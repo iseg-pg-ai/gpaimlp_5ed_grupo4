@@ -1,0 +1,11 @@
+boto3==1.40.71
+sagemaker==2.254.1
+pandas==2.3.3
+numpy==2.3.4
+scikit-learn==1.7.2
+joblib==1.5.2
+pytest==9.0.0
+
+# openai==2.7.2
+# dotenv==0.9.9
+# wikipedia-api==0.8.1

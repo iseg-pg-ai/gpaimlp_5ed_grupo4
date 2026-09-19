@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Distribution / packaging
+.eggs/
+*.egg-info/
+*.egg
+
+# Environment
+.env
+.venv
+
+# Sagemaker
+mlflow.db
+mlruns/
+
+# Others
+.codex/
+.git/
+.tools/
+exemplo/
+reports/*
+Taskfile.yaml

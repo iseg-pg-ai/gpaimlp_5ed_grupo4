@@ -1,0 +1,23 @@
+[project]
+name = "gpaimlp_5ed_grupo4"
+version = "0.1.0"
+description = "Dependencies for the custom SageMaker Studio JupyterLab image."
+requires-python = "==3.12.12"
+dependencies = [
+    "boto3>=1.41,<2",
+    "complexipy>=5.5.0",
+    #"dynaconf[yaml]>=3.2.13,<4",
+    "pandas>=2.2,<3",
+    # "scikit-learn>=1.6,<2",
+    #"xgboost>=3.2.0",
+    #"evidently>=0.7.20",
+    #"skops>=0.14.0",
+    # Suporte a S3 (AWS)
+    #"fsspec>=2024.3.0",
+    #"s3fs>=2024.3.0",
+    #"sagemaker==3.17.0",
+    #"mlflow==3.10.1",
+    # "sagemaker-mlflow==0.2.0"
+    "sagemaker-mlflow>=0.4,<1",
+    "ipython>=9.16.1",
+]
