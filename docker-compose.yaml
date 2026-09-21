@@ -1,0 +1,24 @@
+services:
+  api_gateway:
+    build: .
+    command: uvicorn services.api_gateway.app:app --host 0.0.0.0 --port 8000 --reload
+    ports: ["8000:8000"]
+    env_file: .env
+    volumes: [".:/app"]
+    depends_on: [postgres, localstack]
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: blu
+      POSTGRES_PASSWORD: blu
+      POSTGRES_DB: blu
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+  localstack:
+    image: localstack/localstack:3.8
+    environment:
+      SERVICES: s3,dynamodb
+      AWS_DEFAULT_REGION: eu-west-1
+    ports: ["4566:4566"]
+volumes:
+  pgdata:
