@@ -9,3 +9,4 @@ terraform.tfstate*
 node_modules/
 dist/
 *.egg-info/
+service_account.json

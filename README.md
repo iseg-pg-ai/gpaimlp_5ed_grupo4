@@ -18,6 +18,7 @@ Abra `http://localhost:8000/docs`. Para uma chamada autenticada, crie um token c
 - `services/dna_service`, `curation_service`, `itinerary_service`: decisão explicável e Bedrock opcional.
 - `services/pricing_service`, `reservation_service`, `crm_service`: operações comerciais.
 - `services/api_gateway`: FastAPI, OpenAPI, JWT e limitação por IP.
+- `services/forms_ingestion_service`: refresh direto, sem cache, de respostas Google Forms via Sheet; use `GET /forms/latest`.
 - `shared`: contratos Pydantic, adaptadores AWS/external APIs, segurança e logs.
 - `infrastructure`: Terraform e CDK inicializáveis por ambiente.
 
@@ -36,3 +37,7 @@ O workflow GitHub Actions corre lint, testes e validação Terraform. Nunca colo
 ## Próximos passos de produção
 
 Criar imagens por serviço, adicionar redes privadas/NAT/Aurora e tarefas ECS por ambiente, configurar Secrets Manager/WAF/observabilidade e preencher os adaptadores contratuais de Places, TripAdvisor, Uber, Bolt e CRM com as APIs e permissões contratadas.
+
+## Google Forms / Google Sheets
+
+Ative a Google Sheets API, crie uma service account de leitura e partilhe a Sheet de respostas com o email dessa conta. Guarde o JSON de credenciais fora do Git (por exemplo, AWS Secrets Manager montado como ficheiro em ECS/Lambda) e configure `BLU_GOOGLE_SHEET_ID`, `BLU_GOOGLE_SHEET_RANGE` e `BLU_GOOGLE_SERVICE_ACCOUNT_FILE`. Cada chamada de `GET /forms/latest` faz uma chamada nova à API Google e encaminha os registos por `process_form_responses`; não existe cache de respostas.

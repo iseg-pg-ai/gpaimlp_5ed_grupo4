@@ -5,6 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from services.crm_service.service import CRMService
 from services.dna_service.service import DNAInput, DNAService
 from services.etl_service.service import ETLPipeline
+from services.forms_ingestion_service import get_form_responses
 from services.itinerary_service.service import ItineraryService
 from services.pricing_service.service import PricingInput, PricingService
 from services.reservation_service.service import ReservationService
@@ -56,6 +57,16 @@ def token(subject: str):
 async def etl_upload(file: UploadFile = File(...), _: dict = Depends(current_user)):
     records = ETLPipeline().run(file.filename or "upload.json", await file.read())
     return {"records": [r.model_dump() for r in records], "count": len(records)}
+
+
+@app.get("/forms/latest")
+def latest_form_responses(_: dict = Depends(current_user)):
+    """Return freshly fetched Google Forms data and run it through the ETL boundary."""
+    try:
+        data = get_form_responses()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Google Forms data is unavailable") from exc
+    return {"data": data, "count": len(data), "refreshed": True}
 
 
 @app.post("/dna", response_model=TravellerProfile)
