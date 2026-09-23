@@ -1,3 +1,0 @@
-"use client";
-import { useState } from "react";
-export default function Home() { const [tier, setTier] = useState("classic"); const [message, setMessage] = useState(""); async function submit(e) { e.preventDefault(); setMessage("Proposta solicitada. Ligue esta página ao endpoint /itineraries com o token JWT."); } return <main><h1>BLU AI</h1><p>Crie o seu itinerário personalizado.</p><form onSubmit={submit}><label>Destino <input required name="destination" /></label><label>Experiência <select value={tier} onChange={e=>setTier(e.target.value)}><option value="classic">Classic</option><option value="extended">Extended</option><option value="signature">Signature</option></select></label><button>Ver proposta</button></form><p>{message}</p></main>; }

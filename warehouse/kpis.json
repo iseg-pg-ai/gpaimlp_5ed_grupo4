@@ -1,0 +1,146 @@
+{
+  "catalog": {
+    "attractions": 138,
+    "restaurants": 54,
+    "experiences": 60,
+    "distinct_cities": 34,
+    "records_by_city": {
+      "Lisboa": 94,
+      "Porto": 21,
+      "Sintra": 14,
+      "Braga": 6,
+      "Vila Nova de Gaia": 6,
+      "Nazaré": 4,
+      "Azeitão": 4,
+      "Setúbal": 4,
+      "Guimarães": 4,
+      "Cascais": 3,
+      "Aveiro": 3,
+      "Évora": 3,
+      "Fátima": 2,
+      "Sabrosa": 2,
+      "Pinhão": 2,
+      "Vila Nogueira de Azeitão": 2,
+      "Queluz": 1,
+      "Óbidos": 1,
+      "Mira de Aire": 1,
+      "Vagos": 1,
+      "Almada": 1,
+      "Azaruja": 1,
+      "Redondo": 1,
+      "Lagos": 1,
+      "Vila Real": 1,
+      "Armamar": 1,
+      "Tabuaço": 1,
+      "Lamego": 1,
+      "Sanfins do Douro": 1,
+      "Nafarros (Sintra)": 1,
+      "Por confirmar": 1,
+      "Azenhas do Mar (Sintra)": 1,
+      "Azóia (Sintra)": 1,
+      "Batalha": 1
+    },
+    "experiences_by_category": {
+      "Enoturismo / Gastronomia": 9,
+      "Natureza / Gastronomia / Artesanato": 8,
+      "Música e cultura": 5,
+      "Enoturismo / Arte e património": 4,
+      "Vinhos e gastronomia": 3,
+      "Vinhos / Prova": 3,
+      "Vinhos / Visita e prova": 3,
+      "Gastronomia / Degustação": 3,
+      "Música e gastronomia": 1,
+      "Passeio de barco / Transfer": 1,
+      "Passeio de barco / Gastronomia": 1,
+      "Passeio de barco / Experiência privada": 1,
+      "Passeio de barco / Cultura e património": 1,
+      "Gastronomia / Workshop de pastelaria": 1,
+      "Gastronomia / Aula de culinária": 1,
+      "Gastronomia / Doçaria conventual": 1,
+      "Vinhos / Experiência participativa": 1,
+      "Enoturismo / Paisagem": 1,
+      "História / Património": 1,
+      "Enoturismo": 1,
+      "Azeite / Natureza": 1,
+      "Navegação / Cultura": 1,
+      "Gastronomia / Doçaria": 1,
+      "Natureza / Tradições": 1,
+      "Design / Compras": 1,
+      "Património industrial / Design": 1,
+      "Artesanato / Património": 1,
+      "Artesanato / Workshop": 1,
+      "Gastronomia / Património": 1,
+      "Gastronomia / Workshop": 1
+    }
+  },
+  "pricing": {
+    "priced_records": 209,
+    "by_category": {
+      "Atração": {
+        "count": 108,
+        "min_eur": 0.0,
+        "median_eur": 0.0,
+        "mean_eur": 6.4,
+        "max_eur": 75.0
+      },
+      "Atração — suplemento": {
+        "count": 1,
+        "min_eur": 4.0,
+        "median_eur": 4.0,
+        "mean_eur": 4.0,
+        "max_eur": 4.0
+      },
+      "Custo BLU": {
+        "count": 11,
+        "min_eur": 25.0,
+        "median_eur": 200.0,
+        "mean_eur": 235.91,
+        "max_eur": 700.0
+      },
+      "Experiência": {
+        "count": 49,
+        "min_eur": 7.0,
+        "median_eur": 28.45,
+        "mean_eur": 55.91,
+        "max_eur": 500.0
+      },
+      "Experiência — catálogo": {
+        "count": 39,
+        "min_eur": 10.5,
+        "median_eur": 32.0,
+        "mean_eur": 162.74,
+        "max_eur": 1700.0
+      },
+      "Transporte": {
+        "count": 1,
+        "min_eur": 4.5,
+        "median_eur": 4.5,
+        "mean_eur": 4.5,
+        "max_eur": 4.5
+      }
+    }
+  },
+  "proposals": {
+    "documents": 50,
+    "pages": 1294,
+    "total_text_characters": 508983,
+    "average_pages_per_document": 25.88,
+    "documents_with_email": 44,
+    "documents_with_price_mention": 38
+  },
+  "data_quality": {
+    "status": "passed",
+    "issues": 0,
+    "table_completeness_pct": {
+      "data_request": 95.42,
+      "atracoes": 76.92,
+      "restaurantes": 91.41,
+      "experiencias": 99.03,
+      "curation_principles": 100.0,
+      "curation_rules": 100.0,
+      "precos": 72.79,
+      "proposal_documents": 100.0,
+      "proposal_pages": 100.0
+    }
+  }
+}

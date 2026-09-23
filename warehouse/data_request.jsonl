@@ -1,0 +1,102 @@
+{"dado": "Perfil do viajante", "descricao": "Informação base sobre quem viaja (idade, grupo, preferências gerais).", "definicao_da_necessidade": "Necessário para adaptar ritmo, esforço, tipo de atrações e estilo da viagem.", "_source_sheet": "DATA_REQUEST", "_source_row": 7}
+{"dado": "Interesses", "descricao": "Temas que o viajante aprecia (história, natureza, gastronomia).", "definicao_da_necessidade": "Permite priorizar atrações e experiências relevantes.", "_source_sheet": "DATA_REQUEST", "_source_row": 8}
+{"dado": "Ritmo do viajante", "descricao": "Velocidade preferida: rápido, equilibrado, lento.", "definicao_da_necessidade": "Essencial para definir número de atividades por dia e tempo livre.", "_source_sheet": "DATA_REQUEST", "_source_row": 9}
+{"dado": "Limitações físicas", "descricao": "Mobilidade, tolerância ao esforço, restrições.", "definicao_da_necessidade": "Evita propostas incoerentes ou fisicamente inadequadas.", "_source_sheet": "DATA_REQUEST", "_source_row": 10}
+{"dado": "Preferências alimentares", "descricao": "Vegetarianismo, alergias, intolerâncias.", "definicao_da_necessidade": "Necessário para filtrar restaurantes compatíveis.", "_source_sheet": "DATA_REQUEST", "_source_row": 11}
+{"dado": "Datas da viagem", "descricao": "Período exato da viagem.", "definicao_da_necessidade": "Usado para verificar disponibilidade, horários e dias de encerramento.", "_source_sheet": "DATA_REQUEST", "_source_row": 12}
+{"dado": "Orçamento", "descricao": "Valor aproximado disponível.", "definicao_da_necessidade": "Permite ajustar atrações, experiências e restaurantes ao custo final.", "_source_sheet": "DATA_REQUEST", "_source_row": 13}
+{"dado": "Atração (ID)", "descricao": "Identificador único.", "definicao_da_necessidade": "Necessário para gestão interna e ligação entre módulos.", "_source_sheet": "DATA_REQUEST", "_source_row": 14}
+{"dado": "Nome da atração", "descricao": "Nome oficial ou curado pela BLU.", "definicao_da_necessidade": "Usado na apresentação da proposta e na base de conhecimento.", "_source_sheet": "DATA_REQUEST", "_source_row": 15}
+{"dado": "Categoria da atração", "descricao": "Museu, palácio, natureza, miradouro, etc.", "definicao_da_necessidade": "Ajuda a equilibrar o tipo de atividades no itinerário.", "_source_sheet": "DATA_REQUEST", "_source_row": 16}
+{"dado": "Descrição curada", "descricao": "Texto BLU sobre a atração.", "definicao_da_necessidade": "Permite justificar escolhas e exclusões.", "_source_sheet": "DATA_REQUEST", "_source_row": 17}
+{"dado": "Localização (coordenadas)", "descricao": "Latitude/longitude.", "definicao_da_necessidade": "Necessário para calcular deslocações e coerência geográfica.", "_source_sheet": "DATA_REQUEST", "_source_row": 18}
+{"dado": "Esforço físico", "descricao": "Baixo, médio, alto.", "definicao_da_necessidade": "Crucial para perfis com limitações ou ritmos específicos.", "_source_sheet": "DATA_REQUEST", "_source_row": 19}
+{"dado": "Horário de abertura/fecho", "descricao": "Janela de visita possível.", "definicao_da_necessidade": "Necessário para evitar propostas impossíveis.", "_source_sheet": "DATA_REQUEST", "_source_row": 20}
+{"dado": "Dias de encerramento", "descricao": "Dias em que a atração não funciona.", "definicao_da_necessidade": "Evita erros no itinerário.", "_source_sheet": "DATA_REQUEST", "_source_row": 21}
+{"dado": "Necessidade de reserva", "descricao": "Se exige bilhete antecipado.", "definicao_da_necessidade": "Impacta operação e sequência do dia.", "_source_sheet": "DATA_REQUEST", "_source_row": 22}
+{"dado": "Preço da atração", "descricao": "Bilhete normal, guia, combinado.", "definicao_da_necessidade": "Necessário para cálculo do preço final.", "_source_sheet": "DATA_REQUEST", "_source_row": 23}
+{"dado": "Restaurante (ID)", "descricao": "Identificador único.", "definicao_da_necessidade": "Gestão interna e ligação ao itinerário.", "_source_sheet": "DATA_REQUEST", "_source_row": 24}
+{"dado": "Nome do restaurante", "descricao": "Nome oficial.", "definicao_da_necessidade": "Usado na proposta.", "_source_sheet": "DATA_REQUEST", "_source_row": 25}
+{"dado": "Tipo de cozinha", "descricao": "Tradicional, internacional, vegetariana, etc.", "definicao_da_necessidade": "Compatibilidade com preferências do viajante.", "_source_sheet": "DATA_REQUEST", "_source_row": 26}
+{"dado": "Preço médio", "descricao": "Custo por refeição.", "definicao_da_necessidade": "Entra no cálculo final.", "_source_sheet": "DATA_REQUEST", "_source_row": 27}
+{"dado": "Horário e dias de encerramento", "descricao": "Disponibilidade.", "definicao_da_necessidade": "Evita propostas impossíveis.", "_source_sheet": "DATA_REQUEST", "_source_row": 28}
+{"dado": "Tempo médio de refeição", "descricao": "Duração típica.", "definicao_da_necessidade": "Necessário para encaixar no cronograma.", "_source_sheet": "DATA_REQUEST", "_source_row": 29}
+{"dado": "Experiência (ID)", "descricao": "Identificador único.", "definicao_da_necessidade": "Gestão interna.", "_source_sheet": "DATA_REQUEST", "_source_row": 30}
+{"dado": "Tipo de experiência", "descricao": "Fado, cruzeiro, vinho, gastronomia.", "definicao_da_necessidade": "Ajuda a diversificar a viagem.", "_source_sheet": "DATA_REQUEST", "_source_row": 31}
+{"dado": "Duração da experiência", "descricao": "Tempo total.", "definicao_da_necessidade": "Impacta o cronograma.", "_source_sheet": "DATA_REQUEST", "_source_row": 32}
+{"dado": "Horários fixos", "descricao": "Sessões disponíveis.", "definicao_da_necessidade": "Necessário para encaixar no dia.", "_source_sheet": "DATA_REQUEST", "_source_row": 33}
+{"dado": "Regras de perfil", "descricao": "Ajustes por tipo de viajante.", "definicao_da_necessidade": "Personalização profunda.", "_source_sheet": "DATA_REQUEST", "_source_row": 34}
+{"dado": "Guias disponíveis", "descricao": "Lista de guias e horários.", "definicao_da_necessidade": "Necessário para operação.", "_source_sheet": "DATA_REQUEST", "_source_row": 35}
+{"dado": "Parceiros disponíveis", "descricao": "Tours, transfers, experiências.", "definicao_da_necessidade": "Impacta disponibilidade real.", "_source_sheet": "DATA_REQUEST", "_source_row": 36}
+{"dado": "Tickets e slots", "descricao": "Horários de entrada obrigatórios.", "definicao_da_necessidade": "Define a sequência do dia.", "_source_sheet": "DATA_REQUEST", "_source_row": 37}
+{"dado": "Versão Classic", "descricao": "Itinerário essencial.", "definicao_da_necessidade": "Primeira camada da proposta.", "_source_sheet": "DATA_REQUEST", "_source_row": 38}
+{"dado": "Versão Extended", "descricao": "Itinerário com mais momentos.", "definicao_da_necessidade": "Segunda camada da proposta.", "_source_sheet": "DATA_REQUEST", "_source_row": 39}
+{"dado": "Versão Signature", "descricao": "Itinerário mais imersivo.", "definicao_da_necessidade": "Terceira camada da proposta.", "_source_sheet": "DATA_REQUEST", "_source_row": 40}
+{"dado": "Justificação das escolhas", "descricao": "Razões para incluir atrações.", "definicao_da_necessidade": "Transparência e explicabilidade.", "_source_sheet": "DATA_REQUEST", "_source_row": 41}
+{"dado": "Justificação das exclusões", "descricao": "Razões para não incluir.", "definicao_da_necessidade": "Parte essencial da curadoria BLU.", "_source_sheet": "DATA_REQUEST", "_source_row": 42}
+{"dado": "Preço final calculado", "descricao": "Soma de atrações, deslocações, restaurantes, guias.", "definicao_da_necessidade": "Necessário para a proposta final.", "_source_sheet": "DATA_REQUEST", "_source_row": 43}
+{"dado": "1. Tabela — Perfil do Viajante (DNA)", "_source_sheet": "DATA_REQUEST", "_source_row": 47}
+{"dado": "Dado", "descricao": "Descrição", "definicao_da_necessidade": "Definição da necessidade", "_source_sheet": "DATA_REQUEST", "_source_row": 49}
+{"dado": "Idade / Grupo", "descricao": "Faixa etária, família, casal, solo", "definicao_da_necessidade": "Ajusta ritmo, esforço e tipo de atividades", "_source_sheet": "DATA_REQUEST", "_source_row": 50}
+{"dado": "Interesses", "descricao": "História, natureza, gastronomia, cultura, fotografia", "definicao_da_necessidade": "Prioriza atrações e experiências relevantes", "_source_sheet": "DATA_REQUEST", "_source_row": 51}
+{"dado": "Ritmo", "descricao": "Rápido, equilibrado, lento", "definicao_da_necessidade": "Define nº de atividades por dia e tempo livre", "_source_sheet": "DATA_REQUEST", "_source_row": 52}
+{"dado": "Limitações físicas", "descricao": "Mobilidade, esforço tolerado, inclinações", "definicao_da_necessidade": "Evita atrações inadequadas", "_source_sheet": "DATA_REQUEST", "_source_row": 53}
+{"dado": "Preferências alimentares", "descricao": "Vegetarianismo, alergias, intolerâncias", "definicao_da_necessidade": "Filtra restaurantes compatíveis", "_source_sheet": "DATA_REQUEST", "_source_row": 54}
+{"dado": "Orçamento", "descricao": "Valor disponível", "definicao_da_necessidade": "Ajusta atrações, experiências e refeições", "_source_sheet": "DATA_REQUEST", "_source_row": 55}
+{"dado": "Comportamento", "descricao": "Hora de início, pausas, autonomia vs guia", "definicao_da_necessidade": "Personaliza a experiência diária", "_source_sheet": "DATA_REQUEST", "_source_row": 56}
+{"dado": "Datas da viagem", "descricao": "Período exato", "definicao_da_necessidade": "Verifica disponibilidade e horários", "_source_sheet": "DATA_REQUEST", "_source_row": 57}
+{"dado": "2. Tabela — Atrações", "_source_sheet": "DATA_REQUEST", "_source_row": 59}
+{"dado": "Dado", "descricao": "Descrição", "definicao_da_necessidade": "Definição da necessidade", "_source_sheet": "DATA_REQUEST", "_source_row": 61}
+{"dado": "ID", "descricao": "Identificador único", "definicao_da_necessidade": "Gestão interna e ligação entre módulos", "_source_sheet": "DATA_REQUEST", "_source_row": 62}
+{"dado": "Nome", "descricao": "Nome curado pela BLU", "definicao_da_necessidade": "Apresentação e curadoria", "_source_sheet": "DATA_REQUEST", "_source_row": 63}
+{"dado": "Categoria", "descricao": "Museu, palácio, natureza, miradouro", "definicao_da_necessidade": "Equilíbrio de tipos de atividades", "_source_sheet": "DATA_REQUEST", "_source_row": 64}
+{"dado": "Descrição curada", "descricao": "Texto BLU", "definicao_da_necessidade": "Justificação de escolhas/exclusões", "_source_sheet": "DATA_REQUEST", "_source_row": 65}
+{"dado": "Localização", "descricao": "Coordenadas", "definicao_da_necessidade": "Cálculo de deslocações", "_source_sheet": "DATA_REQUEST", "_source_row": 66}
+{"dado": "Tempo médio de visita", "descricao": "Duração típica", "definicao_da_necessidade": "Construção do cronograma", "_source_sheet": "DATA_REQUEST", "_source_row": 67}
+{"dado": "Esforço físico", "descricao": "Baixo, médio, alto", "definicao_da_necessidade": "Ajuste ao perfil do viajante", "_source_sheet": "DATA_REQUEST", "_source_row": 68}
+{"dado": "Horário", "descricao": "Abertura/fecho", "definicao_da_necessidade": "Evitar propostas impossíveis", "_source_sheet": "DATA_REQUEST", "_source_row": 69}
+{"dado": "Dias de encerramento", "descricao": "Dias sem operação", "definicao_da_necessidade": "Ajuste automático do itinerário", "_source_sheet": "DATA_REQUEST", "_source_row": 70}
+{"dado": "Necessidade de reserva", "descricao": "Bilhete antecipado", "definicao_da_necessidade": "Impacta sequência do dia", "_source_sheet": "DATA_REQUEST", "_source_row": 71}
+{"dado": "Preço", "descricao": "Bilhete normal/guia/combinado", "definicao_da_necessidade": "Cálculo do custo final", "_source_sheet": "DATA_REQUEST", "_source_row": 72}
+{"dado": "4. Tabela — Restaurantes", "_source_sheet": "DATA_REQUEST", "_source_row": 74}
+{"dado": "Dado", "descricao": "Descrição", "definicao_da_necessidade": "Definição da necessidade", "_source_sheet": "DATA_REQUEST", "_source_row": 76}
+{"dado": "ID", "descricao": "Identificador único", "definicao_da_necessidade": "Gestão interna", "_source_sheet": "DATA_REQUEST", "_source_row": 77}
+{"dado": "Nome", "descricao": "Nome oficial", "definicao_da_necessidade": "Apresentação", "_source_sheet": "DATA_REQUEST", "_source_row": 78}
+{"dado": "Tipo de cozinha", "descricao": "Tradicional, internacional, vegetariana", "definicao_da_necessidade": "Compatibilidade com preferências", "_source_sheet": "DATA_REQUEST", "_source_row": 79}
+{"dado": "Preço médio", "descricao": "Custo por refeição", "definicao_da_necessidade": "Cálculo final", "_source_sheet": "DATA_REQUEST", "_source_row": 80}
+{"dado": "Horário", "descricao": "Abertura/fecho", "definicao_da_necessidade": "Ajuste ao cronograma", "_source_sheet": "DATA_REQUEST", "_source_row": 81}
+{"dado": "Dias de encerramento", "descricao": "Disponibilidade", "definicao_da_necessidade": "Evitar propostas impossíveis", "_source_sheet": "DATA_REQUEST", "_source_row": 82}
+{"dado": "Tempo médio de refeição", "descricao": "Duração típica", "definicao_da_necessidade": "Encaixe no itinerário", "_source_sheet": "DATA_REQUEST", "_source_row": 83}
+{"dado": "Restrições alimentares", "descricao": "Alergias, intolerâncias", "definicao_da_necessidade": "Filtragem automática", "_source_sheet": "DATA_REQUEST", "_source_row": 84}
+{"dado": "5. Tabela — Experiências", "_source_sheet": "DATA_REQUEST", "_source_row": 86}
+{"dado": "Dado", "descricao": "Descrição", "definicao_da_necessidade": "Definição da necessidade", "_source_sheet": "DATA_REQUEST", "_source_row": 88}
+{"dado": "ID", "descricao": "Identificador único", "definicao_da_necessidade": "Gestão interna", "_source_sheet": "DATA_REQUEST", "_source_row": 89}
+{"dado": "Tipo", "descricao": "Fado, cruzeiro, vinho, gastronomia", "definicao_da_necessidade": "Diversificação da viagem", "_source_sheet": "DATA_REQUEST", "_source_row": 90}
+{"dado": "Duração", "descricao": "Tempo total", "definicao_da_necessidade": "Cronograma", "_source_sheet": "DATA_REQUEST", "_source_row": 91}
+{"dado": "Horários fixos", "descricao": "Sessões disponíveis", "definicao_da_necessidade": "Sequência obrigatória", "_source_sheet": "DATA_REQUEST", "_source_row": 92}
+{"dado": "Localização", "descricao": "Coordenadas", "definicao_da_necessidade": "Deslocações", "_source_sheet": "DATA_REQUEST", "_source_row": 93}
+{"dado": "Ritmo adequado", "descricao": "Lento, equilibrado, intenso", "definicao_da_necessidade": "Ajuste ao DNA", "_source_sheet": "DATA_REQUEST", "_source_row": 94}
+{"dado": "6. Tabela — Regras BLU (se existir)", "_source_sheet": "DATA_REQUEST", "_source_row": 96}
+{"dado": "Dado", "descricao": "Descrição", "definicao_da_necessidade": "Definição da necessidade", "_source_sheet": "DATA_REQUEST", "_source_row": 98}
+{"dado": "Regras de ritmo", "descricao": "Máximo de atividades, pausas obrigatórias", "definicao_da_necessidade": "Evitar itinerários sobrecarregados", "_source_sheet": "DATA_REQUEST", "_source_row": 99}
+{"dado": "Regras de combinação", "descricao": "Atrações que funcionam ou não juntas", "definicao_da_necessidade": "Base da curadoria", "_source_sheet": "DATA_REQUEST", "_source_row": 100}
+{"dado": "Regras de coerência", "descricao": "Evitar zig-zag, repetições, deslocações longas", "definicao_da_necessidade": "Itinerários inteligentes", "_source_sheet": "DATA_REQUEST", "_source_row": 101}
+{"dado": "Regras de perfil", "descricao": "Ajustes por tipo de viajante", "definicao_da_necessidade": "Personalização profunda", "_source_sheet": "DATA_REQUEST", "_source_row": 102}
+{"dado": "Regras de esforço", "descricao": "Limites físicos", "definicao_da_necessidade": "Evitar propostas inadequadas", "_source_sheet": "DATA_REQUEST", "_source_row": 103}
+{"dado": "Regras de tempo livre", "descricao": "Mínimos por dia", "definicao_da_necessidade": "Ritmo equilibrado", "_source_sheet": "DATA_REQUEST", "_source_row": 104}
+{"dado": "Regras de profundidade", "descricao": "Classic / Extended / Signature", "definicao_da_necessidade": "Geração das três propostas", "_source_sheet": "DATA_REQUEST", "_source_row": 105}
+{"dado": "7. Tabela — Preços e Custos", "_source_sheet": "DATA_REQUEST", "_source_row": 107}
+{"dado": "Dado", "descricao": "Descrição", "definicao_da_necessidade": "Definição da necessidade", "_source_sheet": "DATA_REQUEST", "_source_row": 109}
+{"dado": "Preço de atrações", "descricao": "Bilhete normal, guia, combinado", "definicao_da_necessidade": "Cálculo final", "_source_sheet": "DATA_REQUEST", "_source_row": 110}
+{"dado": "Preço de experiências", "descricao": "Fado, cruzeiro, vinho", "definicao_da_necessidade": "Ajuste ao orçamento", "_source_sheet": "DATA_REQUEST", "_source_row": 111}
+{"dado": "Preço de deslocações", "descricao": "Transfer, shuttle", "definicao_da_necessidade": "Custo total", "_source_sheet": "DATA_REQUEST", "_source_row": 112}
+{"dado": "Preço de restaurantes", "descricao": "Estimativa por refeição", "definicao_da_necessidade": "Planeamento financeiro", "_source_sheet": "DATA_REQUEST", "_source_row": 113}
+{"dado": "Preço de guias", "descricao": "Valor por hora ou por tour", "definicao_da_necessidade": "Operação", "_source_sheet": "DATA_REQUEST", "_source_row": 114}
+{"dado": "Preço de serviços adicionais", "descricao": "Extras BLU", "definicao_da_necessidade": "Transparência no orçamento", "_source_sheet": "DATA_REQUEST", "_source_row": 115}
+{"dado": "8. Tabela — 3 Propostas", "_source_sheet": "DATA_REQUEST", "_source_row": 118}
+{"dado": "Dado", "descricao": "Descrição", "definicao_da_necessidade": "Definição da necessidade", "_source_sheet": "DATA_REQUEST", "_source_row": 120}
+{"dado": "Classic", "descricao": "Itinerário essencial", "definicao_da_necessidade": "Primeira camada da proposta", "_source_sheet": "DATA_REQUEST", "_source_row": 121}
+{"dado": "Extended", "descricao": "Itinerário com mais momentos", "definicao_da_necessidade": "Segunda camada", "_source_sheet": "DATA_REQUEST", "_source_row": 122}
+{"dado": "Signature", "descricao": "Itinerário imersivo", "definicao_da_necessidade": "Terceira camada", "_source_sheet": "DATA_REQUEST", "_source_row": 123}
+{"dado": "Justificação das escolhas", "descricao": "Razões para incluir", "definicao_da_necessidade": "Explicabilidade", "_source_sheet": "DATA_REQUEST", "_source_row": 124}
+{"dado": "Justificação das exclusões", "descricao": "Razões para não incluir", "definicao_da_necessidade": "Curadoria BLU", "_source_sheet": "DATA_REQUEST", "_source_row": 125}
