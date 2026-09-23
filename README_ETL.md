@@ -17,3 +17,17 @@ The pipeline processes every `.xlsx` and `.pdf` below `data/`.
 - `warehouse/model_catalog_readiness.jsonl` and `model_proposal_complexity.jsonl` contain transparent analytical scores. Their scoring definitions are in `analytical_models.json`.
 
 The pipeline only reads `data/` and fully recreates the selected output directory on each run, preventing stale records after source changes.
+
+## Dashboard
+
+After running the ETL, launch the dashboard with:
+
+```powershell
+.\.venv\Scripts\streamlit.exe run dashboard\app.py
+```
+
+It reads the SQLite warehouse and the validation/KPI/model artifacts. The warehouse data-model documentation is in `reports/data_model_report.md`.
+
+## Automation and operations
+
+Use `powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1` for the complete automated local workflow. See [AUTOMATION.md](AUTOMATION.md) for the full operating guide, CI behavior, validation gate, data flow, dashboard commands, and troubleshooting.
