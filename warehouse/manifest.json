@@ -1,0 +1,31 @@
+{
+  "pipeline": "blu-local-etl",
+  "ran_at_utc": "2026-09-23T22:40:30.139456+00:00",
+  "input_directory": "data",
+  "workbook": "data/Requisitos informações Alunos ISEG.xlsx",
+  "tables": {
+    "data_request": 102,
+    "atracoes": 138,
+    "restaurantes": 54,
+    "experiencias": 60,
+    "curation_principles": 6,
+    "curation_rules": 51,
+    "precos": 257,
+    "proposal_documents": 50,
+    "proposal_pages": 1294
+  },
+  "pdfs_discovered": 50,
+  "pdf_errors": [],
+  "validation": {
+    "status": "passed",
+    "issue_count": 0
+  },
+  "analytics": {
+    "kpis": "kpis.json",
+    "models": "analytical_models.json"
+  },
+  "outputs": {
+    "database": "blu_etl.sqlite",
+    "format": "JSON Lines + SQLite"
+  }
+}

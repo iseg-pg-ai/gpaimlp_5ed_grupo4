@@ -1,0 +1,125 @@
+{
+  "status": "passed",
+  "tables": {
+    "data_request": {
+      "record_count": 102,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 95.42,
+      "missing_values_by_column": {
+        "definicao_da_necessidade": 7,
+        "descricao": 7
+      }
+    },
+    "atracoes": {
+      "record_count": 138,
+      "primary_key": [
+        "id"
+      ],
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 76.92,
+      "missing_values_by_column": {
+        "dias_de_encerramento": 74,
+        "esforco_fisico": 74,
+        "horario": 74,
+        "necessidade_de_reserva": 74,
+        "preco_da_atracao": 74,
+        "tempo_medio_de_visita": 74,
+        "latitude": 1,
+        "longitude": 1
+      }
+    },
+    "restaurantes": {
+      "record_count": 54,
+      "primary_key": [
+        "id_blu"
+      ],
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 91.41,
+      "missing_values_by_column": {
+        "latitude": 51,
+        "longitude": 51
+      }
+    },
+    "experiencias": {
+      "record_count": 60,
+      "primary_key": [
+        "nome_da_experiencia"
+      ],
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 99.03,
+      "missing_values_by_column": {
+        "site_fonte": 7
+      }
+    },
+    "curation_principles": {
+      "record_count": 6,
+      "primary_key": [
+        "id"
+      ],
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "curation_rules": {
+      "record_count": 51,
+      "primary_key": [
+        "id"
+      ],
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "precos": {
+      "record_count": 257,
+      "primary_key": [
+        "id"
+      ],
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 72.79,
+      "missing_values_by_column": {
+        "crianca_eur": 181,
+        "data_de_verificacao": 187,
+        "fornecedor": 137,
+        "notas_de_utilizacao": 92,
+        "senior_eur": 184,
+        "url_catalogo_verificado": 172,
+        "adulto_eur": 112,
+        "preco_referencia_eur": 48,
+        "preco_original_condicoes": 40,
+        "local": 25,
+        "fonte": 11
+      }
+    },
+    "proposal_documents": {
+      "record_count": 50,
+      "primary_key": [
+        "document_id"
+      ],
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "proposal_pages": {
+      "record_count": 1294,
+      "primary_key": [
+        "document_id",
+        "page_number"
+      ],
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    }
+  },
+  "issue_count": 0,
+  "orphan_page_count": 0
+}
