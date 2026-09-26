@@ -205,7 +205,7 @@ def run(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     # Validate the expected single-workbook source contract before changing outputs.
     if not data_dir.is_dir():
         raise FileNotFoundError(f"Data directory does not exist: {data_dir}")
-    xlsx_files = sorted(data_dir.rglob("*.xlsx"))
+    xlsx_files = sorted(data_dir.glob("*.xlsx")) or sorted(data_dir.rglob("*.xlsx"))
     if len(xlsx_files) != 1:
         raise ValueError(f"Expected exactly one workbook; found {len(xlsx_files)}")
     # Rebuild the output atomically by clearing only the selected output directory.

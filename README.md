@@ -24,6 +24,20 @@ Abra `http://localhost:8000/docs`. Para uma chamada autenticada, crie um token c
 - `services/forms_ingestion_service`: refresh direto, sem cache, de respostas Google Forms via Sheet; use `GET /forms/latest`.
 - `shared`: contratos Pydantic, adaptadores AWS/external APIs, segurança e logs.
 - `infrastructure`: Terraform e CDK inicializáveis por ambiente.
+- `dmc-workspace`: protótipo interativo frontend (Next.js 16, React 19, Tailwind CSS v4, shadcn/ui, AI Elements) do workspace do consultor/curador de viagens da BLU Costa Travel.
+
+## Workspace UI Prototype (DMC Travel Designer)
+
+Para testar o fluxo de experiência de utilizador (*Intake do Briefing → Curadoria Simulada → Itinerário Interativo → Copiloto AI com Destaques Visuais*):
+
+```bash
+cd dmc-workspace
+npm install
+npm run dev -- -p 3001
+```
+
+Aceda a **[http://localhost:3001](http://localhost:3001)**. Consulte o guia detalhado em **[README_UIMOCK.md](README_UIMOCK.md)**.
+
 
 ## Qualidade e entrega
 
