@@ -1,43 +1,40 @@
 # BLU AI System
 
-Plataforma de itinerários inteligentes: ingestão ETL, DNA do viajante, curadoria baseada em regras, itinerários por tier, preços, reservas, CRM e integrações AWS/Bedrock.
+Pipeline local para ingestão, validação, análise e visualização dos dados BLU.
 
 ## Arranque rápido
 
-```bash
-cp .env.example .env
-docker compose up --build
-# ou: pip install -e ".[dev]" && uvicorn services.api_gateway.app:app --reload
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1
 ```
 
-Abra `http://localhost:8000/docs`. Para uma chamada autenticada, crie um token com `POST /auth/token?subject=demo` e use-o no botão **Authorize**.
+Depois, inicie o dashboard:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1
+```
+
+Abra `http://localhost:8501`.
 
 ## Componentes
 
-- `services/etl_service`: ingestão, limpeza, transformação e persistência opcional em S3/DynamoDB.
-- `services/dna_service`, `curation_service`, `itinerary_service`: decisão explicável e Bedrock opcional.
-- `services/pricing_service`, `reservation_service`, `crm_service`: operações comerciais.
-- `services/api_gateway`: FastAPI, OpenAPI, JWT e limitação por IP.
-- `services/forms_ingestion_service`: refresh direto, sem cache, de respostas Google Forms via Sheet; use `GET /forms/latest`.
-- `shared`: contratos Pydantic, adaptadores AWS/external APIs, segurança e logs.
-- `infrastructure`: Terraform e CDK inicializáveis por ambiente.
+- `etl/`: extração de Excel/PDF, transformação, validação, KPIs e modelos analíticos explicáveis.
+- `data/`: fontes de entrada — um workbook e propostas PDF.
+- `warehouse/`: saída regenerada com JSONL, SQLite, validação, KPIs e modelos.
+- `dashboard/`: dashboard Streamlit sobre o warehouse.
+- `reports/`: documentação do modelo de dados.
+- `scripts/`: automação de execução e arranque do dashboard.
 
-## Qualidade e entrega
+## Credenciais
 
-```bash
-make test
-make lint
-locust -f tests/load_itineraries.py --host http://localhost:8000
-terraform -chdir=infrastructure/terraform init
-terraform -chdir=infrastructure/terraform plan
-```
+Não são necessárias credenciais, `.env`, Docker, AWS, Google Sheets ou APIs externas para correr o pipeline e o dashboard locais. É necessário apenas Python com `pip` e acesso à internet na primeira instalação das dependências.
 
-O workflow GitHub Actions corre lint, testes e validação Terraform. Nunca coloque chaves no repositório: use `.env` apenas localmente e Secrets Manager em produção. Consulte [arquitetura](docs/architecture.md), [API](docs/api.md), [ETL](docs/etl.md), [curadoria/DNA](docs/curation.md), [operações](docs/operations.md) e [modelo ER](docs/er-diagram.md).
+## Documentação
 
-## Próximos passos de produção
+- [Automação e operações](AUTOMATION.md)
+- [ETL e saídas](README_ETL.md)
+- [Modelo de dados](reports/data_model_report.md)
 
-Criar imagens por serviço, adicionar redes privadas/NAT/Aurora e tarefas ECS por ambiente, configurar Secrets Manager/WAF/observabilidade e preencher os adaptadores contratuais de Places, TripAdvisor, Uber, Bolt e CRM com as APIs e permissões contratadas.
+## Nota sobre as instruções antigas
 
-## Google Forms / Google Sheets
-
-Ative a Google Sheets API, crie uma service account de leitura e partilhe a Sheet de respostas com o email dessa conta. Guarde o JSON de credenciais fora do Git (por exemplo, AWS Secrets Manager montado como ficheiro em ECS/Lambda) e configure `BLU_GOOGLE_SHEET_ID`, `BLU_GOOGLE_SHEET_RANGE` e `BLU_GOOGLE_SERVICE_ACCOUNT_FILE`. Cada chamada de `GET /forms/latest` faz uma chamada nova à API Google e encaminha os registos por `process_form_responses`; não existe cache de respostas.
+As instruções que usavam `cp .env.example .env`, `docker compose`, `pip install -e ".[dev]"` e `uvicorn` pertenciam a uma versão anterior do projeto. Os respetivos ficheiros (`.env.example`, `docker-compose.yaml`, `pyproject.toml` e `services/`) não existem neste checkout, pelo que esses comandos não devem ser usados.
