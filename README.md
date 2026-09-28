@@ -5,6 +5,50 @@
 
 Plataforma de itinerários inteligentes: ingestão ETL, DNA do viajante, curadoria baseada em regras, itinerários por tier, preços, reservas, CRM e integrações AWS/Bedrock.
 
+## Dependências Python
+
+A fonte de dependências é `pyproject.toml`; `uv.lock` fixa as versões diretas e
+transitivas para Python 3.12 e 3.13. `requirements.txt` e
+`translations/requirements.txt` são exports gerados, não devem ser editados à mão.
+
+```powershell
+python -m pip install uv==0.12.19
+python -m uv sync --locked --group translation
+```
+
+O conjunto base instala o ETL e o dashboard Streamlit. Grupos opcionais:
+
+- `translation`: tradução local do DMC Workspace; os modelos continuam a ser
+  instalados com `python translations/setup_models.py` usando o Python do ambiente.
+- `sagemaker`: SDK AWS/SageMaker, MLflow, IPython e bibliotecas de machine learning.
+- `dev`: pytest e análise de complexidade.
+
+Use `python -m uv sync --locked --group sagemaker --group dev` para o ambiente
+SageMaker. Os grupos podem ser combinados. `uv sync` remove dependências que não
+pertencem aos grupos escolhidos; inclua `--group translation` se este ambiente
+for também usado pelo portal. O frontend mantém as dependências Node em
+`dmc-workspace/package.json` e `package-lock.json`.
+
+A instalação por pip continua disponível:
+
+```powershell
+python -m pip install -r requirements.txt
+python -m pip install -r translations/requirements.txt
+```
+
+Depois de alterar dependências no `pyproject.toml`:
+
+```powershell
+python -m uv lock
+python scripts/export_requirements.py
+python -m uv lock --check --offline
+python scripts/export_requirements.py --check
+```
+
+O workflow Data pipeline verifica o lock e os exports antes de instalar as
+ dependências e executar os testes. O uv é uma ferramenta de manutenção;
+ não é necessário para executar a aplicação instalada por pip.
+
 ## Fluxo de dados local
 
 `data/` (Excel e PDF, incluindo subpastas) → ETL → `warehouse/` → DMC Workspace.
