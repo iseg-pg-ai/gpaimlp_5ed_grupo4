@@ -1,4 +1,6 @@
 "use client";
+import { T, useTranslated } from "@/components/LocaleProvider";
+
 
 import React, { useState, useRef, useEffect } from "react";
 import { 
@@ -54,6 +56,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   isProcessing,
   onResetItinerary,
 }) => {
+  const promptPlaceholder = useTranslated("Ask me to adapt anything…");
   const [inputText, setInputText] = useState("");
   const conversationContainerRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -102,13 +105,9 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
               <Sparkles className="w-2.5 h-2.5 text-[#D8A65C]" />
               <span>BLU</span>
             </Badge>
-            <h3 className="font-serif-blu font-bold text-sm text-[#143F4B]">
-              Curation Assistant
-            </h3>
+            <h3 className="font-serif-blu font-bold text-sm text-[#143F4B]"><T text="Curation Assistant" source="en"/>{" "}</h3>
           </div>
-          <p className="text-[11px] text-[#4A636B] mt-0.5">
-            Comandos de curadoria · sem modelo de IA
-          </p>
+          <p className="text-[11px] text-[#4A636B] mt-0.5"><T text="Comandos de curadoria · sem modelo de IA" source="pt"/>{" "}</p>
         </div>
 
         <div className="flex items-center gap-1">
@@ -156,7 +155,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                         : "bg-[#143F4B] text-[#F4F0E7]"
                     }
                   >
-                    <MessageResponse>{message.text}</MessageResponse>
+                    <MessageResponse>{message.sender === "assistant" ? <T text={message.text} source="pt"/> : message.text}</MessageResponse>
                   </MessageContent>
 
                   {/* Status update indicator */}
@@ -192,13 +191,11 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             <Message from="assistant">
               <div className="flex items-center gap-1.5 mb-1 px-1">
                 <MessageAvatar from="assistant" />
-                <span className="text-[10px] font-medium text-[#4A636B]">
-                  BLU Costa Curator
-                </span>
+                <span className="text-[10px] font-medium text-[#4A636B]"><T text="BLU Costa Curator" source="en"/>{" "}</span>
               </div>
               <MessageContent from="assistant" className="text-[#4A636B] flex items-center gap-2 bg-white border border-[#D5D1C7]">
                 <Loader2 className="size-3.5 animate-spin text-[#2D5B67]" />
-                <span>Validating rules & updating proposal…</span>
+                <span><T text="Validating rules & updating proposal…" source="en"/></span>
               </MessageContent>
             </Message>
           )}
@@ -212,9 +209,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
         <PromptInput onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
           {/* Suggestion Chips */}
           <div className="px-2 pt-2 pb-1">
-            <span className="text-[10px] font-semibold text-[#698288] uppercase tracking-wider block mb-1.5">
-              Curator Suggestions
-            </span>
+            <span className="text-[10px] font-semibold text-[#698288] uppercase tracking-wider block mb-1.5"><T text="Curator Suggestions" source="en"/>{" "}</span>
             <PromptInputTools>
               {suggestionChips.map((chip, idx) => (
                 <button
@@ -224,7 +219,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   onClick={() => handleChipClick(chip)}
                   className="text-[11px] px-2 py-0.5 rounded-md bg-[#FAF8F3] text-[#143F4B] border border-[#D5D1C7] hover:border-[#2D5B67] hover:bg-[#E7EEF0] transition-all cursor-pointer disabled:opacity-50 text-left"
                 >
-                  {chip}
+                  <T text={chip} source="pt"/>
                 </button>
               ))}
             </PromptInputTools>
@@ -236,7 +231,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onEnterSubmit={handleSubmit}
-              placeholder="Ask me to adapt anything…"
+              placeholder={promptPlaceholder}
               disabled={isProcessing}
             />
             <PromptInputSubmit
@@ -248,8 +243,8 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
 
           {/* Footer note */}
           <PromptInputFooter>
-            <span>Press Enter to curate</span>
-            <span>Real-time itinerary sync</span>
+            <span><T text="Press Enter to curate" source="en"/></span>
+            <span><T text="Real-time itinerary sync" source="en"/></span>
           </PromptInputFooter>
         </PromptInput>
       </div>

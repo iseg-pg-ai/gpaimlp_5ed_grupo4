@@ -1,4 +1,6 @@
 "use client";
+import { T } from "@/components/LocaleProvider";
+
 
 import React from "react";
 import { Plus, MapPin, Compass, ShieldCheck } from "lucide-react";
@@ -22,7 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isNewTripActive,
 }) => {
   return (
-    <aside className="w-64 shrink-0 border-r border-[#D5D1C7] bg-[#EBE5DA] flex flex-col justify-between h-screen select-none">
+    <aside className="w-64 shrink-0 border-r border-[#D5D1C7] bg-[#EBE5DA] flex flex-col justify-between h-full select-none">
       {/* Top Header / BLU Costa Branding */}
       <div>
         <div className="p-4 border-b border-[#D5D1C7] bg-[#F4F0E7]">
@@ -34,14 +36,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="font-serif-blu font-bold text-sm tracking-tight text-[#143F4B] block leading-tight">
                 BLU COSTA
               </span>
-              <span className="text-[10px] text-[#4A636B] font-medium tracking-widest uppercase">
-                Travel Curation
-              </span>
+              <span className="text-[10px] text-[#4A636B] font-medium tracking-widest uppercase"><T text="Travel Curation" source="en"/>{" "}</span>
             </div>
           </div>
-          <div className="mt-2 text-[10px] text-[#7E9399] tracking-wider uppercase font-semibold">
-            Portugal · Studio
-          </div>
+          <div className="mt-2 text-[10px] text-[#7E9399] tracking-wider uppercase font-semibold"><T text="Portugal · Studio" source="en"/>{" "}</div>
         </div>
 
         {/* Action Button: New Trip via Shadcn Button */}
@@ -52,16 +50,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="w-full gap-2 justify-center shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            <span>New Trip Brief</span>
+            <span><T text="New Trip Brief" source="en"/></span>
           </Button>
         </div>
 
         {/* Recent Projects Section */}
         <div className="px-3 pt-2">
           <div className="flex items-center justify-between px-2 mb-1.5">
-            <span className="text-[10px] font-semibold tracking-widest text-[#4A636B] uppercase">
-              Recent Journeys
-            </span>
+            <span className="text-[10px] font-semibold tracking-widest text-[#4A636B] uppercase"><T text="Recent Journeys" source="en"/>{" "}</span>
             <span className="text-[10px] text-[#7E9399] font-mono">
               {recentTrips.length}
             </span>
@@ -107,12 +103,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-3 border-t border-[#D5D1C7] bg-[#E3DCD0] text-[10px] text-[#4A636B]">
         <div className="flex items-center gap-1.5 font-medium mb-1 text-[#143F4B]">
           <ShieldCheck className="w-3.5 h-3.5 text-[#2D5B67]" />
-          <span>Curated with Care</span>
+          <span><T text="Curated with Care" source="en"/></span>
         </div>
-        <p className="text-[10px] text-[#698288] leading-tight">
-          RNAAT Registered · 26/2026
-          <br />Lisbon HQ · Portugal
-        </p>
+        <p className="text-[10px] text-[#698288] leading-tight"><T text="RNAAT Registered · 26/2026" source="en"/>{" "}<br /><T text="Lisbon HQ · Portugal" source="en"/>{" "}</p>
       </div>
     </aside>
   );

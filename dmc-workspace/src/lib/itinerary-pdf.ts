@@ -3,7 +3,8 @@ import { existsSync } from "node:fs";
 import type { CustomerBrief, ItineraryDay } from "../types/index";
 export type Snapshot = { brief: CustomerBrief; itinerary: ItineraryDay[]; pending: string[] };
 export type VersionMeta = { exportedAt?: string | null; tripId: string; version: number; filename: string; createdAt: string; reason: string; snapshotHash: string; chainHash: string; parentVersion: number | null };
-export function renderPdf(snapshot: Snapshot, meta: VersionMeta): Promise<Buffer> {
+export type PdfLanguageOptions = { locale?: string; capture?: string[]; normalize?: (text: string) => string; translations?: Map<string,string> };
+export function renderPdf(snapshot: Snapshot, meta: VersionMeta, options: PdfLanguageOptions = {}): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 48, bufferPages: true, info: { Title: `${snapshot.brief.customerName} — ${snapshot.brief.destination} — v${meta.version}`, Author: "BLU Costa Travel", CreationDate: new Date(meta.createdAt) } });
     const chunks: Buffer[] = [];
@@ -12,8 +13,17 @@ export function renderPdf(snapshot: Snapshot, meta: VersionMeta): Promise<Buffer
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     try {
       const font = [process.env.BLU_PDF_FONT, "C:/Windows/Fonts/arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"].find(p => p && existsSync(p));
-      if (font) doc.font(font);
-      const text = (value: string, size = 10, color = "#143F4B") => { doc.fontSize(size).fillColor(color).text(value, { lineGap: 4 }); doc.moveDown(0.45); };
+      if (options.locale === "zh") {
+        const chineseFont = process.env.BLU_PDF_CJK_FONT ?? "C:/Windows/Fonts/msyh.ttc";
+        if (!existsSync(/* turbopackIgnore: true */ chineseFont)) throw new Error("Configure BLU_PDF_CJK_FONT with a Chinese font.");
+        if (chineseFont.endsWith(".ttc")) doc.font(chineseFont, process.env.BLU_PDF_CJK_FACE ?? "MicrosoftYaHei");
+        else doc.font(chineseFont);
+      } else if (font) doc.font(font);
+      const text = (value: string, size = 10, color = "#143F4B") => {
+        value = options.normalize?.(value) ?? value;
+        options.capture?.push(value);
+        value = options.translations?.get(value) ?? value;
+        doc.fontSize(size).fillColor(color).text(value, { lineGap: 4 }); doc.moveDown(0.45); };
       const heading = (value: string) => { if (doc.y > 700) doc.addPage(); text(value, 16); };
       const b = snapshot.brief;
       text("BLU COSTA TRAVEL", 23);

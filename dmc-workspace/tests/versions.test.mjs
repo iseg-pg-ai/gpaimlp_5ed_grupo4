@@ -20,7 +20,7 @@ test("version chain is durable, monotonic, immutable and deduplicated", t => {
  const {store, directory} = setup(t);
  const first = store.save("trip-test", snapshot, "generated", null);
  assert.equal(first.version, 1); assert.equal(first.parentVersion, null);
- assert.match(first.filename, /^BLU_Joao-Ines_Lisboa-Sintra_2026-10-10_a_2026-10-11_v001_trip-test\.pdf$/);
+ assert.match(first.filename, /^BLU_Joao-Ines_Lisboa-Sintra_2026-10-10_a_2026-10-11_v001\.pdf$/);
  assert.equal(store.save("trip-test", structuredClone(snapshot), "export", 1).version, 1);
  const next = structuredClone(snapshot); next.itinerary[0].items[0].title = "Alteração";
  const second = store.save("trip-test", next, "edited", 1);
@@ -58,4 +58,41 @@ test("long content is paginated into a valid PDF", async t => {
  const result=await store.pdf("trip-long",1);
  assert.ok(result.bytes.length>15000);
  assert.match(result.bytes.toString("latin1"),/%%EOF/);
+});
+
+test("legacy filenames are simplified without changing archived PDF bytes", async t => {
+ const {store}=setup(t);
+ const first=store.save("trip-test",snapshot,"generated",null);
+ const original=await store.pdf("trip-test",1);
+ const legacy=first.filename.replace(/\.pdf$/, "_trip-test.pdf");
+ store.db.prepare("UPDATE versions SET filename=? WHERE tripId=?").run(legacy,"trip-test");
+ assert.equal(store.list("trip-test")[0].filename,first.filename);
+ assert.equal(store.get("trip-test",1).filename,first.filename);
+ const download=await store.pdf("trip-test",1);
+ assert.equal(download.filename,first.filename);
+ assert.deepEqual(download.bytes,original.bytes);
+});
+
+
+test("localized variants share a snapshot, retain bytes and isolate languages", async t => {
+ const directory = mkdtempSync(path.join(tmpdir(), "blu-languages-"));
+ let calls=0;
+ const store = new VersionStore(directory, async (content,meta,locale) => {
+   calls++;
+   assert.equal(content.brief.customerName,snapshot.brief.customerName);
+   return Buffer.from(`%PDF-test-${locale}-${meta.version}`);
+ });
+ t.after(()=>{store.close(); assert.equal(path.dirname(path.resolve(directory)),path.resolve(tmpdir()));rmSync(directory,{recursive:true,force:true});});
+ const original=store.save("languages-test",snapshot,"generated",null);
+ const pt=await store.localizedPdf("languages-test",1,"pt");
+ const zh=await store.localizedPdf("languages-test",1,"zh");
+ assert.match(pt.filename,/_v001_PT\.pdf$/);
+ assert.match(zh.filename,/_v001_ZH\.pdf$/);
+ assert.notDeepEqual(pt.bytes,zh.bytes);
+ assert.deepEqual((await store.localizedPdf("languages-test",1,"pt")).bytes,pt.bytes);
+ assert.equal(calls,2);
+ assert.equal(store.list("languages-test").length,1);
+ assert.equal(store.get("languages-test",1).chainHash,original.chainHash);
+ assert.ok(store.get("languages-test",1).exportedAt);
+ assert.deepEqual(readFileSync(path.join(directory,"languages-test",zh.filename)),zh.bytes);
 });

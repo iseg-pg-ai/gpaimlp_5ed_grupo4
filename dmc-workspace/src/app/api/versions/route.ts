@@ -1,3 +1,5 @@
+import { zipSync } from "fflate";
+import { isLocale } from "@/lib/locales";
 import { VersionStore, VersionConflict, checkTripId } from "@/lib/version-store";
 import { validateBrief } from "@/lib/curation";
 import type { Snapshot } from "@/lib/itinerary-pdf";
@@ -50,8 +52,20 @@ export async function GET(request: Request) {
     let row;
     try { row = store.get(id, version); }
     catch { return Response.json({ error: "Versão não encontrada." }, { status: 404 }); }
+    const language=params.get("locale") ?? "pt";
+    if(!isLocale(language))return Response.json({error:"Idioma inválido."},{status:400});
+    if(params.get("format")==="bundle") {
+      const company=await store.localizedPdf(id,version,"pt");
+      const files:Record<string,Uint8Array>={[company.filename]:new Uint8Array(company.bytes)};
+      if(language!=="pt") {
+        const client=await store.localizedPdf(id,version,language);
+        files[client.filename]=new Uint8Array(client.bytes);
+      }
+      const filename=row.filename.replace(/\.pdf$/,`_PT${language==="pt"?"":"-"+language.toUpperCase()}.zip`);
+      return new Response(new Uint8Array(zipSync(files)),{headers:{...headers,"Content-Type":"application/zip","Content-Disposition":`attachment; filename="${filename}"`}});
+    }
     if (params.get("format") === "pdf") {
-      const pdf = await store.pdf(id, version);
+      const pdf = params.has("locale") ? await store.localizedPdf(id, version, language) : await store.pdf(id, version);
       return new Response(new Uint8Array(pdf.bytes), { headers: { ...headers, "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${pdf.filename}"` } });
     }
     return Response.json({ meta: store.list(id).find(v => v.version === version), snapshot: JSON.parse(row.snapshot) }, { headers });

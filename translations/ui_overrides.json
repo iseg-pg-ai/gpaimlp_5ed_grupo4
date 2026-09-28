@@ -1,0 +1,90 @@
+{
+  "Curate Proposal": {
+    "pt": "Criar proposta",
+    "en": "Curate Proposal",
+    "es": "Crear propuesta",
+    "fr": "Créer une proposition",
+    "de": "Reisevorschlag erstellen",
+    "zh": "创建行程方案"
+  },
+  "Pinned / Protected": {
+    "pt": "Fixada / Protegida",
+    "en": "Pinned / Protected",
+    "es": "Fijada / Protegida",
+    "fr": "Épinglée / Protégée",
+    "de": "Angeheftet / Geschützt",
+    "zh": "已固定 / 已保护"
+  },
+  "Esforço:": {
+    "pt": "Esforço:",
+    "en": "Effort:",
+    "es": "Esfuerzo:",
+    "fr": "Effort :",
+    "de": "Anstrengung:",
+    "zh": "体力要求："
+  },
+  "New Trip Brief": {
+    "pt": "Nova viagem",
+    "en": "New Trip Brief",
+    "es": "Nuevo viaje",
+    "fr": "Nouveau voyage",
+    "de": "Neue Reise",
+    "zh": "新建旅行"
+  },
+  "Exportar PDF": {
+    "pt": "Exportar PDF",
+    "en": "Export PDF",
+    "es": "Exportar PDF",
+    "fr": "Exporter les PDF",
+    "de": "PDF exportieren",
+    "zh": "导出 PDF"
+  },
+  "A exportar…": {
+    "pt": "A exportar…",
+    "en": "Exporting…",
+    "es": "Exportando…",
+    "fr": "Exportation…",
+    "de": "Export läuft…",
+    "zh": "正在导出…"
+  },
+  "Idioma do cliente (PDF)": {
+    "pt": "Idioma do cliente (PDF)",
+    "en": "Customer language (PDF)",
+    "es": "Idioma del cliente (PDF)",
+    "fr": "Langue du client (PDF)",
+    "de": "Kundensprache (PDF)",
+    "zh": "客户语言（PDF）"
+  },
+  "Descarregar PDFs": {
+    "pt": "Descarregar PDFs",
+    "en": "Download PDFs",
+    "es": "Descargar PDF",
+    "fr": "Télécharger les PDF",
+    "de": "PDFs herunterladen",
+    "zh": "下载 PDF"
+  },
+  "Baixo (Low)": {
+    "pt": "Baixo",
+    "en": "Low",
+    "es": "Bajo",
+    "fr": "Faible",
+    "de": "Gering",
+    "zh": "低"
+  },
+  "Médio (Medium)": {
+    "pt": "Médio",
+    "en": "Medium",
+    "es": "Medio",
+    "fr": "Modéré",
+    "de": "Mittel",
+    "zh": "中"
+  },
+  "Alto (High)": {
+    "pt": "Alto",
+    "en": "High",
+    "es": "Alto",
+    "fr": "Élevé",
+    "de": "Hoch",
+    "zh": "高"
+  }
+}

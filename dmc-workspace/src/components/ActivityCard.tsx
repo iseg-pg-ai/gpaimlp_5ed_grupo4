@@ -1,4 +1,6 @@
 "use client";
+import { T } from "@/components/LocaleProvider";
+
 
 import React from "react";
 import { 
@@ -86,7 +88,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
       {activity.isRecentlyModified && (
         <div className="absolute -top-2.5 right-4 z-10 flex items-center gap-1 rounded-full bg-[#E27151] px-2.5 py-0.5 text-[10px] font-medium text-white shadow-xs animate-in fade-in slide-in-from-top-1">
           <Sparkles className="w-2.5 h-2.5" />
-          <span>Updated by Assistant</span>
+          <span><T text="Updated by Assistant" source="en"/></span>
         </div>
       )}
 
@@ -94,7 +96,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
       {activity.isLocked && !activity.isRecentlyModified && (
         <div className="absolute -top-2.5 right-4 z-10 flex items-center gap-1 rounded-full bg-[#143F4B] px-2 py-0.5 text-[10px] font-medium text-[#F4F0E7] shadow-xs">
           <Lock className="w-2.5 h-2.5 text-[#D8A65C]" />
-          <span>Pinned / Protected</span>
+          <span><T text="Pinned / Protected" source="en"/></span>
         </div>
       )}
 
@@ -102,20 +104,20 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         {/* Time and category column */}
         <div className="w-16 shrink-0 text-right pt-0.5">
           <span className="font-mono text-xs font-semibold tracking-tight text-[#1A1917] block">
-            {activity.time}
+            <T text={activity.time} source="pt"/>
           </span>
           <div className="mt-1 flex items-center justify-end">
             <span
               className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border ${config.badgeClass}`}
             >
               <Icon className="w-2.5 h-2.5 shrink-0" />
-              <span>{config.label}</span>
+              <span><T text={config.label} source="en"/></span>
             </span>
           </div>
 
           {activity.duration && (
             <span className="block text-[10px] text-[#8F8B82] mt-1 font-mono">
-              {activity.duration}
+              <T text={activity.duration} source="pt"/>
             </span>
           )}
         </div>
@@ -127,7 +129,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between gap-2">
             <h4 className="text-sm font-semibold text-[#1A1917] leading-snug flex items-center gap-1.5">
-              <span>{activity.title}</span>
+              <span><T text={activity.title} source="pt"/></span>
               {activity.isLocked && (
                 <Lock className="w-3 h-3 text-[#9E6E24] shrink-0" />
               )}
@@ -137,7 +139,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
               {activity.effortLevel && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border bg-[#F8F6F1] text-[#6B6861] border-[#EAE6DF]">
                   <Footprints className="w-2.5 h-2.5 text-[#8F8B82]" />
-                  <span>Esforço: {activity.effortLevel}</span>
+                  <span><T text="Esforço:" source="pt"/>{" "}{activity.effortLevel}</span>
                 </span>
               )}
 
@@ -158,12 +160,12 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
                 {activity.isLocked ? (
                   <>
                     <Lock className="w-3 h-3 text-[#9E6E24]" />
-                    <span className="hidden sm:inline">Locked</span>
+                    <span className="hidden sm:inline"><T text="Locked" source="en"/></span>
                   </>
                 ) : (
                   <>
                     <Unlock className="w-3 h-3" />
-                    <span className="hidden sm:inline">Lock</span>
+                    <span className="hidden sm:inline"><T text="Lock" source="en"/></span>
                   </>
                 )}
               </button>
@@ -172,16 +174,16 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 
           {activity.description && (
             <p className="mt-1 text-xs text-[#6B6861] leading-relaxed">
-              {activity.description}
+              <T text={activity.description} source="pt"/>
             </p>
           )}
 
-          {activity.priceNote && <p className="mt-2 text-xs text-amber-800">{activity.priceNote}</p>}
+          {activity.priceNote && <p className="mt-2 text-xs text-amber-800"><T text={activity.priceNote} source="pt"/></p>}
           {activity.source && <details className="mt-3 text-xs text-[#4A636B]">
-            <summary className="cursor-pointer">Origem, decisões e confirmações pendentes</summary>
+            <summary className="cursor-pointer"><T text="Origem, decisões e confirmações pendentes" source="pt"/></summary>
             <p className="mt-2">{activity.source}</p>
-            <p>{activity.appliedRules?.join(" · ")}</p>
-            <p className="text-amber-800">Por confirmar: {activity.pendingChecks?.join("; ")}</p>
+            <p><T text={activity.appliedRules?.join(" · ") ?? ""} source="pt"/></p>
+            <p className="text-amber-800"><T text="Por confirmar:" source="pt"/>{" "}<T text={activity.pendingChecks?.join("; ") ?? ""} source="pt"/></p>
           </details>}
           {/* Criteria metadata pills: location, accessibility, dietary notes */}
           <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px]">
@@ -195,14 +197,14 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             {activity.accessibilityNotes && (
               <div className="inline-flex items-center gap-1 text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded border border-blue-200/60 text-[10px]">
                 <Accessibility className="w-2.5 h-2.5 shrink-0" />
-                <span>{activity.accessibilityNotes}</span>
+                <span><T text={activity.accessibilityNotes} source="pt"/></span>
               </div>
             )}
 
             {activity.dietaryNotes && (
               <div className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50/80 px-2 py-0.5 rounded border border-emerald-200/60 text-[10px]">
                 <AlertCircle className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
-                <span>{activity.dietaryNotes}</span>
+                <span><T text={activity.dietaryNotes} source="pt"/></span>
               </div>
             )}
           </div>

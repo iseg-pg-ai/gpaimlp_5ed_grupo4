@@ -1,4 +1,6 @@
 "use client";
+import { T } from "@/components/LocaleProvider";
+
 
 import React, { useEffect, useState } from "react";
 import { Check, Compass, Sparkles, Loader2 } from "lucide-react";
@@ -60,24 +62,19 @@ export const GenerationModal: React.FC<GenerationModalProps> = ({
             <span className="font-serif-blu font-bold text-base">B</span>
           </div>
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#2D5B67]">
-              BLU Costa Travel Curation
-            </div>
-            <h3 className="font-serif-blu text-base font-bold text-[#143F4B]">
-              Synthesizing Bespoke Proposal
-            </h3>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#2D5B67]"><T text="BLU Costa Travel Curation" source="en"/>{" "}</div>
+            <h3 className="font-serif-blu text-base font-bold text-[#143F4B]"><T text="Synthesizing Bespoke Proposal" source="en"/>{" "}</h3>
           </div>
         </div>
 
-        <div className="mt-2 text-xs text-[#4A636B] leading-relaxed">
-          Curating a considered journey to <span className="font-semibold text-[#143F4B]">{destination}</span> for{" "}
+        <div className="mt-2 text-xs text-[#4A636B] leading-relaxed"><T text="Curating a considered journey to" source="en"/>{" "}<span className="font-semibold text-[#143F4B]">{destination}</span><T text="for" source="en"/>{" "}
           <span className="font-semibold text-[#143F4B]">{customerName}</span>.
         </div>
 
         {/* Minimal Progress Bar */}
         <div className="mt-5">
           <div className="flex justify-between text-[11px] text-[#698288] font-mono mb-1.5">
-            <span>Curation progress</span>
+            <span><T text="Curation progress" source="en"/></span>
             <span>{progressPercentage}%</span>
           </div>
           <div className="h-1.5 w-full rounded-full bg-[#E2DDD3] overflow-hidden">
@@ -121,16 +118,14 @@ export const GenerationModal: React.FC<GenerationModalProps> = ({
                     <span>{idx + 1}</span>
                   )}
                 </div>
-                <span>{step}</span>
+                <span><T text={step}/></span>
               </div>
             );
           })}
         </div>
 
         {/* Footer note */}
-        <div className="mt-6 pt-4 border-t border-[#D5D1C7] text-center text-[11px] text-[#698288] font-serif-blu italic">
-          “A journey should feel considered, not assembled.”
-        </div>
+        <div className="mt-6 pt-4 border-t border-[#D5D1C7] text-center text-[11px] text-[#698288] font-serif-blu italic"><T text="“A journey should feel considered, not assembled.”" source="en"/>{" "}</div>
       </div>
     </div>
   );

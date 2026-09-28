@@ -1,4 +1,7 @@
 "use client";
+import { T, useLocale, LanguagePicker } from "@/components/LocaleProvider";
+import type { Locale } from "@/lib/locales";
+
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { Sidebar } from "@/components/Sidebar";
@@ -9,12 +12,15 @@ import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip } from "@/typ
 import { initialBrief } from "@/data/mockData";
 import { validateBrief, applyCommand } from "@/lib/curation";
 
-type Trip = { version?: number; id: string; brief: CustomerBrief; itinerary: ItineraryDay[]; pending: string[]; messages: ChatMessage[] };
+type Trip = { clientLanguage?: Locale; version?: number; id: string; brief: CustomerBrief; itinerary: ItineraryDay[]; pending: string[]; messages: ChatMessage[] };
 type HistoryVersion = { version: number; filename: string; createdAt: string };
 const STORAGE = "blu-trips-v1";
 const emptyBrief = (): CustomerBrief => ({ ...initialBrief, customerName: "", destination: "", startDate: "", endDate: "", arrivalLocation: "", departureLocation: "", interests: [], mobilityRestrictions: [], dietaryRestrictions: [], exclusions: [], specialOccasion: "", notes: "", childrenAges: "" });
 const message = (sender: ChatMessage["sender"], text: string): ChatMessage => ({ id: crypto.randomUUID(), sender, text, timestamp: new Date().toLocaleTimeString() });
 export default function WorkspacePage() {
+  const { locale } = useLocale();
+  const dateLocale = locale === "zh" ? "zh-CN" : locale;
+  const [clientLanguage, setClientLanguage] = useState<Locale>("en");
   const [trips, setTrips] = useState<Trip[]>([]);
   const [activeId, setActiveId] = useState("");
   const [editing, setEditing] = useState(true);
@@ -88,12 +94,12 @@ export default function WorkspacePage() {
     try {
       const saved = await saveVersion(active, "export");
       setTrips(prev => prev.map(t => t.id === saved.id ? saved : t));
-      const response = await fetch(`/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=pdf`);
+      const response = await fetch(`/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`);
       if (!response.ok) throw new Error((await response.json()).error);
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
       link.href = url;
-      link.download = response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ?? "roteiro.pdf";
+      link.download = response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ?? "roteiro.zip";
       document.body.appendChild(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e) { setError(e instanceof Error ? e.message : "Falha na exportação."); }
@@ -124,7 +130,7 @@ export default function WorkspacePage() {
       const response = await fetch("/api/itineraries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(brief) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
-      const trip: Trip = { version: active?.version, id: activeId || crypto.randomUUID(), brief, itinerary: result.itinerary, pending: result.pending, messages: [message("assistant", "Rascunho gerado a partir do catálogo real. Consulte a origem de cada sugestão e as confirmações pendentes. Para alterar preferências, use Edit Brief. Pode pedir: remover última atividade do dia 2; os bloqueios são respeitados.")] };
+      const trip: Trip = { clientLanguage: active?.clientLanguage ?? clientLanguage, version: active?.version, id: activeId || crypto.randomUUID(), brief, itinerary: result.itinerary, pending: result.pending, messages: [message("assistant", "Rascunho gerado a partir do catálogo real. Consulte a origem de cada sugestão e as confirmações pendentes. Para alterar preferências, use Edit Brief. Pode pedir: remover última atividade do dia 2; os bloqueios são respeitados.")] };
       const saved = await saveVersion(trip, "generated");
       setTrips(prev => [...prev.filter(t => t.id !== saved.id), saved]);
       setActiveId(trip.id); setEditing(false);
@@ -136,23 +142,24 @@ export default function WorkspacePage() {
     return { ...trip, itinerary, messages: [...trip.messages, message("user", input), message("assistant", reply)] };
   });
   const recent: RecentTrip[] = trips.map(t => ({ id: t.id, name: t.brief.customerName, destination: t.brief.destination, dates: `${t.brief.startDate} – ${t.brief.endDate}`, budget: `${t.brief.budget} EUR`, tier: t.brief.proposalTier, status: "Draft" }));
-  return <div className="flex h-screen bg-[#F4F0E7]">
+  return <div className="flex h-[calc(100dvh-49px)] bg-[#F4F0E7]">
     <div className={busy ? "pointer-events-none opacity-50" : ""}><Sidebar currentTripId={activeId} recentTrips={recent} isNewTripActive={editing}
       onNewTrip={() => { if (busy || operation.current) return; setActiveId(""); setDraft(emptyBrief()); setEditing(true); setFormKey(k => k + 1); setError(""); }}
       onSelectTrip={id => { if (busy || operation.current) return; setActiveId(id); setEditing(false); setError(""); }} /></div>
     <main className="flex-1 min-w-0 overflow-auto">
-      <div className="p-3 text-xs bg-amber-50">Propostas preliminares · Versões guardadas no servidor local · Sem reservas ou preços finais confirmados.</div>
-      <Link href="/references" target="_blank" className="block px-4 py-2 underline text-sm">Consultar propostas históricas e divergências do catálogo</Link>
-      <Link href="/exports" target="_blank" className="block px-4 py-2 underline text-sm">Histórico de versões e PDFs de todas as viagens</Link>
-      {(error || storageError) && <p role="alert" className="p-4 text-red-800">{error || storageError}</p>}
-      {busy ? <p role="status" className="p-8">A consultar o catálogo e aplicar os critérios de curadoria…</p> : !ready ? <p className="p-8">A carregar viagens guardadas…</p> : editing ?
+      <div className="p-3 text-xs bg-amber-50"><T text="Propostas preliminares · Versões guardadas no servidor local · Sem reservas ou preços finais confirmados." source="pt"/></div>
+      <Link href="/references" target="_blank" className="block px-4 py-2 underline text-sm"><T text="Consultar propostas históricas e divergências do catálogo" source="pt"/></Link>
+      <Link href="/exports" target="_blank" className="block px-4 py-2 underline text-sm"><T text="Histórico de versões e PDFs de todas as viagens" source="pt"/></Link>
+      {(error || storageError) && <p role="alert" className="p-4 text-red-800"><T text={error || storageError} source="pt"/></p>}
+      {busy ? <p role="status" className="p-8"><T text="A consultar o catálogo e aplicar os critérios de curadoria…" source="pt"/></p> : !ready ? <p className="p-8"><T text="A carregar viagens guardadas…" source="pt"/></p> : editing ?
         <NewTripScreen key={formKey} initialValue={draft} onGenerate={generate} onCancel={active ? () => setEditing(false) : undefined} /> : active && <>
-          <details className="p-4 text-sm"><summary>Versões guardadas · {active.version ? `v${String(active.version).padStart(3,"0")}` : "Ainda sem versão no servidor"}</summary>
-            <button type="button" className="underline my-2" onClick={reopenLatest} disabled={saving || exporting}>Reabrir última versão guardada</button>
-            {(history.id === activeId ? history.versions : []).map(v => <div key={v.version} className="my-2 break-words"><a className="underline" href={`/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=pdf`}>{v.filename}</a><span className="ml-2">{new Date(v.createdAt).toLocaleString()}</span></div>)}
+          <div className="px-4 py-3 flex items-center gap-3"><T text="Idioma do cliente (PDF)" source="pt"/><LanguagePicker value={active.clientLanguage ?? clientLanguage} onChange={language=>{setClientLanguage(language);setTrips(prev=>prev.map(t=>t.id===activeId?{...t,clientLanguage:language}:t));}}/><span className="text-xs"><T text="Inclui sempre a versão em português. Os dois PDFs são descarregados num ZIP." source="pt"/></span></div>
+          <details className="p-4 text-sm"><summary><T text="Versões guardadas ·" source="pt"/>{" "}{active.version ? `v${String(active.version).padStart(3,"0")}` : "Ainda sem versão no servidor"}</summary>
+            <button type="button" className="underline my-2" onClick={reopenLatest} disabled={saving || exporting}><T text="Reabrir última versão guardada" source="pt"/></button>
+            {(history.id === activeId ? history.versions : []).map(v => <div key={v.version} className="my-2 break-words"><a className="underline" href={`/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`}>{v.filename}</a><span className="ml-2">{new Date(v.createdAt).toLocaleString(dateLocale)}</span></div>)}
           </details>
-          {saving && <p role="status" className="px-4">A guardar nova versão…</p>}
-          <details className="p-4 text-sm text-amber-900" open><summary>Confirmações pendentes</summary><ul className="list-disc pl-5">{active.pending.map(p => <li key={p}>{p}</li>)}</ul></details>
+          {saving && <p role="status" className="px-4"><T text="A guardar nova versão…" source="pt"/></p>}
+          <details className="p-4 text-sm text-amber-900" open><summary><T text="Confirmações pendentes" source="pt"/></summary><ul className="list-disc pl-5">{active.pending.map(p => <li key={p}><T text={p} source="pt"/></li>)}</ul></details>
           <div className="flex flex-col lg:flex-row">
             <ItineraryWorkspace brief={active.brief} itinerary={active.itinerary} displayBudget={`${active.brief.budget.toLocaleString()} EUR · limite, não cotação`} highlightedDay={null}
               onExportPdf={exportPdf} isExporting={exporting || saving}

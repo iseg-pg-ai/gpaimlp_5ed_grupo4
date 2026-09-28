@@ -1,4 +1,6 @@
 "use client";
+import { T } from "@/components/LocaleProvider";
+
 
 import React, { useState, useRef, useEffect } from "react";
 import { ItineraryDay, CustomerBrief, TransitLeg } from "@/types";
@@ -78,9 +80,9 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               <div className="flex items-center gap-2 mb-1">
                 <Badge variant="gold" className="font-semibold uppercase tracking-wider text-[10px] gap-1">
                   <Crown className="w-2.5 h-2.5 text-[#D8A65C]" />
-                  <span>{brief.proposalTier} Tier Curation</span>
+                  <span>{brief.proposalTier}<T text="Tier Curation" source="en"/></span>
                 </Badge>
-                <span className="text-[#698288] text-xs font-normal">• Rascunho para revisão</span>
+                <span className="text-[#698288] text-xs font-normal"><T text="• Rascunho para revisão" source="pt"/></span>
                 {brief.specialOccasion && (
                   <>
                     <span className="text-[#C9C6BD]">·</span>
@@ -111,7 +113,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 className="gap-1.5"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5 text-[#698288]" />
-                <span>Edit Brief</span>
+                <span><T text="Edit Brief" source="en"/></span>
               </Button>
               <Button 
                 variant="outline"
@@ -120,7 +122,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 className="gap-1.5"
               >
                 <Share2 className="w-3.5 h-3.5 text-[#698288]" />
-                <span>Share</span>
+                <span><T text="Share" source="en"/></span>
               </Button>
               <Button 
                 variant="primaryDark"
@@ -129,7 +131,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 className="gap-1.5 bg-[#143F4B] hover:bg-[#0A242B]"
               >
                 <Download className="w-3.5 h-3.5 text-white/80" />
-                <span>{isExporting ? "A exportar…" : "Export PDF"}</span>
+                <span><T text={isExporting ? "A exportar…" : "Exportar PDF"} source="pt"/></span>
               </Button>
             </div>
           </div>
@@ -138,36 +140,36 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
           <div className="mt-4 pt-3 border-t border-[#E2DDD3] flex flex-wrap items-center gap-2 text-xs">
             <Badge variant="secondary" className="px-2.5 py-1 gap-1.5 font-medium">
               <Calendar className="w-3.5 h-3.5 text-[#698288]" />
-              <span>{itinerary.length} dias · {Math.max(0, itinerary.length - 1)} noites</span>
+              <span>{itinerary.length}<T text="dias ·" source="pt"/>{" "}{Math.max(0, itinerary.length - 1)}<T text="noites" source="pt"/></span>
             </Badge>
 
             <Badge variant="secondary" className="px-2.5 py-1 gap-1.5 font-medium">
               <Users className="w-3.5 h-3.5 text-[#698288]" />
-              <span>{brief.adults + brief.children} travellers</span>
+              <span>{brief.adults + brief.children}<T text="travellers" source="en"/></span>
             </Badge>
 
             <Badge variant="secondary" className="px-2.5 py-1 gap-1.5 font-medium">
               <Coins className="w-3.5 h-3.5 text-[#698288]" />
-              <span>{displayBudget}</span>
+              <span><T text={displayBudget} source="pt"/></span>
             </Badge>
 
             {/* Physical Effort constraint pill */}
             <Badge variant="secondary" className="px-2.5 py-1 gap-1.5 font-medium text-[#143F4B]">
               <Footprints className="w-3.5 h-3.5 text-[#698288]" />
-              <span>Esforço: {brief.physicalEffort.split(" ")[0]}</span>
+              <span><T text="Esforço:" source="pt"/>{" "}<T text={brief.physicalEffort}/></span>
             </Badge>
 
             {/* Morning start pace pill */}
             <Badge variant="secondary" className="px-2.5 py-1 gap-1.5 font-medium text-[#143F4B]">
               <Clock className="w-3.5 h-3.5 text-[#698288]" />
-              <span>{brief.morningPreference.split(" ")[0]} Start</span>
+              <span><T text={brief.morningPreference}/></span>
             </Badge>
 
             {/* Mobility restriction badge */}
             {brief.mobilityRestrictions.length > 0 && (
               <Badge variant="teal" className="px-2.5 py-1 gap-1.5 font-medium">
                 <Accessibility className="w-3.5 h-3.5 text-[#2D5B67]" />
-                <span>{brief.mobilityRestrictions[0]}</span>
+                <span><T text={brief.mobilityRestrictions[0]} source="en"/></span>
               </Badge>
             )}
 
@@ -175,7 +177,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
             {brief.dietaryRestrictions.length > 0 && (
               <Badge variant="gold" className="px-2.5 py-1 gap-1.5 font-medium">
                 <AlertCircle className="w-2.5 h-2.5 text-[#9E6E24]" />
-                <span>{brief.dietaryRestrictions[0]}</span>
+                <span><T text={brief.dietaryRestrictions[0]} source="en"/></span>
               </Badge>
             )}
           </div>
@@ -187,8 +189,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               size="sm"
               onClick={() => setSelectedDayFilter("all")}
               className="h-7 text-xs font-medium"
-            >
-              All Days ({itinerary.length})
+            ><T text="All Days (" source="en"/>{itinerary.length})
             </Button>
             {itinerary.map((day) => (
               <Button
@@ -211,7 +212,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                     : ""
                 }`}
               >
-                <span>Day {day.dayNumber}</span>
+                <span><T text="Day" source="en"/>{" "}{day.dayNumber}</span>
                 {highlightedDay === day.dayNumber && (
                   <span className="w-1.5 h-1.5 rounded-full bg-[#D8A65C]" />
                 )}
@@ -241,8 +242,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 pb-4 mb-5 border-b border-[#F0ECE4]">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="teal" className="font-bold text-[10px] tracking-wide uppercase">
-                      Day {day.dayNumber}
+                    <Badge variant="teal" className="font-bold text-[10px] tracking-wide uppercase"><T text="Day" source="en"/>{" "}{day.dayNumber}
                     </Badge>
                     <span className="text-xs font-medium text-[#698288]">
                       {day.date}
@@ -263,21 +263,21 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                   </div>
 
                   <h2 className="mt-1.5 font-serif-blu text-lg font-bold text-[#143F4B] tracking-tight">
-                    {day.title}
+                    <T text={day.title} source="pt"/>
                   </h2>
                 </div>
 
                 {isDayModified && (
                   <Badge variant="gold" className="gap-1.5 py-1 px-2.5 font-medium shrink-0 animate-in fade-in">
                     <Sparkles className="w-3 h-3 text-[#D8A65C]" />
-                    <span>Curated by Assistant (Rule Verified)</span>
+                    <span><T text="Curated by Assistant (Rule Verified)" source="en"/></span>
                   </Badge>
                 )}
               </div>
 
               {day.summary && (
                 <p className="text-xs text-[#4A636B] -mt-2 mb-5 italic font-serif-blu">
-                  "{day.summary}"
+                  "<T text={day.summary} source="pt"/>"
                 </p>
               )}
 

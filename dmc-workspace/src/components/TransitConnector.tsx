@@ -1,4 +1,6 @@
 "use client";
+import { T } from "@/components/LocaleProvider";
+
 
 import React from "react";
 import { 
@@ -101,7 +103,7 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
 
         {/* Duration & Distance */}
         <div className="flex items-center gap-1.5 font-medium text-[#143F4B]">
-          <span className="font-semibold">{leg.duration}</span>
+          <span className="font-semibold"><T text={leg.duration} source="pt"/></span>
           {leg.distance && (
             <>
               <span className="text-[#A8A49C]">·</span>
@@ -115,7 +117,7 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
           <>
             <span className="hidden sm:inline text-[#D5D1C7]">|</span>
             <span className="text-[#4A636B] truncate max-w-xs text-[11px]">
-              {leg.routeNote}
+              <T text={leg.routeNote} source="pt"/>
             </span>
           </>
         )}
@@ -127,7 +129,7 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
             className="text-[10px] py-0 px-1.5 h-4.5 gap-1 shrink-0 font-normal bg-[#EBF1F2] text-[#2D5B67] border-[#C3D7DB]"
           >
             <ShieldCheck className="w-2.5 h-2.5 text-[#2D5B67]" />
-            <span>Algorithm Verified</span>
+            <span><T text="Algorithm Verified" source="en"/></span>
           </Badge>
         )}
 
@@ -135,7 +137,7 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
         {leg.bufferMinutes && (
           <span className="text-[10px] text-[#8C877D] flex items-center gap-0.5 ml-auto">
             <Clock className="w-2.5 h-2.5" />
-            <span>+{leg.bufferMinutes}m buffer</span>
+            <span>+{leg.bufferMinutes}<T text="m buffer" source="en"/></span>
           </span>
         )}
 

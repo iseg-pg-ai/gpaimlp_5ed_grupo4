@@ -23,7 +23,7 @@ Verificação: `npm test` e `npx tsc --noEmit --incremental false`.
 - Gerar ou alterar o conteúdo de uma viagem guarda uma versão imutável no servidor local. Alterações apenas à conversa não criam versões; bloqueios de atividades fazem parte do roteiro.
 - A sequência é por ID de viagem: `v001`, `v002`, etc. Regenerar a mesma viagem mantém a cadeia. Uma nova viagem inicia outra cadeia.
 - Exportar sem alterações reutiliza a mesma versão e os mesmos bytes do PDF. O documento contém datas, participantes, tier, dias, atividades, preços indicativos, pendências, fontes e identificação da versão.
-- Nome: `BLU_<cliente>_<destino>_<início>_a_<fim>_vNNN_<id-da-viagem>.pdf`. Cliente e destino são normalizados sem acentos para facilitar pesquisa e compatibilidade; o conteúdo mantém os acentos.
+- Nome: `BLU_<cliente>_<destino>_<início>_a_<fim>_vNNN.pdf`. Cliente e destino são normalizados sem acentos para facilitar pesquisa e compatibilidade; o conteúdo mantém os acentos.
 - O painel de versões da viagem permite descarregar documentos anteriores e reabrir a última versão guardada. `/exports` lista o histórico de todas as viagens, mesmo depois de limpar o armazenamento do navegador.
 - `exports/itineraries/history.sqlite` guarda os snapshots JSON, sequência, ligação à versão anterior, hashes SHA-256 e PDFs. Cada PDF exportado é também materializado em `exports/itineraries/<id>/`, com JSON de suporte de igual nome. A base SQLite é a fonte autoritativa para descarregar novamente.
 - Estes dados ficam fora do ETL e do Git. Faça backup de toda a pasta `exports/`; não a coloque dentro de `data/` ou `warehouse/`. `BLU_EXPORT_DIR` permite definir outra pasta de armazenamento persistente.
@@ -269,4 +269,52 @@ Route (app)
 ┌ ○ /
 └ ○ /_not-found
 ```
-All routes are pre-rendered statically with 0 lint or TypeScript errors.
+The workspace is pre-rendered; API routes, export history and references use the server at runtime. TypeScript validation is included in the build.
+
+
+## Idiomas do portal e PDFs
+
+O seletor no topo apresenta bandeiras e seis idiomas: Português, English,
+中文（普通话, chinês simplificado), Español, Français e Deutsch. A escolha do
+portal fica guardada neste navegador. Os campos mantêm os valores internos de
+curadoria; mudar de idioma não altera as regras nem cria uma nova versão.
+
+No roteiro, escolha **Idioma do cliente (PDF)** e clique **Exportar PDF**.
+O download é um ZIP com dois PDFs da mesma versão e estrutura: português para a
+empresa e o idioma escolhido para o cliente. Se escolher português, inclui
+apenas um PDF, sem duplicados. O histórico também permite escolher o idioma.
+
+Exemplos:
+- `BLU_Pedro_Lisboa_2026-09-23_a_2026-09-26_v003_PT.pdf`
+- `BLU_Pedro_Lisboa_2026-09-23_a_2026-09-26_v003_EN.pdf`
+
+As variantes ficam em `exports/itineraries/<tripId>/` e na tabela
+`localized_pdfs` da base de dados de versões, com hash próprio. Cada variante
+é arquivada na primeira exportação; exportações seguintes recuperam os mesmos
+bytes. A língua não incrementa a versão do roteiro. PDFs antigos são preservados.
+A tradução é automática e local, incluindo descrições livres do catálogo.
+
+### Preparar tradução local noutro computador
+
+A partir da raiz do projeto, com o ambiente Python criado:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r translations/requirements.txt
+.\.venv\Scripts\python.exe -B translations/setup_models.py
+```
+
+A instalação inicial precisa de internet e descarrega os modelos para
+`.tools/translation-models`. Depois, a tradução funciona sem serviços externos;
+os textos não são enviados para uma API de tradução. A cache local fica em
+`exports/translations/cache.sqlite`. O primeiro pedido pode demorar enquanto
+os modelos carregam. Inglês serve de língua intermédia quando necessário.
+
+No Windows, os PDFs chineses usam Microsoft YaHei do sistema. Noutros sistemas,
+configure `BLU_PDF_CJK_FONT` com uma fonte TTF/OTF que inclua chinês. Para uma
+coleção TTC, configure também `BLU_PDF_CJK_FACE` com o nome PostScript da fonte.
+`BLU_TRANSLATION_PYTHON` permite escolher outro executável Python.
+
+Para atualizar o catálogo estático do portal depois de alterar textos:
+`python translations/build_ui_catalogue.py`. As traduções geradas ficam
+versionadas em `dmc-workspace/src/i18n/messages.json`. Correções editoriais ficam em
+`translations/ui_overrides.json` e são preservadas ao regenerar o catálogo.
