@@ -33,6 +33,8 @@ interface ItineraryWorkspaceProps {
   itinerary: ItineraryDay[];
   highlightedDay: number | null;
   onEditBrief: () => void;
+  onExportPdf: () => void;
+  isExporting?: boolean;
   displayBudget: string;
   onToggleLockActivity?: (dayNumber: number, activityId: string) => void;
 }
@@ -42,6 +44,8 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   itinerary,
   highlightedDay,
   onEditBrief,
+  onExportPdf,
+  isExporting,
   displayBudget,
   onToggleLockActivity,
 }) => {
@@ -76,7 +80,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                   <Crown className="w-2.5 h-2.5 text-[#D8A65C]" />
                   <span>{brief.proposalTier} Tier Curation</span>
                 </Badge>
-                <span className="text-[#698288] text-xs font-normal">• BLU Reference #PT-8429</span>
+                <span className="text-[#698288] text-xs font-normal">• Rascunho para revisão</span>
                 {brief.specialOccasion && (
                   <>
                     <span className="text-[#C9C6BD]">·</span>
@@ -93,11 +97,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 </span>
                 <span>·</span>
                 <span className="flex items-center gap-1">
-                  <span>Lisbon</span>
-                  <ArrowRight className="w-3 h-3 text-[#A8A49C]" />
-                  <span>Douro Valley</span>
-                  <ArrowRight className="w-3 h-3 text-[#A8A49C]" />
-                  <span>Porto</span>
+                  <span>{Array.from(new Set(itinerary.map(day => day.location))).join(" → ")}</span>
                 </span>
               </div>
             </div>
@@ -116,7 +116,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               <Button 
                 variant="outline"
                 size="sm"
-                onClick={() => alert(`Client proposal link generated: https://blucostatravel.com/p/${brief.customerName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-journey`)}
+                disabled title="Partilha ainda não disponível"
                 className="gap-1.5"
               >
                 <Share2 className="w-3.5 h-3.5 text-[#698288]" />
@@ -125,11 +125,11 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               <Button 
                 variant="primaryDark"
                 size="sm"
-                onClick={() => alert("Exporting BLU Costa Journey Portfolio PDF...")}
+                onClick={onExportPdf} disabled={isExporting}
                 className="gap-1.5 bg-[#143F4B] hover:bg-[#0A242B]"
               >
                 <Download className="w-3.5 h-3.5 text-white/80" />
-                <span>Export PDF</span>
+                <span>{isExporting ? "A exportar…" : "Export PDF"}</span>
               </Button>
             </div>
           </div>
@@ -138,12 +138,12 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
           <div className="mt-4 pt-3 border-t border-[#E2DDD3] flex flex-wrap items-center gap-2 text-xs">
             <Badge variant="secondary" className="px-2.5 py-1 gap-1.5 font-medium">
               <Calendar className="w-3.5 h-3.5 text-[#698288]" />
-              <span>{itinerary.length} nights</span>
+              <span>{itinerary.length} dias · {Math.max(0, itinerary.length - 1)} noites</span>
             </Badge>
 
             <Badge variant="secondary" className="px-2.5 py-1 gap-1.5 font-medium">
               <Users className="w-3.5 h-3.5 text-[#698288]" />
-              <span>{brief.adults} travellers</span>
+              <span>{brief.adults + brief.children} travellers</span>
             </Badge>
 
             <Badge variant="secondary" className="px-2.5 py-1 gap-1.5 font-medium">

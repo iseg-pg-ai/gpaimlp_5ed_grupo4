@@ -1,3 +1,40 @@
+# Estado atual: geração local com catálogo real
+
+O DMC Workspace consulta `warehouse/*.jsonl` através de `POST /api/itineraries`. O catálogo inclui o enriquecimento de `data/reference/structured_dataset.xlsx` após executar o ETL. A página `/references` apresenta propostas e preços históricos separadamente, com proveniência e divergências para revisão.
+Arranque na pasta `dmc-workspace` com `npm run dev -- -p 3001` (Node.js 24 LTS).
+O warehouse e `config/curation_rule_overrides.json` devem estar disponíveis na pasta pai.
+Não é necessário um serviço Python em execução nem credenciais externas.
+
+- Cada proposta usa destino, datas, ritmo, interesses, exclusões, esforço e tier.
+- Cobertura geográfica inicial: Lisboa, Porto, Sintra, Cascais e Douro. Para `Portugal`, os pontos de chegada/partida determinam as regiões reconhecidas; não há seleção nacional automática.
+- A seleção é determinística: pontuação por palavras-chave, preferência por atrações no Soft e experiências no Classic/Signature; Signature prioriza aprofundamento quando descrito no catálogo. Não representa inclusões comerciais aprovadas.
+- Os dias incluem chegada e partida. As atividades ficam **por agendar**, com horários, deslocações, acessibilidade e disponibilidade por confirmar. Não há validação completa das 51 regras nem cálculo de rotas.
+- Restrições alimentares retiram refeições e experiências alimentares identificadas por texto até validação do fornecedor. A correspondência textual é conservadora, não certifica segurança.
+- Notas livres, ocasião, crianças, alojamento, refeições e orçamento requerem revisão do curador; não existe cotação total automática.
+- Viagens, bloqueios e conversa persistem no `localStorage` deste navegador. Não existe sincronização entre utilizadores, autenticação ou partilha. Limpar o armazenamento apaga as propostas.
+- Edit Brief recupera o briefing da viagem. Regenerar uma viagem com bloqueios é recusado até serem removidos. O assistente executa apenas `remover última atividade do dia N`; outros pedidos não alteram a proposta.
+- O botão Export PDF gera um PDF real da versão guardada. A partilha pública continua desativada.
+- `config/curation_rule_overrides.json` é a alteração de negócio versionada para Soft/Classic/Signature. Aplica-se na API e na extração do Excel, preservando o ficheiro original. Os artefactos ETL antigos só são atualizados ao reexecutar a pipeline.
+
+Verificação: `npm test` e `npx tsc --noEmit --incremental false`.
+
+## Exportação PDF e histórico de versões
+
+- Gerar ou alterar o conteúdo de uma viagem guarda uma versão imutável no servidor local. Alterações apenas à conversa não criam versões; bloqueios de atividades fazem parte do roteiro.
+- A sequência é por ID de viagem: `v001`, `v002`, etc. Regenerar a mesma viagem mantém a cadeia. Uma nova viagem inicia outra cadeia.
+- Exportar sem alterações reutiliza a mesma versão e os mesmos bytes do PDF. O documento contém datas, participantes, tier, dias, atividades, preços indicativos, pendências, fontes e identificação da versão.
+- Nome: `BLU_<cliente>_<destino>_<início>_a_<fim>_vNNN_<id-da-viagem>.pdf`. Cliente e destino são normalizados sem acentos para facilitar pesquisa e compatibilidade; o conteúdo mantém os acentos.
+- O painel de versões da viagem permite descarregar documentos anteriores e reabrir a última versão guardada. `/exports` lista o histórico de todas as viagens, mesmo depois de limpar o armazenamento do navegador.
+- `exports/itineraries/history.sqlite` guarda os snapshots JSON, sequência, ligação à versão anterior, hashes SHA-256 e PDFs. Cada PDF exportado é também materializado em `exports/itineraries/<id>/`, com JSON de suporte de igual nome. A base SQLite é a fonte autoritativa para descarregar novamente.
+- Estes dados ficam fora do ETL e do Git. Faça backup de toda a pasta `exports/`; não a coloque dentro de `data/` ou `warehouse/`. `BLU_EXPORT_DIR` permite definir outra pasta de armazenamento persistente.
+- Viagens antigas guardadas só no navegador entram no histórico ao serem exportadas ou alteradas; não é possível reconstruir revisões anteriores que nunca foram guardadas.
+- Alterações concorrentes sobre uma versão desatualizada são recusadas; use “Reabrir última versão guardada” antes de continuar.
+- Node.js 24 é necessário para o armazenamento SQLite nativo. PDFs usam Arial no Windows ou DejaVu Sans no Linux, se disponíveis; `BLU_PDF_FONT` pode indicar outro TTF. Existe fallback Helvetica.
+
+## Referência histórica do protótipo
+
+O texto abaixo descreve a demonstração anterior, incluindo simulações que foram substituídas. Não representa as capacidades atuais.
+
 # BLU Costa Travel · AI Travel Designer Workspace (UI Prototype)
 
 > **Live Local URL**: [http://localhost:3001](http://localhost:3001)  
@@ -43,8 +80,8 @@ The prototype is built with a modern, lightweight, maintainable stack with zero 
 The intake form and data models are mapped directly to the internal data pipeline and SQLite database:
 
 ### 3.1 Curation Tiers (Rules R33–R44)
-- **Classic**: Essential, cohesive, and authentic Portuguese cultural highlights.
-- **Extended**: Additional curatorial depth, regional artisan workshops, and private tastings.
+- **Soft**: Essential, cohesive, and authentic Portuguese cultural highlights.
+- **Classic**: Additional curatorial depth, regional artisan workshops, and private tastings.
 - **Signature**: Sommelier-guided private estates, VIP access, and senior historians.
 
 ### 3.2 Physical Effort & Mobility Safety (Rules R15–R17)

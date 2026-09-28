@@ -74,13 +74,13 @@
     }
   },
   "pricing": {
-    "priced_records": 209,
+    "priced_records": 250,
     "by_category": {
       "Atração": {
-        "count": 108,
+        "count": 129,
         "min_eur": 0.0,
-        "median_eur": 0.0,
-        "mean_eur": 6.4,
+        "median_eur": 2.0,
+        "mean_eur": 6.9,
         "max_eur": 75.0
       },
       "Atração — suplemento": {
@@ -98,10 +98,10 @@
         "max_eur": 700.0
       },
       "Experiência": {
-        "count": 49,
-        "min_eur": 7.0,
-        "median_eur": 28.45,
-        "mean_eur": 55.91,
+        "count": 69,
+        "min_eur": 0.0,
+        "median_eur": 27.5,
+        "mean_eur": 55.03,
         "max_eur": 500.0
       },
       "Experiência — catálogo": {
@@ -133,12 +133,30 @@
     "issues": 0,
     "table_completeness_pct": {
       "data_request": 95.42,
-      "atracoes": 76.92,
-      "restaurantes": 91.41,
-      "experiencias": 99.03,
+      "atracoes": 93.39,
+      "restaurantes": 99.85,
+      "experiencias": 100.0,
       "curation_principles": 100.0,
       "curation_rules": 100.0,
-      "precos": 72.79,
+      "precos": 88.2,
+      "source_workbook_rows": 100.0,
+      "structured_guia_dataset": 100.0,
+      "structured_roteiros": 84.11,
+      "structured_viajantes": 100.0,
+      "structured_atividades": 93.57,
+      "structured_experiencias": 90.34,
+      "structured_precos_propostas": 99.93,
+      "structured_fontes_pdf": 100.0,
+      "structured_casos_interacoes": 100.0,
+      "structured_atracoes_base": 93.39,
+      "structured_restaurantes_base": 99.85,
+      "structured_experiencias_base": 100.0,
+      "structured_precos_base": 88.2,
+      "structured_regras_blu": 96.05,
+      "structured_auditoria_vazios": 100.0,
+      "structured_fontes_enriquecimento": 99.8,
+      "structured_merge_changes": 100.0,
+      "structured_merge_conflicts": 100.0,
       "proposal_documents": 100.0,
       "proposal_pages": 100.0
     }

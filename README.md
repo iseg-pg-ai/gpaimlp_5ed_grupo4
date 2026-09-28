@@ -5,7 +5,32 @@
 
 Plataforma de itinerários inteligentes: ingestão ETL, DNA do viajante, curadoria baseada em regras, itinerários por tier, preços, reservas, CRM e integrações AWS/Bedrock.
 
-## Arranque rápido
+## Fluxo de dados local
+
+`data/` (Excel e PDF, incluindo subpastas) → ETL → `warehouse/` → DMC Workspace.
+
+```powershell
+.\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse
+```
+
+A origem local é separada da transformação para permitir acrescentar S3 mais tarde.
+Nenhum serviço AWS é usado nesta fase. Ver [README_ETL.md](README_ETL.md).
+
+## Dashboard DMC com dados reais
+
+```powershell
+cd dmc-workspace
+npm ci
+npm run dev -- -p 3001
+```
+
+Requer Node.js 24 LTS e os ficheiros JSONL existentes em `warehouse/`.
+Abra http://localhost:3001, preencha o briefing e gere uma proposta preliminar.
+As viagens em edição ficam neste navegador; as versões e os PDFs são guardados no servidor local em `exports/itineraries/`, fora do ETL. Use **Export PDF** ou consulte `/exports` para aceder ao histórico. Horários, acessibilidade, disponibilidade
+ e preços finais exigem confirmação. Consulte o estado atual e os limites em
+[README_UIMOCK.md](README_UIMOCK.md).
+
+## Arranque rápido (arquitetura de referência anterior)
 
 ```bash
 cp .env.example .env

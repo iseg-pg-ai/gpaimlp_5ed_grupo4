@@ -1,3 +1,16 @@
+# Fluxo local atual
+
+Execute `powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1 -SkipInstall`.
+O script interrompe a execução se um comando falhar. Os testes escrevem apenas em
+pastas temporárias isoladas, nunca no warehouse operacional.
+
+A ingestão percorre `data/` recursivamente e publica um warehouse validado.
+Consulte [README_ETL.md](README_ETL.md) para o contrato de origem local, inventário
+de ficheiros e preparação para uma futura origem S3. O DMC Workspace lê a saída
+em http://localhost:3001; o servidor é iniciado separadamente.
+
+## Documentação complementar
+
 # BLU pipeline automation and operations
 
 ## Purpose

@@ -44,12 +44,8 @@ interface AIAssistantPanelProps {
 }
 
 const suggestionChips = [
-  "Make Day 3 more relaxed (R01)",
-  "Optimize transfers & route buffers (Algorithm)",
-  "Change the hotel to boutique",
-  "Add a culinary masterclass (R04)",
-  "Optimize budget to €4,850",
-  "Add another night in Porto",
+  "Remover última atividade do dia 1",
+  "Remover última atividade do dia 2",
 ];
 
 export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
@@ -104,14 +100,14 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
           <div className="flex items-center gap-2">
             <Badge variant="gold" className="px-1.5 py-0.5 text-[10px] font-semibold">
               <Sparkles className="w-2.5 h-2.5 text-[#D8A65C]" />
-              <span>BLU AI</span>
+              <span>BLU</span>
             </Badge>
             <h3 className="font-serif-blu font-bold text-sm text-[#143F4B]">
               Curation Assistant
             </h3>
           </div>
           <p className="text-[11px] text-[#4A636B] mt-0.5">
-            Adriana & Tiago curatorial engine
+            Comandos de curadoria · sem modelo de IA
           </p>
         </div>
 
@@ -121,7 +117,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             variant="ghost"
             size="iconSm"
             onClick={onResetItinerary}
-            title="Reset itinerary modifications"
+            title="Editar briefing para regenerar"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </Button>
@@ -135,7 +131,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             <ConversationEmptyState
               icon={<Sparkles className="size-8 text-[#D8A65C]" />}
               title="Curator Ready"
-              description="Ask to adjust pacing (R01), swap accommodations, or refine culinary reservations."
+              description="Use Edit Brief para alterar preferências; remova atividades através dos comandos sugeridos."
             />
           ) : (
             messages.map((message) => {

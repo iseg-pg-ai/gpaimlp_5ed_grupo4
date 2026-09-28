@@ -48,7 +48,7 @@ export const initialRecentTrips: RecentTrip[] = [
     destination: "Italy (Tuscany & Rome)",
     dates: "2–11 Nov",
     budget: "€9,500",
-    tier: "Extended",
+    tier: "Classic",
     status: "Draft",
   },
   {
@@ -57,7 +57,7 @@ export const initialRecentTrips: RecentTrip[] = [
     destination: "Lisbon & Cascais",
     dates: "18–21 Nov",
     budget: "€18,000",
-    tier: "Classic",
+    tier: "Soft",
     status: "Proposal Ready",
   },
 ];

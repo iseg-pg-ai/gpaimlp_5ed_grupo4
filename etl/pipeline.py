@@ -14,7 +14,9 @@ import re
 import shutil
 import sqlite3
 import unicodedata
+import uuid
 from collections import Counter
+from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable
@@ -24,6 +26,7 @@ from pypdf import PdfReader
 
 from etl.analytics import build_analytics
 from etl.validation import validate
+from etl.sources import LocalSource
 
 
 # Map each regular worksheet to its header row; the rows above are document titles.
@@ -114,6 +117,12 @@ def extract_workbook(path: Path) -> dict[str, list[dict[str, Any]]]:
             if header_row is None:
                 raise ValueError(f"No header mapping configured for worksheet {sheet.title!r}")
             tables[slug(sheet.title)] = records_from_section(sheet, header_row)
+    # Business terminology overrides are versioned separately from the original workbook.
+    overrides_path = Path(__file__).resolve().parents[1] / "config" / "curation_rule_overrides.json"
+    overrides = json.loads(overrides_path.read_text(encoding="utf-8"))
+    for record in tables.get("curation_rules", []):
+        record.update(overrides.get(record.get("id"), {}))
+    workbook.close()
     return tables
 
 
@@ -126,10 +135,10 @@ def document_hashes(path: Path) -> tuple[str, str]:
     return instance_id, content_hash
 
 
-def extract_pdfs(directory: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+def extract_pdfs(directory: Path, paths: list[Path] | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     """Extract document-level metadata and page-level text from every PDF."""
     documents, pages, errors = [], [], []
-    for path in sorted(directory.rglob("*.pdf")):
+    for path in sorted(paths if paths is not None else directory.rglob("*.pdf")):
         # Keep the file-instance ID as the shared primary key between document/pages.
         digest, content_hash = document_hashes(path)
         try:
@@ -200,22 +209,31 @@ def load_table(connection: sqlite3.Connection, name: str, records: list[dict[str
     connection.executemany(f"INSERT INTO {quoted(name)} VALUES ({placeholders})", values)
 
 
-def run(data_dir: Path, output_dir: Path) -> dict[str, Any]:
-    """Run the full extract-transform-load workflow and return its manifest."""
-    # Validate the expected single-workbook source contract before changing outputs.
-    if not data_dir.is_dir():
-        raise FileNotFoundError(f"Data directory does not exist: {data_dir}")
-    xlsx_files = sorted(data_dir.glob("*.xlsx")) or sorted(data_dir.rglob("*.xlsx"))
-    if len(xlsx_files) != 1:
-        raise ValueError(f"Expected exactly one workbook; found {len(xlsx_files)}")
-    # Rebuild the output atomically by clearing only the selected output directory.
-    if output_dir.exists():
-        shutil.rmtree(output_dir)
-    output_dir.mkdir(parents=True)
-
+def _build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
+    """Build a delivery in an isolated staging directory."""
+    workbook, supplement, pdf_paths, source_manifest = LocalSource(data_dir).discover()
     # Extract both source types, then add their records to one logical data catalog.
-    tables = extract_workbook(xlsx_files[0])
-    documents, pages, pdf_errors = extract_pdfs(data_dir)
+    tables = extract_workbook(workbook)
+    # Preserve other workbook schemas as source evidence, without guessing mappings.
+    reference_rows = []
+    for item in source_manifest["objects"]:
+        if item["role"] != "reference_workbook":
+            continue
+        reference_path = data_dir / item["key"]
+        reference = load_workbook(reference_path, read_only=True, data_only=True)
+        try:
+            for sheet in reference:
+                for number, cells in enumerate(sheet.iter_rows(values_only=True), 1):
+                    if any(value is not None for value in cells):
+                        reference_rows.append({"_source_file": reference_path.as_posix(), "_source_sheet": sheet.title, "_source_row": number, "cells": [value.isoformat() if isinstance(value, datetime) else value for value in cells]})
+        finally:
+            reference.close()
+    tables["source_workbook_rows"] = reference_rows
+    structured = None
+    if supplement is not None:
+        from etl.structured import integrate_structured
+        structured = integrate_structured(supplement, tables)
+    documents, pages, pdf_errors = extract_pdfs(data_dir, pdf_paths)
     tables["proposal_documents"] = documents
     tables["proposal_pages"] = pages
 
@@ -223,6 +241,9 @@ def run(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     validation_report, validation_issues = validate(tables)
     # Only validated records feed the descriptive KPIs and transparent score models.
     kpis, models, model_outputs = build_analytics(tables, validation_report)
+    if validation_report["status"] != "passed":
+        raise ValueError(f"Warehouse validation failed: {validation_report['issue_count']} issues")
+    output_dir.mkdir(parents=True, exist_ok=True)
     for table, records in tables.items():
         # JSONL is the portable, table-per-file delivery format.
         write_jsonl(output_dir / f"{table}.jsonl", records)
@@ -235,27 +256,62 @@ def run(data_dir: Path, output_dir: Path) -> dict[str, Any]:
 
     # SQLite is the relational delivery format for SQL queries and joins.
     database = output_dir / "blu_etl.sqlite"
-    with sqlite3.connect(database) as connection:
+    with closing(sqlite3.connect(database)) as connection:
         for table, records in tables.items():
             load_table(connection, table, records)
         load_table(connection, "data_quality_issues", validation_issues)
         for model_name, records in model_outputs.items():
             load_table(connection, model_name, records)
-        connection.execute("CREATE INDEX idx_proposal_pages_document ON proposal_pages(document_id)")
+        if pages:
+            connection.execute("CREATE INDEX idx_proposal_pages_document ON proposal_pages(document_id)")
+        connection.commit()
 
     # Publish run metadata so consumers can verify data coverage and quality.
     manifest = {
         "pipeline": "blu-local-etl", "ran_at_utc": datetime.now(UTC).isoformat(),
-        "input_directory": data_dir.as_posix(), "workbook": xlsx_files[0].as_posix(),
+        "input_directory": data_dir.as_posix(), "workbook": workbook.as_posix(), "source": source_manifest,
         "tables": {table: len(records) for table, records in tables.items()},
-        "pdfs_discovered": len(list(data_dir.rglob("*.pdf"))),
+        "pdfs_discovered": len(pdf_paths),
         "pdf_errors": pdf_errors,
+        "structured_dataset": structured,
         "validation": {"status": validation_report["status"], "issue_count": validation_report["issue_count"]},
         "analytics": {"kpis": "kpis.json", "models": "analytical_models.json"},
         "outputs": {"database": database.name, "format": "JSON Lines + SQLite"},
     }
     (output_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return manifest
+
+
+
+def run(data_dir: Path, output_dir: Path) -> dict[str, Any]:
+    """Read local raw data, validate a complete delivery, then publish with rollback."""
+    source, target = data_dir.resolve(), output_dir.resolve()
+    if source == target or source in target.parents or target in source.parents:
+        raise ValueError("Source and warehouse directories must be separate and not nested")
+    if output_dir.is_symlink():
+        raise ValueError("Warehouse must not be a symbolic link")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    stage = target.with_name(f".{target.name}-staging-{uuid.uuid4().hex}")
+    stage.mkdir()  # Inherit warehouse-parent permissions; tempfile uses restrictive ACLs on Windows.
+    backup = target.with_name(f".{target.name}-backup-{uuid.uuid4().hex}")
+    # Every directory removed or moved below is a checked sibling of the explicit output.
+    assert stage.parent == target.parent and backup.parent == target.parent
+    try:
+        manifest = _build(data_dir, stage)
+        if target.exists():
+            target.rename(backup)
+        try:
+            stage.rename(target)
+        except Exception:
+            if backup.exists():
+                backup.rename(target)
+            raise
+        if backup.exists():
+            shutil.rmtree(backup, ignore_errors=True)
+        return manifest
+    finally:
+        if stage.exists():
+            shutil.rmtree(stage)
 
 
 def main() -> None:

@@ -19,16 +19,10 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 76.92,
+      "completeness_pct": 93.39,
       "missing_values_by_column": {
-        "dias_de_encerramento": 74,
-        "esforco_fisico": 74,
-        "horario": 74,
-        "necessidade_de_reserva": 74,
-        "preco_da_atracao": 74,
-        "tempo_medio_de_visita": 74,
-        "latitude": 1,
-        "longitude": 1
+        "esforco_fisico": 73,
+        "tempo_medio_de_visita": 73
       }
     },
     "restaurantes": {
@@ -38,10 +32,10 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 91.41,
+      "completeness_pct": 99.85,
       "missing_values_by_column": {
-        "latitude": 51,
-        "longitude": 51
+        "latitude": 1,
+        "longitude": 1
       }
     },
     "experiencias": {
@@ -51,10 +45,8 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 99.03,
-      "missing_values_by_column": {
-        "site_fonte": 7
-      }
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
     },
     "curation_principles": {
       "record_count": 6,
@@ -83,20 +75,189 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 72.79,
+      "completeness_pct": 88.2,
       "missing_values_by_column": {
         "crianca_eur": 181,
-        "data_de_verificacao": 187,
-        "fornecedor": 137,
         "notas_de_utilizacao": 92,
         "senior_eur": 184,
-        "url_catalogo_verificado": 172,
         "adulto_eur": 112,
-        "preco_referencia_eur": 48,
-        "preco_original_condicoes": 40,
-        "local": 25,
-        "fonte": 11
+        "preco_referencia_eur": 7
       }
+    },
+    "source_workbook_rows": {
+      "record_count": 709,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "structured_guia_dataset": {
+      "record_count": 77,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "structured_roteiros": {
+      "record_count": 58,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 84.11,
+      "missing_values_by_column": {
+        "n_o_viajantes": 27,
+        "ano_explicito": 46,
+        "data_explicita": 56
+      }
+    },
+    "structured_viajantes": {
+      "record_count": 31,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "structured_atividades": {
+      "record_count": 222,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 93.57,
+      "missing_values_by_column": {
+        "id_atracao_base": 145,
+        "cidade_da_base": 12
+      }
+    },
+    "structured_experiencias": {
+      "record_count": 48,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 90.34,
+      "missing_values_by_column": {
+        "duracao_da_base_estimativa": 46,
+        "local_da_base": 5
+      }
+    },
+    "structured_precos_propostas": {
+      "record_count": 127,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 99.93,
+      "missing_values_by_column": {
+        "id_roteiro": 1
+      }
+    },
+    "structured_fontes_pdf": {
+      "record_count": 59,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "structured_casos_interacoes": {
+      "record_count": 3,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "structured_atracoes_base": {
+      "record_count": 138,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 93.39,
+      "missing_values_by_column": {
+        "esforco_fisico": 73,
+        "tempo_medio_de_visita": 73
+      }
+    },
+    "structured_restaurantes_base": {
+      "record_count": 54,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 99.85,
+      "missing_values_by_column": {
+        "latitude": 1,
+        "longitude": 1
+      }
+    },
+    "structured_experiencias_base": {
+      "record_count": 60,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "structured_precos_base": {
+      "record_count": 257,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 88.2,
+      "missing_values_by_column": {
+        "crianca_eur": 181,
+        "notas_de_utilizacao": 92,
+        "senior_eur": 184,
+        "adulto_eur": 112,
+        "preco_referencia_eur": 7
+      }
+    },
+    "structured_regras_blu": {
+      "record_count": 57,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 96.05,
+      "missing_values_by_column": {
+        "dados_necessarios": 6,
+        "decisao_aplicacao": 6,
+        "prioridade": 6
+      }
+    },
+    "structured_auditoria_vazios": {
+      "record_count": 49,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "structured_fontes_enriquecimento": {
+      "record_count": 1020,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 99.8,
+      "missing_values_by_column": {
+        "url": 13,
+        "data_da_pesquisa": 9
+      }
+    },
+    "structured_merge_changes": {
+      "record_count": 2038,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "structured_merge_conflicts": {
+      "record_count": 3,
+      "primary_key": null,
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
     },
     "proposal_documents": {
       "record_count": 50,

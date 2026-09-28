@@ -40,6 +40,9 @@ export interface ActivityItem {
   isRecentlyModified?: boolean;
   isLocked?: boolean;
   transitToNext?: TransitLeg;
+  source?: string;
+  appliedRules?: string[];
+  pendingChecks?: string[];
 }
 
 export interface DailyRouteSummary {
@@ -57,14 +60,14 @@ export interface ItineraryDay {
   title: string;
   location: string;
   summary?: string;
-  tier?: "Classic" | "Extended" | "Signature";
+  tier?: ProposalTier;
   items: ActivityItem[];
   routeSummary?: DailyRouteSummary;
   isRecentlyModified?: boolean;
 }
 
 export type PhysicalEffortLevel = "Baixo (Low)" | "Moderado (Moderate)" | "Alto (High)";
-export type ProposalTier = "Classic" | "Extended" | "Signature";
+export type ProposalTier = "Soft" | "Classic" | "Signature";
 export type DiningPace = "Quick Lunch (~40m)" | "Relaxed Dining (~90m)" | "Tasting Experience (120m+)";
 export type MorningPreference = "Early (08:30)" | "Standard (09:30)" | "Late Start (10:30+)";
 

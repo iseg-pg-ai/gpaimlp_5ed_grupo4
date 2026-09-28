@@ -1,8 +1,338 @@
 {
   "pipeline": "blu-local-etl",
-  "ran_at_utc": "2026-09-26T11:09:54.604785+00:00",
+  "ran_at_utc": "2026-09-28T21:39:38.724536+00:00",
   "input_directory": "data",
   "workbook": "data/Requisitos informações Alunos ISEG.xlsx",
+  "source": {
+    "type": "local",
+    "root": "data",
+    "objects": [
+      {
+        "key": "proposals/260711 - PROPOSTA CIAL SINTRA E AZEITAO JUL26.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 3432308,
+        "sha256": "cb1143434d50bb4dd85ac3a4fe99b75cffebf91501ed50ad6fbdb9bb881afdda"
+      },
+      {
+        "key": "proposals/A FADO EVENING.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 10099633,
+        "sha256": "e33798e6b13e0cb7ed96be8523e5e7117bddc8e1a088d8f91154e840dcece5e8"
+      },
+      {
+        "key": "proposals/ANDY & CAROL LIS - PORTO.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 7013887,
+        "sha256": "28acc917e8dccd722705caf187c44d74dd3130602fdd3d7a98589f8ba8549a5a"
+      },
+      {
+        "key": "proposals/ATLANTIC ROAD ARC - NANCY N RON.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 16225364,
+        "sha256": "c1c7c70d5a08b1645651e6977455c8145492203f44c88bb396812a21690dadd0"
+      },
+      {
+        "key": "proposals/BETH FOOD TOUR LISBON.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 6038960,
+        "sha256": "0e6c4372e5c53b4d9239e0592d86bb26702594ed36c6978b20f82e07aeccec08"
+      },
+      {
+        "key": "proposals/BLU - THE JOURNEY PORTFOLIO (2).pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 70085674,
+        "sha256": "a32c9f66d51ca52e4923368a4ad044668d32bd77620c1a49cd2ecc407416c1ef"
+      },
+      {
+        "key": "proposals/DAY TRIP BRAGA N GUIMARAES.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 3119755,
+        "sha256": "dbbed620277ee184050bc95af63e80fa9780cde5588db351fbf6f203db372900"
+      },
+      {
+        "key": "proposals/DAY TRIP PORTO - AVEIRO - OBI - LISBON.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 8562363,
+        "sha256": "00acffaf097b69f5aa67067e5ded9799635913859dee5766fb7fc2bd7b91d567"
+      },
+      {
+        "key": "proposals/DEBBIE_S PORTUGUESE JOURNEY - MAR27.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 36327481,
+        "sha256": "568d954dcef292dc1de2bcb7f20285d0c54ba8014c9ff50a41ce99dcc3603703"
+      },
+      {
+        "key": "proposals/DOURO CRUISE - DAVID HANSON.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 2111193,
+        "sha256": "7cd7987b4d4a6ab28a111a008367a4b1ba977307d6714c8a08c979f00b3cd1fd"
+      },
+      {
+        "key": "proposals/FAITH AND TRADITION - MELISSA SHANNON.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 1103317,
+        "sha256": "3d75bbab97bdd8a39b0e45ebe6e9930be9605536d43121ee9c9309523f6c7208"
+      },
+      {
+        "key": "proposals/FROM SPLENDOR TO STILLNESS - CHRIS AND LINDA.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 2153421,
+        "sha256": "48d03cbfa08bd96b1fa6410db551c62a8f42ebee979c9c11df72da7cb8c01572"
+      },
+      {
+        "key": "proposals/HIDDEN GEMS OF SINTRA.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 9836304,
+        "sha256": "27bf6acee138228194cee8ffc55cf1572a91d007e357d00410be852ed93439cf"
+      },
+      {
+        "key": "proposals/HISTORIC HEART LISBON - LAURIE REILLY - OCT 10 11.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 30216488,
+        "sha256": "6f8ed1f084038a9faf3281532a14c695fbcd135c0bf440d7b1b4e0f44d4a967d"
+      },
+      {
+        "key": "proposals/HISTORIC HEART LISBON - RICK EVANS - 2P SEP15.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 30216488,
+        "sha256": "6f8ed1f084038a9faf3281532a14c695fbcd135c0bf440d7b1b4e0f44d4a967d"
+      },
+      {
+        "key": "proposals/HISTORIC HEART LISBON - SARA BREIEL - SEP 22 1P.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 26578419,
+        "sha256": "56f8c9ac54160cb4945fab154d99b8731c6eedb26d2690283b8c350c339be64e"
+      },
+      {
+        "key": "proposals/IN BETWEEN LISBON AND PORTO - GORDON AND ERIN.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 14576638,
+        "sha256": "4d0cadff6d366bc65b5e61935d9fed9afb3279bacfa43e48920bffdb9801b1a6"
+      },
+      {
+        "key": "proposals/JEWISH LEGACY & TEMPLARS - BUDDY.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 37644895,
+        "sha256": "57d3eb8def659d064b8b2def260b232e51d3ffe086d1d92f90a9c80a647f077a"
+      },
+      {
+        "key": "proposals/JUDY - OLD LISBON FOOD & CULTURE - 4H.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 15891795,
+        "sha256": "d4e09baf9c9c500f8346e89884d51a91a003ac8c14960bfc4d90bc3783c012bd"
+      },
+      {
+        "key": "proposals/KAMRAN N SHIRIN PORTUGAL TRIP OCT 25.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 27361487,
+        "sha256": "68052cf79f7c3efd8f251b6beedafc6afa278599366ecbadf847831a947ae978"
+      },
+      {
+        "key": "proposals/KARA FAMILY TRIP .pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 29976368,
+        "sha256": "5906763eef8f8d77b14e6f45254d8ad502a8af9c3c054ac194827d81cba95539"
+      },
+      {
+        "key": "proposals/KHAMIRE ROTEIRO 2.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 21250731,
+        "sha256": "5bea81ee8a797eaf8781b3d05ab5a428beb8f7b7d0373ffc28384ee8208bfe41"
+      },
+      {
+        "key": "proposals/L. SINTRA WITH KIDS_ EYES - KATIE AND FAMILY.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 21217012,
+        "sha256": "422223975bb23c11c5be9ddd8c69e04d55062281d36052173143c23a92638335"
+      },
+      {
+        "key": "proposals/LISBON AT THE TABLE.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 19073929,
+        "sha256": "942dd6350172bee8987b670f0ba9924c4fc1cb958ffc2a89f21bbe285a406289"
+      },
+      {
+        "key": "proposals/LISBON IN PERSPECTIVE - GERMAIN HAUPRICH - 2P OCT 16.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 27782767,
+        "sha256": "73d485fb0d5717e6c8d83c5f5497d3a2e0c8931c33b9461ee931879f042430da"
+      },
+      {
+        "key": "proposals/LISBON IN PERSPECTIVE - MARK - MDV - SEP 17 2P.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 22088108,
+        "sha256": "03119f60838d1ed395f3f1f4a051be983b39bd685a9b49081506f4a08cec19c9"
+      },
+      {
+        "key": "proposals/LX WINE TASTING.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 1687408,
+        "sha256": "4b9186bccb90555de697c5130c60a474b633ddf030757460158a383cc76c1534"
+      },
+      {
+        "key": "proposals/MAYRA ITINERARY MAR 25 (2).pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 19595450,
+        "sha256": "b2c40c387f21db86775508b709e5e9e6436c1f8567f0d1c6dd45bd1fb0d135f3"
+      },
+      {
+        "key": "proposals/MELISSA & FAMILY JOURNEY TO THE DOURO.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 15203819,
+        "sha256": "f176b423d853033d6bffcdd82f74962bff808e523a52cf5b84765e9d9014dbf4"
+      },
+      {
+        "key": "proposals/MIKE AND JESSICA TRIP PORTUGAL.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 17306385,
+        "sha256": "4388b036600c29800c8123b7e6d7e2c7a11d8ee578c1072e1fdb532c0954ed7c"
+      },
+      {
+        "key": "proposals/MR. LICHTEN BY STEPHANIE KAUFMAN - PROTRAVEL.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 11985138,
+        "sha256": "5961053f622d550fccd377e8a9120e6e7a1459372d8d25aa59b4788a1d618969"
+      },
+      {
+        "key": "proposals/MYSTERIES OF SINTRA - MELISSA SHANNON.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 35151653,
+        "sha256": "29f47e872cad7c645f4dcab66b5f14d417ee12fcc79cf7d543f000f64c34e494"
+      },
+      {
+        "key": "proposals/NIKKI_S FAMILY PORTUAL TRIP.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 19467947,
+        "sha256": "9b9d6395698de9273b003270b2ca53aa700c121f3196b7f4978ca3ff775c91c2"
+      },
+      {
+        "key": "proposals/OUR RIVIERA, CASCAIS - KEVIN DOLAN - 1P SEP29.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 25897537,
+        "sha256": "dbdc3994297875ae802de9df9057b9f51c06d08f80c88179c4776eae6397ea60"
+      },
+      {
+        "key": "proposals/PALACES AND WINE SINTRA - JAMIE PATTEE.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 33117775,
+        "sha256": "f312d77765a81f06c69f98f6e46118e92d88714e7147aa0b55e3da0c2b59f17e"
+      },
+      {
+        "key": "proposals/PORTO AND DOURO JOURNEYS.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 14413016,
+        "sha256": "082970ca61c192c9ca8f6dea825dc80a210d9247640bd160d3741ee542b83210"
+      },
+      {
+        "key": "proposals/PORTO IN LAYERS - DAVID HANSON.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 6937541,
+        "sha256": "3d6496bb7b199e3f0b61e683862e5c4e15a879817a9436913475b3d36686448a"
+      },
+      {
+        "key": "proposals/PORTO IN PERSPECTIVE - LISA COOKSEY AND FAMILY.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 33943046,
+        "sha256": "d89c022a7e37bc3c4e5b3f86b4e63373c40f49ecaf53ae0e2b3635396ed2ebed"
+      },
+      {
+        "key": "proposals/PORTO IN PERSPECTIVE - TOM, COLLEEN AND FRIENDS OCT26.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 32131987,
+        "sha256": "fd653d62938eb165281dca5326297e156a3b47571a3023a1e6e816a013b2148a"
+      },
+      {
+        "key": "proposals/PORTO TO LISBON DAY TRIP VIA NAZARE N OBIDOS.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 3297413,
+        "sha256": "33e91b0bd31b69ed4dba0374fcebe994148239e10d40254d5fa786281c6f2bc9"
+      },
+      {
+        "key": "proposals/ROTEIRO CARMENCITA.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 29839438,
+        "sha256": "f6601dd45ebad6cd2f93cd87084a99de05462b89c81607b255d8e728f2eefd44"
+      },
+      {
+        "key": "proposals/ROTEIRO JULIA JUL25 PT FR.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 25407120,
+        "sha256": "80259565d2bb651946c24fc017b0677e2a28ae1d938cd29637ec659242fa65da"
+      },
+      {
+        "key": "proposals/ROTEIRO KUMARESON SINGAPORE.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 23625624,
+        "sha256": "41fe89eae16cdcafaa6c3a5a5efd71f31f7c4370b9e8f574c1ad0b966a271020"
+      },
+      {
+        "key": "proposals/ROTEIRO LALLINE E FAMILIA 2025.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 733049,
+        "sha256": "b6f15322c978fcc7d0d4c0cd951a8c24d6c27d4985e38ef56649337470c1433d"
+      },
+      {
+        "key": "proposals/ROTEIRO SANDRA JUN24.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 23692373,
+        "sha256": "d2c0fd9cd684f915a5299e22ca415c1249db0a3d4299d1dfede843c5b2b086db"
+      },
+      {
+        "key": "proposals/ROTEIRO VISITANDO ITALIA OUT 25.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 19564987,
+        "sha256": "23d8161086f14893d8233ada38fb049976ec042009b5564a48f4737758455884"
+      },
+      {
+        "key": "proposals/SINTRA WITH KIDS_ EYES.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 22221275,
+        "sha256": "ec72e5f6528f07746edd4d2979af6a1a4614d4382c1e00e42a250c25df2a31f8"
+      },
+      {
+        "key": "proposals/SINTRA WONDERS RUSHANI.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 7987270,
+        "sha256": "680a3639ee4909d863e02df8ea6151474e8096ec6532ae43e8138b320436de30"
+      },
+      {
+        "key": "proposals/SOODY NELSON & FAMILY.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 30299042,
+        "sha256": "0ad0e980c9c09a19117a80ed4fdd320bb4da2a18bc3a760d79dbf06d57cda3e4"
+      },
+      {
+        "key": "proposals/SUGESTÃO ROTEIRO JULIANE N251218.pdf",
+        "role": "proposal_pdf",
+        "size_bytes": 754841,
+        "sha256": "d461870853dfde3d93d4eb1659c147945eb32fcaa5ac8c6f2bed719b41c1fc60"
+      },
+      {
+        "key": "raw/interacoes_reais_3_exemplos.xlsx",
+        "role": "reference_workbook",
+        "size_bytes": 20797,
+        "sha256": "aa1d13415ba56ea4f32cd15e7666190ec53aa43f511c8086ee7485330eff49b4"
+      },
+      {
+        "key": "raw/Requisitos informações Alunos ISEG.xlsx",
+        "role": "reference_workbook",
+        "size_bytes": 102891,
+        "sha256": "a031d73729ab82d9d678169e645bbc28a64b451d7d3b5aa9f5ae3b07b7fd7bc7"
+      },
+      {
+        "key": "reference/structured_dataset.xlsx",
+        "role": "structured_supplement",
+        "size_bytes": 256204,
+        "sha256": "64843c0b749fcee2487e3d1eb9504117d7582703b992513dba67002eb69a8f61"
+      },
+      {
+        "key": "Requisitos informações Alunos ISEG.xlsx",
+        "role": "catalog_workbook",
+        "size_bytes": 116032,
+        "sha256": "a35eb3b53732612139c4a0a11798ca8039462d68b25d5f6db8faf9462fa2e7d5"
+      }
+    ]
+  },
   "tables": {
     "data_request": 102,
     "atracoes": 138,
@@ -11,11 +341,53 @@
     "curation_principles": 6,
     "curation_rules": 51,
     "precos": 257,
+    "source_workbook_rows": 709,
+    "structured_guia_dataset": 77,
+    "structured_roteiros": 58,
+    "structured_viajantes": 31,
+    "structured_atividades": 222,
+    "structured_experiencias": 48,
+    "structured_precos_propostas": 127,
+    "structured_fontes_pdf": 59,
+    "structured_casos_interacoes": 3,
+    "structured_atracoes_base": 138,
+    "structured_restaurantes_base": 54,
+    "structured_experiencias_base": 60,
+    "structured_precos_base": 257,
+    "structured_regras_blu": 57,
+    "structured_auditoria_vazios": 49,
+    "structured_fontes_enriquecimento": 1020,
+    "structured_merge_changes": 2038,
+    "structured_merge_conflicts": 3,
     "proposal_documents": 50,
     "proposal_pages": 1294
   },
   "pdfs_discovered": 50,
   "pdf_errors": [],
+  "structured_dataset": {
+    "file": "data/reference/structured_dataset.xlsx",
+    "sha256": "64843c0b749fcee2487e3d1eb9504117d7582703b992513dba67002eb69a8f61",
+    "sheets": {
+      "Guia_dataset": 77,
+      "Roteiros": 58,
+      "Viajantes": 31,
+      "Atividades": 222,
+      "Experiencias": 48,
+      "Precos_propostas": 127,
+      "Fontes_PDF": 59,
+      "Casos_interacoes": 3,
+      "Atracoes_base": 138,
+      "Restaurantes_base": 54,
+      "Experiencias_base": 60,
+      "Precos_base": 257,
+      "Regras_BLU": 57,
+      "Auditoria_vazios": 49,
+      "Fontes_enriquecimento": 1020
+    },
+    "changes": 2038,
+    "conflicts": 3,
+    "policy": "Fill missing fields by exact key; retain existing values and audit conflicts. Historical proposals remain separate."
+  },
   "validation": {
     "status": "passed",
     "issue_count": 0

@@ -176,6 +176,13 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             </p>
           )}
 
+          {activity.priceNote && <p className="mt-2 text-xs text-amber-800">{activity.priceNote}</p>}
+          {activity.source && <details className="mt-3 text-xs text-[#4A636B]">
+            <summary className="cursor-pointer">Origem, decisões e confirmações pendentes</summary>
+            <p className="mt-2">{activity.source}</p>
+            <p>{activity.appliedRules?.join(" · ")}</p>
+            <p className="text-amber-800">Por confirmar: {activity.pendingChecks?.join("; ")}</p>
+          </details>}
           {/* Criteria metadata pills: location, accessibility, dietary notes */}
           <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px]">
             {activity.location && (

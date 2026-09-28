@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface NewTripScreenProps {
   onGenerate: (brief: CustomerBrief) => void;
+  initialValue?: CustomerBrief;
   onCancel?: () => void;
 }
 
@@ -85,9 +86,9 @@ const effortLevels: PhysicalEffortLevel[] = [
 ];
 
 const curationTiers: Array<{ tier: ProposalTier; desc: string }> = [
-  { tier: "Classic", desc: "Essential, cohesive & authentic Portuguese highlights" },
-  { tier: "Extended", desc: "Curated additional layers, regional craft & depth" },
-  { tier: "Signature", desc: "Private VIP access, sommelier-guided & senior historians" },
+  { tier: "Soft", desc: "Essential, cohesive & authentic Portuguese highlights" },
+  { tier: "Classic", desc: "Curated additional layers, regional craft & depth" },
+  { tier: "Signature", desc: "Immersive experiences; special access subject to confirmation" },
 ];
 
 const diningPaces: DiningPace[] = [
@@ -115,8 +116,9 @@ const accommodationOptions: Array<CustomerBrief["accommodation"]> = [
 export const NewTripScreen: React.FC<NewTripScreenProps> = ({
   onGenerate,
   onCancel,
+  initialValue,
 }) => {
-  const [brief, setBrief] = useState<CustomerBrief>(initialBrief);
+  const [brief, setBrief] = useState<CustomerBrief>(initialValue ?? initialBrief);
 
   const toggleArrayItem = (field: keyof CustomerBrief, item: string) => {
     setBrief((prev) => {
@@ -334,6 +336,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </label>
                   <Input
                     type="date"
+                    required
                     value={brief.startDate}
                     onChange={(e) =>
                       setBrief({ ...brief, startDate: e.target.value })
@@ -347,6 +350,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </label>
                   <Input
                     type="date"
+                    required
                     value={brief.endDate}
                     onChange={(e) =>
                       setBrief({ ...brief, endDate: e.target.value })

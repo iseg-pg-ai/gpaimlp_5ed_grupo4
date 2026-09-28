@@ -30,13 +30,16 @@ if (-not (Test-Path -LiteralPath $Python)) {
     # Install virtualenv with the system interpreter because some Windows Python
     # distributions do not bundle ensurepip, which `python -m venv` requires.
     python -m pip install virtualenv
+    if ($LASTEXITCODE -ne 0) { throw "Command failed with exit code $LASTEXITCODE" }
     python -m virtualenv .venv
+    if ($LASTEXITCODE -ne 0) { throw "Command failed with exit code $LASTEXITCODE" }
 }
 
 # Install exact dashboard and ETL dependencies unless explicitly skipped.
 if (-not $SkipInstall) {
     Write-Host "Installing dependencies..."
     & $Python -m pip install -r $Requirements
+    if ($LASTEXITCODE -ne 0) { throw "Command failed with exit code $LASTEXITCODE" }
 }
 
 # Verify source availability before clearing/rebuilding the output warehouse.
@@ -47,6 +50,7 @@ if (-not (Test-Path -LiteralPath $DataDirectory)) {
 # Run the ordered data workflow: extraction, validation, KPIs, and scoring models.
 Write-Host "Running ETL, validation, KPIs, and analytical models..."
 & $Python -m etl.pipeline --data-dir $DataDirectory --output-dir $OutputDirectory
+if ($LASTEXITCODE -ne 0) { throw "Command failed with exit code $LASTEXITCODE" }
 
 # Enforce the validation report as a release gate for generated warehouse data.
 $ValidationReport = Join-Path $OutputDirectory "validation_report.json"
@@ -58,6 +62,8 @@ if ($Validation.status -ne "passed") {
 # Compile application code and run the end-to-end regression test.
 Write-Host "Running application checks..."
 & $Python -m py_compile etl\pipeline.py etl\validation.py etl\analytics.py dashboard\app.py
-& $Python -m unittest tests.test_etl_pipeline -v
+if ($LASTEXITCODE -ne 0) { throw "Command failed with exit code $LASTEXITCODE" }
+& $Python -m unittest tests.test_etl_pipeline tests.test_structured_dataset tests.test_local_source -v
+if ($LASTEXITCODE -ne 0) { throw "Command failed with exit code $LASTEXITCODE" }
 
-Write-Host "Pipeline completed successfully. Dashboard: http://localhost:8501"
+Write-Host "Pipeline completed successfully. DMC Workspace: http://localhost:3001 (start separately)."
