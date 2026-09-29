@@ -1,4 +1,5 @@
 import { zipSync } from "fflate";
+import { TranslationError } from "@/lib/translation-error";
 import { isLocale } from "@/lib/locales";
 import { VersionStore, VersionConflict, checkTripId } from "@/lib/version-store";
 import { validateBrief } from "@/lib/curation";
@@ -69,6 +70,10 @@ export async function GET(request: Request) {
       return new Response(new Uint8Array(pdf.bytes), { headers: { ...headers, "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${pdf.filename}"` } });
     }
     return Response.json({ meta: store.list(id).find(v => v.version === version), snapshot: JSON.parse(row.snapshot) }, { headers });
-  } catch { return Response.json({ error: "Não foi possível gerar ou carregar o PDF. A versão guardada foi preservada." }, { status: 500 }); }
+  } catch (error) {
+    if (error instanceof TranslationError) return Response.json({ error: error.message, code: error.code }, { status: 503, headers });
+    console.error("PDF export failed", error);
+    return Response.json({ error: "Não foi possível gerar ou carregar o PDF. A versão guardada foi preservada." }, { status: 500, headers });
+  }
   finally { store.close(); }
 }
