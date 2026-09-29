@@ -6,8 +6,13 @@ ROOT = Path(__file__).resolve().parents[1]
 os.environ["ARGOS_PACKAGES_DIR"] = str(ROOT / ".tools/translation-models")
 os.environ["XDG_DATA_HOME"] = str(ROOT / ".tools/translation-data")
 os.environ["XDG_CACHE_HOME"] = str(ROOT / ".tools/translation-cache")
-import ctranslate2
-from argostranslate import package
+try:
+    import ctranslate2
+    from argostranslate import package
+except ImportError:
+    if __name__ == "__main__":
+        print(json.dumps({"fatal": "TRANSLATION_DEPENDENCIES_MISSING"}), flush=True)
+    raise
 PACKAGES = {(p.from_code,p.to_code):p for p in package.get_installed_packages()}
 MODELS = {}
 CACHE_DIR = ROOT / "exports/translations"
@@ -81,5 +86,5 @@ if __name__=="__main__":
             request=json.loads(line)
             response={"id":request["id"],"texts":translate(request["items"],request["target"])}
         except Exception as error:
-            response={"id":request.get("id") if "request" in locals() else None,"error":str(error)}
+            response={"id":request.get("id") if "request" in locals() else None,"error":str(error),"code":"TRANSLATION_MODELS_MISSING" if str(error).startswith("Missing local model ") else "TRANSLATION_FAILED"}
         print(json.dumps(response,ensure_ascii=False),flush=True)
