@@ -1,0 +1,1522 @@
+{
+  "Updated by Assistant": {
+    "pt": "Atualizado por Assistente",
+    "en": "Updated by Assistant",
+    "es": "Actualizado por Assistant",
+    "fr": "Mise à jour par un assistant",
+    "de": "Aktualisiert von Assistant",
+    "zh": "由助理更新"
+  },
+  "Pinned / Protected": {
+    "pt": "Fixada / Protegida",
+    "en": "Pinned / Protected",
+    "es": "Fijada / Protegida",
+    "fr": "Épinglée / Protégée",
+    "de": "Angeheftet / Geschützt",
+    "zh": "已固定 / 已保护"
+  },
+  "Esforço:": {
+    "pt": "Esforço:",
+    "en": "Effort:",
+    "es": "Esfuerzo:",
+    "fr": "Effort :",
+    "de": "Anstrengung:",
+    "zh": "体力要求："
+  },
+  "Locked": {
+    "pt": "Travado",
+    "en": "Locked",
+    "es": "Cerrado",
+    "fr": "Verrouillé",
+    "de": "Verriegelt",
+    "zh": "已锁定"
+  },
+  "Lock": {
+    "pt": "Bloquear",
+    "en": "Lock",
+    "es": "Cerradura",
+    "fr": "Verrouillage",
+    "de": "Verriegelung",
+    "zh": "锁定"
+  },
+  "Origem, decisões e confirmações pendentes": {
+    "pt": "Origem, decisões e confirmações pendentes",
+    "en": "Pending origin, decisions and confirmations",
+    "es": "Origen pendiente, decisiones y confirmaciones",
+    "fr": "Origine, décisions et confirmations en attente",
+    "de": "Ausstehender Ursprung, Entscheidungen und Bestätigungen",
+    "zh": "待发源地、决定和确认"
+  },
+  "Por confirmar:": {
+    "pt": "Por confirmar:",
+    "en": "Confirming:",
+    "es": "Confirmación:",
+    "fr": "Confirmation :",
+    "de": "Bestätigung:",
+    "zh": "确认:"
+  },
+  "Curation Assistant": {
+    "pt": "Assistente de Curação",
+    "en": "Curation Assistant",
+    "es": "Curation Assistant",
+    "fr": "Assistant de curation",
+    "de": "Kuratorin",
+    "zh": "校正助理"
+  },
+  "Comandos de curadoria · sem modelo de IA": {
+    "pt": "Comandos de curadoria · sem modelo de IA",
+    "en": "Curated controls · no AI model",
+    "es": "Controles curados · no modelo AI",
+    "fr": "Commandes curées · pas de modèle AI",
+    "de": "Kuratierte Kontrollen · kein KI-Modell",
+    "zh": "· 没有 AI 模型"
+  },
+  "BLU Costa Curator": {
+    "pt": "Curador Costa BLU",
+    "en": "BLU Costa Curator",
+    "es": "BLU Costa Curador",
+    "fr": "Conservateur BLU Costa",
+    "de": "BLU Costa Kurator",
+    "zh": "BLU 科斯塔库拉托"
+  },
+  "Validating rules & updating proposal…": {
+    "pt": "Validando as regras e atualizando a proposta...",
+    "en": "Validating rules & updating proposal…",
+    "es": "Validación de reglas &amp; actualización propuesta...",
+    "fr": "Valider les règles & mettre à jour la proposition...",
+    "de": "Validierung von Regeln & Aktualisierungsvorschlag...",
+    "zh": "正在验证规则和更新建议( U)..."
+  },
+  "Curator Suggestions": {
+    "pt": "Sugestões do Curador",
+    "en": "Curator Suggestions",
+    "es": "Sugerencias del comisario",
+    "fr": "Suggestions des conservateurs",
+    "de": "Kuratorische Vorschläge",
+    "zh": "浏览器建议"
+  },
+  "Press Enter to curate": {
+    "pt": "Pressione Enter para curar",
+    "en": "Press Enter to curate",
+    "es": "Pulse Enter para comisariar",
+    "fr": "Appuyez sur Entrée pour guérir",
+    "de": "Press Enter zum Kuratieren",
+    "zh": "按 Enter 来管理"
+  },
+  "Real-time itinerary sync": {
+    "pt": "Sincronização do itinerário em tempo real",
+    "en": "Real-time itinerary sync",
+    "es": "Sincronización itineraria en tiempo real",
+    "fr": "Synchronisation de l'itinéraire en temps réel",
+    "de": "Echtzeit-Reiseroutensynchronisierung",
+    "zh": "实时行程同步"
+  },
+  "BLU Costa Travel Curation": {
+    "pt": "Curação de viagens BLU Costa",
+    "en": "BLU Costa Travel Curation",
+    "es": "BLU Costa Curación de Viaje",
+    "fr": "BLU Costa Travel Curation",
+    "de": "BLU Costa Travel Kuratation",
+    "zh": "BLU 科斯塔旅行处罚"
+  },
+  "Synthesizing Bespoke Proposal": {
+    "pt": "Sintetizando a proposta sob medida",
+    "en": "Synthesizing Bespoke Proposal",
+    "es": "Sintetización de la propuesta a medida",
+    "fr": "Synthèse de la proposition sur mesure",
+    "de": "Synthese von maßgeschneidertem Vorschlag",
+    "zh": "综合发言提案"
+  },
+  "Curating a considered journey to": {
+    "pt": "Curando uma viagem considerada para",
+    "en": "Curating a considered journey to",
+    "es": "Curar un viaje considerado a",
+    "fr": "Prendre en charge un voyage",
+    "de": "Kuratieren einer überlegten Reise zum",
+    "zh": "允许经过深思熟虑的旅程"
+  },
+  "for": {
+    "pt": "em vez de",
+    "en": "for",
+    "es": "para",
+    "fr": "pour",
+    "de": "für",
+    "zh": "(单位:千美元)"
+  },
+  "Curation progress": {
+    "pt": "Evolução da cura",
+    "en": "Curation progress",
+    "es": "Progreso de la curación",
+    "fr": "État d'avancement des mesures de curation",
+    "de": "Fortschritte bei der Kuration",
+    "zh": "校正进度"
+  },
+  "“A journey should feel considered, not assembled.”": {
+    "pt": "“Uma viagem deve ser considerada, não montada.”",
+    "en": "“A journey should feel considered, not assembled.”",
+    "es": "“Un viaje debe sentirse considerado, no montado.”",
+    "fr": "Un voyage doit se sentir considéré, non assemblé.",
+    "de": "\"Eine Reise sollte sich betrachtet fühlen, nicht versammelt.\"",
+    "zh": "“旅程应该被考虑,而不是聚集在一起。”"
+  },
+  "Tier Curation": {
+    "pt": "Curação de Nível",
+    "en": "Tier Curation",
+    "es": "Curación del tier",
+    "fr": "Carrière",
+    "de": "Tier Curation",
+    "zh": "分级曲线"
+  },
+  "• Rascunho para revisão": {
+    "pt": "• Rascunho para revisão",
+    "en": "• Draft for review",
+    "es": "• Proyecto de revisión",
+    "fr": "• Projet pour examen",
+    "de": "• Entwurf zur Überprüfung",
+    "zh": "• 审查草案"
+  },
+  "Edit Brief": {
+    "pt": "Editar Resumo",
+    "en": "Edit Brief",
+    "es": "Editar información",
+    "fr": "Modifier le bref",
+    "de": "Edit Brief",
+    "zh": "编辑简介"
+  },
+  "Share": {
+    "pt": "Partilha",
+    "en": "Share",
+    "es": "Compartir",
+    "fr": "Partager",
+    "de": "Anteil",
+    "zh": "份额"
+  },
+  "dias ·": {
+    "pt": "dias ·",
+    "en": "days ·",
+    "es": "días ·",
+    "fr": "jours",
+    "de": "Tage ·",
+    "zh": "天数 ·"
+  },
+  "noites": {
+    "pt": "noites",
+    "en": "nights",
+    "es": "noches",
+    "fr": "nuits",
+    "de": "Nächte",
+    "zh": "夜 间"
+  },
+  "travellers": {
+    "pt": "viajantes",
+    "en": "travellers",
+    "es": "viajeros",
+    "fr": "voyageurs",
+    "de": "Reisende",
+    "zh": "旅行者"
+  },
+  "Start": {
+    "pt": "Iniciar",
+    "en": "Start",
+    "es": "Comienzo",
+    "fr": "Démarrer",
+    "de": "Beginn",
+    "zh": "开始"
+  },
+  "All Days (": {
+    "pt": "Todos os dias (",
+    "en": "All Days (",
+    "es": "Todos los días (",
+    "fr": "Tous les jours (",
+    "de": "Alle Tage (",
+    "zh": "所有天数( O)"
+  },
+  "Day": {
+    "pt": "Dia",
+    "en": "Day",
+    "es": "Día",
+    "fr": "Jour",
+    "de": "Tag",
+    "zh": "天数"
+  },
+  "Curated by Assistant (Rule Verified)": {
+    "pt": "Curado por Assistente (Regra Verificada)",
+    "en": "Curated by Assistant (Rule Verified)",
+    "es": "Curado por Asistente (Rule Verified)",
+    "fr": "Prévu par un assistant (règle vérifiée)",
+    "de": "Kuratiert von Assistant (Regel verifiziert)",
+    "zh": "助理(经核实)"
+  },
+  "BLU Costa Travel Curation · Intake": {
+    "pt": "Curação de viagens BLU Costa · Intake",
+    "en": "BLU Costa Travel Curation · Intake",
+    "es": "BLU Costa Curación de Viajes · Entrada",
+    "fr": "BLU Costa Travel Curation · Entrée",
+    "de": "BLU Costa Reisekuration · Aufnahme",
+    "zh": "BLU 科斯塔旅行处罚"
+  },
+  "Plan a Considered Journey": {
+    "pt": "Planeje uma viagem considerada",
+    "en": "Plan a Considered Journey",
+    "es": "Planee un Viaje Considerado",
+    "fr": "Planifiez un voyage réfléchi",
+    "de": "Planen Sie eine überlegte Reise",
+    "zh": "计划一个考虑的旅程"
+  },
+  "“Travel is not accumulation. It is interpretation.”": {
+    "pt": "“Viagem não é acumulação. É interpretação.”",
+    "en": "“Travel is not accumulation. It is interpretation.”",
+    "es": "“El viaje no es acumulación. Es interpretación”.",
+    "fr": "Le voyage n'est pas une accumulation. C'est une interprétation.",
+    "de": "\"Reisen ist keine Akkumulation, sondern Interpretation.\"",
+    "zh": "“旅行不是积累,而是解释。”"
+  },
+  "Load Sample Demo Brief": {
+    "pt": "Carregar resumo da demonstração da amostra",
+    "en": "Load Sample Demo Brief",
+    "es": "Demo de muestra de carga",
+    "fr": "Démonstration de l'échantillon de chargement",
+    "de": "Load Sample Demo Brief",
+    "zh": "装入演示文稿"
+  },
+  "Proposal Curation Tier (Rules R33–R44)": {
+    "pt": "Nível de cura da proposta (Regras R33–R44)",
+    "en": "Proposal Curation Tier (Rules R33–R44)",
+    "es": "Tier (Reglas R33-R44)",
+    "fr": "Niveau de protection de la proposition (règles R33 à R44)",
+    "de": "Curation Tier (Regeln R33–R44)",
+    "zh": "估价等级(规则R33-R44)"
+  },
+  "BLU Standard": {
+    "pt": "BLU Standard",
+    "en": "BLU Standard",
+    "es": "BLU Standard",
+    "fr": "Norme BLU",
+    "de": "BLU-Standard",
+    "zh": "BLU 标准"
+  },
+  "Customer Details & Occasion": {
+    "pt": "Detalhes do Cliente & Ocasião",
+    "en": "Customer Details & Occasion",
+    "es": "Detalles del cliente",
+    "fr": "Détails du client et occasion",
+    "de": "Kundendetails & Gelegenheiten",
+    "zh": "客户详细情况( E)"
+  },
+  "Customer / Group Name": {
+    "pt": "Nome do Cliente / Grupo",
+    "en": "Customer / Group Name",
+    "es": "Nombre del cliente / Grupo",
+    "fr": "Nom du client / du groupe",
+    "de": "Kunde / Gruppenname",
+    "zh": "客户/ 组名"
+  },
+  "Special Occasion (R04)": {
+    "pt": "Ocasião especial (R04)",
+    "en": "Special Occasion (R04)",
+    "es": "Ocasión especial (R04)",
+    "fr": "Occasion spéciale (R04)",
+    "de": "Besondere Gelegenheit (R04)",
+    "zh": "特殊情况(R04)"
+  },
+  "Adults": {
+    "pt": "Adultos",
+    "en": "Adults",
+    "es": "Adultos",
+    "fr": "Adultes",
+    "de": "Erwachsene",
+    "zh": "成年人"
+  },
+  "Children": {
+    "pt": "Crianças",
+    "en": "Children",
+    "es": "Niños",
+    "fr": "Enfants",
+    "de": "Kinder",
+    "zh": "儿童"
+  },
+  "Children Ages (if any)": {
+    "pt": "Crianças Idades (se houver)",
+    "en": "Children Ages (if any)",
+    "es": "Edades de los niños (si las hay)",
+    "fr": "Enfants Âge (le cas échéant)",
+    "de": "Alter der Kinder (falls vorhanden)",
+    "zh": "儿童年龄(如果有)"
+  },
+  "Trip Routing & Regional Scale": {
+    "pt": "Roteamento de viagem e escala regional",
+    "en": "Trip Routing & Regional Scale",
+    "es": "Viaje Routing &quot; Escala Regional",
+    "fr": "Routage des voyages et échelle régionale",
+    "de": "Trip Routing & Regional Scale",
+    "zh": "Trip Routing 区域规模( R)"
+  },
+  "Destination Region": {
+    "pt": "Região de Destino",
+    "en": "Destination Region",
+    "es": "Región",
+    "fr": "Région de destination",
+    "de": "Bestimmungsgebiet",
+    "zh": "目标区域"
+  },
+  "Start Date": {
+    "pt": "Data de início",
+    "en": "Start Date",
+    "es": "Fecha de inicio",
+    "fr": "Date de début",
+    "de": "Startdatum",
+    "zh": "开始日期"
+  },
+  "End Date": {
+    "pt": "Data de Fim",
+    "en": "End Date",
+    "es": "Fecha final",
+    "fr": "Date de fin",
+    "de": "Enddatum",
+    "zh": "结束日期"
+  },
+  "Arrival Airport / Point": {
+    "pt": "Aeroporto de Chegada / Ponto",
+    "en": "Arrival Airport / Point",
+    "es": "Aeropuerto de llegada / punto",
+    "fr": "Aéroport d'arrivée / Point",
+    "de": "Ankunftsflughafen / Point",
+    "zh": "抵达机场/点"
+  },
+  "Departure Airport / Point": {
+    "pt": "Aeroporto de partida / Ponto",
+    "en": "Departure Airport / Point",
+    "es": "Aeropuerto de salida / Punto",
+    "fr": "Aéroport de départ / Point",
+    "de": "Abflughafen / Point",
+    "zh": "出发机场/点"
+  },
+  "Budget & Curatorial Focus": {
+    "pt": "Orçamento e foco curatorial",
+    "en": "Budget & Curatorial Focus",
+    "es": "Presupuesto &quot; Enfoque curatorial &quot;",
+    "fr": "Objectif budgétaire et curatoire",
+    "de": "Budget & Kuratorischer Fokus",
+    "zh": "预算和目录焦点"
+  },
+  "Approximate Total Budget": {
+    "pt": "Orçamento Total aproximado",
+    "en": "Approximate Total Budget",
+    "es": "Presupuesto total aproximado",
+    "fr": "Budget total approximatif",
+    "de": "Angemessenes Gesamtbudget",
+    "zh": "预算总额"
+  },
+  "Currency": {
+    "pt": "Moeda",
+    "en": "Currency",
+    "es": "Moneda",
+    "fr": "Monnaie",
+    "de": "Währung",
+    "zh": "货币"
+  },
+  "Themes & Narrative Elements": {
+    "pt": "Temas & Elementos narrativos",
+    "en": "Themes & Narrative Elements",
+    "es": "Temas &quot; Elementos narrativos &quot;",
+    "fr": "Thèmes & Éléments narratifs",
+    "de": "Themen & Narrative Elemente",
+    "zh": "主题和叙述元素"
+  },
+  "Travel Pace (Thoughtfully Paced)": {
+    "pt": "Pace de viagem (Pensei bem)",
+    "en": "Travel Pace (Thoughtfully Paced)",
+    "es": "Pace de viaje (aproximadamente Pacto)",
+    "fr": "Pace de voyage (Pensée)",
+    "de": "Reisegeschwindigkeit (Thoughtfully Paced)",
+    "zh": "旅行佩斯(深思熟虑)"
+  },
+  "Preferred Accommodation Standard": {
+    "pt": "Padrão de Alojamento Preferido",
+    "en": "Preferred Accommodation Standard",
+    "es": "Norma de alojamiento preferente",
+    "fr": "Norme d'hébergement préférée",
+    "de": "Bevorzugter Unterkunftsstandard",
+    "zh": "首选住宿标准"
+  },
+  "Restrictions & Curation Constraints (Rules R01–R51)": {
+    "pt": "Restrições e restrições de cura (Regras R01–R51)",
+    "en": "Restrictions & Curation Constraints (Rules R01–R51)",
+    "es": "Restrictions &quot; Curation Constraints (Rules R01–R51)",
+    "fr": "Restrictions et contraintes de protection (règles R01–R51)",
+    "de": "Einschränkungen und Kurationsbeschränkungen (Regeln R01–R51)",
+    "zh": "限制和限制(规则R01-R51)"
+  },
+  "Physical Effort & Mobility Constraints (Rule R15–R17)": {
+    "pt": "Restrições ao esforço físico e à mobilidade (artigo R15–R17)",
+    "en": "Physical Effort & Mobility Constraints (Rule R15–R17)",
+    "es": "Constraints de Movilidad Física (Regla R15–R17)",
+    "fr": "Contraintes en matière d'effort physique et de mobilité (règle R15–R17)",
+    "de": "Einschränkungen der körperlichen Anstrengung und Mobilität (Regel R15-R17)",
+    "zh": "物质努力和流动限制(规则R15-R17)"
+  },
+  "Strict Safety": {
+    "pt": "Segurança Estrita",
+    "en": "Strict Safety",
+    "es": "Seguridad estricta",
+    "fr": "Sécurité stricte",
+    "de": "Strenge Sicherheit",
+    "zh": "严格安全性"
+  },
+  "Physical Effort Tolerance (Esforço Físico)": {
+    "pt": "Tolerância ao Esforço Físico",
+    "en": "Physical Effort Tolerance (Esforço Físico)",
+    "es": "Tolerancia Físico (Esforço Físico)",
+    "fr": "Tolérance à l'effort physique (Esforço Físico)",
+    "de": "Körperliche Anstrengung Toleranz (Esforço Físico)",
+    "zh": "物质容忍"
+  },
+  "Baixo: Flat walking, level access, chauffeured transfers directly to viewpoints (eliminates steep stair ascents in Lisbon/Sintra).": {
+    "pt": "Baixo: Caminhada plana, acesso ao nível, transferências de chofer directamente para miradouros (elimina subidas de escadas íngremes em Lisboa/Sintra).",
+    "en": "Baixo: Flat walking, level access, chauffeured transfers directly to viewpoints (eliminates steep stair ascents in Lisbon/Sintra).",
+    "es": "Baixo: Caminata plana, acceso a nivel, traslados con chófer directamente a puntos de vista (elimina empinados ascensos de escalera en Lisboa/Sintra).",
+    "fr": "Baixo: marche à plat, accès à niveau, transferts chauffeurs directement vers les points de vue (supprime les ascensions raides de l'escalier à Lisbonne/Sintra).",
+    "de": "Baixo: Flaches Gehen, ebener Zugang, Chauffeurtransfers direkt zu Aussichtspunkten (beseitigt steile Treppenbesteigungen in Lissabon/Sintra).",
+    "zh": "Baixo:平坦步行,平面出入,司机直接转到视线(消除里斯本/辛特拉的陡峭楼梯升降)."
+  },
+  "Specific Mobility Needs & Terrain Adjustments": {
+    "pt": "Necessidades específicas de mobilidade e ajustes do solo",
+    "en": "Specific Mobility Needs & Terrain Adjustments",
+    "es": "Necesidades específicas de movilidad",
+    "fr": "Besoins spécifiques en matière de mobilité et ajustements du terrain",
+    "de": "Spezifische Mobilitätsbedürfnisse und Geländeanpassungen",
+    "zh": "具体流动需要和地形调整"
+  },
+  "Dietary Allergies & Dining Requirements (Rule R02, R04)": {
+    "pt": "Alergias dietéticas e requisitos de refeições (artigo R02, R04)",
+    "en": "Dietary Allergies & Dining Requirements (Rule R02, R04)",
+    "es": "Requisitos dietéticos para comer (regla R02, R04)",
+    "fr": "Allergies alimentaires et exigences en matière de repas (règle R02, R04)",
+    "de": "Diätetische Allergien & Dining Anforderungen (Regel R02, R04)",
+    "zh": "饮食过敏和饮食要求(规则R02,R04)"
+  },
+  "Allergen Protocol": {
+    "pt": "Protocolo de Alergen",
+    "en": "Allergen Protocol",
+    "es": "Protocolo de Allergen",
+    "fr": "Protocole sur les allergènes",
+    "de": "Allergenprotokoll",
+    "zh": "过敏原议定书"
+  },
+  "Dietary Restrictions & Allergens (Cross-checks Restaurant Database)": {
+    "pt": "Restrições dietéticas & Alergens (Cross-checks Restaurant Database)",
+    "en": "Dietary Restrictions & Allergens (Cross-checks Restaurant Database)",
+    "es": "Restricciones dietéticas &quot; Alérgenos (Cross-checks Restaurant Database)",
+    "fr": "Restrictions alimentaires et allergènes (Cross-checks Restaurant Database)",
+    "de": "Diätetische Einschränkungen & Allergene (Cross-Checks Restaurant Datenbank)",
+    "zh": "饮食限制和过敏(检查餐厅数据库)"
+  },
+  "Dining Pace & Table Duration": {
+    "pt": "Pace de jantar & Tabela Duração",
+    "en": "Dining Pace & Table Duration",
+    "es": "Pace de comedor &quot; Duración de la mesa",
+    "fr": "Pace à manger et durée de la table",
+    "de": "Essen Tempo & Tisch Dauer",
+    "zh": "日记纸片持续时间( T)"
+  },
+  "Daily Rhythm & Explicit Exclusions (Rule R03, R05)": {
+    "pt": "Ritmo diário & Exclusões explícitas (artigo R03, R05)",
+    "en": "Daily Rhythm & Explicit Exclusions (Rule R03, R05)",
+    "es": "Exclusiones diarias de Rhythm &amp; Explicit (Rule R03, R05)",
+    "fr": "Rhythme quotidien et exclusions explicites (règle R03, R05)",
+    "de": "Daily Rhythm & Explicit Exclusions (Regel R03, R05)",
+    "zh": "每日节奏和明确排除(规则R03、R05)"
+  },
+  "Morning Start Preference (Horários e Hábitos Pessoais)": {
+    "pt": "Preferência de início da manhã (Horários e Hábitos Pessoais)",
+    "en": "Morning Start Preference (Horários e Hábitos Pessoais)",
+    "es": "(Horários e Hábitos Pessoais)",
+    "fr": "Préférence de départ matinale (Horários et Hábitos Pessoais)",
+    "de": "Präferenz für den Morgenanfang (Horários e Hábitos Pessoais)",
+    "zh": "上午开始首选(Horários e Hábitos Pessoais)"
+  },
+  "Atividades Expressamente Indesejadas (Do Not Propose)": {
+    "pt": "Atividades Expressamente Indesejadas (Do Not Propose)",
+    "en": "Expressly Undesired Activities (Do Not Purpose)",
+    "es": "Actividades expresamente no deseadas (No Propósito)",
+    "fr": "Activités expressément indésirables (ne pas viser)",
+    "de": "Ausdrücklich unerwünschte Aktivitäten (nicht Zweck)",
+    "zh": "明显不希望的活动(目的不明)"
+  },
+  "Curator Perspective & Personal Nuances": {
+    "pt": "Perspectiva do Curador e Nuâncias Pessoais",
+    "en": "Curator Perspective & Personal Nuances",
+    "es": "Curador Perspectiva &quot; Personal Nuances",
+    "fr": "Perspective du conservateur et Nuances personnelles",
+    "de": "Kurator Perspektive & persönliche Nuancen",
+    "zh": "浏览器视角和个人努恩斯"
+  },
+  "Cancel": {
+    "pt": "Cancelar",
+    "en": "Cancel",
+    "es": "Cancelar",
+    "fr": "Annuler",
+    "de": "Stornierung",
+    "zh": "取消"
+  },
+  "Curate Proposal (": {
+    "pt": "Proposta de curadoria (",
+    "en": "Curate Proposal (",
+    "es": "Curate Proposal (Curate Proposal)",
+    "fr": "Proposition de programme (",
+    "de": "Kuratenvorschlag ()",
+    "zh": "Curate 提案("
+  },
+  "Tier)": {
+    "pt": "Nível)",
+    "en": "Tier)",
+    "es": "Tier)",
+    "fr": "Niveau)",
+    "de": "Ebene",
+    "zh": "等级)"
+  },
+  "Travel Curation": {
+    "pt": "Curação de Viagens",
+    "en": "Travel Curation",
+    "es": "Curación de viajes",
+    "fr": "Frais de voyage",
+    "de": "Reisekuratation",
+    "zh": "旅行限制"
+  },
+  "Portugal · Studio": {
+    "pt": "Portugal · Estúdio",
+    "en": "Portugal · Studio",
+    "es": "Portugal · Estudio",
+    "fr": "Portugal · Studio",
+    "de": "Portugal · Studio",
+    "zh": "葡萄牙 工作室"
+  },
+  "New Trip Brief": {
+    "pt": "Nova viagem",
+    "en": "New Trip Brief",
+    "es": "Nuevo viaje",
+    "fr": "Nouveau voyage",
+    "de": "Neue Reise",
+    "zh": "新建旅行"
+  },
+  "Recent Journeys": {
+    "pt": "Viagens Recentes",
+    "en": "Recent Journeys",
+    "es": "Viajes recientes",
+    "fr": "Voyages récents",
+    "de": "Jüngste Reisen",
+    "zh": "最近的旅行"
+  },
+  "Curated with Care": {
+    "pt": "Curado com Cuidado",
+    "en": "Curated with Care",
+    "es": "Curada con cuidado",
+    "fr": "Avec soin",
+    "de": "Kuratiert mit Care",
+    "zh": "治疗"
+  },
+  "RNAAT Registered · 26/2026": {
+    "pt": "RNAAT registado · 26/2026",
+    "en": "RNAAT Registered · 26/2026",
+    "es": "RNAAT Registrado · 26/2026",
+    "fr": "RNAAT enregistré · 26/2026",
+    "de": "RNAAT registriert · 26/2026",
+    "zh": "RNAAT 登记 26/2026"
+  },
+  "Lisbon HQ · Portugal": {
+    "pt": "Lisboa HQ · Portugal",
+    "en": "Lisbon HQ · Portugal",
+    "es": "Sede de Lisboa · Portugal",
+    "fr": "Quartier général de Lisbonne · Portugal",
+    "de": "Lissabon HQ · Portugal",
+    "zh": "葡萄牙 里斯本总部"
+  },
+  "Algorithm Verified": {
+    "pt": "Algoritmo Verificado",
+    "en": "Algorithm Verified",
+    "es": "Algoritm Verified",
+    "fr": "Algorithme vérifié",
+    "de": "Algorithmus verifiziert",
+    "zh": "算法验证"
+  },
+  "m buffer": {
+    "pt": "m buffer",
+    "en": "m buffer",
+    "es": "m buffer",
+    "fr": "m tampon",
+    "de": "m Puffer",
+    "zh": "m 缓冲"
+  },
+  "Stippl-Style Dislocation Leg": {
+    "pt": "Perna de Deslocamento do Estilo",
+    "en": "Stippl-Style Dislocation Leg",
+    "es": "Stippl-Style Dislocation Leg",
+    "fr": "Jambe de dislocation Stippl-Style",
+    "de": "Stippl-Style Dislokation Leg",
+    "zh": "Stipl- Style 离队腿"
+  },
+  "Routing Algorithm Inspector": {
+    "pt": "Inspector de Algoritmo de Rotação",
+    "en": "Routing Algorithm Inspector",
+    "es": "Routing Algorithm Inspector",
+    "fr": "Inspecteur de l'algorithme",
+    "de": "Routing Algorithmus Inspector",
+    "zh": "轨道算法检查员"
+  },
+  "From:": {
+    "pt": "De:",
+    "en": "From:",
+    "es": "De:",
+    "fr": "Depuis :",
+    "de": "Von:",
+    "zh": "发件人:"
+  },
+  "To:": {
+    "pt": "Para:",
+    "en": "To:",
+    "es": "A:",
+    "fr": "Pour :",
+    "de": "An:",
+    "zh": "改为:"
+  },
+  "Routing Optimization Rationale": {
+    "pt": "Roteamento Otimização Racional",
+    "en": "Routing Optimization Rationale",
+    "es": "Rationale de optimización de rutina",
+    "fr": "Justification de l'optimisation du routage",
+    "de": "Routing Optimierung Rationale",
+    "zh": "运行优化理由"
+  },
+  "BLU Rules Compliant": {
+    "pt": "Regras BLU Compliant",
+    "en": "BLU Rules Compliant",
+    "es": "BLU Rules Compliant",
+    "fr": "Règles BLU conformes",
+    "de": "BLU Rules konform",
+    "zh": "BLU 规则"
+  },
+  "Terrain & Mobility Evaluation (Rule R15)": {
+    "pt": "Avaliação do Terreno e Mobilidade (Regra R15)",
+    "en": "Terrain & Mobility Evaluation (Rule R15)",
+    "es": "Evaluación de la movilidad (Regla R15)",
+    "fr": "Évaluation du terrain et de la mobilité (règle R15)",
+    "de": "Terrain & Mobility Evaluation (Regel R15)",
+    "zh": "地形和流动评价(规则R15)"
+  },
+  "Traffic Buffer & Pacing (Rule R01, R03)": {
+    "pt": "Buffer & Pacing (Regra R01, R03)",
+    "en": "Traffic Buffer & Pacing (Rule R01, R03)",
+    "es": "Buffer de tráfico &quot; Pacing (Rule R01, R03)",
+    "fr": "Buffer et Paçage de la circulation (règle R01, R03)",
+    "de": "Traffic Buffer & Pacing (Regel R01, R03)",
+    "zh": "交通缓冲和缓冲(规则R01,R03)"
+  },
+  "Added +": {
+    "pt": "Adicionado +",
+    "en": "Added +",
+    "es": "Añadido +",
+    "fr": "Ajouté +",
+    "de": "Hinzugefügt +",
+    "zh": "已添加 +"
+  },
+  "min safety buffer to safeguard restaurant table reservation time and relaxed dining rhythm.": {
+    "pt": "Min buffer de segurança para salvaguardar o tempo de reserva da mesa do restaurante e o ritmo de jantar relaxado.",
+    "en": "min safety buffer to safeguard restaurant table reservation time and relaxed dining rhythm.",
+    "es": "men de seguridad buffer para salvaguardar el tiempo de reserva de mesa restaurante y el ritmo de comedor relajado.",
+    "fr": "min tampon de sécurité pour protéger le temps de réservation de table de restaurant et rythme de restauration détendu.",
+    "de": "min Sicherheitspuffer, um die Reservierungszeit für den Restauranttisch und den entspannten Speiserhythmus zu sichern.",
+    "zh": "分钟安全缓冲器,以保障餐厅餐桌预定时间和放松餐厅节奏."
+  },
+  "Curatorial Scenery Layer": {
+    "pt": "Camada de Cenários Curatoriais",
+    "en": "Curatorial Scenery Layer",
+    "es": "Curatorial Scenery Layer",
+    "fr": "Calque scénique curatoire",
+    "de": "Kuratorische Landschaftsschicht",
+    "zh": "曲线扫描层"
+  },
+  "Modality": {
+    "pt": "Modalidade",
+    "en": "Modality",
+    "es": "Modalidad",
+    "fr": "Modalités",
+    "de": "Modalität",
+    "zh": "模式"
+  },
+  "Transfer Time": {
+    "pt": "Tempo de Transferência",
+    "en": "Transfer Time",
+    "es": "Tiempo de transferencia",
+    "fr": "Temps de transfert",
+    "de": "Übertragungszeit",
+    "zh": "传输时间"
+  },
+  "Safety Buffer": {
+    "pt": "Tampão de Segurança",
+    "en": "Safety Buffer",
+    "es": "Buffer de seguridad",
+    "fr": "Bouffer de sécurité",
+    "de": "Sicherheitspuffer",
+    "zh": "安全缓冲"
+  },
+  "m": {
+    "pt": "m",
+    "en": "m",
+    "es": "m",
+    "fr": "m",
+    "de": "m",
+    "zh": "页:1"
+  },
+  "Computed by BLU Logistics Routing Engine": {
+    "pt": "Computado pela BLU Logistics Routing Engine",
+    "en": "Computed by BLU Logistics Routing Engine",
+    "es": "Computed by BLU Logistics Routing Engine",
+    "fr": "Calculé par le moteur de routage logistique BLU",
+    "de": "Berechnet von BLU Logistics Routing Engine",
+    "zh": "由BLU物流运行引擎计算"
+  },
+  "Done": {
+    "pt": "Feito",
+    "en": "Done",
+    "es": "Hecho",
+    "fr": "Fait",
+    "de": "Geschehen",
+    "zh": "写好了"
+  },
+  "Propostas preliminares · Versões guardadas no servidor local · Sem reservas ou preços finais confirmados.": {
+    "pt": "Propostas preliminares · Versões guardadas no servidor local · Sem reservas ou preços finais confirmados.",
+    "en": "Preliminary proposals · Versions stored on the local server · No reservations or final prices confirmed.",
+    "es": "Propuestas preliminares · Versiones almacenadas en el servidor local · No se han confirmado reservas ni precios finales.",
+    "fr": "Propositions préliminaires · Versions stockées sur le serveur local · Aucune réservation ou prix final confirmés.",
+    "de": "Vorläufige Vorschläge · Versionen auf dem lokalen Server · Keine Reservierungen oder Endpreise bestätigt.",
+    "zh": "初步提案 地方服务器上存储的版本 未确认保留或最终价格。"
+  },
+  "Consultar propostas históricas e divergências do catálogo": {
+    "pt": "Consultar propostas históricas e divergências do catálogo",
+    "en": "See historical proposals and catalogue differences",
+    "es": "Ver propuestas históricas y diferencias de catálogo",
+    "fr": "Voir les propositions historiques et les différences de catalogue",
+    "de": "Sehen Sie historische Vorschläge und Katalogunterschiede",
+    "zh": "见历史提案和目录差异"
+  },
+  "Histórico de versões e PDFs de todas as viagens": {
+    "pt": "Histórico de versões e PDFs de todas as viagens",
+    "en": "Version history and PDFs of all trips",
+    "es": "Historia de la versión y PDF de todos los viajes",
+    "fr": "Historique des versions et PDF de tous les voyages",
+    "de": "Versionshistorie und PDFs aller Reisen",
+    "zh": "所有旅行的版本历史和PDF"
+  },
+  "A consultar o catálogo e aplicar os critérios de curadoria…": {
+    "pt": "A consultar o catálogo e aplicar os critérios de curadoria…",
+    "en": "Consulting the catalog and applying the curated criteria...",
+    "es": "Consultar el catálogo y aplicar los criterios curados...",
+    "fr": "Consultation du catalogue et application des critères curés...",
+    "de": "Beratung des Katalogs und Anwendung der kuratierten Kriterien...",
+    "zh": "咨询目录 并应用 整理的标准..."
+  },
+  "A carregar viagens guardadas…": {
+    "pt": "A carregar viagens guardadas…",
+    "en": "Loading safe trips...",
+    "es": "Cargando viajes seguros...",
+    "fr": "Chargement en lieu sûr...",
+    "de": "Sichere Fahrten laden...",
+    "zh": "正在装入安全旅行..."
+  },
+  "Versões guardadas ·": {
+    "pt": "Versões guardadas ·",
+    "en": "Saved versions ·",
+    "es": "Versiones guardadas ·",
+    "fr": "Versions sauvegardées ·",
+    "de": "Gespeicherte Versionen ·",
+    "zh": "保存的版本..."
+  },
+  "Reabrir última versão guardada": {
+    "pt": "Reabrir última versão guardada",
+    "en": "Reopen last saved version",
+    "es": "Reabrir la última versión guardada",
+    "fr": "Réouvrir la dernière version enregistrée",
+    "de": "Letzte gespeicherte Version öffnen",
+    "zh": "重新打开上次保存的版本"
+  },
+  "A guardar nova versão…": {
+    "pt": "A guardar nova versão…",
+    "en": "Saving new version...",
+    "es": "Salvando nueva versión...",
+    "fr": "Enregistrer une nouvelle version...",
+    "de": "Neue Version speichern...",
+    "zh": "正在保存新版本..."
+  },
+  "Confirmações pendentes": {
+    "pt": "Confirmações pendentes",
+    "en": "Confirmations pending",
+    "es": "Confirmaciones pendientes",
+    "fr": "Confirmations en attente",
+    "de": "Anhängige Bestätigungen",
+    "zh": "待确认"
+  },
+  "Voltar ao workspace": {
+    "pt": "Voltar ao workspace",
+    "en": "Back to workspace",
+    "es": "Volver al espacio de trabajo",
+    "fr": "Retour à l'espace de travail",
+    "de": "Zurück zum Workspace",
+    "zh": "回到工作区"
+  },
+  "Histórico de versões dos roteiros": {
+    "pt": "Histórico de versões dos roteiros",
+    "en": "Version history of scripts",
+    "es": "Historia de la versión de scripts",
+    "fr": "Historique des versions des scripts",
+    "de": "Versionshistorie der Skripte",
+    "zh": "脚本的版本历史"
+  },
+  "Cada versão preserva o roteiro desse momento. Exportar novamente mantém o PDF original.": {
+    "pt": "Cada versão preserva o roteiro desse momento. Exportar novamente mantém o PDF original.",
+    "en": "Each version preserves the script of this moment. Exporting again keeps the original PDF.",
+    "es": "Cada versión conserva el script de este momento. Exportar de nuevo mantiene el PDF original.",
+    "fr": "Chaque version conserve le script de ce moment. Exporter à nouveau conserve le PDF original.",
+    "de": "Jede Version bewahrt das Skript dieses Moments. Exportieren behält wieder das Original-PDF.",
+    "zh": "每个版本都保留了这个时刻的脚本。导出再次保留了原始的PDF 。"
+  },
+  "Ainda não existem versões guardadas.": {
+    "pt": "Ainda não existem versões guardadas.",
+    "en": "There are no saved versions yet.",
+    "es": "Aún no hay versiones guardadas.",
+    "fr": "Il n'y a pas encore de version enregistrée.",
+    "de": "Es gibt noch keine gespeicherten Versionen.",
+    "zh": "目前还没有保存的版本 。"
+  },
+  "Descarregar PDF": {
+    "pt": "Descarregar PDF",
+    "en": "Download PDF",
+    "es": "Descargar PDF",
+    "fr": "Télécharger le PDF",
+    "de": "Download PDF",
+    "zh": "下载 PDF"
+  },
+  "Consultar conteúdo guardado": {
+    "pt": "Consultar conteúdo guardado",
+    "en": "Query saved content",
+    "es": "Buscar contenido guardado",
+    "fr": "Demande de contenu enregistré",
+    "de": "Abfrage gespeicherter Inhalt",
+    "zh": "查询保存的内容"
+  },
+  "Referências indisponíveis. Execute o ETL para importar o dataset complementar.": {
+    "pt": "Referências indisponíveis. Execute o ETL para importar o dataset complementar.",
+    "en": "Unavailable references. Run ETL to import the additional dataset.",
+    "es": "Referencias no disponibles. Ejecute ETL para importar el conjunto de datos adicional.",
+    "fr": "Exécutez ETL pour importer l'ensemble de données supplémentaires.",
+    "de": "Nicht verfügbare Referenzen: Führen Sie ETL aus, um den zusätzlichen Datensatz zu importieren.",
+    "zh": "无法获取引用。 运行 ETL 以导入附加数据集 。"
+  },
+  "Referências históricas": {
+    "pt": "Referências históricas",
+    "en": "Historical references",
+    "es": "Referencias históricas",
+    "fr": "Références historiques",
+    "de": "Historische Referenzen",
+    "zh": "历史参考资料"
+  },
+  "Fonte: structured_dataset.xlsx ·": {
+    "pt": "Fonte: structured_dataset.xlsx ·",
+    "en": "Source: structured dataset.xlsx ·",
+    "es": "Fuente: conjunto de datos estructurado.xlsx ·",
+    "fr": "Source: ensemble de données structuré.xlsx ·",
+    "de": "Quelle: Strukturierte dataset.xlsx ·",
+    "zh": "资料来源:结构化数据集.xlsx -"
+  },
+  "roteiros ·": {
+    "pt": "roteiros ·",
+    "en": "scripts ·",
+    "es": "scripts ·",
+    "fr": "scripts ·",
+    "de": "Skripte ·",
+    "zh": "脚本..."
+  },
+  "preços históricos.": {
+    "pt": "preços históricos.",
+    "en": "historical prices.",
+    "es": "precios históricos.",
+    "fr": "prix historiques.",
+    "de": "historische Preise.",
+    "zh": "历史价格。"
+  },
+  "Estas propostas não comprovam reservas, disponibilidade ou tarifas atuais. Não entram automaticamente no itinerário nem no orçamento do cliente.": {
+    "pt": "Estas propostas não comprovam reservas, disponibilidade ou tarifas atuais. Não entram automaticamente no itinerário nem no orçamento do cliente.",
+    "en": "These proposals do not prove current reservations, availability or tariffs. They do not automatically enter the itinerary or customer budget.",
+    "es": "Estas propuestas no prueban reservas, disponibilidad o tarifas actuales. No entran automáticamente en el itinerario o presupuesto del cliente.",
+    "fr": "Ces propositions ne prouvent pas les réservations, la disponibilité ou les tarifs actuels. Elles ne saisissent pas automatiquement l'itinéraire ou le budget du client.",
+    "de": "Diese Vorschläge belegen nicht die derzeitigen Vorbehalte, Verfügbarkeiten oder Tarife, sie gehen nicht automatisch in den Reiseplan oder das Kundenbudget ein.",
+    "zh": "这些建议不能证明目前的保留、可用性或收费,也不能自动输入行程或客户预算。"
+  },
+  "Divergências do catálogo para revisão (": {
+    "pt": "Divergências do catálogo para revisão (",
+    "en": "Catalogue differences for revision (",
+    "es": "Diferencias de catálogo para la revisión (",
+    "fr": "Différences de catalogue pour la révision (",
+    "de": "Katalogdifferenzen zur Revision ()",
+    "zh": "修订目录差异( A)"
+  },
+  ": mantido «": {
+    "pt": ": mantido «",
+    "en": ": maintained '",
+    "es": ": mantenido '",
+    "fr": ": maintenu '",
+    "de": ": beibehalten",
+    "zh": ": 维护 '"
+  },
+  "»; alternativa «": {
+    "pt": "»; alternativa «",
+    "en": "'; alternative '",
+    "es": "'; alternativa '",
+    "fr": "'; alternative '",
+    "de": "\"; Alternative\"",
+    "zh": "'; 备选案文 '"
+  },
+  ", linha": {
+    "pt": ", linha",
+    "en": ", line",
+    "es": ", línea",
+    "fr": "Ligne",
+    "de": ", Linie",
+    "zh": "线条"
+  },
+  ", página": {
+    "pt": ", página",
+    "en": ", page",
+    "es": ", página",
+    "fr": ", page",
+    "de": ", Seite",
+    "zh": "页面"
+  },
+  "Menções documentadas": {
+    "pt": "Menções documentadas",
+    "en": "Documented mentions",
+    "es": "Menciones documentadas",
+    "fr": "Mention documentée",
+    "de": "Dokumentierte Erwähnungen",
+    "zh": "有记录提到"
+  },
+  "Preços históricos — confirmar vigência e inclusões": {
+    "pt": "Preços históricos — confirmar vigência e inclusões",
+    "en": "Historical prices — confirm duration and inclusions",
+    "es": "Precios históricos - confirmar la duración e inclusiones",
+    "fr": "Prix historiques — confirmer la durée et les inclusions",
+    "de": "Historische Preise - bestätigen Dauer und Einschlüsse",
+    "zh": "历史价格——确认期限和列入"
+  },
+  "Idioma do cliente (PDF)": {
+    "pt": "Idioma do cliente (PDF)",
+    "en": "Customer language (PDF)",
+    "es": "Idioma del cliente (PDF)",
+    "fr": "Langue du client (PDF)",
+    "de": "Kundensprache (PDF)",
+    "zh": "客户语言（PDF）"
+  },
+  "Inclui sempre a versão em português. Os dois PDFs são descarregados num ZIP.": {
+    "pt": "Inclui sempre a versão em português. Os dois PDFs são descarregados num ZIP.",
+    "en": "It always includes the Portuguese version. The two PDFs are downloaded in a ZIP.",
+    "es": "Siempre incluye la versión portuguesa. Los dos PDFs se descargan en un ZIP.",
+    "fr": "Il inclut toujours la version portugaise. Les deux PDF sont téléchargés dans un ZIP.",
+    "de": "Es enthält immer die portugiesische Version. Die beiden PDFs werden in einem ZIP heruntergeladen.",
+    "zh": "它总是包括葡萄牙文版本,两个PDF以ZIP下载."
+  },
+  "Descarregar PDFs": {
+    "pt": "Descarregar PDFs",
+    "en": "Download PDFs",
+    "es": "Descargar PDF",
+    "fr": "Télécharger les PDF",
+    "de": "PDFs herunterladen",
+    "zh": "下载 PDF"
+  },
+  "e.g. Sarah & James": {
+    "pt": "Por exemplo, Sarah & James",
+    "en": "e.g. Sarah & James",
+    "es": "por ejemplo Sarah &amp; James",
+    "fr": "Par exemple, Sarah et James",
+    "de": "z. B. Sarah & James",
+    "zh": "例如,萨拉和詹姆斯"
+  },
+  "e.g. 10th Anniversary": {
+    "pt": "Por exemplo, 10o Aniversário",
+    "en": "e.g. 10th Anniversary",
+    "es": "por ejemplo 10o aniversario",
+    "fr": "10e anniversaire",
+    "de": "z. B. 10. Jahrestag",
+    "zh": "譬如说. 10纪念日"
+  },
+  "e.g. 8 and 11": {
+    "pt": "Por exemplo, 8 e 11",
+    "en": "e.g. 8 and 11",
+    "es": "por ejemplo, 8 y 11",
+    "fr": "8 et 11 par exemple",
+    "de": "z.B. 8 und 11",
+    "zh": "例如,8和11"
+  },
+  "e.g. Portugal (Lisbon, Douro, Porto)": {
+    "pt": "Por exemplo, Portugal (Lisboa, Douro, Porto)",
+    "en": "e.g. Portugal (Lisbon, Douro, Porto)",
+    "es": "por ejemplo Portugal (Lisboa, Douro, Oporto)",
+    "fr": "Portugal (Lisbonne, Douro, Porto)",
+    "de": "z. B. Portugal (Lissabon, Douro, Porto)",
+    "zh": "例如葡萄牙(里斯本、杜罗、波尔图)"
+  },
+  "e.g. Lisbon Humberto Delgado Airport (LIS)": {
+    "pt": "Por exemplo, Aeroporto de Lisboa Humberto Delgado (LIS)",
+    "en": "e.g. Lisbon Humberto Delgado Airport (LIS)",
+    "es": "por ejemplo, Aeropuerto de Lisboa Humberto Delgado (LIS)",
+    "fr": "Par exemple, l'aéroport de Lisbonne Humberto Delgado (LIS)",
+    "de": "Flughafen Lissabon Humberto Delgado (LIS)",
+    "zh": "例如,里斯本·汉伯托·德尔加多机场"
+  },
+  "e.g. Porto Francisco Sá Carneiro Airport (OPO)": {
+    "pt": "Por exemplo, Aeroporto de Porto Francisco Sá Carneiro (OPO)",
+    "en": "e.g. Porto Francisco Sá Carneiro Airport (OPO)",
+    "es": "e.g. Porto Francisco Sá Carneiro Airport (OPO)",
+    "fr": "Par exemple, l'aéroport de Porto Francisco Sá Carneiro (OPO)",
+    "de": "Flughafen Porto Francisco Sá Carneiro (OPO)",
+    "zh": "例如,弗朗西斯科·萨内罗港机场(OPO)"
+  },
+  "Nuances, customer personality, travel memories...": {
+    "pt": "Nuances, personalidade do cliente, memórias de viagem...",
+    "en": "Nuances, customer personality, travel memories...",
+    "es": "Nuances, personalidad del cliente, memorias de viaje...",
+    "fr": "Nuances, personnalité du client, souvenirs de voyage...",
+    "de": "Nuancen, Kundenpersönlichkeit, Reiseerinnerungen...",
+    "zh": "纽斯 顾客个性 旅行记忆..."
+  },
+  "Culture & Heritage": {
+    "pt": "Cultura e património",
+    "en": "Culture & Heritage",
+    "es": "Cultura y Patrimonio",
+    "fr": "Culture & Patrimoine",
+    "de": "Kultur und Erbe",
+    "zh": "文化和遗产"
+  },
+  "Gastronomy & Petiscos": {
+    "pt": "Gastronomia e Petiscos",
+    "en": "Gastronomy & Petiscos",
+    "es": "Gastronomía &amp; Petiscos",
+    "fr": "Gastronomie & Petiscos",
+    "de": "Gastronomie & Petiscos",
+    "zh": "胃和小肠"
+  },
+  "Douro & Alentejo Wines": {
+    "pt": "Vinhos do Douro & Alentejo",
+    "en": "Douro & Alentejo Wines",
+    "es": "Vinos Douro & Alentejo",
+    "fr": "Vins Douro & Alentejo",
+    "de": "Douro & Alentejo Weine",
+    "zh": "杜罗和阿伦特霍葡萄酒"
+  },
+  "Atlantic Coast & Nature": {
+    "pt": "Costa Atlântica e Natureza",
+    "en": "Atlantic Coast & Nature",
+    "es": "Atlantic Coast &amp; Nature",
+    "fr": "Côte Atlantique & Nature",
+    "de": "Atlantikküste und Natur",
+    "zh": "大西洋海岸和自然"
+  },
+  "Tile Craft & Architecture": {
+    "pt": "Artesanato e Arquitetura",
+    "en": "Tile Craft & Architecture",
+    "es": "Tile Craft &amp; Architecture",
+    "fr": "Artisanat et Architecture Tile",
+    "de": "Tile Craft & Architektur",
+    "zh": "砖瓦工艺和建筑"
+  },
+  "Fado & Traditional Music": {
+    "pt": "Fado & Música Tradicional",
+    "en": "Fado & Traditional Music",
+    "es": "Fado &amp; Música Tradicional",
+    "fr": "Fado & Musique Traditionnelle",
+    "de": "Fado und traditionelle Musik",
+    "zh": "Fado 传统音乐"
+  },
+  "Local Markets & Artisans": {
+    "pt": "Mercados locais e artesãos",
+    "en": "Local Markets & Artisans",
+    "es": "Mercados locales &quot; Artisans",
+    "fr": "Marchés locaux et artisans",
+    "de": "Lokale Märkte & Künstler",
+    "zh": "当地市场和艺术品"
+  },
+  "Contemporary Art (Serralves)": {
+    "pt": "Arte Contemporânea (Serralves)",
+    "en": "Contemporary Art (Serralves)",
+    "es": "Arte contemporáneo (Serralves)",
+    "fr": "Art contemporain (Serralves)",
+    "de": "Zeitgenössische Kunst (Serralves)",
+    "zh": "当代艺术( Serralves)"
+  },
+  "Bespoke Wellness & Spas": {
+    "pt": "Bem-estar e spas sob medida",
+    "en": "Bespoke Wellness & Spas",
+    "es": "Wellness a medida &amp; Spas",
+    "fr": "Bien-être et spas sur mesure",
+    "de": "Maßgeschneiderte Wellness & Spas",
+    "zh": "发言井喷( S)"
+  },
+  "Avoid Steep Stairs (Lisbon/Porto Calçada)": {
+    "pt": "Evite escadarias (Lisboa/Porto Calçada)",
+    "en": "Avoid Steep Stairs (Lisbon/Porto Calçada)",
+    "es": "Evite las escaleras de escote (Lisbon/Porto Calçada)",
+    "fr": "Éviter les escaliers profonds (Lisbonne/Porto Calçada)",
+    "de": "Vermeiden Sie Treppen (Lissabon / Porto Calçada)",
+    "zh": "避免楼梯(里斯本/卡尔萨达港)"
+  },
+  "Wheelchair Accessible Routes": {
+    "pt": "Rotas Acessíveis para cadeira de rodas",
+    "en": "Wheelchair Accessible Routes",
+    "es": "Rutas accesibles silla de ruedas",
+    "fr": "Routes accessibles aux fauteuils roulants",
+    "de": "Rollstuhl Erreichbare Routen",
+    "zh": "轮椅无障碍路线"
+  },
+  "Limited Walking Distance (< 1km)": {
+    "pt": "Distância Limitada da Caminhada (< 1 km)",
+    "en": "Limited Walking Distance (< 1km)",
+    "es": "Distancia caminante limitada (aprobado 1km)",
+    "fr": "Distance de marche limitée (< 1 km)",
+    "de": "Begrenzte Gehstrecke (< 1 km)",
+    "zh": "有限行走距离( < 1公里)"
+  },
+  "Chauffeured Door-to-door Drop-offs": {
+    "pt": "Entregas porta-a-porta a motorista",
+    "en": "Chauffeured Door-to-door Drop-offs",
+    "es": "Chauffeured Door-to-door Drop-offs",
+    "fr": "Décrochage de porte à porte avec chauffeur",
+    "de": "Chauffeured Door-to-Door Drop-offs",
+    "zh": "门到门到门到门"
+  },
+  "Elevator Required at Hotels": {
+    "pt": "Elevador necessário em hotéis",
+    "en": "Elevator Required at Hotels",
+    "es": "Ascensor requerido en Hoteles",
+    "fr": "Ascenseur requis aux hôtels",
+    "de": "Fahrstuhl in Hotels erforderlich",
+    "zh": "旅馆所需电梯"
+  },
+  "Shellfish Allergy": {
+    "pt": "Alergia de marisco",
+    "en": "Shellfish Allergy",
+    "es": "Shellfish Alergy",
+    "fr": "Allergie des mollusques",
+    "de": "Muschelallergie",
+    "zh": "贝壳鱼过敏"
+  },
+  "Gluten-Free (Celiac)": {
+    "pt": "Sem glúten (Celíaco)",
+    "en": "Gluten-Free (Celiac)",
+    "es": "Libre de gluten (Celiac)",
+    "fr": "Sans gluten (Celiac)",
+    "de": "Glutenfrei (Zöliakie)",
+    "zh": "无胶( Celiac)"
+  },
+  "Vegetarian": {
+    "pt": "Vegetariano",
+    "en": "Vegetarian",
+    "es": "Vegetariano",
+    "fr": "Végétarien",
+    "de": "Vegetarier",
+    "zh": "植物学家"
+  },
+  "Vegan": {
+    "pt": "Vegan",
+    "en": "Vegan",
+    "es": "Vegan",
+    "fr": "Végétaux",
+    "de": "Vegan",
+    "zh": "维冈"
+  },
+  "Nut Allergy": {
+    "pt": "Alergia por Nozes",
+    "en": "Nut Allergy",
+    "es": "Nut Allergy",
+    "fr": "Allergie aux noix",
+    "de": "Nussallergie",
+    "zh": "神经过敏症"
+  },
+  "Dairy-Free (Lactose)": {
+    "pt": "Sem leite (Lactose)",
+    "en": "Dairy-Free (Lactose)",
+    "es": "Libre de lácteos (Lactosa)",
+    "fr": "Sans lait (Lactose)",
+    "de": "Milchfrei (Lactose)",
+    "zh": "无乳品(乳糖)"
+  },
+  "Halal": {
+    "pt": "Halal",
+    "en": "Halal",
+    "es": "Halal",
+    "fr": "Halal",
+    "de": "Halal",
+    "zh": "穷光蛋"
+  },
+  "Kosher": {
+    "pt": "Kosher",
+    "en": "Kosher",
+    "es": "Kosher",
+    "fr": "Casher",
+    "de": "Koscher",
+    "zh": "科舍尔"
+  },
+  "No Crowded Tour Buses": {
+    "pt": "Nenhum ônibus de turismo lotado",
+    "en": "No Crowded Tour Buses",
+    "es": "No hay autobuses de gira",
+    "fr": "Pas de bus en foule",
+    "de": "Keine überfüllten Tourbusse",
+    "zh": "无人群旅游巴士"
+  },
+  "No Commercial Souvenir Shops": {
+    "pt": "Nenhuma loja de souvenir comercial",
+    "en": "No Commercial Souvenir Shops",
+    "es": "No Commercial Souvenir Shops",
+    "fr": "Pas de magasins de souvenirs commerciaux",
+    "de": "Keine kommerziellen Souvenirshops",
+    "zh": "无商业苏文尼尔商店"
+  },
+  "No Standard Large Museums": {
+    "pt": "Nenhum museu grande padrão",
+    "en": "No Standard Large Museums",
+    "es": "No Standard Museos Grandes",
+    "fr": "Pas de grands musées standard",
+    "de": "Keine großen Standardmuseen",
+    "zh": "无标准大型博物馆"
+  },
+  "No Religious / Churches": {
+    "pt": "Nenhum religioso / igrejas",
+    "en": "No Religious / Churches",
+    "es": "No religiosos / iglesias",
+    "fr": "Pas de religion / Eglises",
+    "de": "Keine religiösen / Kirchen",
+    "zh": "无宗教/教会"
+  },
+  "No Open Boats (Sea Sickness)": {
+    "pt": "Nenhum barco aberto (doença do mar)",
+    "en": "No Open Boats (Sea Sickness)",
+    "es": "No Open Boats (Sea Sickness)",
+    "fr": "Pas de bateaux ouverts (maladie de la mer)",
+    "de": "Keine offenen Boote (Seekrankheit)",
+    "zh": "无开放船(海病)"
+  },
+  "No Alcohol / Wine Tastings": {
+    "pt": "Sem degustações de álcool / vinho",
+    "en": "No Alcohol / Wine Tastings",
+    "es": "Sin alcohol / Cata de vinos",
+    "fr": "Pas d'alcool / dégustation de vin",
+    "de": "Kein Alkohol / Weinproben",
+    "zh": "无酒精/ 酒味"
+  },
+  "Baixo (Low)": {
+    "pt": "Baixo",
+    "en": "Low",
+    "es": "Bajo",
+    "fr": "Faible",
+    "de": "Gering",
+    "zh": "低"
+  },
+  "Moderado (Moderate)": {
+    "pt": "Moderado (Moderado)",
+    "en": "Moderado (Moderate)",
+    "es": "Moderado (Moderado)",
+    "fr": "Modérado (modéré)",
+    "de": "Moderado (Moderat)",
+    "zh": "调制解调器( 模块)"
+  },
+  "Alto (High)": {
+    "pt": "Alto",
+    "en": "High",
+    "es": "Alto",
+    "fr": "Élevé",
+    "de": "Hoch",
+    "zh": "高"
+  },
+  "Quick Lunch (~40m)": {
+    "pt": "Almoço rápido (~40m)",
+    "en": "Quick Lunch (~40m)",
+    "es": "Comida rápida (~40m)",
+    "fr": "Déjeuner rapide (~40m)",
+    "de": "Schnelles Mittagessen (~40m)",
+    "zh": "快速午餐(~40米)"
+  },
+  "Relaxed Dining (~90m)": {
+    "pt": "Jantar relaxado (~90m)",
+    "en": "Relaxed Dining (~90m)",
+    "es": "Cena relajada (~90m)",
+    "fr": "Dîner détendu (~90m)",
+    "de": "Entspanntes Essen (~90m)",
+    "zh": "放松饮食(~90米)"
+  },
+  "Tasting Experience (120m+)": {
+    "pt": "Experiência de degustação (120m+)",
+    "en": "Tasting Experience (120m+)",
+    "es": "Experiencia de Cata (120m+)",
+    "fr": "Expérience de dégustation (120m+)",
+    "de": "Verkostungserlebnis (120m+)",
+    "zh": "品尝经验(120米+)"
+  },
+  "Early (08:30)": {
+    "pt": "Cedo (08:30)",
+    "en": "Early (08:30)",
+    "es": "Temprano (08:30)",
+    "fr": "Début (08:30)",
+    "de": "Früh (08:30)",
+    "zh": "早期( E)08:30)"
+  },
+  "Standard (09:30)": {
+    "pt": "Padrão (09:30)",
+    "en": "Standard (09:30)",
+    "es": "Estándar (09:30)",
+    "fr": "Norme (09:30)",
+    "de": "Standard (09:30)",
+    "zh": "标准(09:30)"
+  },
+  "Late Start (10:30+)": {
+    "pt": "Início tardio (10:30+)",
+    "en": "Late Start (10:30+)",
+    "es": "Inicio tardío (10:30+)",
+    "fr": "Départ tardif (10:30+)",
+    "de": "Late Start (10:30+)",
+    "zh": "延迟开始( L)10:30+)"
+  },
+  "Relaxed": {
+    "pt": "Relaxado",
+    "en": "Relaxed",
+    "es": "Relajado",
+    "fr": "Détends-toi",
+    "de": "Entspannt",
+    "zh": "放松点"
+  },
+  "Balanced": {
+    "pt": "Saldo",
+    "en": "Balanced",
+    "es": "Saldo",
+    "fr": "Solde",
+    "de": "Ausgewogen",
+    "zh": "余额"
+  },
+  "Active": {
+    "pt": "Activo",
+    "en": "Active",
+    "es": "Activo",
+    "fr": "Activité",
+    "de": "Aktiv",
+    "zh": "活动"
+  },
+  "3 star": {
+    "pt": "3 estrelas",
+    "en": "3 star",
+    "es": "3 estrellas",
+    "fr": "3 étoiles",
+    "de": "3 Sterne",
+    "zh": "3 星号"
+  },
+  "4 star": {
+    "pt": "4 estrelas",
+    "en": "4 star",
+    "es": "4 estrellas",
+    "fr": "4 étoiles",
+    "de": "4 Sterne",
+    "zh": "4星级"
+  },
+  "5 star": {
+    "pt": "5 estrelas",
+    "en": "5 star",
+    "es": "5 estrellas",
+    "fr": "5 étoiles",
+    "de": "5 Sterne",
+    "zh": "5 星号"
+  },
+  "Boutique": {
+    "pt": "Boutique",
+    "en": "Boutique",
+    "es": "Boutique",
+    "fr": "Boutique",
+    "de": "Boutique",
+    "zh": "英国"
+  },
+  "Luxury": {
+    "pt": "Luxo",
+    "en": "Luxury",
+    "es": "Lujo",
+    "fr": "Luxe",
+    "de": "Luxus",
+    "zh": "奢华"
+  },
+  "01 Understand — Analyzing traveler needs & restrictions": {
+    "pt": "01 Compreender — Analisar as necessidades e restrições dos viajantes",
+    "en": "01 Understand — Analyzing traveler needs & restrictions",
+    "es": "01 Comprender — Analizar necesidades de viajeros &quot; restricciones",
+    "fr": "01 Comprendre — Analyser les besoins et les restrictions des voyageurs",
+    "de": "01 Verstehen - Analyse der Bedürfnisse und Einschränkungen von Reisenden",
+    "zh": "01 理解——分析旅行者需要和限制"
+  },
+  "02 Interpret — Establishing narrative route & pacing": {
+    "pt": "02 Interpreto — Estabelecendo rota narrativa e ritmo",
+    "en": "02 Interpret — Establishing narrative route & pacing",
+    "es": "02 Interpretación - Establecimiento de la ruta narrativa &quot;",
+    "fr": "02 Interprétation — Établissement d'un itinéraire narratif et d'un rythme",
+    "de": "02 Interpretieren — Erklärende Route und Pacing",
+    "zh": "02 解释——建立叙事路线和间隔"
+  },
+  "03 Curate — Selecting local providers & dining safety": {
+    "pt": "03 Curar — Selecionar fornecedores locais e segurança de refeições",
+    "en": "03 Curate — Selecting local providers & dining safety",
+    "es": "03 Curate — Selección de proveedores locales y seguridad gastronómica",
+    "fr": "03 Curate — Sélection des fournisseurs locaux et sécurité des restaurants",
+    "de": "03 Kurate - Auswahl lokaler Anbieter & Gastronomiesicherheit",
+    "zh": "03 Curate - 选择本地供应商和餐饮安全"
+  },
+  "04 Viability — Validating physical effort & access (R15–R17)": {
+    "pt": "04 Viabilidade — Validação do esforço físico e do acesso (R15–R17)",
+    "en": "04 Viability — Validating physical effort & access (R15–R17)",
+    "es": "04 Viabilidad — Validación del esfuerzo físico &quot; acceso (R15–R17)",
+    "fr": "04 Viabilité — Validation de l'effort physique et de l'accès (R15–R17)",
+    "de": "04 Lebensfähigkeit — Validierung der körperlichen Anstrengung und des Zugangs (R15–R17)",
+    "zh": "04 可行性——验证实际努力和准入(R15-R17)"
+  },
+  "05 Finalize — Composing bespoke Journey Proposal": {
+    "pt": "05 Finalizar — Compondo Proposta de Viagem sob medida",
+    "en": "05 Finalize — Composing bespoke Journey Proposal",
+    "es": "05 Finalizar — Componiendo propuesta de viaje a medida",
+    "fr": "05 Finaliser — Composer une proposition de voyage sur mesure",
+    "de": "05 Finalize — Erstellung eines maßgeschneiderten Reisevorschlags",
+    "zh": "05 最后敲定——提出讲演的旅程建议"
+  },
+  "Curate Proposal": {
+    "pt": "Criar proposta",
+    "en": "Curate Proposal",
+    "es": "Crear propuesta",
+    "fr": "Créer une proposition",
+    "de": "Reisevorschlag erstellen",
+    "zh": "创建行程方案"
+  },
+  "Exportar PDF": {
+    "pt": "Exportar PDF",
+    "en": "Export PDF",
+    "es": "Exportar PDF",
+    "fr": "Exporter les PDF",
+    "de": "PDF exportieren",
+    "zh": "导出 PDF"
+  },
+  "A exportar…": {
+    "pt": "A exportar…",
+    "en": "Exporting…",
+    "es": "Exportando…",
+    "fr": "Exportation…",
+    "de": "Export läuft…",
+    "zh": "正在导出…"
+  },
+  "Médio (Medium)": {
+    "pt": "Médio",
+    "en": "Medium",
+    "es": "Medio",
+    "fr": "Modéré",
+    "de": "Mittel",
+    "zh": "中"
+  }
+}

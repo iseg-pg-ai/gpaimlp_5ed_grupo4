@@ -1,0 +1,10 @@
+{
+  "catalog_readiness": {
+    "description": "Percent of itinerary-curation fields populated; no predictive assumptions.",
+    "records": 252
+  },
+  "proposal_complexity": {
+    "description": "45% page count, 45% text volume, 10% price-reference density; scores are normalized within this corpus.",
+    "records": 50
+  }
+}

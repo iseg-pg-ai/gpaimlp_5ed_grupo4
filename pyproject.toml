@@ -1,0 +1,29 @@
+[project]
+name = "gpaimlp_5ed_grupo4"
+version = "0.1.0"
+description = "BLU local ETL, dashboards and optional translation and SageMaker environments."
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "openpyxl==3.1.5",
+    "pypdf==6.19.0",
+    "pandas==2.3.3",
+    "plotly==6.5.2",
+    "streamlit==1.55.0",
+]
+
+[dependency-groups]
+dev = ["pytest==9.0.0", "complexipy>=5.5.0"]
+translation = ["argostranslate==1.11.0", "ctranslate2>=4.0,<5"]
+sagemaker = [
+    "boto3>=1.41,<2",
+    "sagemaker==2.254.1",
+    "sagemaker-mlflow>=0.4,<1",
+    "ipython>=9.16.1",
+    "numpy==2.3.4",
+    "scikit-learn==1.7.2",
+    "joblib==1.5.2",
+]
+
+[tool.uv]
+package = false
+default-groups = []
