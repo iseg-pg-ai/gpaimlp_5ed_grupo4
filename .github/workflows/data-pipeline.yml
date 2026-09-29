@@ -1,0 +1,62 @@
+name: Data pipeline
+
+on:
+  push:
+    paths:
+      - "data/**"
+      - "etl/**"
+      - "dashboard/**"
+      - "tests/**"
+      - "requirements.txt"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "translations/requirements.txt"
+      - "scripts/**"
+      - ".github/workflows/data-pipeline.yml"
+  pull_request:
+    paths:
+      - "data/**"
+      - "etl/**"
+      - "dashboard/**"
+      - "tests/**"
+      - "requirements.txt"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "translations/requirements.txt"
+      - "scripts/**"
+      - ".github/workflows/data-pipeline.yml"
+  workflow_dispatch:
+
+jobs:
+  build-warehouse:
+    runs-on: windows-latest
+    steps:
+      # Source data is versioned with the project, so one checkout is the full input.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install uv==0.12.19
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m uv lock --check --offline
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/export_requirements.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -r requirements.txt
+      - name: Run ETL and validation gate
+        run: python -m etl.pipeline --data-dir data --output-dir warehouse
+      - name: Verify validation gate
+        shell: pwsh
+        run: |
+          $report = Get-Content warehouse/validation_report.json -Raw | ConvertFrom-Json
+          if ($report.status -ne 'passed') { throw "Validation status: $($report.status)" }
+      - name: Run regression tests
+        run: python -m unittest tests.test_local_source tests.test_structured_dataset tests.test_etl_pipeline -v
+      - name: Publish warehouse delivery
+        uses: actions/upload-artifact@v4
+        with:
+          name: blu-warehouse
+          path: warehouse/
+          if-no-files-found: error

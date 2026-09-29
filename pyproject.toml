@@ -1,23 +1,29 @@
 [project]
 name = "gpaimlp_5ed_grupo4"
 version = "0.1.0"
-description = "Dependencies for the custom SageMaker Studio JupyterLab image."
-requires-python = "==3.12.12"
+description = "BLU local ETL, dashboards and optional translation and SageMaker environments."
+requires-python = ">=3.12,<3.14"
 dependencies = [
+    "openpyxl==3.1.5",
+    "pypdf==6.19.0",
+    "pandas==2.3.3",
+    "plotly==6.5.2",
+    "streamlit==1.55.0",
+]
+
+[dependency-groups]
+dev = ["pytest==9.0.0", "complexipy>=5.5.0"]
+translation = ["argostranslate==1.11.0", "ctranslate2>=4.0,<5"]
+sagemaker = [
     "boto3>=1.41,<2",
-    "complexipy>=5.5.0",
-    #"dynaconf[yaml]>=3.2.13,<4",
-    "pandas>=2.2,<3",
-    # "scikit-learn>=1.6,<2",
-    #"xgboost>=3.2.0",
-    #"evidently>=0.7.20",
-    #"skops>=0.14.0",
-    # Suporte a S3 (AWS)
-    #"fsspec>=2024.3.0",
-    #"s3fs>=2024.3.0",
-    #"sagemaker==3.17.0",
-    #"mlflow==3.10.1",
-    # "sagemaker-mlflow==0.2.0"
+    "sagemaker==2.254.1",
     "sagemaker-mlflow>=0.4,<1",
     "ipython>=9.16.1",
+    "numpy==2.3.4",
+    "scikit-learn==1.7.2",
+    "joblib==1.5.2",
 ]
+
+[tool.uv]
+package = false
+default-groups = []

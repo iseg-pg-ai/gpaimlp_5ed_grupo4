@@ -1,11 +1,107 @@
-boto3==1.40.71
-sagemaker==2.254.1
-pandas==2.3.3
+# Generated from pyproject.toml and uv.lock. Do not edit manually.
+# Regenerate: python scripts/export_requirements.py
+altair==6.3.0
+    # via streamlit
+attrs==25.4.0
+    # via
+    #   jsonschema
+    #   referencing
+blinker==1.9.0
+    # via streamlit
+cachetools==6.2.6
+    # via streamlit
+certifi==2026.7.22
+    # via requests
+charset-normalizer==3.4.9
+    # via requests
+click==8.4.2
+    # via streamlit
+colorama==0.4.6 ; sys_platform == 'win32'
+    # via click
+et-xmlfile==2.0.0
+    # via openpyxl
+gitdb==4.0.12
+    # via gitpython
+gitpython==3.1.58
+    # via streamlit
+idna==3.18
+    # via requests
+jinja2==3.1.6
+    # via
+    #   altair
+    #   pydeck
+jsonschema==4.26.0
+    # via altair
+jsonschema-specifications==2025.9.1
+    # via jsonschema
+markupsafe==3.0.3
+    # via jinja2
+narwhals==2.26.0
+    # via
+    #   altair
+    #   plotly
 numpy==2.3.4
-scikit-learn==1.7.2
-joblib==1.5.2
-pytest==9.0.0
-
-# openai==2.7.2
-# dotenv==0.9.9
-# wikipedia-api==0.8.1
+    # via
+    #   pandas
+    #   pydeck
+    #   streamlit
+openpyxl==3.1.5
+    # via gpaimlp-5ed-grupo4
+packaging==24.2
+    # via
+    #   altair
+    #   plotly
+    #   streamlit
+pandas==2.3.3
+    # via
+    #   gpaimlp-5ed-grupo4
+    #   streamlit
+pillow==12.3.0
+    # via streamlit
+plotly==6.5.2
+    # via gpaimlp-5ed-grupo4
+protobuf==6.31.1
+    # via streamlit
+pyarrow==25.0.1
+    # via streamlit
+pydeck==0.9.3
+    # via streamlit
+pypdf==6.19.0
+    # via gpaimlp-5ed-grupo4
+python-dateutil==2.9.0.post0
+    # via pandas
+pytz==2026.3.post1
+    # via pandas
+referencing==0.37.0
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
+requests==2.34.2
+    # via streamlit
+rpds-py==2026.6.3
+    # via
+    #   jsonschema
+    #   referencing
+six==1.17.0
+    # via python-dateutil
+smmap==5.0.3
+    # via gitdb
+streamlit==1.55.0
+    # via gpaimlp-5ed-grupo4
+tenacity==9.1.4
+    # via streamlit
+toml==0.10.2
+    # via streamlit
+tornado==6.5.10
+    # via streamlit
+typing-extensions==4.16.0
+    # via
+    #   altair
+    #   referencing
+    #   streamlit
+tzdata==2026.3
+    # via pandas
+urllib3==2.7.0
+    # via requests
+watchdog==6.0.0 ; sys_platform != 'darwin'
+    # via streamlit

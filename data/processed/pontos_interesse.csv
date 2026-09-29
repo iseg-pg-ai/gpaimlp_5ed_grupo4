@@ -1,0 +1,253 @@
+id,name,category,city,zone,source_sheet,latitude,longitude,raw_address,best_location,has_coordinates
+LIS-001,Castelo de São Jorge,Monumento e miradouro,Lisboa,Alfama,Folha2 (Atrações),38.713909,-9.133476,,"(38.713909, -9.133476)",True
+LIS-002,Sé de Lisboa,Igreja e património religioso,Lisboa,Alfama,Folha2 (Atrações),38.71037,-9.132472,,"(38.71037, -9.132472)",True
+LIS-003,Igreja de Santo António,Igreja e património religioso,Lisboa,Alfama,Folha2 (Atrações),38.710806,-9.132041,,"(38.710806, -9.132041)",True
+LIS-004,Teatro Romano — Museu de Lisboa,Arqueologia e museu,Lisboa,Alfama,Folha2 (Atrações),38.709837,-9.13173,,"(38.709837, -9.13173)",True
+LIS-005,Miradouro de Santa Luzia,Miradouro,Lisboa,Alfama,Folha2 (Atrações),38.711091,-9.130431,,"(38.711091, -9.130431)",True
+LIS-006,Loja XVIII,Loja,Lisboa,Alfama,Folha2 (Atrações),,,,"Loja XVIII, Alfama, Lisboa, Portugal",False
+LIS-007,Miradouro das Portas do Sol,Miradouro,Lisboa,Alfama,Folha2 (Atrações),38.711258,-9.13045,,"(38.711258, -9.13045)",True
+LIS-008,Ruas de Alfama,Ruas,Lisboa,Alfama,Folha2 (Atrações),38.711564,-9.129607,,"(38.711564, -9.129607)",True
+LIS-009,Miradouro da Senhora do Monte,Miradouro,Lisboa,Graça,Folha2 (Atrações),38.7203,-9.1326,,"(38.7203, -9.1326)",True
+LIS-010,Miradouro da Graça / Sophia de Mello Breyner Andresen,Miradouro,Lisboa,Graça,Folha2 (Atrações),38.7195,-9.1305,,"(38.7195, -9.1305)",True
+LIS-011,Igreja e Convento da Graça,Igreja e convento,Lisboa,Graça,Folha2 (Atrações),38.7191,-9.1313,,"(38.7191, -9.1313)",True
+LIS-012,Mosteiro de São Vicente de Fora,Mosteiro e igreja,Lisboa,São Vicente,Folha2 (Atrações),38.7147,-9.1317,,"(38.7147, -9.1317)",True
+LIS-013,Panteão Nacional,Monumento e miradouro,Lisboa,São Vicente,Folha2 (Atrações),38.7144,-9.128,,"(38.7144, -9.128)",True
+LIS-014,Feira da Ladra,Feira histórica,Lisboa,São Vicente,Folha2 (Atrações),38.714,-9.1244,,"(38.714, -9.1244)",True
+LIS-015,Museu Nacional de Arte Contemporânea do Chiado,Museu de arte,Lisboa,Chiado,Folha2 (Atrações),38.7106,-9.1424,,"(38.7106, -9.1424)",True
+LIS-016,Museu Arqueológico do Carmo,Museu e ruínas históricas,Lisboa,Chiado,Folha2 (Atrações),38.7123,-9.14,,"(38.7123, -9.14)",True
+LIS-017,Convento dos Cardais,Convento e patrimônio religioso,Lisboa,Bairro Alto,Folha2 (Atrações),38.7147,-9.1455,,"(38.7147, -9.1455)",True
+LIS-018,Igreja de São Roque,Igreja e arte sacra,Lisboa,Bairro Alto,Folha2 (Atrações),38.7145,-9.1459,,"(38.7145, -9.1459)",True
+LIS-019,Miradouro de São Pedro de Alcântara,Miradouro e jardim,Lisboa,Bairro Alto,Folha2 (Atrações),38.7156,-9.1453,,"(38.7156, -9.1453)",True
+LIS-020,Elevador da Bica,Transporte histórico,Lisboa,Bairro Alto,Folha2 (Atrações),38.7095,-9.1465,,"(38.7095, -9.1465)",True
+LIS-021,Praça Luís de Camões e percurso histórico do Chiado,Espaço urbano e patrimônio,Lisboa,Chiado,Folha2 (Atrações),38.71,-9.1433,,"(38.71, -9.1433)",True
+LIS-022,Livraria Bertrand do Chiado,Livraria histórica,Lisboa,Chiado,Folha2 (Atrações),38.7108,-9.1439,,"(38.7108, -9.1439)",True
+LIS-023,Pastelaria Alcoa,Pastelaria histórica,Lisboa,Chiado,Folha2 (Atrações),38.7105,-9.1438,,"(38.7105, -9.1438)",True
+LIS-024,Joalheira Aliança,Joalheria histórica,Lisboa,Chiado,Folha2 (Atrações),38.7107,-9.1438,,"(38.7107, -9.1438)",True
+LIS-026,Jardim Botânico de Lisboa,Jardim botânico,Lisboa,Príncipe Real,Folha2 (Atrações),38.7274,-9.1515,,"(38.7274, -9.1515)",True
+LIS-028,Reservatório da Patriarcal,Patrimônio hidráulico,Lisboa,Príncipe Real,Folha2 (Atrações),38.7267,-9.1539,,"(38.7267, -9.1539)",True
+LIS-030,Embaixada — Palacete Ribeiro da Cunha,Arquitetura e comércio,Lisboa,Príncipe Real,Folha2 (Atrações),38.7168,-9.1517,,"(38.7168, -9.1517)",True
+LIS-033,LX Factory,Complexo cultural e comercial,Lisboa,Alcântara,Folha2 (Atrações),38.7038,-9.1781,,"(38.7038, -9.1781)",True
+LIS-034,Docas de Santo Amaro,Passeio ribeirinho,Lisboa,Alcântara,Folha2 (Atrações),38.6965,-9.1771,,"(38.6965, -9.1771)",True
+LIS-035,Mosteiro dos Jerónimos — Claustro,Monumento UNESCO,Lisboa,Belém,Folha2 (Atrações),38.6979,-9.2064,,"(38.6979, -9.2064)",True
+LIS-036,Igreja de Santa Maria de Belém,Igreja e patrimônio religioso,Lisboa,Belém,Folha2 (Atrações),38.6976,-9.2062,,"(38.6976, -9.2062)",True
+LIS-037,Torre de Belém,Monumento UNESCO,Lisboa,Belém,Folha2 (Atrações),38.6916,-9.216,,"(38.6916, -9.216)",True
+LIS-038,Padrão dos Descobrimentos,Monumento e miradouro,Lisboa,Belém,Folha2 (Atrações),38.6946,-9.2057,,"(38.6946, -9.2057)",True
+LIS-039,Museu Nacional dos Coches,Museu histórico,Lisboa,Belém,Folha2 (Atrações),38.6974,-9.198,,"(38.6974, -9.198)",True
+LIS-041,Museu de Marinha,Museu marítimo,Lisboa,Belém,Folha2 (Atrações),38.6977,-9.206,,"(38.6977, -9.206)",True
+LIS-044,Museu da Cerveja,Museu,Lisboa,Baixa,Folha2 (Atrações),38.7078,-9.137,,"(38.7078, -9.137)",True
+LIS-045,Praça do Comércio,Praça histórica e espaço monumental,Lisboa,Baixa,Folha2 (Atrações),38.7078,-9.1367,,"(38.7078, -9.1367)",True
+LIS-046,Arco da Rua Augusta,Monumento e miradouro,Lisboa,Baixa,Folha2 (Atrações),38.708,-9.1361,,"(38.708, -9.1361)",True
+LIS-048,Centro Interpretativo do Bacalhau,Centro interpretativo,Lisboa,Baixa,Folha2 (Atrações),38.7083,-9.1363,,"(38.7083, -9.1363)",True
+LIS-050,MUDE — Museu do Design,Museu de design,Lisboa,Baixa,Folha2 (Atrações),38.708,-9.1388,,"(38.708, -9.1388)",True
+LIS-051,Elevador de Santa Justa,Monumento e transporte histórico,Lisboa,Baixa,Folha2 (Atrações),38.7139,-9.1392,,"(38.7139, -9.1392)",True
+LIS-052,Igreja de São Domingos,Igreja e patrimônio religioso,Lisboa,Baixa,Folha2 (Atrações),38.7141,-9.1409,,"(38.7141, -9.1409)",True
+LIS-053,Praça do Rossio,Praça histórica,Lisboa,Baixa,Folha2 (Atrações),38.7139,-9.1393,,"(38.7139, -9.1393)",True
+LIS-054,Estação do Rossio,Arquitetura e transporte histórico,Lisboa,Baixa,Folha2 (Atrações),38.7142,-9.1403,,"(38.7142, -9.1403)",True
+LIS-055,Casa do Alentejo,Arquitetura e cultura,Lisboa,Baixa,Folha2 (Atrações),38.7152,-9.1415,,"(38.7152, -9.1415)",True
+LIS-056,Palácio Nacional da Ajuda,Palácio e museu,Lisboa,Ajuda,Folha2 (Atrações),38.707,-9.1968,,"(38.707, -9.1968)",True
+LIS-057,Museu do Tesouro Real,Museu histórico,Lisboa,Ajuda,Folha2 (Atrações),38.707,-9.1968,,"(38.707, -9.1968)",True
+LIS-058,Jardim Botânico da Ajuda,Jardim botânico,Lisboa,Ajuda,Folha2 (Atrações),38.7096,-9.1982,,"(38.7096, -9.1982)",True
+LIS-059,Fábrica Sant’Anna,Cerâmica e azulejaria,Lisboa,Ajuda,Folha2 (Atrações),38.7072,-9.1977,,"(38.7072, -9.1977)",True
+LIS-060,Palácio dos Marqueses da Fronteira,Palácio e jardins,Lisboa,Benfica,Folha2 (Atrações),38.738,-9.176,,"(38.738, -9.176)",True
+LIS-061,Aqueduto das Águas Livres,Patrimônio hidráulico,Lisboa,Amoreiras / Campolide,Folha2 (Atrações),38.7238,-9.165,,"(38.7238, -9.165)",True
+LIS-062,Basílica da Estrela,Igreja e patrimônio religioso,Lisboa,Estrela,Folha2 (Atrações),38.7145,-9.1609,,"(38.7145, -9.1609)",True
+LIS-063,Jardim da Estrela,Jardim histórico,Lisboa,Estrela,Folha2 (Atrações),38.7141,-9.1615,,"(38.7141, -9.1615)",True
+LIS-065,Oceanário de Lisboa,Aquário e ciência,Lisboa,Parque das Nações,Folha2 (Atrações),38.7636,-9.0935,,"(38.7636, -9.0935)",True
+LIS-066,Telecabine Lisboa,Passeio panorâmico,Lisboa,Parque das Nações,Folha2 (Atrações),38.7673,-9.0954,,"(38.7673, -9.0954)",True
+LIS-067,Pavilhão do Conhecimento,Museu de ciência,Lisboa,Parque das Nações,Folha2 (Atrações),38.7624,-9.09555,,"(38.7624, -9.09555)",True
+LIS-068,Gare do Oriente,Arquitetura e transporte,Lisboa,Parque das Nações,Folha2 (Atrações),38.7685,-9.0991,,"(38.7685, -9.0991)",True
+LIS-071,Passeio do Tejo,Passeio ribeirinho,Lisboa,Parque das Nações,Folha2 (Atrações),38.7659,-9.0948,,"(38.7659, -9.0948)",True
+LIS-072,Estufa Fria,Jardim botânico,Lisboa,Parque Eduardo VII,Folha2 (Atrações),38.732435,-9.154326,,"(38.732435, -9.154326)",True
+LIS-073,Estufa Quente,Jardim botânico,Lisboa,Parque Eduardo VII,Folha2 (Atrações),38.732435,-9.154326,,"(38.732435, -9.154326)",True
+LIS-074,Miradouro do Parque Eduardo VII,Miradouro,Lisboa,Parque Eduardo VII,Folha2 (Atrações),38.731301,-9.154455,,"(38.731301, -9.154455)",True
+LIS-075,Casa Fernando Pessoa,Museu literário,Lisboa,Campo de Ourique,Folha2 (Atrações),38.71925,-9.164877,,"(38.71925, -9.164877)",True
+LIS-076,Museu Calouste Gulbenkian,Museu de arte,Lisboa,Fundação Gulbenkian / Avenidas Novas,Folha2 (Atrações),38.737732,-9.154587,,"(38.737732, -9.154587)",True
+LIS-077,Centro de Arte Moderna Gulbenkian,Museu de arte contemporânea,Lisboa,Fundação Gulbenkian / Avenidas Novas,Folha2 (Atrações),38.7377,-9.1542,,"(38.7377, -9.1542)",True
+LIS-078,Jardim da Fundação Calouste Gulbenkian,Jardim e arquitetura paisagista,Lisboa,Fundação Gulbenkian / Avenidas Novas,Folha2 (Atrações),38.737548,-9.153603,,"(38.737548, -9.153603)",True
+SIN-001,Palácio Nacional da Pena,Palácio e parque,Sintra,São Pedro de Penaferrim,Folha2 (Atrações),,,,"Palácio Nacional da Pena, São Pedro de Penaferrim, Sintra, Portugal",False
+SIN-002,Castelo dos Mouros,Castelo e miradouro,Sintra,São Pedro de Penaferrim,Folha2 (Atrações),,,,"Castelo dos Mouros, São Pedro de Penaferrim, Sintra, Portugal",False
+SIN-003,Quinta da Regaleira,"Palácio, jardim e património simbólico",Sintra,São Martinho,Folha2 (Atrações),,,,"Quinta da Regaleira, São Martinho, Sintra, Portugal",False
+SIN-004,Palácio Nacional de Sintra,Palácio histórico,Sintra,Centro Histórico,Folha2 (Atrações),,,,"Palácio Nacional de Sintra, Centro Histórico, Sintra, Portugal",False
+SIN-005,Palácio e Parque de Monserrate,Palácio e jardim botânico,Sintra,Monserrate,Folha2 (Atrações),,,,"Palácio e Parque de Monserrate, Monserrate, Sintra, Portugal",False
+SIN-006,Palácio de Seteais,Palácio e jardim,Sintra,São Martinho,Folha2 (Atrações),,,,"Palácio de Seteais, São Martinho, Sintra, Portugal",False
+SIN-007,Convento dos Capuchos,Convento e natureza,Sintra,Colares,Folha2 (Atrações),,,,"Convento dos Capuchos, Colares, Sintra, Portugal",False
+SIN-008,Chalet e Jardim da Condessa d'Edla,Chalet e jardim,Sintra,Parque da Pena,Folha2 (Atrações),,,,"Chalet e Jardim da Condessa d'Edla, Parque da Pena, Sintra, Portugal",False
+SIN-009,Vila Sassetti,Casa histórica e jardim,Sintra,Centro Histórico,Folha2 (Atrações),,,,"Vila Sassetti, Centro Histórico, Sintra, Portugal",False
+SIN-010,Centro Histórico de Sintra,Vila histórica,Sintra,Centro Histórico,Folha2 (Atrações),,,,"Centro Histórico de Sintra, Centro Histórico, Sintra, Portugal",False
+QLZ-001,Palácio Nacional de Queluz,Palácio e jardins,Queluz,Queluz,Folha2 (Atrações),,,,"Palácio Nacional de Queluz, Queluz, Queluz, Portugal",False
+SIN-011,Fazenda do Magoito,Experiência rural e natureza,Sintra,Magoito / São João das Lampas,Folha2 (Atrações),,,,"Fazenda do Magoito, Magoito / São João das Lampas, Sintra, Portugal",False
+SIN-012,Cabo da Roca,Paisagem natural e miradouro,Sintra,Colares,Folha2 (Atrações),,,,"Cabo da Roca, Colares, Sintra, Portugal",False
+CAS-001,Centro Histórico de Cascais,Vila histórica e passeio marítimo,Cascais,Centro Histórico,Folha2 (Atrações),,,,"Centro Histórico de Cascais, Centro Histórico, Cascais, Portugal",False
+OBD-001,Centro Histórico de Óbidos,Vila muralhada e património,Óbidos,Centro Histórico,Folha2 (Atrações),,,,"Centro Histórico de Óbidos, Centro Histórico, Óbidos, Portugal",False
+FAT-001,Santuário de Fátima,Santuário e património religioso,Fátima,Cova da Iria,Folha2 (Atrações),,,,"Santuário de Fátima, Cova da Iria, Fátima, Portugal",False
+FAT-002,Casa dos Pastorinhos,Casa-museu e património religioso,Fátima,Aljustrel,Folha2 (Atrações),,,,"Casa dos Pastorinhos, Aljustrel, Fátima, Portugal",False
+MRA-001,Grutas de Mira de Aire,Grutas e geologia,Mira de Aire,Mira de Aire,Folha2 (Atrações),,,,"Grutas de Mira de Aire, Mira de Aire, Mira de Aire, Portugal",False
+NAZ-001,Farol da Nazaré / Forte de São Miguel Arcanjo,"Farol, fortaleza e miradouro",Nazaré,Sítio,Folha2 (Atrações),,,,"Farol da Nazaré / Forte de São Miguel Arcanjo, Sítio, Nazaré, Portugal",False
+NAZ-002,Santuário de Nossa Senhora da Nazaré,Santuário e património religioso,Nazaré,Sítio,Folha2 (Atrações),,,,"Santuário de Nossa Senhora da Nazaré, Sítio, Nazaré, Portugal",False
+NAZ-003,Museu do Peixe Seco,Património marítimo e gastronómico,Nazaré,Praia da Nazaré,Folha2 (Atrações),,,,"Museu do Peixe Seco, Praia da Nazaré, Nazaré, Portugal",False
+AVR-001,Passeio de moliceiro,Passeio fluvial e património,Aveiro,Canais centrais,Folha2 (Atrações),,,,"Passeio de moliceiro, Canais centrais, Aveiro, Portugal",False
+AVR-002,Costa Nova,Arquitetura e paisagem costeira,Aveiro,Costa Nova do Prado,Folha2 (Atrações),,,,"Costa Nova, Costa Nova do Prado, Aveiro, Portugal",False
+AVR-003,Fábrica Costa Nova,Design e cerâmica,Vagos,Vagos,Folha2 (Atrações),,,,"Fábrica Costa Nova, Vagos, Vagos, Portugal",False
+AVR-004,Salinas de Aveiro,Património natural e industrial,Aveiro,Ecomuseu Marinha da Troncalhada,Folha2 (Atrações),,,,"Salinas de Aveiro, Ecomuseu Marinha da Troncalhada, Aveiro, Portugal",False
+AZT-001,José Maria da Fonseca,Enoturismo e património,Azeitão,Vila Nogueira de Azeitão,Folha2 (Atrações),,,,"José Maria da Fonseca, Vila Nogueira de Azeitão, Azeitão, Portugal",False
+AZT-002,Bacalhôa Vinhos de Portugal,"Enoturismo, arte e património",Azeitão,Vila Nogueira de Azeitão,Folha2 (Atrações),,,,"Bacalhôa Vinhos de Portugal, Vila Nogueira de Azeitão, Azeitão, Portugal",False
+SET-001,Serra da Arrábida,"Natureza, paisagem e miradouros",Setúbal,Parque Natural da Arrábida,Folha2 (Atrações),,,,"Serra da Arrábida, Parque Natural da Arrábida, Setúbal, Portugal",False
+SET-002,Mercado Municipal de Setúbal,Mercado e gastronomia,Setúbal,Centro Histórico,Folha2 (Atrações),,,,"Mercado Municipal de Setúbal, Centro Histórico, Setúbal, Portugal",False
+SET-003,Forte de São Filipe,Fortaleza e miradouro,Setúbal,Setúbal,Folha2 (Atrações),,,,"Forte de São Filipe, Setúbal, Setúbal, Portugal",False
+ALM-001,Cristo Rei,Monumento e miradouro,Almada,Pragal,Folha2 (Atrações),,,,"Cristo Rei, Pragal, Almada, Portugal",False
+AZR-001,Pepe Aromas,Turismo rural e agricultura biológica,Azaruja,Quinta de São Miguel,Folha2 (Atrações),,,,"Pepe Aromas, Quinta de São Miguel, Azaruja, Portugal",False
+RED-001,Casa Relvas,Enoturismo e natureza,Redondo,Herdade de São Miguel,Folha2 (Atrações),,,,"Casa Relvas, Herdade de São Miguel, Redondo, Portugal",False
+EVR-001,Centro Histórico de Évora,Cidade histórica e património,Évora,Centro Histórico,Folha2 (Atrações),,,,"Centro Histórico de Évora, Centro Histórico, Évora, Portugal",False
+EVR-002,Capela dos Ossos,Património religioso,Évora,Centro Histórico,Folha2 (Atrações),,,,"Capela dos Ossos, Centro Histórico, Évora, Portugal",False
+LAG-001,Passeio de caiaque pela Ponta da Piedade,Atividade náutica e paisagem costeira,Lagos,Ponta da Piedade,Folha2 (Atrações),,,,"Passeio de caiaque pela Ponta da Piedade, Ponta da Piedade, Lagos, Portugal",False
+BRG-001,Centro Histórico de Braga,Cidade histórica e património,Braga,Centro Histórico,Folha2 (Atrações),,,,"Centro Histórico de Braga, Centro Histórico, Braga, Portugal",False
+BRG-002,Santuário do Bom Jesus do Monte,"Santuário, jardins e miradouro",Braga,Tenões,Folha2 (Atrações),,,,"Santuário do Bom Jesus do Monte, Tenões, Braga, Portugal",False
+BRG-003,Sé de Braga,Catedral e património religioso,Braga,Centro Histórico,Folha2 (Atrações),,,,"Sé de Braga, Centro Histórico, Braga, Portugal",False
+GUI-001,Centro Histórico de Guimarães,Cidade histórica e património,Guimarães,Centro Histórico,Folha2 (Atrações),,,,"Centro Histórico de Guimarães, Centro Histórico, Guimarães, Portugal",False
+DOR-001,Fundação da Casa de Mateus,"Palácio, jardins e património",Vila Real,Mateus,Folha2 (Atrações),,,,"Fundação da Casa de Mateus, Mateus, Vila Real, Portugal",False
+DOR-002,Lagar da Sancha,Olivoturismo e gastronomia,Sabrosa,Douro,Folha2 (Atrações),,,,"Lagar da Sancha, Douro, Sabrosa, Portugal",False
+DOR-003,Cruzeiro de uma hora no rio Douro,Cruzeiro fluvial e paisagem,Pinhão,Rio Douro,Folha2 (Atrações),,,,"Cruzeiro de uma hora no rio Douro, Rio Douro, Pinhão, Portugal",False
+BRG-004,Palácio do Raio (visita exterior),Arquitetura civil e património,Braga,Centro Histórico,Folha2 (Atrações),,,,"Palácio do Raio (visita exterior), Centro Histórico, Braga, Portugal",False
+BRG-005,Jardim de Santa Bárbara,Jardim histórico e património,Braga,Centro Histórico,Folha2 (Atrações),,,,"Jardim de Santa Bárbara, Centro Histórico, Braga, Portugal",False
+BRG-006,Paço Episcopal de Braga,Palácio e património,Braga,Centro Histórico,Folha2 (Atrações),,,,"Paço Episcopal de Braga, Centro Histórico, Braga, Portugal",False
+GUI-002,Castelo de Guimarães,Castelo e património nacional,Guimarães,Oliveira do Castelo,Folha2 (Atrações),,,,"Castelo de Guimarães, Oliveira do Castelo, Guimarães, Portugal",False
+GUI-003,Paço dos Duques de Bragança,Palácio e museu,Guimarães,Oliveira do Castelo,Folha2 (Atrações),,,,"Paço dos Duques de Bragança, Oliveira do Castelo, Guimarães, Portugal",False
+GUI-004,Zona de Couros,Património industrial e urbano,Guimarães,Zona de Couros,Folha2 (Atrações),,,,"Zona de Couros, Zona de Couros, Guimarães, Portugal",False
+AZT-003,Quinta Velha Queijeira,Queijaria artesanal e gastronomia,Azeitão,Vila Nogueira de Azeitão,Folha2 (Atrações),,,,"Quinta Velha Queijeira, Vila Nogueira de Azeitão, Azeitão, Portugal",False
+AZT-004,Leiveira – Azulejos de Azeitão,Oficina de azulejaria artesanal,Azeitão,Vila Fresca de Azeitão,Folha2 (Atrações),,,,"Leiveira – Azulejos de Azeitão, Vila Fresca de Azeitão, Azeitão, Portugal",False
+SAB-002,Quinta Nova Winery House,Quinta vinícola e enoturismo,Sabrosa,Covas do Douro,Folha2 (Atrações),,,,"Quinta Nova Winery House, Covas do Douro, Sabrosa, Portugal",False
+ARM-001,Quinta do Tedo,Quinta vinícola e enoturismo,Armamar,Folgosa do Douro,Folha2 (Atrações),,,,"Quinta do Tedo, Folgosa do Douro, Armamar, Portugal",False
+PIN-001,Quinta de La Rosa,Quinta vinícola e enoturismo,Pinhão,Pinhão,Folha2 (Atrações),,,,"Quinta de La Rosa, Pinhão, Pinhão, Portugal",False
+TAB-001,Quinta de São Luiz,Quinta vinícola e enoturismo,Tabuaço,Adorigo,Folha2 (Atrações),,,,"Quinta de São Luiz, Adorigo, Tabuaço, Portugal",False
+LAM-001,Quinta da Pacheca,Quinta vinícola e enoturismo,Lamego,Cambres,Folha2 (Atrações),,,,"Quinta da Pacheca, Cambres, Lamego, Portugal",False
+SFD-001,Casa dos Lagares – Vinhos Fragulho,Adega familiar e enoturismo,Sanfins do Douro,Cheires,Folha2 (Atrações),,,,"Casa dos Lagares – Vinhos Fragulho, Cheires, Sanfins do Douro, Portugal",False
+POR-001,Centro Histórico e Ribeira,Centro histórico e património urbano,Porto,Centro Histórico e Ribeira,Folha2 (Atrações),,,,"Centro Histórico e Ribeira, Centro Histórico e Ribeira, Porto, Portugal",False
+POR-002,Sé do Porto e claustro,Catedral e património religioso,Porto,Sé,Folha2 (Atrações),,,,"Sé do Porto e claustro, Sé, Porto, Portugal",False
+POR-003,Estação de São Bento,Estação ferroviária e azulejaria,Porto,São Bento,Folha2 (Atrações),,,,"Estação de São Bento, São Bento, Porto, Portugal",False
+POR-004,Torre e Igreja dos Clérigos,Igreja barroca e miradouro,Porto,Clérigos,Folha2 (Atrações),,,,"Torre e Igreja dos Clérigos, Clérigos, Porto, Portugal",False
+POR-005,Livraria Lello,Livraria histórica e arquitetura,Porto,Carmo,Folha2 (Atrações),,,,"Livraria Lello, Carmo, Porto, Portugal",False
+POR-006,Palácio da Bolsa,Palácio e património comercial,Porto,Infante,Folha2 (Atrações),,,,"Palácio da Bolsa, Infante, Porto, Portugal",False
+POR-007,Igreja de São Francisco,Igreja e património religioso,Porto,São Nicolau,Folha2 (Atrações),,,,"Igreja de São Francisco, São Nicolau, Porto, Portugal",False
+POR-008,Escovaria de Belomonte,Loja e oficina artesanal,Porto,Rua de Belomonte,Folha2 (Atrações),,,,"Escovaria de Belomonte, Rua de Belomonte, Porto, Portugal",False
+POR-009,Igreja do Carmo,Igreja barroca e azulejaria,Porto,Carmo,Folha2 (Atrações),,,,"Igreja do Carmo, Carmo, Porto, Portugal",False
+POR-010,Igreja dos Carmelitas,Igreja e património religioso,Porto,Carmo,Folha2 (Atrações),,,,"Igreja dos Carmelitas, Carmo, Porto, Portugal",False
+POR-011,Mercado do Bolhão,Mercado histórico e gastronomia,Porto,Bolhão,Folha2 (Atrações),,,,"Mercado do Bolhão, Bolhão, Porto, Portugal",False
+POR-012,Rua das Flores e Vitória,Percurso urbano e comércio histórico,Porto,Centro Histórico,Folha2 (Atrações),,,,"Rua das Flores e Vitória, Centro Histórico, Porto, Portugal",False
+GAI-001,Cais de Gaia,Ribeira e património urbano,Vila Nova de Gaia,Cais de Gaia,Folha2 (Atrações),,,,"Cais de Gaia, Cais de Gaia, Vila Nova de Gaia, Portugal",False
+GAI-002,Ponte D. Luís I,Ponte e património,Vila Nova de Gaia,Centro Histórico de Gaia,Folha2 (Atrações),,,,"Ponte D. Luís I, Centro Histórico de Gaia, Vila Nova de Gaia, Portugal",False
+GAI-003,Mosteiro da Serra do Pilar,Mosteiro e miradouro,Vila Nova de Gaia,Serra do Pilar,Folha2 (Atrações),,,,"Mosteiro da Serra do Pilar, Serra do Pilar, Vila Nova de Gaia, Portugal",False
+GAI-004,Caves da Real Companhia Velha,Caves de vinho do Porto e enoturismo,Vila Nova de Gaia,Cais de Gaia,Folha2 (Atrações),,,,"Caves da Real Companhia Velha, Cais de Gaia, Vila Nova de Gaia, Portugal",False
+REST-001,Fábrica da Nata — Restauradores,Pastelaria; pastéis de nata,Lisboa,Restauradores,Folha3 (Restaurantes),,,"Praça dos Restauradores, 62–68, Lisboa","Praça dos Restauradores, 62–68, Lisboa, Portugal",False
+REST-002,Cervejaria Ramiro,Marisqueira; marisco,Lisboa,Intendente,Folha3 (Restaurantes),,,"Avenida Almirante Reis, 1-H, Lisboa","Avenida Almirante Reis, 1-H, Lisboa, Portugal",False
+REST-003,Cervejaria Trindade,Cervejaria histórica; cozinha portuguesa,Lisboa,Chiado,Folha3 (Restaurantes),,,"Rua Nova da Trindade, 20 C, Lisboa","Rua Nova da Trindade, 20 C, Lisboa, Portugal",False
+REST-004,SUD Lisboa Terrazza,Contemporânea; mediterrânica,Lisboa,Belém / Alcântara,Folha3 (Restaurantes),38.696528,-9.191611,"Avenida Brasília, Pavilhão Poente, Lisboa","(38.696528, -9.191611)",True
+REST-005,Monte Mar Lisboa,Peixe e marisco,Lisboa,Cais do Sodré,Folha3 (Restaurantes),,,"Rua da Cintura do Porto de Lisboa, Armazém 65","Rua da Cintura do Porto de Lisboa, Armazém 65, Portugal",False
+REST-006,Pica-Pau,Portuguesa tradicional; petiscos,Lisboa,Príncipe Real,Folha3 (Restaurantes),,,"Rua da Escola Politécnica, 27, Lisboa","Rua da Escola Politécnica, 27, Lisboa, Portugal",False
+REST-007,Cocheira Alentejana,Alentejana; cozinha regional,Lisboa,Por confirmar,Folha3 (Restaurantes),,,"Travessa do Poço da Cidade, 19, Lisboa","Travessa do Poço da Cidade, 19, Lisboa, Portugal",False
+REST-008,SEEN Lisboa,Contemporânea; restaurante e bar,Lisboa,Avenida da Liberdade,Folha3 (Restaurantes),,,"Avenida da Liberdade, 185, 9.º piso, Lisboa","Avenida da Liberdade, 185, 9.º piso, Lisboa, Portugal",False
+REST-009,Museu da Cerveja,Restaurante / espaço temático; portuguesa,Lisboa,Terreiro do Paço,Folha3 (Restaurantes),,,Morada exata por confirmar,"Museu da Cerveja, Terreiro do Paço, Lisboa, Portugal",False
+REST-010,5 Oceanos,Peixe e marisco,Lisboa,Docas de Santo Amaro,Folha3 (Restaurantes),,,"Doca de Santo Amaro, Armazém 12, Lisboa","Doca de Santo Amaro, Armazém 12, Lisboa, Portugal",False
+REST-011,Nosolo Itália Belém,Italiana; massas e pizzas,Lisboa,Belém,Folha3 (Restaurantes),,,"Avenida Brasília, 202, Lisboa","Avenida Brasília, 202, Lisboa, Portugal",False
+REST-012,Pastéis de Belém,Pastelaria histórica; pastéis de Belém,Lisboa,Belém,Folha3 (Restaurantes),,,"Rua de Belém, 84–92, Lisboa","Rua de Belém, 84–92, Lisboa, Portugal",False
+REST-013,Prado,Portuguesa contemporânea sazonal,Lisboa,Sé / Baixa,Folha3 (Restaurantes),,,"Travessa das Pedras Negras, 2, Lisboa","Travessa das Pedras Negras, 2, Lisboa, Portugal",False
+REST-014,Café de São Bento,Portuguesa; bifes,Lisboa,São Bento,Folha3 (Restaurantes),,,"Rua de São Bento, 212, Lisboa","Rua de São Bento, 212, Lisboa, Portugal",False
+REST-015,Time Out Market Lisboa,Mercado gastronómico; oferta variada,Lisboa,Cais do Sodré,Folha3 (Restaurantes),,,"Mercado da Ribeira, Avenida 24 de Julho, Lisboa","Mercado da Ribeira, Avenida 24 de Julho, Lisboa, Portugal",False
+REST-016,Canalha,Portuguesa contemporânea; cozinha de mercado,Lisboa,Belém / Junqueira,Folha3 (Restaurantes),,,"Rua da Junqueira, 207 B, Lisboa","Rua da Junqueira, 207 B, Lisboa, Portugal",False
+REST-017,Pinóquio,Marisqueira; peixe e marisco,Lisboa,Restauradores,Folha3 (Restaurantes),,,"Praça dos Restauradores, 79–80, Lisboa","Praça dos Restauradores, 79–80, Lisboa, Portugal",False
+REST-018,Príncipe do Calhariz,Portuguesa tradicional,Lisboa,Bairro Alto / Calhariz,Folha3 (Restaurantes),,,"Calçada do Combro, 28–30, Lisboa","Calçada do Combro, 28–30, Lisboa, Portugal",False
+REST-019,Vegan Nata Chiado,Pastelaria vegan; pastel de nata,Lisboa,Chiado,Folha3 (Restaurantes),,,"Rua da Misericórdia, 9, Lisboa","Rua da Misericórdia, 9, Lisboa, Portugal",False
+REST-020,Sea Me Peixaria Moderna,"Peixe, marisco e influência japonesa",Lisboa,Chiado,Folha3 (Restaurantes),,,"Rua do Loreto, 21, Lisboa","Rua do Loreto, 21, Lisboa, Portugal",False
+REST-021,Casa da Índia,Portuguesa tradicional,Lisboa,Bairro Alto / Chiado,Folha3 (Restaurantes),,,Morada exata por confirmar,"Casa da Índia, Bairro Alto / Chiado, Lisboa, Portugal",False
+REST-022,Café A Brasileira,Café histórico; pastelaria e portuguesa,Lisboa,Chiado,Folha3 (Restaurantes),,,"Rua Garrett, 120–122, Lisboa","Rua Garrett, 120–122, Lisboa, Portugal",False
+REST-023,Pastelaria Alcôa — Chiado,Pastelaria; doçaria conventual,Lisboa,Chiado,Folha3 (Restaurantes),,,"Rua Garrett, número por confirmar","Pastelaria Alcôa — Chiado, Chiado, Lisboa, Portugal",False
+REST-024,A Licorista e o Bacalhoeiro,Portuguesa; bacalhau,Lisboa,Baixa,Folha3 (Restaurantes),,,"Rua dos Sapateiros, 218–224, Lisboa","Rua dos Sapateiros, 218–224, Lisboa, Portugal",False
+REST-025,A Muralha,Portuguesa tradicional,Lisboa,Alfama,Folha3 (Restaurantes),,,"Rua Jardim do Tabaco, 112, Lisboa","Rua Jardim do Tabaco, 112, Lisboa, Portugal",False
+REST-026,Alma,Alta gastronomia contemporânea portuguesa,Lisboa,Chiado,Folha3 (Restaurantes),,,Morada por confirmar,"Alma, Chiado, Lisboa, Portugal",False
+REST-027,Fifty Seconds,Alta gastronomia contemporânea,Lisboa,Parque das Nações,Folha3 (Restaurantes),,,Morada por confirmar,"Fifty Seconds, Parque das Nações, Lisboa, Portugal",False
+REST-028,Loco,Alta gastronomia contemporânea,Lisboa,Estrela,Folha3 (Restaurantes),,,Morada por confirmar,"Loco, Estrela, Lisboa, Portugal",False
+REST-029,Feitoria,Alta gastronomia contemporânea; menus degustação,Lisboa,Belém,Folha3 (Restaurantes),38.693624,-9.210855,"Doca do Bom Sucesso, Lisboa","(38.693624, -9.210855)",True
+REST-030,Casa Negrito,"Pastelaria, charcutaria e refeições ligeiras",Vila Nogueira de Azeitão,Azeitão,Folha3 (Restaurantes),,,"Rua José Augusto Coelho, 26","Rua José Augusto Coelho, 26, Vila Nogueira de Azeitão, Portugal",False
+REST-031,Wine Corner by José Maria da Fonseca,Regional; vinhos,Vila Nogueira de Azeitão,Azeitão,Folha3 (Restaurantes),38.518031,-9.015622,"Rua José Augusto Coelho, 1","(38.518031, -9.015622)",True
+REST-032,Copa d'Ouro,Peixe e marisco,Setúbal,Centro,Folha3 (Restaurantes),,,"Avenida Luísa Todi, 530, Setúbal","Avenida Luísa Todi, 530, Setúbal, Portugal",False
+REST-033,Adega do Saraiva,Portuguesa tradicional,Nafarros (Sintra),Nafarros,Folha3 (Restaurantes),,,"Largo do Paquete, 4–6","Largo do Paquete, 4–6, Nafarros (Sintra), Portugal",False
+REST-034,Paço Real,Portuguesa; referências italianas,Sintra,Centro histórico,Folha3 (Restaurantes),,,"Praça da República, 14","Praça da República, 14, Sintra, Portugal",False
+REST-035,Restaurante Alcobaça,Por confirmar,Por confirmar,Região de Sintra (a confirmar),Folha3 (Restaurantes),,,Morada por confirmar,"Restaurante Alcobaça, Região de Sintra (a confirmar), Por confirmar, Portugal",False
+REST-036,Dona Maria,Por confirmar,Sintra,Por confirmar,Folha3 (Restaurantes),,,Morada por confirmar,"Dona Maria, Por confirmar, Sintra, Portugal",False
+REST-037,Restaurante Azenhas do Mar,Peixe e marisco,Azenhas do Mar (Sintra),Azenhas do Mar,Folha3 (Restaurantes),,,"Lugar das Azenhas do Mar, Colares","Lugar das Azenhas do Mar, Colares, Azenhas do Mar (Sintra), Portugal",False
+REST-038,Furnas do Guincho,Peixe e marisco,Cascais,Guincho,Folha3 (Restaurantes),,,"Estrada do Guincho, Cascais","Estrada do Guincho, Cascais, Portugal",False
+REST-039,Monte Mar Guincho,Peixe e marisco,Cascais,Guincho,Folha3 (Restaurantes),,,"Avenida Nossa Senhora do Cabo, Cascais","Avenida Nossa Senhora do Cabo, Cascais, Portugal",False
+REST-040,Moinho Dom Quixote,Restaurante / brunch,Azóia (Sintra),Colares / Azóia,Folha3 (Restaurantes),,,"Rua dos Moinhos, 5, Azóia","Rua dos Moinhos, 5, Azóia, Azóia (Sintra), Portugal",False
+REST-041,Burro Velho,Portuguesa; bistrô,Batalha,Centro,Folha3 (Restaurantes),,,"Rua de Nossa Senhora do Caminho, 6-A, Batalha","Rua de Nossa Senhora do Caminho, 6-A, Batalha, Portugal",False
+REST-042,Celeiro d’Évora (antigo A Bruxa d’Évora),Por confirmar,Évora,Centro histórico,Folha3 (Restaurantes),,,"Rua 5 de Outubro, 86, Évora","Rua 5 de Outubro, 86, Évora, Portugal",False
+REST-043,Taverna do 8 ó 80,"Contemporânea; tapas, peixe e carne",Nazaré,Centro,Folha3 (Restaurantes),,,"Avenida Manuel Remígio, 8, Nazaré","Avenida Manuel Remígio, 8, Nazaré, Portugal",False
+REST-044,Vinum,Gastronomia e vinhos; detalhes por confirmar,Vila Nova de Gaia,Por confirmar,Folha3 (Restaurantes),,,Morada por confirmar,"Vinum, Por confirmar, Vila Nova de Gaia, Portugal",False
+REST-045,Abadia do Porto,Portuguesa tradicional,Porto,Centro,Folha3 (Restaurantes),,,"Rua do Ateneu Comercial do Porto, 22–24","Rua do Ateneu Comercial do Porto, 22–24, Portugal",False
+REST-046,O Antunes,Portuguesa tradicional,Porto,Bonjardim,Folha3 (Restaurantes),,,"Rua do Bonjardim, 525","Rua do Bonjardim, 525, Porto, Portugal",False
+REST-047,Adega São Nicolau,Portuguesa tradicional,Porto,Ribeira,Folha3 (Restaurantes),,,"Rua de São Nicolau, 1","Rua de São Nicolau, 1, Porto, Portugal",False
+REST-048,Taberna Santo António,Portuguesa tradicional,Porto,Virtudes,Folha3 (Restaurantes),,,"Rua das Virtudes, 32","Rua das Virtudes, 32, Porto, Portugal",False
+REST-049,Antiqvvm,Alta gastronomia; detalhes por confirmar,Porto,Por confirmar,Folha3 (Restaurantes),,,Morada por confirmar,"Antiqvvm, Por confirmar, Porto, Portugal",False
+REST-050,Gastro by Elemento,Contemporânea; fogo e brasas,Porto,Por confirmar,Folha3 (Restaurantes),,,"Rua Maria Adelaide Freitas Gonçalves, 13, Porto","Rua Maria Adelaide Freitas Gonçalves, 13, Porto, Portugal",False
+REST-051,Le Monument,Alta gastronomia; detalhes por confirmar,Porto,Por confirmar,Folha3 (Restaurantes),,,Morada por confirmar,"Le Monument, Por confirmar, Porto, Portugal",False
+REST-052,Cozinha das Flores,Contemporânea; detalhes por confirmar,Porto,Por confirmar,Folha3 (Restaurantes),,,Morada por confirmar,"Cozinha das Flores, Por confirmar, Porto, Portugal",False
+REST-053,The Yeatman Gastronomic Restaurant,Alta gastronomia,Vila Nova de Gaia,Por confirmar,Folha3 (Restaurantes),,,"Rua do Choupelo, Vila Nova de Gaia","Rua do Choupelo, Vila Nova de Gaia, Portugal",False
+REST-054,Casa Guedes Tradicional,Portuguesa tradicional; detalhes por confirmar,Porto,Por confirmar,Folha3 (Restaurantes),,,Morada por confirmar,"Casa Guedes Tradicional, Por confirmar, Porto, Portugal",False
+EXP-001,Fado no Rio Tejo,Música e cultura,Lisboa,Lisboa — Rio Tejo,Folha4 (Experiências),,,"Fado no Rio Tejo, Lisboa — Rio Tejo, Portugal","Fado no Rio Tejo, Lisboa — Rio Tejo, Portugal",False
+EXP-002,Fado in Chiado,Música e cultura,Lisboa,Lisboa — Chiado,Folha4 (Experiências),,,"Fado in Chiado, Lisboa — Chiado, Portugal","Fado in Chiado, Lisboa — Chiado, Portugal",False
+EXP-003,Clube de Fado,Música e gastronomia,Lisboa,Lisboa — Alfama,Folha4 (Experiências),,,"Clube de Fado, Lisboa — Alfama, Portugal","Clube de Fado, Lisboa — Alfama, Portugal",False
+EXP-004,Real Fado — Pavilhão Chinês,Música e cultura,Lisboa,"Príncipe Real, Lisboa",Folha4 (Experiências),,,"Real Fado — Pavilhão Chinês, Príncipe Real, Lisboa, Portugal","Real Fado — Pavilhão Chinês, Príncipe Real, Lisboa, Portugal",False
+EXP-005,Real Fado — Reservatório da Patriarcal,Música e cultura,Lisboa,"Príncipe Real, Lisboa",Folha4 (Experiências),,,"Real Fado — Reservatório da Patriarcal, Príncipe Real, Lisboa, Portugal","Real Fado — Reservatório da Patriarcal, Príncipe Real, Lisboa, Portugal",False
+EXP-006,Real Fado — Embaixada,Música e cultura,Lisboa,"Príncipe Real, Lisboa",Folha4 (Experiências),,,"Real Fado — Embaixada, Príncipe Real, Lisboa, Portugal","Real Fado — Embaixada, Príncipe Real, Lisboa, Portugal",False
+EXP-007,Transfer fluvial Belém – Praça do Comércio,Passeio de barco / Transfer,Lisboa,"Belém – Praça do Comércio, Lisboa",Folha4 (Experiências),,,"Transfer fluvial Belém – Praça do Comércio, Belém – Praça do Comércio, Lisboa, Portugal","Transfer fluvial Belém – Praça do Comércio, Belém – Praça do Comércio, Lisboa, Portugal",False
+EXP-008,Cruzeiro com pequeno-almoço no Tejo,Passeio de barco / Gastronomia,Lisboa,"Rio Tejo, Lisboa",Folha4 (Experiências),,,"Cruzeiro com pequeno-almoço no Tejo, Rio Tejo, Lisboa, Portugal","Cruzeiro com pequeno-almoço no Tejo, Rio Tejo, Lisboa, Portugal",False
+EXP-009,Passeio privativo em veleiro no Tejo,Passeio de barco / Experiência privada,Lisboa,"Rio Tejo, Lisboa",Folha4 (Experiências),,,"Passeio privativo em veleiro no Tejo, Rio Tejo, Lisboa, Portugal","Passeio privativo em veleiro no Tejo, Rio Tejo, Lisboa, Portugal",False
+EXP-010,Lisbon Traditional Boats Sunset Cruise — Nosso Tejo,Passeio de barco / Cultura e património,Lisboa,"Rio Tejo, Lisboa — Estação Fluvial Sul e Sueste",Folha4 (Experiências),,,"Lisbon Traditional Boats Sunset Cruise — Nosso Tejo, Rio Tejo, Lisboa — Estação Fluvial Sul e Sueste, Portugal","Lisbon Traditional Boats Sunset Cruise — Nosso Tejo, Rio Tejo, Lisboa — Estação Fluvial Sul e Sueste, Portugal",False
+EXP-011,Wine & Territory — Classic,Vinhos e gastronomia,Lisboa,Lisboa,Folha4 (Experiências),,,"Wine & Territory — Classic, Lisboa, Portugal","Wine & Territory — Classic, Lisboa, Portugal",False
+EXP-012,Wine & Territory — Extended,Vinhos e gastronomia,Lisboa,Lisboa,Folha4 (Experiências),,,"Wine & Territory — Extended, Lisboa, Portugal","Wine & Territory — Extended, Lisboa, Portugal",False
+EXP-013,Wine & Territory — Signature,Vinhos e gastronomia,Lisboa,Lisboa,Folha4 (Experiências),,,"Wine & Territory — Signature, Lisboa, Portugal","Wine & Territory — Signature, Lisboa, Portugal",False
+EXP-014,Masterclass de Pastel de Nata,Gastronomia / Workshop de pastelaria,Lisboa,"Rua de Santa Justa, 87, Baixa, Lisboa",Folha4 (Experiências),,,"Masterclass de Pastel de Nata, Rua de Santa Justa, 87, Baixa, Lisboa, Portugal","Masterclass de Pastel de Nata, Rua de Santa Justa, 87, Baixa, Lisboa, Portugal",False
+EXP-015,Lisbon Market Tour & Cooking Class,Gastronomia / Aula de culinária,Lisboa,"Rua Ilha Terceira, 51A, Lisboa",Folha4 (Experiências),,,"Lisbon Market Tour & Cooking Class, Rua Ilha Terceira, 51A, Lisboa, Portugal","Lisbon Market Tour & Cooking Class, Rua Ilha Terceira, 51A, Lisboa, Portugal",False
+EXP-016,Workshop de Doçaria Conventual — Casa dos Ovos Moles,Gastronomia / Doçaria conventual,Lisboa,"Calçada do Sacramento, 25, Chiado, Lisboa",Folha4 (Experiências),,,"Workshop de Doçaria Conventual — Casa dos Ovos Moles, Calçada do Sacramento, 25, Chiado, Lisboa, Portugal","Workshop de Doçaria Conventual — Casa dos Ovos Moles, Calçada do Sacramento, 25, Chiado, Lisboa, Portugal",False
+EXP-017,José Maria da Fonseca — Prova Premium,Vinhos / Prova,Lisboa,Azeitão,Folha4 (Experiências),,,"José Maria da Fonseca — Prova Premium, Azeitão, Portugal","José Maria da Fonseca — Prova Premium, Azeitão, Portugal",False
+EXP-018,José Maria da Fonseca — Prova Super Premium,Vinhos / Prova,Lisboa,Azeitão,Folha4 (Experiências),,,"José Maria da Fonseca — Prova Super Premium, Azeitão, Portugal","José Maria da Fonseca — Prova Super Premium, Azeitão, Portugal",False
+EXP-019,José Maria da Fonseca — Prova Especial de Moscatéis,Vinhos / Prova,Lisboa,Azeitão,Folha4 (Experiências),,,"José Maria da Fonseca — Prova Especial de Moscatéis, Azeitão, Portugal","José Maria da Fonseca — Prova Especial de Moscatéis, Azeitão, Portugal",False
+EXP-020,José Maria da Fonseca — Wine Blending,Vinhos / Experiência participativa,Lisboa,Azeitão,Folha4 (Experiências),,,"José Maria da Fonseca — Wine Blending, Azeitão, Portugal","José Maria da Fonseca — Wine Blending, Azeitão, Portugal",False
+EXP-021,Casa Relvas — Prova Terroir,Vinhos / Visita e prova,Lisboa,Évora,Folha4 (Experiências),,,"Casa Relvas — Prova Terroir, Évora, Portugal","Casa Relvas — Prova Terroir, Évora, Portugal",False
+EXP-022,Casa Relvas — Prova Especial,Vinhos / Visita e prova,Lisboa,Évora,Folha4 (Experiências),,,"Casa Relvas — Prova Especial, Évora, Portugal","Casa Relvas — Prova Especial, Évora, Portugal",False
+EXP-023,Casa Relvas — Prova de Castas Portuguesas,Vinhos / Visita e prova,Lisboa,Évora,Folha4 (Experiências),,,"Casa Relvas — Prova de Castas Portuguesas, Évora, Portugal","Casa Relvas — Prova de Castas Portuguesas, Évora, Portugal",False
+EXP-024,Pepe Aromas — Cork Tour — Sobreira Grande de Jipe 4×4,Natureza / Gastronomia / Artesanato,Lisboa,Alentejo — Pepe Aromas,Folha4 (Experiências),,,"Pepe Aromas — Cork Tour — Sobreira Grande de Jipe 4×4, Alentejo — Pepe Aromas, Portugal","Pepe Aromas — Cork Tour — Sobreira Grande de Jipe 4×4, Alentejo — Pepe Aromas, Portugal",False
+EXP-025,Pepe Aromas — Menu Degustação Lux,Natureza / Gastronomia / Artesanato,Lisboa,Alentejo — Pepe Aromas,Folha4 (Experiências),,,"Pepe Aromas — Menu Degustação Lux, Alentejo — Pepe Aromas, Portugal","Pepe Aromas — Menu Degustação Lux, Alentejo — Pepe Aromas, Portugal",False
+EXP-026,Pepe Aromas — Menu Degustação Lux Premium,Natureza / Gastronomia / Artesanato,Lisboa,Alentejo — Pepe Aromas,Folha4 (Experiências),,,"Pepe Aromas — Menu Degustação Lux Premium, Alentejo — Pepe Aromas, Portugal","Pepe Aromas — Menu Degustação Lux Premium, Alentejo — Pepe Aromas, Portugal",False
+EXP-027,Pepe Aromas — Lunch in a Box,Natureza / Gastronomia / Artesanato,Lisboa,Alentejo — Pepe Aromas,Folha4 (Experiências),,,"Pepe Aromas — Lunch in a Box, Alentejo — Pepe Aromas, Portugal","Pepe Aromas — Lunch in a Box, Alentejo — Pepe Aromas, Portugal",False
+EXP-028,Pepe Aromas — Oficina de Cortiça,Natureza / Gastronomia / Artesanato,Lisboa,Alentejo — Pepe Aromas,Folha4 (Experiências),,,"Pepe Aromas — Oficina de Cortiça, Alentejo — Pepe Aromas, Portugal","Pepe Aromas — Oficina de Cortiça, Alentejo — Pepe Aromas, Portugal",False
+EXP-029,Pepe Aromas — Workshop de Sabonetes Artesanais de Figo-da-Índia,Natureza / Gastronomia / Artesanato,Lisboa,Alentejo — Pepe Aromas,Folha4 (Experiências),,,"Pepe Aromas — Workshop de Sabonetes Artesanais de Figo-da-Índia, Alentejo — Pepe Aromas, Portugal","Pepe Aromas — Workshop de Sabonetes Artesanais de Figo-da-Índia, Alentejo — Pepe Aromas, Portugal",False
+EXP-030,Pepe Aromas — Workshop de Tapetes de Arraiolos — Ponto a Ponto,Natureza / Gastronomia / Artesanato,Lisboa,Alentejo — Pepe Aromas,Folha4 (Experiências),,,"Pepe Aromas — Workshop de Tapetes de Arraiolos — Ponto a Ponto, Alentejo — Pepe Aromas, Portugal","Pepe Aromas — Workshop de Tapetes de Arraiolos — Ponto a Ponto, Alentejo — Pepe Aromas, Portugal",False
+EXP-031,Pepe Aromas — Ritmo da Terra,Natureza / Gastronomia / Artesanato,Lisboa,Alentejo — Pepe Aromas,Folha4 (Experiências),,,"Pepe Aromas — Ritmo da Terra, Alentejo — Pepe Aromas, Portugal","Pepe Aromas — Ritmo da Terra, Alentejo — Pepe Aromas, Portugal",False
+EXP-032,Bacalhôa — Adega Museu,Enoturismo / Arte e património,Lisboa,Azeitão,Folha4 (Experiências),,,"Bacalhôa — Adega Museu, Azeitão, Portugal","Bacalhôa — Adega Museu, Azeitão, Portugal",False
+EXP-033,Bacalhôa — Palácio da Bacalhôa,Enoturismo / Arte e património,Lisboa,Azeitão,Folha4 (Experiências),,,"Bacalhôa — Palácio da Bacalhôa, Azeitão, Portugal","Bacalhôa — Palácio da Bacalhôa, Azeitão, Portugal",False
+EXP-034,Bacalhôa — Adega Museu + Palácio,Enoturismo / Arte e património,Lisboa,Azeitão,Folha4 (Experiências),,,"Bacalhôa — Adega Museu + Palácio, Azeitão, Portugal","Bacalhôa — Adega Museu + Palácio, Azeitão, Portugal",False
+EXP-035,Bacalhôa — Aliança Underground Museum,Enoturismo / Arte e património,Lisboa,"Sangalhos, Bairrada",Folha4 (Experiências),,,"Bacalhôa — Aliança Underground Museum, Sangalhos, Bairrada, Portugal","Bacalhôa — Aliança Underground Museum, Sangalhos, Bairrada, Portugal",False
+EXP-036,José Maria da Fonseca — Um dia com a nossa Família,Enoturismo / Gastronomia,Lisboa,Azeitão,Folha4 (Experiências),,,"José Maria da Fonseca — Um dia com a nossa Família, Azeitão, Portugal","José Maria da Fonseca — Um dia com a nossa Família, Azeitão, Portugal",False
+EXP-037,Fragulho — Casa dos Lagares e Prova,Enoturismo / Gastronomia,Lisboa,"Cheires, Douro",Folha4 (Experiências),,,"Fragulho — Casa dos Lagares e Prova, Cheires, Douro, Portugal","Fragulho — Casa dos Lagares e Prova, Cheires, Douro, Portugal",False
+EXP-038,Fragulho — Casa dos Lagares e Quinta dos Azeredos,Enoturismo / Paisagem,Lisboa,"Cheires e Quinta dos Azeredos, Douro",Folha4 (Experiências),,,"Fragulho — Casa dos Lagares e Quinta dos Azeredos, Cheires e Quinta dos Azeredos, Douro, Portugal","Fragulho — Casa dos Lagares e Quinta dos Azeredos, Cheires e Quinta dos Azeredos, Douro, Portugal",False
+EXP-039,Casa de Mateus — Visita Especial,História / Património,Lisboa,"Vila Real, Douro",Folha4 (Experiências),,,"Casa de Mateus — Visita Especial, Vila Real, Douro, Portugal","Casa de Mateus — Visita Especial, Vila Real, Douro, Portugal",False
+EXP-040,Casa de Mateus — Prova com o Enólogo,Enoturismo,Lisboa,"Vila Real, Douro",Folha4 (Experiências),,,"Casa de Mateus — Prova com o Enólogo, Vila Real, Douro, Portugal","Casa de Mateus — Prova com o Enólogo, Vila Real, Douro, Portugal",False
+EXP-041,Lagar da Sancha — Olive Oil Safari,Azeite / Natureza,Lisboa,Douro — Lagar da Sancha,Folha4 (Experiências),,,"Lagar da Sancha — Olive Oil Safari, Douro — Lagar da Sancha, Portugal","Lagar da Sancha — Olive Oil Safari, Douro — Lagar da Sancha, Portugal",False
+EXP-042,Passeio de Moliceiro pelos Canais de Aveiro,Navegação / Cultura,Lisboa,Aveiro,Folha4 (Experiências),,,"Passeio de Moliceiro pelos Canais de Aveiro, Aveiro, Portugal","Passeio de Moliceiro pelos Canais de Aveiro, Aveiro, Portugal",False
+EXP-043,Oficina do Doce — Workshop de Ovos Moles,Gastronomia / Doçaria,Lisboa,"Aveiro — Rua João Mendonça, 23",Folha4 (Experiências),,,"Oficina do Doce — Workshop de Ovos Moles, Aveiro — Rua João Mendonça, 23, Portugal","Oficina do Doce — Workshop de Ovos Moles, Aveiro — Rua João Mendonça, 23, Portugal",False
+EXP-044,Visita às Salinas de Aveiro,Natureza / Tradições,Lisboa,Aveiro — Salinas,Folha4 (Experiências),,,"Visita às Salinas de Aveiro, Aveiro — Salinas, Portugal","Visita às Salinas de Aveiro, Aveiro — Salinas, Portugal",False
+EXP-045,Costa Nova — Fábrica e Outlet,Design / Compras,Lisboa,Região de Aveiro — local a confirmar,Folha4 (Experiências),,,"Costa Nova — Fábrica e Outlet, Região de Aveiro — local a confirmar, Portugal","Costa Nova — Fábrica e Outlet, Região de Aveiro — local a confirmar, Portugal",False
+EXP-046,Vista Alegre — Visita à Fábrica,Património industrial / Design,Lisboa,"Ílhavo, região de Aveiro",Folha4 (Experiências),,,"Vista Alegre — Visita à Fábrica, Ílhavo, região de Aveiro, Portugal","Vista Alegre — Visita à Fábrica, Ílhavo, região de Aveiro, Portugal",False
+EXP-047,Azulejos de Azeitão — Visita Guiada,Artesanato / Património,Lisboa,Azeitão,Folha4 (Experiências),,,"Azulejos de Azeitão — Visita Guiada, Azeitão, Portugal","Azulejos de Azeitão — Visita Guiada, Azeitão, Portugal",False
+EXP-048,Azulejos de Azeitão — Visita e Workshop de Pintura,Artesanato / Workshop,Lisboa,Azeitão,Folha4 (Experiências),,,"Azulejos de Azeitão — Visita e Workshop de Pintura, Azeitão, Portugal","Azulejos de Azeitão — Visita e Workshop de Pintura, Azeitão, Portugal",False
+EXP-049,Quinta Velha — Museu do Queijo de Azeitão,Gastronomia / Património,Lisboa,Azeitão — Quinta Velha,Folha4 (Experiências),,,"Quinta Velha — Museu do Queijo de Azeitão, Azeitão — Quinta Velha, Portugal","Quinta Velha — Museu do Queijo de Azeitão, Azeitão — Quinta Velha, Portugal",False
+EXP-050,Quinta Velha — Atelier de Fabrico do Queijo de Azeitão,Gastronomia / Workshop,Lisboa,Azeitão — Quinta Velha,Folha4 (Experiências),,,"Quinta Velha — Atelier de Fabrico do Queijo de Azeitão, Azeitão — Quinta Velha, Portugal","Quinta Velha — Atelier de Fabrico do Queijo de Azeitão, Azeitão — Quinta Velha, Portugal",False
+EXP-051,Quinta Velha — Degustação Tradicional,Gastronomia / Degustação,Lisboa,Azeitão — Quinta Velha,Folha4 (Experiências),,,"Quinta Velha — Degustação Tradicional, Azeitão — Quinta Velha, Portugal","Quinta Velha — Degustação Tradicional, Azeitão — Quinta Velha, Portugal",False
+EXP-052,Quinta Velha — Degustação com Paios Regionais,Gastronomia / Degustação,Lisboa,Azeitão — Quinta Velha,Folha4 (Experiências),,,"Quinta Velha — Degustação com Paios Regionais, Azeitão — Quinta Velha, Portugal","Quinta Velha — Degustação com Paios Regionais, Azeitão — Quinta Velha, Portugal",False
+EXP-053,Quinta Velha — Degustação Completa,Gastronomia / Degustação,Lisboa,Azeitão — Quinta Velha,Folha4 (Experiências),,,"Quinta Velha — Degustação Completa, Azeitão — Quinta Velha, Portugal","Quinta Velha — Degustação Completa, Azeitão — Quinta Velha, Portugal",False
+EXP-054,Quinta do Infantado — Infante,Enoturismo / Gastronomia,Lisboa,"Vale de Gontelho, a 4 km do Pinhão, Douro",Folha4 (Experiências),,,"Quinta do Infantado — Infante, Vale de Gontelho, a 4 km do Pinhão, Douro, Portugal","Quinta do Infantado — Infante, Vale de Gontelho, a 4 km do Pinhão, Douro, Portugal",False
+EXP-055,Quinta do Infantado — Dona Margarida,Enoturismo / Gastronomia,Lisboa,"Vale de Gontelho, a 4 km do Pinhão, Douro",Folha4 (Experiências),,,"Quinta do Infantado — Dona Margarida, Vale de Gontelho, a 4 km do Pinhão, Douro, Portugal","Quinta do Infantado — Dona Margarida, Vale de Gontelho, a 4 km do Pinhão, Douro, Portugal",False
+EXP-056,Quinta do Infantado — Amante de Vinhos,Enoturismo / Gastronomia,Lisboa,"Vale de Gontelho, a 4 km do Pinhão, Douro",Folha4 (Experiências),,,"Quinta do Infantado — Amante de Vinhos, Vale de Gontelho, a 4 km do Pinhão, Douro, Portugal","Quinta do Infantado — Amante de Vinhos, Vale de Gontelho, a 4 km do Pinhão, Douro, Portugal",False
+EXP-057,Quinta do Infantado — Amante de Vinhos Especial,Enoturismo / Gastronomia,Lisboa,"Vale de Gontelho, a 4 km do Pinhão, Douro",Folha4 (Experiências),,,"Quinta do Infantado — Amante de Vinhos Especial, Vale de Gontelho, a 4 km do Pinhão, Douro, Portugal","Quinta do Infantado — Amante de Vinhos Especial, Vale de Gontelho, a 4 km do Pinhão, Douro, Portugal",False
+EXP-058,Quinta do Infantado — Um Dia na Vindima,Enoturismo / Gastronomia,Lisboa,"Vale de Gontelho, a 4 km do Pinhão, Douro",Folha4 (Experiências),,,"Quinta do Infantado — Um Dia na Vindima, Vale de Gontelho, a 4 km do Pinhão, Douro, Portugal","Quinta do Infantado — Um Dia na Vindima, Vale de Gontelho, a 4 km do Pinhão, Douro, Portugal",False
+EXP-059,Quinta do Fojo — Prova Tradicional,Enoturismo / Gastronomia,Lisboa,"Rio Bom, Cambres, Douro",Folha4 (Experiências),,,"Quinta do Fojo — Prova Tradicional, Rio Bom, Cambres, Douro, Portugal","Quinta do Fojo — Prova Tradicional, Rio Bom, Cambres, Douro, Portugal",False
+EXP-060,Quinta do Fojo — Prova Privada,Enoturismo / Gastronomia,Lisboa,"Rio Bom, Cambres, Douro",Folha4 (Experiências),,,"Quinta do Fojo — Prova Privada, Rio Bom, Cambres, Douro, Portugal","Quinta do Fojo — Prova Privada, Rio Bom, Cambres, Douro, Portugal",False
