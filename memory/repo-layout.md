@@ -30,6 +30,10 @@ data/ (versioned Excel and proposal PDFs; source of truth)
 | Version store | `dmc-workspace/src/lib/version-store.ts` | Persists SQLite metadata, snapshots, hashes, and localized PDFs under `exports/`. |
 | Local translation | `translations/worker.py` and `dmc-workspace/src/lib/local-translation.ts` | Runs optional offline translation through a Python child process. |
 
+The DMC workspace has two persistence layers: browser `localStorage` holds
+draft/UI state, while SQLite and write-once files under `exports/itineraries`
+hold authoritative immutable versions and exported artifacts.
+
 ## Ownership boundaries
 
 - `data/`: protected input. The ETL reads it; applications do not write it.
@@ -53,6 +57,8 @@ data/ (versioned Excel and proposal PDFs; source of truth)
   warehouse, enforces validation, runs Python regressions, and publishes the
   warehouse artifact on Windows.
 - There is currently no checked-in frontend CI workflow.
+- The data workflow rebuilds the checked-in warehouse, while regression tests
+  also exercise publication independently in temporary directories.
 
 ## Documentation caveat
 

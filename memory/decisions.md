@@ -7,8 +7,9 @@ Last verified: 2026-09-29
 - Status: accepted for project planning
 - Date: 2026-09-29
 - Decision: treat the local ETL, warehouse, Streamlit dashboard, and Next.js DMC
-  Workspace as the implemented baseline. Treat Forms, S3, Bedrock, live provider
-  APIs, and AWS deployment as target scope until code and tests exist.
+  Workspace as the implemented baseline. Treat S3, Bedrock, live provider APIs,
+  and AWS deployment as target scope until code and tests exist. The earlier
+  Google Forms concept is superseded by embedded dashboard intake.
 - Reason: this prevents agents from relying on README passages or diagram boxes
   as if they were deployed components.
 - Evidence: repository tree, package manifests, tests, supplied project diagram.
@@ -47,13 +48,24 @@ Last verified: 2026-09-29
 - Evidence: `README.md`, `README_UIMOCK.md`, supplied project diagram.
 - Scope: UI language, agent behavior, exports, and integration error handling.
 
+## D-005 - Embed intake in the curator dashboard
+
+- Status: accepted product decision
+- Date: 2026-09-29
+- Decision: use the existing version 1.0 form in
+  `dmc-workspace/src/components/NewTripScreen.tsx` as the intake baseline.
+  Google Forms and a separate intake application are out of scope.
+- Reason: keeps intake, curation, review, versioning, and export in one
+  operational workflow.
+- Evidence: explicit team direction and the existing component.
+- Scope: UI ownership, intake contracts, roadmap, and cloud integration.
+
 ## Open decisions
 
 ### O-001 - Primary operational UI
 
-Choose whether the Next.js DMC Workspace is the operational product and
-Streamlit remains analytical, or whether Streamlit must also implement the
-diagram's operational workflow.
+Document the accepted boundary in user-facing architecture material: Next.js
+owns operational intake and curation; Streamlit remains analytical.
 
 ### O-002 - Agent/model boundary
 
@@ -75,4 +87,19 @@ local/offline fallback before writing an adapter.
 ### O-005 - Privacy and consent
 
 Define the minimum traveler data, consent, retention, redaction, logging, and
-deletion rules before connecting Google Forms or sending briefs to an LLM.
+deletion rules before persisting dashboard intake or sending briefs to an LLM.
+
+### O-006 - Warehouse delivery policy
+
+Choose whether `warehouse/` is a committed release snapshot, a CI artifact, or
+both. Define review and retention rules before changing the current mixed model.
+
+### O-007 - Extraction and conflict gates
+
+Decide whether any PDF extraction error blocks publication and how approved
+structured merge conflicts are identified, reviewed, and waived.
+
+### O-008 - Translation deployment
+
+Choose whether the Python runtime and local models are bundled with deployment or
+provisioned separately. The Node workspace does not install them.

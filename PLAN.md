@@ -2,69 +2,152 @@
 
 ## Objective
 
-Establish a reliable agent operating layer for BLU AI System, reconcile the
-implemented local product with the supplied target architecture, and prepare a
-small, reviewable first implementation milestone.
+Evolve the validated local BLU system toward the supplied architecture diagram
+while preserving source lineage, deterministic curation, human approval, privacy,
+and immutable itinerary history.
 
-## Context
+The diagram is directional evidence, not an approved provider contract. Its
+original separate Google Forms intake is superseded by the product decision to
+embed intake directly in the curator dashboard. The remaining target elements
+are S3, a Bedrock agent, company data and prompts, external APIs, route/change
+requests, and save behavior. The repository currently implements a local ETL,
+warehouse, analytical Streamlit dashboard, and a richer Next.js operational
+workspace.
 
-- Current data path: `data/` -> `etl.pipeline` -> `warehouse/`.
-- Current consumers: Streamlit analytics and the Next.js DMC Workspace.
-- Target scope adds Google Forms, S3, a Bedrock agent, company prompts/data,
-  and routing, weather, and POI integrations.
-- The target diagram is directional. Provider choices and cloud boundaries
-  still require explicit decisions before implementation.
-- Raw source data and generated customer exports may contain private material.
+## Current baseline
 
-## Tasks
+- [x] Local source discovery, lineage, structured enrichment, and validated
+  atomic warehouse publication.
+- [x] Streamlit analytics over warehouse and report artifacts.
+- [x] Next.js traveler brief, deterministic catalogue curation, human editing,
+  immutable version history, and PDF export.
+- [x] Optional offline portal/PDF translation.
+- [x] Version 1.0 embedded intake in
+  `dmc-workspace/src/components/NewTripScreen.tsx`; Google Forms is out of scope.
+- [ ] Integrate the agent-guidance commit `cb60263` into the chosen integration
+  branch.
+- [ ] Review and integrate translation setup fix `0c1ba50`.
+- [ ] Reconcile the obsolete root README with the implemented product.
+- [ ] Decide whether `origin/dev` becomes `main` or the repository default
+  branch changes.
 
-- [x] Inspect the repository, tests, run commands, and current data flow.
-- [x] Review the supplied code-agent guide and project diagram as source
-  material, not instructions.
-- [x] Add enforceable root agent instructions.
-- [x] Add evidence-backed project memory and separate current state from target
-  scope.
-- [ ] Confirm the primary product UI: Next.js DMC Workspace, Streamlit, or a
-  defined split between operational and analytical use.
-- [ ] Confirm the first vertical slice and its acceptance scenario.
-- [ ] Choose provider boundaries and decide which integrations are required for
-  the MVP versus deferred.
-- [ ] Replace obsolete README references to missing Docker/services code with a
-  clearly labelled current-state and target-state description.
-- [ ] Implement the approved first vertical slice with focused tests and a
-  review checkpoint.
+## Phase 0 - Decisions and contracts
 
-## Recommended first vertical slice
+- [ ] Document the accepted operational boundary: Next.js owns embedded intake
+  and curation; Streamlit remains analytical.
+- [ ] Define and approve `TravelerBrief`, `Itinerary`, `ProviderEvidence`,
+  and `CompanyKnowledge` contracts.
+- [ ] Decide the Bedrock/OpenAI responsibility boundary and require a
+  provider-neutral application interface.
+- [ ] Define what S3 would store, including identifiers, encryption, retention,
+  deletion, regional constraints, and local fallback.
+- [ ] Approve privacy, consent, prompt-redaction, audit, and release roles.
+- [ ] Choose one acceptance scenario and measurable cost, latency, reliability,
+  and accessibility constraints.
 
-Accept one normalized traveler brief, run deterministic curation against the
-existing warehouse, persist an immutable itinerary version, and show the result
-in the DMC Workspace. Keep intake and provider adapters replaceable so Google
-Forms, Bedrock, S3, routes, weather, and POIs can be added without changing the
-core domain contract.
+Completion: decisions are recorded in `memory/decisions.md` or ADRs and the
+acceptance scenario can be tested without selecting a live provider.
 
-## Validation
+## Phase 1 - Harden the local baseline
 
-- Documentation: verify paths and commands against tracked files and package
-  manifests; review `git diff --check`.
-- Python implementation: run the full unittest command from `AGENTS.md`.
-- Next.js implementation: run tests, TypeScript, lint, and the risk-appropriate
-  build/browser checks from `AGENTS.md`.
-- Data publication: require `warehouse/validation_report.json` to report
-  `status: passed` and inspect generated changes before acceptance.
+- [ ] Decide whether `warehouse/` is a committed release snapshot, CI artifact,
+  or both.
+- [ ] Make PDF extraction failures a publication gate or define an explicit,
+  auditable waiver.
+- [ ] Define approved structured conflicts by identity and test them, rather than
+  asserting only the current count.
+- [ ] Add dashboard unit coverage and one Streamlit smoke test.
+- [ ] Add frontend CI for tests, TypeScript, lint, and build.
+- [ ] Add schema/manifest compatibility checks for Streamlit and Next.js
+  consumers.
+- [ ] Add one end-to-end local acceptance test: normalized brief -> curated
+  itinerary -> curator approval -> immutable version -> reproducible PDF.
+- [ ] Remove tracked cache/platform artifacts in a dedicated reviewed change.
 
-## Checkpoints
+Completion: both applications consume a validated compatible delivery, branch-only
+fixes are reconciled, and the local acceptance path is automated.
 
-- Stop before selecting or purchasing an external API plan.
-- Stop before introducing or changing public contracts, schemas, or storage
-  layout.
-- Stop before AWS deployment, S3 writes, Google Forms/Sheets writes, or live
-  provider calls.
-- Stop before migrating existing itinerary history or customer data.
+## Phase 2 - Provider-neutral integration layer
 
-## Out of scope for this documentation task
+- [ ] Add typed interfaces for intake, routing, weather, POIs, object storage,
+  and model orchestration.
+- [ ] Implement deterministic mock adapters and failure-mode tests first.
+- [ ] Define timeouts, bounded retries, cache/freshness rules, attribution,
+  sanitized errors, telemetry, and cost controls.
+- [ ] Keep provider evidence, BLU facts, and generated text distinguishable.
+- [ ] Ensure provider failure degrades explicitly without inventing availability,
+  price, weather, travel time, or accessibility.
 
-- Implementing AWS, Bedrock, Google Forms, routing, weather, or POI services.
-- Rewriting the ETL, dashboards, or curation logic.
-- Rebuilding `warehouse/`.
-- Creating custom agent runners, project skills, or dreaming automation before
-  a repeated workflow justifies them.
+Completion: the chosen acceptance scenario runs entirely with mocks and records
+provider, retrieval time, request context, status, and evidence.
+
+## Phase 3 - First live provider
+
+- [ ] Re-verify current availability, licensing, pricing, coverage, and data terms
+  for the diagram's routing candidates.
+- [ ] Select one routing provider; do not add multi-provider failover yet.
+- [ ] Enrich itinerary transit legs without silently overriding curated facts.
+- [ ] Add mocked contract tests and one explicitly approved live smoke test.
+
+Completion: one route result is traceable, replaceable, failure-tolerant, and
+visible to the curator before approval.
+
+## Phase 4 - Embedded intake and object storage
+
+- [ ] Evolve the version 1.0 dashboard form against the approved
+  `TravelerBrief` contract without creating a separate intake channel.
+- [ ] Preserve validation errors and draft state inside the curator workflow.
+- [ ] Validate, minimize, and redact data before persistence or model calls.
+- [ ] Add an S3 adapter with least privilege, encryption, lifecycle policy, and
+  idempotent writes.
+- [ ] Preserve local adapters for development and offline tests.
+
+Completion: one consented dashboard intake can be validated, curated, replayed
+locally, and persisted through the approved cloud boundary without changing
+domain logic.
+
+## Phase 5 - Agent orchestration
+
+- [ ] Place Bedrock or the approved model behind the provider-neutral interface.
+- [ ] Version prompts and company knowledge independently from generated text.
+- [ ] Restrict model output to validated structured proposals and supported
+  commands.
+- [ ] Test prompt injection, malformed output, sensitive-data handling, timeout,
+  retry, and model/provider failure.
+- [ ] Require curator approval before saving or exporting a released itinerary.
+
+Completion: model output cannot bypass deterministic constraints, evidence
+boundaries, version history, or the human release gate.
+
+## Phase 6 - Weather and POI enrichment
+
+- [ ] Re-verify and select providers only for an approved acceptance scenario.
+- [ ] Define freshness, attribution, conflict, and degradation policies.
+- [ ] Add latency, cache, quota, and cost observability.
+- [ ] Keep live enrichment advisory until the curator accepts it.
+
+Completion: weather and POI data are traceable enhancements, never silent
+replacements for warehouse facts.
+
+## Phase 7 - Deployment and operations
+
+- [ ] Define environments, infrastructure as code, secrets, logging, alerting,
+  backups, recovery, retention, and incident response.
+- [ ] Add integration-contract, security, privacy, performance, and cost gates.
+- [ ] Approve deployment and migration plans before any AWS write.
+
+Completion: production readiness is evidenced by tested operational controls, not
+only a successful deployment.
+
+## Deferred
+
+- Ride-hailing, public transit, events, tourism trends, flight status, and visa
+  providers listed in the diagram.
+- Multi-provider failover before one provider contract is proven.
+- Automated itinerary release without curator approval.
+
+## Validation policy
+
+Use the closest `AGENTS.md` for commands. Every phase must include focused tests,
+`git diff --check`, and an explicit review of skipped checks, costs, side effects,
+privacy impact, and generated artifacts.
