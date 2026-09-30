@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useRef, useState, useCallback } f
 import { languages, isLocale, type Locale } from "@/lib/locales";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { TopBar } from "@/components/TopBar";
 import catalogue from "@/i18n/messages.json";
 const messages = catalogue as Record<string, Partial<Record<Locale,string>>>;
 type Context = { locale: Locale; setLocale: (locale: Locale) => void; values: Record<string,string>; request: (text:string,source:"pt"|"en")=>void };
@@ -49,7 +50,7 @@ export function LocaleProvider({children}:{children:React.ReactNode}) {
   },[locale]);
   return <LocaleContext.Provider value={{locale,setLocale,values,request}}>
     <div className="flex h-dvh flex-col">
-    <header className="shrink-0 flex justify-end items-center gap-3 px-4 py-2 bg-[#EBE5DA] border-b relative z-50"><span className="text-xs">🌐</span><LanguagePicker value={locale} onChange={setLocale}/></header>
+    <TopBar locale={locale}><LanguagePicker value={locale} onChange={setLocale}/></TopBar>
     {error&&<p role="alert" className="p-2 text-amber-900 bg-amber-50">Tradução local indisponível / Local translation unavailable. <button className="underline" onClick={()=>window.location.reload()}>↻</button></p>}
     <div className="flex-1 min-h-0 overflow-auto">{children}</div>
     </div>

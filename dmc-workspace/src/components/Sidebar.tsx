@@ -3,10 +3,9 @@ import { T } from "@/components/LocaleProvider";
 
 
 import React from "react";
-import { Plus, MapPin, Compass, ShieldCheck } from "lucide-react";
+import { Plus, MapPin, ShieldCheck } from "lucide-react";
 import { RecentTrip } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps {
   currentTripId: string;
@@ -27,21 +26,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className="w-full lg:w-64 shrink-0 border-r border-[#D5D1C7] bg-[#EBE5DA] flex flex-col justify-between h-full select-none">
       {/* Top Header / BLU Costa Branding */}
       <div>
-        <div className="p-4 border-b border-[#D5D1C7] bg-[#F4F0E7]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#143F4B] flex items-center justify-center text-[#D8A65C] shadow-xs">
-              <span className="font-serif-blu font-bold text-sm tracking-widest">B</span>
-            </div>
-            <div>
-              <span className="font-serif-blu font-bold text-sm tracking-tight text-[#143F4B] block leading-tight">
-                BLU COSTA
-              </span>
-              <span className="text-[10px] text-[#4A636B] font-medium tracking-widest uppercase"><T text="Travel Curation" source="en"/>{" "}</span>
-            </div>
-          </div>
-          <div className="mt-2 text-[10px] text-[#7E9399] tracking-wider uppercase font-semibold"><T text="Portugal · Studio" source="en"/>{" "}</div>
-        </div>
-
         {/* Action Button: New Trip via Shadcn Button */}
         <div className="p-3">
           <Button
