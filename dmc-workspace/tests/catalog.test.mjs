@@ -5,13 +5,15 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { CatalogStore, CatalogConflict, legacyId } from '../src/lib/catalog-store.ts';
 import { emptyFields } from '../src/lib/catalog-schema.ts';
+import { emptyMatching } from '../src/lib/catalog-matching.ts';
 
 const input = () => ({ category: 'atracoes', status: 'draft', baseRevision: null, reason: 'Teste', fields: { ...emptyFields(), name: 'Jardim', location: 'Lisboa', description: 'Visita ao jardim', duration: '60 min', price: '10 EUR por pessoa', accessibility: 'Entrada sem degraus', source: 'Fornecedor', effort: 'Baixo' } });
 test('catalog revisions survive reopen, reject stale edits and immediately revoke published records', () => {
  const root = mkdtempSync(path.join(tmpdir(), 'blu-catalog-'));
  let store = new CatalogStore(root);
  try {
-  const first = store.save(input());
+  const matching = { ...emptyMatching(), interests: ['Culture & Heritage'], children: 'allowed', maxGroup: 8 };
+  const first = store.save({ ...input(), matching });
   const approved = store.save({ ...input(), id: first.id, baseRevision: 1, status: 'approved' });
   const warehouse = { _catalog_id: first.id, _catalog_revision: 2, _catalog_status: 'approved' };
   assert.ok(store.isPublished(warehouse));
@@ -21,6 +23,8 @@ test('catalog revisions survive reopen, reject stale edits and immediately revok
   assert.ok(!store.isPublished(warehouse));
   assert.equal(store.history(first.id).length, 3);
   assert.equal(store.history(first.id)[2].status, 'draft');
+  assert.deepEqual(store.history(first.id)[2].matching, matching);
+  assert.deepEqual(store.history(first.id)[0].matching, matching);
   store.close(); store = new CatalogStore(root);
   assert.equal(store.list()[0].revision, 3);
   assert.throws(() => store.save({ ...input(), fields: { ...emptyFields(), name: 'Incomplete' }, status: 'approved' }));

@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { CatalogStore } from '../src/lib/catalog-store.ts';
+import { emptyMatching } from '../src/lib/catalog-matching.ts';
 import { emptyFields } from '../src/lib/catalog-schema.ts';
 import { generateItinerary } from '../src/lib/curation.ts';
 const project = fileURLToPath(new URL('../../', import.meta.url));
@@ -20,7 +21,7 @@ try {
   copyFileSync(path.join(project, 'data', workbook), path.join(data, workbook));
   const store = new CatalogStore(path.join(data, 'portal'));
   let record;
-  try { record = store.save({ category: 'atracoes', status: 'approved', baseRevision: null, reason: 'Integration test', fields: { ...emptyFields(), name: 'Jardim de teste', location: 'Lisboa', description: 'Passeio cultural', duration: '60 min', price: '10 EUR por pessoa', accessibility: 'Entrada sem degraus', source: 'Fornecedor', effort: 'Baixo' } }); }
+  try { record = store.save({ category: 'atracoes', status: 'approved', baseRevision: null, reason: 'Integration test', matching: { ...emptyMatching(), interests: ['Culture & Heritage'], children: 'allowed', food: 'no', pricePerPerson: 10 }, fields: { ...emptyFields(), name: 'Jardim de teste', location: 'Lisboa', description: 'Passeio cultural', duration: '60 min', price: '10 EUR por pessoa', accessibility: 'Entrada sem degraus', source: 'Fornecedor', effort: 'Baixo' } }); }
   finally { store.close(); }
   const run = () => execFileSync(python, ['-B', '-m', 'etl.pipeline', '--data-dir', data, '--output-dir', warehouse], { cwd: project, windowsHide: true, stdio: 'pipe' });
   const readCatalog = () => Object.fromEntries(['atracoes', 'experiencias', 'restaurantes', 'curation_rules'].map(name => [name, readFileSync(path.join(warehouse, `${name}.jsonl`), 'utf8').split(/\r?\n/).filter(Boolean).map(JSON.parse)]));
@@ -29,6 +30,7 @@ try {
   const row = catalog.atracoes.find(r => r._catalog_id === record.id);
   assert.equal(row._catalog_revision, 1);
   assert.equal(row._catalog_status, 'approved');
+  assert.deepEqual(row._matching, record.matching);
   const brief = JSON.parse(readFileSync(new URL('./browser/fixture.json', import.meta.url), 'utf8')).brief;
   Object.assign(brief, { childrenAges: '', specialOccasion: '', notes: '', accommodation: 'Boutique', diningPace: 'Relaxed Dining (~90m)', destination: 'Lisboa' });
   const items = generateItinerary(brief, catalog).itinerary.flatMap(d => d.items);

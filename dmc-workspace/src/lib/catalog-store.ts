@@ -59,6 +59,7 @@ export class CatalogStore {
       if (previous && previous.category !== v.category) throw new Error('A categoria de um registo existente não pode ser alterada.');
       const record: CatalogRecord = { id: previous?.id ?? `cat-${randomUUID()}`, category: v.category, status: v.status,
         revision: (previous?.revision ?? 0) + 1, fields: Object.fromEntries(Object.entries(v.fields).filter(([k]) => k in emptyFields()).map(([k, val]) => [k, val.trim()])) as CatalogRecord['fields'],
+        matching: v.matching ? { ...v.matching, food: v.category === 'restaurantes' ? 'yes' : v.matching.food } : previous?.matching,
         raw: previous?.raw ?? {}, updatedAt: new Date().toISOString(), reason: v.reason.trim() };
       this.write(record); this.db.exec('COMMIT'); return record;
     } catch (e) { this.db.exec('ROLLBACK'); throw e; }

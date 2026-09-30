@@ -1279,6 +1279,118 @@
     "de": "Aktualisierter Katalog. Nur genehmigte Reviews sind für neue Skripte verfügbar.",
     "zh": "更新的目录,只有经批准的审查可用于新的脚本."
   },
+  "Interesses associados": {
+    "pt": "Interesses associados",
+    "en": "Associated interests",
+    "es": "Intereses asociados",
+    "fr": "Intérêts associés",
+    "de": "Verbundene Interessen",
+    "zh": "相关利益"
+  },
+  "Níveis de proposta compatíveis": {
+    "pt": "Níveis de proposta compatíveis",
+    "en": "Compatible bid levels",
+    "es": "Niveles de oferta compatibles",
+    "fr": "Niveaux des soumissions compatibles",
+    "de": "Kompatible Gebotsniveaus",
+    "zh": "兼容投标水平"
+  },
+  "Ritmos de viagem compatíveis": {
+    "pt": "Ritmos de viagem compatíveis",
+    "en": "Compatible travel rhythms",
+    "es": "ritmos de viaje compatibles",
+    "fr": "Rythmes de voyage compatibles",
+    "de": "Kompatible Reiserhythmen",
+    "zh": "兼容的旅行节奏"
+  },
+  "Preferências de início compatíveis": {
+    "pt": "Preferências de início compatíveis",
+    "en": "Compatible Start Preferences",
+    "es": "Preferencias de inicio compatibles",
+    "fr": "Préférences de démarrage compatibles",
+    "de": "Kompatible Startpräferenzen",
+    "zh": "兼容的启动首选项"
+  },
+  "Ritmos de refeição compatíveis": {
+    "pt": "Ritmos de refeição compatíveis",
+    "en": "Compatible meal rhythms",
+    "es": "ritmos de comida compatibles",
+    "fr": "Rythmes de repas compatibles",
+    "de": "Kompatible Mahlzeit Rhythmen",
+    "zh": "兼容的餐饮节奏"
+  },
+  "Necessidades de mobilidade verificadas": {
+    "pt": "Necessidades de mobilidade verificadas",
+    "en": "Verified mobility needs",
+    "es": "Necesidades de movilidad verificadas",
+    "fr": "Besoins de mobilité vérifiés",
+    "de": "Überprüfter Mobilitätsbedarf",
+    "zh": "核实的流动需要"
+  },
+  "Restrições alimentares verificadas": {
+    "pt": "Restrições alimentares verificadas",
+    "en": "Verified dietary restrictions",
+    "es": "Restricciones dietéticas verificadas",
+    "fr": "Restrictions alimentaires vérifiées",
+    "de": "Verifizierte diätetische Einschränkungen",
+    "zh": "经核实的饮食限制"
+  },
+  "Excluir quando o cliente assinalar": {
+    "pt": "Excluir quando o cliente assinalar",
+    "en": "Delete when client ticks",
+    "es": "Eliminar cuando el cliente marca",
+    "fr": "Supprimer lorsque le client coche",
+    "de": "Löschen, wenn Client tickt",
+    "zh": "客户端选中时删除"
+  },
+  "Idade mínima (anos)": {
+    "pt": "Idade mínima (anos)",
+    "en": "Minimum age (years)",
+    "es": "Edad mínima (años)",
+    "fr": "Âge minimum (années)",
+    "de": "Mindestalter (Jahre)",
+    "zh": "最低年龄(岁)"
+  },
+  "Máximo de participantes": {
+    "pt": "Máximo de participantes",
+    "en": "Maximum participants",
+    "es": "Principales participantes",
+    "fr": "Nombre maximal de participants",
+    "de": "Maximale Teilnehmerzahl",
+    "zh": "最大参与者"
+  },
+  "Preço de referência por pessoa (EUR)": {
+    "pt": "Preço de referência por pessoa (EUR)",
+    "en": "Reference price per person (EUR)",
+    "es": "Precio de referencia por persona (EUR)",
+    "fr": "Prix de référence par personne (EUR)",
+    "de": "Referenzpreis je Person (EUR)",
+    "zh": "人均参考价格(欧元)"
+  },
+  "Disponível a partir de": {
+    "pt": "Disponível a partir de",
+    "en": "Available from",
+    "es": "Disponible desde",
+    "fr": "Disponible à partir de",
+    "de": "Verfügbar ab",
+    "zh": "备查"
+  },
+  "Disponível até": {
+    "pt": "Disponível até",
+    "en": "Available until",
+    "es": "Disponible hasta",
+    "fr": "Disponible jusqu'à",
+    "de": "verfügbar bis",
+    "zh": "可用至"
+  },
+  "Fonte, data e condições verificadas": {
+    "pt": "Fonte, data e condições verificadas",
+    "en": "Source, date and conditions verified",
+    "es": "Fuente, fecha y condiciones verificadas",
+    "fr": "Source, date et conditions vérifiées",
+    "de": "Quelle, Datum und geprüfte Bedingungen",
+    "zh": "来源、日期和条件得到核实"
+  },
   "Idioma do cliente (PDF)": {
     "pt": "Idioma do cliente (PDF)",
     "en": "Customer language (PDF)",
@@ -1310,6 +1422,102 @@
     "fr": "Critères",
     "de": "Kriterien",
     "zh": "标准"
+  },
+  "Compatibilidade com o questionário": {
+    "pt": "Compatibilidade com o questionário",
+    "en": "Compatibility with the questionnaire",
+    "es": "Compatibilidad con el cuestionario",
+    "fr": "Compatibilité avec le questionnaire",
+    "de": "Vereinbarkeit mit dem Fragebogen",
+    "zh": "与调查问卷的兼容性"
+  },
+  "Associe os interesses para dar prioridade ao registo. Nas preferências de nível, ritmo e início, uma lista vazia não limita a seleção. Assinale exclusões que tornam este registo incompatível.": {
+    "pt": "Associe os interesses para dar prioridade ao registo. Nas preferências de nível, ritmo e início, uma lista vazia não limita a seleção. Assinale exclusões que tornam este registo incompatível.",
+    "en": "Associate interests to give priority to registration. In the level, rhythm and start preferences, an empty list does not limit selection. Check deletions that make this record incompatible.",
+    "es": "Intereses asociados para dar prioridad al registro. En el nivel, el ritmo y las preferencias de inicio, una lista vacía no limita la selección. Revisar borraciones que hacen que este registro sea incompatible.",
+    "fr": "Dans les préférences de niveau, rythme et démarrage, une liste vide ne limite pas la sélection. Vérifiez les suppressions qui rendent cet enregistrement incompatible.",
+    "de": "In den Level-, Rhythmus- und Starteinstellungen schränkt eine leere Liste die Auswahl nicht ein.",
+    "zh": "对注册给予优先的关联权益。 在级别、 节奏和首选项中, 空列表不限制选择 。 请检查删除内容是否使此记录不兼容 。"
+  },
+  "Mobilidade e alimentação: assinale apenas condições verificadas e documente a fonte. Sem correspondência para todas as restrições do cliente, o registo não é sugerido. Crianças por confirmar também impedem a seleção para famílias.": {
+    "pt": "Mobilidade e alimentação: assinale apenas condições verificadas e documente a fonte. Sem correspondência para todas as restrições do cliente, o registo não é sugerido. Crianças por confirmar também impedem a seleção para famílias.",
+    "en": "Mobility and food: Only check conditions and document the source. Without matching for all customer restrictions, registration is not suggested. Unconfirmed children also prevent selection for families.",
+    "es": "Movilidad y alimentación: Sólo las condiciones de control y documentar la fuente. Sin igualar todas las restricciones al cliente, no se sugiere el registro. Los niños no confirmados también evitan la selección para las familias.",
+    "fr": "Mobilité et nourriture: uniquement vérifier les conditions et documenter la source. Sans correspondance pour toutes les restrictions du client, l'inscription n'est pas proposée.",
+    "de": "Mobilität und Essen: Prüfen Sie nur die Bedingungen und dokumentieren Sie die Quelle. Ohne Übereinstimmung für alle Kundenbeschränkungen wird keine Registrierung vorgeschlagen. Unbestätigte Kinder verhindern auch die Auswahl für Familien.",
+    "zh": "流动和食品:只检查条件和记录来源,不匹配所有客户限制,不建议登记,未经确认的儿童也阻止选择家庭。"
+  },
+  "Inclui comida ou bebida?": {
+    "pt": "Inclui comida ou bebida?",
+    "en": "Does it include food or drink?",
+    "es": "¿Incluye comida o bebida?",
+    "fr": "Y compris la nourriture ou la boisson?",
+    "de": "Beinhaltet es Essen oder Trinken?",
+    "zh": "包括食物还是饮料?"
+  },
+  "Sim": {
+    "pt": "Sim",
+    "en": "Yeah.",
+    "es": "Sí.",
+    "fr": "Oui.",
+    "de": "Ja.",
+    "zh": "对"
+  },
+  "Não": {
+    "pt": "Não",
+    "en": "No, no, no.",
+    "es": "No, no, no.",
+    "fr": "C'est pas vrai.",
+    "de": "Nein, nein, nein.",
+    "zh": "不,不,没有。"
+  },
+  "Adequação a crianças": {
+    "pt": "Adequação a crianças",
+    "en": "Adaptation to children",
+    "es": "Adaptación a los niños",
+    "fr": "Adaptation aux enfants",
+    "de": "Anpassung an Kinder",
+    "zh": "适应儿童"
+  },
+  "Aceita crianças": {
+    "pt": "Aceita crianças",
+    "en": "Take children",
+    "es": "Niños",
+    "fr": "Prendre des enfants",
+    "de": "Nehmen Sie Kinder",
+    "zh": "带孩子"
+  },
+  "Apenas adultos": {
+    "pt": "Apenas adultos",
+    "en": "Adults only",
+    "es": "Solo adultos",
+    "fr": "Adultes seulement",
+    "de": "Nur Erwachsene",
+    "zh": "仅成年人"
+  },
+  "O período limita os dias elegíveis; não confirma disponibilidade. O preço por pessoa é multiplicado pelo grupo e comparado com o orçamento restante. Preços em falta, transportes e alojamento continuam por orçamentar.": {
+    "pt": "O período limita os dias elegíveis; não confirma disponibilidade. O preço por pessoa é multiplicado pelo grupo e comparado com o orçamento restante. Preços em falta, transportes e alojamento continuam por orçamentar.",
+    "en": "The period limits the eligible days; it does not confirm availability. The price per person is multiplied by the group and compared to the remaining budget. Missing prices, transport and accommodation remain per budget.",
+    "es": "El período limita los días elegibles; no confirma la disponibilidad. El precio por persona se multiplica por el grupo y en comparación con el presupuesto restante. Los precios, el transporte y el alojamiento perdidos permanecen por presupuesto.",
+    "fr": "La période limite les jours admissibles; elle ne confirme pas la disponibilité. Le prix par personne est multiplié par le groupe et comparé au budget restant.",
+    "de": "Die Frist begrenzt die förderfähigen Tage; die Verfügbarkeit wird nicht bestätigt; der Preis pro Person wird mit der Gruppe multipliziert und mit dem verbleibenden Budget verglichen; fehlende Preise, Transport und Unterkunft verbleiben pro Budget.",
+    "zh": "期限限制合格天数,不能证实是否具备条件,每人的价格按组数乘以乘数,比照其余预算,缺失的价格、交通和住宿仍按预算计算。"
+  },
+  "A idade mínima exige as idades das crianças no briefing, separadas por vírgulas. Notas livres, ocasiões especiais e preferências de alojamento requerem revisão do curador; este catálogo não inclui hotéis.": {
+    "pt": "A idade mínima exige as idades das crianças no briefing, separadas por vírgulas. Notas livres, ocasiões especiais e preferências de alojamento requerem revisão do curador; este catálogo não inclui hotéis.",
+    "en": "The minimum age requires the ages of children in the briefing, separated by commas. Free notes, special occasions and accommodation preferences require review of the curator; this catalogue does not include hotels.",
+    "es": "La edad mínima requiere la edad de los niños en la sesión informativa, separada por comas. Notas gratuitas, ocasiones especiales y preferencias de alojamiento requieren revisión del curador; este catálogo no incluye hoteles.",
+    "fr": "Les notes gratuites, les occasions spéciales et les préférences en matière d'hébergement doivent être examinées par le conservateur; ce catalogue ne comprend pas les hôtels.",
+    "de": "Das Mindestalter erfordert das Alter der Kinder im Briefing, getrennt durch Kommas; kostenlose Notizen, besondere Anlässe und Unterkunftspräferenzen erfordern eine Überprüfung des Kurators; Hotels sind in diesem Katalog nicht enthalten.",
+    "zh": "最低年龄要求简报中的儿童年龄,用逗号分隔,免费的笔记、特殊场合和住宿优惠要求审查馆长;这个目录不包括旅馆。"
+  },
+  "Preencha também o esforço físico nos dados do registo. Esforço por confirmar ou idade mínima acima dos 18 anos exigem revisão manual, porque o briefing não recolhe a idade dos adultos.": {
+    "pt": "Preencha também o esforço físico nos dados do registo. Esforço por confirmar ou idade mínima acima dos 18 anos exigem revisão manual, porque o briefing não recolhe a idade dos adultos.",
+    "en": "Also fill out the physical effort in the registration data. Effort to confirm or minimum age above 18 years require manual review, because briefing does not collect the age of adults.",
+    "es": "Rellene también el esfuerzo físico en los datos de registro. El esfuerzo para confirmar o la edad mínima de 18 años requiere revisión manual, ya que la información no recoge la edad de los adultos.",
+    "fr": "L'effort pour confirmer ou l'âge minimum de plus de 18 ans nécessite un examen manuel, car l'information ne recueille pas l'âge des adultes.",
+    "de": "Um das Mindestalter über 18 Jahren zu bestätigen oder zu bestätigen, ist eine manuelle Überprüfung erforderlich, da das Briefing nicht das Alter von Erwachsenen erfasst.",
+    "zh": "同时填写登记数据中的体力工作,确认或确定18岁以上最低年龄的工作需要人工审查,因为情况介绍并不收集成年人的年龄。"
   },
   "Proposta preliminar. Exportar não confirma reservas, disponibilidade ou preços.": {
     "pt": "Proposta preliminar. Exportar não confirma reservas, disponibilidade ou preços.",
@@ -1550,6 +1758,14 @@
     "fr": "Tous les lieux",
     "de": "Alle Standorte",
     "zh": "所有地点"
+  },
+  "Novo Registo": {
+    "pt": "Novo Registo",
+    "en": "New Log",
+    "es": "Nuevo Log",
+    "fr": "Nouveau journal",
+    "de": "Neues Logbuch",
+    "zh": "新建日志"
   },
   "Para aprovar: nome, localização, descrição, duração, preço, fonte, acessibilidade e esforço são obrigatórios. Use preços de referência com unidade; a aprovação não confirma reservas.": {
     "pt": "Para aprovar: nome, localização, descrição, duração, preço, fonte, acessibilidade e esforço são obrigatórios. Use preços de referência com unidade; a aprovação não confirma reservas.",
@@ -2150,13 +2366,5 @@
     "fr": "Navigation par jour",
     "de": "Tagesnavigation",
     "zh": "按天导航"
-  },
-  "Novo Registo": {
-    "pt": "Novo Registo",
-    "en": "New Register",
-    "es": "Nuevo registro",
-    "fr": "Nouveau registre",
-    "de": "Neues Register",
-    "zh": "新登记册"
   }
 }

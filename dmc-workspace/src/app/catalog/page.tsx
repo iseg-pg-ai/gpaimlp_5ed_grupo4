@@ -1,18 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import { T } from '@/components/LocaleProvider';
+import { CatalogCompatibility } from '@/components/CatalogCompatibility';
+import { emptyMatching } from '@/lib/catalog-matching';
+import { selectStyle } from '@/components/ui/select-style';
 import { Button } from '@/components/ui/button';
 import { categories, categoryLabels, statuses, statusLabels, fieldLabels, emptyFields, type Category, type CatalogRecord, type CatalogInput, type Fields } from '@/lib/catalog-schema';
 
 type Entry = CatalogRecord & { published?: boolean };
 const control = 'w-full min-w-0 rounded-lg border border-[#9DB3B8] bg-white p-3 text-base text-[#143F4B]';
-const selectStyle = {
-  appearance: 'none' as const,
-  paddingRight: '2.5rem',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23143F4B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-  backgroundPosition: 'right 0.75rem center',
-  backgroundRepeat: 'no-repeat',
-};
 const button = 'min-h-11 rounded-lg border border-[#9DB3B8] px-4 py-2 text-sm font-medium disabled:opacity-50 hover:bg-[#EDF3F4]';
 const statusColor = { draft: 'bg-stone-100', review: 'bg-amber-50', approved: 'bg-teal-50', inactive: 'bg-gray-100 text-gray-600' };
 async function responseJson(response: Response) {
@@ -47,7 +43,7 @@ export default function CatalogPage() {
   const locations = [...new Set(records.filter(r => r.category === category).map(r => r.fields.location).filter(Boolean))].sort();
   function edit(record?: Entry) {
     setHistory(null); setError(''); setNotice('');
-    setEditing(record ? { id: record.id, category: record.category, status: record.status, baseRevision: record.revision, fields: { ...record.fields }, reason: '' } : { category, status: 'draft', baseRevision: null, fields: emptyFields(), reason: 'Criação de registo' });
+    setEditing(record ? { id: record.id, category: record.category, status: record.status, baseRevision: record.revision, fields: { ...record.fields }, matching: record.matching ?? emptyMatching(), reason: '' } : { category, status: 'draft', baseRevision: null, fields: emptyFields(), matching: emptyMatching(), reason: 'Criação de registo' });
   }
   async function save(input: CatalogInput) {
     setBusy(true); setError(''); setNotice('');
@@ -108,6 +104,7 @@ export default function CatalogPage() {
               : ['description', 'accessibility', 'dietary'].includes(key) ? <textarea rows={3} maxLength={4000} name={key} className={`${control} mt-1`} value={editing.fields[key]} onChange={e => setEditing({ ...editing, fields: { ...editing.fields, [key]: e.target.value } })}/>
               : <input name={key} required={key === 'name'} maxLength={key === 'name' ? 200 : 4000} className={`${control} mt-1`} value={editing.fields[key]} onChange={e => setEditing({ ...editing, fields: { ...editing.fields, [key]: e.target.value } })}/>}
           </label>)}
+          <div className="md:col-span-2 min-w-0"><CatalogCompatibility value={editing.matching ?? emptyMatching()} restaurant={editing.category === 'restaurantes'} onChange={matching => setEditing({ ...editing, matching })}/></div>
           <label className="text-sm"><T text="Estado" source="pt"/><select style={selectStyle} name="status" className={`${control} mt-1`} value={editing.status} onChange={e => setEditing({ ...editing, status: e.target.value as CatalogInput['status'] })}>{statuses.map(s => <option key={s} value={s}><T text={statusLabels[s]} source="pt"/></option>)}</select></label>
           <label className="text-sm"><T text="Motivo da alteração" source="pt"/><input name="reason" required maxLength={500} className={`${control} mt-1`} value={editing.reason} onChange={e => setEditing({ ...editing, reason: e.target.value })}/></label>
         </fieldset>
@@ -115,7 +112,7 @@ export default function CatalogPage() {
       </form>}
       {history && <section ref={historyRef} data-testid="catalog-history" className="my-6 rounded-2xl border bg-white p-4 sm:p-6">
         <div className="flex flex-wrap justify-between gap-3"><h2 className="text-xl"><T text="Histórico de alterações" source="pt"/></h2><button className={button} onClick={() => setHistory(null)}><T text="Fechar" source="pt"/></button></div>
-        <ol className="mt-4 space-y-4">{history.map(h => <li key={h.revision} className="border-t pt-4"><p className="break-words font-semibold">{h.fields.name} · v{h.revision} · <T text={statusLabels[h.status]} source="pt"/></p><p className="my-2 text-sm">{new Date(h.updatedAt).toLocaleString()} · {h.reason}</p><p className="break-all text-xs">{h.id}</p><details className="mt-2 text-sm"><summary className="cursor-pointer py-2"><T text="Ver dados desta revisão" source="pt"/></summary><dl className="grid gap-3 sm:grid-cols-2">{Object.entries(h.fields).filter(([,v]) => v).map(([k,v]) => <div className="min-w-0" key={k}><dt className="font-semibold"><T text={fieldLabels[k as keyof Fields]} source="pt"/></dt><dd className="break-words whitespace-pre-wrap">{v}</dd></div>)}</dl></details></li>)}</ol>
+        <ol className="mt-4 space-y-4">{history.map(h => <li key={h.revision} className="border-t pt-4"><p className="break-words font-semibold">{h.fields.name} · v{h.revision} · <T text={statusLabels[h.status]} source="pt"/></p><p className="my-2 text-sm">{new Date(h.updatedAt).toLocaleString()} · {h.reason}</p><p className="break-all text-xs">{h.id}</p><details className="mt-2 text-sm"><summary className="cursor-pointer py-2"><T text="Ver dados desta revisão" source="pt"/></summary><dl className="grid gap-3 sm:grid-cols-2">{Object.entries(h.fields).filter(([,v]) => v).map(([k,v]) => <div className="min-w-0" key={k}><dt className="font-semibold"><T text={fieldLabels[k as keyof Fields]} source="pt"/></dt><dd className="break-words whitespace-pre-wrap">{v}</dd></div>)}</dl>{h.matching && <div className="mt-4"><CatalogCompatibility value={h.matching} restaurant={h.category === 'restaurantes'}/></div>}</details></li>)}</ol>
       </section>}
       <p role="status" className="my-5 text-sm">{loading ? <T text="A carregar catálogo…" source="pt"/> : <>{filtered.length} <T text="registos" source="pt"/></>}</p>
       {!loading && !filtered.length && <p className="rounded-xl border bg-white p-6"><T text="Sem registos para estes filtros." source="pt"/></p>}
@@ -125,7 +122,7 @@ export default function CatalogPage() {
         <p className="mt-3 text-sm">{r.fields.price || '—'}</p>
         <p className="mt-3 text-sm font-medium"><T text={r.published ? 'Disponível para novos roteiros' : r.status === 'approved' ? 'Aguarda atualização do catálogo' : 'Fora da geração de roteiros'} source="pt"/></p>
         <p className="mt-2 break-all text-xs text-[#4A636B]">{r.id} · v{r.revision}</p>
-        <div className="mt-4 flex flex-wrap gap-2"><button className={button} disabled={busy || Boolean(editing)} onClick={() => edit(r)}><T text="Editar" source="pt"/></button><button className={button} disabled={busy} onClick={() => showHistory(r)}><T text="Histórico" source="pt"/></button>{r.status !== 'inactive' && <button className={button} disabled={busy || Boolean(editing)} onClick={() => save({ id: r.id, category: r.category, status: 'inactive', fields: r.fields, baseRevision: r.revision, reason: 'Inativação manual no portal' })}><T text="Inativar" source="pt"/></button>}</div>
+        <div className="mt-4 flex flex-wrap gap-2"><button className={button} disabled={busy || Boolean(editing)} onClick={() => edit(r)}><T text="Editar" source="pt"/></button><button className={button} disabled={busy} onClick={() => showHistory(r)}><T text="Histórico" source="pt"/></button>{r.status !== 'inactive' && <button className={button} disabled={busy || Boolean(editing)} onClick={() => save({ id: r.id, category: r.category, status: 'inactive', fields: r.fields, matching: r.matching, baseRevision: r.revision, reason: 'Inativação manual no portal' })}><T text="Inativar" source="pt"/></button>}</div>
       </article>)}</div>
     </section>
   </main>;

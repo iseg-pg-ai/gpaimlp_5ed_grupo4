@@ -1,4 +1,5 @@
 import type { CustomerBrief, ItineraryDay, ActivityItem } from "../types/index";
+import { matchCatalogProfile, validateMatching, type MatchingProfile } from './catalog-matching.ts';
 
 export type Row = Record<string, unknown>;
 export type Catalog = { atracoes: Row[]; experiencias: Row[]; restaurantes: Row[]; curation_rules: Row[] };
@@ -63,30 +64,49 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
   if (unsupported.length) throw new Error(`Exclusões não suportadas: ${unsupported.join(", ")}`);
   const all = Object.entries(catalog).filter(([table]) => table !== "curation_rules").flatMap(([table, records]) => records.map(row => ({ table, row })));
   const used = new Set<string>();
+  let remainingBudget = brief.budget;
   const maxEffort = brief.physicalEffort.startsWith("Baixo") ? 0 : brief.physicalEffort.startsWith("Moderado") ? 1 : 2;
   const limit = brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4;
   const itinerary: ItineraryDay[] = Array.from({ length: count }, (_, i) => {
     const city = route[Math.floor(i * route.length / count)];
+    const date = new Date(Date.parse(brief.startDate) + i * 86400000).toISOString().slice(0, 10);
     const candidates = all.filter(({ row, table }) => {
       if (row._catalog_status !== 'approved') return false;
+      const profile = row._matching as MatchingProfile | undefined;
+      if (profile !== undefined) {
+        try { validateMatching(profile); } catch { return false; }
+        if (!matchCatalogProfile(profile, brief, date, table === 'restaurantes')) return false;
+      }
       const location = text(row, "cidade") || text(row, "localizacao");
       const body = norm(Object.values(row).join(" "));
       const key = `${table}:${row._catalog_id ?? row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`;
       if (used.has(key) || !mentioned(location, cities[city])) return false;
       if (brief.exclusions.some(e => exclusions[e].test(body))) return false;
       const effort = ["baixo", "moderado", "alto"].indexOf(norm(row.esforco_fisico));
+      if (profile && effort < 0) return false;
       if (effort > maxEffort) return false;
-      if (brief.mobilityRestrictions.length && (effort > 0 || /escad|ingreme|subida|piso irregular/.test(body))) return false;
-      if (brief.dietaryRestrictions.length && (table === "restaurantes" || /gastronom|comida|bebida|vinho|pastel|jantar|almoco|prova|culin/.test(body))) return false;
+      if (!profile && brief.mobilityRestrictions.length && (effort > 0 || /escad|ingreme|subida|piso irregular/.test(body))) return false;
+      if (!profile && brief.dietaryRestrictions.length && (table === "restaurantes" || /gastronom|comida|bebida|vinho|pastel|jantar|almoco|prova|culin/.test(body))) return false;
       return true;
     }).map(candidate => {
       const body = norm(Object.values(candidate.row).join(" "));
-      const score = brief.interests.reduce((s, interest) => s + (interests[interest]?.test(body) ? 10 : 0), 0)
+      const profile = candidate.row._matching as MatchingProfile | undefined;
+      const matching = profile && matchCatalogProfile(profile, brief, date, candidate.table === 'restaurantes');
+      const score = (matching ? matching.score : brief.interests.reduce((s, interest) => s + (interests[interest]?.test(body) ? 10 : 0), 0))
         + (candidate.table === (brief.proposalTier === "Soft" ? "atracoes" : "experiencias") ? 3 : 0)
         + (brief.proposalTier === "Signature" && /oficina|imers|privad|especialista/.test(body) ? 2 : 0);
-      return { ...candidate, score };
+      return { ...candidate, score, matching };
     }).sort((a, b) => b.score - a.score || Number(a.row._source_row) - Number(b.row._source_row));
-    const items: ActivityItem[] = candidates.slice(0, limit).map(({ row, table }) => {
+    const selected = [];
+    for (const candidate of candidates) {
+      if (selected.length >= limit) break;
+      const price = (candidate.row._matching as MatchingProfile | undefined)?.pricePerPerson;
+      const estimated = typeof price === 'number' ? price * (brief.adults + brief.children) : 0;
+      if (estimated > remainingBudget) continue;
+      remainingBudget -= estimated;
+      selected.push(candidate);
+    }
+    const items: ActivityItem[] = selected.map(({ row, table, matching }) => {
       const id = `${table}:${row._catalog_id ?? row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`;
       used.add(id);
       const source = row._catalog_id ? `${table} · ${row._catalog_id} · revisão ${row._catalog_revision} · ${row.site_fonte ?? ''}` : `${table} · ${row.id ?? row.id_blu ?? row.nome_da_experiencia} · ${row._source_sheet}, linha ${row._source_row}`;
@@ -98,7 +118,8 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         description: text(row, "descricao_curada") || text(row, "descricao") || text(row, "proposta_de_curadoria_blu_nao_aprovada"),
         duration: text(row, "tempo_medio_de_visita") || text(row, "duracao") || text(row, "duracao_blu_estimativa"),
         priceNote: `Referência, confirmar: ${row.preco_da_atracao ?? row.preco ?? row.preco_nao_cotacao ?? "sem preço"}`,
-        source: enrichedSource, appliedRules: ["R04: prioridade por interesses", "R05: exclusões por correspondência textual", "R09: sem repetição", "R16: esforço conhecido filtrado"],
+        source: enrichedSource, appliedRules: ["R04: prioridade por interesses", "R05: exclusões por etiquetas e texto", "R09: sem repetição", "R16: esforço conhecido filtrado", ...(matching ? matching.reasons : [])],
+        accessibilityNotes: text(row, 'acessibilidade_nivel_de_confirmacao'), dietaryNotes: text(row, 'opcoes_alimentares_alergenios'),
         pendingChecks: ["Disponibilidade, horário e preço", "Acessibilidade e deslocação", ...(table === "restaurantes" ? ["Condições alimentares"] : [])],
       };
     });

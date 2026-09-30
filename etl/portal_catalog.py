@@ -42,6 +42,9 @@ def integrate_portal(data_dir: Path, tables: dict):
                    'morada': f['address'], 'contactos': f['contacts'],
                    'acessibilidade_nivel_de_confirmacao': f['accessibility'], 'site_fonte': f['source'],
                    'esforco_fisico': f['effort'], 'horario': f['hours']}
+            # Keep the structured questionnaire profile intact, including explicit unknowns.
+            if record.get('matching') is not None:
+                row['_matching'] = record['matching']
             if category == 'atracoes':
                 row.update(id=record['raw'].get('id', record['id']), nome_da_atracao=f['name'], cidade=f['location'],
                            descricao_curada=f['description'], tempo_medio_de_visita=f['duration'], preco_da_atracao=f['price'], categoria=f['kind'])

@@ -41,6 +41,7 @@ try {
       const form = page.getByTestId('catalog-editor');
       assert.equal(await form.locator('[name="cuisine"]').count(), category === 'restaurantes' ? 1 : 0);
       assert.equal(await form.locator('[name="provider"]').count(), category === 'experiencias' ? 1 : 0);
+      await form.getByTestId('catalog-compatibility').locator('details').evaluateAll(nodes => nodes.forEach(node => { node.open = true; }));
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth || [...document.querySelectorAll('main')].some(e => e.scrollWidth > e.clientWidth + 1)), false);
       await form.locator('button[type="button"]').click();
     }
@@ -56,6 +57,11 @@ try {
       const card = page.getByTestId('catalog-record');
       await card.getByRole('button', { name: 'Editar', exact: true }).click();
       await form.locator('[name="reason"]').fill('Correção');
+      const compatibility = form.getByTestId('catalog-compatibility');
+      await compatibility.locator('details').first().locator('summary').click();
+      await compatibility.locator('details').first().locator('input[type="checkbox"]').first().check();
+      await compatibility.locator('[name="matching-children"]').selectOption('allowed');
+      await compatibility.locator('[name="matching-maxGroup"]').fill('6');
       for (const field of ['location', 'description', 'duration', 'price', 'accessibility', 'source']) await form.locator(`[name="${field}"]`).fill('Dados revistos');
       await form.locator('[name="effort"]').selectOption('Baixo');
       await form.locator('[name="status"]').selectOption('approved');
@@ -73,6 +79,8 @@ try {
       await card.getByRole('button', { name: 'Histórico', exact: true }).click();
       await page.getByTestId('catalog-history').waitFor();
       assert.equal(await page.getByTestId('catalog-history').locator('li').count(), 3);
+      assert.equal(history.at(-1).matching.maxGroup, 6);
+      assert.equal(history.at(-1).matching.interests[0], 'Culture & Heritage');
     }
     assert.deepEqual(errors, []);
     console.log(width, locale, 'catalog OK');

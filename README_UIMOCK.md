@@ -422,3 +422,39 @@ Validação: `npm test` cobre persistência, conflitos, estados e geração;
 temporárias, requerendo as dependências Python. Com o portal aberto,
 `npm run test:catalog` verifica formulários por categoria, pesquisa, edição, conflitos,
 inativação, histórico e responsividade nos seis idiomas, usando APIs simuladas.
+
+### Compatibilidade com o questionário
+
+O formulário do catálogo inclui um perfil estruturado que usa as mesmas opções
+do briefing: interesses, níveis Soft/Classic/Signature, ritmos, preferências de
+início, ritmos de refeição, mobilidade, alimentação e exclusões. As opções são
+partilhadas em `src/lib/brief-options.ts` para evitar divergências entre os formulários.
+
+- Os interesses associados aumentam a prioridade na seleção. Listas vazias de
+  níveis, ritmos e início não impõem limites; opções marcadas limitam a elegibilidade.
+- As exclusões identificam respostas do cliente que impedem selecionar o registo.
+  Mantêm-se também os filtros conservadores de exclusão por texto.
+- Necessidades de mobilidade e restrições alimentares exigem correspondência para
+  todas as opções do cliente e notas com fonte/data/condições verificadas. Alimentação
+  desconhecida impede sugestões a clientes com restrições. Restaurantes incluem
+  sempre alimentação; atividades declaradas sem comida não exigem opções alimentares.
+- Para famílias, indicar que aceita crianças e, se aplicável, uma idade mínima.
+  Neste caso o briefing precisa de uma idade por criança, separada por vírgulas.
+  Adequação desconhecida não é tratada como compatibilidade. Idades mínimas superiores
+  a 18 anos exigem revisão manual, pois o briefing não recolhe as idades dos adultos.
+- O máximo de participantes inclui adultos e crianças. O período de datas limita
+  os dias em que o registo pode ser sugerido, sem constituir disponibilidade confirmada.
+- O preço numérico de referência por pessoa é multiplicado por todos os participantes.
+  A soma dos preços conhecidos selecionados não ultrapassa o orçamento da viagem;
+  preços desconhecidos, alojamento e transportes não estão incluídos nessa estimativa.
+  Não se trata de uma cotação completa nem de um cálculo de tarifas infantis.
+- O esforço físico deve estar definido. Perfis estruturados com esforço por confirmar
+  ficam fora da seleção automática. Registos antigos sem perfil mantêm as regras
+  anteriores até serem revistos no formulário; não recebem compatibilidades automáticas.
+
+Este perfil segue a mesma cadeia **fonte local → ETL → warehouse → geração**, com
+revisões no histórico. Após guardar, atualizar o catálogo para os roteiros.
+Os interesses correspondentes e condições utilizadas surgem nos detalhes de curadoria
+das atividades. O motor atual é baseado em regras: não interpreta automaticamente
+notas livres/ocasiões especiais. A preferência de alojamento não classifica atividades,
+restaurantes ou experiências; hotéis não fazem parte destas três categorias.

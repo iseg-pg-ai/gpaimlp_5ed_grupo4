@@ -1,3 +1,4 @@
+import { validateMatching, type MatchingProfile } from './catalog-matching.ts';
 export const categories = ['atracoes', 'restaurantes', 'experiencias'] as const;
 export type Category = typeof categories[number];
 export const statuses = ['draft', 'review', 'approved', 'inactive'] as const;
@@ -12,12 +13,13 @@ export const fieldLabels = {
   dietary: 'Opções alimentares e alergénios', provider: 'Fornecedor', modality: 'Modalidade da experiência',
 } as const;
 export type Fields = Record<keyof typeof fieldLabels, string>;
-export type CatalogRecord = { id: string; category: Category; status: CatalogStatus; revision: number; fields: Fields; raw: Record<string, unknown>; updatedAt: string; reason: string };
-export type CatalogInput = { id?: string; category: Category; status: CatalogStatus; baseRevision: number | null; fields: Fields; reason: string };
+export type CatalogRecord = { id: string; category: Category; status: CatalogStatus; revision: number; fields: Fields; matching?: MatchingProfile; raw: Record<string, unknown>; updatedAt: string; reason: string };
+export type CatalogInput = { id?: string; category: Category; status: CatalogStatus; baseRevision: number | null; fields: Fields; matching?: MatchingProfile; reason: string };
 export const emptyFields = (): Fields => Object.fromEntries(Object.keys(fieldLabels).map(k => [k, ''])) as Fields;
 export function validateCatalogInput(value: unknown): asserts value is CatalogInput {
   if (!value || typeof value !== 'object') throw new Error('Registo inválido.');
   const v = value as CatalogInput;
+  if (v.matching !== undefined) validateMatching(v.matching);
   if (!categories.includes(v.category) || !statuses.includes(v.status)) throw new Error('Categoria ou estado inválido.');
   if (v.id !== undefined && (typeof v.id !== 'string' || !/^cat-[a-z0-9-]{16,64}$/.test(v.id))) throw new Error('Identificador inválido.');
   if (v.id ? !Number.isSafeInteger(v.baseRevision) || Number(v.baseRevision) < 1 : v.baseRevision !== null) throw new Error('Revisão inválida.');
