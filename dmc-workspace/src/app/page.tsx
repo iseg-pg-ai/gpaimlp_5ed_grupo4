@@ -1,8 +1,9 @@
 "use client";
-import { T, useLocale, LanguagePicker } from "@/components/LocaleProvider";
+import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import type { Locale } from "@/lib/locales";
 
 import Link from "next/link";
+import { MessageCircle, X } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { ResponsiveNavigation } from "@/components/ResponsiveNavigation";
 import { Sidebar } from "@/components/Sidebar";
@@ -26,6 +27,8 @@ export default function WorkspacePage() {
   const [activeId, setActiveId] = useState("");
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const assistantLabel = useTranslated("Curation Assistant");
+  const assistantButton = useRef<HTMLButtonElement>(null);
   const [editing, setEditing] = useState(true);
   const [draft, setDraft] = useState<CustomerBrief>(emptyBrief);
   const [formKey, setFormKey] = useState(0);
@@ -169,9 +172,15 @@ export default function WorkspacePage() {
               onExportPdf={exportPdf} isExporting={exporting || saving}
               onEditBrief={() => { if (operation.current) return; setDraft(active.brief); setEditing(true); setFormKey(k => k + 1); }}
               onToggleLockActivity={(dayNumber, id) => update(t => ({ ...t, itinerary: t.itinerary.map(d => d.dayNumber === dayNumber ? { ...d, items: d.items.map(i => i.id === id ? { ...i, isLocked: !i.isLocked } : i) } : d) }))} />
-            <section className="min-w-0 shrink-0 xl:absolute xl:inset-y-0 xl:right-0 xl:w-80 2xl:w-96">
-              <button type="button" className="xl:hidden w-full min-h-11 p-3 border bg-[#EBE5DA] text-sm text-left" aria-expanded={assistantOpen} aria-controls="curation-assistant" onClick={()=>setAssistantOpen(v=>!v)}><T text="Curation Assistant"/> <span aria-hidden="true">{assistantOpen ? "−" : "+"}</span></button>
-              <div id="curation-assistant" className={`xl:h-full ${assistantOpen ? "block" : "hidden xl:block"}`}>
+            <section onKeyDown={event=>{if(event.key==="Escape" && assistantOpen){setAssistantOpen(false);assistantButton.current?.focus();}}} className="min-w-0 shrink-0 xl:absolute xl:inset-y-0 xl:right-0 xl:w-80 2xl:w-96">
+              <button ref={assistantButton} type="button" aria-label={assistantLabel} title={assistantLabel}
+                className="xl:hidden fixed right-4 z-40 rounded-full bg-[#143F4B] text-[#F4F0E7] border border-[#D8A65C] shadow-xl flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D8A65C]"
+                style={{width:56,height:56,minHeight:56,bottom:"max(1rem, env(safe-area-inset-bottom))"}}
+                aria-expanded={assistantOpen} aria-controls="curation-assistant" onClick={()=>setAssistantOpen(v=>!v)}>
+                {assistantOpen ? <X aria-hidden="true" className="size-6"/> : <MessageCircle aria-hidden="true" className="size-6"/>}
+              </button>
+              <div id="curation-assistant" role="region" aria-label={assistantLabel}
+                className={`fixed right-4 bottom-20 z-40 w-[calc(100%-2rem)] max-w-sm h-[min(70dvh,36rem)] overflow-hidden rounded-2xl border border-[#D5D1C7] shadow-xl [&>aside]:h-full xl:static xl:w-full xl:max-w-none xl:h-full xl:rounded-none xl:border-0 xl:shadow-none ${assistantOpen ? "block" : "hidden xl:block"}`}>
             <AIAssistantPanel messages={active.messages} onSendMessage={send} isProcessing={saving || exporting} onResetItinerary={() => { if (operation.current) return; setDraft(active.brief); setEditing(true); setFormKey(k => k + 1); }} />
               </div>
             </section>

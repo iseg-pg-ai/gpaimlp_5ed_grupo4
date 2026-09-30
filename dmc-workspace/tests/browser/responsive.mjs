@@ -31,7 +31,14 @@ import { readFileSync } from 'node:fs';
  const modal=page.locator('.transit-dialog[open] > div').last();const bounds=await modal.boundingBox();
  if(bounds.y<0||bounds.y+bounds.height>(width===640?320:700)+1)throw Error('Modal outside viewport');
  await page.keyboard.press('Escape');if(await page.locator('.transit-dialog').isVisible())throw Error('Modal Escape');if(!await page.locator('.group.relative.z-10').first().evaluate(e=>e===document.activeElement))throw Error('Modal focus not restored');
-if(width<1280)await page.locator('[aria-controls="curation-assistant"]').click();else {const assistant=await page.locator('#curation-assistant').boundingBox();const itinerary=await page.locator('#curation-assistant').locator('xpath=../preceding-sibling::*[1]').boundingBox();if(!assistant||assistant.x<itinerary.x+itinerary.width-1)throw Error('Desktop assistant must be visible on the right');const frame=await page.locator('.responsive-workspace').boundingBox();if(Math.abs(assistant.y-frame.y)>1||Math.abs(assistant.height-frame.height)>1)throw Error('Assistant must fill workspace height');}await check('assistant');
+if(width<1280){
+ const launcher=page.locator('[aria-controls="curation-assistant"]');
+ const circle=await launcher.boundingBox();if(Math.abs(circle.width-circle.height)>1||circle.width<44)throw Error('Assistant launcher must be round and touch-sized');
+ await launcher.click();
+ const panel=await page.locator('#curation-assistant').boundingBox();if(panel.x<0||panel.y<0||panel.x+panel.width>width+1)throw Error('Assistant popup outside viewport');
+ await page.keyboard.press('Escape');if(await page.locator('#curation-assistant').isVisible())throw Error('Assistant Escape');
+ await launcher.click();
+ }else {const assistant=await page.locator('#curation-assistant').boundingBox();const itinerary=await page.locator('#curation-assistant').locator('xpath=../preceding-sibling::*[1]').boundingBox();if(!assistant||assistant.x<itinerary.x+itinerary.width-1)throw Error('Desktop assistant must be visible on the right');const frame=await page.locator('.responsive-workspace').boundingBox();if(Math.abs(assistant.y-frame.y)>1||Math.abs(assistant.height-frame.height)>1)throw Error('Assistant must fill workspace height');}await check('assistant');
 
  if(width===640){await page.evaluate(()=>document.documentElement.style.fontSize='200%');await check('large text');} if(errors.length)throw Error(errors.join('\n'));console.log(width,language,'OK');await context.close();
  }
