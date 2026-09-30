@@ -349,9 +349,9 @@ Lixo e o seletor de idioma. Mantém-se fora da área de scroll e destaca a pági
 ativa. Abaixo de 1024 px os destinos ficam no menu compacto; a seleção fecha-o.
 A barra lateral do workspace continua dedicada às viagens recentes e novas viagens.
 
-`/catalog` e `/trash` são páginas de entrada que indicam as funcionalidades ainda
-não disponíveis. Este passo não implementa edição do catálogo nem remoção/restauro
-de viagens. Histórico (`/exports`) e Referências (`/references`) mantêm as funcionalidades existentes.
+`/catalog` permite gerir a oferta (ver abaixo). `/trash` continua a ser uma página
+de entrada; a remoção/restauro de viagens ainda não está implementada.
+Histórico (`/exports`) e Referências (`/references`) mantêm as funcionalidades existentes.
 
 Com o portal em execução, `npm run test:navigation` verifica os cinco destinos,
 o destaque da página ativa, o menu móvel e a posição da top bar durante o scroll,
@@ -376,3 +376,49 @@ Com o portal em execução, `node tests/browser/itinerary-visual.mjs` (na pasta
 `dmc-workspace`) verifica os estados, detalhes sem fonte, seleção dos dias e o
 assistente recolhível no computador. Aceita `PORTAL_URL` e `BROWSER_CHANNEL`;
 simula tradução e histórico, sem efetuar exportações reais.
+
+## Gestão do catálogo
+
+Em **Catálogo**, escolha Atividades, Restaurantes ou Experiências. Pode pesquisar
+por nome, descrição, localização, fornecedor ou ID; filtrar por estado e localização;
+criar, editar e inativar registos. Cada categoria apresenta os seus campos próprios.
+Os textos introduzidos no catálogo são a fonte em português; o idioma do portal
+traduz os controlos, sem reescrever os dados editados.
+
+1. Os registos existentes são importados como **Em revisão**, sem aprovação automática.
+2. **Novo registo** começa em **Rascunho**. Para aprovar, preencha nome, localização,
+   descrição, duração, preço, fonte, acessibilidade e esforço. Preços são referências,
+   com moeda/unidade; a aprovação de catálogo não confirma reservas.
+3. Guarde com o estado **Aprovado**, indicando o motivo da alteração.
+4. Carregue em **Atualizar catálogo para os roteiros**. Esta ação executa o ETL
+   Python instalado na `.venv` (ou `BLU_PYTHON`, quando definido). Aguarde a conclusão.
+   A indicação **Disponível para novos roteiros** confirma que a revisão foi processada.
+5. **Inativar** retira imediatamente o registo de novas gerações, mesmo antes do
+   próximo ETL. Uma alteração a um aprovado também exige reprocessar a nova revisão.
+   As propostas já guardadas não são alteradas. Para reativar, edite o estado e atualize.
+
+Sem registos aprovados/processados, a geração explica que é necessário rever o catálogo.
+O ETL também pode ser executado pela CLI habitual: `python -m etl.pipeline --data-dir data --output-dir warehouse`.
+
+A fonte editável e o histórico ficam em **`data/portal/catalog.sqlite`**, fora do Git.
+Cada gravação gera uma revisão transacional com ID estável, data, motivo e cópia
+completa dos campos. O histórico é consultável no portal; edições concorrentes
+baseadas numa revisão antiga são recusadas. Não há eliminação definitiva.
+O ETL lê esta fonte e produz o warehouse; o formulário nunca escreve diretamente nele.
+O manifesto regista o hash do snapshot do catálogo consumido.
+
+Para transportar os registos e o histórico para outro computador, pare o portal
+e o ETL e copie `data/portal/catalog.sqlite`, além das restantes fontes em `data/`.
+Depois execute o ETL no computador de destino. Um clone Git, por si só, não inclui
+os registos locais. A gestão usa o mesmo contexto local do portal: ainda não existe
+autenticação nem identificação individual do autor das revisões.
+
+Se o servidor for interrompido durante uma atualização, confirme que o processo ETL
+terminou antes de remover o bloqueio residual `data/portal/etl.lock` e tentar novamente.
+Não execute atualizações pela CLI e pelo portal simultaneamente.
+
+Validação: `npm test` cobre persistência, conflitos, estados e geração;
+`npm run test:catalog-etl` faz o percurso real Node → ETL Python → geração em pastas
+temporárias, requerendo as dependências Python. Com o portal aberto,
+`npm run test:catalog` verifica formulários por categoria, pesquisa, edição, conflitos,
+inativação, histórico e responsividade nos seis idiomas, usando APIs simuladas.

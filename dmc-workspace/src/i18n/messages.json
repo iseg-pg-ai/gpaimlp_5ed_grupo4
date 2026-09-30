@@ -1007,6 +1007,278 @@
     "de": "Historische Preise - bestätigen Dauer und Einschlüsse",
     "zh": "历史价格——确认期限和列入"
   },
+  "Atividades": {
+    "pt": "Atividades",
+    "en": "Activities",
+    "es": "Actividades",
+    "fr": "Activités",
+    "de": "Aktivitäten",
+    "zh": "活动"
+  },
+  "Restaurantes": {
+    "pt": "Restaurantes",
+    "en": "Restaurants",
+    "es": "Restaurantes",
+    "fr": "Restaurants",
+    "de": "Restaurants",
+    "zh": "餐厅"
+  },
+  "Experiências": {
+    "pt": "Experiências",
+    "en": "Experiences",
+    "es": "Experiencias",
+    "fr": "Expériences",
+    "de": "Erfahrungen",
+    "zh": "经验"
+  },
+  "Rascunho": {
+    "pt": "Rascunho",
+    "en": "Draft",
+    "es": "Borrador",
+    "fr": "Brouillon",
+    "de": "Entwurf",
+    "zh": "草稿"
+  },
+  "Em revisão": {
+    "pt": "Em revisão",
+    "en": "In revision",
+    "es": "Revisión",
+    "fr": "Révision",
+    "de": "In Revision",
+    "zh": "修订"
+  },
+  "Aprovado": {
+    "pt": "Aprovado",
+    "en": "Approved",
+    "es": "Aprobado",
+    "fr": "Approuvé",
+    "de": "Zugelassen",
+    "zh": "核定数"
+  },
+  "Inativo": {
+    "pt": "Inativo",
+    "en": "Inactive",
+    "es": "Inactivo",
+    "fr": "Inactif",
+    "de": "inaktiv",
+    "zh": "非活动"
+  },
+  "Nome": {
+    "pt": "Nome",
+    "en": "Name",
+    "es": "Nombre",
+    "fr": "Dénomination",
+    "de": "Name",
+    "zh": "名称"
+  },
+  "Localização / cidade": {
+    "pt": "Localização / cidade",
+    "en": "Location / city",
+    "es": "Ubicación / ciudad",
+    "fr": "Lieu / ville",
+    "de": "Standort/Stadt",
+    "zh": "地点/城市"
+  },
+  "Morada": {
+    "pt": "Morada",
+    "en": "Address",
+    "es": "Dirección",
+    "fr": "Adresse",
+    "de": "Anschrift",
+    "zh": "地址"
+  },
+  "Descrição": {
+    "pt": "Descrição",
+    "en": "Description",
+    "es": "Descripción",
+    "fr": "Désignation des marchandises",
+    "de": "Beschreibung",
+    "zh": "说明"
+  },
+  "Duração": {
+    "pt": "Duração",
+    "en": "Duration",
+    "es": "Duración",
+    "fr": "Durée",
+    "de": "Dauer",
+    "zh": "会期"
+  },
+  "Preço de referência (EUR e unidade)": {
+    "pt": "Preço de referência (EUR e unidade)",
+    "en": "Reference price (EUR and unit)",
+    "es": "Precio de referencia (EUR y unidad)",
+    "fr": "Prix de référence (EUR et unité)",
+    "de": "Referenzpreis (EUR und Stück)",
+    "zh": "参考价格(欧元和单位)"
+  },
+  "Contactos": {
+    "pt": "Contactos",
+    "en": "Contacts",
+    "es": "Contactos",
+    "fr": "Personnes-ressources",
+    "de": "Kontakte",
+    "zh": "联系人"
+  },
+  "Acessibilidade e condições": {
+    "pt": "Acessibilidade e condições",
+    "en": "Accessibility and conditions",
+    "es": "Accesibilidad y condiciones",
+    "fr": "Accessibilité et conditions",
+    "de": "Zugänglichkeit und Bedingungen",
+    "zh": "无障碍和条件"
+  },
+  "Fonte": {
+    "pt": "Fonte",
+    "en": "Source",
+    "es": "Fuente",
+    "fr": "Source",
+    "de": "Quelle",
+    "zh": "来源"
+  },
+  "Esforço físico": {
+    "pt": "Esforço físico",
+    "en": "Physical effort",
+    "es": "esfuerzo físico",
+    "fr": "effort physique",
+    "de": "Körperliche Anstrengung",
+    "zh": "体力"
+  },
+  "Tipo de atividade": {
+    "pt": "Tipo de atividade",
+    "en": "Type of activity",
+    "es": "Tipo de actividad",
+    "fr": "Type d'activité",
+    "de": "Art der Tätigkeit",
+    "zh": "活动类型"
+  },
+  "Horários e encerramentos": {
+    "pt": "Horários e encerramentos",
+    "en": "Timetables and closures",
+    "es": "Calendarios y cierres",
+    "fr": "Horaires et fermetures",
+    "de": "Zeitplan und Schließungen",
+    "zh": "时间表和关闭"
+  },
+  "Tipo de cozinha": {
+    "pt": "Tipo de cozinha",
+    "en": "Type of kitchen",
+    "es": "Tipo de cocina",
+    "fr": "Type de cuisine",
+    "de": "Art der Küche",
+    "zh": "厨房类型"
+  },
+  "Opções alimentares e alergénios": {
+    "pt": "Opções alimentares e alergénios",
+    "en": "Food and allergen options",
+    "es": "Opciones de alimentos y alérgenos",
+    "fr": "Options alimentaires et allergènes",
+    "de": "Lebensmittel- und Allergenoptionen",
+    "zh": "粮食和过敏原选择"
+  },
+  "Fornecedor": {
+    "pt": "Fornecedor",
+    "en": "Supplier",
+    "es": "proveedor",
+    "fr": "Fournisseur",
+    "de": "Lieferanten",
+    "zh": "供应商"
+  },
+  "Modalidade da experiência": {
+    "pt": "Modalidade da experiência",
+    "en": "Mode of experience",
+    "es": "Modo de experiencia",
+    "fr": "Mode d'expérience",
+    "de": "Art der Erfahrung",
+    "zh": "经验模式"
+  },
+  "Editar registo": {
+    "pt": "Editar registo",
+    "en": "Edit Log",
+    "es": "Editar registro",
+    "fr": "Modifier le journal",
+    "de": "Edit Log",
+    "zh": "编辑日志"
+  },
+  "Novo registo": {
+    "pt": "Novo registo",
+    "en": "New Register",
+    "es": "Nuevo registro",
+    "fr": "Nouveau registre",
+    "de": "Neues Register",
+    "zh": "新登记册"
+  },
+  "Disponível para novos roteiros": {
+    "pt": "Disponível para novos roteiros",
+    "en": "Available for new scripts",
+    "es": "Disponible para nuevos scripts",
+    "fr": "Disponible pour les nouveaux scripts",
+    "de": "Verfügbar für neue Skripte",
+    "zh": "新脚本可用"
+  },
+  "Aguarda atualização do catálogo": {
+    "pt": "Aguarda atualização do catálogo",
+    "en": "Waiting for catalog update",
+    "es": "Esperando la actualización del catálogo",
+    "fr": "En attente de mise à jour du catalogue",
+    "de": "Warten auf Katalog-Update",
+    "zh": "正在等待目录更新"
+  },
+  "Fora da geração de roteiros": {
+    "pt": "Fora da geração de roteiros",
+    "en": "Out of script generation",
+    "es": "De generación de scripts",
+    "fr": "Hors de la génération de script",
+    "de": "Out of script generation",
+    "zh": "脚本生成失败"
+  },
+  "Baixo": {
+    "pt": "Baixo",
+    "en": "Low",
+    "es": "Baja",
+    "fr": "Faible",
+    "de": "niedrig",
+    "zh": "低级"
+  },
+  "Moderado": {
+    "pt": "Moderado",
+    "en": "Moderate",
+    "es": "Moderado",
+    "fr": "Modéré",
+    "de": "Moderat",
+    "zh": "中调"
+  },
+  "Alto": {
+    "pt": "Alto",
+    "en": "High",
+    "es": "Alto",
+    "fr": "Élevé",
+    "de": "hoch",
+    "zh": "高级"
+  },
+  "Por confirmar": {
+    "pt": "Por confirmar",
+    "en": "To be confirmed",
+    "es": "Por confirmar",
+    "fr": "À confirmer",
+    "de": "Noch zu bestätigen",
+    "zh": "待确认"
+  },
+  "Registo guardado. Atualize o catálogo para disponibilizar a revisão aprovada nos novos roteiros.": {
+    "pt": "Registo guardado. Atualize o catálogo para disponibilizar a revisão aprovada nos novos roteiros.",
+    "en": "Record saved. Update the catalog to make the approved revision available on the new roadmaps.",
+    "es": "Grabar guardado. Actualizar el catálogo para hacer la revisión aprobada disponible en las nuevas hojas de ruta.",
+    "fr": "Enregistrement enregistré. Mettre à jour le catalogue pour rendre la révision approuvée disponible sur les nouvelles feuilles de route.",
+    "de": "Speichern von Daten. Aktualisieren Sie den Katalog, um die genehmigte Überarbeitung für die neuen Roadmaps verfügbar zu machen.",
+    "zh": "已保存记录 。 更新目录, 以便在新的路线图上提供已核准的修订 。"
+  },
+  "Catálogo atualizado. Apenas as revisões aprovadas ficam disponíveis para novos roteiros.": {
+    "pt": "Catálogo atualizado. Apenas as revisões aprovadas ficam disponíveis para novos roteiros.",
+    "en": "Updated catalogue. Only approved reviews are available for new scripts.",
+    "es": "Catálogo actualizado. Sólo hay reseñas aprobadas disponibles para nuevos scripts.",
+    "fr": "Catalogue mis à jour. Seuls les avis approuvés sont disponibles pour les nouveaux scripts.",
+    "de": "Aktualisierter Katalog. Nur genehmigte Reviews sind für neue Skripte verfügbar.",
+    "zh": "更新的目录,只有经批准的审查可用于新的脚本."
+  },
   "Idioma do cliente (PDF)": {
     "pt": "Idioma do cliente (PDF)",
     "en": "Customer language (PDF)",
@@ -1023,14 +1295,6 @@
     "de": "Es enthält immer die portugiesische Version. Die beiden PDFs werden in einem ZIP heruntergeladen.",
     "zh": "它总是包括葡萄牙文版本,两个PDF以ZIP下载."
   },
-  "Duração": {
-    "pt": "Duração",
-    "en": "Duration",
-    "es": "Duración",
-    "fr": "Durée",
-    "de": "Dauer",
-    "zh": "会期"
-  },
   "Fontes e detalhes de curadoria": {
     "pt": "Fontes e detalhes de curadoria",
     "en": "Sources and Curated Details",
@@ -1038,14 +1302,6 @@
     "fr": "Sources et détails curés",
     "de": "Quellen und kuratierte Details",
     "zh": "来源和已解析的细节"
-  },
-  "Fonte": {
-    "pt": "Fonte",
-    "en": "Source",
-    "es": "Fuente",
-    "fr": "Source",
-    "de": "Quelle",
-    "zh": "来源"
   },
   "Critérios": {
     "pt": "Critérios",
@@ -1231,21 +1487,173 @@
     "de": "Katalog",
     "zh": "目录"
   },
-  "Atividades, restaurantes e experiências": {
-    "pt": "Atividades, restaurantes e experiências",
-    "en": "Activities, restaurants and experiences",
-    "es": "Actividades, restaurantes y experiencias",
-    "fr": "Activités, restaurants et expériences",
-    "de": "Aktivitäten, Restaurants und Erlebnisse",
-    "zh": "活动、餐馆和经验"
+  "Mantenha a oferta e reveja os dados antes de aprovar. Apenas os aprovados entram em novos roteiros após atualizar o catálogo.": {
+    "pt": "Mantenha a oferta e reveja os dados antes de aprovar. Apenas os aprovados entram em novos roteiros após atualizar o catálogo.",
+    "en": "Keep the offer and review the data before approving. Only approved people enter new scripts after updating the catalog.",
+    "es": "Mantenga la oferta y revise los datos antes de aprobar. Solo las personas aprobadas entran en nuevos scripts después de actualizar el catálogo.",
+    "fr": "Conservez l'offre et examinez les données avant d'approuver. Seules les personnes approuvées entrent de nouveaux scripts après la mise à jour du catalogue.",
+    "de": "Halten Sie das Angebot und überprüfen Sie die Daten vor der Genehmigung. Nur genehmigte Personen geben neue Skripte ein, nachdem sie den Katalog aktualisiert haben.",
+    "zh": "保留要约并在批准前审查数据。 只有被批准的人在更新目录后才能输入新的脚本 。"
   },
-  "A gestão do catálogo será disponibilizada numa próxima etapa. Por enquanto, os roteiros usam o catálogo importado pelo ETL.": {
-    "pt": "A gestão do catálogo será disponibilizada numa próxima etapa. Por enquanto, os roteiros usam o catálogo importado pelo ETL.",
-    "en": "Catalog management will be made available in a next step. For the time being, scripts use the catalogue imported by ETL.",
-    "es": "La gestión del catálogo estará disponible en un próximo paso. Por el momento, los scripts utilizan el catálogo importado por ETL.",
-    "fr": "La gestion du catalogue sera disponible dans une prochaine étape. Pour le moment, les scripts utilisent le catalogue importé par ETL.",
-    "de": "Das Katalogmanagement wird in einem nächsten Schritt zur Verfügung gestellt, vorerst verwenden Skripte den von ETL importierten Katalog.",
-    "zh": "下一步将提供目录管理。目前,脚本使用ETL导入的目录。"
+  "Atualizar catálogo para os roteiros": {
+    "pt": "Atualizar catálogo para os roteiros",
+    "en": "Update catalog to scripts",
+    "es": "Catálogo de actualización de scripts",
+    "fr": "Mettre à jour le catalogue dans les scripts",
+    "de": "Aktualisieren des Katalogs auf Skripte",
+    "zh": "更新目录到脚本"
+  },
+  "A processar…": {
+    "pt": "A processar…",
+    "en": "Processing...",
+    "es": "Procesando...",
+    "fr": "Traitement...",
+    "de": "Verarbeitung ...",
+    "zh": "正在处理..."
+  },
+  "Pesquisar": {
+    "pt": "Pesquisar",
+    "en": "Search",
+    "es": "Búsqueda",
+    "fr": "Recherche",
+    "de": "Suche",
+    "zh": "搜索"
+  },
+  "Estado": {
+    "pt": "Estado",
+    "en": "Status",
+    "es": "Situación",
+    "fr": "État",
+    "de": "Status",
+    "zh": "状态"
+  },
+  "Todos os estados": {
+    "pt": "Todos os estados",
+    "en": "All states",
+    "es": "Todos los estados",
+    "fr": "Tous les États",
+    "de": "Alle Staaten",
+    "zh": "所有国家"
+  },
+  "Localização": {
+    "pt": "Localização",
+    "en": "Location",
+    "es": "Ubicación",
+    "fr": "Lieu",
+    "de": "Standort",
+    "zh": "地点"
+  },
+  "Todas as localizações": {
+    "pt": "Todas as localizações",
+    "en": "All Locations",
+    "es": "Todos los lugares",
+    "fr": "Tous les lieux",
+    "de": "Alle Standorte",
+    "zh": "所有地点"
+  },
+  "Para aprovar: nome, localização, descrição, duração, preço, fonte, acessibilidade e esforço são obrigatórios. Use preços de referência com unidade; a aprovação não confirma reservas.": {
+    "pt": "Para aprovar: nome, localização, descrição, duração, preço, fonte, acessibilidade e esforço são obrigatórios. Use preços de referência com unidade; a aprovação não confirma reservas.",
+    "en": "To approve: name, location, description, duration, price, source, accessibility and effort are required. Use reference prices with unit; approval does not confirm reservations.",
+    "es": "Para aprobar: nombre, ubicación, descripción, duración, precio, fuente, accesibilidad y esfuerzo son necesarios. Use precios de referencia con unidad; aprobación no confirma reservas.",
+    "fr": "Pour approuver : le nom, l'emplacement, la description, la durée, le prix, la source, l'accessibilité et l'effort sont requis.",
+    "de": "Zur Genehmigung: Name, Standort, Beschreibung, Dauer, Preis, Quelle, Zugänglichkeit und Aufwand erforderlich.",
+    "zh": "审批:需要名称,地点,说明,期限,价格,来源,可及性和努力程度. 与单位使用参考价格;审批不确认保留."
+  },
+  "Motivo da alteração": {
+    "pt": "Motivo da alteração",
+    "en": "Reason for amendment",
+    "es": "Motivo de la enmienda",
+    "fr": "Justification de l'amendement",
+    "de": "Änderungsgrund",
+    "zh": "修正理由"
+  },
+  "Guardar registo": {
+    "pt": "Guardar registo",
+    "en": "Save log",
+    "es": "Guardar registro",
+    "fr": "Enregistrer le journal",
+    "de": "Speicherprotokoll",
+    "zh": "保存日志"
+  },
+  "Cancelar": {
+    "pt": "Cancelar",
+    "en": "Cancel",
+    "es": "Cancelar",
+    "fr": "Annuler",
+    "de": "Stornierung",
+    "zh": "取消"
+  },
+  "Histórico de alterações": {
+    "pt": "Histórico de alterações",
+    "en": "History of changes",
+    "es": "Historia de los cambios",
+    "fr": "Historique des changements",
+    "de": "Geschichte der Änderungen",
+    "zh": "变化的历史"
+  },
+  "Fechar": {
+    "pt": "Fechar",
+    "en": "Close",
+    "es": "Cerca",
+    "fr": "Fermer",
+    "de": "Schließen",
+    "zh": "关闭"
+  },
+  "Ver dados desta revisão": {
+    "pt": "Ver dados desta revisão",
+    "en": "See data from this review",
+    "es": "Ver datos de esta revisión",
+    "fr": "Voir les données de cet examen",
+    "de": "Siehe Daten aus dieser Überprüfung",
+    "zh": "见本次审查的数据"
+  },
+  "A carregar catálogo…": {
+    "pt": "A carregar catálogo…",
+    "en": "Loading catalog...",
+    "es": "Cargando catálogo...",
+    "fr": "Chargement du catalogue...",
+    "de": "Ladekatalog...",
+    "zh": "正在装入目录..."
+  },
+  "registos": {
+    "pt": "registos",
+    "en": "records",
+    "es": "registros",
+    "fr": "Enregistrements",
+    "de": "Aufzeichnungen",
+    "zh": "记录"
+  },
+  "Sem registos para estes filtros.": {
+    "pt": "Sem registos para estes filtros.",
+    "en": "No records for these filters.",
+    "es": "No hay registros de estos filtros.",
+    "fr": "Aucun enregistrement pour ces filtres.",
+    "de": "Keine Datensätze für diese Filter.",
+    "zh": "没有这些过滤器的记录 。"
+  },
+  "Editar": {
+    "pt": "Editar",
+    "en": "Edit",
+    "es": "Editar",
+    "fr": "Modifier",
+    "de": "Edit",
+    "zh": "编辑"
+  },
+  "Histórico": {
+    "pt": "Histórico",
+    "en": "History",
+    "es": "Historia",
+    "fr": "Historique",
+    "de": "Geschichte",
+    "zh": "历史"
+  },
+  "Inativar": {
+    "pt": "Inativar",
+    "en": "Inactivate",
+    "es": "Inactivar",
+    "fr": "Désactiver",
+    "de": "Inaktivierung",
+    "zh": "不激活"
   },
   "Lixo": {
     "pt": "Lixo",
@@ -1695,22 +2103,6 @@
     "de": "Mittel",
     "zh": "中"
   },
-  "Rascunho": {
-    "pt": "Rascunho",
-    "en": "Draft",
-    "es": "Borrador",
-    "fr": "Brouillon",
-    "de": "Entwurf",
-    "zh": "草稿"
-  },
-  "Por confirmar": {
-    "pt": "Por confirmar",
-    "en": "To be confirmed",
-    "es": "Por confirmar",
-    "fr": "À confirmer",
-    "de": "Noch zu bestätigen",
-    "zh": "待确认"
-  },
   "Protegida": {
     "pt": "Protegida",
     "en": "Protected",
@@ -1758,5 +2150,13 @@
     "fr": "Navigation par jour",
     "de": "Tagesnavigation",
     "zh": "按天导航"
+  },
+  "Novo Registo": {
+    "pt": "Novo Registo",
+    "en": "New Register",
+    "es": "Nuevo registro",
+    "fr": "Nouveau registre",
+    "de": "Neues Register",
+    "zh": "新登记册"
   }
 }

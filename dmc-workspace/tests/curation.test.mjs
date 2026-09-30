@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { generateItinerary, validateBrief, applyCommand } from "../src/lib/curation.ts";
 const catalog = Object.fromEntries(["atracoes", "experiencias", "restaurantes", "curation_rules"].map(name => [name, readFileSync(new URL(`../../warehouse/${name}.jsonl`, import.meta.url), "utf8").trim().split(/\r?\n/).map(JSON.parse)]));
+// Curator approval is explicit test setup, independent of local portal data.
+for (const name of ['atracoes', 'experiencias', 'restaurantes']) for (const row of catalog[name]) { row._catalog_status = 'approved'; delete row._catalog_id; }
 const brief = { customerName: "Test", destination: "Lisboa", startDate: "2026-10-10", endDate: "2026-10-12", arrivalLocation: "Lisboa", departureLocation: "Lisboa", adults: 2, children: 0, childrenAges: "", budget: 2000, currency: "EUR", interests: ["Culture & Heritage"], pace: "Relaxed", accommodation: "Boutique", proposalTier: "Soft", physicalEffort: "Baixo (Low)", mobilityRestrictions: [], dietaryRestrictions: [], diningPace: "Relaxed Dining (~90m)", morningPreference: "Late Start (10:30+)", exclusions: [], specialOccasion: "", notes: "" };
 test("actual catalog, calendar dates, provenance and no repeated activities", () => {
  const result = generateItinerary(brief, catalog);
@@ -17,6 +19,12 @@ test("invalid date ranges and unknown destinations fail explicitly", () => {
  assert.throws(() => validateBrief({...brief, endDate: "2026-10-09"}));
  assert.throws(() => validateBrief({...brief, startDate: "2026-02-30"}));
  assert.throws(() => generateItinerary({...brief, destination: "Italy"}, catalog));
+});
+test('only explicitly approved records enter generation', () => {
+ const blocked = { ...catalog, atracoes: catalog.atracoes.map(r => ({ ...r, _catalog_status: 'review' })), experiencias: catalog.experiencias.map(r => ({ ...r, _catalog_status: 'draft' })), restaurantes: catalog.restaurantes.map(r => ({ ...r, _catalog_status: 'inactive' })) };
+ assert.equal(generateItinerary(brief, blocked).itinerary.flatMap(d => d.items).length, 0);
+ for (const rows of [blocked.atracoes, blocked.experiencias, blocked.restaurantes]) for (const row of rows) delete row._catalog_status;
+ assert.equal(generateItinerary(brief, blocked).itinerary.flatMap(d => d.items).length, 0);
 });
 test("museum exclusion and low effort are enforced", () => {
  const result = generateItinerary({...brief, exclusions: ["No Standard Large Museums"]}, catalog);

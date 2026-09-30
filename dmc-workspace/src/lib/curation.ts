@@ -68,9 +68,10 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
   const itinerary: ItineraryDay[] = Array.from({ length: count }, (_, i) => {
     const city = route[Math.floor(i * route.length / count)];
     const candidates = all.filter(({ row, table }) => {
+      if (row._catalog_status !== 'approved') return false;
       const location = text(row, "cidade") || text(row, "localizacao");
       const body = norm(Object.values(row).join(" "));
-      const key = `${table}:${row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`;
+      const key = `${table}:${row._catalog_id ?? row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`;
       if (used.has(key) || !mentioned(location, cities[city])) return false;
       if (brief.exclusions.some(e => exclusions[e].test(body))) return false;
       const effort = ["baixo", "moderado", "alto"].indexOf(norm(row.esforco_fisico));
@@ -86,9 +87,9 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
       return { ...candidate, score };
     }).sort((a, b) => b.score - a.score || Number(a.row._source_row) - Number(b.row._source_row));
     const items: ActivityItem[] = candidates.slice(0, limit).map(({ row, table }) => {
-      const id = `${table}:${row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`;
+      const id = `${table}:${row._catalog_id ?? row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`;
       used.add(id);
-      const source = `${table} · ${row.id ?? row.id_blu ?? row.nome_da_experiencia} · ${row._source_sheet}, linha ${row._source_row}`;
+      const source = row._catalog_id ? `${table} · ${row._catalog_id} · revisão ${row._catalog_revision} · ${row.site_fonte ?? ''}` : `${table} · ${row.id ?? row.id_blu ?? row.nome_da_experiencia} · ${row._source_sheet}, linha ${row._source_row}`;
       const supplement = row._supplement_source as { file?: string; sheet?: string; row?: number; status?: string } | undefined;
       const enrichedSource = supplement ? `${source}. Complemento: ${supplement.file}, ${supplement.sheet}, linha ${supplement.row} (${supplement.status ?? "por validar"})` : source;
       return {
