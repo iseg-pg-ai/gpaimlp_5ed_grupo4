@@ -41,8 +41,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Recent Projects Section */}
         <div className="px-3 pt-2">
           <div className="flex items-center justify-between px-2 mb-1.5">
-            <span className="text-[10px] font-semibold tracking-widest text-[#4A636B] uppercase"><T text="Recent Journeys" source="en"/>{" "}</span>
-            <span className="text-[10px] text-[#7E9399] font-mono">
+            <span className="text-xs font-semibold tracking-widest text-[#4A636B]"><T text="Recent Journeys" source="en"/>{" "}</span>
+            <span className="text-xs text-[#4A636B] font-mono">
               {recentTrips.length}
             </span>
           </div>
@@ -54,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={trip.id}
                   onClick={() => onSelectTrip(trip.id)}
-                  className={`w-full text-left p-2.5 rounded-lg transition-all text-xs cursor-pointer group flex items-center justify-between ${
+                  className={`w-full text-left p-2.5 rounded-lg transition-all text-sm cursor-pointer group flex items-center justify-between ${
                     isSelected
                       ? "bg-white border border-[#2D5B67]/40 text-[#143F4B] shadow-xs"
                       : "hover:bg-black/[0.04] text-[#2D4A52] border border-transparent"
@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         {trip.name}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 text-[11px] text-[#698288] mt-0.5 truncate">
+                    <div className="flex items-center gap-1 text-xs text-[#698288] mt-0.5 truncate">
                       <MapPin className="w-3 h-3 shrink-0" />
                       <span className="truncate">{trip.destination}</span>
                       <span>·</span>
@@ -84,12 +84,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Footer / BLU Principles Reassurance */}
-      <div className="p-3 border-t border-[#D5D1C7] bg-[#E3DCD0] text-[10px] text-[#4A636B]">
+      <div className="p-3 border-t border-[#D5D1C7] bg-[#E3DCD0] text-xs text-[#4A636B]">
         <div className="flex items-center gap-1.5 font-medium mb-1 text-[#143F4B]">
           <ShieldCheck className="w-3.5 h-3.5 text-[#2D5B67]" />
           <span><T text="Curated with Care" source="en"/></span>
         </div>
-        <p className="text-[10px] text-[#698288] leading-tight"><T text="RNAAT Registered · 26/2026" source="en"/>{" "}<br /><T text="Lisbon HQ · Portugal" source="en"/>{" "}</p>
+        <p className="text-xs text-[#698288] leading-tight"><T text="RNAAT Registered · 26/2026" source="en"/>{" "}<br /><T text="Lisbon HQ · Portugal" source="en"/>{" "}</p>
       </div>
     </aside>
   );

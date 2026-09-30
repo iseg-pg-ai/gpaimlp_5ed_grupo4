@@ -193,19 +193,19 @@
   },
   "dias ·": {
     "pt": "dias ·",
-    "en": "days ·",
-    "es": "días ·",
-    "fr": "jours",
-    "de": "Tage ·",
-    "zh": "天数 ·"
+    "en": "dias ·",
+    "es": "dias ·",
+    "fr": "Dias",
+    "de": "Dias ·",
+    "zh": "阴茎"
   },
   "noites": {
     "pt": "noites",
-    "en": "nights",
-    "es": "noches",
-    "fr": "nuits",
-    "de": "Nächte",
-    "zh": "夜 间"
+    "en": "noites",
+    "es": "noites",
+    "fr": "noites",
+    "de": "Noites",
+    "zh": "噪声"
   },
   "travellers": {
     "pt": "viajantes",
@@ -1023,6 +1023,142 @@
     "de": "Es enthält immer die portugiesische Version. Die beiden PDFs werden in einem ZIP heruntergeladen.",
     "zh": "它总是包括葡萄牙文版本,两个PDF以ZIP下载."
   },
+  "Duração": {
+    "pt": "Duração",
+    "en": "Duration",
+    "es": "Duración",
+    "fr": "Durée",
+    "de": "Dauer",
+    "zh": "会期"
+  },
+  "Fontes e detalhes de curadoria": {
+    "pt": "Fontes e detalhes de curadoria",
+    "en": "Sources and Curated Details",
+    "es": "Fuentes y detalles curados",
+    "fr": "Sources et détails curés",
+    "de": "Quellen und kuratierte Details",
+    "zh": "来源和已解析的细节"
+  },
+  "Fonte": {
+    "pt": "Fonte",
+    "en": "Source",
+    "es": "Fuente",
+    "fr": "Source",
+    "de": "Quelle",
+    "zh": "来源"
+  },
+  "Critérios": {
+    "pt": "Critérios",
+    "en": "Criteria",
+    "es": "Criterios",
+    "fr": "Critères",
+    "de": "Kriterien",
+    "zh": "标准"
+  },
+  "Proposta preliminar. Exportar não confirma reservas, disponibilidade ou preços.": {
+    "pt": "Proposta preliminar. Exportar não confirma reservas, disponibilidade ou preços.",
+    "en": "Preliminary proposal. Exporting does not confirm reservations, availability or prices.",
+    "es": "Propuesta preliminar. La exportación no confirma reservas, disponibilidad o precios.",
+    "fr": "Proposition préliminaire. L'exportation ne confirme pas les réservations, la disponibilité ou les prix.",
+    "de": "Vorläufiger Vorschlag: Der Export bestätigt keine Reservierungen, Verfügbarkeit oder Preise.",
+    "zh": "初步建议 出口并不确认保留、供应或价格。"
+  },
+  "Preferências e restrições da viagem": {
+    "pt": "Preferências e restrições da viagem",
+    "en": "Travel Preferences and Restrictions",
+    "es": "Preferencias y restricciones del viaje",
+    "fr": "Préférences et restrictions en matière de voyages",
+    "de": "Reisepräferenzen und -beschränkungen",
+    "zh": "旅行优惠和限制"
+  },
+  "Nível da proposta": {
+    "pt": "Nível da proposta",
+    "en": "Level of proposal",
+    "es": "Nivel de propuesta",
+    "fr": "Niveau de proposition",
+    "de": "Höhe des Vorschlags",
+    "zh": "提案的级别"
+  },
+  "Orçamento indicado": {
+    "pt": "Orçamento indicado",
+    "en": "Budget indicated",
+    "es": "Presupuesto indicado",
+    "fr": "Budget indiqué",
+    "de": "Angegebene Haushaltsmittel",
+    "zh": "所示预算"
+  },
+  "Ritmo e horários": {
+    "pt": "Ritmo e horários",
+    "en": "Rhythm and times",
+    "es": "Rhythm y veces",
+    "fr": "Rythme et temps",
+    "de": "Rhythmus und Zeiten",
+    "zh": "韵律和时间"
+  },
+  "Mobilidade": {
+    "pt": "Mobilidade",
+    "en": "Mobility",
+    "es": "Movilidad",
+    "fr": "Mobilité",
+    "de": "Mobilität",
+    "zh": "调动"
+  },
+  "Não indicada": {
+    "pt": "Não indicada",
+    "en": "Not indicated",
+    "es": "No se indica",
+    "fr": "Non indiqué",
+    "de": "Nicht angegeben",
+    "zh": "未说明"
+  },
+  "Restrições alimentares": {
+    "pt": "Restrições alimentares",
+    "en": "Food restrictions",
+    "es": "Restricciones alimentarias",
+    "fr": "Restrictions alimentaires",
+    "de": "Lebensmittelbeschränkungen",
+    "zh": "食品限制"
+  },
+  "Não indicadas": {
+    "pt": "Não indicadas",
+    "en": "Not specified",
+    "es": "No especificado",
+    "fr": "Non spécifié",
+    "de": "Nicht spezifiziert",
+    "zh": "未说明"
+  },
+  "Exclusões": {
+    "pt": "Exclusões",
+    "en": "Exclusions",
+    "es": "Exclusiones",
+    "fr": "Exclusions",
+    "de": "Ausschlüsse",
+    "zh": "不适用情况"
+  },
+  "Ocasião especial": {
+    "pt": "Ocasião especial",
+    "en": "Special occasion",
+    "es": "Con ocasión especial",
+    "fr": "occasion spéciale",
+    "de": "Besonderer Anlass",
+    "zh": "特别活动"
+  },
+  "Exportação, versões e confirmações": {
+    "pt": "Exportação, versões e confirmações",
+    "en": "Exports, versions and confirmations",
+    "es": "Exportaciones, versiones y confirmaciones",
+    "fr": "Exportations, versions et confirmations",
+    "de": "Exporte, Versionen und Bestätigungen",
+    "zh": "出口、版本和确认"
+  },
+  "Todos os dias": {
+    "pt": "Todos os dias",
+    "en": "Every day",
+    "es": "Cada día",
+    "fr": "Tous les jours",
+    "de": "Jeden Tag",
+    "zh": "每天都这样"
+  },
   "Descarregar PDFs": {
     "pt": "Descarregar PDFs",
     "en": "Download PDFs",
@@ -1558,5 +1694,69 @@
     "fr": "Modéré",
     "de": "Mittel",
     "zh": "中"
+  },
+  "Rascunho": {
+    "pt": "Rascunho",
+    "en": "Draft",
+    "es": "Borrador",
+    "fr": "Brouillon",
+    "de": "Entwurf",
+    "zh": "草稿"
+  },
+  "Por confirmar": {
+    "pt": "Por confirmar",
+    "en": "To be confirmed",
+    "es": "Por confirmar",
+    "fr": "À confirmer",
+    "de": "Noch zu bestätigen",
+    "zh": "待确认"
+  },
+  "Protegida": {
+    "pt": "Protegida",
+    "en": "Protected",
+    "es": "Protegida",
+    "fr": "Protégée",
+    "de": "Geschützt",
+    "zh": "已保护"
+  },
+  "Exportada": {
+    "pt": "Exportada",
+    "en": "Exported",
+    "es": "Exportada",
+    "fr": "Exportée",
+    "de": "Exportiert",
+    "zh": "已导出"
+  },
+  "Recolher assistente": {
+    "pt": "Recolher assistente",
+    "en": "Collapse assistant",
+    "es": "Contraer asistente",
+    "fr": "Réduire l’assistant",
+    "de": "Assistent einklappen",
+    "zh": "收起助手"
+  },
+  "Proteger atividade": {
+    "pt": "Proteger atividade",
+    "en": "Protect activity",
+    "es": "Proteger actividad",
+    "fr": "Protéger l’activité",
+    "de": "Aktivität schützen",
+    "zh": "保护活动"
+  },
+  "Desproteger atividade": {
+    "pt": "Desproteger atividade",
+    "en": "Unprotect activity",
+    "es": "Desproteger actividad",
+    "fr": "Déprotéger l’activité",
+    "de": "Schutz aufheben",
+    "zh": "取消活动保护"
+  },
+  "Navegação por dias": {
+    "pt": "Navegação por dias",
+    "en": "Day navigation",
+    "es": "Navegación por días",
+    "fr": "Navigation par jour",
+    "de": "Tagesnavigation",
+    "zh": "按天导航"
   }
 }

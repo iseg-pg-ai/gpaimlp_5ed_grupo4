@@ -14,7 +14,7 @@ import { initialBrief } from "@/data/mockData";
 import { validateBrief, applyCommand } from "@/lib/curation";
 
 type Trip = { clientLanguage?: Locale; version?: number; id: string; brief: CustomerBrief; itinerary: ItineraryDay[]; pending: string[]; messages: ChatMessage[] };
-type HistoryVersion = { version: number; filename: string; createdAt: string };
+type HistoryVersion = { version: number; filename: string; createdAt: string; exportedAt?: string | null };
 const STORAGE = "blu-trips-v1";
 const emptyBrief = (): CustomerBrief => ({ ...initialBrief, customerName: "", destination: "", startDate: "", endDate: "", arrivalLocation: "", departureLocation: "", interests: [], mobilityRestrictions: [], dietaryRestrictions: [], exclusions: [], specialOccasion: "", notes: "", childrenAges: "" });
 const message = (sender: ChatMessage["sender"], text: string): ChatMessage => ({ id: crypto.randomUUID(), sender, text, timestamp: new Date().toLocaleTimeString() });
@@ -25,6 +25,8 @@ export default function WorkspacePage() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [activeId, setActiveId] = useState("");
   const [navigationOpen, setNavigationOpen] = useState(false);
+  const [desktopAssistantCollapsed, setDesktopAssistantCollapsed] = useState(false);
+  const [exportedVersions, setExportedVersions] = useState<Record<string, boolean>>({});
   const [assistantOpen, setAssistantOpen] = useState(false);
   const assistantLabel = useTranslated("Curation Assistant");
   const assistantButton = useRef<HTMLButtonElement>(null);
@@ -106,6 +108,7 @@ export default function WorkspacePage() {
       link.href = url;
       link.download = response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ?? "roteiro.zip";
       document.body.appendChild(link); link.click(); link.remove();
+      setExportedVersions(prev=>({...prev,[`${saved.id}:${saved.version}`]:true}));
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e) { setError(e instanceof Error ? e.message : "Falha na exportação."); }
     finally { operation.current = false; setExporting(false); }
@@ -152,11 +155,14 @@ export default function WorkspacePage() {
     <ResponsiveNavigation open={navigationOpen} onClose={()=>setNavigationOpen(false)}><div className={busy ? "pointer-events-none opacity-50" : ""}><Sidebar currentTripId={activeId} recentTrips={recent} isNewTripActive={editing}
       onNewTrip={() => { setNavigationOpen(false); if (busy || operation.current) return; setActiveId(""); setDraft(emptyBrief()); setEditing(true); setFormKey(k => k + 1); setError(""); }}
       onSelectTrip={id => { setNavigationOpen(false); if (busy || operation.current) return; setActiveId(id); setEditing(false); setError(""); }} /></div></ResponsiveNavigation>
-    <main className={`flex-1 min-h-0 min-w-0 overflow-auto ${active && !editing && !busy ? "xl:mr-80 2xl:mr-96" : ""}`}>
-      <div className="p-3 text-xs bg-amber-50"><T text="Propostas preliminares · Versões guardadas no servidor local · Sem reservas ou preços finais confirmados." source="pt"/></div>
+    <main className={`flex-1 min-h-0 min-w-0 overflow-auto ${active && !editing && !busy && !desktopAssistantCollapsed ? "xl:mr-80 2xl:mr-96" : ""}`}>
       {(error || storageError) && <p role="alert" className="p-4 text-red-800"><T text={error || storageError} source="pt"/></p>}
       {busy ? <p role="status" className="p-8"><T text="A consultar o catálogo e aplicar os critérios de curadoria…" source="pt"/></p> : !ready ? <p className="p-8"><T text="A carregar viagens guardadas…" source="pt"/></p> : editing ?
         <NewTripScreen key={formKey} initialValue={draft} onGenerate={generate} onCancel={active ? () => setEditing(false) : undefined} /> : active && <>
+          <div className="flex flex-col xl:flex-row items-stretch">
+            <ItineraryWorkspace key={active.id} brief={active.brief} itinerary={active.itinerary} displayBudget={`${active.brief.budget.toLocaleString()} EUR · limite, não cotação`} highlightedDay={null}
+              version={active.version} exported={Boolean(exportedVersions[`${active.id}:${active.version}`] || (history.id === active.id && history.versions.find(v=>v.version===active.version)?.exportedAt))}
+              proposalTools={<>
           <div className="px-4 py-3 flex flex-wrap items-center gap-3"><T text="Idioma do cliente (PDF)" source="pt"/><LanguagePicker value={active.clientLanguage ?? clientLanguage} onChange={language=>{setClientLanguage(language);setTrips(prev=>prev.map(t=>t.id===activeId?{...t,clientLanguage:language}:t));}}/><span className="text-xs"><T text="Inclui sempre a versão em português. Os dois PDFs são descarregados num ZIP." source="pt"/></span></div>
           <details className="p-4 text-sm"><summary><T text="Versões guardadas ·" source="pt"/>{" "}{active.version ? `v${String(active.version).padStart(3,"0")}` : "Ainda sem versão no servidor"}</summary>
             <button type="button" className="underline my-2" onClick={reopenLatest} disabled={saving || exporting}><T text="Reabrir última versão guardada" source="pt"/></button>
@@ -164,21 +170,20 @@ export default function WorkspacePage() {
           </details>
           {saving && <p role="status" className="px-4"><T text="A guardar nova versão…" source="pt"/></p>}
           <details className="p-4 text-sm text-amber-900" open><summary><T text="Confirmações pendentes" source="pt"/></summary><ul className="list-disc pl-5">{active.pending.map(p => <li key={p}><T text={p} source="pt"/></li>)}</ul></details>
-          <div className="flex flex-col xl:flex-row items-stretch">
-            <ItineraryWorkspace brief={active.brief} itinerary={active.itinerary} displayBudget={`${active.brief.budget.toLocaleString()} EUR · limite, não cotação`} highlightedDay={null}
+</>}
               onExportPdf={exportPdf} isExporting={exporting || saving}
               onEditBrief={() => { if (operation.current) return; setDraft(active.brief); setEditing(true); setFormKey(k => k + 1); }}
               onToggleLockActivity={(dayNumber, id) => update(t => ({ ...t, itinerary: t.itinerary.map(d => d.dayNumber === dayNumber ? { ...d, items: d.items.map(i => i.id === id ? { ...i, isLocked: !i.isLocked } : i) } : d) }))} />
-            <section onKeyDown={event=>{if(event.key==="Escape" && assistantOpen){setAssistantOpen(false);assistantButton.current?.focus();}}} className="min-w-0 shrink-0 xl:absolute xl:inset-y-0 xl:right-0 xl:w-80 2xl:w-96">
+            <section onKeyDown={event=>{if(event.key==="Escape" && assistantOpen){setAssistantOpen(false);assistantButton.current?.focus();}}} className={`min-w-0 shrink-0 xl:absolute xl:inset-y-0 xl:right-0 ${desktopAssistantCollapsed ? "xl:w-0" : "xl:w-80 2xl:w-96"}`}>
               <button ref={assistantButton} type="button" aria-label={assistantLabel} title={assistantLabel}
-                className="xl:hidden fixed right-4 z-40 rounded-full bg-[#143F4B] text-[#F4F0E7] border border-[#D8A65C] shadow-xl flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D8A65C]"
+                className={`${desktopAssistantCollapsed ? "" : "xl:hidden"} fixed right-4 z-40 rounded-full bg-[#143F4B] text-[#F4F0E7] border border-[#D8A65C] shadow-xl flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D8A65C]`}
                 style={{width:56,height:56,minHeight:56,bottom:"max(1rem, env(safe-area-inset-bottom))"}}
-                aria-expanded={assistantOpen} aria-controls="curation-assistant" onClick={()=>setAssistantOpen(v=>!v)}>
+                aria-expanded={assistantOpen} aria-controls="curation-assistant" onClick={()=>{if(window.matchMedia("(min-width:1280px)").matches){setDesktopAssistantCollapsed(false);requestAnimationFrame(()=>document.getElementById("curation-assistant")?.focus());}else setAssistantOpen(v=>!v);}}>
                 {assistantOpen ? <X aria-hidden="true" className="size-6"/> : <MessageCircle aria-hidden="true" className="size-6"/>}
               </button>
-              <div id="curation-assistant" role="region" aria-label={assistantLabel}
-                className={`fixed right-4 bottom-20 z-40 w-[calc(100%-2rem)] max-w-sm h-[min(70dvh,36rem)] overflow-hidden rounded-2xl border border-[#D5D1C7] shadow-xl [&>aside]:h-full xl:static xl:w-full xl:max-w-none xl:h-full xl:rounded-none xl:border-0 xl:shadow-none ${assistantOpen ? "block" : "hidden xl:block"}`}>
-            <AIAssistantPanel messages={active.messages} onSendMessage={send} isProcessing={saving || exporting} onResetItinerary={() => { if (operation.current) return; setDraft(active.brief); setEditing(true); setFormKey(k => k + 1); }} />
+              <div id="curation-assistant" tabIndex={-1} role="region" aria-label={assistantLabel}
+                className={`fixed right-4 bottom-20 z-40 w-[calc(100%-2rem)] max-w-sm h-[min(70dvh,36rem)] overflow-hidden rounded-2xl border border-[#D5D1C7] shadow-xl [&>aside]:h-full xl:static xl:w-full xl:max-w-none xl:h-full xl:rounded-none xl:border-0 xl:shadow-none ${assistantOpen ? "block" : "hidden"} ${desktopAssistantCollapsed ? "xl:hidden" : "xl:block"}`}>
+            <AIAssistantPanel onCollapse={()=>{setDesktopAssistantCollapsed(true);requestAnimationFrame(()=>assistantButton.current?.focus());}} messages={active.messages} onSendMessage={send} isProcessing={saving || exporting} onResetItinerary={() => { if (operation.current) return; setDraft(active.brief); setEditing(true); setFormKey(k => k + 1); }} />
               </div>
             </section>
           </div>
