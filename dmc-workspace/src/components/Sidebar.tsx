@@ -1,7 +1,6 @@
 "use client";
 import { T } from "@/components/LocaleProvider";
 
-
 import React from "react";
 import { Plus, MapPin, ShieldCheck } from "lucide-react";
 import { RecentTrip } from "@/types";
@@ -34,17 +33,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="w-full gap-2 justify-center shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            <span><T text="New Trip Brief" source="en"/></span>
+            <span>
+              <T text="New Trip Brief" source="en" />
+            </span>
           </Button>
         </div>
 
         {/* Recent Projects Section */}
         <div className="px-3 pt-2">
           <div className="flex items-center justify-between px-2 mb-1.5">
-            <span className="text-xs font-semibold tracking-widest text-[#4A636B]"><T text="Recent Journeys" source="en"/>{" "}</span>
-            <span className="text-xs text-[#4A636B] font-mono">
-              {recentTrips.length}
+            <span className="text-xs font-semibold tracking-widest text-[#4A636B]">
+              <T text="Recent Journeys" source="en" />{" "}
             </span>
+            <span className="text-xs text-[#4A636B] font-mono">{recentTrips.length}</span>
           </div>
 
           <div className="space-y-1">
@@ -62,7 +63,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div className="min-w-0 pr-2">
                     <div className="flex items-center gap-1.5">
-                      <span className={`font-medium truncate ${isSelected ? "text-[#2D5B67] font-semibold" : "text-[#143F4B]"}`}>
+                      <span
+                        className={`font-medium truncate ${isSelected ? "text-[#2D5B67] font-semibold" : "text-[#143F4B]"}`}
+                      >
                         {trip.name}
                       </span>
                     </div>
@@ -73,9 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <span className="shrink-0">{trip.dates}</span>
                     </div>
                   </div>
-                  {isSelected && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#D8A65C] shrink-0" />
-                  )}
+                  {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#D8A65C] shrink-0" />}
                 </button>
               );
             })}
@@ -87,9 +88,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-3 border-t border-[#D5D1C7] bg-[#E3DCD0] text-xs text-[#4A636B]">
         <div className="flex items-center gap-1.5 font-medium mb-1 text-[#143F4B]">
           <ShieldCheck className="w-3.5 h-3.5 text-[#2D5B67]" />
-          <span><T text="Curated with Care" source="en"/></span>
+          <span>
+            <T text="Curated with Care" source="en" />
+          </span>
         </div>
-        <p className="text-xs text-[#698288] leading-tight"><T text="RNAAT Registered · 26/2026" source="en"/>{" "}<br /><T text="Lisbon HQ · Portugal" source="en"/>{" "}</p>
+        <p className="text-xs text-[#698288] leading-tight">
+          <T text="RNAAT Registered · 26/2026" source="en" /> <br />
+          <T text="Lisbon HQ · Portugal" source="en" />{" "}
+        </p>
       </div>
     </aside>
   );

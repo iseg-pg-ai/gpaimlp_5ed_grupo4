@@ -1,4 +1,10 @@
-import type { CustomerBrief, PhysicalEffortLevel, ProposalTier, DiningPace, MorningPreference } from "../types/index";
+import type {
+  CustomerBrief,
+  PhysicalEffortLevel,
+  ProposalTier,
+  DiningPace,
+  MorningPreference,
+} from "../types/index";
 
 export const interestOptions = [
   "Culture & Heritage",
@@ -73,4 +79,3 @@ export const accommodationOptions: Array<CustomerBrief["accommodation"]> = [
   "Boutique",
   "Luxury",
 ];
-

@@ -479,6 +479,30 @@ os avisos gerais da proposta permanecem. A exportação não confirma atividades
 Referências de reserva, contactos e nomes dos fornecedores são preservados nas
 traduções do PDF. Os dados preenchidos são mantidos no formulário se a gravação falhar.
 
+### Manutenção e validação do código
+
+A lógica de viagens e catálogo está em `src/hooks/useWorkspace.ts` e
+`src/hooks/useCatalog.ts`. As páginas compõem a interface; o editor e o histórico
+do catálogo estão em `src/components/catalog/`. A validação dos snapshots e dos
+dados transportados do catálogo está centralizada em `src/lib/snapshot-validation.ts`
+e `src/lib/catalog-details.ts`.
+
+Dentro de `dmc-workspace`, executar `npm run check` para verificar lint sem avisos,
+tipos, formatação e testes. `npm run format` aplica a formatação definida no projeto;
+`npm run build` verifica a compilação de produção.
+
+Com o portal iniciado na porta 3001, executar `npm run test:responsive`,
+`npm run test:navigation`, `npm run test:catalog`, `npm run test:confirmations`
+e `npm run test:itinerary`. No Windows, pode definir `BROWSER_CHANNEL=msedge`
+para usar o Edge instalado. Estes testes usam APIs simuladas; complementar com
+`npm run test:catalog-etl`, que verifica a integração real em dados temporários.
+Na raiz, executar `python -B -m unittest discover -s tests -v` para o ETL e
+o extrator de textos traduzíveis.
+
+A extração de traduções aceita componentes `T` em várias linhas. Textos dinâmicos
+continuam a precisar de entradas em `translations/ui_sources.json` ou de
+substituições explícitas em `translations/ui_overrides.json`.
+
 `node tests/browser/confirmations.mjs` verifica o fluxo em computador e telemóvel,
 incluindo erro de gravação, recuperação, recarregamento e reabertura, com APIs simuladas.
 Os testes de confirmação/versões verificam a persistência real e o conteúdo do PDF.

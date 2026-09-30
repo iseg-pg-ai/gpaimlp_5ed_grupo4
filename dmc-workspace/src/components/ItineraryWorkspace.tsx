@@ -1,7 +1,6 @@
 "use client";
 import { T, useLocale, useTranslated } from "@/components/LocaleProvider";
 
-
 import type { ActivityConfirmation } from "@/lib/activity-confirmation";
 import React, { useState, useRef, useEffect } from "react";
 import { ItineraryDay, CustomerBrief, TransitLeg } from "@/types";
@@ -24,7 +23,11 @@ interface ItineraryWorkspaceProps {
   proposalTools?: React.ReactNode;
   version?: number;
   exported?: boolean;
-  onConfirmActivity?: (dayNumber: number, activityId: string, value: ActivityConfirmation) => Promise<boolean>;
+  onConfirmActivity?: (
+    dayNumber: number,
+    activityId: string,
+    value: ActivityConfirmation,
+  ) => Promise<boolean>;
   saving?: boolean;
   onToggleLockActivity?: (dayNumber: number, activityId: string) => void;
 }
@@ -46,7 +49,12 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
 }) => {
   const { locale } = useLocale();
   const dayNavigationLabel = useTranslated("Navegação por dias", "pt");
-  const formatDate = (date: string) => new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : locale, {day:"numeric",month:"short",year:"numeric"}).format(new Date(date + "T12:00:00"));
+  const formatDate = (date: string) =>
+    new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(date + "T12:00:00"));
   const [selectedDayFilter, setSelectedDayFilter] = useState<number | "all">("all");
   const [inspectedLeg, setInspectedLeg] = useState<TransitLeg | null>(null);
   const dayRefs = useRef<{ [key: number]: HTMLElement | null }>({});
@@ -61,57 +69,192 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
     }
   }, [highlightedDay]);
 
-  const filteredDays = selectedDayFilter === "all" 
-    ? itinerary 
-    : itinerary.filter((d) => d.dayNumber === selectedDayFilter);
+  const filteredDays =
+    selectedDayFilter === "all"
+      ? itinerary
+      : itinerary.filter((d) => d.dayNumber === selectedDayFilter);
 
   return (
     <div className="flex-1 min-w-0 w-full bg-[#F4F0E7] pb-24">
       <header className="px-4 sm:px-6 py-7 border-b border-[#DDD8CE]">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <ProposalStatus state="draft"/>
-            {exported && <ProposalStatus state="exported"/>}
-            {version && <span className="text-sm text-[#4A636B]">v{String(version).padStart(3,"0")}</span>}
+            <ProposalStatus state="draft" />
+            {exported && <ProposalStatus state="exported" />}
+            {version && (
+              <span className="text-sm text-[#4A636B]">v{String(version).padStart(3, "0")}</span>
+            )}
           </div>
           <p className="text-base font-medium text-[#4A636B] break-words">{brief.customerName}</p>
-          <h1 className="mt-2 font-serif-blu text-3xl sm:text-4xl leading-tight text-[#143F4B] break-words">{brief.destination}</h1>
+          <h1 className="mt-2 font-serif-blu text-3xl sm:text-4xl leading-tight text-[#143F4B] break-words">
+            {brief.destination}
+          </h1>
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm sm:text-base text-[#143F4B]">
-            <p className="flex flex-wrap items-center gap-2"><Calendar aria-hidden="true" className="size-4 shrink-0"/>{formatDate(brief.startDate)} — {formatDate(brief.endDate)}</p>
-            <p className="flex flex-wrap items-center gap-2"><Users aria-hidden="true" className="size-4"/>{brief.adults + brief.children} <T text="travellers"/></p>
+            <p className="flex flex-wrap items-center gap-2">
+              <Calendar aria-hidden="true" className="size-4 shrink-0" />
+              {formatDate(brief.startDate)} — {formatDate(brief.endDate)}
+            </p>
+            <p className="flex flex-wrap items-center gap-2">
+              <Users aria-hidden="true" className="size-4" />
+              {brief.adults + brief.children} <T text="travellers" />
+            </p>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Button variant="primaryDark" onClick={onExportPdf} disabled={isExporting} className="min-h-11 text-sm"><Download aria-hidden="true" className="size-4"/><T text={isExporting ? "A exportar…" : "Exportar PDF"} source="pt"/></Button>
-            <Button variant="outline" onClick={onEditBrief} className="min-h-11 text-sm"><SlidersHorizontal aria-hidden="true" className="size-4"/><T text="Edit Brief"/></Button>
+            <Button
+              variant="primaryDark"
+              onClick={onExportPdf}
+              disabled={isExporting}
+              className="min-h-11 text-sm"
+            >
+              <Download aria-hidden="true" className="size-4" />
+              <T text={isExporting ? "A exportar…" : "Exportar PDF"} source="pt" />
+            </Button>
+            <Button variant="outline" onClick={onEditBrief} className="min-h-11 text-sm">
+              <SlidersHorizontal aria-hidden="true" className="size-4" />
+              <T text="Edit Brief" />
+            </Button>
           </div>
-          <p className="mt-4 text-sm leading-6 text-[#4A636B]"><T text="Proposta preliminar. Exportar não confirma reservas, disponibilidade ou preços." source="pt"/></p>
-          <details data-testid="proposal-preferences" className="mt-5 rounded-xl border border-[#DDD8CE] bg-[#FFFEFA] px-4 py-3 text-sm">
-            <summary className="cursor-pointer font-medium text-[#143F4B]"><T text="Preferências e restrições da viagem" source="pt"/></summary>
+          <p className="mt-4 text-sm leading-6 text-[#4A636B]">
+            <T
+              text="Proposta preliminar. Exportar não confirma reservas, disponibilidade ou preços."
+              source="pt"
+            />
+          </p>
+          <details
+            data-testid="proposal-preferences"
+            className="mt-5 rounded-xl border border-[#DDD8CE] bg-[#FFFEFA] px-4 py-3 text-sm"
+          >
+            <summary className="cursor-pointer font-medium text-[#143F4B]">
+              <T text="Preferências e restrições da viagem" source="pt" />
+            </summary>
             <dl className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-[#4A636B] leading-6">
-              <div><dt className="font-semibold text-[#143F4B]"><T text="Nível da proposta" source="pt"/></dt><dd>{brief.proposalTier}</dd></div>
-              <div><dt className="font-semibold text-[#143F4B]"><T text="Esforço:" source="pt"/></dt><dd><T text={brief.physicalEffort}/></dd></div>
-              <div><dt className="font-semibold text-[#143F4B]"><T text="Orçamento indicado" source="pt"/></dt><dd><T text={displayBudget} source="pt"/></dd></div>
-              <div><dt className="font-semibold text-[#143F4B]"><T text="Ritmo e horários" source="pt"/></dt><dd><T text={brief.pace}/> · <T text={brief.morningPreference}/></dd></div>
-              <div><dt className="font-semibold text-[#143F4B]"><T text="Mobilidade" source="pt"/></dt><dd>{brief.mobilityRestrictions.length ? brief.mobilityRestrictions.map(value=><p key={value}><T text={value}/></p>) : <T text="Não indicada" source="pt"/>}</dd></div>
-              <div><dt className="font-semibold text-[#143F4B]"><T text="Restrições alimentares" source="pt"/></dt><dd>{brief.dietaryRestrictions.length ? brief.dietaryRestrictions.map(value=><p key={value}><T text={value}/></p>) : <T text="Não indicadas" source="pt"/>}</dd></div>
-              {brief.exclusions.length > 0 && <div><dt className="font-semibold text-[#143F4B]"><T text="Exclusões" source="pt"/></dt><dd>{brief.exclusions.map(value=><p key={value}><T text={value}/></p>)}</dd></div>}
-              {brief.specialOccasion && <div><dt className="font-semibold text-[#143F4B]"><T text="Ocasião especial" source="pt"/></dt><dd>{brief.specialOccasion}</dd></div>}
+              <div>
+                <dt className="font-semibold text-[#143F4B]">
+                  <T text="Nível da proposta" source="pt" />
+                </dt>
+                <dd>{brief.proposalTier}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-[#143F4B]">
+                  <T text="Esforço:" source="pt" />
+                </dt>
+                <dd>
+                  <T text={brief.physicalEffort} />
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-[#143F4B]">
+                  <T text="Orçamento indicado" source="pt" />
+                </dt>
+                <dd>
+                  <T text={displayBudget} source="pt" />
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-[#143F4B]">
+                  <T text="Ritmo e horários" source="pt" />
+                </dt>
+                <dd>
+                  <T text={brief.pace} /> · <T text={brief.morningPreference} />
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-[#143F4B]">
+                  <T text="Mobilidade" source="pt" />
+                </dt>
+                <dd>
+                  {brief.mobilityRestrictions.length ? (
+                    brief.mobilityRestrictions.map((value) => (
+                      <p key={value}>
+                        <T text={value} />
+                      </p>
+                    ))
+                  ) : (
+                    <T text="Não indicada" source="pt" />
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-[#143F4B]">
+                  <T text="Restrições alimentares" source="pt" />
+                </dt>
+                <dd>
+                  {brief.dietaryRestrictions.length ? (
+                    brief.dietaryRestrictions.map((value) => (
+                      <p key={value}>
+                        <T text={value} />
+                      </p>
+                    ))
+                  ) : (
+                    <T text="Não indicadas" source="pt" />
+                  )}
+                </dd>
+              </div>
+              {brief.exclusions.length > 0 && (
+                <div>
+                  <dt className="font-semibold text-[#143F4B]">
+                    <T text="Exclusões" source="pt" />
+                  </dt>
+                  <dd>
+                    {brief.exclusions.map((value) => (
+                      <p key={value}>
+                        <T text={value} />
+                      </p>
+                    ))}
+                  </dd>
+                </div>
+              )}
+              {brief.specialOccasion && (
+                <div>
+                  <dt className="font-semibold text-[#143F4B]">
+                    <T text="Ocasião especial" source="pt" />
+                  </dt>
+                  <dd>{brief.specialOccasion}</dd>
+                </div>
+              )}
             </dl>
           </details>
-          {proposalTools && <details data-testid="proposal-tools" className="mt-3 rounded-xl border border-[#DDD8CE] bg-[#FFFEFA] text-sm">
-            <summary className="cursor-pointer px-4 py-3 font-medium text-[#143F4B]"><T text="Exportação, versões e confirmações" source="pt"/></summary>{proposalTools}
-          </details>}
+          {proposalTools && (
+            <details
+              data-testid="proposal-tools"
+              className="mt-3 rounded-xl border border-[#DDD8CE] bg-[#FFFEFA] text-sm"
+            >
+              <summary className="cursor-pointer px-4 py-3 font-medium text-[#143F4B]">
+                <T text="Exportação, versões e confirmações" source="pt" />
+              </summary>
+              {proposalTools}
+            </details>
+          )}
         </div>
       </header>
-      <nav aria-label={dayNavigationLabel} data-testid="day-navigation" className="sticky top-0 z-20 border-b border-[#D5D1C7] bg-[#F4F0E7]/95 backdrop-blur-sm px-4 sm:px-6 py-3">
+      <nav
+        aria-label={dayNavigationLabel}
+        data-testid="day-navigation"
+        className="sticky top-0 z-20 border-b border-[#D5D1C7] bg-[#F4F0E7]/95 backdrop-blur-sm px-4 sm:px-6 py-3"
+      >
         <div className="max-w-4xl mx-auto flex gap-2 overflow-x-auto pb-1">
-          <Button aria-pressed={selectedDayFilter === "all"} variant={selectedDayFilter === "all" ? "primaryDark" : "outline"}
-            onClick={()=>setSelectedDayFilter("all")} className="shrink-0 min-h-11 text-sm"><T text="Todos os dias" source="pt"/> ({itinerary.length})</Button>
-          {itinerary.map(day=><Button key={day.dayNumber} aria-pressed={selectedDayFilter === day.dayNumber}
-            variant={selectedDayFilter === day.dayNumber ? "primaryDark" : "outline"}
-            onClick={()=>setSelectedDayFilter(day.dayNumber)} className="shrink-0 min-h-11 text-sm flex-col gap-0.5 px-4">
-            <span><T text="Day"/> {day.dayNumber}</span><span className="text-xs opacity-90">{formatDate(day.date)}</span>
-          </Button>)}
+          <Button
+            aria-pressed={selectedDayFilter === "all"}
+            variant={selectedDayFilter === "all" ? "primaryDark" : "outline"}
+            onClick={() => setSelectedDayFilter("all")}
+            className="shrink-0 min-h-11 text-sm"
+          >
+            <T text="Todos os dias" source="pt" /> ({itinerary.length})
+          </Button>
+          {itinerary.map((day) => (
+            <Button
+              key={day.dayNumber}
+              aria-pressed={selectedDayFilter === day.dayNumber}
+              variant={selectedDayFilter === day.dayNumber ? "primaryDark" : "outline"}
+              onClick={() => setSelectedDayFilter(day.dayNumber)}
+              className="shrink-0 min-h-11 text-sm flex-col gap-0.5 px-4"
+            >
+              <span>
+                <T text="Day" /> {day.dayNumber}
+              </span>
+              <span className="text-xs opacity-90">{formatDate(day.date)}</span>
+            </Button>
+          ))}
         </div>
       </nav>
 
@@ -135,11 +278,10 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 pb-4 mb-5 border-b border-[#F0ECE4]">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="teal" className="font-semibold text-sm"><T text="Day" source="en"/>{" "}{day.dayNumber}
+                    <Badge variant="teal" className="font-semibold text-sm">
+                      <T text="Day" source="en" /> {day.dayNumber}
                     </Badge>
-                    <span className="text-sm font-medium text-[#4A636B]">
-                      {day.date}
-                    </span>
+                    <span className="text-sm font-medium text-[#4A636B]">{day.date}</span>
                     <span className="text-[#C9C6BD]">·</span>
                     <span className="inline-flex items-center gap-1 text-sm text-[#4A636B]">
                       <MapPin className="w-3 h-3 text-[#A8A49C]" />
@@ -156,21 +298,28 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                   </div>
 
                   <h2 className="mt-1.5 font-serif-blu text-lg font-bold text-[#143F4B] tracking-tight">
-                    <T text={day.title} source="pt"/>
+                    <T text={day.title} source="pt" />
                   </h2>
                 </div>
 
                 {isDayModified && (
-                  <Badge variant="gold" className="gap-1.5 py-1 px-2.5 font-medium shrink-0 animate-in fade-in">
+                  <Badge
+                    variant="gold"
+                    className="gap-1.5 py-1 px-2.5 font-medium shrink-0 animate-in fade-in"
+                  >
                     <Sparkles className="w-3 h-3 text-[#D8A65C]" />
-                    <span><T text="Updated by Assistant" source="en"/></span>
+                    <span>
+                      <T text="Updated by Assistant" source="en" />
+                    </span>
                   </Badge>
                 )}
               </div>
 
               {day.summary && (
                 <p className="text-sm leading-7 text-[#4A636B] mb-5">
-                  "<T text={day.summary} source="pt"/>"
+                  &quot;
+                  <T text={day.summary} source="pt" />
+                  &quot;
                 </p>
               )}
 
@@ -179,15 +328,19 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 {day.items.map((activity) => {
                   return (
                     <React.Fragment key={activity.id}>
-                      <ActivityCard 
+                      <ActivityCard
                         activity={activity}
                         saving={saving}
-                        onConfirm={onConfirmActivity ? value => onConfirmActivity(day.dayNumber, activity.id, value) : undefined}
+                        onConfirm={
+                          onConfirmActivity
+                            ? (value) => onConfirmActivity(day.dayNumber, activity.id, value)
+                            : undefined
+                        }
                         onToggleLock={() => onToggleLockActivity?.(day.dayNumber, activity.id)}
                       />
                       {activity.transitToNext && (
-                        <TransitConnector 
-                          leg={activity.transitToNext} 
+                        <TransitConnector
+                          leg={activity.transitToNext}
                           onInspect={(leg) => setInspectedLeg(leg)}
                         />
                       )}
@@ -201,10 +354,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
       </div>
 
       {/* Transit Routing Inspector Modal */}
-      <TransitInspectorModal 
-        leg={inspectedLeg} 
-        onClose={() => setInspectedLeg(null)} 
-      />
+      <TransitInspectorModal leg={inspectedLeg} onClose={() => setInspectedLeg(null)} />
     </div>
   );
 };
