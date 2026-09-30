@@ -1391,6 +1391,110 @@
     "de": "Quelle, Datum und geprüfte Bedingungen",
     "zh": "来源、日期和条件得到核实"
   },
+  "Horário": {
+    "pt": "Horário",
+    "en": "Schedule",
+    "es": "Cuadro",
+    "fr": "Tableau",
+    "de": "Zeitplan",
+    "zh": "时间表"
+  },
+  "Local / ponto de encontro": {
+    "pt": "Local / ponto de encontro",
+    "en": "Location / rendezvous point",
+    "es": "Ubicación / punto de encuentro",
+    "fr": "Lieu / point de rendez-vous",
+    "de": "Ort/Rendezvous-Punkt",
+    "zh": "地点/会合点"
+  },
+  "Preço acordado e unidade": {
+    "pt": "Preço acordado e unidade",
+    "en": "Agreed price and unit",
+    "es": "Precio y unidad convenidos",
+    "fr": "Prix et unité convenus",
+    "de": "Vereinbarter Preis und Einheit",
+    "zh": "商定价格和单位"
+  },
+  "Referência da reserva": {
+    "pt": "Referência da reserva",
+    "en": "Reserve reference",
+    "es": "Referencia de reserva",
+    "fr": "Référence de la réserve",
+    "de": "Reservereferenz",
+    "zh": "准备金参考"
+  },
+  "Contacto do fornecedor": {
+    "pt": "Contacto do fornecedor",
+    "en": "Supplier contact",
+    "es": "Contacto del proveedor",
+    "fr": "Contact avec le fournisseur",
+    "de": "Lieferantenkontakt",
+    "zh": "供应商联系人"
+  },
+  "Evidência da confirmação ou motivo de dispensa de reserva": {
+    "pt": "Evidência da confirmação ou motivo de dispensa de reserva",
+    "en": "Evidence of confirmation or grounds for waiver",
+    "es": "Pruebas de confirmación o motivos de renuncia",
+    "fr": "Preuves de confirmation ou motifs de renonciation",
+    "de": "Bestätigungsnachweise oder Verzichtsgründe",
+    "zh": "证实的证据或放弃的理由"
+  },
+  "Confirmada": {
+    "pt": "Confirmada",
+    "en": "Confirmed",
+    "es": "Confirmado",
+    "fr": "Confirmé",
+    "de": "Bestätigt",
+    "zh": "确认"
+  },
+  "Guardar e voltar a pendente": {
+    "pt": "Guardar e voltar a pendente",
+    "en": "Store and return to pendant",
+    "es": "Almacenar y volver al colgante",
+    "fr": "Conserver et retourner au pendentif",
+    "de": "Lagerung und Rückkehr zum Anhänger",
+    "zh": "存储并返回顶端"
+  },
+  "Guardar progresso": {
+    "pt": "Guardar progresso",
+    "en": "Keep progress",
+    "es": "Seguir progresando",
+    "fr": "Garder les progrès",
+    "de": "Fortschritte halten",
+    "zh": "保持进度"
+  },
+  "Alterações guardadas na versão do roteiro.": {
+    "pt": "Alterações guardadas na versão do roteiro.",
+    "en": "Changes saved in the script version.",
+    "es": "Cambios guardados en la versión del script.",
+    "fr": "Modifications enregistrées dans la version du script.",
+    "de": "In der Skriptversion gespeicherte Änderungen.",
+    "zh": "脚本版本中保存的更改 。"
+  },
+  "Preço e unidade (validar para esta viagem)": {
+    "pt": "Preço e unidade (validar para esta viagem)",
+    "en": "Price and unit (validate for this trip)",
+    "es": "Precio y unidad (validato para este viaje)",
+    "fr": "Prix et unité (validation pour ce voyage)",
+    "de": "Preis und Einheit (gültig für diese Reise)",
+    "zh": "价格和单位(本次旅行的验证)"
+  },
+  "Preço registado": {
+    "pt": "Preço registado",
+    "en": "Registered price",
+    "es": "Precio registrado",
+    "fr": "Prix enregistré",
+    "de": "Registrierter Preis",
+    "zh": "登记价格"
+  },
+  "Preço acordado": {
+    "pt": "Preço acordado",
+    "en": "Price agreed",
+    "es": "Precio acordado",
+    "fr": "Prix convenu",
+    "de": "Preis vereinbart",
+    "zh": "商定价格"
+  },
   "Idioma do cliente (PDF)": {
     "pt": "Idioma do cliente (PDF)",
     "en": "Customer language (PDF)",
@@ -1422,6 +1526,94 @@
     "fr": "Critères",
     "de": "Kriterien",
     "zh": "标准"
+  },
+  "Dados e confirmações": {
+    "pt": "Dados e confirmações",
+    "en": "Data and confirmations",
+    "es": "Datos y confirmaciones",
+    "fr": "Données et confirmations",
+    "de": "Daten und Bestätigungen",
+    "zh": "数据和确认"
+  },
+  "Os dados disponíveis no catálogo são preenchidos automaticamente. Complete apenas o que falta ou ajuste o que mudou para esta viagem. Confirmar não efetua reservas junto do fornecedor.": {
+    "pt": "Os dados disponíveis no catálogo são preenchidos automaticamente. Complete apenas o que falta ou ajuste o que mudou para esta viagem. Confirmar não efetua reservas junto do fornecedor.",
+    "en": "The data available in the catalogue is filled in automatically. Complete only what is missing or adjust what has changed for this trip. Confirm does not make reservations with the supplier.",
+    "es": "Los datos disponibles en el catálogo se rellenan automáticamente. Completa sólo lo que falta o ajusta lo que ha cambiado para este viaje. Confirma no hace reservas con el proveedor.",
+    "fr": "Les données disponibles dans le catalogue sont remplies automatiquement. Compléter seulement ce qui manque ou ajuster ce qui a changé pour ce voyage. Confirmer ne fait pas de réservations auprès du fournisseur.",
+    "de": "Die im Katalog verfügbaren Daten werden automatisch ausgefüllt. Füllen Sie nur das aus, was fehlt, oder passen Sie an, was sich für diese Reise geändert hat.",
+    "zh": "目录中的数据是自动填充的。仅填写缺失的部分或调整本次行程的变化。确认时不会与供应商预约。"
+  },
+  "Informação do catálogo": {
+    "pt": "Informação do catálogo",
+    "en": "Catalog information",
+    "es": "Información del catálogo",
+    "fr": "Informations sur le catalogue",
+    "de": "Kataloginformationen",
+    "zh": "目录信息"
+  },
+  "Horário de funcionamento (não é a hora da visita)": {
+    "pt": "Horário de funcionamento (não é a hora da visita)",
+    "en": "Opening hours (not visiting time)",
+    "es": "Horario (no hora de visita)",
+    "fr": "Heures d'ouverture (pas d'heure de visite)",
+    "de": "Öffnungszeiten (nicht Besuchszeit)",
+    "zh": "开放时间(非访问时间)"
+  },
+  "Acessibilidade": {
+    "pt": "Acessibilidade",
+    "en": "Accessibility",
+    "es": "Accesibilidad",
+    "fr": "Accessibilité",
+    "de": "Zugänglichkeit",
+    "zh": "无障碍"
+  },
+  "Condições alimentares": {
+    "pt": "Condições alimentares",
+    "en": "Food conditions",
+    "es": "Condiciones alimentarias",
+    "fr": "Conditions alimentaires",
+    "de": "Lebensmittelbedingungen",
+    "zh": "粮食状况"
+  },
+  "Verificação registada": {
+    "pt": "Verificação registada",
+    "en": "Verification recorded",
+    "es": "Verificación registrada",
+    "fr": "Vérification enregistrée",
+    "de": "Vermerkte Überprüfung",
+    "zh": "记录的核查"
+  },
+  "O preço do catálogo é uma referência; valide as condições aplicáveis à viagem. Fornecedor, contacto e referência de reserva são opcionais quando não se aplicam.": {
+    "pt": "O preço do catálogo é uma referência; valide as condições aplicáveis à viagem. Fornecedor, contacto e referência de reserva são opcionais quando não se aplicam.",
+    "en": "The price of the catalogue is a reference; validate the conditions applicable to the travel. Supplier, contact and booking reference are optional when not applicable.",
+    "es": "El precio del catálogo es una referencia; validar las condiciones aplicables al viaje. Proveedor, contacto y referencia de reserva son opcionales cuando no son aplicables.",
+    "fr": "Le prix du catalogue est une référence; validez les conditions applicables au voyage. Fournisseur, contact et référence de réservation sont facultatifs quand non applicable.",
+    "de": "Der Preis des Katalogs ist eine Referenz; validieren Sie die für die Reise geltenden Bedingungen. Lieferant, Kontakt und Buchungsreferenz sind optional, wenn nicht zutreffend.",
+    "zh": "该目录的价格是一种参考;验证适用于旅行的条件;供应商、联系人和预订参考书在不适用时是可选的。"
+  },
+  "Desproteja a atividade antes de editar as confirmações.": {
+    "pt": "Desproteja a atividade antes de editar as confirmações.",
+    "en": "Unprotect the activity before editing confirmations.",
+    "es": "Desproteger la actividad antes de editar confirmaciones.",
+    "fr": "Ne pas protéger l'activité avant d'éditer les confirmations.",
+    "de": "Unschützen Sie die Aktivität, bevor Sie Bestätigungen bearbeiten.",
+    "zh": "在编辑确认前取消活动保护 。"
+  },
+  "Pendência resolvida": {
+    "pt": "Pendência resolvida",
+    "en": "Pending resolved",
+    "es": "Pendiente resuelta",
+    "fr": "En attente de résolution",
+    "de": "Ausstehende Lösung",
+    "zh": "待解决"
+  },
+  "Confirmar atividade": {
+    "pt": "Confirmar atividade",
+    "en": "Confirm activity",
+    "es": "Confirma actividad",
+    "fr": "Confirmer l'activité",
+    "de": "Aktivität bestätigen",
+    "zh": "确认活动"
   },
   "Compatibilidade com o questionário": {
     "pt": "Compatibilidade com o questionário",

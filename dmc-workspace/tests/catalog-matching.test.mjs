@@ -26,6 +26,18 @@ test('all mobility restrictions need documented matches', () => {
   assert.equal(generate([row('Partial', { mobilitySupported: restrictions.slice(0, 1), verificationNotes: 'Supplier' })], changes).length, 0);
   assert.equal(generate([row('Matched', { mobilitySupported: restrictions, verificationNotes: 'Supplier, reviewed 2026-09-30' })], changes).length, 1);
 });
+test('generated cards carry catalog fields and do not repeat verified accessibility checks', () => {
+ const needs = ['Wheelchair Accessible Routes'];
+ const entry = { ...row('Visit', { mobilitySupported: needs, verificationNotes: 'Verified with supplier' }), morada: 'Rua A', contactos: 'supplier@example.com', fornecedor: 'Supplier', preco_da_atracao: '20 EUR', horario: '09:00-18:00', acessibilidade_nivel_de_confirmacao: 'Accessible entrance' };
+ const result = generate([entry], { mobilityRestrictions: needs });
+ assert.equal(result.length, 1);
+ assert.equal(result[0].catalogDetails.location, 'Rua A');
+ assert.equal(result[0].catalogDetails.contact, 'supplier@example.com');
+ assert.equal(result[0].catalogDetails.price, '20 EUR');
+ assert.equal(result[0].time, 'Por agendar');
+ assert.ok(!result[0].pendingChecks.some(v => /Acessibilidade/.test(v)));
+ assert.ok(result[0].pendingChecks.some(v => /Disponibilidade/.test(v)));
+});
 test('food restrictions require all verified options, including food experiences; meal pace is respected', () => {
   const dietary = ['Vegan', 'Nut Allergy'];
   const changes = { dietaryRestrictions: dietary };

@@ -458,3 +458,39 @@ Os interesses correspondentes e condições utilizadas surgem nos detalhes de cu
 das atividades. O motor atual é baseado em regras: não interpreta automaticamente
 notas livres/ocasiões especiais. A preferência de alojamento não classifica atividades,
 restaurantes ou experiências; hotéis não fazem parte destas três categorias.
+
+## Confirmações por atividade
+
+No cartão do roteiro, abra **Dados e confirmações** para preencher horário, local,
+preço acordado/unidade, fornecedor, referência, contacto e evidência da confirmação
+(ou motivo de dispensa de reserva). Cada pendência tem um campo de detalhes e uma
+marca de resolução. **Guardar progresso** conserva os dados parciais numa versão.
+
+**Confirmar atividade** exige horário, local, preço, evidência e todas as pendências
+resolvidas com detalhes. O estado passa a **Confirmada** apenas após guardar com
+sucesso. Trata-se de confirmação manual pelo curador, sem chamadas a fornecedores.
+Pode editar e **Guardar e voltar a pendente**; as versões anteriores são preservadas.
+Atividades protegidas devem ser desprotegidas antes de editar. Atividades confirmadas
+não são removidas pelo assistente e impedem regeneração até reabrir a confirmação.
+
+As confirmações seguem no snapshot do roteiro, no armazenamento local e nos PDFs.
+As pendências resolvidas deixam de aparecer como pendentes no respetivo cartão/PDF;
+os avisos gerais da proposta permanecem. A exportação não confirma atividades.
+Referências de reserva, contactos e nomes dos fornecedores são preservados nas
+traduções do PDF. Os dados preenchidos são mantidos no formulário se a gravação falhar.
+
+`node tests/browser/confirmations.mjs` verifica o fluxo em computador e telemóvel,
+incluindo erro de gravação, recuperação, recarregamento e reabertura, com APIs simuladas.
+Os testes de confirmação/versões verificam a persistência real e o conteúdo do PDF.
+
+Os cartões gerados transportam também morada, preço de referência, fornecedor,
+contacto, horário de funcionamento e condições de acessibilidade/alimentação do
+catálogo. Estes dados preenchem automaticamente os campos e os detalhes das
+pendências; uma confirmação já guardada prevalece sobre os valores do catálogo.
+Roteiros antigos sem estes dados tentam consultar o registo atual pelo identificador,
+sem modificar as versões existentes; os dados importados ficam na próxima gravação.
+Horário de funcionamento não é convertido automaticamente na hora da visita.
+Preços conhecidos continuam a exigir validação para a viagem, sem os voltar a escrever.
+Necessidades de acessibilidade/alimentação já verificadas pelo perfil do catálogo
+não geram pendências genéricas repetidas nos novos roteiros. A evidência pode ser
+registada nas próprias pendências, dispensando a repetição no campo de notas.

@@ -107,6 +107,15 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
       selected.push(candidate);
     }
     const items: ActivityItem[] = selected.map(({ row, table, matching }) => {
+      const profile = row._matching as MatchingProfile | undefined;
+      const catalogDetails = {
+        location: text(row, 'morada') || text(row, 'localizacao') || text(row, 'cidade'),
+        price: String(row.preco_da_atracao ?? row.preco ?? row.preco_nao_cotacao ?? ''),
+        supplier: text(row, 'fornecedor') || (table === 'restaurantes' ? text(row, 'estabelecimento') : ''),
+        contact: text(row, 'contactos'), hours: text(row, 'horario') || text(row, 'horario_base_reconfirmar'),
+        accessibility: text(row, 'acessibilidade_nivel_de_confirmacao'), dietary: text(row, 'opcoes_alimentares_alergenios'),
+        verification: profile?.verificationNotes ?? '',
+      };
       const id = `${table}:${row._catalog_id ?? row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`;
       used.add(id);
       const source = row._catalog_id ? `${table} · ${row._catalog_id} · revisão ${row._catalog_revision} · ${row.site_fonte ?? ''}` : `${table} · ${row.id ?? row.id_blu ?? row.nome_da_experiencia} · ${row._source_sheet}, linha ${row._source_row}`;
@@ -120,7 +129,10 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         priceNote: `Referência, confirmar: ${row.preco_da_atracao ?? row.preco ?? row.preco_nao_cotacao ?? "sem preço"}`,
         source: enrichedSource, appliedRules: ["R04: prioridade por interesses", "R05: exclusões por etiquetas e texto", "R09: sem repetição", "R16: esforço conhecido filtrado", ...(matching ? matching.reasons : [])],
         accessibilityNotes: text(row, 'acessibilidade_nivel_de_confirmacao'), dietaryNotes: text(row, 'opcoes_alimentares_alergenios'),
-        pendingChecks: ["Disponibilidade, horário e preço", "Acessibilidade e deslocação", ...(table === "restaurantes" ? ["Condições alimentares"] : [])],
+        catalogDetails,
+        pendingChecks: ["Disponibilidade e reserva para esta viagem", "Validar preço para esta viagem", "Deslocação / ponto de encontro",
+          ...(brief.mobilityRestrictions.length && !profile ? ["Acessibilidade para as necessidades do cliente"] : []),
+          ...(brief.dietaryRestrictions.length && !profile && table === 'restaurantes' ? ["Condições alimentares"] : [])],
       };
     });
     return { dayNumber: i + 1, date: new Date(Date.parse(brief.startDate) + i * 86400000).toISOString().slice(0, 10), title: city, location: city, tier: brief.proposalTier,
@@ -136,6 +148,7 @@ export function applyCommand(itinerary: ItineraryDay[], input: string) {
   const number = Number(match[1]);
   const last = itinerary.find(d => d.dayNumber === number)?.items.at(-1);
   if (!last) return { itinerary, reply: "Esse dia não existe ou não tem atividades. Nada foi alterado." };
+  if (last.confirmation?.status === "confirmed") return { itinerary, reply: "Atividade confirmada: reabra a confirmação antes de remover." };
   if (last.isLocked) return { itinerary, reply: "Atividade bloqueada: nada foi alterado." };
   return {
     itinerary: itinerary.map(d => d.dayNumber === number ? { ...d, items: d.items.slice(0, -1) } : d),

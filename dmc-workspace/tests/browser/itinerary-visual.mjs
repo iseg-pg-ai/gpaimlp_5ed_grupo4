@@ -24,7 +24,7 @@ try {
   const card = page.locator('[data-testid="activity-card"]').first();
   assert.ok(await card.locator('[data-status="pending"]').isVisible());
   assert.ok(await card.locator('[data-status="protected"]').isVisible());
-  await card.locator('summary').click();
+  await card.locator('summary').last().click();
   assert.ok(await card.getByText('Confirmar acessibilidade', { exact: false }).isVisible());
   const days = page.locator('[data-testid="day-navigation"] button');
   await days.nth(1).click();
