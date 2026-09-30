@@ -318,3 +318,25 @@ Para atualizar o catálogo estático do portal depois de alterar textos:
 `python translations/build_ui_catalogue.py`. As traduções geradas ficam
 versionadas em `dmc-workspace/src/i18n/messages.json`. Correções editoriais ficam em
 `translations/ui_overrides.json` e são preservadas ao regenerar o catálogo.
+
+
+## Verificação de responsividade
+
+Com o portal em execução, na pasta `dmc-workspace`:
+
+```powershell
+npm ci
+npx playwright install chromium
+npm run test:responsive
+```
+
+`PORTAL_URL` permite mudar o endereço (predefinição: http://127.0.0.1:3001).
+Para usar Edge instalado no Windows: `$env:BROWSER_CHANNEL="msedge"`.
+`$env:STRESS="1"` ativa um cenário adicional com 12 dias e títulos longos.
+Os testes usam dados locais de teste e simulam as APIs de tradução e histórico;
+não gravam viagens no servidor e não validam a tradução nem a exportação PDF.
+Cobrem seis idiomas, larguras de 320 a 1440 px, orientação horizontal,
+menu sobreposto, foco por teclado, fecho por Escape, altura e overflow.
+Em 640 px verificam também texto base ampliado a 200%, distinto do zoom real.
+A emulação de toque não substitui a validação em dispositivos físicos,
+nomeadamente Safari/iOS e comportamento do teclado virtual.

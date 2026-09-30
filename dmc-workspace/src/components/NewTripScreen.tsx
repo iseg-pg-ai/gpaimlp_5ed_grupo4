@@ -141,7 +141,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 h-screen overflow-y-auto bg-[#F4F0E7] py-8 px-6 lg:px-12">
+    <div className="flex-1 min-w-0 bg-[#F4F0E7] py-5 px-3 sm:py-8 sm:px-6 lg:px-12">
       <div className="max-w-3xl mx-auto pb-20">
         {/* BLU Costa Editorial Header */}
         <div className="pb-6 border-b border-[#D5D1C7]">

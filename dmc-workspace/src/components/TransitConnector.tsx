@@ -80,9 +80,9 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
       <div className="absolute left-[31px] -top-3 bottom-0 w-0.5 border-l-2 border-dashed border-[#D5D1C7]" />
 
       {/* Interactive Transit Pill / Dislocation Card */}
-      <div 
+      <button type="button"
         onClick={() => onInspect?.(leg)}
-        className="group relative z-10 inline-flex flex-wrap sm:flex-nowrap items-center gap-2.5 py-1.5 px-3 rounded-xl bg-white border border-[#E3DFD5] hover:border-[#143F4B]/50 hover:shadow-xs transition-all cursor-pointer text-xs"
+        className="group relative z-10 inline-flex max-w-full min-w-0 flex-wrap items-center gap-2.5 py-1.5 px-3 rounded-xl bg-white border border-[#E3DFD5] hover:border-[#143F4B]/50 hover:shadow-xs transition-all cursor-pointer text-xs"
       >
         {/* Time if this is a primary transfer */}
         {time && (
@@ -116,7 +116,7 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
         {leg.routeNote && (
           <>
             <span className="hidden sm:inline text-[#D5D1C7]">|</span>
-            <span className="text-[#4A636B] truncate max-w-xs text-[11px]">
+            <span className="text-[#4A636B] min-w-0 truncate max-w-full sm:max-w-xs text-[11px]">
               <T text={leg.routeNote} source="pt"/>
             </span>
           </>
@@ -145,7 +145,7 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
         <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[#143F4B] ml-1">
           <Info className="w-3 h-3 text-[#698288]" />
         </div>
-      </div>
+      </button>
     </div>
   );
 };

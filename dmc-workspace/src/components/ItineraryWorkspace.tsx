@@ -70,14 +70,14 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
     : itinerary.filter((d) => d.dayNumber === selectedDayFilter);
 
   return (
-    <div className="flex-1 h-screen overflow-y-auto bg-[#F4F0E7] pb-24">
+    <div className="flex-1 min-w-0 w-full bg-[#F4F0E7] pb-24">
       {/* Top sticky summary header */}
-      <header className="sticky top-0 z-20 border-b border-[#D5D1C7] bg-[#F4F0E7]/95 backdrop-blur-xs px-8 py-5">
+      <header className="xl:sticky xl:top-0 z-20 border-b border-[#D5D1C7] bg-[#F4F0E7]/95 backdrop-blur-xs px-3 sm:px-6 py-5">
         <div className="max-w-4xl mx-auto">
           {/* Title and Top Actions */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Badge variant="gold" className="font-semibold uppercase tracking-wider text-[10px] gap-1">
                   <Crown className="w-2.5 h-2.5 text-[#D8A65C]" />
                   <span>{brief.proposalTier}<T text="Tier Curation" source="en"/></span>
@@ -90,7 +90,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                   </>
                 )}
               </div>
-              <h1 className="font-serif-blu text-2xl font-bold tracking-tight text-[#143F4B]">
+              <h1 className="font-serif-blu text-xl sm:text-2xl break-words font-bold tracking-tight text-[#143F4B]">
                 {brief.customerName} — {brief.destination}
               </h1>
               <div className="mt-1 flex items-center gap-2 text-xs text-[#4A636B]">
@@ -223,7 +223,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
       </header>
 
       {/* Main Itinerary Content */}
-      <main className="max-w-4xl mx-auto px-8 pt-8 space-y-8">
+      <main className="max-w-4xl mx-auto px-3 sm:px-6 pt-5 sm:pt-8 space-y-8">
         {filteredDays.map((day) => {
           const isDayModified = highlightedDay === day.dayNumber || day.isRecentlyModified;
           return (
