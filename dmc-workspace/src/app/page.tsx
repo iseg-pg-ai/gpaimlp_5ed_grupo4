@@ -11,6 +11,7 @@ import { ItineraryWorkspace } from "@/components/ItineraryWorkspace";
 import { AIAssistantPanel } from "@/components/AIAssistantPanel";
 import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip } from "@/types";
 import { initialBrief } from "@/data/mockData";
+import { applyConfirmation } from "@/lib/activity-confirmation";
 import { validateBrief, applyCommand } from "@/lib/curation";
 
 type Trip = { clientLanguage?: Locale; version?: number; id: string; brief: CustomerBrief; itinerary: ItineraryDay[]; pending: string[]; messages: ChatMessage[] };
@@ -87,12 +88,13 @@ export default function WorkspacePage() {
     return { ...trip, version: result.version as number };
   };
   const update = async (fn: (trip: Trip) => Trip) => {
-    if (!active || operation.current) return;
+    if (!active || operation.current) return false;
     operation.current = true; setSaving(true); setError("");
     try {
       const changed = await saveVersion(fn(active), "edited");
       setTrips(prev => prev.map(t => t.id === changed.id ? changed : t));
-    } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível guardar a alteração."); }
+      return true;
+    } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível guardar a alteração."); return false; }
     finally { operation.current = false; setSaving(false); }
   };
   const exportPdf = async () => {
@@ -129,8 +131,8 @@ export default function WorkspacePage() {
   const generate = async (brief: CustomerBrief) => {
     if (busy || operation.current) return;
     setError("");
-    if (active?.itinerary.some(d => d.items.some(i => i.isLocked))) {
-      setError("Existem atividades bloqueadas. Desbloqueie-as antes de regenerar a proposta; a viagem atual foi preservada."); return;
+    if (active?.itinerary.some(d => d.items.some(i => i.isLocked || i.confirmation?.status === "confirmed"))) {
+      setError("Existem atividades protegidas ou confirmadas. Desproteja-as e reabra as confirmações antes de regenerar a proposta; a viagem atual foi preservada."); return;
     }
     setDraft(brief);
     setBusy(true); operation.current = true;
@@ -171,6 +173,8 @@ export default function WorkspacePage() {
           {saving && <p role="status" className="px-4"><T text="A guardar nova versão…" source="pt"/></p>}
           <details className="p-4 text-sm text-amber-900" open><summary><T text="Confirmações pendentes" source="pt"/></summary><ul className="list-disc pl-5">{active.pending.map(p => <li key={p}><T text={p} source="pt"/></li>)}</ul></details>
 </>}
+              saving={saving || exporting}
+              onConfirmActivity={(dayNumber, id, value) => update(t => ({ ...t, itinerary: t.itinerary.map(d => d.dayNumber === dayNumber ? { ...d, items: d.items.map(i => i.id === id ? applyConfirmation(i, value) : i) } : d) }))}
               onExportPdf={exportPdf} isExporting={exporting || saving}
               onEditBrief={() => { if (operation.current) return; setDraft(active.brief); setEditing(true); setFormKey(k => k + 1); }}
               onToggleLockActivity={(dayNumber, id) => update(t => ({ ...t, itinerary: t.itinerary.map(d => d.dayNumber === dayNumber ? { ...d, items: d.items.map(i => i.id === id ? { ...i, isLocked: !i.isLocked } : i) } : d) }))} />

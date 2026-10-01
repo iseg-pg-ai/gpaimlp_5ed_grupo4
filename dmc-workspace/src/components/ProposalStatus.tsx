@@ -1,9 +1,10 @@
 "use client";
 
 import { T } from "@/components/LocaleProvider";
-import { FileText, Clock, Lock, Download } from "lucide-react";
+import { FileText, Clock, Lock, Download, CheckCircle } from "lucide-react";
 
 const states = {
+  confirmed: { label: "Confirmada", icon: CheckCircle, style: "border-[#98BCAA] bg-[#EAF5EF] text-[#245C49]" },
   draft: { label: "Rascunho", icon: FileText, style: "border-[#C5D4D8] bg-[#EDF3F4] text-[#143F4B]" },
   pending: { label: "Por confirmar", icon: Clock, style: "border-[#E4D1AD] bg-[#FFF8EB] text-[#765218]" },
   protected: { label: "Protegida", icon: Lock, style: "border-[#BBCBCD] bg-[#E7EEEF] text-[#143F4B]" },

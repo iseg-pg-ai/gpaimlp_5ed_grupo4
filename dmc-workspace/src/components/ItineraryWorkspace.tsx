@@ -2,6 +2,7 @@
 import { T, useLocale, useTranslated } from "@/components/LocaleProvider";
 
 
+import type { ActivityConfirmation } from "@/lib/activity-confirmation";
 import React, { useState, useRef, useEffect } from "react";
 import { ItineraryDay, CustomerBrief, TransitLeg } from "@/types";
 import { ProposalStatus } from "./ProposalStatus";
@@ -23,6 +24,8 @@ interface ItineraryWorkspaceProps {
   proposalTools?: React.ReactNode;
   version?: number;
   exported?: boolean;
+  onConfirmActivity?: (dayNumber: number, activityId: string, value: ActivityConfirmation) => Promise<boolean>;
+  saving?: boolean;
   onToggleLockActivity?: (dayNumber: number, activityId: string) => void;
 }
 
@@ -38,6 +41,8 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   version,
   exported,
   onToggleLockActivity,
+  onConfirmActivity,
+  saving,
 }) => {
   const { locale } = useLocale();
   const dayNavigationLabel = useTranslated("Navegação por dias", "pt");
@@ -175,7 +180,9 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                   return (
                     <React.Fragment key={activity.id}>
                       <ActivityCard 
-                        activity={activity} 
+                        activity={activity}
+                        saving={saving}
+                        onConfirm={onConfirmActivity ? value => onConfirmActivity(day.dayNumber, activity.id, value) : undefined}
                         onToggleLock={() => onToggleLockActivity?.(day.dayNumber, activity.id)}
                       />
                       {activity.transitToNext && (

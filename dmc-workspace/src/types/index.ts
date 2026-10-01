@@ -26,6 +26,8 @@ export interface TransitLeg {
 }
 
 export interface ActivityItem {
+  catalogDetails?: { location: string; price: string; supplier: string; contact: string; hours: string; accessibility: string; dietary: string; verification: string };
+  confirmation?: import('../lib/activity-confirmation').ActivityConfirmation;
   id: string;
   time: string;
   title: string;

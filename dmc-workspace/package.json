@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "node --test tests/*.test.mjs",
     "test:responsive": "node tests/browser/responsive.mjs",
-    "test:navigation": "node tests/browser/navigation.mjs"
+    "test:navigation": "node tests/browser/navigation.mjs",
+    "test:catalog": "node tests/browser/catalog.mjs",
+    "test:catalog-etl": "node tests/catalog-etl.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

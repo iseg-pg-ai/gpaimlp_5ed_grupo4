@@ -21,13 +21,8 @@ import {
   ShieldAlert,
   Compass
 } from "lucide-react";
-import { 
-  CustomerBrief, 
-  PhysicalEffortLevel, 
-  ProposalTier, 
-  DiningPace, 
-  MorningPreference 
-} from "@/types";
+import { CustomerBrief } from "@/types";
+import { interestOptions, mobilityOptions, dietaryOptions, exclusionOptions, effortLevels, curationTiers, diningPaces, morningPaces, paceOptions, accommodationOptions } from "@/lib/brief-options";
 import { initialBrief } from "@/data/mockData";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,80 +33,6 @@ interface NewTripScreenProps {
   initialValue?: CustomerBrief;
   onCancel?: () => void;
 }
-
-const interestOptions = [
-  "Culture & Heritage",
-  "Gastronomy & Petiscos",
-  "Douro & Alentejo Wines",
-  "Atlantic Coast & Nature",
-  "Tile Craft & Architecture",
-  "Fado & Traditional Music",
-  "Local Markets & Artisans",
-  "Contemporary Art (Serralves)",
-  "Bespoke Wellness & Spas",
-];
-
-const mobilityOptions = [
-  "Avoid Steep Stairs (Lisbon/Porto Calçada)",
-  "Wheelchair Accessible Routes",
-  "Limited Walking Distance (< 1km)",
-  "Chauffeured Door-to-door Drop-offs",
-  "Elevator Required at Hotels",
-];
-
-const dietaryOptions = [
-  "Shellfish Allergy",
-  "Gluten-Free (Celiac)",
-  "Vegetarian",
-  "Vegan",
-  "Nut Allergy",
-  "Dairy-Free (Lactose)",
-  "Halal",
-  "Kosher",
-];
-
-const exclusionOptions = [
-  "No Crowded Tour Buses",
-  "No Commercial Souvenir Shops",
-  "No Standard Large Museums",
-  "No Religious / Churches",
-  "No Open Boats (Sea Sickness)",
-  "No Alcohol / Wine Tastings",
-];
-
-const effortLevels: PhysicalEffortLevel[] = [
-  "Baixo (Low)",
-  "Moderado (Moderate)",
-  "Alto (High)",
-];
-
-const curationTiers: Array<{ tier: ProposalTier; desc: string }> = [
-  { tier: "Soft", desc: "Essential, cohesive & authentic Portuguese highlights" },
-  { tier: "Classic", desc: "Curated additional layers, regional craft & depth" },
-  { tier: "Signature", desc: "Immersive experiences; special access subject to confirmation" },
-];
-
-const diningPaces: DiningPace[] = [
-  "Quick Lunch (~40m)",
-  "Relaxed Dining (~90m)",
-  "Tasting Experience (120m+)",
-];
-
-const morningPaces: MorningPreference[] = [
-  "Early (08:30)",
-  "Standard (09:30)",
-  "Late Start (10:30+)",
-];
-
-const paceOptions: Array<CustomerBrief["pace"]> = ["Relaxed", "Balanced", "Active"];
-
-const accommodationOptions: Array<CustomerBrief["accommodation"]> = [
-  "3 star",
-  "4 star",
-  "5 star",
-  "Boutique",
-  "Luxury",
-];
 
 export const NewTripScreen: React.FC<NewTripScreenProps> = ({
   onGenerate,

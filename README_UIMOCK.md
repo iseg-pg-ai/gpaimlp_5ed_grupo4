@@ -351,9 +351,9 @@ Lixo e o seletor de idioma. Mantém-se fora da área de scroll e destaca a pági
 ativa. Abaixo de 1024 px os destinos ficam no menu compacto; a seleção fecha-o.
 A barra lateral do workspace continua dedicada às viagens recentes e novas viagens.
 
-`/catalog` e `/trash` são páginas de entrada que indicam as funcionalidades ainda
-não disponíveis. Este passo não implementa edição do catálogo nem remoção/restauro
-de viagens. Histórico (`/exports`) e Referências (`/references`) mantêm as funcionalidades existentes.
+`/catalog` permite gerir a oferta (ver abaixo). `/trash` continua a ser uma página
+de entrada; a remoção/restauro de viagens ainda não está implementada.
+Histórico (`/exports`) e Referências (`/references`) mantêm as funcionalidades existentes.
 
 Com o portal em execução, `npm run test:navigation` verifica os cinco destinos,
 o destaque da página ativa, o menu móvel e a posição da top bar durante o scroll,
@@ -378,3 +378,121 @@ Com o portal em execução, `node tests/browser/itinerary-visual.mjs` (na pasta
 `dmc-workspace`) verifica os estados, detalhes sem fonte, seleção dos dias e o
 assistente recolhível no computador. Aceita `PORTAL_URL` e `BROWSER_CHANNEL`;
 simula tradução e histórico, sem efetuar exportações reais.
+
+## Gestão do catálogo
+
+Em **Catálogo**, escolha Atividades, Restaurantes ou Experiências. Pode pesquisar
+por nome, descrição, localização, fornecedor ou ID; filtrar por estado e localização;
+criar, editar e inativar registos. Cada categoria apresenta os seus campos próprios.
+Os textos introduzidos no catálogo são a fonte em português; o idioma do portal
+traduz os controlos, sem reescrever os dados editados.
+
+1. Os registos existentes são importados como **Em revisão**, sem aprovação automática.
+2. **Novo registo** começa em **Rascunho**. Para aprovar, preencha nome, localização,
+   descrição, duração, preço, fonte, acessibilidade e esforço. Preços são referências,
+   com moeda/unidade; a aprovação de catálogo não confirma reservas.
+3. Guarde com o estado **Aprovado**, indicando o motivo da alteração.
+4. Carregue em **Atualizar catálogo para os roteiros**. Esta ação executa o ETL
+   Python instalado na `.venv` (ou `BLU_PYTHON`, quando definido). Aguarde a conclusão.
+   A indicação **Disponível para novos roteiros** confirma que a revisão foi processada.
+5. **Inativar** retira imediatamente o registo de novas gerações, mesmo antes do
+   próximo ETL. Uma alteração a um aprovado também exige reprocessar a nova revisão.
+   As propostas já guardadas não são alteradas. Para reativar, edite o estado e atualize.
+
+Sem registos aprovados/processados, a geração explica que é necessário rever o catálogo.
+O ETL também pode ser executado pela CLI habitual: `python -m etl.pipeline --data-dir data --output-dir warehouse`.
+
+A fonte editável e o histórico ficam em **`data/portal/catalog.sqlite`**, fora do Git.
+Cada gravação gera uma revisão transacional com ID estável, data, motivo e cópia
+completa dos campos. O histórico é consultável no portal; edições concorrentes
+baseadas numa revisão antiga são recusadas. Não há eliminação definitiva.
+O ETL lê esta fonte e produz o warehouse; o formulário nunca escreve diretamente nele.
+O manifesto regista o hash do snapshot do catálogo consumido.
+
+Para transportar os registos e o histórico para outro computador, pare o portal
+e o ETL e copie `data/portal/catalog.sqlite`, além das restantes fontes em `data/`.
+Depois execute o ETL no computador de destino. Um clone Git, por si só, não inclui
+os registos locais. A gestão usa o mesmo contexto local do portal: ainda não existe
+autenticação nem identificação individual do autor das revisões.
+
+Se o servidor for interrompido durante uma atualização, confirme que o processo ETL
+terminou antes de remover o bloqueio residual `data/portal/etl.lock` e tentar novamente.
+Não execute atualizações pela CLI e pelo portal simultaneamente.
+
+Validação: `npm test` cobre persistência, conflitos, estados e geração;
+`npm run test:catalog-etl` faz o percurso real Node → ETL Python → geração em pastas
+temporárias, requerendo as dependências Python. Com o portal aberto,
+`npm run test:catalog` verifica formulários por categoria, pesquisa, edição, conflitos,
+inativação, histórico e responsividade nos seis idiomas, usando APIs simuladas.
+
+### Compatibilidade com o questionário
+
+O formulário do catálogo inclui um perfil estruturado que usa as mesmas opções
+do briefing: interesses, níveis Soft/Classic/Signature, ritmos, preferências de
+início, ritmos de refeição, mobilidade, alimentação e exclusões. As opções são
+partilhadas em `src/lib/brief-options.ts` para evitar divergências entre os formulários.
+
+- Os interesses associados aumentam a prioridade na seleção. Listas vazias de
+  níveis, ritmos e início não impõem limites; opções marcadas limitam a elegibilidade.
+- As exclusões identificam respostas do cliente que impedem selecionar o registo.
+  Mantêm-se também os filtros conservadores de exclusão por texto.
+- Necessidades de mobilidade e restrições alimentares exigem correspondência para
+  todas as opções do cliente e notas com fonte/data/condições verificadas. Alimentação
+  desconhecida impede sugestões a clientes com restrições. Restaurantes incluem
+  sempre alimentação; atividades declaradas sem comida não exigem opções alimentares.
+- Para famílias, indicar que aceita crianças e, se aplicável, uma idade mínima.
+  Neste caso o briefing precisa de uma idade por criança, separada por vírgulas.
+  Adequação desconhecida não é tratada como compatibilidade. Idades mínimas superiores
+  a 18 anos exigem revisão manual, pois o briefing não recolhe as idades dos adultos.
+- O máximo de participantes inclui adultos e crianças. O período de datas limita
+  os dias em que o registo pode ser sugerido, sem constituir disponibilidade confirmada.
+- O preço numérico de referência por pessoa é multiplicado por todos os participantes.
+  A soma dos preços conhecidos selecionados não ultrapassa o orçamento da viagem;
+  preços desconhecidos, alojamento e transportes não estão incluídos nessa estimativa.
+  Não se trata de uma cotação completa nem de um cálculo de tarifas infantis.
+- O esforço físico deve estar definido. Perfis estruturados com esforço por confirmar
+  ficam fora da seleção automática. Registos antigos sem perfil mantêm as regras
+  anteriores até serem revistos no formulário; não recebem compatibilidades automáticas.
+
+Este perfil segue a mesma cadeia **fonte local → ETL → warehouse → geração**, com
+revisões no histórico. Após guardar, atualizar o catálogo para os roteiros.
+Os interesses correspondentes e condições utilizadas surgem nos detalhes de curadoria
+das atividades. O motor atual é baseado em regras: não interpreta automaticamente
+notas livres/ocasiões especiais. A preferência de alojamento não classifica atividades,
+restaurantes ou experiências; hotéis não fazem parte destas três categorias.
+
+## Confirmações por atividade
+
+No cartão do roteiro, abra **Dados e confirmações** para preencher horário, local,
+preço acordado/unidade, fornecedor, referência, contacto e evidência da confirmação
+(ou motivo de dispensa de reserva). Cada pendência tem um campo de detalhes e uma
+marca de resolução. **Guardar progresso** conserva os dados parciais numa versão.
+
+**Confirmar atividade** exige horário, local, preço, evidência e todas as pendências
+resolvidas com detalhes. O estado passa a **Confirmada** apenas após guardar com
+sucesso. Trata-se de confirmação manual pelo curador, sem chamadas a fornecedores.
+Pode editar e **Guardar e voltar a pendente**; as versões anteriores são preservadas.
+Atividades protegidas devem ser desprotegidas antes de editar. Atividades confirmadas
+não são removidas pelo assistente e impedem regeneração até reabrir a confirmação.
+
+As confirmações seguem no snapshot do roteiro, no armazenamento local e nos PDFs.
+As pendências resolvidas deixam de aparecer como pendentes no respetivo cartão/PDF;
+os avisos gerais da proposta permanecem. A exportação não confirma atividades.
+Referências de reserva, contactos e nomes dos fornecedores são preservados nas
+traduções do PDF. Os dados preenchidos são mantidos no formulário se a gravação falhar.
+
+`node tests/browser/confirmations.mjs` verifica o fluxo em computador e telemóvel,
+incluindo erro de gravação, recuperação, recarregamento e reabertura, com APIs simuladas.
+Os testes de confirmação/versões verificam a persistência real e o conteúdo do PDF.
+
+Os cartões gerados transportam também morada, preço de referência, fornecedor,
+contacto, horário de funcionamento e condições de acessibilidade/alimentação do
+catálogo. Estes dados preenchem automaticamente os campos e os detalhes das
+pendências; uma confirmação já guardada prevalece sobre os valores do catálogo.
+Roteiros antigos sem estes dados tentam consultar o registo atual pelo identificador,
+sem modificar as versões existentes; os dados importados ficam na próxima gravação.
+Horário de funcionamento não é convertido automaticamente na hora da visita.
+Preços conhecidos continuam a exigir validação para a viagem, sem os voltar a escrever.
+Necessidades de acessibilidade/alimentação já verificadas pelo perfil do catálogo
+não geram pendências genéricas repetidas nos novos roteiros. A evidência pode ser
+registada nas próprias pendências, dispensando a repetição no campo de notas.

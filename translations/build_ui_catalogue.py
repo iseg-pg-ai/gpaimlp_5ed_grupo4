@@ -7,7 +7,7 @@ for file in (ROOT/"dmc-workspace/src").rglob("*.tsx"):
     code=file.read_text(encoding="utf-8")
     for text in re.findall(r'placeholder="([^"]+)"',code):sources[text]="en"
     for text,source in re.findall(r'<T text="([^"]+)" source="(pt|en)"',code):sources[text]=source
-file=ROOT/"dmc-workspace/src/components/NewTripScreen.tsx"
+file=ROOT/"dmc-workspace/src/lib/brief-options.ts"
 code=file.read_text(encoding="utf-8")
 for name in ["interestOptions","mobilityOptions","dietaryOptions","exclusionOptions","effortLevels","diningPaces","morningPaces","paceOptions","accommodationOptions"]:
     match=re.search(r"const "+name+r"[^=]*=\s*\[(.*?)\];",code,re.S)

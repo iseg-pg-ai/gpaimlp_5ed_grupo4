@@ -31,3 +31,7 @@ Taskfile.yaml
 
 # Local immutable itinerary versions and exported PDFs
 /exports/
+
+# Local editable catalog and its transactional history (back up separately)
+/data/portal/*.sqlite*
+/data/portal/etl.lock

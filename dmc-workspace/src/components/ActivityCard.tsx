@@ -2,6 +2,8 @@
 import { T, useTranslated } from "@/components/LocaleProvider";
 
 
+import { ActivityConfirmationEditor } from "./ActivityConfirmationEditor";
+import { outstandingChecks, type ActivityConfirmation } from "@/lib/activity-confirmation";
 import React from "react";
 import { 
   Bed, 
@@ -19,6 +21,8 @@ import { ProposalStatus } from "./ProposalStatus";
 
 interface ActivityCardProps {
   activity: ActivityItem;
+  onConfirm?: (value: ActivityConfirmation) => Promise<boolean>;
+  saving?: boolean;
   onToggleLock?: (activityId: string) => void;
 }
 
@@ -63,7 +67,8 @@ const categoryConfig: Record<
   },
 };
 
-export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleLock }) => {
+export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleLock, onConfirm, saving }) => {
+  const pending = outstandingChecks(activity);
   const config = categoryConfig[activity.category] || categoryConfig.activity;
   const Icon = config.icon;
   const lockLabel = useTranslated(activity.isLocked ? "Desproteger atividade" : "Proteger atividade", "pt");
@@ -80,7 +85,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleLo
     {activity.priceNote && <p className="mt-3 text-sm text-[#765218]"><T text={activity.priceNote} source="pt"/></p>}
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap gap-2">
-        <ProposalStatus state="pending"/>
+        <ProposalStatus state={activity.confirmation?.status === "confirmed" ? "confirmed" : "pending"}/>
         {activity.isLocked && <ProposalStatus state="protected"/>}
         {activity.isRecentlyModified && <span className="text-sm text-[#4A636B]"><T text="Updated by Assistant"/></span>}
       </div>
@@ -89,12 +94,14 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleLo
         {activity.isLocked ? <Unlock aria-hidden="true" className="size-4"/> : <Lock aria-hidden="true" className="size-4"/>}{lockLabel}
       </button>}
     </div>
+    {activity.confirmation?.price && <p className="mt-3 text-sm"><T text={activity.confirmation.status === "confirmed" ? "Preço acordado" : "Preço registado"} source="pt"/>: {activity.confirmation.price}</p>}
+    {onConfirm && <ActivityConfirmationEditor activity={activity} onSave={onConfirm} disabled={saving}/>}
     {hasDetails && <details className="mt-4 border-t border-[#E6E2D8] pt-3 text-sm leading-6 text-[#4A636B]">
       <summary className="cursor-pointer py-1 font-medium text-[#143F4B]"><T text="Fontes e detalhes de curadoria" source="pt"/></summary>
       <div className="mt-3 space-y-3">
         {activity.source && <p><T text="Fonte" source="pt"/>: {activity.source}</p>}
         {activity.appliedRules?.length ? <p><T text="Critérios" source="pt"/>: <T text={activity.appliedRules.join(" · ")} source="pt"/></p> : null}
-        {activity.pendingChecks?.length ? <p className="text-[#765218]"><T text="Por confirmar:" source="pt"/> <T text={activity.pendingChecks.join("; ")} source="pt"/></p> : null}
+        {pending.length ? <p className="text-[#765218]"><T text="Por confirmar:" source="pt"/> <T text={pending.join("; ")} source="pt"/></p> : null}
         {activity.effortLevel && <p><T text="Esforço:" source="pt"/> <T text={activity.effortLevel} source="pt"/></p>}
         {activity.accessibilityNotes && <p><T text={activity.accessibilityNotes} source="pt"/></p>}
         {activity.dietaryNotes && <p><T text={activity.dietaryNotes} source="pt"/></p>}

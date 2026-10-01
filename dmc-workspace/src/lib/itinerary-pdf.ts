@@ -1,3 +1,4 @@
+import { outstandingChecks } from "./activity-confirmation.ts";
 import PDFDocument from "pdfkit";
 import { existsSync } from "node:fs";
 import type { CustomerBrief, ItineraryDay } from "../types/index";
@@ -56,7 +57,19 @@ export function renderPdf(snapshot: Snapshot, meta: VersionMeta, options: PdfLan
           if (item.priceNote) text(item.priceNote, 10, "#805D26");
           if (item.dietaryNotes) text(item.dietaryNotes);
           if (item.accessibilityNotes) text(item.accessibilityNotes);
-          if (item.pendingChecks?.length) text(`Por confirmar: ${item.pendingChecks.join("; ")}`, 10, "#805D26");
+          const remaining = outstandingChecks(item);
+          if (remaining.length) text(`Por confirmar: ${remaining.join("; ")}`, 10, "#805D26");
+          if (item.confirmation) {
+            const c = item.confirmation;
+            text(c.status === "confirmed" ? "Confirmada pelo curador" : "Confirmação em curso");
+            if (c.price) text(`${c.status === "confirmed" ? "Preço acordado" : "Preço registado"}: ${c.price}`);
+            if (c.supplier) text(`Fornecedor: ${c.supplier}`);
+            if (c.reference) text(`Referência da reserva: ${c.reference}`);
+            if (c.contact) text(`Contacto: ${c.contact}`);
+            if (c.notes) text(`Evidência / condições: ${c.notes}`);
+            if (c.confirmedAt) text(`Confirmada em: ${c.confirmedAt}`);
+            for (const check of c.checks) if (check.details) text(`${check.resolved ? "Resolvida" : "Pendente"} — ${check.label}: ${check.details}`);
+          }
           if (item.source) text(`Fonte: ${item.source}`, 8, "#52656B");
           if (item.appliedRules?.length) text(`Critérios: ${item.appliedRules.join("; ")}`, 8, "#52656B");
           if (item.transitToNext) text(`Deslocação: ${item.transitToNext.fromLocation} → ${item.transitToNext.toLocation}; ${item.transitToNext.mode}; ${item.transitToNext.duration}. Confirmar condições.`);
@@ -69,7 +82,7 @@ export function renderPdf(snapshot: Snapshot, meta: VersionMeta, options: PdfLan
       text(`Viagem: ${meta.tripId}`);
       text(`SHA-256 do conteúdo: ${meta.snapshotHash}`, 8);
       text(`SHA-256 da cadeia: ${meta.chainHash}`, 8);
-      text("Este documento reproduz uma versão guardada. Reservas, disponibilidade, preços e condições operacionais carecem de confirmação.");
+      text("Este documento reproduz uma versão guardada. As confirmações por atividade refletem a verificação manual registada pelo curador. Os restantes dados e condições operacionais continuam sujeitos a confirmação.");
       const range = doc.bufferedPageRange();
       for (let i = 0; i < range.count; i++) {
         doc.switchToPage(i);

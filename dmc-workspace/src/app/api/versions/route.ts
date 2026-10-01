@@ -1,3 +1,4 @@
+import { validateConfirmation } from "@/lib/activity-confirmation";
 import { zipSync } from "fflate";
 import { TranslationError } from "@/lib/translation-error";
 import { isLocale } from "@/lib/locales";
@@ -20,6 +21,8 @@ function validateSnapshot(value: unknown): asserts value is Snapshot {
       if (!item || !string(item.id) || !string(item.time) || !string(item.title)) throw new Error("Atividade inválida.");
       for (const key of ["description", "location", "duration", "priceNote", "dietaryNotes", "accessibilityNotes", "source"] as const) if (item[key] !== undefined && !string(item[key])) throw new Error("Texto de atividade inválido.");
       for (const key of ["pendingChecks", "appliedRules"] as const) if (item[key] !== undefined && !list(item[key])) throw new Error("Detalhes de atividade inválidos.");
+      if (item.confirmation !== undefined) validateConfirmation(item, item.confirmation);
+      if (item.catalogDetails && Object.values(item.catalogDetails).some(v => !string(v))) throw new Error('Dados de catálogo inválidos.');
       if (item.transitToNext && [item.transitToNext.fromLocation, item.transitToNext.toLocation, item.transitToNext.mode, item.transitToNext.duration].some(v => !string(v))) throw new Error("Deslocação inválida.");
     }
   }
