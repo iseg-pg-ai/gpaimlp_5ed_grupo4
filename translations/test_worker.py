@@ -1,5 +1,8 @@
 """Numeric protection tests with a fake model; no network or inference needed."""
 import unittest
+import subprocess
+import sys
+import json
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -7,6 +10,17 @@ from translations import worker
 
 
 class NumericProtectionTests(unittest.TestCase):
+    def test_fresh_python_without_site_packages_reports_missing_dependencies(self):
+        result = subprocess.run([sys.executable, "-S", str(worker.ROOT / "translations/worker.py")],
+                                capture_output=True, text=True, timeout=20)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(json.loads(result.stdout)["fatal"], "TRANSLATION_DEPENDENCIES_MISSING")
+
+    def test_missing_models_fail_explicitly(self):
+        with patch.dict(worker.PACKAGES, {}, clear=True):
+            with self.assertRaisesRegex(ValueError, "Missing local model en->pt"):
+                worker.direct(["Relaxed"], "en", "pt")
+
     def run_translation(self, replacements):
         tokenizer = SimpleNamespace(encode=lambda text: [text], decode=lambda tokens: tokens[0])
         package = SimpleNamespace(tokenizer=tokenizer, target_prefix="")

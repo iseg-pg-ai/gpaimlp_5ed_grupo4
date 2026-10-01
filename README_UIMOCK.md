@@ -3,7 +3,9 @@
 O DMC Workspace consulta `warehouse/*.jsonl` através de `POST /api/itineraries`. O catálogo inclui o enriquecimento de `data/reference/structured_dataset.xlsx` após executar o ETL. A página `/references` apresenta propostas e preços históricos separadamente, com proveniência e divergências para revisão.
 Arranque na pasta `dmc-workspace` com `npm run dev -- -p 3001` (Node.js 24 LTS).
 O warehouse e `config/curation_rule_overrides.json` devem estar disponíveis na pasta pai.
-Não é necessário um serviço Python em execução nem credenciais externas.
+Não é necessário iniciar um serviço Python manualmente nem fornecer credenciais externas.
+A exportação traduzida inicia Python no servidor e requer o ambiente e os modelos descritos abaixo,
+incluindo para normalizar preferências internas no PDF português. `npm ci` não os instala.
 
 - Cada proposta usa destino, datas, ritmo, interesses, exclusões, esforço e tier.
 - Cobertura geográfica inicial: Lisboa, Porto, Sintra, Cascais e Douro. Para `Portugal`, os pontos de chegada/partida determinam as regiões reconhecidas; não há seleção nacional automática.
