@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/LocaleProvider";
+import { T, useTranslated } from "@/components/LocaleProvider";
 
 
 import React from "react";
@@ -11,15 +11,11 @@ import {
   Sun, 
   MapPin, 
   Clock,
-  Sparkles,
-  Accessibility,
-  AlertCircle,
-  Footprints,
   Lock,
   Unlock
 } from "lucide-react";
 import { ActivityItem, ActivityCategory } from "@/types";
-import { Badge } from "@/components/ui/badge";
+import { ProposalStatus } from "./ProposalStatus";
 
 interface ActivityCardProps {
   activity: ActivityItem;
@@ -67,149 +63,42 @@ const categoryConfig: Record<
   },
 };
 
-export const ActivityCard: React.FC<ActivityCardProps> = ({ 
-  activity, 
-  onToggleLock 
-}) => {
+export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleLock }) => {
   const config = categoryConfig[activity.category] || categoryConfig.activity;
   const Icon = config.icon;
-
-  return (
-    <div
-      className={`group relative rounded-xl border p-4 transition-all duration-300 shadow-xs hover:border-[#DFD9CE] hover:shadow-sm ${
-        activity.isRecentlyModified
-          ? "item-highlighted border-[#E27151] ring-1 ring-[#E27151]/30 bg-white"
-          : activity.isLocked
-          ? "bg-[#FCFAF5] border-[#D8A65C]/60 ring-1 ring-[#D8A65C]/20"
-          : "bg-white border-[#EAE6DF]"
-      }`}
-    >
-      {/* Modification notification tag */}
-      {activity.isRecentlyModified && (
-        <div className="absolute -top-2.5 right-4 z-10 flex items-center gap-1 rounded-full bg-[#E27151] px-2.5 py-0.5 text-[10px] font-medium text-white shadow-xs animate-in fade-in slide-in-from-top-1">
-          <Sparkles className="w-2.5 h-2.5" />
-          <span><T text="Updated by Assistant" source="en"/></span>
-        </div>
-      )}
-
-      {/* Locked status tag if not modified */}
-      {activity.isLocked && !activity.isRecentlyModified && (
-        <div className="absolute -top-2.5 right-4 z-10 flex items-center gap-1 rounded-full bg-[#143F4B] px-2 py-0.5 text-[10px] font-medium text-[#F4F0E7] shadow-xs">
-          <Lock className="w-2.5 h-2.5 text-[#D8A65C]" />
-          <span><T text="Pinned / Protected" source="en"/></span>
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row items-start gap-3.5">
-        {/* Time and category column */}
-        <div className="w-full sm:w-16 shrink-0 text-left sm:text-right pt-0.5">
-          <span className="font-mono text-xs font-semibold tracking-tight text-[#1A1917] block">
-            <T text={activity.time} source="pt"/>
-          </span>
-          <div className="mt-1 flex items-center justify-end">
-            <span
-              className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border ${config.badgeClass}`}
-            >
-              <Icon className="w-2.5 h-2.5 shrink-0" />
-              <span><T text={config.label} source="en"/></span>
-            </span>
-          </div>
-
-          {activity.duration && (
-            <span className="block text-[10px] text-[#8F8B82] mt-1 font-mono">
-              <T text={activity.duration} source="pt"/>
-            </span>
-          )}
-        </div>
-
-        {/* Vertical divider line */}
-        <div className="w-px self-stretch bg-[#EAE6DF] shrink-0" />
-
-        {/* Content body */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline justify-between gap-2">
-            <h4 className="text-sm font-semibold text-[#1A1917] leading-snug flex items-center gap-1.5">
-              <span><T text={activity.title} source="pt"/></span>
-              {activity.isLocked && (
-                <Lock className="w-3 h-3 text-[#9E6E24] shrink-0" />
-              )}
-            </h4>
-
-            <div className="flex items-center gap-1.5 shrink-0">
-              {activity.effortLevel && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border bg-[#F8F6F1] text-[#6B6861] border-[#EAE6DF]">
-                  <Footprints className="w-2.5 h-2.5 text-[#8F8B82]" />
-                  <span><T text="Esforço:" source="pt"/>{" "}{activity.effortLevel}</span>
-                </span>
-              )}
-
-              {/* Lock/Unlock Toggle Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleLock?.(activity.id);
-                }}
-                title={activity.isLocked ? "Locked: AI will preserve this event" : "Click to lock and protect from AI changes"}
-                className={`p-1 rounded-md transition-all cursor-pointer flex items-center gap-1 text-[10px] font-medium ${
-                  activity.isLocked
-                    ? "bg-[#FBF4E8] text-[#9E6E24] border border-[#E8D4B0] shadow-2xs"
-                    : "text-[#A8A49C] hover:text-[#143F4B] hover:bg-[#F4F0E7] opacity-0 group-hover:opacity-100"
-                }`}
-              >
-                {activity.isLocked ? (
-                  <>
-                    <Lock className="w-3 h-3 text-[#9E6E24]" />
-                    <span className="hidden sm:inline"><T text="Locked" source="en"/></span>
-                  </>
-                ) : (
-                  <>
-                    <Unlock className="w-3 h-3" />
-                    <span className="hidden sm:inline"><T text="Lock" source="en"/></span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {activity.description && (
-            <p className="mt-1 text-xs text-[#6B6861] leading-relaxed">
-              <T text={activity.description} source="pt"/>
-            </p>
-          )}
-
-          {activity.priceNote && <p className="mt-2 text-xs text-amber-800"><T text={activity.priceNote} source="pt"/></p>}
-          {activity.source && <details className="mt-3 text-xs text-[#4A636B]">
-            <summary className="cursor-pointer"><T text="Origem, decisões e confirmações pendentes" source="pt"/></summary>
-            <p className="mt-2">{activity.source}</p>
-            <p><T text={activity.appliedRules?.join(" · ") ?? ""} source="pt"/></p>
-            <p className="text-amber-800"><T text="Por confirmar:" source="pt"/>{" "}<T text={activity.pendingChecks?.join("; ") ?? ""} source="pt"/></p>
-          </details>}
-          {/* Criteria metadata pills: location, accessibility, dietary notes */}
-          <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px]">
-            {activity.location && (
-              <div className="flex items-center gap-1 text-[#8F8B82]">
-                <MapPin className="w-3 h-3 text-[#B0AAA0] shrink-0" />
-                <span className="truncate">{activity.location}</span>
-              </div>
-            )}
-
-            {activity.accessibilityNotes && (
-              <div className="inline-flex items-center gap-1 text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded border border-blue-200/60 text-[10px]">
-                <Accessibility className="w-2.5 h-2.5 shrink-0" />
-                <span><T text={activity.accessibilityNotes} source="pt"/></span>
-              </div>
-            )}
-
-            {activity.dietaryNotes && (
-              <div className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50/80 px-2 py-0.5 rounded border border-emerald-200/60 text-[10px]">
-                <AlertCircle className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
-                <span><T text={activity.dietaryNotes} source="pt"/></span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+  const lockLabel = useTranslated(activity.isLocked ? "Desproteger atividade" : "Proteger atividade", "pt");
+  const hasDetails = Boolean(activity.source || activity.appliedRules?.length || activity.pendingChecks?.length || activity.effortLevel || activity.accessibilityNotes || activity.dietaryNotes);
+  return <article data-testid="activity-card" className={`rounded-2xl border p-4 sm:p-5 bg-white ${activity.isLocked ? "border-[#9DB3B8]" : "border-[#DDD8CE]"}`}>
+    <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[#4A636B]">
+      <span className="inline-flex items-center gap-2 font-semibold text-[#143F4B]"><Clock aria-hidden="true" className="size-4"/><T text={activity.time} source="pt"/></span>
+      <span className="inline-flex items-center gap-2"><Icon aria-hidden="true" className="size-4"/><T text={config.label}/></span>
     </div>
-  );
+    <h3 className="mt-3 text-lg font-semibold leading-snug text-[#143F4B] break-words"><T text={activity.title} source="pt"/></h3>
+    {activity.location && <p className="mt-2 flex items-start gap-2 text-sm text-[#4A636B]"><MapPin aria-hidden="true" className="size-4 shrink-0 mt-0.5"/>{activity.location}</p>}
+    {activity.description && <p className="mt-3 text-sm leading-7 text-[#3A535B]"><T text={activity.description} source="pt"/></p>}
+    {activity.duration && <p className="mt-2 text-sm text-[#4A636B]"><T text="Duração" source="pt"/>: <T text={activity.duration} source="pt"/></p>}
+    {activity.priceNote && <p className="mt-3 text-sm text-[#765218]"><T text={activity.priceNote} source="pt"/></p>}
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap gap-2">
+        <ProposalStatus state="pending"/>
+        {activity.isLocked && <ProposalStatus state="protected"/>}
+        {activity.isRecentlyModified && <span className="text-sm text-[#4A636B]"><T text="Updated by Assistant"/></span>}
+      </div>
+      {onToggleLock && <button type="button" aria-label={lockLabel} aria-pressed={Boolean(activity.isLocked)}
+        onClick={()=>onToggleLock(activity.id)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#C5D4D8] px-3 py-2 text-sm text-[#143F4B] hover:bg-[#EDF3F4]">
+        {activity.isLocked ? <Unlock aria-hidden="true" className="size-4"/> : <Lock aria-hidden="true" className="size-4"/>}{lockLabel}
+      </button>}
+    </div>
+    {hasDetails && <details className="mt-4 border-t border-[#E6E2D8] pt-3 text-sm leading-6 text-[#4A636B]">
+      <summary className="cursor-pointer py-1 font-medium text-[#143F4B]"><T text="Fontes e detalhes de curadoria" source="pt"/></summary>
+      <div className="mt-3 space-y-3">
+        {activity.source && <p><T text="Fonte" source="pt"/>: {activity.source}</p>}
+        {activity.appliedRules?.length ? <p><T text="Critérios" source="pt"/>: <T text={activity.appliedRules.join(" · ")} source="pt"/></p> : null}
+        {activity.pendingChecks?.length ? <p className="text-[#765218]"><T text="Por confirmar:" source="pt"/> <T text={activity.pendingChecks.join("; ")} source="pt"/></p> : null}
+        {activity.effortLevel && <p><T text="Esforço:" source="pt"/> <T text={activity.effortLevel} source="pt"/></p>}
+        {activity.accessibilityNotes && <p><T text={activity.accessibilityNotes} source="pt"/></p>}
+        {activity.dietaryNotes && <p><T text={activity.dietaryNotes} source="pt"/></p>}
+      </div>
+    </details>}
+  </article>;
 };

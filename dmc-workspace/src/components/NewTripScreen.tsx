@@ -147,9 +147,9 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
         <div className="pb-6 border-b border-[#D5D1C7]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#143F4B] mb-1"><T text="BLU Costa Travel Curation · Intake" source="en"/>{" "}</p>
+              <p className="text-xs font-semibold tracking-[0.2em] text-[#143F4B] mb-1"><T text="BLU Costa Travel Curation · Intake" source="en"/>{" "}</p>
               <h1 className="font-serif-blu text-3xl font-normal text-[#143F4B] tracking-tight"><T text="Plan a Considered Journey" source="en"/>{" "}</h1>
-              <p className="text-xs text-[#4A636B] mt-1.5 italic font-serif-blu"><T text="“Travel is not accumulation. It is interpretation.”" source="en"/>{" "}</p>
+              <p className="text-sm text-[#4A636B] mt-1.5 italic font-serif-blu"><T text="“Travel is not accumulation. It is interpretation.”" source="en"/>{" "}</p>
             </div>
 
             <Button
@@ -174,7 +174,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <Crown className="w-4 h-4 text-[#D8A65C]" />
                   <CardTitle className="text-sm font-serif-blu text-[#143F4B]"><T text="Proposal Curation Tier (Rules R33–R44)" source="en"/>{" "}</CardTitle>
                 </div>
-                <Badge variant="teal" className="text-[10px]"><T text="BLU Standard" source="en"/></Badge>
+                <Badge variant="teal" className="text-xs"><T text="BLU Standard" source="en"/></Badge>
               </div>
             </CardHeader>
             <CardContent className="pt-4">
@@ -193,12 +193,12 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className={`text-xs font-bold ${isSelected ? "text-[#143F4B]" : "text-[#2D5B67]"}`}>
+                        <span className={`text-sm font-bold ${isSelected ? "text-[#143F4B]" : "text-[#2D5B67]"}`}>
                           {tier}
                         </span>
                         {isSelected && <Check className="w-3.5 h-3.5 text-[#2D5B67]" />}
                       </div>
-                      <p className="text-[11px] text-[#4A636B] leading-relaxed">
+                      <p className="text-xs text-[#4A636B] leading-relaxed">
                         <T text={desc} source="en"/>
                       </p>
                     </button>
@@ -220,7 +220,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
             <CardContent className="pt-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Customer / Group Name" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Customer / Group Name" source="en"/>{" "}</label>
                   <LocalizedInput
                     required
                     value={brief.customerName}
@@ -232,7 +232,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Special Occasion (R04)" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Special Occasion (R04)" source="en"/>{" "}</label>
                   <LocalizedInput
                     value={brief.specialOccasion}
                     onChange={(e) =>
@@ -243,7 +243,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Adults" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Adults" source="en"/>{" "}</label>
                   <LocalizedInput
                     type="number"
                     min={1}
@@ -255,7 +255,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Children" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Children" source="en"/>{" "}</label>
                   <LocalizedInput
                     type="number"
                     min={0}
@@ -270,7 +270,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Children Ages (if any)" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Children Ages (if any)" source="en"/>{" "}</label>
                   <LocalizedInput
                     value={brief.childrenAges}
                     onChange={(e) =>
@@ -295,7 +295,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
             <CardContent className="pt-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Destination Region" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Destination Region" source="en"/>{" "}</label>
                   <LocalizedInput
                     required
                     value={brief.destination}
@@ -307,7 +307,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Start Date" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Start Date" source="en"/>{" "}</label>
                   <LocalizedInput
                     type="date"
                     required
@@ -319,7 +319,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="End Date" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="End Date" source="en"/>{" "}</label>
                   <LocalizedInput
                     type="date"
                     required
@@ -331,7 +331,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Arrival Airport / Point" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Arrival Airport / Point" source="en"/>{" "}</label>
                   <LocalizedInput
                     value={brief.arrivalLocation}
                     onChange={(e) =>
@@ -342,7 +342,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Departure Airport / Point" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Departure Airport / Point" source="en"/>{" "}</label>
                   <LocalizedInput
                     value={brief.departureLocation}
                     onChange={(e) =>
@@ -367,7 +367,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
             <CardContent className="pt-5 space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Approximate Total Budget" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Approximate Total Budget" source="en"/>{" "}</label>
                   <LocalizedInput
                     type="number"
                     step="500"
@@ -383,13 +383,13 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-1"><T text="Currency" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-1"><T text="Currency" source="en"/>{" "}</label>
                   <select
                     value={brief.currency}
                     onChange={(e) =>
                       setBrief({ ...brief, currency: e.target.value })
                     }
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-[#D5D1C7] bg-[#FAF8F3] text-[#143F4B] focus:outline-hidden focus:border-[#2D5B67] focus:ring-1 focus:ring-[#2D5B67] transition-all cursor-pointer"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-[#D5D1C7] bg-[#FAF8F3] text-[#143F4B] focus:outline-hidden focus:border-[#2D5B67] focus:ring-1 focus:ring-[#2D5B67] transition-all cursor-pointer"
                   >
                     <option value="EUR">EUR (€)</option>
                     <option value="USD">USD ($)</option>
@@ -400,7 +400,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
               {/* Interests multi-select pills */}
               <div>
-                <label className="block text-xs font-medium text-[#143F4B] mb-2"><T text="Themes & Narrative Elements" source="en"/>{" "}</label>
+                <label className="block text-sm font-medium text-[#143F4B] mb-2"><T text="Themes & Narrative Elements" source="en"/>{" "}</label>
                 <div className="flex flex-wrap gap-2">
                   {interestOptions.map((interest) => {
                     const isSelected = brief.interests.includes(interest);
@@ -409,7 +409,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         key={interest}
                         type="button"
                         onClick={() => toggleArrayItem("interests", interest)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                           isSelected
                             ? "bg-[#143F4B] text-[#F4F0E7] shadow-xs"
                             : "bg-[#FAF8F3] text-[#2D5B67] border border-[#D5D1C7] hover:border-[#2D5B67]"
@@ -425,7 +425,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
               {/* Travel Pace */}
               <div>
-                <label className="block text-xs font-medium text-[#143F4B] mb-2"><T text="Travel Pace (Thoughtfully Paced)" source="en"/>{" "}</label>
+                <label className="block text-sm font-medium text-[#143F4B] mb-2"><T text="Travel Pace (Thoughtfully Paced)" source="en"/>{" "}</label>
                 <div className="grid grid-cols-3 gap-3">
                   {paceOptions.map((pace) => {
                     const isSelected = brief.pace === pace;
@@ -434,7 +434,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         key={pace}
                         type="button"
                         onClick={() => setBrief({ ...brief, pace })}
-                        className={`py-2 px-3 rounded-lg text-xs font-medium text-center transition-all cursor-pointer border ${
+                        className={`py-2 px-3 rounded-lg text-sm font-medium text-center transition-all cursor-pointer border ${
                           isSelected
                             ? "bg-[#E7EEF0] border-[#2D5B67] text-[#143F4B] shadow-2xs font-semibold"
                             : "bg-[#FAF8F3] border-[#D5D1C7] text-[#4A636B] hover:bg-white"
@@ -449,7 +449,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
               {/* Accommodation */}
               <div>
-                <label className="block text-xs font-medium text-[#143F4B] mb-2"><T text="Preferred Accommodation Standard" source="en"/>{" "}</label>
+                <label className="block text-sm font-medium text-[#143F4B] mb-2"><T text="Preferred Accommodation Standard" source="en"/>{" "}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {accommodationOptions.map((acc) => {
                     const isSelected = brief.accommodation === acc;
@@ -458,7 +458,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         key={acc}
                         type="button"
                         onClick={() => setBrief({ ...brief, accommodation: acc })}
-                        className={`py-2 px-2.5 rounded-lg text-xs font-medium text-center transition-all cursor-pointer border ${
+                        className={`py-2 px-2.5 rounded-lg text-sm font-medium text-center transition-all cursor-pointer border ${
                           isSelected
                             ? "bg-[#E7EEF0] border-[#2D5B67] text-[#143F4B] shadow-2xs font-semibold"
                             : "bg-[#FAF8F3] border-[#D5D1C7] text-[#4A636B] hover:bg-white"
@@ -488,13 +488,13 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                     <Accessibility className="w-4 h-4 text-[#2D5B67]" />
                     <CardTitle className="text-sm font-serif-blu text-[#143F4B]"><T text="Physical Effort & Mobility Constraints (Rule R15–R17)" source="en"/>{" "}</CardTitle>
                   </div>
-                  <Badge variant="teal" className="text-[10px]"><T text="Strict Safety" source="en"/></Badge>
+                  <Badge variant="teal" className="text-xs"><T text="Strict Safety" source="en"/></Badge>
                 </div>
               </CardHeader>
 
               <CardContent className="pt-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-2"><T text="Physical Effort Tolerance (Esforço Físico)" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-2"><T text="Physical Effort Tolerance (Esforço Físico)" source="en"/>{" "}</label>
                   <div className="grid grid-cols-3 gap-3">
                     {effortLevels.map((lvl) => {
                       const isSelected = brief.physicalEffort === lvl;
@@ -503,7 +503,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                           key={lvl}
                           type="button"
                           onClick={() => setBrief({ ...brief, physicalEffort: lvl })}
-                          className={`py-2 px-3 rounded-lg text-xs font-medium text-center transition-all cursor-pointer border ${
+                          className={`py-2 px-3 rounded-lg text-sm font-medium text-center transition-all cursor-pointer border ${
                             isSelected
                               ? "bg-[#E7EEF0] border-[#2D5B67] text-[#143F4B] shadow-2xs font-semibold"
                               : "bg-[#FAF8F3] border-[#D5D1C7] text-[#4A636B] hover:bg-white"
@@ -514,11 +514,11 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                       );
                     })}
                   </div>
-                  <p className="text-[11px] text-[#7E9399] mt-1.5"><T text="Baixo: Flat walking, level access, chauffeured transfers directly to viewpoints (eliminates steep stair ascents in Lisbon/Sintra)." source="en"/>{" "}</p>
+                  <p className="text-xs text-[#4A636B] mt-1.5"><T text="Baixo: Flat walking, level access, chauffeured transfers directly to viewpoints (eliminates steep stair ascents in Lisbon/Sintra)." source="en"/>{" "}</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-2"><T text="Specific Mobility Needs & Terrain Adjustments" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-2"><T text="Specific Mobility Needs & Terrain Adjustments" source="en"/>{" "}</label>
                   <div className="flex flex-wrap gap-2">
                     {mobilityOptions.map((opt) => {
                       const isSelected = brief.mobilityRestrictions.includes(opt);
@@ -527,7 +527,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                           key={opt}
                           type="button"
                           onClick={() => toggleArrayItem("mobilityRestrictions", opt)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                             isSelected
                               ? "bg-[#143F4B] text-[#F4F0E7] shadow-xs"
                               : "bg-[#FAF8F3] text-[#2D5B67] border border-[#D5D1C7] hover:border-[#2D5B67]"
@@ -551,13 +551,13 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                     <UtensilsCrossed className="w-4 h-4 text-[#D8A65C]" />
                     <CardTitle className="text-sm font-serif-blu text-[#143F4B]"><T text="Dietary Allergies & Dining Requirements (Rule R02, R04)" source="en"/>{" "}</CardTitle>
                   </div>
-                  <Badge variant="gold" className="text-[10px]"><T text="Allergen Protocol" source="en"/></Badge>
+                  <Badge variant="gold" className="text-xs"><T text="Allergen Protocol" source="en"/></Badge>
                 </div>
               </CardHeader>
 
               <CardContent className="pt-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-2"><T text="Dietary Restrictions & Allergens (Cross-checks Restaurant Database)" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-2"><T text="Dietary Restrictions & Allergens (Cross-checks Restaurant Database)" source="en"/>{" "}</label>
                   <div className="flex flex-wrap gap-2">
                     {dietaryOptions.map((opt) => {
                       const isSelected = brief.dietaryRestrictions.includes(opt);
@@ -566,7 +566,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                           key={opt}
                           type="button"
                           onClick={() => toggleArrayItem("dietaryRestrictions", opt)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                             isSelected
                               ? "bg-emerald-800 text-white shadow-xs"
                               : "bg-[#FAF8F3] text-[#2D5B67] border border-[#D5D1C7] hover:border-[#2D5B67]"
@@ -581,7 +581,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-2"><T text="Dining Pace & Table Duration" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-2"><T text="Dining Pace & Table Duration" source="en"/>{" "}</label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {diningPaces.map((dp) => {
                       const isSelected = brief.diningPace === dp;
@@ -590,7 +590,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                           key={dp}
                           type="button"
                           onClick={() => setBrief({ ...brief, diningPace: dp })}
-                          className={`py-2 px-3 rounded-lg text-xs font-medium text-center transition-all cursor-pointer border ${
+                          className={`py-2 px-3 rounded-lg text-sm font-medium text-center transition-all cursor-pointer border ${
                             isSelected
                               ? "bg-[#E7EEF0] border-[#2D5B67] text-[#143F4B] shadow-2xs font-semibold"
                               : "bg-[#FAF8F3] border-[#D5D1C7] text-[#4A636B] hover:bg-white"
@@ -616,7 +616,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
               <CardContent className="pt-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-2"><T text="Morning Start Preference (Horários e Hábitos Pessoais)" source="en"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-2"><T text="Morning Start Preference (Horários e Hábitos Pessoais)" source="en"/>{" "}</label>
                   <div className="grid grid-cols-3 gap-3">
                     {morningPaces.map((mp) => {
                       const isSelected = brief.morningPreference === mp;
@@ -625,7 +625,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                           key={mp}
                           type="button"
                           onClick={() => setBrief({ ...brief, morningPreference: mp })}
-                          className={`py-2 px-3 rounded-lg text-xs font-medium text-center transition-all cursor-pointer border ${
+                          className={`py-2 px-3 rounded-lg text-sm font-medium text-center transition-all cursor-pointer border ${
                             isSelected
                               ? "bg-[#E7EEF0] border-[#2D5B67] text-[#143F4B] shadow-2xs font-semibold"
                               : "bg-[#FAF8F3] border-[#D5D1C7] text-[#4A636B] hover:bg-white"
@@ -639,7 +639,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#143F4B] mb-2"><T text="Atividades Expressamente Indesejadas (Do Not Propose)" source="pt"/>{" "}</label>
+                  <label className="block text-sm font-medium text-[#143F4B] mb-2"><T text="Atividades Expressamente Indesejadas (Do Not Propose)" source="pt"/>{" "}</label>
                   <div className="flex flex-wrap gap-2">
                     {exclusionOptions.map((opt) => {
                       const isSelected = brief.exclusions.includes(opt);
@@ -648,7 +648,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                           key={opt}
                           type="button"
                           onClick={() => toggleArrayItem("exclusions", opt)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                             isSelected
                               ? "bg-red-800 text-white shadow-xs"
                               : "bg-[#FAF8F3] text-[#2D5B67] border border-[#D5D1C7] hover:border-[#2D5B67]"

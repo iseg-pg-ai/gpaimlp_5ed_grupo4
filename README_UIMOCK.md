@@ -359,3 +359,22 @@ Com o portal em execução, `npm run test:navigation` verifica os cinco destinos
 o destaque da página ativa, o menu móvel e a posição da top bar durante o scroll,
 nos seis idiomas. Usa as mesmas variáveis `PORTAL_URL` e `BROWSER_CHANNEL` dos testes
  de responsividade.
+
+## Leitura do roteiro
+
+O topo destaca cliente, destino e datas. Preferências, restrições e ferramentas
+de exportação ficam em secções expansíveis. A navegação por dias mantém o dia
+selecionado destacado; os cartões seguem a ordem horário, nome, localização,
+descrição e estado, com os detalhes de curadoria recolhidos.
+
+No computador, o assistente abre à direita com a altura do workspace. Pode ser
+recolhido para alargar o roteiro e reaberto pelo botão redondo.
+
+Os estados não representam reservas: Rascunho identifica a proposta preliminar,
+Por confirmar identifica atividades propostas, Protegida indica bloqueio de edição
+e Exportada indica exportação da versão apresentada.
+
+Com o portal em execução, `node tests/browser/itinerary-visual.mjs` (na pasta
+`dmc-workspace`) verifica os estados, detalhes sem fonte, seleção dos dias e o
+assistente recolhível no computador. Aceita `PORTAL_URL` e `BROWSER_CHANNEL`;
+simula tradução e histórico, sem efetuar exportações reais.
