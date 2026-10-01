@@ -1,8 +1,8 @@
 "use client";
-import { T } from "@/components/LocaleProvider";
+import { T, useTranslated } from "@/components/LocaleProvider";
 
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { 
   X, 
   Car, 
@@ -31,13 +31,23 @@ export const TransitInspectorModal: React.FC<TransitInspectorModalProps> = ({
   leg,
   onClose,
 }) => {
-  if (!leg) return null;
+  const dialog = useRef<HTMLDialogElement>(null);
+  const title = useTranslated("Routing Algorithm Inspector");
+  const closeLabel = useTranslated("Done");
+  useEffect(() => {
+    if (leg && !dialog.current?.open) dialog.current?.showModal();
+    if (!leg && dialog.current?.open) dialog.current.close();
+  }, [leg]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#143F4B]/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-lg rounded-2xl bg-white border border-[#D5D1C7] shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <dialog ref={dialog} aria-label={title} onCancel={onClose} onClose={onClose}
+      className="transit-dialog" onClick={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}>
+      {leg &&
+      <div className="w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain break-words rounded-2xl bg-white border border-[#D5D1C7] shadow-xl animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#F0ECE4] bg-[#FAF8F3]">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-[#F0ECE4] bg-[#FAF8F3]">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#143F4B] text-white flex items-center justify-center">
               <Navigation className="w-4 h-4 text-[#D8A65C]" />
@@ -48,8 +58,8 @@ export const TransitInspectorModal: React.FC<TransitInspectorModalProps> = ({
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#8C877D] hover:bg-black/5 transition-colors cursor-pointer"
+            aria-label={closeLabel} autoFocus onClick={onClose}
+            className="w-11 h-11 rounded-lg flex items-center justify-center text-[#8C877D] hover:bg-black/5 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -119,7 +129,7 @@ export const TransitInspectorModal: React.FC<TransitInspectorModalProps> = ({
           </div>
 
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-3 gap-2.5 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
             <div className="p-2.5 rounded-lg bg-[#FAF8F3] border border-[#EAE6DF] text-center">
               <span className="block text-[10px] text-[#8C877D] uppercase font-medium"><T text="Modality" source="en"/></span>
               <span className="font-semibold text-xs text-[#143F4B] capitalize"><T text={leg.mode} source="pt"/></span>
@@ -136,7 +146,7 @@ export const TransitInspectorModal: React.FC<TransitInspectorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-t border-[#F0ECE4] bg-[#FAF8F3]">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-t border-[#F0ECE4] bg-[#FAF8F3]">
           <span className="text-[11px] text-[#8C877D] italic"><T text="Computed by BLU Logistics Routing Engine" source="en"/>{" "}</span>
           <Button 
             variant="primaryDark"
@@ -145,7 +155,7 @@ export const TransitInspectorModal: React.FC<TransitInspectorModalProps> = ({
             className="bg-[#143F4B] text-white hover:bg-[#0E2D36]"
           ><T text="Done" source="en"/>{" "}</Button>
         </div>
-      </div>
-    </div>
+      </div>}
+    </dialog>
   );
 };

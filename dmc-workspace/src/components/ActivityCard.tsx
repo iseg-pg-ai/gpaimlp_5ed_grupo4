@@ -100,9 +100,9 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         </div>
       )}
 
-      <div className="flex items-start gap-3.5">
+      <div className="flex flex-col sm:flex-row items-start gap-3.5">
         {/* Time and category column */}
-        <div className="w-16 shrink-0 text-right pt-0.5">
+        <div className="w-full sm:w-16 shrink-0 text-left sm:text-right pt-0.5">
           <span className="font-mono text-xs font-semibold tracking-tight text-[#1A1917] block">
             <T text={activity.time} source="pt"/>
           </span>

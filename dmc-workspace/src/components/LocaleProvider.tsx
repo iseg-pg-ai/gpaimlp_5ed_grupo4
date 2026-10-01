@@ -48,9 +48,11 @@ export function LocaleProvider({children}:{children:React.ReactNode}) {
     },60);
   },[locale]);
   return <LocaleContext.Provider value={{locale,setLocale,values,request}}>
-    <header className="flex justify-end items-center gap-3 px-4 py-2 bg-[#EBE5DA] border-b relative z-50"><span className="text-xs">🌐</span><LanguagePicker value={locale} onChange={setLocale}/></header>
+    <div className="flex h-dvh flex-col">
+    <header className="shrink-0 flex justify-end items-center gap-3 px-4 py-2 bg-[#EBE5DA] border-b relative z-50"><span className="text-xs">🌐</span><LanguagePicker value={locale} onChange={setLocale}/></header>
     {error&&<p role="alert" className="p-2 text-amber-900 bg-amber-50">Tradução local indisponível / Local translation unavailable. <button className="underline" onClick={()=>window.location.reload()}>↻</button></p>}
-    {children}
+    <div className="flex-1 min-h-0 overflow-auto">{children}</div>
+    </div>
   </LocaleContext.Provider>;
 }
 export function useLocale(){const c=useContext(LocaleContext);if(!c)throw new Error("Missing LocaleProvider");return c;}
@@ -73,5 +75,5 @@ export function LocalizedTextarea(props: React.TextareaHTMLAttributes<HTMLTextAr
 }
 export function ExportLanguageLinks({tripId,version}:{tripId:string;version:number}) {
   const [language,setLanguage]=useState<Locale>("en");
-  return <div className="flex items-center gap-3 my-3"><T text="Idioma do cliente (PDF)" source="pt"/><LanguagePicker value={language} onChange={setLanguage}/><a className="underline" href={`/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=bundle&locale=${language}`}><T text="Descarregar PDFs" source="pt"/></a></div>;
+  return <div className="flex flex-wrap items-center gap-3 my-3"><T text="Idioma do cliente (PDF)" source="pt"/><LanguagePicker value={language} onChange={setLanguage}/><a className="underline" href={`/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=bundle&locale=${language}`}><T text="Descarregar PDFs" source="pt"/></a></div>;
 }

@@ -93,3 +93,54 @@ body {
 .pulsing-indicator {
   animation: pulseDot 1.5s ease-in-out infinite;
 }
+
+/* Let translated labels and user content wrap inside narrow layouts. */
+.responsive-workspace { overflow-wrap: anywhere; }
+.responsive-workspace button:not([class*="w-8"]):not([class*="w-7"]) {
+  white-space: normal;
+  height: auto;
+  min-height: 2.5rem;
+}
+.responsive-workspace input, .responsive-workspace textarea, .responsive-workspace select {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 639px) {
+  .responsive-workspace input, .responsive-workspace textarea, .responsive-workspace select {
+    font-size: 16px;
+  }
+}
+
+.trip-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  margin: 0;
+  padding: 0;
+  width: min(20rem, 85vw);
+  max-width: none;
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  color: #143F4B;
+  background: #EBE5DA;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.trip-drawer[open] { display: flex; flex-direction: column; }
+.trip-drawer::backdrop { background: rgb(14 40 47 / 55%); }
+body:has(.trip-drawer[open]) .responsive-workspace > main { overflow: hidden; }
+
+.transit-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  padding: 0;
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  border: 0;
+  border-radius: 1rem;
+  background: transparent;
+  color: #143F4B;
+}
+.transit-dialog::backdrop { background: rgb(14 40 47 / 55%); }
+body:has(.transit-dialog[open]) .responsive-workspace > main { overflow: hidden; }

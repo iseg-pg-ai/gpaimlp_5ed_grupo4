@@ -96,9 +96,9 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   };
 
   return (
-    <aside className="w-80 lg:w-96 shrink-0 border-l border-[#D5D1C7] bg-[#FAF8F3] flex flex-col h-screen select-none">
+    <aside className="w-full min-w-0 shrink-0 border-l border-[#D5D1C7] bg-[#FAF8F3] flex flex-col h-[70dvh] xl:h-full xl:min-h-0 select-none">
       {/* 1. Header with BLU Costa Primitives */}
-      <div className="p-4 border-b border-[#D5D1C7] bg-[#F4F0E7] flex items-center justify-between">
+      <div className="shrink-0 p-4 border-b border-[#D5D1C7] bg-[#F4F0E7] flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
             <Badge variant="gold" className="px-1.5 py-0.5 text-[10px] font-semibold">
