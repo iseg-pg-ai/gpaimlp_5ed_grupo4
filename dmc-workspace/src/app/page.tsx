@@ -2,7 +2,6 @@
 import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import type { Locale } from "@/lib/locales";
 
-import Link from "next/link";
 import { MessageCircle, X } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { ResponsiveNavigation } from "@/components/ResponsiveNavigation";
@@ -155,8 +154,6 @@ export default function WorkspacePage() {
       onSelectTrip={id => { setNavigationOpen(false); if (busy || operation.current) return; setActiveId(id); setEditing(false); setError(""); }} /></div></ResponsiveNavigation>
     <main className={`flex-1 min-h-0 min-w-0 overflow-auto ${active && !editing && !busy ? "xl:mr-80 2xl:mr-96" : ""}`}>
       <div className="p-3 text-xs bg-amber-50"><T text="Propostas preliminares · Versões guardadas no servidor local · Sem reservas ou preços finais confirmados." source="pt"/></div>
-      <Link href="/references" target="_blank" className="block px-4 py-2 underline text-sm"><T text="Consultar propostas históricas e divergências do catálogo" source="pt"/></Link>
-      <Link href="/exports" target="_blank" className="block px-4 py-2 underline text-sm"><T text="Histórico de versões e PDFs de todas as viagens" source="pt"/></Link>
       {(error || storageError) && <p role="alert" className="p-4 text-red-800"><T text={error || storageError} source="pt"/></p>}
       {busy ? <p role="status" className="p-8"><T text="A consultar o catálogo e aplicar os critérios de curadoria…" source="pt"/></p> : !ready ? <p className="p-8"><T text="A carregar viagens guardadas…" source="pt"/></p> : editing ?
         <NewTripScreen key={formKey} initialValue={draft} onGenerate={generate} onCancel={active ? () => setEditing(false) : undefined} /> : active && <>

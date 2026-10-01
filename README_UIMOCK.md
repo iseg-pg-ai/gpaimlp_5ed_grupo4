@@ -342,3 +342,20 @@ menu sobreposto, foco por teclado, fecho por Escape, altura e overflow.
 Em 640 px verificam também texto base ampliado a 200%, distinto do zoom real.
 A emulação de toque não substitui a validação em dispositivos físicos,
 nomeadamente Safari/iOS e comportamento do teclado virtual.
+
+
+## Navegação principal
+
+A top bar contém o logótipo BLU, Workspace, Catálogo, Histórico, Referências,
+Lixo e o seletor de idioma. Mantém-se fora da área de scroll e destaca a página
+ativa. Abaixo de 1024 px os destinos ficam no menu compacto; a seleção fecha-o.
+A barra lateral do workspace continua dedicada às viagens recentes e novas viagens.
+
+`/catalog` e `/trash` são páginas de entrada que indicam as funcionalidades ainda
+não disponíveis. Este passo não implementa edição do catálogo nem remoção/restauro
+de viagens. Histórico (`/exports`) e Referências (`/references`) mantêm as funcionalidades existentes.
+
+Com o portal em execução, `npm run test:navigation` verifica os cinco destinos,
+o destaque da página ativa, o menu móvel e a posição da top bar durante o scroll,
+nos seis idiomas. Usa as mesmas variáveis `PORTAL_URL` e `BROWSER_CHANNEL` dos testes
+ de responsividade.

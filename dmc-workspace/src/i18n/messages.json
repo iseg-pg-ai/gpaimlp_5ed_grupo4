@@ -1087,6 +1087,46 @@
     "de": "Nuancen, Kundenpersönlichkeit, Reiseerinnerungen...",
     "zh": "纽斯 顾客个性 旅行记忆..."
   },
+  "Catálogo": {
+    "pt": "Catálogo",
+    "en": "Catalog",
+    "es": "Catálogo",
+    "fr": "Catalogue",
+    "de": "Katalog",
+    "zh": "目录"
+  },
+  "Atividades, restaurantes e experiências": {
+    "pt": "Atividades, restaurantes e experiências",
+    "en": "Activities, restaurants and experiences",
+    "es": "Actividades, restaurantes y experiencias",
+    "fr": "Activités, restaurants et expériences",
+    "de": "Aktivitäten, Restaurants und Erlebnisse",
+    "zh": "活动、餐馆和经验"
+  },
+  "A gestão do catálogo será disponibilizada numa próxima etapa. Por enquanto, os roteiros usam o catálogo importado pelo ETL.": {
+    "pt": "A gestão do catálogo será disponibilizada numa próxima etapa. Por enquanto, os roteiros usam o catálogo importado pelo ETL.",
+    "en": "Catalog management will be made available in a next step. For the time being, scripts use the catalogue imported by ETL.",
+    "es": "La gestión del catálogo estará disponible en un próximo paso. Por el momento, los scripts utilizan el catálogo importado por ETL.",
+    "fr": "La gestion du catalogue sera disponible dans une prochaine étape. Pour le moment, les scripts utilisent le catalogue importé par ETL.",
+    "de": "Das Katalogmanagement wird in einem nächsten Schritt zur Verfügung gestellt, vorerst verwenden Skripte den von ETL importierten Katalog.",
+    "zh": "下一步将提供目录管理。目前,脚本使用ETL导入的目录。"
+  },
+  "Lixo": {
+    "pt": "Lixo",
+    "en": "Trash",
+    "es": "Trash",
+    "fr": "Corbeille",
+    "de": "Müll",
+    "zh": "废物"
+  },
+  "A remoção e recuperação de viagens será disponibilizada numa próxima etapa. Ainda não é possível enviar viagens para o lixo.": {
+    "pt": "A remoção e recuperação de viagens será disponibilizada numa próxima etapa. Ainda não é possível enviar viagens para o lixo.",
+    "en": "The removal and recovery of trips will be made available in a next step. It is not yet possible to send trips to the trash.",
+    "es": "La eliminación y recuperación de los viajes se pondrán a disposición en un próximo paso. Aún no es posible enviar viajes a la basura.",
+    "fr": "L'enlèvement et la récupération des voyages seront disponibles dans une prochaine étape. Il n'est pas encore possible d'envoyer des voyages à la poubelle.",
+    "de": "In einem nächsten Schritt wird die Entfernung und Rückgewinnung von Fahrten zur Verfügung gestellt, und es ist noch nicht möglich, Fahrten in den Müll zu schicken.",
+    "zh": "下一步将提供旅行的去除和回收服务,目前无法将旅行送到垃圾堆。"
+  },
   "Culture & Heritage": {
     "pt": "Cultura e património",
     "en": "Culture & Heritage",
