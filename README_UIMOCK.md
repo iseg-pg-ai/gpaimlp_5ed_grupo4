@@ -557,3 +557,28 @@ ou privado), sem inferir condições a partir de descrições. Restaurantes não
 filtrados por acompanhamento. Idioma do guia e necessidades livres do grupo
 ficam para confirmação pelo fornecedor/curador; não são garantias automáticas.
 Teste de interface: `node tests/browser/briefing.mjs`, com portal na porta 3001.
+
+
+### Geração diversificada e horários propostos
+
+A seleção distribui as vagas entre atividades, restaurantes e experiências
+compatíveis. Mantém os limites de duas, três ou quatro sugestões e alterna a
+categoria inicial entre dias; duas vagas não garantem as três categorias no
+mesmo dia. Restrições, aprovações, validade e orçamento continuam a filtrar a oferta.
+
+Horários simples (por exemplo, `Todos os dias 09:00–18:00` ou
+`09:00–12:00; 14:00–18:00`) e durações explícitas permitem propor intervalos.
+São respeitados os encerramentos semanais reconhecidos. Refeições começam entre
+12:00 e 14:00 e respeitam o ritmo de refeição; a agenda proposta termina até às
+18:00. Entre intervalos são reservados 30 minutos, ou 45 com pausas adicionais.
+Estas margens são estimativas, não tempos calculados de percurso.
+
+Intervalos aparecem como **propostos**, sem confirmar reservas. Horários sazonais,
+encerramentos por data, durações ou condições ambíguas ficam **Por agendar**,
+com indicação de revisão manual; não se garante viabilidade desses itens até
+serem agendados. Os intervalos propostos não se sobrepõem.
+
+Preços estruturados em EUR por pessoa, grupo ou serviço alimentam o controlo de
+custos conhecidos. Valores por hora, noutras moedas ou por confirmar não são
+convertidos nem tratados como gratuitos. Os cartões indicam que o custo total
+está por confirmar; zero só representa um preço explicitamente gratuito.
