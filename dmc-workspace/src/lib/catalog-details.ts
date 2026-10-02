@@ -43,7 +43,15 @@ export function detailsFromRecord(record: CatalogRecord): CatalogDetails {
       : f.price,
     supplier: f.provider || (record.category === "restaurantes" ? f.name : ""),
     contact: f.contacts,
-    hours: f.hours,
+    hours: [
+      f.hours,
+      record.operational?.closures ??
+        record.raw.dias_de_encerramento ??
+        record.raw.encerramento_base_reconfirmar,
+      record.operational?.observations ?? record.raw.observacoes,
+    ]
+      .filter(Boolean)
+      .join(" · "),
     accessibility: f.accessibility,
     dietary: f.dietary,
     verification: record.matching?.verificationNotes ?? "",

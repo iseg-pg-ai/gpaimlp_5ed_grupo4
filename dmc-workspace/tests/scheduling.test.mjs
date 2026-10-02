@@ -1,3 +1,4 @@
+import { datedWindows, closureState, transferEstimate } from "../src/lib/itinerary-scheduling.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -117,5 +118,32 @@ test("unknown price is distinct from free and group pricing is not multiplied", 
       4,
     ),
     null,
+  );
+});
+
+test("dataset seasonal schedules, weekdays and specific closure dates are respected", () => {
+  assert.deepEqual(datedWindows("09h–21h (mar.–out.); 09h–18h (nov.–fev.)", "2026-10-05"), [
+    [540, 1260],
+  ]);
+  assert.deepEqual(datedWindows("09h–21h (mar.–out.); 09h–18h (nov.–fev.)", "2026-12-05"), [
+    [540, 1080],
+  ]);
+  assert.deepEqual(datedWindows("Ter–sáb 12:00–00:00; dom 12:00–23:00", "2026-10-05"), []);
+  assert.equal(closureState("1 jan.; 1 maio; 24, 25 e 31 dez.", "2026-12-25"), "closed");
+  assert.equal(closureState("1 jan.; 1 maio; 24, 25 e 31 dez.", "2026-10-05"), "open");
+  assert.equal(closureState("Sujeito ao culto", "2026-10-05"), "unknown");
+});
+test("coordinate estimates increase the margin without claiming measured routes", () => {
+  const estimate = transferEstimate(
+    { latitude: 38.7, longitude: -9.1 },
+    { latitude: 39.2, longitude: -9.1 },
+    30,
+  );
+  assert.ok(estimate.minutes > 30);
+  assert.match(estimate.note, /linha reta/);
+  assert.equal(
+    transferEstimate({ latitude: null, longitude: null }, { latitude: 0, longitude: 0 }, 30)
+      .minutes,
+    30,
   );
 });

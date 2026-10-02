@@ -1,4 +1,6 @@
 "use client";
+import { SourceFields } from "../SourceFields";
+import { operationalFromSource, operationalLabels } from "@/lib/catalog-operational";
 import type { RefObject } from "react";
 import { T } from "@/components/LocaleProvider";
 import { CatalogCompatibility } from "@/components/CatalogCompatibility";
@@ -30,6 +32,9 @@ type Props = {
   editorRef: RefObject<HTMLFormElement | null>;
 };
 export function CatalogEditor({ editing, setEditing, busy, save, editorRef }: Props) {
+  const referencePrices = Array.isArray(editing.sourceData?.tarifas_de_referencia)
+    ? (editing.sourceData.tarifas_de_referencia as Record<string, unknown>[])
+    : [];
   const fields = visibleFields(editing.category).filter((key) => key !== "kind");
   return (
     <form
@@ -321,6 +326,91 @@ export function CatalogEditor({ editing, setEditing, busy, save, editorRef }: Pr
             </section>
           );
         })}
+        <section className="md:col-span-2 min-w-0 rounded-xl border p-4">
+          <h3 className="font-semibold">
+            <T text="Dados operacionais da fonte" source="pt" />
+          </h3>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            {(Object.keys(operationalLabels) as (keyof typeof operationalLabels)[]).map((key) => (
+              <label key={key} className="min-w-0 text-sm">
+                <T text={operationalLabels[key]} source="pt" />
+                <textarea
+                  name={`operational-${key}`}
+                  rows={key === "latitude" || key === "longitude" ? 1 : 3}
+                  maxLength={4000}
+                  className={`${control} mt-1`}
+                  value={(editing.operational ?? operationalFromSource({}))[key]}
+                  onChange={(e) =>
+                    setEditing({
+                      ...editing,
+                      operational: {
+                        ...(editing.operational ?? operationalFromSource({})),
+                        [key]: e.target.value,
+                      },
+                    })
+                  }
+                />
+              </label>
+            ))}
+          </div>
+        </section>
+        {referencePrices.length > 0 && (
+          <label className="md:col-span-2 text-sm">
+            <T text="Usar tarifa da fonte como estimativa (opcional)" source="pt" />
+            <select
+              name="reference-price"
+              className={control}
+              style={selectStyle}
+              value=""
+              onChange={(e) => {
+                const row = referencePrices[Number(e.target.value)];
+                if (!row) return;
+                const units: Record<string, "person" | "group" | "hour" | "service"> = {
+                  "por pessoa": "person",
+                  pessoa: "person",
+                  grupo: "group",
+                  "por grupo": "group",
+                  "por hora": "hour",
+                  "por serviço": "service",
+                };
+                setEditing({
+                  ...editing,
+                  pricing: {
+                    amount: String(row.preco_referencia_eur ?? ""),
+                    currency: "EUR",
+                    unit: units[String(row.unidade).toLowerCase()] ?? "",
+                    status: "estimated",
+                  },
+                });
+              }}
+            >
+              <option value="">
+                <T text="Selecionar tarifa de referência" source="pt" />
+              </option>
+              {referencePrices.map((row, index) => (
+                <option key={index} value={index}>
+                  {String(row.nome_modalidade ?? row.id)} ·{" "}
+                  {String(row.preco_referencia_eur ?? "Por confirmar")} EUR ·{" "}
+                  {String(row.unidade ?? "")}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {editing.sourceData && (
+          <details className="md:col-span-2 min-w-0 rounded-xl border p-4">
+            <summary>
+              <T text="Consultar todos os dados de origem e tarifas" source="pt" />
+            </summary>
+            <p className="my-3 text-sm">
+              <T
+                text="A fonte atual é apresentada para comparação. Guardar não substitui automaticamente as edições manuais nem confirma tarifas históricas."
+                source="pt"
+              />
+            </p>
+            <SourceFields value={editing.sourceData} />
+          </details>
+        )}
         <div className="md:col-span-2 min-w-0">
           <p className="mb-3 text-sm">
             <T

@@ -1,4 +1,5 @@
 "use client";
+import { operationalFromSource } from "@/lib/catalog-operational";
 import { useEffect, useRef, useState } from "react";
 import { responseJson } from "@/lib/http-client";
 import { emptyMatching } from "@/lib/catalog-matching";
@@ -92,6 +93,9 @@ export function useCatalog() {
             fields: { ...record.fields },
             pricing: record.pricing,
             subcategory: record.subcategory,
+            operational:
+              record.operational ?? operationalFromSource(record.sourceData ?? record.raw),
+            sourceData: record.sourceData ?? record.raw,
             matching: record.matching ?? emptyMatching(),
             reason: "",
           }

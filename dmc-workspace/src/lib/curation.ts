@@ -1,4 +1,11 @@
-import { closedOn, knownCost, proposeSlot, clockTime } from "./itinerary-scheduling.ts";
+import {
+  closureState,
+  transferEstimate,
+  closedOn,
+  knownCost,
+  proposeSlot,
+  clockTime,
+} from "./itinerary-scheduling.ts";
 import {
   emptyPersonalization,
   validatePersonalization,
@@ -217,7 +224,13 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
     const date = new Date(Date.parse(brief.startDate) + i * 86400000).toISOString().slice(0, 10);
     const candidates = all
       .filter(({ row, table }) => {
-        if (row._catalog_status !== "approved" || closedOn(row, date)) return false;
+        if (
+          row._catalog_status !== "approved" ||
+          closedOn(row, date) ||
+          closureState(row.dias_de_encerramento ?? row.encerramento_base_reconfirmar, date) ===
+            "closed"
+        )
+          return false;
         if (personalization.avoid.includes(String(row.subcategoria ?? ""))) return false;
         // An unclassified record cannot be certified as outside the excluded subcategories.
         if (personalization.avoid.length && !row.subcategoria) return false;
@@ -286,6 +299,7 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
     const selected: ((typeof candidates)[number] & {
       slot: ReturnType<typeof proposeSlot>;
       cost: number | null;
+      transfer: string;
     })[] = [];
     let cursor = brief.morningPreference.startsWith("Early")
       ? 510
@@ -293,6 +307,7 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         ? 630
         : 570;
     const buffer = personalization.extraBreaks ? 45 : 30;
+    let previousLocation: Row | undefined;
     const chosenCategories = new Set<string>();
     // Rotate the starting category across days; tiers still rank within each category.
     const order = ["atracoes", "restaurantes", "experiencias"];
@@ -308,15 +323,23 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
       const candidate = ranked.shift()!;
       const cost = knownCost(candidate.row, brief.adults + brief.children);
       if (cost !== null && cost > remainingBudget) continue;
-      const slot = proposeSlot(candidate.row, candidate.table === "restaurantes", brief, cursor);
+      const transfer = transferEstimate(previousLocation, candidate.row, buffer);
+      const slot = proposeSlot(
+        candidate.row,
+        candidate.table === "restaurantes",
+        brief,
+        cursor + transfer.minutes,
+        date,
+      );
       if (slot.kind === "unavailable") continue;
       if (cost !== null) remainingBudget -= cost;
-      if (slot.kind === "scheduled") cursor = slot.end + buffer;
-      selected.push({ ...candidate, slot, cost });
+      if (slot.kind === "scheduled") cursor = slot.end;
+      selected.push({ ...candidate, slot, cost, transfer: transfer.note });
+      if (slot.kind === "scheduled") previousLocation = candidate.row;
       chosenCategories.add(candidate.table);
       fulfilled.add(String(candidate.row.subcategoria));
     }
-    const items: ActivityItem[] = selected.map(({ row, table, matching, slot, cost }) => {
+    const items: ActivityItem[] = selected.map(({ row, table, matching, slot, cost, transfer }) => {
       const profile = row._matching as MatchingProfile | undefined;
       const catalogDetails = {
         location: text(row, "morada") || text(row, "localizacao") || text(row, "cidade"),
@@ -324,7 +347,13 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         supplier:
           text(row, "fornecedor") || (table === "restaurantes" ? text(row, "estabelecimento") : ""),
         contact: text(row, "contactos"),
-        hours: text(row, "horario") || text(row, "horario_base_reconfirmar"),
+        hours: [
+          text(row, "horario") || text(row, "horario_base_reconfirmar"),
+          text(row, "dias_de_encerramento") || text(row, "encerramento_base_reconfirmar"),
+          text(row, "observacoes"),
+        ]
+          .filter(Boolean)
+          .join(" · "),
         accessibility: text(row, "acessibilidade_nivel_de_confirmacao"),
         dietary: text(row, "opcoes_alimentares_alergenios"),
         verification: profile?.verificationNotes ?? "",
@@ -377,6 +406,10 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         catalogDetails,
         pendingChecks: [
           "Disponibilidade e reserva para esta viagem",
+          ...(row.observacoes ? [`Condições da fonte a verificar: ${row.observacoes}`] : []),
+          ...(row.necessidade_de_reserva || row.reservas_condicoes_base
+            ? [`Condições de reserva: ${row.necessidade_de_reserva || row.reservas_condicoes_base}`]
+            : []),
           ...(slot.kind === "scheduled"
             ? [
                 `Horário proposto; reconfirmar funcionamento e margem de ${buffer} min para deslocação/pausa`,
@@ -385,6 +418,7 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
           ...(cost === null ? ["Custo desconhecido: orçamento total não validado"] : []),
           "Validar preço para esta viagem",
           "Deslocação / ponto de encontro",
+          ...(transfer ? [transfer] : []),
           ...(brief.mobilityRestrictions.length && !profile
             ? ["Acessibilidade para as necessidades do cliente"]
             : []),

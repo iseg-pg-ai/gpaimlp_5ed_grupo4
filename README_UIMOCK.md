@@ -582,3 +582,26 @@ Preços estruturados em EUR por pessoa, grupo ou serviço alimentam o controlo d
 custos conhecidos. Valores por hora, noutras moedas ou por confirmar não são
 convertidos nem tratados como gratuitos. Os cartões indicam que o custo total
 está por confirmar; zero só representa um preço explicitamente gratuito.
+
+
+### Consulta e aproveitamento do dataset completo
+
+Em Referências, “Todas as folhas do dataset” permite selecionar qualquer folha
+`structured_*` publicada pelo ETL, pesquisar valores e consultar todos os campos
+com paginação de 25 registos. Inclui bases, propostas históricas, viajantes,
+interações, regras, auditorias e proveniência; a consulta não transforma dados
+históricos em oferta aprovada.
+
+No editor do catálogo, a fonte atual é mostrada sem substituir os campos editados.
+Coordenadas, encerramentos, observações e condições de reserva podem ser revistos
+e guardados numa nova revisão. A publicação pelo ETL aplica esses campos. Tarifas
+ligadas por identificador exato podem ser adotadas explicitamente como estimativas;
+campos sem correspondência permanecem disponíveis na consulta do dataset.
+
+A agenda interpreta intervalos sazonais e semanais reconhecidos e listas de
+encerramentos por dia/mês. Condições não reconhecidas continuam por confirmar.
+Coordenadas completas permitem uma margem estimada de deslocação: distância em
+linha reta × 1,5, velocidade de referência de 25 km/h e 10 minutos adicionais,
+respeitando a margem mínima de pausas. Não corresponde a um percurso medido.
+Observações e condições de reserva seguem nos cartões como dados a verificar.
+Textos livres e regras documentais não são executados como instruções do sistema.
