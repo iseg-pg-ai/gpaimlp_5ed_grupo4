@@ -22,6 +22,32 @@ export const confirmationFields = {
   contact: "Contacto do fornecedor",
   notes: "Evidência da confirmação ou motivo de dispensa de reserva",
 };
+export function hasKnownPrice(price: string): boolean {
+  return (
+    !!price.trim() &&
+    !/^(?:(?:valor|preço)\s+)?(?:por confirmar|a confirmar|desconhecido|sem preço|não indicado)/i.test(
+      price.trim(),
+    )
+  );
+}
+
+// Refresh untouched defaults only: late catalogue responses must never undo edits.
+export function mergeConfirmationDefaults(
+  current: ActivityConfirmation,
+  defaults: ActivityConfirmation,
+  touched: ReadonlySet<keyof ActivityConfirmation>,
+): ActivityConfirmation {
+  const next = { ...current };
+  for (const key of Object.keys(confirmationFields) as (keyof typeof confirmationFields)[]) {
+    if (!touched.has(key) && defaults[key]) next[key] = defaults[key];
+  }
+  if (!touched.has("checks"))
+    next.checks = current.checks.map((check) => ({
+      ...check,
+      details: check.details || defaults.checks.find((c) => c.label === check.label)?.details || "",
+    }));
+  return next;
+}
 export function initialConfirmation(item: ActivityItem): ActivityConfirmation {
   // Saved trip-specific edits always win, including deliberately cleared fields.
   if (item.confirmation) return item.confirmation;
@@ -31,12 +57,10 @@ export function initialConfirmation(item: ActivityItem): ActivityConfirmation {
     (item.priceNote ?? "")
       .replace(/^Referência, confirmar:\s*/i, "")
       .replace(/^Referência:\s*/i, "");
-  const price = /^(por confirmar|sem preço|não indicado|a confirmar)$/i.test(referencePrice.trim())
-    ? ""
-    : referencePrice;
+  const price = hasKnownPrice(referencePrice) ? referencePrice : "";
   return {
     status: "pending",
-    time: /^\d{2}:\d{2}$/.test(item.time) ? item.time : "",
+    time: /^([01]\d|2[0-3]):[0-5]\d(?:$|[–-])/.test(item.time) ? item.time.slice(0, 5) : "",
     location: data?.location || item.location || "",
     price,
     supplier: data?.supplier ?? "",
@@ -98,7 +122,7 @@ export function validateConfirmation(
     if (
       !c.time ||
       !c.location.trim() ||
-      !c.price.trim() ||
+      !hasKnownPrice(c.price) ||
       (!c.notes.trim() && !c.checks.some((check) => check.details.trim())) ||
       c.checks.some((check) => !check.resolved)
     )
