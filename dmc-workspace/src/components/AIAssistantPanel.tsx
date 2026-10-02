@@ -38,7 +38,12 @@ interface AIAssistantPanelProps {
   onCollapse?: () => void;
 }
 
-const suggestionChips = ["Remover última atividade do dia 1", "Remover última atividade do dia 2"];
+const suggestionChips = [
+  "Ajuda",
+  "Reagendar atividade 1 do dia 1 para 14:00",
+  "Reorganizar dia 1 na ordem 2,1",
+  "Remover última atividade do dia 1",
+];
 
 export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   messages,

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/locales";
 import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip } from "@/types";
 import { initialBrief } from "@/data/initialBrief";
-import { applyCommand } from "@/lib/curation";
+import { assistantHelp } from "@/lib/assistant-editing";
 
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { responseJson } from "@/lib/http-client";
@@ -149,13 +149,13 @@ export function useWorkspace() {
       throw new Error("Versão inválida recebida do servidor.");
     return { ...trip, version: result.version };
   };
-  const update = async (fn: (trip: Trip) => Trip) => {
+  const update = async (fn: (trip: Trip) => Trip | Promise<Trip>) => {
     if (!active || operation.current) return false;
     operation.current = true;
     setSaving(true);
     setError("");
     try {
-      const changed = await saveVersion(fn(active), "edited");
+      const changed = await saveVersion(await fn(active), "edited");
       setTrips((prev) => prev.map((t) => (t.id === changed.id ? changed : t)));
       return true;
     } catch (e) {
@@ -253,12 +253,7 @@ export function useWorkspace() {
         brief,
         itinerary: result.itinerary,
         pending: result.pending,
-        messages: [
-          message(
-            "assistant",
-            "Rascunho gerado a partir do catálogo real. Consulte a origem de cada sugestão e as confirmações pendentes. Para alterar preferências, use Edit Brief. Pode pedir: remover última atividade do dia 2; os bloqueios são respeitados.",
-          ),
-        ],
+        messages: [message("assistant", assistantHelp)],
       };
       const saved = await saveVersion(trip, "generated");
       setTrips((prev) => [...prev.filter((t) => t.id !== saved.id), saved]);
@@ -272,8 +267,16 @@ export function useWorkspace() {
     }
   };
   const send = (input: string) =>
-    update((trip) => {
-      const { itinerary, reply } = applyCommand(trip.itinerary, input);
+    update(async (trip) => {
+      const response = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ snapshot: trip, input }),
+      });
+      const result = await responseJson<{ itinerary: ItineraryDay[]; reply: string }>(response);
+      validateSnapshot({ ...trip, itinerary: result.itinerary });
+      if (typeof result.reply !== "string") throw new Error("Resposta inválida do assistente.");
+      const { itinerary, reply } = result;
       return {
         ...trip,
         itinerary,
