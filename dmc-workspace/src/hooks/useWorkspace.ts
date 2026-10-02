@@ -3,7 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/locales";
 import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip } from "@/types";
 import { initialBrief } from "@/data/initialBrief";
-import { validateBrief, applyCommand } from "@/lib/curation";
+import { applyCommand } from "@/lib/curation";
+
+import { validateSnapshot } from "@/lib/snapshot-validation";
+import { responseJson } from "@/lib/http-client";
+import type { Snapshot } from "@/lib/itinerary-pdf";
 
 type Trip = {
   clientLanguage?: Locale;
@@ -71,7 +75,7 @@ export function useWorkspace() {
           const saved: Trip[] = JSON.parse(raw);
           if (!Array.isArray(saved)) throw new Error();
           for (const t of saved) {
-            validateBrief(t.brief);
+            validateSnapshot(t);
             if (
               typeof t.id !== "string" ||
               !Array.isArray(t.itinerary) ||
@@ -133,15 +137,17 @@ export function useWorkspace() {
         snapshot: { brief: trip.brief, itinerary: trip.itinerary, pending: trip.pending },
       }),
     });
-    const result = await response.json();
     if (!response.ok) {
       if (response.status === 409) {
         const historyResponse = await fetch(`/api/versions?tripId=${encodeURIComponent(trip.id)}`);
         if (historyResponse.ok) setHistory({ id: trip.id, versions: await historyResponse.json() });
       }
-      throw new Error(result.error);
+      await responseJson(response);
     }
-    return { ...trip, version: result.version as number };
+    const result = await responseJson<{ version: number }>(response);
+    if (!Number.isSafeInteger(result?.version) || result.version < 1)
+      throw new Error("Versão inválida recebida do servidor.");
+    return { ...trip, version: result.version };
   };
   const update = async (fn: (trip: Trip) => Trip) => {
     if (!active || operation.current) return false;
@@ -171,7 +177,7 @@ export function useWorkspace() {
       const response = await fetch(
         `/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`,
       );
-      if (!response.ok) throw new Error((await response.json()).error);
+      if (!response.ok) await responseJson(response);
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
       link.href = url;
@@ -200,7 +206,12 @@ export function useWorkspace() {
         `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${latest.version}`,
       );
       if (!response.ok) throw new Error("Não foi possível reabrir a versão.");
-      const result = await response.json();
+      const result = await responseJson<{ snapshot: Snapshot; meta: { version: number } }>(
+        response,
+      );
+      validateSnapshot(result?.snapshot);
+      if (result?.meta?.version !== latest.version)
+        throw new Error("Versão inválida recebida do servidor.");
       const restored = { ...active, ...result.snapshot, version: result.meta.version };
       setTrips((prev) => prev.map((t) => (t.id === restored.id ? restored : t)));
       setError("");
@@ -233,8 +244,8 @@ export function useWorkspace() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(brief),
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
+      const result = await responseJson<Snapshot>(response);
+      validateSnapshot({ ...result, brief });
       const trip: Trip = {
         clientLanguage: active?.clientLanguage ?? clientLanguage,
         version: active?.version,
@@ -274,7 +285,7 @@ export function useWorkspace() {
     name: t.brief.customerName,
     destination: t.brief.destination,
     dates: `${t.brief.startDate} – ${t.brief.endDate}`,
-    budget: `${t.brief.budget} EUR`,
+    budget: `${t.brief.budget} ${t.brief.currency}`,
     tier: t.brief.proposalTier,
     status: "Draft",
   }));
