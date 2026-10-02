@@ -537,3 +537,23 @@ A comparação automática por pessoa em EUR utiliza apenas preços com essa
 moeda e unidade e estado confirmado ou estimado. Outros preços não são
 convertidos automaticamente. Com preço estruturado, o campo duplicado de
 preço por pessoa no perfil de compatibilidade deixa de ser apresentado.
+
+
+### Briefing por etapas e personalização
+
+O briefing organiza-se em Cliente, Viagem, Preferências, Restrições e Rever.
+As respostas mantêm-se ao mudar de etapa; a geração exige a validação final.
+O resumo permite voltar a cada etapa para editar. Briefings antigos sem
+`personalization` continuam válidos e mantêm o comportamento anterior.
+
+As subcategorias imperdíveis têm prioridade entre ofertas elegíveis; as opções
+a evitar excluem essas subcategorias e registos sem classificação verificável.
+Pedidos imperdíveis não satisfeitos aparecem nas pendências. A margem de 0%,
+10% ou 20% aplica-se ao limite dos custos conhecidos, sem transformar os preços
+em cotação. Pausas adicionais limitam a duas sugestões por dia.
+
+O acompanhamento filtra a modalidade explícita do catálogo (com guia, sem guia
+ou privado), sem inferir condições a partir de descrições. Restaurantes não são
+filtrados por acompanhamento. Idioma do guia e necessidades livres do grupo
+ficam para confirmação pelo fornecedor/curador; não são garantias automáticas.
+Teste de interface: `node tests/browser/briefing.mjs`, com portal na porta 3001.

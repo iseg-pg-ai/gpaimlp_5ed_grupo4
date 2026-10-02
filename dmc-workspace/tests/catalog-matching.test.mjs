@@ -1,3 +1,4 @@
+import { emptyPersonalization, validatePersonalization } from "../src/lib/brief-personalization.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { emptyMatching, validateMatching } from "../src/lib/catalog-matching.ts";
@@ -191,4 +192,55 @@ test("bad profile values and undocumented compatibility cannot be saved or gener
     assert.throws(() => validateMatching({ ...emptyMatching(), ...profile }));
     assert.equal(generate([row("Invalid", profile)]).length, 0);
   }
+});
+
+test("personalization prioritizes requested subcategories and respects exclusions", () => {
+  const museum = { ...row("Museum"), subcategoria: "Museu e galeria" };
+  const garden = { ...row("Garden"), subcategoria: "Jardim e parque" };
+  const p = { ...emptyPersonalization(), mustHave: ["Jardim e parque"] };
+  assert.equal(generate([museum, garden], { personalization: p })[0].title, "Garden");
+  assert.deepEqual(
+    generate([museum, garden, row("Unknown")], {
+      personalization: { ...p, avoid: ["Museu e galeria"] },
+    }).map((i) => i.title),
+    ["Garden"],
+  );
+  assert.throws(() => validatePersonalization({ ...p, avoid: p.mustHave }));
+});
+test("budget flexibility is bounded and extra breaks reduce daily load", () => {
+  const offer = row("Offer", { pricePerPerson: 105 });
+  assert.equal(generate([offer]).length, 0);
+  assert.equal(
+    generate([offer], { personalization: { ...emptyPersonalization(), budgetFlex: 10 } }).length,
+    1,
+  );
+  assert.throws(() => validatePersonalization({ ...emptyPersonalization(), budgetFlex: 100 }));
+  const rows = [1, 2, 3, 4].map((i) => row(String(i)));
+  assert.equal(generate(rows, { pace: "Active" }).length, 4);
+  assert.equal(
+    generate(rows, {
+      pace: "Active",
+      personalization: { ...emptyPersonalization(), extraBreaks: true },
+    }).length,
+    2,
+  );
+});
+test("accompaniment requires explicit matching modality, not inferred descriptions", () => {
+  const options = [
+    { ...row("Guided"), modalidade: "Visita guiada" },
+    { ...row("NoGuide"), modalidade: "Sem guia" },
+    { ...row("Unknown"), descricao_curada: "guia privado" },
+  ];
+  assert.deepEqual(
+    generate(options, {
+      personalization: { ...emptyPersonalization(), accompaniment: "guided" },
+    }).map((i) => i.title),
+    ["Guided"],
+  );
+  assert.deepEqual(
+    generate(options, {
+      personalization: { ...emptyPersonalization(), accompaniment: "independent" },
+    }).map((i) => i.title),
+    ["NoGuide"],
+  );
 });
