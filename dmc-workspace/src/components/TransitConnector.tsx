@@ -1,19 +1,8 @@
 "use client";
 import { T } from "@/components/LocaleProvider";
 
-
 import React from "react";
-import { 
-  Car, 
-  Footprints, 
-  Ship, 
-  Train, 
-  ArrowRight, 
-  Sparkles, 
-  ShieldCheck, 
-  Info,
-  Clock
-} from "lucide-react";
+import { Car, Footprints, Ship, Train, ShieldCheck, Info, Clock } from "lucide-react";
 import { TransitLeg, TransitMode } from "@/types";
 import { Badge } from "@/components/ui/badge";
 
@@ -80,9 +69,10 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
       <div className="absolute left-[31px] -top-3 bottom-0 w-0.5 border-l-2 border-dashed border-[#D5D1C7]" />
 
       {/* Interactive Transit Pill / Dislocation Card */}
-      <div 
+      <button
+        type="button"
         onClick={() => onInspect?.(leg)}
-        className="group relative z-10 inline-flex flex-wrap sm:flex-nowrap items-center gap-2.5 py-1.5 px-3 rounded-xl bg-white border border-[#E3DFD5] hover:border-[#143F4B]/50 hover:shadow-xs transition-all cursor-pointer text-xs"
+        className="group relative z-10 inline-flex max-w-full min-w-0 flex-wrap items-center gap-2.5 py-1.5 px-3 rounded-xl bg-white border border-[#E3DFD5] hover:border-[#143F4B]/50 hover:shadow-xs transition-all cursor-pointer text-xs"
       >
         {/* Time if this is a primary transfer */}
         {time && (
@@ -92,18 +82,20 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
         )}
 
         {/* Mode Icon */}
-        <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${config.bgPill}`}>
+        <div
+          className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${config.bgPill}`}
+        >
           <Icon className="w-3.5 h-3.5" />
         </div>
 
         {/* Title or Modality */}
-        {title ? (
-          <span className="font-semibold text-[#143F4B]">{title}</span>
-        ) : null}
+        {title ? <span className="font-semibold text-[#143F4B]">{title}</span> : null}
 
         {/* Duration & Distance */}
         <div className="flex items-center gap-1.5 font-medium text-[#143F4B]">
-          <span className="font-semibold"><T text={leg.duration} source="pt"/></span>
+          <span className="font-semibold">
+            <T text={leg.duration} source="pt" />
+          </span>
           {leg.distance && (
             <>
               <span className="text-[#A8A49C]">·</span>
@@ -116,20 +108,22 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
         {leg.routeNote && (
           <>
             <span className="hidden sm:inline text-[#D5D1C7]">|</span>
-            <span className="text-[#4A636B] truncate max-w-xs text-[11px]">
-              <T text={leg.routeNote} source="pt"/>
+            <span className="text-[#4A636B] min-w-0 truncate max-w-full sm:max-w-xs text-[11px]">
+              <T text={leg.routeNote} source="pt" />
             </span>
           </>
         )}
 
         {/* Algorithm Badge */}
         {leg.isAlgorithmOptimized && (
-          <Badge 
-            variant="teal" 
+          <Badge
+            variant="teal"
             className="text-[10px] py-0 px-1.5 h-4.5 gap-1 shrink-0 font-normal bg-[#EBF1F2] text-[#2D5B67] border-[#C3D7DB]"
           >
             <ShieldCheck className="w-2.5 h-2.5 text-[#2D5B67]" />
-            <span><T text="Algorithm Verified" source="en"/></span>
+            <span>
+              <T text="Algorithm Verified" source="en" />
+            </span>
           </Badge>
         )}
 
@@ -137,7 +131,10 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
         {leg.bufferMinutes && (
           <span className="text-[10px] text-[#8C877D] flex items-center gap-0.5 ml-auto">
             <Clock className="w-2.5 h-2.5" />
-            <span>+{leg.bufferMinutes}<T text="m buffer" source="en"/></span>
+            <span>
+              +{leg.bufferMinutes}
+              <T text="m buffer" source="en" />
+            </span>
           </span>
         )}
 
@@ -145,7 +142,7 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
         <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[#143F4B] ml-1">
           <Info className="w-3 h-3 text-[#698288]" />
         </div>
-      </div>
+      </button>
     </div>
   );
 };

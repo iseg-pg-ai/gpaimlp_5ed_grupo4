@@ -18,40 +18,33 @@ export const Conversation = React.forwardRef<HTMLDivElement, ConversationProps>(
         aria-live="polite"
         className={cn(
           "relative flex-1 overflow-y-auto size-full flex flex-col scroll-smooth",
-          className
+          className,
         )}
         {...props}
       >
         {children}
       </div>
     );
-  }
+  },
 );
 Conversation.displayName = "Conversation";
 
-export interface ConversationContentProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ConversationContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
-export const ConversationContent = React.forwardRef<
-  HTMLDivElement,
-  ConversationContentProps
->(({ className, children, ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      className={cn("flex flex-col gap-4 p-4 min-h-full", className)}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-});
+export const ConversationContent = React.forwardRef<HTMLDivElement, ConversationContentProps>(
+  ({ className, children, ...props }, ref) => {
+    return (
+      <div ref={ref} className={cn("flex flex-col gap-4 p-4 min-h-full", className)} {...props}>
+        {children}
+      </div>
+    );
+  },
+);
 ConversationContent.displayName = "ConversationContent";
 
-export interface ConversationEmptyStateProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ConversationEmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
   description?: string;
   icon?: React.ReactNode;
@@ -70,13 +63,11 @@ export const ConversationEmptyState: React.FC<ConversationEmptyStateProps> = ({
     <div
       className={cn(
         "flex size-full flex-col items-center justify-center gap-3 p-8 text-center my-auto",
-        className
+        className,
       )}
       {...props}
     >
-      <div className="text-[#8F8B82]">
-        {icon || <MessageSquare className="size-8" />}
-      </div>
+      <div className="text-[#8F8B82]">{icon || <MessageSquare className="size-8" />}</div>
       <div className="space-y-1">
         <h3 className="font-semibold text-sm text-[#1A1917]">{title}</h3>
         <p className="text-xs text-[#6B6861] max-w-xs">{description}</p>
@@ -87,8 +78,7 @@ export const ConversationEmptyState: React.FC<ConversationEmptyStateProps> = ({
 };
 ConversationEmptyState.displayName = "ConversationEmptyState";
 
-export interface ConversationScrollButtonProps
-  extends React.ComponentProps<typeof Button> {
+export interface ConversationScrollButtonProps extends React.ComponentProps<typeof Button> {
   scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -103,7 +93,7 @@ export const ConversationScrollButton: React.FC<ConversationScrollButtonProps> =
       size="iconSm"
       className={cn(
         "absolute bottom-3 right-3 rounded-full shadow-md bg-white border-[#DFD9CE] hover:bg-[#F8F6F1] z-10",
-        className
+        className,
       )}
       onClick={onClick}
       {...props}
@@ -114,8 +104,7 @@ export const ConversationScrollButton: React.FC<ConversationScrollButtonProps> =
 };
 ConversationScrollButton.displayName = "ConversationScrollButton";
 
-export interface ConversationDownloadProps
-  extends React.ComponentProps<typeof Button> {
+export interface ConversationDownloadProps extends React.ComponentProps<typeof Button> {
   messages: Array<{ sender: string; text: string }>;
   fileName?: string;
 }
@@ -128,9 +117,7 @@ export const ConversationDownload: React.FC<ConversationDownloadProps> = ({
 }) => {
   const handleDownload = () => {
     const content = messages
-      .map(
-        (m) => `### ${m.sender.toUpperCase()}\n\n${m.text}\n`
-      )
+      .map((m) => `### ${m.sender.toUpperCase()}\n\n${m.text}\n`)
       .join("\n---\n\n");
     const blob = new Blob([content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);

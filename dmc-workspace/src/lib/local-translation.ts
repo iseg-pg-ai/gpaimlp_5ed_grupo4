@@ -5,8 +5,17 @@ import path from "node:path";
 import { createInterface } from "node:readline";
 import type { Locale } from "./locales";
 export type TranslationItem = { text: string; source: "pt" | "en" };
-type Pending = { resolve: (texts: string[]) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> };
-type Worker = { revision: number; child: ChildProcessWithoutNullStreams; next: number; pending: Map<number, Pending> };
+type Pending = {
+  resolve: (texts: string[]) => void;
+  reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+};
+type Worker = {
+  revision: number;
+  child: ChildProcessWithoutNullStreams;
+  next: number;
+  pending: Map<number, Pending>;
+};
 const globalWorker = globalThis as typeof globalThis & { bluTranslationWorker?: Worker };
 function getWorker(): Worker {
   if (globalWorker.bluTranslationWorker?.revision === 3 && !globalWorker.bluTranslationWorker.child.killed) return globalWorker.bluTranslationWorker;

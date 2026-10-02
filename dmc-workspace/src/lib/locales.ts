@@ -6,5 +6,7 @@ export const languages = [
   { code: "fr", name: "Français", flag: "FR", html: "fr" },
   { code: "de", name: "Deutsch", flag: "DE", html: "de" },
 ] as const;
-export type Locale = typeof languages[number]["code"];
-export function isLocale(value: unknown): value is Locale { return languages.some(l => l.code === value); }
+export type Locale = (typeof languages)[number]["code"];
+export function isLocale(value: unknown): value is Locale {
+  return languages.some((l) => l.code === value);
+}
