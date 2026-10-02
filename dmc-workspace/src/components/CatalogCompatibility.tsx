@@ -16,10 +16,12 @@ export function CatalogCompatibility({
   value,
   onChange,
   restaurant = false,
+  structuredPricing = false,
 }: {
   value: MatchingProfile;
   onChange?: (value: MatchingProfile) => void;
   restaurant?: boolean;
+  structuredPricing?: boolean;
 }) {
   const update = (patch: Partial<MatchingProfile>) => onChange?.({ ...value, ...patch });
   return (
@@ -115,23 +117,25 @@ export function CatalogCompatibility({
             </option>
           </select>
         </label>
-        {(["minAge", "maxGroup", "pricePerPerson"] as const).map((key) => (
-          <label key={key} className="min-w-0 text-sm">
-            <T text={profileFieldLabels[key]} source="pt" />
-            <input
-              className={inputClass}
-              type="number"
-              name={`matching-${key}`}
-              min={key === "maxGroup" ? 1 : 0}
-              max={key === "minAge" ? 120 : key === "maxGroup" ? 200 : 1000000}
-              step={key === "pricePerPerson" ? "0.01" : "1"}
-              value={value[key] ?? ""}
-              onChange={(e) =>
-                update({ [key]: e.target.value === "" ? null : Number(e.target.value) })
-              }
-            />
-          </label>
-        ))}
+        {(["minAge", "maxGroup", "pricePerPerson"] as const)
+          .filter((key) => !structuredPricing || key !== "pricePerPerson")
+          .map((key) => (
+            <label key={key} className="min-w-0 text-sm">
+              <T text={profileFieldLabels[key]} source="pt" />
+              <input
+                className={inputClass}
+                type="number"
+                name={`matching-${key}`}
+                min={key === "maxGroup" ? 1 : 0}
+                max={key === "minAge" ? 120 : key === "maxGroup" ? 200 : 1000000}
+                step={key === "pricePerPerson" ? "0.01" : "1"}
+                value={value[key] ?? ""}
+                onChange={(e) =>
+                  update({ [key]: e.target.value === "" ? null : Number(e.target.value) })
+                }
+              />
+            </label>
+          ))}
         {(["validFrom", "validUntil"] as const).map((key) => (
           <label key={key} className="min-w-0 text-sm">
             <T text={profileFieldLabels[key]} source="pt" />

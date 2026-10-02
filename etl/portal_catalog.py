@@ -34,7 +34,16 @@ def integrate_portal(data_dir: Path, tables: dict):
                 continue
             if record['status'] not in ('draft', 'review', 'approved', 'inactive'):
                 raise ValueError('Invalid portal catalog status')
-            f = record['fields']
+            f = dict(record['fields'])
+            pricing = record.get('pricing')
+            if pricing:
+                units = {'person': 'Por pessoa', 'group': 'Por grupo', 'hour': 'Por hora', 'service': 'Por serviço'}
+                states = {'confirmed': 'Confirmado', 'estimated': 'Estimado', 'pending': 'Por confirmar'}
+                amount = pricing['amount'].replace(',', '.')
+                value = f"{amount} {pricing['currency']}" if amount else 'Valor por confirmar'
+                f['price'] = f"{value} · {units[pricing['unit']]} · {states[pricing['status']]}"
+                if record['fields']['price']:
+                    f['price'] += ' — ' + record['fields']['price']
             row = {**record['raw'], '_catalog_id': record['id'], '_catalog_status': record['status'],
                    '_catalog_revision': record['revision'], '_catalog_source': 'portal/catalog.sqlite',
                    '_source_sheet': record['raw'].get('_source_sheet', 'PORTAL'),
@@ -42,9 +51,15 @@ def integrate_portal(data_dir: Path, tables: dict):
                    'morada': f['address'], 'contactos': f['contacts'],
                    'acessibilidade_nivel_de_confirmacao': f['accessibility'], 'site_fonte': f['source'],
                    'esforco_fisico': f['effort'], 'horario': f['hours']}
+            if record.get('subcategory'):
+                row['subcategoria'] = record['subcategory']
+            if pricing:
+                row['_pricing'] = pricing
             # Keep the structured questionnaire profile intact, including explicit unknowns.
             if record.get('matching') is not None:
-                row['_matching'] = record['matching']
+                row['_matching'] = dict(record['matching'])
+                if pricing:
+                    row['_matching']['pricePerPerson'] = float(pricing['amount'].replace(',', '.')) if pricing['currency'] == 'EUR' and pricing['unit'] == 'person' and pricing['amount'] and pricing['status'] != 'pending' else None
             if category == 'atracoes':
                 row.update(id=record['raw'].get('id', record['id']), nome_da_atracao=f['name'], cidade=f['location'],
                            descricao_curada=f['description'], tempo_medio_de_visita=f['duration'], preco_da_atracao=f['price'], categoria=f['kind'])
