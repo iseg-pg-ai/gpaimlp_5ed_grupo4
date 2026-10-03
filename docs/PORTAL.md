@@ -139,8 +139,10 @@ npm test
 npm run build
 ```
 
-`npm run check` acrescenta `format:check` a estas verificações e deve terminar sem
-avisos antes de integrar alterações no portal.
+`npm run check` acrescenta `format:check` a estas verificações. Neste branch
+documental, essa etapa continua a identificar formatação antiga em ficheiros de
+código; a correção deve ser feita num branch próprio para não misturar alterações
+funcionais e documentais.
 
 Com o portal iniciado na porta 3001:
 

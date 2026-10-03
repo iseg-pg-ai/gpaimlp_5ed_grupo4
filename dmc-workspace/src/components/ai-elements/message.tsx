@@ -5,7 +5,7 @@ import { Sparkles, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-interface MessageProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface MessageProps extends React.HTMLAttributes<HTMLDivElement> {
   from: "user" | "assistant" | "system";
   children: React.ReactNode;
 }
@@ -26,7 +26,7 @@ export const Message = React.forwardRef<HTMLDivElement, MessageProps>(
 );
 Message.displayName = "Message";
 
-interface MessageContentProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface MessageContentProps extends React.HTMLAttributes<HTMLDivElement> {
   from?: "user" | "assistant" | "system";
 }
 
@@ -113,7 +113,7 @@ export const MessageActions: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
 };
 MessageActions.displayName = "MessageActions";
 
-interface MessageActionProps extends React.ComponentProps<typeof Button> {
+export interface MessageActionProps extends React.ComponentProps<typeof Button> {
   label: string;
 }
 

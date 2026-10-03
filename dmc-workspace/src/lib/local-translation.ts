@@ -4,7 +4,7 @@ import { TranslationError } from "./translation-error.ts";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import type { Locale } from "./locales";
-type TranslationItem = { text: string; source: "pt" | "en" };
+export type TranslationItem = { text: string; source: "pt" | "en" };
 type Pending = {
   resolve: (texts: string[]) => void;
   reject: (error: Error) => void;

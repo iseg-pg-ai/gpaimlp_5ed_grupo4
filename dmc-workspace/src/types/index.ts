@@ -42,7 +42,7 @@ export interface ActivityItem {
   pendingChecks?: string[];
 }
 
-interface DailyRouteSummary {
+export interface DailyRouteSummary {
   totalTransitTime: string; // e.g. "48 min"
   totalDistance: string; // e.g. "19.5 km"
   legsCount: number;

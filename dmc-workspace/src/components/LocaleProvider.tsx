@@ -13,7 +13,7 @@ type Context = {
   request: (text: string, source: "pt" | "en") => void;
 };
 const LocaleContext = createContext<Context | null>(null);
-function Flag({ code }: { code: string }) {
+export function Flag({ code }: { code: string }) {
   return (
     <svg
       viewBox="0 0 30 20"
