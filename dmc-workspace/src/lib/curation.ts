@@ -1,3 +1,8 @@
+import {
+  emptyPersonalization,
+  validatePersonalization,
+  accompanimentMatches,
+} from "./brief-personalization.ts";
 import type { CustomerBrief, ItineraryDay, ActivityItem } from "../types/index";
 import { matchCatalogProfile, validateMatching, type MatchingProfile } from "./catalog-matching.ts";
 
@@ -18,6 +23,7 @@ const text = (row: Row, key: string) => String(row[key] ?? "");
 export function validateBrief(value: unknown): asserts value is CustomerBrief {
   if (!value || typeof value !== "object") throw new Error("Briefing inválido.");
   const b = value as CustomerBrief;
+  if (b.personalization !== undefined) validatePersonalization(b.personalization);
   for (const field of [
     "customerName",
     "destination",
@@ -173,19 +179,52 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
     .filter(([table]) => table !== "curation_rules")
     .flatMap(([table, records]) => records.map((row) => ({ table, row })));
   const used = new Set<string>();
-  let remainingBudget = brief.budget;
+  const personalization = brief.personalization ?? emptyPersonalization();
+  const fulfilled = new Set<string>();
+  if (personalization.groupNeeds.trim())
+    pending.push(`Necessidades do grupo para revisão do curador: ${personalization.groupNeeds}`);
+  if (
+    ["guided", "private"].includes(personalization.accompaniment) &&
+    personalization.guideLanguage
+  )
+    pending.push(
+      `Idioma de acompanhamento a confirmar com o fornecedor: ${personalization.guideLanguage}`,
+    );
+  if (personalization.accompaniment !== "any")
+    pending.push(
+      "Acompanhamento filtrado pela modalidade explícita do catálogo; disponibilidade por confirmar.",
+    );
+  if (personalization.budgetFlex)
+    pending.push(
+      `Margem de orçamento autorizada: ${personalization.budgetFlex}%. Limite de referência: ${brief.budget * (1 + personalization.budgetFlex / 100)} EUR; não constitui cotação.`,
+    );
+  let remainingBudget = brief.budget * (1 + personalization.budgetFlex / 100);
   const maxEffort = brief.physicalEffort.startsWith("Baixo")
     ? 0
     : brief.physicalEffort.startsWith("Moderado")
       ? 1
       : 2;
-  const limit = brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4;
+  const limit = personalization.extraBreaks
+    ? 2
+    : brief.pace === "Relaxed"
+      ? 2
+      : brief.pace === "Balanced"
+        ? 3
+        : 4;
   const itinerary: ItineraryDay[] = Array.from({ length: count }, (_, i) => {
     const city = route[Math.floor((i * route.length) / count)];
     const date = new Date(Date.parse(brief.startDate) + i * 86400000).toISOString().slice(0, 10);
     const candidates = all
       .filter(({ row, table }) => {
         if (row._catalog_status !== "approved") return false;
+        if (personalization.avoid.includes(String(row.subcategoria ?? ""))) return false;
+        // An unclassified record cannot be certified as outside the excluded subcategories.
+        if (personalization.avoid.length && !row.subcategoria) return false;
+        if (
+          table !== "restaurantes" &&
+          !accompanimentMatches(row.modalidade, personalization.accompaniment)
+        )
+          return false;
         const profile = row._matching as MatchingProfile | undefined;
         if (profile !== undefined) {
           try {
@@ -224,6 +263,10 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         const matching =
           profile && matchCatalogProfile(profile, brief, date, candidate.table === "restaurantes");
         const score =
+          (personalization.mustHave.includes(String(candidate.row.subcategoria)) &&
+          !fulfilled.has(String(candidate.row.subcategoria))
+            ? 1000
+            : 0) +
           (matching
             ? matching.score
             : brief.interests.reduce(
@@ -247,6 +290,7 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
       if (estimated > remainingBudget) continue;
       remainingBudget -= estimated;
       selected.push(candidate);
+      fulfilled.add(String(candidate.row.subcategoria));
     }
     const items: ActivityItem[] = selected.map(({ row, table, matching }) => {
       const profile = row._matching as MatchingProfile | undefined;
@@ -297,6 +341,9 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
           "R09: sem repetição",
           "R16: esforço conhecido filtrado",
           ...(matching ? matching.reasons : []),
+          ...(personalization.mustHave.includes(String(row.subcategoria))
+            ? [`Imperdível solicitado: ${row.subcategoria}`]
+            : []),
         ],
         accessibilityNotes: text(row, "acessibilidade_nivel_de_confirmacao"),
         dietaryNotes: text(row, "opcoes_alimentares_alergenios"),
@@ -324,6 +371,15 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
       items,
     };
   });
+  for (const required of personalization.mustHave)
+    if (!fulfilled.has(required))
+      pending.push(
+        `Imperdível não incluído por falta de oferta elegível, orçamento ou espaço no roteiro: ${required}`,
+      );
+  if (personalization.extraBreaks)
+    pending.push(
+      "Pausas adicionais: máximo de duas sugestões por dia; horários e intervalos por confirmar.",
+    );
   return { itinerary, pending, ruleIds: requiredRules };
 }
 

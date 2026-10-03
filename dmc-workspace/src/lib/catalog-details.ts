@@ -1,4 +1,4 @@
-import type { CatalogRecord } from "./catalog-schema";
+import { formatPricing, type CatalogRecord } from "./catalog-schema.ts";
 
 export type CatalogDetails = {
   location: string;
@@ -38,7 +38,9 @@ export function detailsFromRecord(record: CatalogRecord): CatalogDetails {
   const f = record.fields;
   return {
     location: f.address || f.location,
-    price: f.price,
+    price: record.pricing
+      ? `${formatPricing(record.pricing)}${f.price ? ` — ${f.price}` : ""}`
+      : f.price,
     supplier: f.provider || (record.category === "restaurantes" ? f.name : ""),
     contact: f.contacts,
     hours: f.hours,

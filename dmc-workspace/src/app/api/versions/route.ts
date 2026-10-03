@@ -112,11 +112,22 @@ export async function GET(request: Request) {
         },
       });
     }
-    return Response.json({ meta: store.list(id).find(v => v.version === version), snapshot: JSON.parse(row.snapshot) }, { headers });
+    return Response.json(
+      {
+        meta: store.list(id).find((v) => v.version === version),
+        snapshot: JSON.parse(row.snapshot),
+      },
+      { headers },
+    );
   } catch (error) {
-    if (error instanceof TranslationError) return Response.json({ error: error.message, code: error.code }, { status: 503, headers });
+    if (error instanceof TranslationError)
+      return Response.json({ error: error.message, code: error.code }, { status: 503, headers });
     console.error("PDF export failed", error);
-    return Response.json({ error: "Não foi possível gerar ou carregar o PDF. A versão guardada foi preservada." }, { status: 500, headers });
+    return Response.json(
+      { error: "Não foi possível gerar ou carregar o PDF. A versão guardada foi preservada." },
+      { status: 500, headers },
+    );
+  } finally {
+    store.close();
   }
-  finally { store.close(); }
 }

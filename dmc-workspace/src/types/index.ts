@@ -72,6 +72,7 @@ export type DiningPace =
 export type MorningPreference = "Early (08:30)" | "Standard (09:30)" | "Late Start (10:30+)";
 
 export interface CustomerBrief {
+  personalization?: import("../lib/brief-personalization").Personalization;
   customerName: string;
   adults: number;
   children: number;

@@ -117,13 +117,37 @@ try {
         await page.locator("#tab-atracoes").click();
         await page.getByRole("button", { name: "+ Novo Registo", exact: true }).click();
         const form = page.getByTestId("catalog-editor");
+        await form.locator('[name="category"]').selectOption("experiencias");
+        await form.locator('[name="subcategory"]').selectOption("Visita guiada");
+        await form.locator('[name="category"]').selectOption("restaurantes");
+        assert.equal(await form.locator('[name="subcategory"]').inputValue(), "");
+        assert.equal(
+          await form
+            .locator('[name="subcategory"] option')
+            .filter({ hasText: "Visita guiada" })
+            .count(),
+          0,
+        );
+        await form.locator('[name="subcategory"]').selectOption("Peixe e marisco");
+        await form.locator('[name="category"]').selectOption("atracoes");
+        await form.locator('[name="subcategory"]').selectOption("Museu e galeria");
         await form.locator('[name="name"]').fill("Portal Test");
+        assert.equal(await form.getByTestId("catalog-field-group").count(), 5);
+        assert.equal(await form.locator("progress").first().getAttribute("value"), "50");
+        await form.locator('[name="description"]').fill("Descrição da oferta");
+        assert.equal(await form.locator("progress").first().getAttribute("value"), "100");
+        await form.locator('[name="pricing-status"]').selectOption("pending");
+        await form.locator('[name="pricing-unit"]').selectOption("group");
+        assert.equal(await form.locator("progress").nth(3).getAttribute("value"), "100");
         await form.locator('button[type="submit"]').click();
         await form.waitFor({ state: "hidden" });
         await page.getByTestId("catalog-search").fill("portal test");
         assert.equal(await page.getByTestId("catalog-record").count(), 1);
         const card = page.getByTestId("catalog-record");
         await card.getByRole("button", { name: "Editar", exact: true }).click();
+        assert.equal(await form.locator('[name="subcategory"]').inputValue(), "Museu e galeria");
+        assert.equal(await form.locator('[name="pricing-unit"]').inputValue(), "group");
+        assert.equal(await form.locator('[name="pricing-amount"]').inputValue(), "");
         await form.locator('[name="reason"]').fill("Correção");
         const compatibility = form.getByTestId("catalog-compatibility");
         await compatibility.locator("details").first().locator("summary").click();
