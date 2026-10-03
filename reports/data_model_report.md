@@ -1,36 +1,55 @@
-# BLU warehouse data-model report
+# Modelo de dados do warehouse BLU
 
-## Modelling approach
+## Abordagem
 
-The warehouse uses a pragmatic analytical model: each source worksheet becomes a business entity, and the PDF corpus is represented as a document-to-page relationship. JSONL exports preserve portable, row-level outputs; SQLite provides the query layer used by the dashboard.
+O warehouse usa um modelo analítico pragmático. Cada folha das fontes representa
+uma entidade de negócio; o corpus de PDFs é representado pela relação entre
+documentos e páginas. Os ficheiros JSONL preservam entregas portáteis por registo e
+o SQLite fornece a camada de consulta usada pelo dashboard.
 
-| Entity | Grain | Business key | Purpose |
+| Entidade | Grão | Chave de negócio | Finalidade |
 | --- | --- | --- | --- |
-| `atracoes` | One attraction | `id` | Curated places for itinerary selection. |
-| `restaurantes` | One restaurant | `id_blu` | Dining catalog and operational notes. |
-| `experiencias` | One experience | `nome_da_experiencia` | Curated activities and suppliers. |
-| `precos` | One price reference | `id` | Reference-price catalog. |
-| `curation_principles` | One principle | `id` | High-level decision principles. |
-| `curation_rules` | One operational rule | `id` | Rules that guide itinerary curation. |
-| `data_request` | One requested data definition | Source row | Data-governance requirements; labels are intentionally not forced unique. |
-| `proposal_documents` | One source PDF file instance | `document_id` | Proposal-level metadata, text, and derived search facets. |
-| `proposal_pages` | One extracted PDF page | `(document_id, page_number)` | Searchable page text and source traceability. |
+| `atracoes` | Uma atração | `id` | Locais selecionáveis para itinerários. |
+| `restaurantes` | Um restaurante | `id_blu` | Oferta de restauração e notas operacionais. |
+| `experiencias` | Uma experiência | `nome_da_experiencia` | Experiências e fornecedores. |
+| `precos` | Uma referência de preço | `id` | Catálogo de preços de referência. |
+| `curation_principles` | Um princípio | `id` | Princípios gerais de decisão. |
+| `curation_rules` | Uma regra operacional | `id` | Regras usadas na curadoria dos itinerários. |
+| `data_request` | Uma definição solicitada | Linha da fonte | Requisitos de governação; os nomes podem repetir-se. |
+| `proposal_documents` | Uma instância de PDF | `document_id` | Metadados, texto e facetas da proposta. |
+| `proposal_pages` | Uma página de PDF | `(document_id, page_number)` | Texto pesquisável e rastreabilidade da página. |
 
-## Relationships and lineage
+## Relações e linhagem
 
-`proposal_documents` has a one-to-many relationship with `proposal_pages` through `document_id`. Every worksheet record retains `_source_sheet` and `_source_row`; every PDF record retains `source_file`, and page records retain `page_number`. The ETL verifies that no orphan page references remain.
+`proposal_documents` tem uma relação de um para muitos com `proposal_pages` por
+`document_id`. Cada registo de uma folha mantém `_source_sheet` e `_source_row`.
+Cada PDF mantém `source_file` e cada página mantém `page_number`. O ETL valida que
+não existem páginas órfãs.
 
-The document identifier represents a supplied file instance. `content_sha256` is also retained to enable duplicate-content analysis without collapsing separately supplied files.
+O identificador do documento representa uma instância do ficheiro fornecido. O
+`content_sha256` permite detetar conteúdo duplicado sem fundir ficheiros entregues
+separadamente.
 
-## Analytical layer
+## Camada analítica
 
-Two explainable models are materialized after validation:
+São publicados dois modelos explicáveis:
 
-1. `model_catalog_readiness` scores each attraction, restaurant, and experience by the percentage of fields needed for curation that are populated. It is an operational data-readiness score, not a prediction.
-2. `model_proposal_complexity` scores proposal-processing effort using 45% page count, 45% extracted-text volume, and 10% price-reference density. Scores are normalized inside the current proposal corpus.
+1. `model_catalog_readiness` calcula a percentagem de campos necessários à
+   curadoria que estão preenchidos em cada atração, restaurante e experiência.
+2. `model_proposal_complexity` estima o esforço de processamento da proposta com
+   45% do número de páginas, 45% do volume de texto extraído e 10% da densidade de
+   referências a preços.
 
-The KPI layer aggregates catalog coverage, price-reference distributions, proposal extraction coverage, and table completeness. No predictive machine-learning model is fitted because the source data contains no observed outcome or target variable (for example, booking conversion, revenue, satisfaction, or itinerary acceptance).
+Os scores são normalizados dentro do corpus atual. Não são modelos preditivos: as
+fontes não incluem uma variável de resultado observada, como conversão, receita,
+satisfação ou aceitação do itinerário.
 
-## Data-quality observations
+## Qualidade dos dados
 
-Structural validation passes: all entity keys are present and unique, coordinates are in valid ranges, and every proposal page belongs to a document. The validation report retains optional-field completeness so operations can prioritize enrichment, especially missing geographic and operational attributes in catalog and price records.
+A validação estrutural verifica chaves obrigatórias e únicas, intervalos válidos de
+coordenadas e a relação entre documentos e páginas. O relatório de validação também
+mantém a completude dos campos opcionais para orientar o enriquecimento de atributos
+geográficos, operacionais e comerciais.
+
+Consulte o [contrato do ETL](../README_ETL.md) para os artefactos publicados e as
+regras de substituição do warehouse.
