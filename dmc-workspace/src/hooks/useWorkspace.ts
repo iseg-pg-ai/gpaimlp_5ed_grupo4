@@ -19,6 +19,7 @@ type Trip = {
   messages: ChatMessage[];
 };
 type HistoryVersion = {
+  exportedLocales?: string[];
   version: number;
   filename: string;
   createdAt: string;
@@ -189,6 +190,14 @@ export function useWorkspace() {
       link.remove();
       setExportedVersions((prev) => ({ ...prev, [`${saved.id}:${saved.version}`]: true }));
       setTimeout(() => URL.revokeObjectURL(url), 60000);
+      // Refresh archived languages even when export reused the current version.
+      try {
+        const historyResponse = await fetch(`/api/versions?tripId=${encodeURIComponent(saved.id)}`);
+        if (historyResponse.ok)
+          setHistory({ id: saved.id, versions: await historyResponse.json() });
+      } catch {
+        // A history refresh failure must not turn a completed download into an export error.
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha na exportação.");
     } finally {
