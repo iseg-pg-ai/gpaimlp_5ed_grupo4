@@ -1,21 +1,30 @@
-# BLU Costa Travel · AI Travel Designer Workspace
+# DMC Workspace
 
-Frontend UI Prototype for an AI-powered travel designer workspace at a luxury Destination Management Company (DMC).
+Portal operacional da BLU Costa Travel para briefing, catálogo, geração e revisão
+de itinerários, confirmação de atividades e exportação de propostas versionadas.
 
-- **Brand**: [BLU Costa Travel](https://www.blucostatravel.com/) (RNAAT 26/2026)
-- **Tech Stack**: Next.js 16 (Turbopack), React 19, TypeScript, Tailwind CSS v4, shadcn/ui, AI Elements.
+## Arranque
 
-## Quick Start
+Executar primeiro o ETL na raiz do repositório. Depois, nesta pasta:
 
-```bash
-npm install
+```powershell
+npm ci
 npm run dev -- -p 3001
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser.
+Abrir [http://localhost:3001](http://localhost:3001).
 
-## Full Documentation
+## Verificação
 
-For the complete guide on how the dashboard works, curation rules alignment (Rules R01–R51), component architecture, and the step-by-step walkthrough, see:
+```powershell
+npm run check
+npm run build
+```
 
-👉 **[README_UIMOCK.md](../README_UIMOCK.md)**
+Os testes de navegador exigem o portal iniciado na porta 3001.
+
+## Documentação
+
+Consulte o [guia completo do portal](../docs/PORTAL.md), o
+[estado das funcionalidades](../docs/STATUS.md) e o
+[README principal](../README.md).

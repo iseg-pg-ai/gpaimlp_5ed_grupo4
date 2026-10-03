@@ -1,9 +1,11 @@
 import { outstandingChecks } from "./activity-confirmation.ts";
+import { renderBudget } from "./budget-pdf.ts";
 import PDFDocument from "pdfkit";
 import { existsSync } from "node:fs";
 import type { CustomerBrief, ItineraryDay } from "../types/index";
 export type Snapshot = { brief: CustomerBrief; itinerary: ItineraryDay[]; pending: string[] };
 export type VersionMeta = {
+  exportedLocales?: string[];
   exportedAt?: string | null;
   tripId: string;
   version: number;
@@ -143,6 +145,7 @@ export function renderPdf(
       text(
         "Este documento reproduz uma versão guardada. As confirmações por atividade refletem a verificação manual registada pelo curador. Os restantes dados e condições operacionais continuam sujeitos a confirmação.",
       );
+      renderBudget(doc, snapshot, meta, options);
       const range = doc.bufferedPageRange();
       for (let i = 0; i < range.count; i++) {
         doc.switchToPage(i);

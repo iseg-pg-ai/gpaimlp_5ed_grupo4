@@ -34,7 +34,8 @@ test("catalog revisions survive reopen, reject stale edits and immediately revok
       children: "allowed",
       maxGroup: 8,
     };
-    const first = store.save({ ...input(), matching });
+    const pricing = { amount: "12,50", currency: "EUR", unit: "person", status: "estimated" };
+    const first = store.save({ ...input(), matching, pricing, subcategory: "Museu e galeria" });
     const approved = store.save({ ...input(), id: first.id, baseRevision: 1, status: "approved" });
     const warehouse = { _catalog_id: first.id, _catalog_revision: 2, _catalog_status: "approved" };
     assert.ok(store.isPublished(warehouse));
@@ -43,6 +44,10 @@ test("catalog revisions survive reopen, reject stale edits and immediately revok
     assert.equal(inactive.id, approved.id);
     assert.ok(!store.isPublished(warehouse));
     assert.equal(store.history(first.id).length, 3);
+    assert.equal(store.history(first.id)[0].subcategory, "Museu e galeria");
+    assert.throws(() => store.save({ ...input(), subcategory: "Peixe e marisco" }), /Subcategoria/);
+    assert.deepEqual(store.history(first.id)[0].pricing, pricing);
+    assert.deepEqual(store.history(first.id)[2].pricing, pricing);
     assert.equal(store.history(first.id)[2].status, "draft");
     assert.deepEqual(store.history(first.id)[2].matching, matching);
     assert.deepEqual(store.history(first.id)[0].matching, matching);

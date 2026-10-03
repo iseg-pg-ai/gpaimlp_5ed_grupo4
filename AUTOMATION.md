@@ -1,105 +1,78 @@
-# Fluxo local atual
+# Automação e operações
 
-Execute `powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1 -SkipInstall`.
-O script interrompe a execução se um comando falhar. Os testes escrevem apenas em
-pastas temporárias isoladas, nunca no warehouse operacional.
+## Fluxo local completo
 
-A ingestão percorre `data/` recursivamente e publica um warehouse validado.
-Consulte [README_ETL.md](README_ETL.md) para o contrato de origem local, inventário
-de ficheiros e preparação para uma futura origem S3. O DMC Workspace lê a saída
-em http://localhost:3001; o servidor é iniciado separadamente.
-
-## Documentação complementar
-
-# BLU pipeline automation and operations
-
-## Purpose
-
-This project turns the raw workbook and proposal PDFs in `data/` into an auditable analytical warehouse, validates the transformed data, creates KPIs and transparent scoring models, and makes the results available through Streamlit.
-
-## One-command local run
-
-From the repository root, run:
+Na raiz do repositório:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1
 ```
 
-The script performs these stages in order and fails fast if any stage fails:
+O script:
 
-1. Installs `virtualenv` with the system Python and creates `.venv` when it does not exist.
-2. Installs the pinned dependencies from `requirements.txt`.
-3. Runs `etl.pipeline`, which extracts all files in `data/`, transforms them, and rebuilds `warehouse/`.
-4. Runs the validation release gate. The run proceeds only when `validation_report.json` has `status: passed`.
-5. Compiles the ETL/dashboard modules and runs the end-to-end test.
+1. cria `.venv`, caso não exista;
+2. instala as dependências fixadas em `requirements.txt`;
+3. executa o ETL, a validação, os KPIs e os modelos analíticos;
+4. exige `status: passed` em `warehouse/validation_report.json`;
+5. compila os módulos Python e executa os testes de regressão do ETL.
 
-To skip installation in an already prepared environment:
+Para ignorar a instalação num ambiente atualizado:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1 -SkipInstall
 ```
 
-To choose an alternative input or delivery path:
+Para usar outros diretórios:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1 -DataDirectory data -OutputDirectory warehouse
+powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1 `
+  -DataDirectory data `
+  -OutputDirectory warehouse
 ```
 
-## Dashboard operations
+## Dashboard analítico
 
-Run the data pipeline first, then start the dashboard:
+Depois de publicar o warehouse:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1
 ```
 
-Visit `http://localhost:8501`. Use another port when required:
+Abrir [http://localhost:8501](http://localhost:8501). Para escolher outra porta:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1 -Port 8502
 ```
 
-The dashboard reads only generated warehouse artifacts; it does not edit raw source data.
+O dashboard lê os artefactos gerados e não edita as fontes.
 
-## Data flow and outputs
+## Integração contínua
 
-```text
-data/*.xlsx + data/**/*.pdf
-            │
-            ▼
-       etl.pipeline
-            │
-            ├── validation_report.json + data_quality_issues.jsonl
-            ├── kpis.json
-            ├── model_catalog_readiness.jsonl
-            ├── model_proposal_complexity.jsonl
-            ├── table-level JSONL files
-            └── blu_etl.sqlite
-                     │
-                     ▼
-              Streamlit dashboard
-```
+O workflow `.github/workflows/data-pipeline.yml` é executado quando mudam dados,
+ETL, dashboard, testes, dependências ou scripts. Valida o lock e os exports de
+dependências, reconstrói o warehouse, executa a validação e os testes e publica o
+artefacto `blu-warehouse`.
 
-`warehouse/` is intentionally regenerated on every run. Treat it as a delivery artifact, not a manual editing location.
+Não existe atualização agendada das fontes. Um agendamento só deve ser criado
+depois de serem definidos a cadência, a origem e o processo de aprovação.
 
-## Validation release gate
+## Recuperação e resolução de problemas
 
-Validation checks primary keys, duplicate keys, coordinate ranges, and the document-to-page relationship. Optional-field completeness is reported by table and does not itself fail a run. Investigate every non-empty `data_quality_issues.jsonl` before publishing a warehouse externally.
+- **`.venv` em falta:** executar o fluxo completo sem `-SkipInstall`.
+- **Falha de instalação:** confirmar acesso à Internet e repetir a instalação.
+- **Validação falhou:** consultar `warehouse/validation_report.json` e
+  `warehouse/data_quality_issues.jsonl`, corrigir a fonte e repetir o ETL.
+- **Dashboard sem warehouse:** executar primeiro a pipeline.
+- **Portal sem catálogo aprovado:** rever o catálogo e voltar a publicar pelo ETL.
+- **Tradução local indisponível:** instalar o grupo `translation` e executar
+  `translations/setup_models.py`.
 
-## Data model and analytics
+## Cópias de segurança
 
-The definitive entity grain, keys, relationships, lineage, and scoring logic are documented in [the data-model report](reports/data_model_report.md). The model outputs are explainable scores, not predictive ML, because the current source has no observed outcome variable.
+- Fazer backup de `exports/itineraries/` para preservar versões e PDFs.
+- Fazer backup de `data/portal/catalog.sqlite` com o portal e o ETL parados.
+- Não guardar segredos, credenciais ou ficheiros `.env` no Git.
+- Não tratar `warehouse/` como fonte editável.
 
-## Continuous integration
-
-`.github/workflows/data-pipeline.yml` executes on relevant pushes, pull requests, or manual dispatch. It installs dependencies, rebuilds the warehouse, applies the validation gate, runs regression tests, and uploads the warehouse as the `blu-warehouse` workflow artifact.
-
-For a scheduled refresh in GitHub Actions, add a `schedule` trigger to that workflow only after deciding the source-data refresh cadence and committing an approved automated source update process. For local scheduled runs, create a Windows Task Scheduler task that invokes `powershell.exe -ExecutionPolicy Bypass -File <repository>\scripts\run_full_pipeline.ps1` from the repository root.
-
-## Recovery and troubleshooting
-
-- Missing `.venv`: run the one-command script; it bootstraps the environment.
-- Failed package installation: confirm internet access, then rerun without `-SkipInstall`.
-- Validation failure: inspect `warehouse/validation_report.json` and `warehouse/data_quality_issues.jsonl`; correct the raw data and rerun.
-- Dashboard reports a missing warehouse: run the pipeline before starting Streamlit.
-- Dashboard code changes: Streamlit detects and reloads them automatically.
+Consulte também [o contrato do ETL](README_ETL.md) e o
+[guia do portal](docs/PORTAL.md).

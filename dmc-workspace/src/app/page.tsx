@@ -2,7 +2,8 @@
 import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
-import { MessageCircle, X } from "lucide-react";
+import { languages } from "@/lib/locales";
+import { MessageCircle, X, Download } from "lucide-react";
 import { useState, useRef } from "react";
 import { ResponsiveNavigation } from "@/components/ResponsiveNavigation";
 import { Sidebar } from "@/components/Sidebar";
@@ -116,48 +117,80 @@ export default function WorkspacePage() {
                   )}
                   proposalTools={
                     <>
-                      <div className="px-4 py-3 flex flex-wrap items-center gap-3">
-                        <T text="Idioma do cliente (PDF)" source="pt" />
-                        <LanguagePicker
-                          value={active.clientLanguage ?? clientLanguage}
-                          onChange={changeClientLanguage}
-                        />
-                        <span className="text-xs">
-                          <T
-                            text="Inclui sempre a versão em português. Os dois PDFs são descarregados num ZIP."
-                            source="pt"
+                      <div data-testid="delivery-panel" className="p-4 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-base font-semibold text-[#143F4B]">
+                            <T text="Versão" source="pt" />{" "}
+                            {active.version ? String(active.version).padStart(3, "0") : "—"} ·
+                            Português
+                            {(active.clientLanguage ?? clientLanguage) !== "pt" &&
+                              ` + ${languages.find((l) => l.code === (active.clientLanguage ?? clientLanguage))?.name}`}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={exportPdf}
+                            disabled={saving || exporting}
+                            className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#245C49] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                          >
+                            <Download aria-hidden="true" className="size-4 shrink-0" />
+                            <T text={exporting ? "A exportar…" : "Descarregar PDFs"} source="pt" />
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <T text="Idioma do cliente (PDF)" source="pt" />
+                          <LanguagePicker
+                            value={active.clientLanguage ?? clientLanguage}
+                            onChange={changeClientLanguage}
                           />
-                        </span>
+                          <span className="text-xs">
+                            <T
+                              text="Inclui sempre a versão em português. Os dois PDFs são descarregados num ZIP."
+                              source="pt"
+                            />
+                          </span>
+                        </div>
+                        <details className="border-t pt-3 text-sm" data-testid="delivery-history">
+                          <summary>
+                            <T text="Versões guardadas ·" source="pt" />{" "}
+                            {active.version
+                              ? `v${String(active.version).padStart(3, "0")}`
+                              : "Ainda sem versão no servidor"}
+                          </summary>
+                          <button
+                            type="button"
+                            className="underline my-2"
+                            onClick={reopenLatest}
+                            disabled={saving || exporting}
+                          >
+                            <T text="Reabrir última versão guardada" source="pt" />
+                          </button>
+                          {(history.id === activeId ? history.versions : []).map((v) => (
+                            <div key={v.version} className="my-2 break-words">
+                              <a
+                                className="underline"
+                                href={`/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`}
+                              >
+                                {v.filename}
+                              </a>
+                              <span className="ml-2">
+                                {new Date(v.createdAt).toLocaleString(dateLocale)}
+                              </span>
+                              <div className="mt-1 flex flex-wrap gap-3">
+                                {(v.exportedLocales ?? []).map((language) => (
+                                  <a
+                                    key={language}
+                                    className="underline"
+                                    href={`/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=pdf&locale=${language}`}
+                                  >
+                                    {languages.find((l) => l.code === language)?.name ?? language} ·
+                                    PDF
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </details>
                       </div>
-                      <details className="p-4 text-sm">
-                        <summary>
-                          <T text="Versões guardadas ·" source="pt" />{" "}
-                          {active.version
-                            ? `v${String(active.version).padStart(3, "0")}`
-                            : "Ainda sem versão no servidor"}
-                        </summary>
-                        <button
-                          type="button"
-                          className="underline my-2"
-                          onClick={reopenLatest}
-                          disabled={saving || exporting}
-                        >
-                          <T text="Reabrir última versão guardada" source="pt" />
-                        </button>
-                        {(history.id === activeId ? history.versions : []).map((v) => (
-                          <div key={v.version} className="my-2 break-words">
-                            <a
-                              className="underline"
-                              href={`/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`}
-                            >
-                              {v.filename}
-                            </a>
-                            <span className="ml-2">
-                              {new Date(v.createdAt).toLocaleString(dateLocale)}
-                            </span>
-                          </div>
-                        ))}
-                      </details>
                       {saving && (
                         <p role="status" className="px-4">
                           <T text="A guardar nova versão…" source="pt" />
@@ -193,8 +226,6 @@ export default function WorkspacePage() {
                       ),
                     }))
                   }
-                  onExportPdf={exportPdf}
-                  isExporting={exporting || saving}
                   onEditBrief={editBrief}
                   onToggleLockActivity={(dayNumber, id) =>
                     update((t) => ({

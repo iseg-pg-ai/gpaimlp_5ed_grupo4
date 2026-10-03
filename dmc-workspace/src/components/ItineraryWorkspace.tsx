@@ -10,15 +10,13 @@ import { TransitConnector } from "./TransitConnector";
 import { TransitInspectorModal } from "./TransitInspectorModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MapPin, Download, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Calendar, Users, MapPin, SlidersHorizontal, Sparkles } from "lucide-react";
 
 interface ItineraryWorkspaceProps {
   brief: CustomerBrief;
   itinerary: ItineraryDay[];
   highlightedDay: number | null;
   onEditBrief: () => void;
-  onExportPdf: () => void;
-  isExporting?: boolean;
   displayBudget: string;
   proposalTools?: React.ReactNode;
   version?: number;
@@ -37,8 +35,6 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   itinerary,
   highlightedDay,
   onEditBrief,
-  onExportPdf,
-  isExporting,
   displayBudget,
   proposalTools,
   version,
@@ -100,15 +96,6 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
             </p>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Button
-              variant="primaryDark"
-              onClick={onExportPdf}
-              disabled={isExporting}
-              className="min-h-11 text-sm"
-            >
-              <Download aria-hidden="true" className="size-4" />
-              <T text={isExporting ? "A exportar…" : "Exportar PDF"} source="pt" />
-            </Button>
             <Button variant="outline" onClick={onEditBrief} className="min-h-11 text-sm">
               <SlidersHorizontal aria-hidden="true" className="size-4" />
               <T text="Edit Brief" />
@@ -215,15 +202,12 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
             </dl>
           </details>
           {proposalTools && (
-            <details
+            <section
               data-testid="proposal-tools"
-              className="mt-3 rounded-xl border border-[#DDD8CE] bg-[#FFFEFA] text-sm"
+              className="mt-4 rounded-xl border border-[#DDD8CE] bg-[#FFFEFA] text-sm"
             >
-              <summary className="cursor-pointer px-4 py-3 font-medium text-[#143F4B]">
-                <T text="Exportação, versões e confirmações" source="pt" />
-              </summary>
               {proposalTools}
-            </details>
+            </section>
           )}
         </div>
       </header>

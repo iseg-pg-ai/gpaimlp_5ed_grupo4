@@ -1,8 +1,15 @@
 "use client";
+import { SourceFields } from "../SourceFields";
 import type { RefObject } from "react";
 import { T } from "@/components/LocaleProvider";
 import { CatalogCompatibility } from "@/components/CatalogCompatibility";
-import { statusLabels, fieldLabels, type CatalogRecord, type Fields } from "@/lib/catalog-schema";
+import {
+  formatPricing,
+  statusLabels,
+  fieldLabels,
+  type CatalogRecord,
+  type Fields,
+} from "@/lib/catalog-schema";
 import { catalogButton as button } from "./styles";
 type Props = {
   history: CatalogRecord[];
@@ -38,6 +45,17 @@ export function CatalogHistory({ history, onClose, historyRef }: Props) {
               <summary className="cursor-pointer py-2">
                 <T text="Ver dados desta revisão" source="pt" />
               </summary>
+              {h.operational && <SourceFields value={h.operational} />}
+              {h.subcategory && (
+                <p>
+                  <T text="Subcategoria" source="pt" />: <T text={h.subcategory} source="pt" />
+                </p>
+              )}
+              {h.pricing && (
+                <p className="my-3">
+                  <T text="Preços" source="pt" />: {formatPricing(h.pricing)}
+                </p>
+              )}
               <dl className="grid gap-3 sm:grid-cols-2">
                 {Object.entries(h.fields)
                   .filter(([, v]) => v)
@@ -53,6 +71,7 @@ export function CatalogHistory({ history, onClose, historyRef }: Props) {
               {h.matching && (
                 <div className="mt-4">
                   <CatalogCompatibility
+                    structuredPricing={Boolean(h.pricing)}
                     value={h.matching}
                     restaurant={h.category === "restaurantes"}
                   />

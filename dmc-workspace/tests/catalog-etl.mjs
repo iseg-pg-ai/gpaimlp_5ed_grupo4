@@ -36,9 +36,18 @@ try {
   try {
     record = store.save({
       category: "atracoes",
+      subcategory: "Museu e galeria",
+      operational: {
+        latitude: "38.71",
+        longitude: "-9.13",
+        closures: "Segunda-feira",
+        observations: "Reserva prévia",
+        reservations: "Obrigatória",
+      },
       status: "approved",
       baseRevision: null,
       reason: "Integration test",
+      pricing: { amount: "12,50", currency: "EUR", unit: "person", status: "estimated" },
       matching: {
         ...emptyMatching(),
         interests: ["Culture & Heritage"],
@@ -81,8 +90,14 @@ try {
   const catalog = readCatalog();
   const row = catalog.atracoes.find((r) => r._catalog_id === record.id);
   assert.equal(row._catalog_revision, 1);
+  assert.equal(row.subcategoria, "Museu e galeria");
+  assert.equal(row.latitude, 38.71);
+  assert.equal(row.dias_de_encerramento, "Segunda-feira");
+  assert.equal(row.observacoes, "Reserva prévia");
   assert.equal(row._catalog_status, "approved");
-  assert.deepEqual(row._matching, record.matching);
+  assert.deepEqual(row._matching, { ...record.matching, pricePerPerson: 12.5 });
+  assert.deepEqual(row._pricing, record.pricing);
+  assert.match(row.preco_da_atracao, /12.50 EUR/);
   const brief = JSON.parse(
     readFileSync(new URL("./browser/fixture.json", import.meta.url), "utf8"),
   ).brief;

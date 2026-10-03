@@ -29,7 +29,14 @@ try {
       verification: "",
     };
     if (width === 1440) snapshot.itinerary[0].items[0].catalogDetails = catalogDetails;
-    await page.route("**/api/catalog/itinerary?*", (r) => r.fulfill({ json: catalogDetails }));
+    let releaseCatalog;
+    const catalogReady = new Promise((resolve) => {
+      releaseCatalog = resolve;
+    });
+    await page.route("**/api/catalog/itinerary?*", async (r) => {
+      if (width === 360) await catalogReady;
+      await r.fulfill({ json: catalogDetails });
+    });
     await page.addInitScript((snapshot) => {
       localStorage.setItem("blu-portal-language", "pt");
       if (!localStorage.getItem("blu-trips-v1"))
@@ -70,6 +77,12 @@ try {
     const card = page.getByTestId("activity-card").first(),
       editor = card.getByTestId("activity-confirmations");
     await editor.locator("summary").click();
+    if (width === 360) {
+      await editor
+        .locator('[name="confirmation-location"]')
+        .fill("Local introduzido antes do catálogo");
+      releaseCatalog();
+    }
     await page.waitForFunction(
       () => document.querySelector('[name="confirmation-supplier"]')?.value === "Operador",
     );
@@ -77,6 +90,11 @@ try {
       await editor.locator('[name="confirmation-price"]').inputValue(),
       "12 EUR por pessoa",
     );
+    if (width === 360)
+      assert.equal(
+        await editor.locator('[name="confirmation-location"]').inputValue(),
+        "Local introduzido antes do catálogo",
+      );
     assert.equal(await editor.locator('[name="confirmation-time"]').inputValue(), "");
     await editor.locator('[name="confirmation-time"]').fill("10:30");
     await editor.locator('[name="confirmation-location"]').fill("Entrada principal");

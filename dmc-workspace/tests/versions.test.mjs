@@ -161,3 +161,48 @@ test("localized variants share a snapshot, retain bytes and isolate languages", 
   assert.ok(store.get("languages-test", 1).exportedAt);
   assert.deepEqual(readFileSync(path.join(directory, "languages-test", zh.filename)), zh.bytes);
 });
+
+test("price and budget changes create versions while later exports use the original captured catalogue", async (t) => {
+  const directory = mkdtempSync(path.join(tmpdir(), "blu-frozen-"));
+  const rendered = [];
+  const store = new VersionStore(directory, async (content, meta, locale) => {
+    rendered.push(structuredClone(content));
+    return Buffer.from(JSON.stringify({ content, version: meta.version, locale }));
+  });
+  t.after(() => {
+    store.close();
+    rmSync(directory, { recursive: true, force: true });
+  });
+  const source = {
+    location: "Rua original",
+    price: "20 EUR",
+    supplier: "Original",
+    contact: "",
+    hours: "09:00–18:00",
+    accessibility: "",
+    dietary: "",
+    verification: "",
+  };
+  const proposal = structuredClone(snapshot);
+  proposal.itinerary[0].items[0].catalogDetails = source;
+  const first = store.save("frozen", proposal, "generated", null);
+  const pdf = await store.pdf("frozen", 1);
+  const pt = await store.localizedPdf("frozen", 1, "pt");
+  source.price = "999 EUR";
+  source.location = "Nova morada";
+  proposal.itinerary[0].items[0].priceNote = "999 EUR";
+  const second = store.save("frozen", proposal, "edited", 1);
+  proposal.brief.budget = 5000;
+  const third = store.save("frozen", proposal, "edited", 2);
+  assert.equal(second.version, 2);
+  assert.equal(third.version, 3);
+  assert.notEqual(first.snapshotHash, second.snapshotHash);
+  assert.notEqual(second.snapshotHash, third.snapshotHash);
+  await store.localizedPdf("frozen", 1, "en");
+  assert.equal(rendered.at(-1).itinerary[0].items[0].catalogDetails.price, "20 EUR");
+  assert.equal(rendered.at(-1).brief.budget, 2000);
+  assert.deepEqual((await store.pdf("frozen", 1)).bytes, pdf.bytes);
+  assert.deepEqual((await store.localizedPdf("frozen", 1, "pt")).bytes, pt.bytes);
+  assert.deepEqual(store.list("frozen").find((v) => v.version === 1).exportedLocales, ["en", "pt"]);
+  assert.equal(store.get("frozen", 1).chainHash, first.chainHash);
+});
