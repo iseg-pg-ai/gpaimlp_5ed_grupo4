@@ -3470,5 +3470,133 @@
     "fr": "Confirmez les réponses. Utilisez les étapes ci-dessus pour modifier sans perdre les données.",
     "de": "Bestätigen Sie die Antworten. Verwenden Sie die oben genannten Schritte zum Bearbeiten, ohne die Daten zu verlieren.",
     "zh": "确认答案。使用上述步骤进行编辑而不丢失数据。"
+  },
+  "Todas as folhas do dataset": {
+    "pt": "Todas as folhas do dataset",
+    "en": "All Dataset Sheets",
+    "es": "Todas las hojas de datos",
+    "fr": "Toutes les fiches de données",
+    "de": "Alle Datensätze",
+    "zh": "所有数据集工作表"
+  },
+  "Consulta das fontes importadas pelo ETL. Informação histórica não confirma disponibilidade, preços ou reservas atuais.": {
+    "pt": "Consulta das fontes importadas pelo ETL. Informação histórica não confirma disponibilidade, preços ou reservas atuais.",
+    "en": "Consultation of sources imported by ETL. Historical information does not confirm current availability, prices or reservations.",
+    "es": "Consulta de fuentes importadas por ETL. La información histórica no confirma la disponibilidad, precios ni reservas actuales.",
+    "fr": "Consultation des sources importées par ETL. Les informations historiques ne confirment pas la disponibilité actuelle, les prix ou les réservations.",
+    "de": "Konsultation der von ETL importierten Quellen: Historische Informationen bestätigen nicht die aktuelle Verfügbarkeit, Preise oder Reservierungen.",
+    "zh": "查阅ETL输入的资料来源. 历史资料不能确认目前的可用性,价格或保留."
+  },
+  "Folha": {
+    "pt": "Folha",
+    "en": "Sheet",
+    "es": "Sheet",
+    "fr": "Feuille",
+    "de": "Blatt",
+    "zh": "工作表"
+  },
+  "Pesquisar nos dados": {
+    "pt": "Pesquisar nos dados",
+    "en": "Search data",
+    "es": "Datos de búsqueda",
+    "fr": "Données de recherche",
+    "de": "Suchdaten",
+    "zh": "搜索数据"
+  },
+  "Registos": {
+    "pt": "Registos",
+    "en": "Records",
+    "es": "Documentos",
+    "fr": "Comptes rendus",
+    "de": "Aufzeichnungen",
+    "zh": "记录"
+  },
+  "Não indicado": {
+    "pt": "Não indicado",
+    "en": "Not indicated",
+    "es": "No se indica",
+    "fr": "Non indiqué",
+    "de": "Nicht angegeben",
+    "zh": "未说明"
+  },
+  "Dados operacionais da fonte": {
+    "pt": "Dados operacionais da fonte",
+    "en": "Source operational data",
+    "es": "Datos operacionales de origen",
+    "fr": "Source des données opérationnelles",
+    "de": "Betriebsmittelquellen",
+    "zh": "源业务数据"
+  },
+  "Usar tarifa da fonte como estimativa (opcional)": {
+    "pt": "Usar tarifa da fonte como estimativa (opcional)",
+    "en": "Use source tariff as estimate (optional)",
+    "es": "Uso del arancel de origen como estimación (opcional)",
+    "fr": "Utiliser le tarif source comme estimation (facultatif)",
+    "de": "Quellentarif als Schätzung verwenden (fakultativ)",
+    "zh": "使用源关税作为估计( 可选)"
+  },
+  "Selecionar tarifa de referência": {
+    "pt": "Selecionar tarifa de referência",
+    "en": "Select reference tariff",
+    "es": "Seleccionar arancel de referencia",
+    "fr": "Choisir un tarif de référence",
+    "de": "Wählen Sie den Referenztarif",
+    "zh": "选择参考关税"
+  },
+  "Consultar todos os dados de origem e tarifas": {
+    "pt": "Consultar todos os dados de origem e tarifas",
+    "en": "Consult all source data and tariffs",
+    "es": "Consulte todos los datos y tarifas de la fuente",
+    "fr": "Consulter toutes les données sources et tarifs",
+    "de": "Konsultieren Sie alle Quelldaten und Tarife",
+    "zh": "咨询所有源数据和收费"
+  },
+  "A fonte atual é apresentada para comparação. Guardar não substitui automaticamente as edições manuais nem confirma tarifas históricas.": {
+    "pt": "A fonte atual é apresentada para comparação. Guardar não substitui automaticamente as edições manuais nem confirma tarifas históricas.",
+    "en": "The current font is presented for comparison. Save does not automatically replace manual edits or confirm historical tariffs.",
+    "es": "La fuente actual se presenta para la comparación. Save no reemplaza automáticamente las ediciones manuales o confirma tarifas históricas.",
+    "fr": "La police courante est présentée pour comparaison. Save ne remplace pas automatiquement les modifications manuelles ou confirme les tarifs historiques.",
+    "de": "Die aktuelle Schriftart wird zum Vergleich dargestellt. Save ersetzt nicht automatisch manuelle Bearbeitungen oder bestätigt historische Tarife.",
+    "zh": "当前字体是用于比较的。保存不会自动替换手动编辑或确认历史收费。"
+  },
+  "Latitude": {
+    "pt": "Latitude",
+    "en": "Latitude",
+    "es": "Latitud",
+    "fr": "Latitude",
+    "de": "Breitengrad",
+    "zh": "纬度"
+  },
+  "Longitude": {
+    "pt": "Longitude",
+    "en": "Longitude",
+    "es": "Longitud",
+    "fr": "Longitude",
+    "de": "Längengrad",
+    "zh": "经度"
+  },
+  "Dias e datas de encerramento": {
+    "pt": "Dias e datas de encerramento",
+    "en": "Closing days and dates",
+    "es": "Días y fechas de cierre",
+    "fr": "Jours et dates de clôture",
+    "de": "Schlusstage und Daten",
+    "zh": "闭幕日和日期"
+  },
+  "Observações e condições de funcionamento": {
+    "pt": "Observações e condições de funcionamento",
+    "en": "Remarks and operating conditions",
+    "es": "Observaciones y condiciones de funcionamiento",
+    "fr": "Remarques et conditions de fonctionnement",
+    "de": "Bemerkungen und Betriebsbedingungen",
+    "zh": "备注和运作条件"
+  },
+  "Reservas e condições": {
+    "pt": "Reservas e condições",
+    "en": "Reservations and conditions",
+    "es": "Reservas y condiciones",
+    "fr": "Réserves et conditions",
+    "de": "Vorbehalte und Bedingungen",
+    "zh": "保留和条件"
   }
 }

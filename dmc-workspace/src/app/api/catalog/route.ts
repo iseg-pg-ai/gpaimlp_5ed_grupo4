@@ -1,3 +1,4 @@
+import { sourceEnricher } from "@/lib/dataset-source";
 import { CatalogStore, CatalogConflict, warehouseRoot } from "@/lib/catalog-store";
 import { validateCatalogInput, categories } from "@/lib/catalog-schema";
 import { readFileSync } from "node:fs";
@@ -21,11 +22,15 @@ export async function GET(request: Request) {
           published.set(row._catalog_id, row._catalog_revision);
       }
     }
+    const enrich = sourceEnricher(warehouseRoot());
     return Response.json(
-      store.list().map((record) => ({
-        ...record,
-        published: record.status === "approved" && published.get(record.id) === record.revision,
-      })),
+      store
+        .list()
+        .map(enrich)
+        .map((record) => ({
+          ...record,
+          published: record.status === "approved" && published.get(record.id) === record.revision,
+        })),
       { headers },
     );
   } catch {

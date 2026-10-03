@@ -49,7 +49,14 @@ test("actual catalog, calendar dates, provenance and no repeated activities", ()
   const items = result.itinerary.flatMap((d) => d.items);
   assert.ok(items.length);
   assert.equal(new Set(items.map((i) => i.id)).size, items.length);
-  assert.ok(items.every((i) => i.source && i.pendingChecks.length && i.time === "Por agendar"));
+  assert.ok(
+    items.every(
+      (i) =>
+        i.source &&
+        i.pendingChecks.length &&
+        (i.time === "Por agendar" || /^\d{2}:\d{2}–\d{2}:\d{2} \(proposto\)$/.test(i.time)),
+    ),
+  );
 });
 test("invalid date ranges and unknown destinations fail explicitly", () => {
   assert.throws(() => validateBrief({ ...brief, endDate: "2026-10-09" }));

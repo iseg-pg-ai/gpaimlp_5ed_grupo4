@@ -297,5 +297,21 @@
   "Viagem": "pt",
   "Preferências": "pt",
   "Restrições": "pt",
-  "Rever": "pt"
+  "Rever": "pt",
+  "Todas as folhas do dataset": "pt",
+  "Consulta das fontes importadas pelo ETL. Informação histórica não confirma disponibilidade, preços ou reservas atuais.": "pt",
+  "Folha": "pt",
+  "Pesquisar nos dados": "pt",
+  "Registos": "pt",
+  "Não indicado": "pt",
+  "Dados operacionais da fonte": "pt",
+  "Usar tarifa da fonte como estimativa (opcional)": "pt",
+  "Selecionar tarifa de referência": "pt",
+  "Consultar todos os dados de origem e tarifas": "pt",
+  "A fonte atual é apresentada para comparação. Guardar não substitui automaticamente as edições manuais nem confirma tarifas históricas.": "pt",
+  "Latitude": "pt",
+  "Longitude": "pt",
+  "Dias e datas de encerramento": "pt",
+  "Observações e condições de funcionamento": "pt",
+  "Reservas e condições": "pt"
 }
