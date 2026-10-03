@@ -605,3 +605,19 @@ linha reta × 1,5, velocidade de referência de 25 km/h e 10 minutos adicionais,
 respeitando a margem mínima de pausas. Não corresponde a um percurso medido.
 Observações e condições de reserva seguem nos cartões como dados a verificar.
 Textos livres e regras documentais não são executados como instruções do sistema.
+
+
+### Alterações pelo assistente
+
+O assistente aceita comandos explícitos em português (as posições começam em 1 e seguem a ordem dos cartões):
+
+- `adicionar "nome exato ou identificador do catálogo" ao dia 1`
+- `substituir atividade 1 do dia 1 por "nome exato ou identificador do catálogo"`
+- `reagendar atividade 1 do dia 1 para 14:00`
+- `reorganizar dia 1 na ordem 2,1,3`
+- `remover atividade 1 do dia 1` ou `remover última atividade do dia 1`
+- `Ajuda` apresenta os formatos disponíveis.
+
+A API `/api/assistant` consulta o mesmo catálogo publicado e regras da geração. Verifica elegibilidade, ritmo, orçamento de referência, funcionamento e margens estimadas de deslocação. Não realiza reservas. Recusa horários sem dados suficientes e pedidos que afetem atividades protegidas ou confirmadas; reorganizar um dia com estas marcações é recusado. Os outros dias são preservados. A alteração só aparece no portal depois de guardada pelo mecanismo de versões existente; uma falha de gravação mantém o roteiro anterior. Pedidos livres fora destes formatos recebem instruções, sem alterações implícitas.
+
+Teste do percurso no navegador (servidor a correr): `node tests/browser/assistant.mjs` dentro de `dmc-workspace`.
