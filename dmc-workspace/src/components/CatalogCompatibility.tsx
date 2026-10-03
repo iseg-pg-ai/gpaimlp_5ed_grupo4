@@ -4,7 +4,7 @@ import { T } from "./LocaleProvider";
 import { matchingOptions, matchingLabels, type MatchingProfile } from "@/lib/catalog-matching";
 
 const inputClass = "mt-1 w-full min-w-0 rounded-lg border border-[#9DB3B8] bg-white p-3 text-base";
-export const profileFieldLabels = {
+const profileFieldLabels = {
   minAge: "Idade mínima (anos)",
   maxGroup: "Máximo de participantes",
   pricePerPerson: "Preço de referência por pessoa (EUR)",

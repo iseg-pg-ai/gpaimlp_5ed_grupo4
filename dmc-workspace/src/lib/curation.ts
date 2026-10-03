@@ -342,6 +342,12 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
     const items: ActivityItem[] = selected.map(({ row, table, matching, slot, cost, transfer }) => {
       const profile = row._matching as MatchingProfile | undefined;
       const catalogDetails = {
+        ...(row._pricing
+          ? { pricing: { ...(row._pricing as import("./catalog-schema").CatalogPricing) } }
+          : {}),
+        inclusions: text(row, "inclusoes"),
+        exclusions: text(row, "exclusoes"),
+        taxes: text(row, "impostos_taxas"),
         location: text(row, "morada") || text(row, "localizacao") || text(row, "cidade"),
         price: String(row.preco_da_atracao ?? row.preco ?? row.preco_nao_cotacao ?? ""),
         supplier:

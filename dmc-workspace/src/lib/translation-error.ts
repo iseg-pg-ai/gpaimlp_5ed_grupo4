@@ -10,7 +10,7 @@ const messages = {
   TRANSLATION_FAILED:
     "A tradução local falhou. Consulte o terminal do servidor para o diagnóstico; o roteiro guardado foi preservado.",
 } as const;
-export type TranslationErrorCode = keyof typeof messages;
+type TranslationErrorCode = keyof typeof messages;
 export class TranslationError extends Error {
   code: TranslationErrorCode;
   constructor(code: string) {

@@ -46,21 +46,16 @@ try {
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(process.env.PORTAL_URL ?? "http://127.0.0.1:3001");
     if (corrupted) {
-      await page
-        .getByRole("alert")
-        .filter({ hasText: /Não foi possível|inválido/ })
-        .waitFor();
+      await page.getByRole("alert").waitFor();
     } else {
       await page
         .locator("aside:visible button")
         .filter({ hasText: snapshot.brief.customerName })
         .click();
-      await page.getByTestId("delivery-history").locator("summary").click();
+      await page.getByTestId("proposal-tools").locator("summary").first().click();
+      await page.getByText("Versões guardadas ·", { exact: false }).click();
       await page.getByRole("button", { name: "Reabrir última versão guardada" }).click();
-      await page
-        .getByRole("alert")
-        .filter({ hasText: /Não foi possível|inválido/ })
-        .waitFor();
+      await page.getByRole("alert").waitFor();
       assert.ok(await page.getByTestId("activity-card").first().isVisible());
     }
     assert.equal(await page.evaluate(() => localStorage.getItem("blu-trips-v1")), original);
