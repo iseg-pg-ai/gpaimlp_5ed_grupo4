@@ -1,12 +1,18 @@
 {
   "pipeline": "blu-local-etl",
-  "ran_at_utc": "2026-09-28T21:39:38.724536+00:00",
+  "ran_at_utc": "2026-10-03T16:31:41.271692+00:00",
   "input_directory": "data",
   "workbook": "data/Requisitos informações Alunos ISEG.xlsx",
   "source": {
     "type": "local",
     "root": "data",
     "objects": [
+      {
+        "key": "Requisitos informações Alunos ISEG.xlsx",
+        "role": "catalog_workbook",
+        "size_bytes": 116032,
+        "sha256": "a35eb3b53732612139c4a0a11798ca8039462d68b25d5f6db8faf9462fa2e7d5"
+      },
       {
         "key": "proposals/260711 - PROPOSTA CIAL SINTRA E AZEITAO JUL26.pdf",
         "role": "proposal_pdf",
@@ -308,16 +314,16 @@
         "sha256": "d461870853dfde3d93d4eb1659c147945eb32fcaa5ac8c6f2bed719b41c1fc60"
       },
       {
-        "key": "raw/interacoes_reais_3_exemplos.xlsx",
-        "role": "reference_workbook",
-        "size_bytes": 20797,
-        "sha256": "aa1d13415ba56ea4f32cd15e7666190ec53aa43f511c8086ee7485330eff49b4"
-      },
-      {
         "key": "raw/Requisitos informações Alunos ISEG.xlsx",
         "role": "reference_workbook",
         "size_bytes": 102891,
         "sha256": "a031d73729ab82d9d678169e645bbc28a64b451d7d3b5aa9f5ae3b07b7fd7bc7"
+      },
+      {
+        "key": "raw/interacoes_reais_3_exemplos.xlsx",
+        "role": "reference_workbook",
+        "size_bytes": 20797,
+        "sha256": "aa1d13415ba56ea4f32cd15e7666190ec53aa43f511c8086ee7485330eff49b4"
       },
       {
         "key": "reference/structured_dataset.xlsx",
@@ -326,10 +332,10 @@
         "sha256": "64843c0b749fcee2487e3d1eb9504117d7582703b992513dba67002eb69a8f61"
       },
       {
-        "key": "Requisitos informações Alunos ISEG.xlsx",
-        "role": "catalog_workbook",
-        "size_bytes": 116032,
-        "sha256": "a35eb3b53732612139c4a0a11798ca8039462d68b25d5f6db8faf9462fa2e7d5"
+        "key": "portal/catalog.sqlite",
+        "role": "portal_catalog",
+        "records": 252,
+        "snapshot_sha256": "b4c296cee13c86b9f9d1e98ff0e42bd6b5a582b68e620dfe995ef662cf408fd4"
       }
     ]
   },
