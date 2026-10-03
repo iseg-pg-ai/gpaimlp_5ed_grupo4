@@ -3142,5 +3142,461 @@
     "fr": "Café, pâtisserie et brunch",
     "de": "Kaffee, Gebäck und Brunch",
     "zh": "咖啡、糕点和早午餐"
+  },
+  "Personalizar a proposta": {
+    "pt": "Personalizar a proposta",
+    "en": "Customize proposal",
+    "es": "Propuesta de personalización",
+    "fr": "Personnaliser la proposition",
+    "de": "Customize Vorschlag",
+    "zh": "自定义提案"
+  },
+  "Imperdíveis têm prioridade entre ofertas elegíveis. Exclusões prevalecem; pedidos sem correspondência ficam por confirmar.": {
+    "pt": "Imperdíveis têm prioridade entre ofertas elegíveis. Exclusões prevalecem; pedidos sem correspondência ficam por confirmar.",
+    "en": "Unstoppables have priority among eligible offers. Exclusions prevail; unmatched requests remain unconfirmed.",
+    "es": "Los imparables tienen prioridad entre las ofertas elegibles. Prevalecen las exclusiones; las solicitudes sin igual siguen sin confirmarse.",
+    "fr": "Les offres admissibles sont prioritaires pour les non-stoppables. Les exclusions prévalent; les demandes non assorties demeurent non confirmées.",
+    "de": "Unstoppables haben Vorrang unter den förderfähigen Angeboten, Ausschlüsse haben Vorrang, unübertroffene Anfragen bleiben unbestätigt.",
+    "zh": "不可阻止者在符合条件的报价中享有优先权,排他性占上风;未匹配的请求仍未证实。"
+  },
+  "Flexibilidade do orçamento": {
+    "pt": "Flexibilidade do orçamento",
+    "en": "Flexibility of the budget",
+    "es": "Flexibilidad del presupuesto",
+    "fr": "Flexibilité du budget",
+    "de": "Flexibilität des Haushalts",
+    "zh": "预算的灵活性"
+  },
+  "Sem margem adicional": {
+    "pt": "Sem margem adicional",
+    "en": "No additional margin",
+    "es": "No hay margen adicional",
+    "fr": "Pas de marge supplémentaire",
+    "de": "Keine zusätzliche Marge",
+    "zh": "无额外差值"
+  },
+  "A margem aumenta apenas o limite autorizado; não garante o preço final da viagem.": {
+    "pt": "A margem aumenta apenas o limite autorizado; não garante o preço final da viagem.",
+    "en": "The margin increases only the authorised limit; it does not guarantee the final price of the trip.",
+    "es": "El margen aumenta sólo el límite autorizado; no garantiza el precio final del viaje.",
+    "fr": "La marge n'augmente que la limite autorisée; elle ne garantit pas le prix final du voyage.",
+    "de": "Die Marge erhöht nur das genehmigte Limit; es garantiert nicht den endgültigen Preis der Reise.",
+    "zh": "差额只增加授权的限额;它不能保证旅行的最后价格。"
+  },
+  "O grupo necessita de pausas adicionais": {
+    "pt": "O grupo necessita de pausas adicionais",
+    "en": "The group needs additional breaks",
+    "es": "El grupo necesita descansos adicionales",
+    "fr": "Le groupe a besoin de pauses supplémentaires",
+    "de": "Die Gruppe braucht zusätzliche Pausen",
+    "zh": "需要休息时间"
+  },
+  "Necessidades adicionais do grupo (revisão pelo curador)": {
+    "pt": "Necessidades adicionais do grupo (revisão pelo curador)",
+    "en": "Additional group needs (curator review)",
+    "es": "Necesidades de grupo adicional (examen de la Fiscalía)",
+    "fr": "Besoins supplémentaires du groupe (réexamen par le curateur)",
+    "de": "Zusätzlicher Gruppenbedarf (Kurator-Review)",
+    "zh": "其他群体需求(教育工作者审查)"
+  },
+  "Preferência de acompanhamento": {
+    "pt": "Preferência de acompanhamento",
+    "en": "Follow-up Preferences",
+    "es": "Preferencias de seguimiento",
+    "fr": "Préférences de suivi",
+    "de": "Folgepräferenzen",
+    "zh": "后续优惠"
+  },
+  "Idioma do acompanhamento (sujeito a confirmação)": {
+    "pt": "Idioma do acompanhamento (sujeito a confirmação)",
+    "en": "Accompanying language (subject to confirmation)",
+    "es": "Idioma acompañante (sujeto a confirmación)",
+    "fr": "Langue d'accompagnement (sous réserve de confirmation)",
+    "de": "Begleitsprache (vorbehaltlich Bestätigung)",
+    "zh": "辅助语言(须经确认)"
+  },
+  "Anterior": {
+    "pt": "Anterior",
+    "en": "Prev",
+    "es": "Prev",
+    "fr": "Précédent",
+    "de": "Prev",
+    "zh": "前一頁"
+  },
+  "Seguinte": {
+    "pt": "Seguinte",
+    "en": "Next",
+    "es": "Siguiente",
+    "fr": "Suivant",
+    "de": "Nächster Artikel",
+    "zh": "下一个"
+  },
+  "Sem preferência": {
+    "pt": "Sem preferência",
+    "en": "No preference",
+    "es": "No hay preferencia",
+    "fr": "Pas de préférence",
+    "de": "Keine Präferenz",
+    "zh": "无偏好"
+  },
+  "Com guia": {
+    "pt": "Com guia",
+    "en": "With tab",
+    "es": "Con pestaña",
+    "fr": "Avec onglet",
+    "de": "mit Tab",
+    "zh": "用标签"
+  },
+  "Sem guia": {
+    "pt": "Sem guia",
+    "en": "No guide",
+    "es": "No hay guía",
+    "fr": "Pas de guide",
+    "de": "Kein Guide",
+    "zh": "无向导"
+  },
+  "Acompanhamento privado": {
+    "pt": "Acompanhamento privado",
+    "en": "Private monitoring",
+    "es": "Vigilancia privada",
+    "fr": "Surveillance privée",
+    "de": "Private Überwachung",
+    "zh": "私人监测"
+  },
+  "Preferências de personalização inválidas.": {
+    "pt": "Preferências de personalização inválidas.",
+    "en": "Invalid customization preferences.",
+    "es": "Preferencias de personalización inválidas.",
+    "fr": "Préférences de personnalisation non valides.",
+    "de": "Ungültige Anpassungspräferenzen.",
+    "zh": "无效的定制首选项 。"
+  },
+  "Subcategorias do briefing inválidas.": {
+    "pt": "Subcategorias do briefing inválidas.",
+    "en": "Invalid briefing subcategories.",
+    "es": "Subcategorías de información inválidas.",
+    "fr": "Sous-catégories de briefing non valides.",
+    "de": "Ungültige Briefing-Unterkategorien.",
+    "zh": "无效的简介子类 。"
+  },
+  "Uma opção não pode ser imperdível e a evitar ao mesmo tempo.": {
+    "pt": "Uma opção não pode ser imperdível e a evitar ao mesmo tempo.",
+    "en": "An option cannot be unmissable and avoidable at the same time.",
+    "es": "Una opción no puede ser inmisible y evitable al mismo tiempo.",
+    "fr": "Une option ne peut être à la fois incontournable et évitable.",
+    "de": "Eine Option kann nicht gleichzeitig unumgänglich und vermeidbar sein.",
+    "zh": "一个选项不能同时是不可缺漏和可避免的。"
+  },
+  ", ": {
+    "pt": ", ",
+    "en": ", ",
+    "es": ", ",
+    "fr": ", ",
+    "de": ", ",
+    "zh": ", "
+  },
+  "visita guiada": {
+    "pt": "visita guiada",
+    "en": "guided tour",
+    "es": "Visita guiada",
+    "fr": "Visite guidée",
+    "de": "geführte Tour",
+    "zh": "导游"
+  },
+  "com guia": {
+    "pt": "com guia",
+    "en": "with guide",
+    "es": "con guía",
+    "fr": "avec guide",
+    "de": "mit Führung",
+    "zh": "带向导"
+  },
+  "sem guia": {
+    "pt": "sem guia",
+    "en": "no guide",
+    "es": "no guía",
+    "fr": "pas de guide",
+    "de": "Kein Guide",
+    "zh": "无向导"
+  },
+  "acompanhamento privado": {
+    "pt": "acompanhamento privado",
+    "en": "private monitoring",
+    "es": "Supervisión privada",
+    "fr": "surveillance privée",
+    "de": "Private Überwachung",
+    "zh": "私人监测"
+  },
+  "Idades das crianças": {
+    "pt": "Idades das crianças",
+    "en": "Ages of children",
+    "es": "Edades de los niños",
+    "fr": "Âge des enfants",
+    "de": "Alter der Kinder",
+    "zh": "儿童年龄"
+  },
+  "Data de início": {
+    "pt": "Data de início",
+    "en": "Start date",
+    "es": "Fecha de inicio",
+    "fr": "Date de début",
+    "de": "Startdatum",
+    "zh": "开始日期"
+  },
+  "Data de fim": {
+    "pt": "Data de fim",
+    "en": "End date",
+    "es": "Fecha final",
+    "fr": "Date de fin",
+    "de": "Enddatum",
+    "zh": "结束日期"
+  },
+  "Ritmo das refeições": {
+    "pt": "Ritmo das refeições",
+    "en": "Meal rhythm",
+    "es": "Ritmo de comida",
+    "fr": "Rythme des repas",
+    "de": "Mahlzeitenrhythmus",
+    "zh": "饮食节奏"
+  },
+  "Início do dia": {
+    "pt": "Início do dia",
+    "en": "Start of day",
+    "es": "Inicio del día",
+    "fr": "Début de la journée",
+    "de": "Beginn des Tages",
+    "zh": "开始日期"
+  },
+  "Experiências imperdíveis": {
+    "pt": "Experiências imperdíveis",
+    "en": "Unmissable experiences",
+    "es": "Experiencias inadmisibles",
+    "fr": "Expériences incontournables",
+    "de": "Unverzichtbare Erlebnisse",
+    "zh": "不容忽视的经历"
+  },
+  "Atividades a evitar": {
+    "pt": "Atividades a evitar",
+    "en": "Activities to avoid",
+    "es": "Actividades para evitar",
+    "fr": "Activités à éviter",
+    "de": "Aktivitäten zur Vermeidung",
+    "zh": "避免的活动"
+  },
+  "Margem autorizada (%)": {
+    "pt": "Margem autorizada (%)",
+    "en": "Margin authorised (%)",
+    "es": "Margin autorizado (%)",
+    "fr": "Marge autorisée (%)",
+    "de": "Zugelassene Einschusszahlungen (%)",
+    "zh": "授权的边际(%)"
+  },
+  "Pausas adicionais": {
+    "pt": "Pausas adicionais",
+    "en": "Additional pauses",
+    "es": "Pausas adicionales",
+    "fr": "Pauses supplémentaires",
+    "de": "Zusätzliche Pausen",
+    "zh": "其他暂停"
+  },
+  "Necessidades do grupo": {
+    "pt": "Necessidades do grupo",
+    "en": "Group needs",
+    "es": "Necesidades de los grupos",
+    "fr": "Besoins des groupes",
+    "de": "Gruppenbedarf",
+    "zh": "组群需求"
+  },
+  "Idioma do acompanhamento": {
+    "pt": "Idioma do acompanhamento",
+    "en": "Accompanying language",
+    "es": "Lenguaje de acompañamiento",
+    "fr": "Langue d'accompagnement",
+    "de": "Begleitsprache",
+    "zh": "伴奏语言"
+  },
+  "Cliente": {
+    "pt": "Cliente",
+    "en": "Client",
+    "es": "Cliente",
+    "fr": "Client",
+    "de": "Kunde",
+    "zh": "客户端"
+  },
+  "Viagem": {
+    "pt": "Viagem",
+    "en": "Travel",
+    "es": "Viajes",
+    "fr": "Voyages",
+    "de": "Reisereise",
+    "zh": "旅费"
+  },
+  "Preferências": {
+    "pt": "Preferências",
+    "en": "Preferences",
+    "es": "Preferencias",
+    "fr": "Préférences",
+    "de": "Präferenzen",
+    "zh": "首选项"
+  },
+  "Restrições": {
+    "pt": "Restrições",
+    "en": "Restrictions",
+    "es": "Restricciones",
+    "fr": "Restrictions",
+    "de": "Beschränkungen",
+    "zh": "限制"
+  },
+  "Rever": {
+    "pt": "Rever",
+    "en": "Review",
+    "es": "Examen",
+    "fr": "Révision",
+    "de": "Überprüfung",
+    "zh": "审查"
+  },
+  "Rever antes de gerar": {
+    "pt": "Rever antes de gerar",
+    "en": "Review before generating",
+    "es": "Revisión antes de generar",
+    "fr": "Examen avant production",
+    "de": "Review vor der Generierung",
+    "zh": "生成前的审查"
+  },
+  "Confirme as respostas. Use as etapas acima para editar sem perder os dados.": {
+    "pt": "Confirme as respostas. Use as etapas acima para editar sem perder os dados.",
+    "en": "Confirm the answers. Use the above steps to edit without losing the data.",
+    "es": "Confirme las respuestas. Utilice los pasos anteriores para editar sin perder los datos.",
+    "fr": "Confirmez les réponses. Utilisez les étapes ci-dessus pour modifier sans perdre les données.",
+    "de": "Bestätigen Sie die Antworten. Verwenden Sie die oben genannten Schritte zum Bearbeiten, ohne die Daten zu verlieren.",
+    "zh": "确认答案。使用上述步骤进行编辑而不丢失数据。"
+  },
+  "Todas as folhas do dataset": {
+    "pt": "Todas as folhas do dataset",
+    "en": "All Dataset Sheets",
+    "es": "Todas las hojas de datos",
+    "fr": "Toutes les fiches de données",
+    "de": "Alle Datensätze",
+    "zh": "所有数据集工作表"
+  },
+  "Consulta das fontes importadas pelo ETL. Informação histórica não confirma disponibilidade, preços ou reservas atuais.": {
+    "pt": "Consulta das fontes importadas pelo ETL. Informação histórica não confirma disponibilidade, preços ou reservas atuais.",
+    "en": "Consultation of sources imported by ETL. Historical information does not confirm current availability, prices or reservations.",
+    "es": "Consulta de fuentes importadas por ETL. La información histórica no confirma la disponibilidad, precios ni reservas actuales.",
+    "fr": "Consultation des sources importées par ETL. Les informations historiques ne confirment pas la disponibilité actuelle, les prix ou les réservations.",
+    "de": "Konsultation der von ETL importierten Quellen: Historische Informationen bestätigen nicht die aktuelle Verfügbarkeit, Preise oder Reservierungen.",
+    "zh": "查阅ETL输入的资料来源. 历史资料不能确认目前的可用性,价格或保留."
+  },
+  "Folha": {
+    "pt": "Folha",
+    "en": "Sheet",
+    "es": "Sheet",
+    "fr": "Feuille",
+    "de": "Blatt",
+    "zh": "工作表"
+  },
+  "Pesquisar nos dados": {
+    "pt": "Pesquisar nos dados",
+    "en": "Search data",
+    "es": "Datos de búsqueda",
+    "fr": "Données de recherche",
+    "de": "Suchdaten",
+    "zh": "搜索数据"
+  },
+  "Registos": {
+    "pt": "Registos",
+    "en": "Records",
+    "es": "Documentos",
+    "fr": "Comptes rendus",
+    "de": "Aufzeichnungen",
+    "zh": "记录"
+  },
+  "Não indicado": {
+    "pt": "Não indicado",
+    "en": "Not indicated",
+    "es": "No se indica",
+    "fr": "Non indiqué",
+    "de": "Nicht angegeben",
+    "zh": "未说明"
+  },
+  "Dados operacionais da fonte": {
+    "pt": "Dados operacionais da fonte",
+    "en": "Source operational data",
+    "es": "Datos operacionales de origen",
+    "fr": "Source des données opérationnelles",
+    "de": "Betriebsmittelquellen",
+    "zh": "源业务数据"
+  },
+  "Usar tarifa da fonte como estimativa (opcional)": {
+    "pt": "Usar tarifa da fonte como estimativa (opcional)",
+    "en": "Use source tariff as estimate (optional)",
+    "es": "Uso del arancel de origen como estimación (opcional)",
+    "fr": "Utiliser le tarif source comme estimation (facultatif)",
+    "de": "Quellentarif als Schätzung verwenden (fakultativ)",
+    "zh": "使用源关税作为估计( 可选)"
+  },
+  "Selecionar tarifa de referência": {
+    "pt": "Selecionar tarifa de referência",
+    "en": "Select reference tariff",
+    "es": "Seleccionar arancel de referencia",
+    "fr": "Choisir un tarif de référence",
+    "de": "Wählen Sie den Referenztarif",
+    "zh": "选择参考关税"
+  },
+  "Consultar todos os dados de origem e tarifas": {
+    "pt": "Consultar todos os dados de origem e tarifas",
+    "en": "Consult all source data and tariffs",
+    "es": "Consulte todos los datos y tarifas de la fuente",
+    "fr": "Consulter toutes les données sources et tarifs",
+    "de": "Konsultieren Sie alle Quelldaten und Tarife",
+    "zh": "咨询所有源数据和收费"
+  },
+  "A fonte atual é apresentada para comparação. Guardar não substitui automaticamente as edições manuais nem confirma tarifas históricas.": {
+    "pt": "A fonte atual é apresentada para comparação. Guardar não substitui automaticamente as edições manuais nem confirma tarifas históricas.",
+    "en": "The current font is presented for comparison. Save does not automatically replace manual edits or confirm historical tariffs.",
+    "es": "La fuente actual se presenta para la comparación. Save no reemplaza automáticamente las ediciones manuales o confirma tarifas históricas.",
+    "fr": "La police courante est présentée pour comparaison. Save ne remplace pas automatiquement les modifications manuelles ou confirme les tarifs historiques.",
+    "de": "Die aktuelle Schriftart wird zum Vergleich dargestellt. Save ersetzt nicht automatisch manuelle Bearbeitungen oder bestätigt historische Tarife.",
+    "zh": "当前字体是用于比较的。保存不会自动替换手动编辑或确认历史收费。"
+  },
+  "Latitude": {
+    "pt": "Latitude",
+    "en": "Latitude",
+    "es": "Latitud",
+    "fr": "Latitude",
+    "de": "Breitengrad",
+    "zh": "纬度"
+  },
+  "Longitude": {
+    "pt": "Longitude",
+    "en": "Longitude",
+    "es": "Longitud",
+    "fr": "Longitude",
+    "de": "Längengrad",
+    "zh": "经度"
+  },
+  "Dias e datas de encerramento": {
+    "pt": "Dias e datas de encerramento",
+    "en": "Closing days and dates",
+    "es": "Días y fechas de cierre",
+    "fr": "Jours et dates de clôture",
+    "de": "Schlusstage und Daten",
+    "zh": "闭幕日和日期"
+  },
+  "Observações e condições de funcionamento": {
+    "pt": "Observações e condições de funcionamento",
+    "en": "Remarks and operating conditions",
+    "es": "Observaciones y condiciones de funcionamiento",
+    "fr": "Remarques et conditions de fonctionnement",
+    "de": "Bemerkungen und Betriebsbedingungen",
+    "zh": "备注和运作条件"
+  },
+  "Reservas e condições": {
+    "pt": "Reservas e condições",
+    "en": "Reservations and conditions",
+    "es": "Reservas y condiciones",
+    "fr": "Réserves et conditions",
+    "de": "Vorbehalte und Bedingungen",
+    "zh": "保留和条件"
   }
 }

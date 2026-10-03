@@ -1,3 +1,4 @@
+import { DatasetExplorer } from "@/components/DatasetExplorer";
 import { T } from "@/components/LocaleProvider";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -45,6 +46,7 @@ export default async function ReferencesPage() {
       <Link href="/" className="underline">
         <T text="Voltar ao workspace" source="pt" />
       </Link>
+      <DatasetExplorer />
       <h1 className="text-3xl mt-6 mb-3">
         <T text="Referências históricas" source="pt" />
       </h1>

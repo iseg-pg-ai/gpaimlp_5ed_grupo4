@@ -1,3 +1,16 @@
+import {
+  closureState,
+  transferEstimate,
+  closedOn,
+  knownCost,
+  proposeSlot,
+  clockTime,
+} from "./itinerary-scheduling.ts";
+import {
+  emptyPersonalization,
+  validatePersonalization,
+  accompanimentMatches,
+} from "./brief-personalization.ts";
 import type { CustomerBrief, ItineraryDay, ActivityItem } from "../types/index";
 import { matchCatalogProfile, validateMatching, type MatchingProfile } from "./catalog-matching.ts";
 
@@ -18,6 +31,7 @@ const text = (row: Row, key: string) => String(row[key] ?? "");
 export function validateBrief(value: unknown): asserts value is CustomerBrief {
   if (!value || typeof value !== "object") throw new Error("Briefing inválido.");
   const b = value as CustomerBrief;
+  if (b.personalization !== undefined) validatePersonalization(b.personalization);
   for (const field of [
     "customerName",
     "destination",
@@ -173,19 +187,58 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
     .filter(([table]) => table !== "curation_rules")
     .flatMap(([table, records]) => records.map((row) => ({ table, row })));
   const used = new Set<string>();
-  let remainingBudget = brief.budget;
+  const personalization = brief.personalization ?? emptyPersonalization();
+  const fulfilled = new Set<string>();
+  if (personalization.groupNeeds.trim())
+    pending.push(`Necessidades do grupo para revisão do curador: ${personalization.groupNeeds}`);
+  if (
+    ["guided", "private"].includes(personalization.accompaniment) &&
+    personalization.guideLanguage
+  )
+    pending.push(
+      `Idioma de acompanhamento a confirmar com o fornecedor: ${personalization.guideLanguage}`,
+    );
+  if (personalization.accompaniment !== "any")
+    pending.push(
+      "Acompanhamento filtrado pela modalidade explícita do catálogo; disponibilidade por confirmar.",
+    );
+  if (personalization.budgetFlex)
+    pending.push(
+      `Margem de orçamento autorizada: ${personalization.budgetFlex}%. Limite de referência: ${brief.budget * (1 + personalization.budgetFlex / 100)} EUR; não constitui cotação.`,
+    );
+  let remainingBudget = brief.budget * (1 + personalization.budgetFlex / 100);
   const maxEffort = brief.physicalEffort.startsWith("Baixo")
     ? 0
     : brief.physicalEffort.startsWith("Moderado")
       ? 1
       : 2;
-  const limit = brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4;
+  const limit = personalization.extraBreaks
+    ? 2
+    : brief.pace === "Relaxed"
+      ? 2
+      : brief.pace === "Balanced"
+        ? 3
+        : 4;
   const itinerary: ItineraryDay[] = Array.from({ length: count }, (_, i) => {
     const city = route[Math.floor((i * route.length) / count)];
     const date = new Date(Date.parse(brief.startDate) + i * 86400000).toISOString().slice(0, 10);
     const candidates = all
       .filter(({ row, table }) => {
-        if (row._catalog_status !== "approved") return false;
+        if (
+          row._catalog_status !== "approved" ||
+          closedOn(row, date) ||
+          closureState(row.dias_de_encerramento ?? row.encerramento_base_reconfirmar, date) ===
+            "closed"
+        )
+          return false;
+        if (personalization.avoid.includes(String(row.subcategoria ?? ""))) return false;
+        // An unclassified record cannot be certified as outside the excluded subcategories.
+        if (personalization.avoid.length && !row.subcategoria) return false;
+        if (
+          table !== "restaurantes" &&
+          !accompanimentMatches(row.modalidade, personalization.accompaniment)
+        )
+          return false;
         const profile = row._matching as MatchingProfile | undefined;
         if (profile !== undefined) {
           try {
@@ -224,6 +277,10 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         const matching =
           profile && matchCatalogProfile(profile, brief, date, candidate.table === "restaurantes");
         const score =
+          (personalization.mustHave.includes(String(candidate.row.subcategoria)) &&
+          !fulfilled.has(String(candidate.row.subcategoria))
+            ? 1000
+            : 0) +
           (matching
             ? matching.score
             : brief.interests.reduce(
@@ -239,16 +296,50 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         return { ...candidate, score, matching };
       })
       .sort((a, b) => b.score - a.score || Number(a.row._source_row) - Number(b.row._source_row));
-    const selected = [];
-    for (const candidate of candidates) {
-      if (selected.length >= limit) break;
-      const price = (candidate.row._matching as MatchingProfile | undefined)?.pricePerPerson;
-      const estimated = typeof price === "number" ? price * (brief.adults + brief.children) : 0;
-      if (estimated > remainingBudget) continue;
-      remainingBudget -= estimated;
-      selected.push(candidate);
+    const selected: ((typeof candidates)[number] & {
+      slot: ReturnType<typeof proposeSlot>;
+      cost: number | null;
+      transfer: string;
+    })[] = [];
+    let cursor = brief.morningPreference.startsWith("Early")
+      ? 510
+      : brief.morningPreference.startsWith("Late")
+        ? 630
+        : 570;
+    const buffer = personalization.extraBreaks ? 45 : 30;
+    let previousLocation: Row | undefined;
+    const chosenCategories = new Set<string>();
+    // Rotate the starting category across days; tiers still rank within each category.
+    const order = ["atracoes", "restaurantes", "experiencias"];
+    const categoryOrder = [...order.slice(i % 3), ...order.slice(0, i % 3)];
+    const ranked = [...candidates];
+    while (ranked.length && selected.length < limit) {
+      ranked.sort(
+        (a, b) =>
+          Number(chosenCategories.has(a.table)) - Number(chosenCategories.has(b.table)) ||
+          categoryOrder.indexOf(a.table) - categoryOrder.indexOf(b.table) ||
+          b.score - a.score,
+      );
+      const candidate = ranked.shift()!;
+      const cost = knownCost(candidate.row, brief.adults + brief.children);
+      if (cost !== null && cost > remainingBudget) continue;
+      const transfer = transferEstimate(previousLocation, candidate.row, buffer);
+      const slot = proposeSlot(
+        candidate.row,
+        candidate.table === "restaurantes",
+        brief,
+        cursor + transfer.minutes,
+        date,
+      );
+      if (slot.kind === "unavailable") continue;
+      if (cost !== null) remainingBudget -= cost;
+      if (slot.kind === "scheduled") cursor = slot.end;
+      selected.push({ ...candidate, slot, cost, transfer: transfer.note });
+      if (slot.kind === "scheduled") previousLocation = candidate.row;
+      chosenCategories.add(candidate.table);
+      fulfilled.add(String(candidate.row.subcategoria));
     }
-    const items: ActivityItem[] = selected.map(({ row, table, matching }) => {
+    const items: ActivityItem[] = selected.map(({ row, table, matching, slot, cost, transfer }) => {
       const profile = row._matching as MatchingProfile | undefined;
       const catalogDetails = {
         location: text(row, "morada") || text(row, "localizacao") || text(row, "cidade"),
@@ -256,7 +347,13 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         supplier:
           text(row, "fornecedor") || (table === "restaurantes" ? text(row, "estabelecimento") : ""),
         contact: text(row, "contactos"),
-        hours: text(row, "horario") || text(row, "horario_base_reconfirmar"),
+        hours: [
+          text(row, "horario") || text(row, "horario_base_reconfirmar"),
+          text(row, "dias_de_encerramento") || text(row, "encerramento_base_reconfirmar"),
+          text(row, "observacoes"),
+        ]
+          .filter(Boolean)
+          .join(" · "),
         accessibility: text(row, "acessibilidade_nivel_de_confirmacao"),
         dietary: text(row, "opcoes_alimentares_alergenios"),
         verification: profile?.verificationNotes ?? "",
@@ -274,7 +371,10 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         : source;
       return {
         id,
-        time: "Por agendar",
+        time:
+          slot.kind === "scheduled"
+            ? `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`
+            : "Por agendar",
         title:
           text(row, "nome_da_atracao") ||
           text(row, "nome_da_experiencia") ||
@@ -289,7 +389,7 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
           text(row, "tempo_medio_de_visita") ||
           text(row, "duracao") ||
           text(row, "duracao_blu_estimativa"),
-        priceNote: `Referência, confirmar: ${row.preco_da_atracao ?? row.preco ?? row.preco_nao_cotacao ?? "sem preço"}`,
+        priceNote: `Referência, confirmar: ${text(row, "preco_da_atracao") || text(row, "preco") || text(row, "preco_nao_cotacao") || "Preço por confirmar"}${cost === null ? "; custo total por confirmar" : `; referência para o grupo: ${cost} EUR`}`,
         source: enrichedSource,
         appliedRules: [
           "R04: prioridade por interesses",
@@ -297,14 +397,28 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
           "R09: sem repetição",
           "R16: esforço conhecido filtrado",
           ...(matching ? matching.reasons : []),
+          ...(personalization.mustHave.includes(String(row.subcategoria))
+            ? [`Imperdível solicitado: ${row.subcategoria}`]
+            : []),
         ],
         accessibilityNotes: text(row, "acessibilidade_nivel_de_confirmacao"),
         dietaryNotes: text(row, "opcoes_alimentares_alergenios"),
         catalogDetails,
         pendingChecks: [
           "Disponibilidade e reserva para esta viagem",
+          ...(row.observacoes ? [`Condições da fonte a verificar: ${row.observacoes}`] : []),
+          ...(row.necessidade_de_reserva || row.reservas_condicoes_base
+            ? [`Condições de reserva: ${row.necessidade_de_reserva || row.reservas_condicoes_base}`]
+            : []),
+          ...(slot.kind === "scheduled"
+            ? [
+                `Horário proposto; reconfirmar funcionamento e margem de ${buffer} min para deslocação/pausa`,
+              ]
+            : ["Horário e duração sem dados suficientes: agendar manualmente"]),
+          ...(cost === null ? ["Custo desconhecido: orçamento total não validado"] : []),
           "Validar preço para esta viagem",
           "Deslocação / ponto de encontro",
+          ...(transfer ? [transfer] : []),
           ...(brief.mobilityRestrictions.length && !profile
             ? ["Acessibilidade para as necessidades do cliente"]
             : []),
@@ -320,10 +434,19 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
       title: city,
       location: city,
       tier: brief.proposalTier,
-      summary: `R01: até ${limit} sugestões; R03: início ${brief.morningPreference}. ${items.length ? "Ordem provisória; durações do catálogo, sem validação de agenda." : "Sem sugestões compatíveis disponíveis: requer curadoria manual."}`,
+      summary: `R01: até ${limit} sugestões; R03: início ${brief.morningPreference}. ${items.length ? "Horários propostos quando os dados permitem; intervalos estimados para deslocações e pausas. Itens por agendar requerem integração manual na agenda." : "Sem sugestões compatíveis disponíveis: requer curadoria manual."}`,
       items,
     };
   });
+  for (const required of personalization.mustHave)
+    if (!fulfilled.has(required))
+      pending.push(
+        `Imperdível não incluído por falta de oferta elegível, orçamento ou espaço no roteiro: ${required}`,
+      );
+  if (personalization.extraBreaks)
+    pending.push(
+      "Pausas adicionais: máximo de duas sugestões por dia; horários e intervalos por confirmar.",
+    );
   return { itinerary, pending, ruleIds: requiredRules };
 }
 

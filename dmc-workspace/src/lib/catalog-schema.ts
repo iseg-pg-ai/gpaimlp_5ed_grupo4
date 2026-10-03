@@ -1,3 +1,4 @@
+import { validateOperational, type Operational } from "./catalog-operational.ts";
 import { validateMatching, type MatchingProfile } from "./catalog-matching.ts";
 export const categories = ["atracoes", "restaurantes", "experiencias"] as const;
 export type Category = (typeof categories)[number];
@@ -39,6 +40,8 @@ export type CatalogRecord = {
   status: CatalogStatus;
   revision: number;
   fields: Fields;
+  operational?: Operational;
+  sourceData?: Record<string, unknown>;
   subcategory?: string;
   pricing?: CatalogPricing;
   matching?: MatchingProfile;
@@ -52,6 +55,8 @@ export type CatalogInput = {
   status: CatalogStatus;
   baseRevision: number | null;
   fields: Fields;
+  operational?: Operational;
+  sourceData?: Record<string, unknown>;
   subcategory?: string;
   pricing?: CatalogPricing;
   matching?: MatchingProfile;
@@ -62,6 +67,7 @@ export const emptyFields = (): Fields =>
 export function validateCatalogInput(value: unknown): asserts value is CatalogInput {
   if (!value || typeof value !== "object") throw new Error("Registo inválido.");
   const v = value as CatalogInput;
+  if (v.operational !== undefined) validateOperational(v.operational);
   if (v.pricing !== undefined) validatePricing(v.pricing);
   if (v.matching !== undefined) validateMatching(v.matching);
   if (!categories.includes(v.category) || !statuses.includes(v.status))

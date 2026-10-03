@@ -1,4 +1,5 @@
 "use client";
+import { SourceFields } from "../SourceFields";
 import type { RefObject } from "react";
 import { T } from "@/components/LocaleProvider";
 import { CatalogCompatibility } from "@/components/CatalogCompatibility";
@@ -44,6 +45,7 @@ export function CatalogHistory({ history, onClose, historyRef }: Props) {
               <summary className="cursor-pointer py-2">
                 <T text="Ver dados desta revisão" source="pt" />
               </summary>
+              {h.operational && <SourceFields value={h.operational} />}
               {h.subcategory && (
                 <p>
                   <T text="Subcategoria" source="pt" />: <T text={h.subcategory} source="pt" />

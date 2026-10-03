@@ -537,3 +537,71 @@ A comparação automática por pessoa em EUR utiliza apenas preços com essa
 moeda e unidade e estado confirmado ou estimado. Outros preços não são
 convertidos automaticamente. Com preço estruturado, o campo duplicado de
 preço por pessoa no perfil de compatibilidade deixa de ser apresentado.
+
+
+### Briefing por etapas e personalização
+
+O briefing organiza-se em Cliente, Viagem, Preferências, Restrições e Rever.
+As respostas mantêm-se ao mudar de etapa; a geração exige a validação final.
+O resumo permite voltar a cada etapa para editar. Briefings antigos sem
+`personalization` continuam válidos e mantêm o comportamento anterior.
+
+As subcategorias imperdíveis têm prioridade entre ofertas elegíveis; as opções
+a evitar excluem essas subcategorias e registos sem classificação verificável.
+Pedidos imperdíveis não satisfeitos aparecem nas pendências. A margem de 0%,
+10% ou 20% aplica-se ao limite dos custos conhecidos, sem transformar os preços
+em cotação. Pausas adicionais limitam a duas sugestões por dia.
+
+O acompanhamento filtra a modalidade explícita do catálogo (com guia, sem guia
+ou privado), sem inferir condições a partir de descrições. Restaurantes não são
+filtrados por acompanhamento. Idioma do guia e necessidades livres do grupo
+ficam para confirmação pelo fornecedor/curador; não são garantias automáticas.
+Teste de interface: `node tests/browser/briefing.mjs`, com portal na porta 3001.
+
+
+### Geração diversificada e horários propostos
+
+A seleção distribui as vagas entre atividades, restaurantes e experiências
+compatíveis. Mantém os limites de duas, três ou quatro sugestões e alterna a
+categoria inicial entre dias; duas vagas não garantem as três categorias no
+mesmo dia. Restrições, aprovações, validade e orçamento continuam a filtrar a oferta.
+
+Horários simples (por exemplo, `Todos os dias 09:00–18:00` ou
+`09:00–12:00; 14:00–18:00`) e durações explícitas permitem propor intervalos.
+São respeitados os encerramentos semanais reconhecidos. Refeições começam entre
+12:00 e 14:00 e respeitam o ritmo de refeição; a agenda proposta termina até às
+18:00. Entre intervalos são reservados 30 minutos, ou 45 com pausas adicionais.
+Estas margens são estimativas, não tempos calculados de percurso.
+
+Intervalos aparecem como **propostos**, sem confirmar reservas. Horários sazonais,
+encerramentos por data, durações ou condições ambíguas ficam **Por agendar**,
+com indicação de revisão manual; não se garante viabilidade desses itens até
+serem agendados. Os intervalos propostos não se sobrepõem.
+
+Preços estruturados em EUR por pessoa, grupo ou serviço alimentam o controlo de
+custos conhecidos. Valores por hora, noutras moedas ou por confirmar não são
+convertidos nem tratados como gratuitos. Os cartões indicam que o custo total
+está por confirmar; zero só representa um preço explicitamente gratuito.
+
+
+### Consulta e aproveitamento do dataset completo
+
+Em Referências, “Todas as folhas do dataset” permite selecionar qualquer folha
+`structured_*` publicada pelo ETL, pesquisar valores e consultar todos os campos
+com paginação de 25 registos. Inclui bases, propostas históricas, viajantes,
+interações, regras, auditorias e proveniência; a consulta não transforma dados
+históricos em oferta aprovada.
+
+No editor do catálogo, a fonte atual é mostrada sem substituir os campos editados.
+Coordenadas, encerramentos, observações e condições de reserva podem ser revistos
+e guardados numa nova revisão. A publicação pelo ETL aplica esses campos. Tarifas
+ligadas por identificador exato podem ser adotadas explicitamente como estimativas;
+campos sem correspondência permanecem disponíveis na consulta do dataset.
+
+A agenda interpreta intervalos sazonais e semanais reconhecidos e listas de
+encerramentos por dia/mês. Condições não reconhecidas continuam por confirmar.
+Coordenadas completas permitem uma margem estimada de deslocação: distância em
+linha reta × 1,5, velocidade de referência de 25 km/h e 10 minutos adicionais,
+respeitando a margem mínima de pausas. Não corresponde a um percurso medido.
+Observações e condições de reserva seguem nos cartões como dados a verificar.
+Textos livres e regras documentais não são executados como instruções do sistema.

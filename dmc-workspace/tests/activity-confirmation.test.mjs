@@ -8,6 +8,7 @@ import {
   validateConfirmation,
   applyConfirmation,
   outstandingChecks,
+  mergeConfirmationDefaults,
 } from "../src/lib/activity-confirmation.ts";
 import { applyCommand } from "../src/lib/curation.ts";
 import { renderPdf } from "../src/lib/itinerary-pdf.ts";
@@ -33,6 +34,41 @@ const confirmed = () => ({
     resolved: true,
     details: "Validado com fornecedor",
   })),
+});
+
+test("proposed visit times prefill without confirming and unknown prices remain missing", () => {
+  const proposed = initialConfirmation({ ...item, time: "09:30–10:30 (proposto)" });
+  assert.equal(proposed.time, "09:30");
+  assert.equal(proposed.status, "pending");
+  for (const price of [
+    "Valor por confirmar · Por pessoa · Por confirmar",
+    "Preço por confirmar; custo total por confirmar",
+    "Por confirmar",
+  ]) {
+    assert.equal(initialConfirmation({ ...item, priceNote: price }).price, "");
+    assert.throws(() => validateConfirmation(item, { ...confirmed(), price }));
+  }
+  assert.doesNotThrow(() =>
+    validateConfirmation(item, { ...confirmed(), price: "0 EUR (gratuito)" }),
+  );
+});
+
+test("late catalogue data fill missing fields without replacing manual values or explicit clears", () => {
+  const current = { ...initialConfirmation(item), location: "Encontro combinado", contact: "" };
+  const defaults = {
+    ...initialConfirmation(item),
+    location: "Morada original",
+    contact: "Original",
+    supplier: "Operador",
+    price: "12 EUR",
+  };
+  const merged = mergeConfirmationDefaults(current, defaults, new Set(["location", "contact"]));
+  assert.equal(merged.location, "Encontro combinado");
+  assert.equal(merged.contact, "");
+  assert.equal(merged.supplier, "Operador");
+  assert.equal(merged.price, "12 EUR");
+  assert.equal(merged.status, "pending");
+  assert.equal(current.supplier, "");
 });
 test("partial progress preserves unresolved checks and confirmation requires evidence", () => {
   const partial = initialConfirmation(item);
@@ -108,6 +144,9 @@ test("confirmation versions persist, reopen as pending and appear in PDF without
     await renderPdf(snapshot, meta, { capture });
     assert.ok(capture.includes("Confirmada pelo curador"));
     assert.ok(capture.includes("Referência da reserva: BLU-123"));
+    assert.ok(capture.includes("Evidência / condições: Fornecedor confirmou por email"));
+    assert.ok(capture.includes("Preço acordado: 20 EUR por pessoa"));
+    assert.ok(capture.includes("Resolvida — Disponibilidade: Validado com fornecedor"));
     assert.ok(!capture.some((s) => s.startsWith("Por confirmar:")));
     snapshot.itinerary[0].items = [
       applyConfirmation(snapshot.itinerary[0].items[0], {

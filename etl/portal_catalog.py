@@ -51,6 +51,13 @@ def integrate_portal(data_dir: Path, tables: dict):
                    'morada': f['address'], 'contactos': f['contacts'],
                    'acessibilidade_nivel_de_confirmacao': f['accessibility'], 'site_fonte': f['source'],
                    'esforco_fisico': f['effort'], 'horario': f['hours']}
+            if record.get('operational') is not None:
+                op = record['operational']
+                row.update(latitude=float(op['latitude'].replace(',', '.')) if op['latitude'] else None,
+                           longitude=float(op['longitude'].replace(',', '.')) if op['longitude'] else None,
+                           dias_de_encerramento=op['closures'], encerramento_base_reconfirmar=op['closures'],
+                           observacoes=op['observations'], necessidade_de_reserva=op['reservations'],
+                           reservas_condicoes_base=op['reservations'])
             if record.get('subcategory'):
                 row['subcategoria'] = record['subcategory']
             if pricing:
