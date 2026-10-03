@@ -3,7 +3,7 @@ import { validateMatching, type MatchingProfile } from "./catalog-matching.ts";
 export const categories = ["atracoes", "restaurantes", "experiencias"] as const;
 export type Category = (typeof categories)[number];
 export const statuses = ["draft", "review", "approved", "inactive"] as const;
-export type CatalogStatus = (typeof statuses)[number];
+type CatalogStatus = (typeof statuses)[number];
 export const categoryLabels = {
   atracoes: "Atividades",
   restaurantes: "Restaurantes",

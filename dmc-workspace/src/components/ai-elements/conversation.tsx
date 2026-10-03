@@ -29,7 +29,7 @@ export const Conversation = React.forwardRef<HTMLDivElement, ConversationProps>(
 );
 Conversation.displayName = "Conversation";
 
-export interface ConversationContentProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ConversationContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
@@ -44,7 +44,7 @@ export const ConversationContent = React.forwardRef<HTMLDivElement, Conversation
 );
 ConversationContent.displayName = "ConversationContent";
 
-export interface ConversationEmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ConversationEmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
   description?: string;
   icon?: React.ReactNode;
@@ -78,7 +78,7 @@ export const ConversationEmptyState: React.FC<ConversationEmptyStateProps> = ({
 };
 ConversationEmptyState.displayName = "ConversationEmptyState";
 
-export interface ConversationScrollButtonProps extends React.ComponentProps<typeof Button> {
+interface ConversationScrollButtonProps extends React.ComponentProps<typeof Button> {
   scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -104,7 +104,7 @@ export const ConversationScrollButton: React.FC<ConversationScrollButtonProps> =
 };
 ConversationScrollButton.displayName = "ConversationScrollButton";
 
-export interface ConversationDownloadProps extends React.ComponentProps<typeof Button> {
+interface ConversationDownloadProps extends React.ComponentProps<typeof Button> {
   messages: Array<{ sender: string; text: string }>;
   fileName?: string;
 }

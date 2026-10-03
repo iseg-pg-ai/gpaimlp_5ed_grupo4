@@ -1,7 +1,7 @@
 import { validatePricing, type CatalogPricing } from "./catalog-schema.ts";
 import type { Snapshot } from "./itinerary-pdf";
 
-export type BudgetLine = {
+type BudgetLine = {
   description: string;
   quantity: number | null;
   unit: string;
