@@ -5,6 +5,8 @@ import {
   initialConfirmation,
   validateConfirmation,
   confirmationFields,
+  mergeConfirmationDefaults,
+  hasKnownPrice,
   type ActivityConfirmation,
 } from "@/lib/activity-confirmation";
 import { T } from "./LocaleProvider";
@@ -23,11 +25,18 @@ export function ActivityConfirmationEditor({
   const [busy, setBusy] = useState(false);
   const [catalog, setCatalog] = useState(activity.catalogDetails);
   const dirty = useRef(false);
+  const touched = useRef(new Set<keyof ActivityConfirmation>());
+  const editingId = useRef(activity.id);
+  const saving = useRef(false);
   useEffect(() => {
     let active = true;
-    dirty.current = false;
+    if (editingId.current !== activity.id) {
+      editingId.current = activity.id;
+      dirty.current = false;
+      touched.current.clear();
+    }
     queueMicrotask(() => {
-      if (active) {
+      if (active && !dirty.current) {
         setValue(initialConfirmation(activity));
         setCatalog(activity.catalogDetails);
       }
@@ -36,9 +45,15 @@ export function ActivityConfirmationEditor({
       fetch(`/api/catalog/itinerary?id=${encodeURIComponent(activity.id)}`)
         .then(async (response) => (response.ok ? response.json() : null))
         .then((data) => {
-          if (active && !dirty.current && data) {
+          if (active && data) {
             setCatalog(data);
-            setValue(initialConfirmation({ ...activity, catalogDetails: data }));
+            setValue((current) =>
+              mergeConfirmationDefaults(
+                current,
+                initialConfirmation({ ...activity, catalogDetails: data }),
+                touched.current,
+              ),
+            );
           }
         })
         .catch(() => {});
@@ -49,10 +64,14 @@ export function ActivityConfirmationEditor({
   }, [activity]);
   const change = (patch: Partial<ActivityConfirmation>) => {
     dirty.current = true;
+    for (const key of Object.keys(patch) as (keyof ActivityConfirmation)[])
+      touched.current.add(key);
     setValue((v) => ({ ...v, ...patch, status: "pending", confirmedAt: null }));
     setNotice("");
   };
   async function save(confirm: boolean) {
+    if (saving.current || disabled || activity.isLocked) return;
+    saving.current = true;
     const next: ActivityConfirmation = {
       ...value,
       ...(catalog ? { catalogDetails: catalog } : {}),
@@ -65,6 +84,8 @@ export function ActivityConfirmationEditor({
       validateConfirmation(activity, next);
       setBusy(true);
       if (await onSave(next)) {
+        dirty.current = false;
+        touched.current.clear();
         setValue(next);
         setNotice("Alterações guardadas na versão do roteiro.");
       } else
@@ -74,6 +95,7 @@ export function ActivityConfirmationEditor({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível guardar.");
     } finally {
+      saving.current = false;
       setBusy(false);
     }
   }
@@ -92,6 +114,20 @@ export function ActivityConfirmationEditor({
           source="pt"
         />
       </p>
+      {(!value.time || !value.location.trim() || !hasKnownPrice(value.price)) && (
+        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+          <T text="Por confirmar" source="pt" />:
+          <ul className="mt-1 list-inside list-disc">
+            {(["time", "location", "price"] as const)
+              .filter((key) => (key === "price" ? !hasKnownPrice(value.price) : !value[key].trim()))
+              .map((key) => (
+                <li key={key}>
+                  <T text={confirmationFields[key]} source="pt" />
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
       {catalog && (
         <div className="mb-4 space-y-2 rounded-lg border bg-white p-3 text-sm">
           <p className="font-semibold">
