@@ -30,9 +30,8 @@ branch ainda precisa de merge antes de ficar disponível em `main`.
   infantis e horas faturáveis só são incluídos quando explícitos.
 - Correção de erros: existe cobertura de regressão para as alterações realizadas,
   mas não uma garantia de ausência total de erros.
-- Qualidade do código: lint, tipos e testes passam isoladamente nas alterações já
-  validadas; `npm run format:check` ainda identifica ficheiros antigos que precisam
-  de uniformização num branch de código dedicado.
+- Qualidade do código: lint, tipos, formatação, testes e compilação são executados
+  pelo controlo `npm run check` e pela validação final do portal.
 
 ## Por fazer
 

@@ -5,7 +5,7 @@ import { ArrowUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-export type PromptInputProps = React.FormHTMLAttributes<HTMLFormElement>;
+type PromptInputProps = React.FormHTMLAttributes<HTMLFormElement>;
 
 export const PromptInput = React.forwardRef<HTMLFormElement, PromptInputProps>(
   ({ className, onSubmit, children, ...props }, ref) => {
@@ -44,7 +44,7 @@ export const PromptInputBody: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
 };
 PromptInputBody.displayName = "PromptInputBody";
 
-export interface PromptInputTextareaProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface PromptInputTextareaProps extends React.InputHTMLAttributes<HTMLInputElement> {
   onEnterSubmit?: () => void;
 }
 
@@ -77,7 +77,7 @@ export const PromptInputTextarea = React.forwardRef<HTMLInputElement, PromptInpu
 );
 PromptInputTextarea.displayName = "PromptInputTextarea";
 
-export interface PromptInputSubmitProps extends React.ComponentProps<typeof Button> {
+interface PromptInputSubmitProps extends React.ComponentProps<typeof Button> {
   status?: "ready" | "streaming";
 }
 

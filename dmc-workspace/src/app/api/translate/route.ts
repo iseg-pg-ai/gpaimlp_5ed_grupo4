@@ -1,13 +1,13 @@
 import { translateLocal } from "@/lib/local-translation";
 import { isLocale } from "@/lib/locales";
 import { TranslationError } from "@/lib/translation-error";
+import { jsonError, noStoreHeaders } from "@/lib/api-response";
 export const runtime = "nodejs";
 export async function POST(request: Request) {
   let body;
   try {
     const raw = await request.text();
-    if (raw.length > 300000)
-      return Response.json({ error: "Pedido demasiado grande." }, { status: 413 });
+    if (raw.length > 300000) return jsonError("Pedido demasiado grande.", 413);
     body = JSON.parse(raw);
     if (
       !isLocale(body.target) ||
@@ -23,22 +23,20 @@ export async function POST(request: Request) {
     )
       throw new Error();
   } catch {
-    return Response.json({ error: "Pedido de tradução inválido." }, { status: 400 });
+    return jsonError("Pedido de tradução inválido.", 400);
   }
   try {
     return Response.json(
       { texts: await translateLocal(body.items, body.target) },
-      { headers: { "Cache-Control": "no-store" } },
+      { headers: noStoreHeaders },
     );
   } catch (error) {
     if (error instanceof TranslationError)
       return Response.json({ error: error.message, code: error.code }, { status: 503 });
     console.error("Translation failed", error);
-    return Response.json(
-      {
-        error: "Tradução local indisponível. Verifique os modelos linguísticos ou tente novamente.",
-      },
-      { status: 503 },
+    return jsonError(
+      "Tradução local indisponível. Verifique os modelos linguísticos ou tente novamente.",
+      503,
     );
   }
 }
