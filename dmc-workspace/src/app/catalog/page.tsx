@@ -1,4 +1,5 @@
 "use client";
+import { formatPricing } from "@/lib/catalog-schema";
 import { T } from "@/components/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import { selectStyle } from "@/components/ui/select-style";
@@ -194,7 +195,9 @@ export default function CatalogPage() {
                 {r.fields.location || "—"} · {r.fields.duration || "—"}
               </p>
               <p className="break-words text-sm leading-6">{r.fields.description}</p>
-              <p className="mt-3 text-sm">{r.fields.price || "—"}</p>
+              <p className="mt-3 text-sm">
+                {r.pricing ? formatPricing(r.pricing) : r.fields.price || "—"}
+              </p>
               <p className="mt-3 text-sm font-medium">
                 <T
                   text={

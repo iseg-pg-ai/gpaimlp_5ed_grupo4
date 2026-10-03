@@ -141,6 +141,8 @@ export class CatalogStore {
             .filter(([k]) => k in emptyFields())
             .map(([k, val]) => [k, val.trim()]),
         ) as CatalogRecord["fields"],
+        subcategory: v.subcategory ?? previous?.subcategory,
+        pricing: v.pricing ?? previous?.pricing,
         matching: v.matching
           ? { ...v.matching, food: v.category === "restaurantes" ? "yes" : v.matching.food }
           : previous?.matching,

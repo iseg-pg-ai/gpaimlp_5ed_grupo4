@@ -90,6 +90,8 @@ export function useCatalog() {
             status: record.status,
             baseRevision: record.revision,
             fields: { ...record.fields },
+            pricing: record.pricing,
+            subcategory: record.subcategory,
             matching: record.matching ?? emptyMatching(),
             reason: "",
           }
@@ -118,6 +120,7 @@ export function useCatalog() {
       // Preserve the draft on conflict, but refresh the list so reopening uses the current revision.
       if (response.status === 409) await load();
       await responseJson(response);
+      setCategory(input.category);
       setEditing(null);
       setHistory(null);
       setNotice(
