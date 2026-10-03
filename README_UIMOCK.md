@@ -630,3 +630,17 @@ O painel de entrega reúne versão, idioma do cliente, descarregamento e histór
 Cada versão guarda uma cópia do briefing, incluindo o orçamento, e do roteiro, incluindo preços, dados do catálogo e confirmações. Alterar estes dados cria uma nova versão; mudar apenas o idioma de exportação mantém a versão e acrescenta uma variante linguística. As exportações antigas reutilizam os bytes guardados. Mesmo a primeira exportação de outro idioma numa versão antiga usa exclusivamente a cópia dessa versão, sem consultar o catálogo atual.
 
 Validação do painel em telemóvel e computador: `node tests/browser/delivery.mjs` (servidor iniciado; download simulado). As garantias de persistência e isolamento são verificadas em `tests/versions.test.mjs`.
+
+
+### Orçamento discriminado no PDF
+
+As novas exportações terminam com **Orçamento da proposta**: descrição, quantidade/unidade, preço unitário, subtotal e estado. O orçamento disponível do cliente aparece separado do custo calculado. Não se trata de uma fatura.
+
+- Os preços estruturados do catálogo são copiados para o roteiro e versionados. Os dados de confirmação da viagem prevalecem, incluindo campos deliberadamente apagados. Nas propostas antigas, apenas preços textuais completos e inequívocos (por exemplo, `20 EUR por pessoa`) são calculados.
+- Por pessoa: adultos + crianças; por grupo ou serviço: uma unidade. Tarifas infantis diferentes não são presumidas. Horas de visita não são automaticamente horas faturáveis.
+- Preços do catálogo são estimativas para a viagem; só a confirmação da atividade permite o estado Confirmado. Valores pendentes não entram na soma e não são tratados como zero. Uma tarifa explícita de zero é preservada.
+- Os subtotais são calculados em cêntimos e separados por moeda, sem conversão cambial. Se faltarem valores, o documento identifica a soma como subtotal conhecido de uma proposta incompleta.
+- Inclusões, exclusões e condições fiscais explícitas (`inclusoes`, `exclusoes`, `impostos_taxas`) são preservadas quando existentes na fonte. Impostos adicionais não são inferidos nem calculados a partir de texto livre. Deslocações sem preço/inclusão explícita ficam por confirmar.
+- O renderer é comum ao português e às traduções. O orçamento usa exclusivamente a cópia guardada da proposta; PDFs já exportados mantêm os bytes originais.
+
+Testes dos cálculos, paginação e histórico: `node --test tests/proposal-budget.test.mjs` em `dmc-workspace`.
