@@ -108,6 +108,26 @@ O orçamento discriminado apresenta preços calculáveis, valores por confirmar 
 totais separados por moeda. O orçamento disponível do cliente aparece separado do
 custo conhecido da proposta. Valores desconhecidos não são apresentados como zero.
 
+### Apresentação dos PDFs BLU
+
+As novas exportações têm capa em azul-petróleo e creme, apontamentos dourados,
+cliente e destino em destaque, datas, versão e estado preliminar. O resumo da
+viagem é separado dos dias; cada atividade apresenta horário, título,
+localização, descrição, preço e confirmações por ordem de leitura. Fontes e
+critérios aparecem com menor destaque. O rodapé identifica a versão e a
+paginação.
+
+Português e traduções usam o mesmo renderer, com quebra de linhas e paginação
+conforme o comprimento dos textos. Mandarim mantém a configuração
+`BLU_PDF_CJK_FONT`. O número de páginas pode variar entre idiomas. Os PDFs já
+arquivados não são redesenhados: continuam a ser entregues com os bytes
+originais; o novo desenho aplica-se a PDFs ainda não gerados.
+
+Não foram incluídas fotografias: o repositório não contém fotografias de destinos
+com autorização documentada. A introdução de fotografias fica dependente desses
+materiais e respetivos créditos. A decoração geométrica da capa é desenhada
+diretamente no PDF.
+
 ## Idiomas
 
 A interface suporta português, inglês, mandarim, espanhol, francês e alemão. Os

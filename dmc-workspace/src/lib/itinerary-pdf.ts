@@ -30,7 +30,7 @@ export function renderPdf(
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: "A4",
-      margin: 48,
+      margins: { top: 64, bottom: 64, left: 48, right: 48 },
       bufferPages: true,
       info: {
         Title: `${snapshot.brief.customerName} — ${snapshot.brief.destination} — v${meta.version}`,
@@ -46,6 +46,8 @@ export function renderPdf(
       const font = [
         process.env.BLU_PDF_FONT,
         "C:/Windows/Fonts/arial.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/Library/Fonts/Arial.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
       ].find((p) => p && existsSync(p));
       if (options.locale === "zh") {
@@ -56,26 +58,75 @@ export function renderPdf(
           doc.font(chineseFont, process.env.BLU_PDF_CJK_FACE ?? "MicrosoftYaHei");
         else doc.font(chineseFont);
       } else if (font) doc.font(font);
-      const text = (value: string, size = 10, color = "#143F4B") => {
+      const decorate = () => {
+        doc.save();
+        doc.rect(0, 0, doc.page.width, doc.page.height).fill("#FFFEFA");
+        doc.rect(0, 0, doc.page.width, 10).fill("#143F4B");
+        doc.rect(48, 35, 38, 3).fill("#B88B49");
+        doc.restore();
+      };
+      decorate();
+      doc.on("pageAdded", decorate);
+      const translated = (value: string) => {
+        const normalized = options.normalize?.(value) ?? value;
+        return options.translations?.get(normalized) ?? normalized;
+      };
+      const ensure = (height: number) => {
+        if (doc.y + height > doc.page.height - 64) doc.addPage();
+      };
+      const text = (value: string, size = 11, color = "#143F4B") => {
         value = options.normalize?.(value) ?? value;
         options.capture?.push(value);
         value = options.translations?.get(value) ?? value;
-        doc.fontSize(size).fillColor(color).text(value, { lineGap: 4 });
+        doc
+          .fontSize(size)
+          .fillColor(color)
+          .text(value, 48, doc.y, { width: doc.page.width - 96, lineGap: 5 });
         doc.moveDown(0.45);
       };
       const heading = (value: string) => {
-        if (doc.y > 700) doc.addPage();
-        text(value, 16);
+        const height = doc
+          .fontSize(23)
+          .heightOfString(translated(value), { width: doc.page.width - 96, lineGap: 5 });
+        ensure(Math.min(height + 65, 600));
+        doc.save().rect(48, doc.y, 32, 3).fill("#B88B49").restore();
+        doc.y += 16;
+        text(value, 23);
       };
       const b = snapshot.brief;
-      text("BLU COSTA TRAVEL", 23);
-      text("ROTEIRO · PROPOSTA PRELIMINAR", 11, "#986C26");
-      heading(`${b.customerName} — ${b.destination}`);
+      // The cover uses the same flow layout in every language, rather than fixed text boxes.
+      doc.save();
+      doc.rect(0, 0, doc.page.width, 170).fill("#143F4B");
+      doc
+        .circle(doc.page.width - 15, 40, 115)
+        .lineWidth(1)
+        .stroke("#50727A");
+      doc.circle(doc.page.width - 15, 40, 145).stroke("#50727A");
+      doc.restore();
+      doc.y = 64;
+      text("BLU COSTA TRAVEL", 27, "#FFFEFA");
+      doc.y = 204;
+      text("ROTEIRO · PROPOSTA PRELIMINAR", 11, "#896225");
+      text(b.destination, 38);
+      text(b.customerName, 22, "#52656B");
+      doc.moveDown(0.6);
       text(
         `${b.startDate} a ${b.endDate} | ${b.proposalTier} | ${b.adults} adultos + ${b.children} crianças`,
+        12,
       );
+      text(`Versão v${String(meta.version).padStart(3, "0")}`, 14, "#896225");
+      text(
+        "Proposta para revisão. As reservas e os preços dependem de confirmação.",
+        11,
+        "#52656B",
+      );
+      doc.addPage();
+      heading("A sua viagem");
+      text(`${b.customerName} — ${b.destination}`, 15);
       text(
         `Versão v${String(meta.version).padStart(3, "0")} | Criada em ${new Date(meta.createdAt).toISOString()} | Viagem ${meta.tripId}`,
+        9,
+        "#52656B",
       );
       text(
         `Versão anterior: ${meta.parentVersion === null ? "nenhuma (início do histórico)" : `v${String(meta.parentVersion).padStart(3, "0")}`}`,
@@ -98,11 +149,27 @@ export function renderPdf(
         if (day.summary) text(day.summary);
         if (!day.items.length) text("Sem atividades selecionadas. Requer curadoria manual.");
         for (const item of day.items) {
-          if (doc.y > 650) doc.addPage();
-          text(`${item.time} — ${item.title}${item.isLocked ? " [Protegida]" : ""}`, 12);
-          if (item.location) text(item.location);
+          const titleHeight = doc
+            .fontSize(18)
+            .heightOfString(translated(item.title), { width: doc.page.width - 96, lineGap: 5 });
+          ensure(Math.min(titleHeight + 120, 600));
+          doc
+            .save()
+            .moveTo(48, doc.y)
+            .lineTo(doc.page.width - 48, doc.y)
+            .lineWidth(0.7)
+            .stroke("#DDD8CE")
+            .restore();
+          doc.y += 15;
+          text(item.time, 10, "#896225");
+          text(item.title, 18);
+          if (item.isLocked) text("Protegida", 10, "#52656B");
+          if (item.location) text(item.location, 11, "#52656B");
           if (item.duration) text(`Duração: ${item.duration}`);
-          if (item.description) text(item.description);
+          if (item.description) {
+            doc.moveDown(0.2);
+            text(item.description);
+          }
           if (item.priceNote) text(item.priceNote, 10, "#805D26");
           if (item.dietaryNotes) text(item.dietaryNotes);
           if (item.accessibilityNotes) text(item.accessibilityNotes);
@@ -138,7 +205,7 @@ export function renderPdf(
       }
       doc.addPage();
       heading("Identificação da versão");
-      text(meta.filename);
+      text(meta.filename, 10);
       text(`Viagem: ${meta.tripId}`);
       text(`SHA-256 do conteúdo: ${meta.snapshotHash}`, 8);
       text(`SHA-256 da cadeia: ${meta.chainHash}`, 8);
@@ -150,6 +217,13 @@ export function renderPdf(
       for (let i = 0; i < range.count; i++) {
         doc.switchToPage(i);
         doc.page.margins.bottom = 0;
+        doc
+          .save()
+          .moveTo(48, doc.page.height - 46)
+          .lineTo(doc.page.width - 48, doc.page.height - 46)
+          .lineWidth(0.5)
+          .stroke("#DDD8CE")
+          .restore();
         doc
           .fontSize(8)
           .fillColor("#52656B")
