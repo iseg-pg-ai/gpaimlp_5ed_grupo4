@@ -211,3 +211,34 @@ test("optimizeRouteSequence eliminates zig-zag and anchors lunch in the middle",
   // Times must be sequential
   assert.match(optimized[0].time, /^09:30/);
 });
+
+test("enrichItineraryWithRoadRouting skips road legs for free_time periods", async () => {
+  const day = {
+    dayNumber: 1,
+    date: "2026-10-10",
+    title: "Dia 1: Lisboa",
+    location: "Lisboa",
+    items: [
+      {
+        id: "poi-1",
+        title: "Castelo de São Jorge",
+        category: "activity",
+        latitude: 38.7139,
+        longitude: -9.1335,
+        time: "10:00–12:00 (proposto)",
+      },
+      {
+        id: "free-time-1",
+        title: "Tarde Livre — Exploração e Descanso",
+        category: "free_time",
+        time: "14:00–18:00 (proposto)",
+      },
+    ],
+  };
+
+  const [enriched] = await enrichItineraryWithRoadRouting([day]);
+  assert.equal(enriched.items.length, 2);
+  // No transit leg between poi-1 and free-time-1
+  assert.equal(enriched.items[0].transitToNext, undefined);
+  assert.equal(enriched.routeSummary, undefined);
+});

@@ -1,4 +1,44 @@
 {
+  "+ Tempo Livre": {
+    "pt": "+ Tempo Livre",
+    "en": "+ Free Time",
+    "es": "+ Tiempo Libre",
+    "fr": "+ Temps Libre",
+    "de": "+ Freizeit",
+    "zh": "+ 自由时间"
+  },
+  "Atividade": {
+    "pt": "Atividade",
+    "en": "Activity",
+    "es": "Actividad",
+    "fr": "Activité",
+    "de": "Aktivität",
+    "zh": "活动"
+  },
+  "Remover": {
+    "pt": "Remover",
+    "en": "Remove",
+    "es": "Eliminar",
+    "fr": "Supprimer",
+    "de": "Entfernen",
+    "zh": "删除"
+  },
+  "Adicionar Atividade ao Dia": {
+    "pt": "Adicionar Atividade ao Dia",
+    "en": "Add Activity to Day",
+    "es": "Añadir Actividad al Día",
+    "fr": "Ajouter une activité au jour",
+    "de": "Aktivität zum Tag hinzufügen",
+    "zh": "添加活动到该日"
+  },
+  "Capacidade deste dia:": {
+    "pt": "Capacidade deste dia:",
+    "en": "Day capacity:",
+    "es": "Capacidad del día:",
+    "fr": "Capacité du jour :",
+    "de": "Tageskapazität:",
+    "zh": "当日容量："
+  },
   "Otimizar Rota": {
     "pt": "Otimizar Rota",
     "en": "Optimize Route",

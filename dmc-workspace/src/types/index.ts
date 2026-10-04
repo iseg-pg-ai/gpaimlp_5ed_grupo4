@@ -63,6 +63,7 @@ export interface ItineraryDay {
   items: ActivityItem[];
   routeSummary?: DailyRouteSummary;
   isRecentlyModified?: boolean;
+  dailyCapacity?: number;
 }
 
 export type PhysicalEffortLevel = "Baixo (Low)" | "Moderado (Moderate)" | "Alto (High)";

@@ -175,3 +175,57 @@ test("assistant optimizes day route sequence on request", () => {
   assert.match(optimized.reply, /Rota do dia 1 otimizada/);
   assert.equal(optimized.itinerary[0].items.length, 3);
 });
+
+test("assistant adjusts day capacity and allows adding activity beyond default pace limit", () => {
+  const { c, snapshot } = setup();
+  snapshot.brief.pace = "Relaxed"; // limit 2
+  const added = editWithAssistant(snapshot, 'adicionar "Other" ao dia 1', c);
+  assert.equal(added.changed, true);
+  assert.equal(added.itinerary[0].items.length, 2);
+
+  // Attempting 3rd activity without adjusting capacity fails
+  const failed3rd = editWithAssistant(
+    { ...snapshot, itinerary: added.itinerary },
+    'adicionar "Third" ao dia 1',
+    c,
+  );
+  assert.equal(failed3rd.changed, false);
+
+  // Adjust capacity of day 1 to 3
+  const adjusted = editWithAssistant(
+    { ...snapshot, itinerary: added.itinerary },
+    "ajustar capacidade do dia 1 para 3",
+    c,
+  );
+  assert.equal(adjusted.changed, true);
+  assert.equal(adjusted.itinerary[0].dailyCapacity, 3);
+
+  // Now adding 3rd activity succeeds!
+  const success3rd = editWithAssistant(
+    { ...snapshot, itinerary: adjusted.itinerary },
+    'adicionar "Third" ao dia 1',
+    c,
+  );
+  assert.equal(success3rd.changed, true);
+  assert.equal(success3rd.itinerary[0].items.length, 3);
+});
+
+test("assistant adds free periods and supports full free day", () => {
+  const { c, snapshot } = setup();
+
+  // Add afternoon free time
+  const withTardeLivre = editWithAssistant(snapshot, "adicionar tarde livre ao dia 1", c);
+  assert.equal(withTardeLivre.changed, true);
+  const afternoonItem = withTardeLivre.itinerary[0].items.find(
+    (it) => it.category === "free_time",
+  );
+  assert.ok(afternoonItem);
+  assert.match(afternoonItem.title, /Tarde Livre/);
+
+  // Mark day 1 as free day
+  const withDiaLivre = editWithAssistant(snapshot, "marcar dia 1 como dia livre", c);
+  assert.equal(withDiaLivre.changed, true);
+  assert.equal(withDiaLivre.itinerary[0].items.length, 1);
+  assert.equal(withDiaLivre.itinerary[0].items[0].category, "free_time");
+  assert.match(withDiaLivre.itinerary[0].items[0].title, /Dia Livre/);
+});

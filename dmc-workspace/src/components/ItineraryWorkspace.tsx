@@ -8,9 +8,10 @@ import { ProposalStatus } from "./ProposalStatus";
 import { ActivityCard } from "./ActivityCard";
 import { TransitConnector } from "./TransitConnector";
 import { TransitInspectorModal } from "./TransitInspectorModal";
+import { AddPoiModal } from "./AddPoiModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MapPin, Download, SlidersHorizontal, Sparkles, Route } from "lucide-react";
+import { Calendar, Users, MapPin, Download, SlidersHorizontal, Sparkles, Route, Plus, Sun } from "lucide-react";
 
 interface ItineraryWorkspaceProps {
   brief: CustomerBrief;
@@ -31,6 +32,10 @@ interface ItineraryWorkspaceProps {
   saving?: boolean;
   onToggleLockActivity?: (dayNumber: number, activityId: string) => void;
   onOptimizeDayRoute?: (dayNumber: number) => void;
+  onAddPoiToDay?: (dayNumber: number, title: string) => void;
+  onRemoveActivity?: (dayNumber: number, activityId: string) => void;
+  onAddFreePeriodToDay?: (dayNumber: number, type: "afternoon" | "morning" | "fullday") => void;
+  onAdjustDayCapacity?: (dayNumber: number, newCapacity: number) => void;
 }
 
 export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
@@ -47,6 +52,10 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   onToggleLockActivity,
   onConfirmActivity,
   onOptimizeDayRoute,
+  onAddPoiToDay,
+  onRemoveActivity,
+  onAddFreePeriodToDay,
+  onAdjustDayCapacity,
   saving,
 }) => {
   const { locale } = useLocale();
@@ -59,6 +68,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
     }).format(new Date(date + "T12:00:00"));
   const [selectedDayFilter, setSelectedDayFilter] = useState<number | "all">("all");
   const [inspectedLeg, setInspectedLeg] = useState<TransitLeg | null>(null);
+  const [addPoiDay, setAddPoiDay] = useState<number | null>(null);
   const dayRefs = useRef<{ [key: number]: HTMLElement | null }>({});
 
   // Auto-scroll into view when a specific day is modified by the AI Assistant
@@ -304,7 +314,84 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                   </h2>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {onAdjustDayCapacity && (
+                    <div className="flex items-center gap-1 rounded-lg border border-[#D5D1C7] bg-[#FAF8F3] px-2 py-1 text-xs text-[#143F4B]">
+                      <span className="text-[#6A8288]">Capacidade:</span>
+                      <button
+                        type="button"
+                        disabled={
+                          saving ||
+                          (day.dailyCapacity ??
+                            (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) <= 1
+                        }
+                        onClick={() =>
+                          onAdjustDayCapacity(
+                            day.dayNumber,
+                            (day.dailyCapacity ??
+                              (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) - 1,
+                          )
+                        }
+                        className="px-1 font-bold hover:bg-white rounded disabled:opacity-30"
+                        title="Diminuir limite de atividades"
+                      >
+                        -
+                      </button>
+                      <span className="font-semibold px-0.5">
+                        {day.items.filter((it) => it.category !== "free_time").length} /{" "}
+                        {day.dailyCapacity ??
+                          (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={
+                          saving ||
+                          (day.dailyCapacity ??
+                            (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) >= 6
+                        }
+                        onClick={() =>
+                          onAdjustDayCapacity(
+                            day.dayNumber,
+                            (day.dailyCapacity ??
+                              (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) + 1,
+                          )
+                        }
+                        className="px-1 font-bold hover:bg-white rounded disabled:opacity-30"
+                        title="Aumentar limite de atividades deste dia"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
+
+                  {onAddPoiToDay && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAddPoiDay(day.dayNumber)}
+                      disabled={saving}
+                      className="text-xs h-8 gap-1 border-[#D5D1C7] text-[#143F4B] hover:bg-[#FAF8F3]"
+                      title="Adicionar oferta do catálogo a este dia"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-[#143F4B]" />
+                      <T text="Atividade" source="pt" />
+                    </Button>
+                  )}
+
+                  {onAddFreePeriodToDay && !day.items.some((it) => it.category === "free_time") && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onAddFreePeriodToDay(day.dayNumber, "afternoon")}
+                      disabled={saving}
+                      className="text-xs h-8 gap-1 border-[#D5D1C7] text-[#765218] bg-amber-50/50 hover:bg-amber-100/50"
+                      title="Adicionar período de tarde livre para descanso ou compras"
+                    >
+                      <Sun className="w-3.5 h-3.5 text-[#D8A65C]" />
+                      <T text="+ Tempo Livre" source="pt" />
+                    </Button>
+                  )}
+
                   {onOptimizeDayRoute && day.items.length > 2 && (
                     <Button
                       variant="outline"
@@ -377,6 +464,11 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                             : undefined
                         }
                         onToggleLock={() => onToggleLockActivity?.(day.dayNumber, activity.id)}
+                        onRemove={
+                          onRemoveActivity
+                            ? () => onRemoveActivity(day.dayNumber, activity.id)
+                            : undefined
+                        }
                       />
                       {activity.transitToNext && (
                         <TransitConnector
@@ -395,6 +487,24 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
 
       {/* Transit Routing Inspector Modal */}
       <TransitInspectorModal leg={inspectedLeg} onClose={() => setInspectedLeg(null)} />
+
+      {/* Add POI Modal */}
+      {addPoiDay !== null && (
+        <AddPoiModal
+          isOpen={true}
+          dayNumber={addPoiDay}
+          dayLocation={itinerary.find((d) => d.dayNumber === addPoiDay)?.location || brief.destination}
+          dayCapacity={
+            itinerary.find((d) => d.dayNumber === addPoiDay)?.dailyCapacity ??
+            (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)
+          }
+          currentItems={itinerary.find((d) => d.dayNumber === addPoiDay)?.items || []}
+          allItineraryItems={itinerary.flatMap((d) => d.items)}
+          onClose={() => setAddPoiDay(null)}
+          onAddPoi={(title) => onAddPoiToDay?.(addPoiDay, title)}
+          onAdjustCapacity={(cap) => onAdjustDayCapacity?.(addPoiDay, cap)}
+        />
+      )}
     </div>
   );
 };

@@ -435,6 +435,16 @@ export function optimizeRouteSequence(
 ): ActivityItem[] {
   if (items.length <= 2) return items;
 
+  const hasFreeTime = items.some((it) => it.category === "free_time");
+  if (hasFreeTime) {
+    const morningFree = items.filter((it, idx) => it.category === "free_time" && idx === 0);
+    const afternoonFree = items.filter((it, idx) => it.category === "free_time" && idx > 0);
+    const active = items.filter((it) => it.category !== "free_time");
+    if (active.length <= 2) return items;
+    const optActive = optimizeRouteSequence(active, coordMap);
+    return [...morningFree, ...optActive, ...afternoonFree];
+  }
+
   const isLockedOrConfirmed = (item: ActivityItem) =>
     item.isLocked || item.confirmation?.status === "confirmed";
 
@@ -544,6 +554,10 @@ export async function enrichItineraryWithRoadRouting(
     for (let i = 0; i < items.length - 1; i++) {
       const current = items[i];
       const next = items[i + 1];
+
+      if (current.category === "free_time" || next.category === "free_time") {
+        continue;
+      }
 
       const fromCoords = extractCoords(current, coordMap);
       const toCoords = extractCoords(next, coordMap);

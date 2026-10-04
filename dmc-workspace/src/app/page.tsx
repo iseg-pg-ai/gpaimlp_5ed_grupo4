@@ -214,6 +214,29 @@ export default function WorkspacePage() {
                   onOptimizeDayRoute={(dayNumber) =>
                     send(`otimizar rota do dia ${dayNumber}`)
                   }
+                  onAddPoiToDay={(dayNumber, title) =>
+                    send(`adicionar "${title}" ao dia ${dayNumber}`)
+                  }
+                  onRemoveActivity={(dayNumber, activityId) => {
+                    const day = active.itinerary.find((d) => d.dayNumber === dayNumber);
+                    if (!day) return;
+                    const index = day.items.findIndex((i) => i.id === activityId);
+                    if (index >= 0) {
+                      send(`remover atividade ${index + 1} do dia ${dayNumber}`);
+                    }
+                  }}
+                  onAddFreePeriodToDay={(dayNumber, type) => {
+                    if (type === "morning") {
+                      send(`adicionar manha livre ao dia ${dayNumber}`);
+                    } else if (type === "fullday") {
+                      send(`marcar dia ${dayNumber} como dia livre`);
+                    } else {
+                      send(`adicionar tarde livre ao dia ${dayNumber}`);
+                    }
+                  }}
+                  onAdjustDayCapacity={(dayNumber, newCapacity) =>
+                    send(`ajustar capacidade do dia ${dayNumber} para ${newCapacity}`)
+                  }
                 />
                 <section
                   onKeyDown={(event) => {
