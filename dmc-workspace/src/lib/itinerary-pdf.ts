@@ -5,7 +5,6 @@ import { existsSync } from "node:fs";
 import type { CustomerBrief, ItineraryDay } from "../types/index";
 export type Snapshot = { brief: CustomerBrief; itinerary: ItineraryDay[]; pending: string[] };
 export type VersionMeta = {
-  exportedLocales?: string[];
   exportedAt?: string | null;
   tripId: string;
   version: number;

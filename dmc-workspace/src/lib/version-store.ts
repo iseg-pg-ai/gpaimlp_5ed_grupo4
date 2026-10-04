@@ -68,13 +68,6 @@ export class VersionStore {
     this.db.close();
   }
   list(tripId?: string): VersionMeta[] {
-    const withLanguages = (row: VersionMeta): VersionMeta => ({
-      ...publicName(row),
-      exportedLocales: this.db
-        .prepare("SELECT locale FROM localized_pdfs WHERE tripId=? AND version=? ORDER BY locale")
-        .all(row.tripId, row.version)
-        .map((entry) => String(entry.locale)),
-    });
     const columns =
       "tripId, version, filename, createdAt, reason, snapshotHash, chainHash, parentVersion, exportedAt";
     if (tripId) {
@@ -83,13 +76,13 @@ export class VersionStore {
         this.db
           .prepare(`SELECT ${columns} FROM versions WHERE tripId=? ORDER BY version DESC`)
           .all(tripId) as unknown as VersionMeta[]
-      ).map(withLanguages);
+      ).map(publicName);
     }
     return (
       this.db
         .prepare(`SELECT ${columns} FROM versions ORDER BY createdAt DESC`)
         .all() as unknown as VersionMeta[]
-    ).map(withLanguages);
+    ).map(publicName);
   }
   get(tripId: string, version: number): Stored {
     checkTripId(tripId);
