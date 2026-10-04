@@ -29,6 +29,8 @@ export interface ActivityItem {
   description?: string;
   category: ActivityCategory;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   duration?: string;
   priceNote?: string;
   effortLevel?: "Baixo" | "Moderado" | "Alto";

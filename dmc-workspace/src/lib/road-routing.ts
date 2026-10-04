@@ -120,20 +120,63 @@ export async function calculateRoadLeg(
   };
 }
 
+const normKey = (s?: unknown) =>
+  String(s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+function parseCoord(val: unknown): number | undefined {
+  if (typeof val === "number" && Number.isFinite(val)) return val;
+  if (typeof val === "string") {
+    const num = parseFloat(val.trim());
+    if (Number.isFinite(num)) return num;
+  }
+  return undefined;
+}
+
 /**
  * Extracts coordinates from an activity item using its catalog details or raw data.
  */
 function extractCoords(
   item: ActivityItem,
-  rawCatalogMap?: Map<string, { latitude?: number; longitude?: number }>,
+  rawCatalogMap?: Map<string, { latitude: number; longitude: number }>,
 ): LocationCoords {
-  const catalogEntry = rawCatalogMap?.get(item.id);
-  const lat = catalogEntry?.latitude ?? (item as unknown as { latitude?: number }).latitude;
-  const lon = catalogEntry?.longitude ?? (item as unknown as { longitude?: number }).longitude;
+  // 1. Direct coordinate properties on item
+  const directLat = parseCoord(item.latitude);
+  const directLon = parseCoord(item.longitude);
+  if (directLat !== undefined && directLon !== undefined) {
+    return {
+      latitude: directLat,
+      longitude: directLon,
+      title: item.title,
+    };
+  }
+
+  // 2. Lookup in catalog map with various possible keys
+  if (rawCatalogMap) {
+    const rawId = item.id.replace(/^[a-z_]+:/i, "");
+    const candidate =
+      rawCatalogMap.get(item.id) ??
+      rawCatalogMap.get(normKey(item.id)) ??
+      rawCatalogMap.get(rawId) ??
+      rawCatalogMap.get(normKey(rawId)) ??
+      rawCatalogMap.get(item.title) ??
+      rawCatalogMap.get(normKey(item.title));
+
+    if (candidate) {
+      return {
+        latitude: candidate.latitude,
+        longitude: candidate.longitude,
+        title: item.title,
+      };
+    }
+  }
 
   return {
-    latitude: typeof lat === "number" && Number.isFinite(lat) ? lat : undefined,
-    longitude: typeof lon === "number" && Number.isFinite(lon) ? lon : undefined,
+    latitude: undefined,
+    longitude: undefined,
     title: item.title,
   };
 }
@@ -143,23 +186,50 @@ function extractCoords(
  */
 export async function enrichItineraryWithRoadRouting(
   days: ItineraryDay[],
-  catalogRecords?: Array<{
-    id?: string;
-    id_blu?: string;
-    nome_da_experiencia?: string;
-    latitude?: number;
-    longitude?: number;
-  }>,
+  catalogRecords?: Array<Record<string, unknown>>,
 ): Promise<ItineraryDay[]> {
   // Build lookup map for coordinates
-  const coordMap = new Map<string, { latitude?: number; longitude?: number }>();
+  const coordMap = new Map<string, { latitude: number; longitude: number }>();
   if (catalogRecords) {
     for (const rec of catalogRecords) {
-      if (typeof rec.latitude === "number" && typeof rec.longitude === "number") {
-        const coords = { latitude: rec.latitude, longitude: rec.longitude };
-        if (rec.id) coordMap.set(String(rec.id), coords);
-        if (rec.id_blu) coordMap.set(String(rec.id_blu), coords);
-        if (rec.nome_da_experiencia) coordMap.set(String(rec.nome_da_experiencia), coords);
+      const lat = parseCoord(rec.latitude);
+      const lon = parseCoord(rec.longitude);
+      if (lat !== undefined && lon !== undefined) {
+        const coords = { latitude: lat, longitude: lon };
+
+        // Key by raw ID
+        if (rec.id) {
+          const idStr = String(rec.id);
+          coordMap.set(idStr, coords);
+          coordMap.set(normKey(idStr), coords);
+          coordMap.set(`atracoes:${idStr}`, coords);
+          coordMap.set(`experiencias:${idStr}`, coords);
+        }
+        if (rec.id_blu) {
+          const bluStr = String(rec.id_blu);
+          coordMap.set(bluStr, coords);
+          coordMap.set(normKey(bluStr), coords);
+          coordMap.set(`restaurantes:${bluStr}`, coords);
+        }
+
+        // Key by catalog ID
+        if (rec._catalog_id) {
+          const catId = String(rec._catalog_id);
+          coordMap.set(catId, coords);
+          coordMap.set(normKey(catId), coords);
+          coordMap.set(`atracoes:${catId}`, coords);
+          coordMap.set(`experiencias:${catId}`, coords);
+          coordMap.set(`restaurantes:${catId}`, coords);
+        }
+
+        // Key by name / title / establishment
+        for (const key of ["nome_da_atracao", "estabelecimento", "nome_da_experiencia"] as const) {
+          const val = rec[key];
+          if (typeof val === "string" && val.trim()) {
+            coordMap.set(val.trim(), coords);
+            coordMap.set(normKey(val), coords);
+          }
+        }
       }
     }
   }

@@ -86,3 +86,54 @@ test("enrichItineraryWithRoadRouting attaches transitToNext and routeSummary to 
   assert.match(day.routeSummary.totalDistance, /[\d.]+\s*km/);
   assert.equal(day.routeSummary.algorithmStatus, "Feasible & Optimized");
 });
+
+test("enrichItineraryWithRoadRouting resolves coordinates by catalog ID, title and establishment", async () => {
+  const mockDays = [
+    {
+      dayNumber: 1,
+      date: "2026-10-10",
+      title: "Lisboa",
+      location: "Lisboa",
+      items: [
+        {
+          id: "atracoes:cat-09673e2650504dd8c36f64c92b2e14e8",
+          time: "11:00–11:30 (proposto)",
+          title: "Telecabine Lisboa",
+          category: "activity",
+        },
+        {
+          id: "restaurantes:cat-0122ddf2cd071f8778b6be4112d0553a",
+          time: "12:30–14:00 (proposto)",
+          title: "Time Out Market Lisboa",
+          category: "restaurant",
+        },
+      ],
+    },
+  ];
+
+  const catalogRecords = [
+    {
+      id: "LIS-066",
+      nome_da_atracao: "Telecabine Lisboa",
+      _catalog_id: "cat-09673e2650504dd8c36f64c92b2e14e8",
+      latitude: 38.7673,
+      longitude: -9.0954,
+    },
+    {
+      id_blu: "REST-015",
+      estabelecimento: "Time Out Market Lisboa",
+      _catalog_id: "cat-0122ddf2cd071f8778b6be4112d0553a",
+      latitude: 38.7070934,
+      longitude: -9.1458973,
+    },
+  ];
+
+  const enriched = await enrichItineraryWithRoadRouting(mockDays, catalogRecords);
+  const leg = enriched[0].items[0].transitToNext;
+  assert.ok(leg);
+  assert.equal(leg.fromLocation, "Telecabine Lisboa");
+  assert.equal(leg.toLocation, "Time Out Market Lisboa");
+  assert.notEqual(leg.distance, "Por confirmar");
+  assert.match(leg.distance, /[\d.]+\s*km/);
+  assert.match(leg.duration, /\d+\s*min/);
+});

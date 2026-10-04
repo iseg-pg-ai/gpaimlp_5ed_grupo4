@@ -387,6 +387,18 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
           text(row, "estabelecimento"),
         category: table === "restaurantes" ? "restaurant" : "activity",
         location: city,
+        latitude:
+          typeof row.latitude === "number" && Number.isFinite(row.latitude)
+            ? row.latitude
+            : typeof row.latitude === "string" && Number.isFinite(parseFloat(row.latitude))
+              ? parseFloat(row.latitude)
+              : undefined,
+        longitude:
+          typeof row.longitude === "number" && Number.isFinite(row.longitude)
+            ? row.longitude
+            : typeof row.longitude === "string" && Number.isFinite(parseFloat(row.longitude))
+              ? parseFloat(row.longitude)
+              : undefined,
         description:
           text(row, "descricao_curada") ||
           text(row, "descricao") ||
