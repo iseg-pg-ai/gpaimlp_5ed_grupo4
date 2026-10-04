@@ -161,3 +161,17 @@ test("changed proposal enters immutable version history", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("assistant optimizes day route sequence on request", () => {
+  const { c, snapshot } = setup();
+  const added1 = editWithAssistant(snapshot, 'adicionar "Other" ao dia 1', c);
+  const withTwo = { ...snapshot, itinerary: added1.itinerary };
+  const added2 = editWithAssistant(withTwo, 'adicionar "Third" ao dia 1', c);
+  const withThree = { ...snapshot, itinerary: added2.itinerary };
+  assert.equal(withThree.itinerary[0].items.length, 3);
+
+  const optimized = editWithAssistant(withThree, "otimizar rota do dia 1", c);
+  assert.equal(optimized.changed, true);
+  assert.match(optimized.reply, /Rota do dia 1 otimizada/);
+  assert.equal(optimized.itinerary[0].items.length, 3);
+});

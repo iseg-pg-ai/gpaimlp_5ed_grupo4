@@ -211,6 +211,9 @@ export default function WorkspacePage() {
                       ),
                     }))
                   }
+                  onOptimizeDayRoute={(dayNumber) =>
+                    send(`otimizar rota do dia ${dayNumber}`)
+                  }
                 />
                 <section
                   onKeyDown={(event) => {

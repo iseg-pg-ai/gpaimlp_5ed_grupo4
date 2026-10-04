@@ -1,6 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calculateRoadLeg, enrichItineraryWithRoadRouting } from "../src/lib/road-routing.ts";
+import {
+  calculateRoadLeg,
+  enrichItineraryWithRoadRouting,
+  optimizeRouteSequence,
+} from "../src/lib/road-routing.ts";
 
 test("calculateRoadLeg computes real road travel leg between coordinates", async () => {
   const from = { title: "Castelo de São Jorge", latitude: 38.71391, longitude: -9.13348 };
@@ -136,4 +140,74 @@ test("enrichItineraryWithRoadRouting resolves coordinates by catalog ID, title a
   assert.notEqual(leg.distance, "Por confirmar");
   assert.match(leg.distance, /[\d.]+\s*km/);
   assert.match(leg.duration, /\d+\s*min/);
+});
+
+test("optimizeRouteSequence eliminates zig-zag and anchors lunch in the middle", () => {
+  // Parque das Nações (East)
+  const telecabine = {
+    id: "poi-telecabine",
+    title: "Telecabine Lisboa",
+    category: "activity",
+    latitude: 38.7673,
+    longitude: -9.0954,
+    time: "09:30–10:30 (proposto)",
+  };
+  const oceanario = {
+    id: "poi-oceanario",
+    title: "Oceanário de Lisboa",
+    category: "activity",
+    latitude: 38.7635,
+    longitude: -9.0937,
+    time: "10:45–12:00 (proposto)",
+  };
+
+  // Lunch anchor in Baixa / Cais do Sodré
+  const lunch = {
+    id: "poi-lunch",
+    title: "Time Out Market",
+    category: "restaurant",
+    latitude: 38.7071,
+    longitude: -9.1459,
+    time: "12:30–14:00 (proposto)",
+  };
+
+  // Belém (West)
+  const jeronimos = {
+    id: "poi-jeronimos",
+    title: "Mosteiro dos Jerónimos",
+    category: "activity",
+    latitude: 38.6979,
+    longitude: -9.2067,
+    time: "14:30–16:00 (proposto)",
+  };
+  const torreBelem = {
+    id: "poi-torre",
+    title: "Torre de Belém",
+    category: "activity",
+    latitude: 38.6916,
+    longitude: -9.2160,
+    time: "16:30–17:30 (proposto)",
+  };
+
+  // Scrambled input: East -> West -> Lunch -> West -> East
+  const scrambled = [telecabine, jeronimos, lunch, torreBelem, oceanario];
+
+  const optimized = optimizeRouteSequence(scrambled);
+  assert.equal(optimized.length, 5);
+
+  // Lunch must remain anchored in index 2
+  assert.equal(optimized[2].id, "poi-lunch");
+
+  // Morning activities must both be East (Telecabine & Oceanário together)
+  const morningIds = [optimized[0].id, optimized[1].id];
+  assert.ok(morningIds.includes("poi-telecabine"));
+  assert.ok(morningIds.includes("poi-oceanario"));
+
+  // Afternoon activities must both be West (Jerónimos & Torre together)
+  const afternoonIds = [optimized[3].id, optimized[4].id];
+  assert.ok(afternoonIds.includes("poi-jeronimos"));
+  assert.ok(afternoonIds.includes("poi-torre"));
+
+  // Times must be sequential
+  assert.match(optimized[0].time, /^09:30/);
 });

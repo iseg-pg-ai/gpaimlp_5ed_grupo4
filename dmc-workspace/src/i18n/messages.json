@@ -1,4 +1,20 @@
 {
+  "Otimizar Rota": {
+    "pt": "Otimizar Rota",
+    "en": "Optimize Route",
+    "es": "Optimizar Ruta",
+    "fr": "Optimiser l'itinéraire",
+    "de": "Route optimieren",
+    "zh": "优化路线"
+  },
+  "Resumo da Rota:": {
+    "pt": "Resumo da Rota:",
+    "en": "Route Summary:",
+    "es": "Resumen de la Ruta:",
+    "fr": "Résumé de l'itinéraire :",
+    "de": "Routenübersicht:",
+    "zh": "路线摘要："
+  },
   "Updated by Assistant": {
     "pt": "Atualizado por Assistente",
     "en": "Updated by Assistant",

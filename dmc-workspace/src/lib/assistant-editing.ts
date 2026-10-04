@@ -8,9 +8,10 @@ import {
 } from "./itinerary-scheduling.ts";
 import type { Snapshot } from "./itinerary-pdf";
 import type { ActivityItem } from "../types/index";
+import { optimizeRouteSequence, buildCoordMap } from "./road-routing.ts";
 
 export const assistantHelp =
-  'Pedidos disponíveis: adicionar "nome do catálogo" ao dia 1; substituir atividade 1 do dia 1 por "nome do catálogo"; reagendar atividade 1 do dia 1 para 14:00; reorganizar dia 1 na ordem 2,1,3; remover atividade 1 do dia 1. Os números seguem a ordem dos cartões.';
+  'Pedidos disponíveis: adicionar "nome do catálogo" ao dia 1; substituir atividade 1 do dia 1 por "nome do catálogo"; reagendar atividade 1 do dia 1 para 14:00; reorganizar dia 1 na ordem 2,1,3; otimizar rota do dia 1; remover atividade 1 do dia 1. Os números seguem a ordem dos cartões.';
 const normalize = (s: string) =>
   s
     .normalize("NFD")
@@ -35,6 +36,31 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
   if (/^remover (?:a )?ultima atividade do dia \d+$/.test(command)) {
     const result = applyCommand(original, input);
     return { ...result, changed: result.itinerary !== original };
+  }
+  const optimize =
+    command.match(/^otimizar (?:a )?rota do dia (\d+)$/) ||
+    command.match(/^otimizar (?:o )?trajeto do dia (\d+)$/) ||
+    command.match(/^otimizar dia (\d+)$/);
+  if (optimize) {
+    const number = Number(optimize[1]);
+    const day = original.find((d) => d.dayNumber === number);
+    if (!day) return reject("Esse dia não existe.");
+    if (day.items.length <= 2) {
+      return reject("O dia já tem 2 ou menos atividades e não requer otimização de sequência.");
+    }
+    const allRecords = [
+      ...catalog.atracoes,
+      ...catalog.experiencias,
+      ...catalog.restaurantes,
+    ];
+    const coordMap = buildCoordMap(allRecords);
+    const optimizedItems = optimizeRouteSequence(day.items, coordMap);
+    const itinerary = original.map((d) => (d === day ? { ...d, items: optimizedItems } : d));
+    return {
+      itinerary,
+      changed: true,
+      reply: `Rota do dia ${number} otimizada pelo BLU Routing Engine para o trajeto rodoviário mais eficiente. Horários sequenciais atualizados.`,
+    };
   }
   const add = command.match(/^adicionar "(.+)" ao dia (\d+)$/);
   const replace = command.match(/^substituir atividade (\d+) do dia (\d+) por "(.+)"$/);

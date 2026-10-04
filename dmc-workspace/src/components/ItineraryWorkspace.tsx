@@ -10,7 +10,7 @@ import { TransitConnector } from "./TransitConnector";
 import { TransitInspectorModal } from "./TransitInspectorModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MapPin, Download, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Calendar, Users, MapPin, Download, SlidersHorizontal, Sparkles, Route } from "lucide-react";
 
 interface ItineraryWorkspaceProps {
   brief: CustomerBrief;
@@ -30,6 +30,7 @@ interface ItineraryWorkspaceProps {
   ) => Promise<boolean>;
   saving?: boolean;
   onToggleLockActivity?: (dayNumber: number, activityId: string) => void;
+  onOptimizeDayRoute?: (dayNumber: number) => void;
 }
 
 export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
@@ -45,6 +46,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   exported,
   onToggleLockActivity,
   onConfirmActivity,
+  onOptimizeDayRoute,
   saving,
 }) => {
   const { locale } = useLocale();
@@ -302,25 +304,63 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                   </h2>
                 </div>
 
-                {isDayModified && (
-                  <Badge
-                    variant="gold"
-                    className="gap-1.5 py-1 px-2.5 font-medium shrink-0 animate-in fade-in"
-                  >
-                    <Sparkles className="w-3 h-3 text-[#D8A65C]" />
-                    <span>
-                      <T text="Updated by Assistant" source="en" />
-                    </span>
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {onOptimizeDayRoute && day.items.length > 2 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onOptimizeDayRoute(day.dayNumber)}
+                      disabled={saving}
+                      className="text-xs h-8 gap-1.5 border-[#D5D1C7] text-[#143F4B] hover:bg-[#FAF8F3]"
+                      title="Otimizar ordem das paragens para menor tempo de deslocação"
+                    >
+                      <Route className="w-3.5 h-3.5 text-[#D8A65C]" />
+                      <T text="Otimizar Rota" source="pt" />
+                    </Button>
+                  )}
+                  {isDayModified && (
+                    <Badge
+                      variant="gold"
+                      className="gap-1.5 py-1 px-2.5 font-medium shrink-0 animate-in fade-in"
+                    >
+                      <Sparkles className="w-3 h-3 text-[#D8A65C]" />
+                      <span>
+                        <T text="Updated by Assistant" source="en" />
+                      </span>
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               {day.summary && (
-                <p className="text-sm leading-7 text-[#4A636B] mb-5">
+                <p className="text-sm leading-7 text-[#4A636B] mb-4">
                   &quot;
                   <T text={day.summary} source="pt" />
                   &quot;
                 </p>
+              )}
+
+              {day.routeSummary && (
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#E6E1D5] bg-[#FAF8F3] px-3.5 py-2.5 text-xs text-[#2D5B67]">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-[#143F4B] flex items-center gap-1.5">
+                      <Route className="w-3.5 h-3.5 text-[#D8A65C]" />
+                      <T text="Resumo da Rota:" source="pt" />
+                    </span>
+                    <span>
+                      🚗 {day.routeSummary.totalTransitTime} · {day.routeSummary.totalDistance} ({day.routeSummary.legsCount}{" "}
+                      {day.routeSummary.legsCount === 1 ? "deslocação" : "deslocações"})
+                    </span>
+                    {day.routeSummary.walkingDistance && day.routeSummary.walkingDistance !== "0 m" && (
+                      <span className="text-[#698288]">
+                        · 🚶 {day.routeSummary.walkingDistance} a pé
+                      </span>
+                    )}
+                  </div>
+                  <Badge variant="teal" className="text-[10px] py-0 px-2 font-normal">
+                    {day.routeSummary.algorithmStatus}
+                  </Badge>
+                </div>
               )}
 
               {/* Activities timeline with Stippl-inspired transit & dislocation cards */}
