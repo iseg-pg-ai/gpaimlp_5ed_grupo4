@@ -326,9 +326,38 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
       } else {
         const match = a.time.match(/^(\d{2}):(\d{2})(?:[–-](\d{2}):(\d{2}))?/);
         const duration = durationMinutes(a.duration);
-        if (!match || (!match[3] && !duration))
+        if (!match) {
+          if (!record || protectedItem(a))
+            return reject(
+              "Uma atividade existente não tem horário suficiente para validar conflitos. Complete os dados primeiro.",
+            );
+          const slot = proposeSlot(
+            record.row,
+            record.table === "restaurantes",
+            snapshot.brief,
+            cursor,
+            day.date,
+          );
+          if (slot.kind !== "scheduled") {
+            if (!duration)
+              return reject(
+                "Uma atividade existente continua por agendar e não tem duração suficiente para validar conflitos.",
+              );
+            cursor += duration;
+            previous = record.row;
+            continue;
+          }
+          items[i] = {
+            ...a,
+            time: `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`,
+          };
+          cursor = slot.end;
+          previous = record.row;
+          continue;
+        }
+        if (!match[3] && !duration)
           return reject(
-            "Uma atividade existente não tem horário ou duração suficientes para validar conflitos. Complete os dados primeiro.",
+            "Uma atividade existente não tem duração suficiente para validar conflitos.",
           );
         const start = Number(match[1]) * 60 + Number(match[2]);
         if (start < cursor)

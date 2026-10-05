@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  expiredTrashTripIds,
   moveCompletedTripsToTrash,
   moveTripToTrash,
   readTripTrash,
@@ -44,4 +45,13 @@ test("automatic removal moves only trips whose end date is before today", () => 
   );
   assert.equal(result.trash[0].trip.id, "completed");
   assert.equal(result.trash[0].removal, "automatic");
+});
+
+test("cleanup candidates include only trashed trips whose journey has ended", () => {
+  const past = moveTripToTrash([], [], "missing", "manual").trash;
+  const entries = [
+    { kind: "trip", trip: trip("past", "2026-10-04"), removedAt: "now", removal: "manual" },
+    { kind: "trip", trip: trip("today", "2026-10-05"), removedAt: "now", removal: "manual" },
+  ];
+  assert.deepEqual(expiredTrashTripIds([...past, ...entries], "2026-10-05"), ["past"]);
 });

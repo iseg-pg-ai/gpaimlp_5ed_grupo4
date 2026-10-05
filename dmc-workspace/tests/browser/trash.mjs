@@ -32,6 +32,9 @@ try {
     }),
   );
   await page.route("**/api/versions?*", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/trash/cleanup", (route) =>
+    route.fulfill({ json: { deletedTripIds: [], deletedVersions: [] } }),
+  );
   let restoredVersion = false;
   await page.route("**/api/versions/trash", (route) => {
     if (route.request().method() === "GET")
