@@ -40,6 +40,7 @@ export default function WorkspacePage() {
     reopenLatest,
     generate,
     send,
+    assistantBusy,
     setEditing,
     startNewTrip,
     selectTrip,
@@ -276,7 +277,7 @@ export default function WorkspacePage() {
                       }}
                       messages={active.messages}
                       onSendMessage={send}
-                      isProcessing={saving || exporting}
+                      isProcessing={assistantBusy}
                       onResetItinerary={editBrief}
                     />
                   </div>
