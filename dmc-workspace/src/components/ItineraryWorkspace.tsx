@@ -569,6 +569,8 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
           }
           currentItems={itinerary.find((d) => d.dayNumber === addPoiDay)?.items || []}
           allItineraryItems={itinerary.flatMap((d) => d.items)}
+          brief={brief}
+          itinerary={itinerary}
           onClose={() => setAddPoiDay(null)}
           onAddPoi={(title) => onAddPoiToDay?.(addPoiDay, title)}
           onAdjustCapacity={(cap) => onAdjustDayCapacity?.(addPoiDay, cap)}

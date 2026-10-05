@@ -75,6 +75,16 @@ test("budget, daily capacity and closed days are checked before accepting an add
     false,
   );
 });
+test("an unscheduled existing card does not hide a compatible addition when duration is known", () => {
+  const { c, snapshot } = setup();
+  snapshot.itinerary[0].dailyCapacity = 2;
+  snapshot.itinerary[0].items[0].time = "Por agendar";
+  const result = editWithAssistant(snapshot, 'adicionar "Other" ao dia 1', c);
+  assert.equal(result.changed, true);
+  assert.equal(result.itinerary[0].items.length, 2);
+  assert.match(result.itinerary[0].items[0].time, /proposto/);
+  assert.match(result.itinerary[0].items[1].time, /proposto/);
+});
 test("assistant adds, replaces, reschedules, reorders and removes without mutating its input", () => {
   const { c, snapshot } = setup();
   const before = JSON.stringify(snapshot);
