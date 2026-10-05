@@ -4,18 +4,7 @@ import { T, useTranslated } from "@/components/LocaleProvider";
 import { ActivityConfirmationEditor } from "./ActivityConfirmationEditor";
 import { outstandingChecks, type ActivityConfirmation } from "@/lib/activity-confirmation";
 import React from "react";
-import {
-  Bed,
-  Compass,
-  UtensilsCrossed,
-  Car,
-  Sun,
-  MapPin,
-  Clock,
-  Lock,
-  Unlock,
-  Trash2,
-} from "lucide-react";
+import { Bed, Compass, UtensilsCrossed, Car, Sun, MapPin, Clock, Lock, Unlock } from "lucide-react";
 import { ActivityItem, ActivityCategory } from "@/types";
 import { ProposalStatus } from "./ProposalStatus";
 
@@ -24,7 +13,6 @@ interface ActivityCardProps {
   onConfirm?: (value: ActivityConfirmation) => Promise<boolean>;
   saving?: boolean;
   onToggleLock?: (activityId: string) => void;
-  onRemove?: (activityId: string) => void;
 }
 
 const categoryConfig: Record<
@@ -60,7 +48,6 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   activity,
   onToggleLock,
   onConfirm,
-  onRemove,
   saving,
 }) => {
   const pending = outstandingChecks(activity);
@@ -129,37 +116,22 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             </span>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {onToggleLock && (
-            <button
-              type="button"
-              aria-label={lockLabel}
-              aria-pressed={Boolean(activity.isLocked)}
-              onClick={() => onToggleLock(activity.id)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#C5D4D8] px-3 py-2 text-sm text-[#143F4B] hover:bg-[#EDF3F4]"
-            >
-              {activity.isLocked ? (
-                <Unlock aria-hidden="true" className="size-4" />
-              ) : (
-                <Lock aria-hidden="true" className="size-4" />
-              )}
-              {lockLabel}
-            </button>
-          )}
-          {onRemove && !activity.isLocked && activity.confirmation?.status !== "confirmed" && (
-            <button
-              type="button"
-              aria-label="Remover atividade"
-              onClick={() => onRemove(activity.id)}
-              disabled={saving}
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[#E5D7D5] px-3 py-2 text-sm text-[#943D36] hover:bg-[#FDF4F3] transition-colors"
-              title="Remover atividade do dia"
-            >
-              <Trash2 aria-hidden="true" className="size-4" />
-              <T text="Remover" source="pt" />
-            </button>
-          )}
-        </div>
+        {onToggleLock && (
+          <button
+            type="button"
+            aria-label={lockLabel}
+            aria-pressed={Boolean(activity.isLocked)}
+            onClick={() => onToggleLock(activity.id)}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#C5D4D8] px-3 py-2 text-sm text-[#143F4B] hover:bg-[#EDF3F4]"
+          >
+            {activity.isLocked ? (
+              <Unlock aria-hidden="true" className="size-4" />
+            ) : (
+              <Lock aria-hidden="true" className="size-4" />
+            )}
+            {lockLabel}
+          </button>
+        )}
       </div>
       {activity.confirmation?.price && (
         <p className="mt-3 text-sm">

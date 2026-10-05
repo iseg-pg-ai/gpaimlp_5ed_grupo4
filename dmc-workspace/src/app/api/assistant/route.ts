@@ -2,8 +2,6 @@ import { validateSnapshot } from "@/lib/snapshot-validation";
 import { loadPublishedCatalog } from "@/lib/published-catalog";
 import { editWithAssistant } from "@/lib/assistant-editing";
 import { jsonError } from "@/lib/api-response";
-import { enrichItineraryWithRoadRouting } from "@/lib/road-routing";
-
 export const runtime = "nodejs";
 export async function POST(request: Request) {
   let body;
@@ -16,17 +14,9 @@ export async function POST(request: Request) {
     return jsonError("Pedido ou roteiro inválido.", 400);
   }
   try {
-    const catalog = await loadPublishedCatalog();
-    const result = editWithAssistant(body.snapshot, body.input, catalog);
-    if (result.changed) {
-      try {
-        const allRecords = [...catalog.atracoes, ...catalog.experiencias, ...catalog.restaurantes];
-        result.itinerary = await enrichItineraryWithRoadRouting(result.itinerary, allRecords);
-      } catch (routingErr) {
-        console.warn("Could not enrich assistant road routes:", routingErr);
-      }
-    }
-    return Response.json(result);
+    return Response.json(
+      editWithAssistant(body.snapshot, body.input, await loadPublishedCatalog()),
+    );
   } catch {
     return jsonError(
       "Não foi possível validar a alteração com o catálogo e as regras atuais. Nada foi alterado.",

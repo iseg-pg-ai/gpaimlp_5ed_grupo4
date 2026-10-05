@@ -45,8 +45,6 @@ export function renderPdf(
       const font = [
         process.env.BLU_PDF_FONT,
         "C:/Windows/Fonts/arial.ttf",
-        "/System/Library/Fonts/Supplemental/Arial.ttf",
-        "/Library/Fonts/Arial.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
       ].find((p) => p && existsSync(p));
       if (options.locale === "zh") {

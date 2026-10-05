@@ -92,122 +92,104 @@ def load_all_points(excel_path: Union[str, Path]) -> Dict[str, PointOfInterest]:
     """Loads and standardizes attractions, restaurants, and experiences from the Excel workbook."""
     excel_path = Path(excel_path)
     if not excel_path.exists():
-        for candidate in [
-            Path("data") / excel_path.name,
-            Path("data/raw") / excel_path.name,
-            PROJECT_ROOT / "data" / excel_path.name,
-            PROJECT_ROOT / "data/raw" / excel_path.name,
-        ]:
-            if candidate.exists():
-                excel_path = candidate
-                break
-
-    if not excel_path.exists():
         raise FileNotFoundError(f"Excel file not found at: {excel_path}")
 
     points: Dict[str, PointOfInterest] = {}
-    xl = pd.ExcelFile(excel_path)
-    sheet_names = xl.sheet_names
 
-    # 1. Atrações (ATRACOES or Folha2)
-    atr_sheet = next((s for s in ["ATRACOES", "Folha2", "Atrações"] if s in sheet_names), None)
-    if atr_sheet:
-        try:
-            df_atr = pd.read_excel(excel_path, sheet_name=atr_sheet, header=5)
-            df_atr = df_atr.dropna(subset=["ID"])
-            for _, row in df_atr.iterrows():
-                poi_id = str(row["ID"]).strip()
-                name = str(row.get("Nome da atração", "")).strip()
-                city = str(row.get("Cidade", "Lisboa")).strip()
-                zone = str(row.get("Zona/Bairro", "")).strip()
-                cat = str(row.get("Categoria", "Atração")).strip()
+    # 1. Folha2: Atrações
+    try:
+        df_atr = pd.read_excel(excel_path, sheet_name="Folha2", header=5)
+        df_atr = df_atr.dropna(subset=["ID"])
+        for _, row in df_atr.iterrows():
+            poi_id = str(row["ID"]).strip()
+            name = str(row.get("Nome da atração", "")).strip()
+            city = str(row.get("Cidade", "Lisboa")).strip()
+            zone = str(row.get("Zona/Bairro", "")).strip()
+            cat = str(row.get("Categoria", "Atração")).strip()
 
-                lat = row.get("Latitude")
-                lng = row.get("Longitude")
-                valid_lat = float(lat) if pd.notna(lat) else None
-                valid_lng = float(lng) if pd.notna(lng) else None
+            lat = row.get("Latitude")
+            lng = row.get("Longitude")
+            valid_lat = float(lat) if pd.notna(lat) else None
+            valid_lng = float(lng) if pd.notna(lng) else None
 
-                points[poi_id] = PointOfInterest(
-                    id=poi_id,
-                    name=name,
-                    category=cat,
-                    city=city,
-                    zone=zone,
-                    source_sheet=f"{atr_sheet} (Atrações)",
-                    latitude=valid_lat,
-                    longitude=valid_lng,
-                    raw_address=None,
-                )
-        except Exception as e:
-            print(f"Warning loading {atr_sheet}: {e}")
+            points[poi_id] = PointOfInterest(
+                id=poi_id,
+                name=name,
+                category=cat,
+                city=city,
+                zone=zone,
+                source_sheet="Folha2 (Atrações)",
+                latitude=valid_lat,
+                longitude=valid_lng,
+                raw_address=None,
+            )
+    except Exception as e:
+        print(f"Warning loading Folha2 (Atrações): {e}")
 
-    # 2. Restaurantes (RESTAURANTES or Folha3)
-    rest_sheet = next((s for s in ["RESTAURANTES", "Folha3", "Restaurantes"] if s in sheet_names), None)
-    if rest_sheet:
-        try:
-            df_rest = pd.read_excel(excel_path, sheet_name=rest_sheet)
-            df_rest = df_rest.dropna(subset=["ID BLU"])
-            for _, row in df_rest.iterrows():
-                poi_id = str(row["ID BLU"]).strip()
-                name = str(row.get("Estabelecimento", "")).strip()
-                city = str(row.get("Cidade", "Lisboa")).strip()
-                zone = str(row.get("Zona / localidade", "")).strip()
-                raw_addr = str(row.get("Morada", "")).strip()
-                cat = str(row.get("Tipo / gastronomia (base)", "Restaurante")).strip()
+    # 2. Folha3: Restaurantes
+    try:
+        df_rest = pd.read_excel(excel_path, sheet_name="Folha3")
+        df_rest = df_rest.dropna(subset=["ID BLU"])
+        for _, row in df_rest.iterrows():
+            poi_id = str(row["ID BLU"]).strip()
+            name = str(row.get("Estabelecimento", "")).strip()
+            city = str(row.get("Cidade", "Lisboa")).strip()
+            zone = str(row.get("Zona / localidade", "")).strip()
+            raw_addr = str(row.get("Morada", "")).strip()
+            cat = str(row.get("Tipo / gastronomia (base)", "Restaurante")).strip()
 
-                lat = row.get("Latitude")
-                lng = row.get("Longitude")
-                valid_lat = None
-                valid_lng = None
-                if pd.notna(lat) and pd.notna(lng):
-                    f_lat = float(lat)
-                    f_lng = float(lng)
-                    if abs(f_lat) > 90:
-                        f_lat /= 1e6
-                    if abs(f_lng) > 180:
-                        f_lng /= 1e6
-                    valid_lat = f_lat
-                    valid_lng = f_lng
+            # Handle coordinates if present (fixing decimal scale if needed)
+            lat = row.get("Latitude")
+            lng = row.get("Longitude")
+            valid_lat = None
+            valid_lng = None
+            if pd.notna(lat) and pd.notna(lng):
+                f_lat = float(lat)
+                f_lng = float(lng)
+                if abs(f_lat) > 90:
+                    f_lat /= 1e6
+                if abs(f_lng) > 180:
+                    f_lng /= 1e6
+                valid_lat = f_lat
+                valid_lng = f_lng
 
-                points[poi_id] = PointOfInterest(
-                    id=poi_id,
-                    name=name,
-                    category=cat,
-                    city=city,
-                    zone=zone,
-                    source_sheet=f"{rest_sheet} (Restaurantes)",
-                    latitude=valid_lat,
-                    longitude=valid_lng,
-                    raw_address=raw_addr,
-                )
-        except Exception as e:
-            print(f"Warning loading {rest_sheet}: {e}")
+            points[poi_id] = PointOfInterest(
+                id=poi_id,
+                name=name,
+                category=cat,
+                city=city,
+                zone=zone,
+                source_sheet="Folha3 (Restaurantes)",
+                latitude=valid_lat,
+                longitude=valid_lng,
+                raw_address=raw_addr,
+            )
+    except Exception as e:
+        print(f"Warning loading Folha3 (Restaurantes): {e}")
 
-    # 3. Experiências (EXPERIENCIAS or Folha4)
-    exp_sheet = next((s for s in ["EXPERIENCIAS", "Folha4", "Experiências"] if s in sheet_names), None)
-    if exp_sheet:
-        try:
-            df_exp = pd.read_excel(excel_path, sheet_name=exp_sheet)
-            df_exp = df_exp.dropna(subset=["Nome da experiência"])
-            for idx, row in df_exp.iterrows():
-                poi_id = f"EXP-{idx + 1:03d}"
-                name = str(row["Nome da experiência"]).strip()
-                loc_str = str(row.get("Localização", "")).strip()
-                cat = str(row.get("Categoria", "Experiência")).strip()
+    # 3. Folha4: Experiências
+    try:
+        df_exp = pd.read_excel(excel_path, sheet_name="Folha4")
+        df_exp = df_exp.dropna(subset=["Nome da experiência"])
+        for idx, row in df_exp.iterrows():
+            poi_id = f"EXP-{idx + 1:03d}"
+            name = str(row["Nome da experiência"]).strip()
+            loc_str = str(row.get("Localização", "")).strip()
+            cat = str(row.get("Categoria", "Experiência")).strip()
 
-                points[poi_id] = PointOfInterest(
-                    id=poi_id,
-                    name=name,
-                    category=cat,
-                    city="Lisboa",
-                    zone=loc_str,
-                    source_sheet=f"{exp_sheet} (Experiências)",
-                    latitude=None,
-                    longitude=None,
-                    raw_address=f"{name}, {loc_str}, Portugal" if loc_str else None,
-                )
-        except Exception as e:
-            print(f"Warning loading {exp_sheet}: {e}")
+            points[poi_id] = PointOfInterest(
+                id=poi_id,
+                name=name,
+                category=cat,
+                city="Lisboa",
+                zone=loc_str,
+                source_sheet="Folha4 (Experiências)",
+                latitude=None,
+                longitude=None,
+                raw_address=f"{name}, {loc_str}, Portugal" if loc_str else None,
+            )
+    except Exception as e:
+        print(f"Warning loading Folha4 (Experiências): {e}")
 
     return points
 
@@ -286,8 +268,12 @@ def run_demo_routes(points: Dict[str, PointOfInterest], api_key: Optional[str] =
         print(f"  • Destino:     [{dest.id}] {dest.name} ({dest.city})")
         print(f"    Localização: {dest.best_location}")
 
-        engine = "Google Maps API" if (key and key != "111111111") else "OSRM (OpenStreetMap)"
-        print(f"  ⚡ Motor de Rota: {engine}")
+        if not key or key == "111111111":
+            print("  ℹ️  [Modo Pré-visualização] Chave de API Google Maps não configurada.")
+            print(
+                "     Para executar a chamada real, defina GOOGLE_MAPS_API_KEY no ficheiro .env"
+            )
+            continue
 
         try:
             result = calculate_distance_between_pois(orig, dest, api_key=key)
