@@ -19,6 +19,8 @@
     "test:confirmations": "node tests/browser/confirmations.mjs",
     "test:itinerary": "node tests/browser/itinerary-visual.mjs",
     "test:trash": "node tests/browser/trash.mjs",
+    "test:delivery": "node tests/browser/delivery.mjs",
+    "test:compliance": "node tests/compliance.mjs",
     "check": "npm run lint && npm run typecheck && npm run format:check && npm test"
   },
   "dependencies": {
