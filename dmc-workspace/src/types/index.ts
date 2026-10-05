@@ -50,7 +50,13 @@ export interface DailyRouteSummary {
   legsCount: number;
   walkingDistance: string; // e.g. "650 m (< 1km constraint met)"
   routePath: string[]; // e.g. ["LIS Airport", "Príncipe Real", "Campo de Ourique"]
-  algorithmStatus: "Feasible & Optimized" | "Buffer Added" | "Manual Adjusted";
+  algorithmStatus:
+    | "Feasible & Optimized"
+    | "Buffer Added"
+    | "Manual Adjusted"
+    | "Viável e Otimizado"
+    | "Margem Adicionada"
+    | "Ajustado Manualmente";
 }
 
 export interface ItineraryDay {

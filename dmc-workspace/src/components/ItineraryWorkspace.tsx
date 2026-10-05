@@ -3,7 +3,7 @@ import { T, useLocale, useTranslated } from "@/components/LocaleProvider";
 
 import type { ActivityConfirmation } from "@/lib/activity-confirmation";
 import React, { useState, useRef, useEffect } from "react";
-import { ItineraryDay, CustomerBrief, TransitLeg } from "@/types";
+import { ItineraryDay, CustomerBrief, TransitLeg, TransitMode } from "@/types";
 import { ProposalStatus } from "./ProposalStatus";
 import { ActivityCard } from "./ActivityCard";
 import { TransitConnector } from "./TransitConnector";
@@ -32,6 +32,12 @@ interface ItineraryWorkspaceProps {
   saving?: boolean;
   onToggleLockActivity?: (dayNumber: number, activityId: string) => void;
   onOptimizeDayRoute?: (dayNumber: number) => void;
+  onUpdateTransitLeg?: (
+    dayNumber: number,
+    activityId: string,
+    newMode: TransitMode,
+    bufferMinutes?: number,
+  ) => void;
   onAddPoiToDay?: (dayNumber: number, title: string) => void;
   onRemoveActivity?: (dayNumber: number, activityId: string) => void;
   onAddFreePeriodToDay?: (dayNumber: number, type: "afternoon" | "morning" | "fullday") => void;
@@ -52,6 +58,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   onToggleLockActivity,
   onConfirmActivity,
   onOptimizeDayRoute,
+  onUpdateTransitLeg,
   onAddPoiToDay,
   onRemoveActivity,
   onAddFreePeriodToDay,
@@ -67,7 +74,11 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
       year: "numeric",
     }).format(new Date(date + "T12:00:00"));
   const [selectedDayFilter, setSelectedDayFilter] = useState<number | "all">("all");
-  const [inspectedLeg, setInspectedLeg] = useState<TransitLeg | null>(null);
+  const [inspectedLegInfo, setInspectedLegInfo] = useState<{
+    leg: TransitLeg;
+    dayNumber: number;
+    activityId: string;
+  } | null>(null);
   const [addPoiDay, setAddPoiDay] = useState<number | null>(null);
   const dayRefs = useRef<{ [key: number]: HTMLElement | null }>({});
 
@@ -445,7 +456,18 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                     )}
                   </div>
                   <Badge variant="teal" className="text-[10px] py-0 px-2 font-normal">
-                    {day.routeSummary.algorithmStatus}
+                    <T
+                      text={
+                        day.routeSummary.algorithmStatus === "Feasible & Optimized"
+                          ? "Viável e Otimizado"
+                          : day.routeSummary.algorithmStatus === "Buffer Added"
+                            ? "Margem Adicionada"
+                            : day.routeSummary.algorithmStatus === "Manual Adjusted"
+                              ? "Ajustado Manualmente"
+                              : day.routeSummary.algorithmStatus
+                      }
+                      source="pt"
+                    />
                   </Badge>
                 </div>
               )}
@@ -473,7 +495,13 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                       {activity.transitToNext && (
                         <TransitConnector
                           leg={activity.transitToNext}
-                          onInspect={(leg) => setInspectedLeg(leg)}
+                          onInspect={(leg) =>
+                            setInspectedLegInfo({
+                              leg,
+                              dayNumber: day.dayNumber,
+                              activityId: activity.id,
+                            })
+                          }
                         />
                       )}
                     </React.Fragment>
@@ -486,7 +514,23 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
       </div>
 
       {/* Transit Routing Inspector Modal */}
-      <TransitInspectorModal leg={inspectedLeg} onClose={() => setInspectedLeg(null)} />
+      <TransitInspectorModal
+        leg={inspectedLegInfo?.leg ?? null}
+        onClose={() => setInspectedLegInfo(null)}
+        onApplyMode={
+          onUpdateTransitLeg && inspectedLegInfo
+            ? (newMode, newBuffer) => {
+                onUpdateTransitLeg(
+                  inspectedLegInfo.dayNumber,
+                  inspectedLegInfo.activityId,
+                  newMode,
+                  newBuffer,
+                );
+                setInspectedLegInfo(null);
+              }
+            : undefined
+        }
+      />
 
       {/* Add POI Modal */}
       {addPoiDay !== null && (

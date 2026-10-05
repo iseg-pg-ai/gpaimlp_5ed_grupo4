@@ -17,13 +17,29 @@ const OSRM_URL = process.env.OSRM_ROUTER_URL || "http://router.project-osrm.org"
 
 /**
  * Calculates real road distance and travel duration between two coordinates using OSRM.
- * Falls back to Haversine if OSRM is unreachable or coordinates are missing.
+ * Supports driving and walking profiles, and falls back to Haversine if OSRM is unreachable or coordinates are missing.
  */
 export async function calculateRoadLeg(
   from: LocationCoords,
   to: LocationCoords,
-  timeoutMs = 3000,
+  optionsOrTimeout?:
+    | number
+    | {
+        preferredMode?: TransitMode;
+        bufferMinutes?: number;
+        timeoutMs?: number;
+      },
+  legacyTimeoutMs = 3000,
 ): Promise<TransitLeg | null> {
+  const timeoutMs =
+    typeof optionsOrTimeout === "number"
+      ? optionsOrTimeout
+      : optionsOrTimeout?.timeoutMs ?? legacyTimeoutMs;
+  const preferredMode =
+    typeof optionsOrTimeout === "object" ? optionsOrTimeout?.preferredMode : undefined;
+  const customBuffer =
+    typeof optionsOrTimeout === "object" ? optionsOrTimeout?.bufferMinutes : undefined;
+
   const hasCoords =
     typeof from.latitude === "number" &&
     typeof from.longitude === "number" &&
@@ -35,15 +51,16 @@ export async function calculateRoadLeg(
     Number.isFinite(to.longitude);
 
   if (!hasCoords) {
+    const fallbackMode: TransitMode = preferredMode ?? "chauffeur";
     return {
       id: `transit-${encodeURIComponent(from.title)}-${encodeURIComponent(to.title)}`,
       fromLocation: from.title,
       toLocation: to.title,
-      mode: "chauffeur",
-      duration: "15 min",
+      mode: fallbackMode,
+      duration: fallbackMode === "walk" ? "20 min" : "15 min",
       distance: "Por confirmar",
       routeNote: "Coordenadas incompletas; estimativa padrão de deslocação",
-      bufferMinutes: 15,
+      bufferMinutes: customBuffer ?? (fallbackMode === "walk" ? 5 : 15),
       isAlgorithmOptimized: false,
       algorithmNote: "Sem coordenadas precisas no catálogo; tempo de reserva atribuído.",
     };
@@ -53,12 +70,13 @@ export async function calculateRoadLeg(
   const lon1 = from.longitude!;
   const lat2 = to.latitude!;
   const lon2 = to.longitude!;
+  const profile = preferredMode === "walk" ? "walking" : "driving";
 
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    const url = `${OSRM_URL}/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`;
+    const url = `${OSRM_URL}/route/v1/${profile}/${lon1},${lat1};${lon2},${lat2}?overview=false`;
     const response = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
 
@@ -67,14 +85,40 @@ export async function calculateRoadLeg(
       if (data.code === "Ok" && data.routes && data.routes.length > 0) {
         const route = data.routes[0];
         const meters = Math.round(route.distance);
-        const seconds = Math.round(route.duration);
-        const minutes = Math.max(1, Math.round(seconds / 60));
         const km = meters / 1000;
-
-        // Choose mode: walk for <= 1 km; chauffeur otherwise
-        const mode: TransitMode = meters <= 1000 ? "walk" : "chauffeur";
         const distStr = meters < 1000 ? `${meters} m` : `${km.toFixed(1)} km`;
+
+        // If preferredMode is set, honor it. Otherwise auto-detect: walk if <= 1000m, chauffeur otherwise
+        const mode: TransitMode = preferredMode ?? (meters <= 1000 ? "walk" : "chauffeur");
+
+        let minutes = 1;
+        if (mode === "walk") {
+          // Standard urban pedestrian speed ~ 4.5 km/h = 75 m/min
+          minutes = Math.max(2, Math.round(meters / 75));
+        } else if (mode === "boat") {
+          // Scenic riverboat speed ~ 15 km/h + 5 min boarding
+          minutes = Math.max(10, Math.round(meters / 250 + 5));
+        } else if (mode === "train" || mode === "funicular") {
+          minutes = Math.max(8, Math.round(meters / 400 + 5));
+        } else {
+          // chauffeur (driving from OSRM seconds)
+          const seconds = Math.round(route.duration);
+          minutes = Math.max(1, Math.round(seconds / 60));
+        }
+
         const durStr = `${minutes} min`;
+        const buffer = customBuffer ?? (mode === "walk" ? 5 : 10);
+
+        let routeNote = `Trajeto de ${distStr} via estrada (~${durStr})`;
+        if (mode === "walk") {
+          routeNote = `Percurso pedonal de ${distStr} (~${durStr})`;
+        } else if (mode === "boat") {
+          routeNote = `Travessia cénica fluvial de ${distStr} (~${durStr})`;
+        } else if (mode === "train") {
+          routeNote = `Ligação ferroviária cénica de ${distStr} (~${durStr})`;
+        } else if (mode === "funicular") {
+          routeNote = `Subida/descida em transporte histórico/funicular (~${durStr})`;
+        }
 
         return {
           id: `transit-${encodeURIComponent(from.title)}-${encodeURIComponent(to.title)}`,
@@ -83,14 +127,10 @@ export async function calculateRoadLeg(
           mode,
           duration: durStr,
           distance: distStr,
-          routeNote:
-            mode === "walk"
-              ? `Percurso pedonal de ${distStr} (~${durStr})`
-              : `Trajeto de ${distStr} via estrada (~${durStr})`,
-          bufferMinutes: mode === "walk" ? 5 : 10,
+          routeNote,
+          bufferMinutes: buffer,
           isAlgorithmOptimized: true,
-          algorithmNote:
-            "Percurso rodoviário medido pela malha viária real via OSRM (OpenStreetMap).",
+          algorithmNote: `Percurso calculado pela malha viária real via OSRM (${profile}).`,
         };
       }
     }
@@ -105,19 +145,26 @@ export async function calculateRoadLeg(
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
   const straightKm = 6371 * 2 * Math.asin(Math.sqrt(Math.min(1, a)));
-  const estMins = Math.max(10, Math.ceil(((straightKm * 1.5) / 25) * 60 + 10));
+
+  const fallbackMode: TransitMode = preferredMode ?? (straightKm <= 0.8 ? "walk" : "chauffeur");
+  let estMins = 10;
+  if (fallbackMode === "walk") {
+    estMins = Math.max(5, Math.ceil(((straightKm * 1.3) / 4.5) * 60));
+  } else {
+    estMins = Math.max(10, Math.ceil(((straightKm * 1.5) / 25) * 60 + 10));
+  }
 
   return {
     id: `transit-${encodeURIComponent(from.title)}-${encodeURIComponent(to.title)}`,
     fromLocation: from.title,
     toLocation: to.title,
-    mode: straightKm <= 0.8 ? "walk" : "chauffeur",
+    mode: fallbackMode,
     duration: `${estMins} min`,
     distance: `${straightKm.toFixed(1)} km (estimado)`,
     routeNote: `Margem estimada: ~${estMins} min (${straightKm.toFixed(1)} km em linha reta)`,
-    bufferMinutes: 10,
+    bufferMinutes: customBuffer ?? (fallbackMode === "walk" ? 5 : 10),
     isAlgorithmOptimized: false,
-    algorithmNote: "Estimativa geométrica (fator urbano 1,5 a 25 km/h + 10 min de tolerância).",
+    algorithmNote: "Estimativa geométrica (fator urbano 1,5 a 25 km/h + tolerância).",
   };
 }
 
@@ -397,9 +444,22 @@ export function realignTimeSlots(
 
     if (i < items.length - 1) {
       const next = items[i + 1];
-      const distM = distanceBetweenItems(item, next, coordMap);
-      const travelMins = Math.max(5, Math.ceil((distM / 1000 / 30) * 60));
-      const buffer = distM <= 1000 ? 5 : 10;
+      const leg = item.transitToNext;
+      let travelMins = 15;
+      let buffer = 10;
+      if (leg?.duration) {
+        travelMins = parseInt(leg.duration, 10) || 15;
+        buffer =
+          typeof leg.bufferMinutes === "number"
+            ? leg.bufferMinutes
+            : leg.mode === "walk"
+              ? 5
+              : 10;
+      } else {
+        const distM = distanceBetweenItems(item, next, coordMap);
+        travelMins = Math.max(5, Math.ceil((distM / 1000 / 30) * 60));
+        buffer = distM <= 1000 ? 5 : 10;
+      }
       cursor += travelMins + buffer;
     }
 
@@ -562,7 +622,13 @@ export async function enrichItineraryWithRoadRouting(
       const fromCoords = extractCoords(current, coordMap);
       const toCoords = extractCoords(next, coordMap);
 
-      const leg = await calculateRoadLeg(fromCoords, toCoords);
+      const preferredMode = current.transitToNext?.mode;
+      const customBuffer = current.transitToNext?.bufferMinutes;
+
+      const leg = await calculateRoadLeg(fromCoords, toCoords, {
+        preferredMode,
+        bufferMinutes: customBuffer,
+      });
       if (leg) {
         items[i] = { ...current, transitToNext: leg };
         legs.push(leg);
@@ -591,7 +657,7 @@ export async function enrichItineraryWithRoadRouting(
         legsCount: legs.length,
         walkingDistance: walkStr,
         routePath: [items[0].title, ...legs.map((l) => l.toLocation)],
-        algorithmStatus: "Feasible & Optimized",
+        algorithmStatus: "Viável e Otimizado",
       };
     }
 
@@ -603,6 +669,85 @@ export async function enrichItineraryWithRoadRouting(
   }
 
   return enrichedDays;
+}
+
+/**
+ * Recomputes route summary statistics for a list of activity items.
+ */
+export function recomputeDailyRouteSummary(items: ActivityItem[]): DailyRouteSummary | undefined {
+  const legs = items.map((i) => i.transitToNext).filter((l): l is TransitLeg => Boolean(l));
+  if (!legs.length) return undefined;
+
+  let totalMinutes = 0;
+  let totalKm = 0;
+  let walkingMeters = 0;
+
+  for (const leg of legs) {
+    const durNum = parseInt(leg.duration, 10) || 0;
+    totalMinutes += durNum;
+
+    const distMatch = leg.distance?.match(/^([\d.]+)\s*(km|m)/i);
+    if (distMatch) {
+      const val = parseFloat(distMatch[1]);
+      const unit = distMatch[2].toLowerCase();
+      const meters = unit === "km" ? val * 1000 : val;
+      totalKm += meters / 1000;
+      if (leg.mode === "walk") walkingMeters += meters;
+    }
+  }
+
+  const walkStr =
+    walkingMeters >= 1000 ? `${(walkingMeters / 1000).toFixed(1)} km` : `${walkingMeters} m`;
+
+  return {
+    totalTransitTime: `${totalMinutes} min`,
+    totalDistance: `${totalKm.toFixed(1)} km`,
+    legsCount: legs.length,
+    walkingDistance: walkStr,
+    routePath: [items[0].title, ...legs.map((l) => l.toLocation)],
+    algorithmStatus: "Viável e Otimizado",
+  };
+}
+
+/**
+ * Updates a single transit leg's mode (e.g. walk vs chauffeur) and buffer,
+ * recalculates road distance and duration via OSRM, realigns subsequent timestamps,
+ * and updates the day's route summary.
+ */
+export async function updateDayTransitLeg(
+  day: ItineraryDay,
+  activityId: string,
+  newMode: TransitMode,
+  customBufferMinutes?: number,
+  catalogRecords?: Array<Record<string, unknown>>,
+): Promise<ItineraryDay> {
+  const coordMap = buildCoordMap(catalogRecords);
+  const items = [...day.items];
+  const idx = items.findIndex((it) => it.id === activityId);
+  if (idx < 0 || idx >= items.length - 1) return day;
+
+  const current = items[idx];
+  const next = items[idx + 1];
+  const fromCoords = extractCoords(current, coordMap);
+  const toCoords = extractCoords(next, coordMap);
+
+  const updatedLeg = await calculateRoadLeg(fromCoords, toCoords, {
+    preferredMode: newMode,
+    bufferMinutes: customBufferMinutes,
+  });
+
+  if (updatedLeg) {
+    items[idx] = { ...current, transitToNext: updatedLeg };
+  }
+
+  const realignedItems = realignTimeSlots(items, coordMap);
+  const summary = recomputeDailyRouteSummary(realignedItems);
+
+  return {
+    ...day,
+    items: realignedItems,
+    routeSummary: summary ?? day.routeSummary,
+  };
 }
 
 /**

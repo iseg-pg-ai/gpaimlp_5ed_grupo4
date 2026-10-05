@@ -88,7 +88,7 @@ test("enrichItineraryWithRoadRouting attaches transitToNext and routeSummary to 
   assert.equal(day.routeSummary.legsCount, 2);
   assert.match(day.routeSummary.totalTransitTime, /\d+\s*min/);
   assert.match(day.routeSummary.totalDistance, /[\d.]+\s*km/);
-  assert.equal(day.routeSummary.algorithmStatus, "Feasible & Optimized");
+  assert.ok(["Viável e Otimizado", "Feasible & Optimized"].includes(day.routeSummary.algorithmStatus));
 });
 
 test("enrichItineraryWithRoadRouting resolves coordinates by catalog ID, title and establishment", async () => {
@@ -241,4 +241,54 @@ test("enrichItineraryWithRoadRouting skips road legs for free_time periods", asy
   // No transit leg between poi-1 and free-time-1
   assert.equal(enriched.items[0].transitToNext, undefined);
   assert.equal(enriched.routeSummary, undefined);
+});
+
+test("calculateRoadLeg supports explicit preferredMode (walk vs chauffeur)", async () => {
+  const from = { title: "Miradouro de Santa Luzia", latitude: 38.7116, longitude: -9.1303 };
+  const to = { title: "Sé de Lisboa", latitude: 38.7099, longitude: -9.1326 };
+
+  const walkLeg = await calculateRoadLeg(from, to, { preferredMode: "walk" });
+  assert.ok(walkLeg);
+  assert.equal(walkLeg.mode, "walk");
+  assert.match(walkLeg.duration, /^\d+\s*min$/);
+  assert.equal(walkLeg.bufferMinutes, 5);
+
+  const carLeg = await calculateRoadLeg(from, to, { preferredMode: "chauffeur", bufferMinutes: 12 });
+  assert.ok(carLeg);
+  assert.equal(carLeg.mode, "chauffeur");
+  assert.equal(carLeg.bufferMinutes, 12);
+});
+
+test("updateDayTransitLeg switches transit mode and realigns subsequent schedule", async () => {
+  const { updateDayTransitLeg } = await import("../src/lib/road-routing.ts");
+  const day = {
+    dayNumber: 1,
+    date: "2026-10-10",
+    title: "Lisboa",
+    location: "Lisboa",
+    items: [
+      {
+        id: "act-1",
+        title: "Praça do Comércio",
+        category: "activity",
+        latitude: 38.7075,
+        longitude: -9.1364,
+        time: "09:30–10:45 (proposto)",
+      },
+      {
+        id: "act-2",
+        title: "Elevador de Santa Justa",
+        category: "activity",
+        latitude: 38.7121,
+        longitude: -9.1394,
+        time: "11:15–12:30 (proposto)",
+      },
+    ],
+  };
+
+  const updatedDay = await updateDayTransitLeg(day, "act-1", "walk", 8);
+  assert.equal(updatedDay.items[0].transitToNext?.mode, "walk");
+  assert.equal(updatedDay.items[0].transitToNext?.bufferMinutes, 8);
+  assert.ok(updatedDay.routeSummary);
+  assert.equal(updatedDay.routeSummary.legsCount, 1);
 });

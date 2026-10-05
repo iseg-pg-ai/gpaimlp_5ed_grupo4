@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/locales";
-import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip } from "@/types";
+import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip, TransitMode } from "@/types";
 import { initialBrief } from "@/data/initialBrief";
 import { assistantHelp } from "@/lib/assistant-editing";
 
@@ -319,6 +319,140 @@ export function useWorkspace() {
       prev.map((t) => (t.id === activeId ? { ...t, clientLanguage: language } : t)),
     );
   };
+
+  const updateTransitLegMode = (
+    dayNumber: number,
+    activityId: string,
+    newMode: TransitMode,
+    bufferMinutes?: number,
+  ) =>
+    update(async (trip) => {
+      const response = await fetch("/api/routing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_leg",
+          snapshot: trip,
+          dayNumber,
+          activityId,
+          newMode,
+          bufferMinutes,
+        }),
+      });
+      if (!response.ok) {
+        const err = await responseJson<{ error?: string }>(response).catch(() => null);
+        throw new Error(err?.error || "Não foi possível atualizar a modalidade de deslocação.");
+      }
+      const result = await responseJson<{ itinerary: ItineraryDay[] }>(response);
+      validateSnapshot({ ...trip, itinerary: result.itinerary });
+      return {
+        ...trip,
+        itinerary: result.itinerary,
+      };
+    });
+
+  const optimizeDayRoute = (dayNumber: number) =>
+    update(async (trip) => {
+      const response = await fetch("/api/routing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "optimize_day",
+          snapshot: trip,
+          dayNumber,
+        }),
+      });
+      if (!response.ok) {
+        const err = await responseJson<{ error?: string }>(response).catch(() => null);
+        throw new Error(err?.error || "Não foi possível otimizar o percurso do dia.");
+      }
+      const result = await responseJson<{ itinerary: ItineraryDay[] }>(response);
+      validateSnapshot({ ...trip, itinerary: result.itinerary });
+      return {
+        ...trip,
+        itinerary: result.itinerary,
+      };
+    });
+
+  const applyDeterministicCommand = (command: string) =>
+    update(async (trip) => {
+      const response = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ snapshot: trip, input: command }),
+      });
+      if (!response.ok) {
+        const err = await responseJson<{ error?: string }>(response).catch(() => null);
+        throw new Error(err?.error || "Não foi possível executar a ação.");
+      }
+      const result = await responseJson<{
+        itinerary: ItineraryDay[];
+        reply: string;
+        changed?: boolean;
+      }>(response);
+      if (result.changed === false) {
+        throw new Error(result.reply || "Não foi possível aplicar a alteração.");
+      }
+      validateSnapshot({ ...trip, itinerary: result.itinerary });
+      return {
+        ...trip,
+        itinerary: result.itinerary,
+      };
+    });
+
+  const addPoiToDay = (dayNumber: number, title: string) =>
+    applyDeterministicCommand(`adicionar "${title}" ao dia ${dayNumber}`);
+
+  const removeActivity = (dayNumber: number, activityId: string) =>
+    update(async (trip) => {
+      const day = trip.itinerary.find((d) => d.dayNumber === dayNumber);
+      if (!day) throw new Error("Dia não encontrado.");
+      const index = day.items.findIndex((i) => i.id === activityId);
+      if (index < 0) throw new Error("Atividade não encontrada.");
+
+      const response = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          snapshot: trip,
+          input: `remover atividade ${index + 1} do dia ${dayNumber}`,
+        }),
+      });
+      if (!response.ok) {
+        const err = await responseJson<{ error?: string }>(response).catch(() => null);
+        throw new Error(err?.error || "Não foi possível remover a atividade.");
+      }
+      const result = await responseJson<{
+        itinerary: ItineraryDay[];
+        reply: string;
+        changed?: boolean;
+      }>(response);
+      if (result.changed === false) {
+        throw new Error(result.reply || "Não foi possível remover a atividade.");
+      }
+      validateSnapshot({ ...trip, itinerary: result.itinerary });
+      return {
+        ...trip,
+        itinerary: result.itinerary,
+      };
+    });
+
+  const addFreePeriodToDay = (
+    dayNumber: number,
+    type: "afternoon" | "morning" | "fullday",
+  ) => {
+    const cmd =
+      type === "morning"
+        ? `adicionar manha livre ao dia ${dayNumber}`
+        : type === "fullday"
+          ? `marcar dia ${dayNumber} como dia livre`
+          : `adicionar tarde livre ao dia ${dayNumber}`;
+    return applyDeterministicCommand(cmd);
+  };
+
+  const adjustDayCapacity = (dayNumber: number, newCapacity: number) =>
+    applyDeterministicCommand(`ajustar capacidade do dia ${dayNumber} para ${newCapacity}`);
+
   return {
     activeId,
     active,
@@ -345,5 +479,11 @@ export function useWorkspace() {
     selectTrip,
     editBrief,
     changeClientLanguage,
+    updateTransitLegMode,
+    optimizeDayRoute,
+    addPoiToDay,
+    removeActivity,
+    addFreePeriodToDay,
+    adjustDayCapacity,
   };
 }
