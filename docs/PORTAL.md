@@ -108,6 +108,19 @@ O orçamento discriminado apresenta preços calculáveis, valores por confirmar 
 totais separados por moeda. O orçamento disponível do cliente aparece separado do
 custo conhecido da proposta. Valores desconhecidos não são apresentados como zero.
 
+## Partilha com o cliente
+
+O botão **Partilhar** abre um painel para escolher a versão, o idioma e a forma de
+entrega. A ligação de acesso apresenta uma página simples da proposta; a opção
+Documento PDF abre diretamente o PDF imutável dessa versão e idioma. O email do
+cliente vem do briefing e pode ser alterado antes de preparar a mensagem.
+
+O portal abre o programa de email do computador com destinatário, assunto, texto e
+ligação preenchidos. O envio é confirmado nessa aplicação. As ligações ficam
+guardadas no histórico SQLite de exportações. Em instalações acessíveis fora do
+computador local, `BLU_PUBLIC_URL` deve conter a origem pública do portal, por
+exemplo `https://propostas.example.com`.
+
 ### Apresentação dos PDFs BLU
 
 As novas exportações têm capa em azul-petróleo e creme, apontamentos dourados,

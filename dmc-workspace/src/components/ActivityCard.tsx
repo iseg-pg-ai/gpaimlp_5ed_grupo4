@@ -4,7 +4,18 @@ import { T, useTranslated } from "@/components/LocaleProvider";
 import { ActivityConfirmationEditor } from "./ActivityConfirmationEditor";
 import { outstandingChecks, type ActivityConfirmation } from "@/lib/activity-confirmation";
 import React from "react";
-import { Bed, Compass, UtensilsCrossed, Car, Sun, MapPin, Clock, Lock, Unlock, Trash2 } from "lucide-react";
+import {
+  Bed,
+  Compass,
+  UtensilsCrossed,
+  Car,
+  Sun,
+  MapPin,
+  Clock,
+  Lock,
+  Unlock,
+  Trash2,
+} from "lucide-react";
 import { ActivityItem, ActivityCategory } from "@/types";
 import { ProposalStatus } from "./ProposalStatus";
 

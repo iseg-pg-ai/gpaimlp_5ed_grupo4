@@ -88,7 +88,9 @@ test("enrichItineraryWithRoadRouting attaches transitToNext and routeSummary to 
   assert.equal(day.routeSummary.legsCount, 2);
   assert.match(day.routeSummary.totalTransitTime, /\d+\s*min/);
   assert.match(day.routeSummary.totalDistance, /[\d.]+\s*km/);
-  assert.ok(["Viável e Otimizado", "Feasible & Optimized"].includes(day.routeSummary.algorithmStatus));
+  assert.ok(
+    ["Viável e Otimizado", "Feasible & Optimized"].includes(day.routeSummary.algorithmStatus),
+  );
 });
 
 test("enrichItineraryWithRoadRouting resolves coordinates by catalog ID, title and establishment", async () => {
@@ -185,7 +187,7 @@ test("optimizeRouteSequence eliminates zig-zag and anchors lunch in the middle",
     title: "Torre de Belém",
     category: "activity",
     latitude: 38.6916,
-    longitude: -9.2160,
+    longitude: -9.216,
     time: "16:30–17:30 (proposto)",
   };
 
@@ -253,7 +255,10 @@ test("calculateRoadLeg supports explicit preferredMode (walk vs chauffeur)", asy
   assert.match(walkLeg.duration, /^\d+\s*min$/);
   assert.equal(walkLeg.bufferMinutes, 5);
 
-  const carLeg = await calculateRoadLeg(from, to, { preferredMode: "chauffeur", bufferMinutes: 12 });
+  const carLeg = await calculateRoadLeg(from, to, {
+    preferredMode: "chauffeur",
+    bufferMinutes: 12,
+  });
   assert.ok(carLeg);
   assert.equal(carLeg.mode, "chauffeur");
   assert.equal(carLeg.bufferMinutes, 12);

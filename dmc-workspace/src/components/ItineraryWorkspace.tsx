@@ -11,7 +11,18 @@ import { TransitInspectorModal } from "./TransitInspectorModal";
 import { AddPoiModal } from "./AddPoiModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MapPin, Download, SlidersHorizontal, Sparkles, Route, Plus, Sun } from "lucide-react";
+import {
+  Calendar,
+  Users,
+  MapPin,
+  Download,
+  SlidersHorizontal,
+  Sparkles,
+  Route,
+  Plus,
+  Sun,
+  Share2,
+} from "lucide-react";
 
 interface ItineraryWorkspaceProps {
   brief: CustomerBrief;
@@ -19,6 +30,7 @@ interface ItineraryWorkspaceProps {
   highlightedDay: number | null;
   onEditBrief: () => void;
   onExportPdf: () => void;
+  onShare?: () => void;
   isExporting?: boolean;
   displayBudget: string;
   proposalTools?: React.ReactNode;
@@ -50,6 +62,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   highlightedDay,
   onEditBrief,
   onExportPdf,
+  onShare,
   isExporting,
   displayBudget,
   proposalTools,
@@ -136,6 +149,12 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               <SlidersHorizontal aria-hidden="true" className="size-4" />
               <T text="Edit Brief" />
             </Button>
+            {onShare && version && (
+              <Button variant="outline" onClick={onShare} className="min-h-11 text-sm">
+                <Share2 aria-hidden="true" className="size-4" />
+                <T text="Partilhar" source="pt" />
+              </Button>
+            )}
           </div>
           <p className="mt-4 text-sm leading-6 text-[#4A636B]">
             <T
@@ -340,7 +359,8 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                           onAdjustDayCapacity(
                             day.dayNumber,
                             (day.dailyCapacity ??
-                              (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) - 1,
+                              (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) -
+                              1,
                           )
                         }
                         className="px-1 font-bold hover:bg-white rounded disabled:opacity-30"
@@ -364,7 +384,8 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                           onAdjustDayCapacity(
                             day.dayNumber,
                             (day.dailyCapacity ??
-                              (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) + 1,
+                              (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) +
+                              1,
                           )
                         }
                         className="px-1 font-bold hover:bg-white rounded disabled:opacity-30"
@@ -446,14 +467,16 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                       <T text="Resumo da Rota:" source="pt" />
                     </span>
                     <span>
-                      🚗 {day.routeSummary.totalTransitTime} · {day.routeSummary.totalDistance} ({day.routeSummary.legsCount}{" "}
+                      🚗 {day.routeSummary.totalTransitTime} · {day.routeSummary.totalDistance} (
+                      {day.routeSummary.legsCount}{" "}
                       {day.routeSummary.legsCount === 1 ? "deslocação" : "deslocações"})
                     </span>
-                    {day.routeSummary.walkingDistance && day.routeSummary.walkingDistance !== "0 m" && (
-                      <span className="text-[#698288]">
-                        · 🚶 {day.routeSummary.walkingDistance} a pé
-                      </span>
-                    )}
+                    {day.routeSummary.walkingDistance &&
+                      day.routeSummary.walkingDistance !== "0 m" && (
+                        <span className="text-[#698288]">
+                          · 🚶 {day.routeSummary.walkingDistance} a pé
+                        </span>
+                      )}
                   </div>
                   <Badge variant="teal" className="text-[10px] py-0 px-2 font-normal">
                     <T
@@ -537,7 +560,9 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
         <AddPoiModal
           isOpen={true}
           dayNumber={addPoiDay}
-          dayLocation={itinerary.find((d) => d.dayNumber === addPoiDay)?.location || brief.destination}
+          dayLocation={
+            itinerary.find((d) => d.dayNumber === addPoiDay)?.location || brief.destination
+          }
           dayCapacity={
             itinerary.find((d) => d.dayNumber === addPoiDay)?.dailyCapacity ??
             (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)

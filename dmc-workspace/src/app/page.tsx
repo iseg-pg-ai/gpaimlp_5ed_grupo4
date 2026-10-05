@@ -10,6 +10,7 @@ import { NewTripScreen } from "@/components/NewTripScreen";
 import { ItineraryWorkspace } from "@/components/ItineraryWorkspace";
 import { AIAssistantPanel } from "@/components/AIAssistantPanel";
 import { applyConfirmation } from "@/lib/activity-confirmation";
+import { ShareProposalModal } from "@/components/ShareProposalModal";
 
 export default function WorkspacePage() {
   const { locale } = useLocale();
@@ -17,6 +18,7 @@ export default function WorkspacePage() {
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [desktopAssistantCollapsed, setDesktopAssistantCollapsed] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const assistantLabel = useTranslated("Curation Assistant");
   const assistantButton = useRef<HTMLButtonElement>(null);
   const {
@@ -201,6 +203,7 @@ export default function WorkspacePage() {
                     }))
                   }
                   onExportPdf={exportPdf}
+                  onShare={() => setShareOpen(true)}
                   isExporting={exporting || saving}
                   onEditBrief={editBrief}
                   onToggleLockActivity={(dayNumber, id) =>
@@ -225,6 +228,18 @@ export default function WorkspacePage() {
                   onAddFreePeriodToDay={addFreePeriodToDay}
                   onAdjustDayCapacity={adjustDayCapacity}
                 />
+                {shareOpen && active.version && (
+                  <ShareProposalModal
+                    tripId={active.id}
+                    currentVersion={active.version}
+                    versions={history.id === active.id ? history.versions : []}
+                    defaultLocale={active.clientLanguage ?? clientLanguage}
+                    defaultEmail={active.brief.customerEmail}
+                    customerName={active.brief.customerName}
+                    destination={active.brief.destination}
+                    onClose={() => setShareOpen(false)}
+                  />
+                )}
                 <section
                   onKeyDown={(event) => {
                     if (event.key === "Escape" && assistantOpen) {

@@ -48,11 +48,7 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
     if (day.items.length <= 2) {
       return reject("O dia já tem 2 ou menos atividades e não requer otimização de sequência.");
     }
-    const allRecords = [
-      ...catalog.atracoes,
-      ...catalog.experiencias,
-      ...catalog.restaurantes,
-    ];
+    const allRecords = [...catalog.atracoes, ...catalog.experiencias, ...catalog.restaurantes];
     const coordMap = buildCoordMap(allRecords);
     const optimizedItems = optimizeRouteSequence(day.items, coordMap);
     const itinerary = original.map((d) => (d === day ? { ...d, items: optimizedItems } : d));
@@ -76,9 +72,7 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
     if (cap < 1 || cap > 6) {
       return reject("Indique uma capacidade entre 1 e 6 atividades por dia.");
     }
-    const itinerary = original.map((d) =>
-      d === day ? { ...d, dailyCapacity: cap } : d,
-    );
+    const itinerary = original.map((d) => (d === day ? { ...d, dailyCapacity: cap } : d));
     return {
       itinerary,
       changed: true,

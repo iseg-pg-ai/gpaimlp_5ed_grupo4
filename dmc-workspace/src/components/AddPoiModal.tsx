@@ -301,7 +301,9 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
                 <div
                   key={rec.id}
                   className={`p-3.5 sm:p-4 rounded-xl border bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                    isAlreadyAdded ? "border-[#DDD8CE] opacity-60" : "border-[#E2DED5] hover:border-[#143F4B]"
+                    isAlreadyAdded
+                      ? "border-[#DDD8CE] opacity-60"
+                      : "border-[#E2DED5] hover:border-[#143F4B]"
                   }`}
                 >
                   <div className="space-y-1 min-w-0 flex-1">

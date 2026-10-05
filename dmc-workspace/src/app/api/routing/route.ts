@@ -20,11 +20,7 @@ export async function POST(request: Request) {
 
   try {
     const catalog = await loadPublishedCatalog();
-    const allRecords = [
-      ...catalog.atracoes,
-      ...catalog.experiencias,
-      ...catalog.restaurantes,
-    ];
+    const allRecords = [...catalog.atracoes, ...catalog.experiencias, ...catalog.restaurantes];
 
     const currentDay = body.snapshot.itinerary.find(
       (d: ItineraryDay) => d.dayNumber === body.dayNumber,

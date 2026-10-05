@@ -2,7 +2,19 @@
 import { T, useTranslated } from "@/components/LocaleProvider";
 
 import React, { useEffect, useRef, useState } from "react";
-import { X, MapPin, Clock, ShieldCheck, Sparkles, CheckCircle2, Navigation, Car, Footprints, Ship, Train } from "lucide-react";
+import {
+  X,
+  MapPin,
+  Clock,
+  ShieldCheck,
+  Sparkles,
+  CheckCircle2,
+  Navigation,
+  Car,
+  Footprints,
+  Ship,
+  Train,
+} from "lucide-react";
 import { TransitLeg, TransitMode } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +25,11 @@ interface TransitInspectorModalProps {
   onApplyMode?: (newMode: TransitMode, newBufferMinutes: number) => void;
 }
 
-export const TransitInspectorModal: React.FC<TransitInspectorModalProps> = ({ leg, onClose, onApplyMode }) => {
+export const TransitInspectorModal: React.FC<TransitInspectorModalProps> = ({
+  leg,
+  onClose,
+  onApplyMode,
+}) => {
   const dialog = useRef<HTMLDialogElement>(null);
   const title = useTranslated("Inspetor do Algoritmo de Roteamento", "pt");
   const closeLabel = useTranslated("Fechar", "pt");
@@ -22,7 +38,7 @@ export const TransitInspectorModal: React.FC<TransitInspectorModalProps> = ({ le
   const [overrideBuffer, setOverrideBuffer] = useState<number | null>(null);
 
   const selectedMode = overrideMode ?? (leg?.mode || "chauffeur");
-  const selectedBuffer = overrideBuffer ?? (leg?.bufferMinutes ?? (leg?.mode === "walk" ? 5 : 10));
+  const selectedBuffer = overrideBuffer ?? leg?.bufferMinutes ?? (leg?.mode === "walk" ? 5 : 10);
 
   const handleClose = () => {
     setOverrideMode(null);

@@ -421,10 +421,7 @@ export function useWorkspace() {
       return `remover atividade ${index + 1} do dia ${dayNumber}`;
     });
 
-  const addFreePeriodToDay = (
-    dayNumber: number,
-    type: "afternoon" | "morning" | "fullday",
-  ) => {
+  const addFreePeriodToDay = (dayNumber: number, type: "afternoon" | "morning" | "fullday") => {
     const cmd =
       type === "morning"
         ? `adicionar manha livre ao dia ${dayNumber}`

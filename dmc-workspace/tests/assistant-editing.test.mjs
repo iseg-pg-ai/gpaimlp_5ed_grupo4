@@ -216,9 +216,7 @@ test("assistant adds free periods and supports full free day", () => {
   // Add afternoon free time
   const withTardeLivre = editWithAssistant(snapshot, "adicionar tarde livre ao dia 1", c);
   assert.equal(withTardeLivre.changed, true);
-  const afternoonItem = withTardeLivre.itinerary[0].items.find(
-    (it) => it.category === "free_time",
-  );
+  const afternoonItem = withTardeLivre.itinerary[0].items.find((it) => it.category === "free_time");
   assert.ok(afternoonItem);
   assert.match(afternoonItem.title, /Tarde Livre/);
 
