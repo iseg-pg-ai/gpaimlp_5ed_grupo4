@@ -72,7 +72,9 @@ export function useWorkspace() {
   const [storageError, setStorageError] = useState("");
   const active = trips.find((t) => t.id === activeId);
   useEffect(() => {
-    const timer = setTimeout(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
       try {
         const raw = localStorage.getItem(STORAGE);
         if (raw) {
@@ -96,8 +98,10 @@ export function useWorkspace() {
           "Não foi possível ler as viagens guardadas. Os dados existentes não serão substituídos; exporte ou recupere o armazenamento do navegador antes de continuar.",
         );
       }
-    }, 0);
-    return () => clearTimeout(timer);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
   useEffect(() => {
     if (!ready || localStorage.getItem(AUTO_TRASH_STORAGE) !== "true") return;
