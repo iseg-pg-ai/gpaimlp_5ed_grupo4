@@ -121,6 +121,23 @@ guardadas no histórico SQLite de exportações. Em instalações acessíveis fo
 computador local, `BLU_PUBLIC_URL` deve conter a origem pública do portal, por
 exemplo `https://propostas.example.com`.
 
+## Planos ativos e Lixo
+
+O ícone de lixo de cada viagem na barra lateral retira a viagem dos planos ativos
+sem eliminar o seu briefing, roteiro, mensagens ou referência à versão. A página
+**Lixo** permite pesquisar as viagens removidas, consultar a data e distinguir a
+remoção manual da automática. A opção automática move apenas viagens cuja data de
+fim seja anterior ao dia atual.
+
+Cada versão no histórico tem uma ação própria para a enviar para o Lixo. Isto não
+remove a viagem nem uma atividade do roteiro. As versões removidas deixam de surgir
+no histórico ativo, mas os snapshots, PDFs e variantes linguísticas permanecem no
+SQLite e podem ser restaurados na página Lixo. A remoção de uma atividade continua
+a ser feita no cartão do respetivo dia e cria uma nova versão do roteiro.
+
+Com o portal em execução, `npm run test:trash` valida no navegador a remoção e o
+restauro de uma viagem e de uma versão.
+
 ### Apresentação dos PDFs BLU
 
 As novas exportações têm capa em azul-petróleo e creme, apontamentos dourados,

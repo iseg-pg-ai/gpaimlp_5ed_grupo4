@@ -2,7 +2,7 @@
 import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle, Trash2, X } from "lucide-react";
 import { useState, useRef } from "react";
 import { ResponsiveNavigation } from "@/components/ResponsiveNavigation";
 import { Sidebar } from "@/components/Sidebar";
@@ -40,12 +40,14 @@ export default function WorkspacePage() {
     update,
     exportPdf,
     reopenLatest,
+    trashVersion,
     generate,
     send,
     assistantBusy,
     setEditing,
     startNewTrip,
     selectTrip,
+    trashTrip,
     editBrief,
     changeClientLanguage,
     updateTransitLegMode,
@@ -81,6 +83,7 @@ export default function WorkspacePage() {
               setNavigationOpen(false);
               selectTrip(id);
             }}
+            onTrashTrip={trashTrip}
           />
         </div>
       </ResponsiveNavigation>
@@ -164,6 +167,16 @@ export default function WorkspacePage() {
                             <span className="ml-2">
                               {new Date(v.createdAt).toLocaleString(dateLocale)}
                             </span>
+                            <button
+                              type="button"
+                              onClick={() => trashVersion(v.version)}
+                              disabled={saving || exporting}
+                              className="ml-2 inline-flex min-h-9 items-center gap-1 rounded-lg border border-[#D5D1C7] px-2 py-1 text-xs text-[#70443E] hover:bg-[#F7E9E6] disabled:opacity-50"
+                              title="Enviar apenas esta versão para o Lixo"
+                            >
+                              <Trash2 className="size-3.5" />
+                              <T text="Enviar versão para o Lixo" source="pt" />
+                            </button>
                           </div>
                         ))}
                       </details>

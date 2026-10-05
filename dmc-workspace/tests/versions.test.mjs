@@ -181,3 +181,21 @@ test("proposal shares retain their selected version, language, method and recipi
   assert.equal(reopened.customerName, snapshot.brief.customerName);
   assert.throws(() => store.getShare("invalid"), /Partilha inválida/);
 });
+
+test("trashed versions leave active history and restore with snapshots and PDFs intact", async (t) => {
+  const { store } = setup(t);
+  store.save("trip-trash", structuredClone(snapshot), "generated", null);
+  const pdf = await store.pdf("trip-trash", 1);
+  const removed = store.trashVersion("trip-trash", 1);
+  assert.equal(removed.trashReason, "manual");
+  assert.ok(removed.trashedAt);
+  assert.equal(store.list("trip-trash").length, 0);
+  assert.equal(store.listTrash().length, 1);
+  assert.deepEqual((await store.pdf("trip-trash", 1)).bytes, pdf.bytes);
+  assert.equal(JSON.parse(store.get("trip-trash", 1).snapshot).brief.customerName, "João & Inês");
+
+  const restored = store.restoreVersion("trip-trash", 1);
+  assert.equal(restored.trashedAt, null);
+  assert.equal(store.listTrash().length, 0);
+  assert.equal(store.list("trip-trash")[0].version, 1);
+});
