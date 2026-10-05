@@ -2,7 +2,7 @@
 import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle, Trash2, X } from "lucide-react";
 import { useState, useRef } from "react";
 import { ResponsiveNavigation } from "@/components/ResponsiveNavigation";
 import { Sidebar } from "@/components/Sidebar";
@@ -10,6 +10,7 @@ import { NewTripScreen } from "@/components/NewTripScreen";
 import { ItineraryWorkspace } from "@/components/ItineraryWorkspace";
 import { AIAssistantPanel } from "@/components/AIAssistantPanel";
 import { applyConfirmation } from "@/lib/activity-confirmation";
+import { ShareProposalModal } from "@/components/ShareProposalModal";
 
 export default function WorkspacePage() {
   const { locale } = useLocale();
@@ -17,6 +18,7 @@ export default function WorkspacePage() {
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [desktopAssistantCollapsed, setDesktopAssistantCollapsed] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const assistantLabel = useTranslated("Curation Assistant");
   const assistantButton = useRef<HTMLButtonElement>(null);
   const {
@@ -38,13 +40,22 @@ export default function WorkspacePage() {
     update,
     exportPdf,
     reopenLatest,
+    trashVersion,
     generate,
     send,
+    assistantBusy,
     setEditing,
     startNewTrip,
     selectTrip,
+    trashTrip,
     editBrief,
     changeClientLanguage,
+    updateTransitLegMode,
+    optimizeDayRoute,
+    addPoiToDay,
+    removeActivity,
+    addFreePeriodToDay,
+    adjustDayCapacity,
   } = useWorkspace();
   return (
     <div className="responsive-workspace relative flex flex-col lg:flex-row h-full bg-[#F4F0E7]">
@@ -72,6 +83,7 @@ export default function WorkspacePage() {
               setNavigationOpen(false);
               selectTrip(id);
             }}
+            onTrashTrip={trashTrip}
           />
         </div>
       </ResponsiveNavigation>
@@ -155,6 +167,16 @@ export default function WorkspacePage() {
                             <span className="ml-2">
                               {new Date(v.createdAt).toLocaleString(dateLocale)}
                             </span>
+                            <button
+                              type="button"
+                              onClick={() => trashVersion(v.version)}
+                              disabled={saving || exporting}
+                              className="ml-2 inline-flex min-h-9 items-center gap-1 rounded-lg border border-[#D5D1C7] px-2 py-1 text-xs text-[#70443E] hover:bg-[#F7E9E6] disabled:opacity-50"
+                              title="Enviar apenas esta versão para o Lixo"
+                            >
+                              <Trash2 className="size-3.5" />
+                              <T text="Enviar para o Lixo" source="pt" />
+                            </button>
                           </div>
                         ))}
                       </details>
@@ -194,6 +216,7 @@ export default function WorkspacePage() {
                     }))
                   }
                   onExportPdf={exportPdf}
+                  onShare={() => setShareOpen(true)}
                   isExporting={exporting || saving}
                   onEditBrief={editBrief}
                   onToggleLockActivity={(dayNumber, id) =>
@@ -211,7 +234,25 @@ export default function WorkspacePage() {
                       ),
                     }))
                   }
+                  onOptimizeDayRoute={optimizeDayRoute}
+                  onUpdateTransitLeg={updateTransitLegMode}
+                  onAddPoiToDay={addPoiToDay}
+                  onRemoveActivity={removeActivity}
+                  onAddFreePeriodToDay={addFreePeriodToDay}
+                  onAdjustDayCapacity={adjustDayCapacity}
                 />
+                {shareOpen && active.version && (
+                  <ShareProposalModal
+                    tripId={active.id}
+                    currentVersion={active.version}
+                    versions={history.id === active.id ? history.versions : []}
+                    defaultLocale={active.clientLanguage ?? clientLanguage}
+                    defaultEmail={active.brief.customerEmail}
+                    customerName={active.brief.customerName}
+                    destination={active.brief.destination}
+                    onClose={() => setShareOpen(false)}
+                  />
+                )}
                 <section
                   onKeyDown={(event) => {
                     if (event.key === "Escape" && assistantOpen) {
@@ -264,7 +305,7 @@ export default function WorkspacePage() {
                       }}
                       messages={active.messages}
                       onSendMessage={send}
-                      isProcessing={saving || exporting}
+                      isProcessing={assistantBusy}
                       onResetItinerary={editBrief}
                     />
                   </div>
