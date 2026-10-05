@@ -20,11 +20,7 @@ export async function POST(request: Request) {
     const result = editWithAssistant(body.snapshot, body.input, catalog);
     if (result.changed) {
       try {
-        const allRecords = [
-          ...catalog.atracoes,
-          ...catalog.experiencias,
-          ...catalog.restaurantes,
-        ];
+        const allRecords = [...catalog.atracoes, ...catalog.experiencias, ...catalog.restaurantes];
         result.itinerary = await enrichItineraryWithRoadRouting(result.itinerary, allRecords);
       } catch (routingErr) {
         console.warn("Could not enrich assistant road routes:", routingErr);

@@ -49,6 +49,13 @@ export function validateBrief(value: unknown): asserts value is CustomerBrief {
       throw new Error(`Campo inválido: ${field}`);
   if (!b.customerName.trim() || !b.destination.trim())
     throw new Error("Indique cliente e destino.");
+  if (
+    b.customerEmail !== undefined &&
+    (typeof b.customerEmail !== "string" ||
+      b.customerEmail.length > 320 ||
+      (b.customerEmail.trim() !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.customerEmail)))
+  )
+    throw new Error("Email do cliente inválido.");
   for (const field of [
     "interests",
     "exclusions",

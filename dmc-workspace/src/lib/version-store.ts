@@ -1,9 +1,9 @@
 import { DatabaseSync } from "node:sqlite";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { renderLocalizedPdf } from "./localized-pdf.ts";
-import type { Locale } from "./locales";
+import { isLocale, type Locale } from "./locales.ts";
 import { renderPdf, type Snapshot, type VersionMeta } from "./itinerary-pdf.ts";
 const hash = (s: string | Buffer) => createHash("sha256").update(s).digest("hex");
 function canonical(value: unknown): string {
@@ -42,6 +42,21 @@ type Stored = VersionMeta & {
   pdfHash: string | null;
   exportedAt: string | null;
 };
+export type ShareMethod = "document" | "link";
+export type ProposalShare = {
+  token: string;
+  tripId: string;
+  version: number;
+  locale: Locale;
+  method: ShareMethod;
+  recipient: string;
+  createdAt: string;
+  filename: string;
+  customerName: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+};
 export class VersionStore {
   db: DatabaseSync;
   root: string;
@@ -62,7 +77,12 @@ export class VersionStore {
       CREATE TABLE IF NOT EXISTS localized_pdfs (
         tripId TEXT NOT NULL, version INTEGER NOT NULL, locale TEXT NOT NULL,
         filename TEXT NOT NULL, pdf BLOB NOT NULL, pdfHash TEXT NOT NULL, createdAt TEXT NOT NULL,
-        PRIMARY KEY(tripId,version,locale));`);
+        PRIMARY KEY(tripId,version,locale));
+      CREATE TABLE IF NOT EXISTS proposal_shares (
+        token TEXT PRIMARY KEY, tripId TEXT NOT NULL, version INTEGER NOT NULL,
+        locale TEXT NOT NULL, method TEXT NOT NULL, recipient TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        FOREIGN KEY(tripId,version) REFERENCES versions(tripId,version));`);
   }
   close() {
     this.db.close();
@@ -92,6 +112,66 @@ export class VersionStore {
       .get(tripId, version) as unknown as Stored | undefined;
     if (!row) throw new Error("Versão não encontrada.");
     return publicName(row);
+  }
+  createShare(
+    tripId: string,
+    version: number,
+    locale: Locale,
+    method: ShareMethod,
+    recipient: string,
+  ): ProposalShare {
+    const stored = this.get(tripId, version);
+    const token = randomBytes(24).toString("base64url");
+    const createdAt = new Date().toISOString();
+    this.db
+      .prepare(
+        "INSERT INTO proposal_shares (token,tripId,version,locale,method,recipient,createdAt) VALUES (?,?,?,?,?,?,?)",
+      )
+      .run(token, tripId, version, locale, method, recipient, createdAt);
+    const snapshot = JSON.parse(stored.snapshot) as Snapshot;
+    return {
+      token,
+      tripId,
+      version,
+      locale,
+      method,
+      recipient,
+      createdAt,
+      filename: stored.filename.replace(/\.pdf$/, `_${locale.toUpperCase()}.pdf`),
+      customerName: snapshot.brief.customerName,
+      destination: snapshot.brief.destination,
+      startDate: snapshot.brief.startDate,
+      endDate: snapshot.brief.endDate,
+    };
+  }
+  getShare(token: string): ProposalShare {
+    if (!/^[A-Za-z0-9_-]{32}$/.test(token)) throw new Error("Partilha inválida.");
+    const row = this.db.prepare("SELECT * FROM proposal_shares WHERE token=?").get(token) as
+      | {
+          token: string;
+          tripId: string;
+          version: number;
+          locale: string;
+          method: string;
+          recipient: string;
+          createdAt: string;
+        }
+      | undefined;
+    if (!row || !isLocale(row.locale) || !["document", "link"].includes(row.method))
+      throw new Error("Partilha não encontrada.");
+    const locale = row.locale;
+    const stored = this.get(row.tripId, row.version);
+    const snapshot = JSON.parse(stored.snapshot) as Snapshot;
+    return {
+      ...row,
+      locale,
+      method: row.method as ShareMethod,
+      filename: stored.filename.replace(/\.pdf$/, `_${row.locale.toUpperCase()}.pdf`),
+      customerName: snapshot.brief.customerName,
+      destination: snapshot.brief.destination,
+      startDate: snapshot.brief.startDate,
+      endDate: snapshot.brief.endDate,
+    };
   }
   save(
     tripId: string,

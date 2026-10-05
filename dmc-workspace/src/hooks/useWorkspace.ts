@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/locales";
-import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip } from "@/types";
+import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip, TransitMode } from "@/types";
 import { initialBrief } from "@/data/initialBrief";
 import { assistantHelp } from "@/lib/assistant-editing";
 
@@ -59,6 +59,7 @@ export function useWorkspace() {
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [assistantBusy, setAssistantBusy] = useState(false);
   const operation = useRef(false);
   const [history, setHistory] = useState<{ id: string; versions: HistoryVersion[] }>({
     id: "",
@@ -266,23 +267,30 @@ export function useWorkspace() {
       operation.current = false;
     }
   };
-  const send = (input: string) =>
-    update(async (trip) => {
-      const response = await fetch("/api/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ snapshot: trip, input }),
+  const send = async (input: string) => {
+    if (!active || operation.current) return false;
+    setAssistantBusy(true);
+    try {
+      return await update(async (trip) => {
+        const response = await fetch("/api/assistant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snapshot: trip, input }),
+        });
+        const result = await responseJson<{ itinerary: ItineraryDay[]; reply: string }>(response);
+        validateSnapshot({ ...trip, itinerary: result.itinerary });
+        if (typeof result.reply !== "string") throw new Error("Resposta inválida do assistente.");
+        const { itinerary, reply } = result;
+        return {
+          ...trip,
+          itinerary,
+          messages: [...trip.messages, message("user", input), message("assistant", reply)],
+        };
       });
-      const result = await responseJson<{ itinerary: ItineraryDay[]; reply: string }>(response);
-      validateSnapshot({ ...trip, itinerary: result.itinerary });
-      if (typeof result.reply !== "string") throw new Error("Resposta inválida do assistente.");
-      const { itinerary, reply } = result;
-      return {
-        ...trip,
-        itinerary,
-        messages: [...trip.messages, message("user", input), message("assistant", reply)],
-      };
-    });
+    } finally {
+      setAssistantBusy(false);
+    }
+  };
   const recent: RecentTrip[] = trips.map((t) => ({
     id: t.id,
     name: t.brief.customerName,
@@ -319,10 +327,118 @@ export function useWorkspace() {
       prev.map((t) => (t.id === activeId ? { ...t, clientLanguage: language } : t)),
     );
   };
+
+  const updateTransitLegMode = (
+    dayNumber: number,
+    activityId: string,
+    newMode: TransitMode,
+    bufferMinutes?: number,
+  ) =>
+    update(async (trip) => {
+      const response = await fetch("/api/routing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_leg",
+          snapshot: trip,
+          dayNumber,
+          activityId,
+          newMode,
+          bufferMinutes,
+        }),
+      });
+      if (!response.ok) {
+        const err = await responseJson<{ error?: string }>(response).catch(() => null);
+        throw new Error(err?.error || "Não foi possível atualizar a modalidade de deslocação.");
+      }
+      const result = await responseJson<{ itinerary: ItineraryDay[] }>(response);
+      validateSnapshot({ ...trip, itinerary: result.itinerary });
+      return {
+        ...trip,
+        itinerary: result.itinerary,
+      };
+    });
+
+  const optimizeDayRoute = (dayNumber: number) =>
+    update(async (trip) => {
+      const response = await fetch("/api/routing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "optimize_day",
+          snapshot: trip,
+          dayNumber,
+        }),
+      });
+      if (!response.ok) {
+        const err = await responseJson<{ error?: string }>(response).catch(() => null);
+        throw new Error(err?.error || "Não foi possível otimizar o percurso do dia.");
+      }
+      const result = await responseJson<{ itinerary: ItineraryDay[] }>(response);
+      validateSnapshot({ ...trip, itinerary: result.itinerary });
+      return {
+        ...trip,
+        itinerary: result.itinerary,
+      };
+    });
+
+  const applyDeterministicCommand = (commandOrFn: string | ((trip: Trip) => string)) =>
+    update(async (trip) => {
+      const command = typeof commandOrFn === "function" ? commandOrFn(trip) : commandOrFn;
+      const response = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ snapshot: trip, input: command }),
+      });
+      if (!response.ok) {
+        const err = await responseJson<{ error?: string }>(response).catch(() => null);
+        throw new Error(err?.error || "Não foi possível executar a ação.");
+      }
+      const result = await responseJson<{
+        itinerary: ItineraryDay[];
+        reply: string;
+        changed?: boolean;
+      }>(response);
+      if (result.changed === false) {
+        throw new Error(result.reply || "Não foi possível aplicar a alteração.");
+      }
+      validateSnapshot({ ...trip, itinerary: result.itinerary });
+      return {
+        ...trip,
+        itinerary: result.itinerary,
+      };
+    });
+
+  const addPoiToDay = (dayNumber: number, title: string) =>
+    applyDeterministicCommand(`adicionar "${title}" ao dia ${dayNumber}`);
+
+  const removeActivity = (dayNumber: number, activityId: string) =>
+    applyDeterministicCommand((trip) => {
+      const day = trip.itinerary.find((d) => d.dayNumber === dayNumber);
+      if (!day) throw new Error("Dia não encontrado.");
+      const index = day.items.findIndex((i) => i.id === activityId);
+      if (index < 0) throw new Error("Atividade não encontrada.");
+      return `remover atividade ${index + 1} do dia ${dayNumber}`;
+    });
+
+  const addFreePeriodToDay = (dayNumber: number, type: "afternoon" | "morning" | "fullday") => {
+    const cmd =
+      type === "morning"
+        ? `adicionar manha livre ao dia ${dayNumber}`
+        : type === "fullday"
+          ? `marcar dia ${dayNumber} como dia livre`
+          : `adicionar tarde livre ao dia ${dayNumber}`;
+    return applyDeterministicCommand(cmd);
+  };
+
+  const adjustDayCapacity = (dayNumber: number, newCapacity: number) =>
+    applyDeterministicCommand(`ajustar capacidade do dia ${dayNumber} para ${newCapacity}`);
+
   return {
     activeId,
     active,
     busy,
+    assistantBusy,
     editing,
     ready,
     draft,
@@ -345,5 +461,11 @@ export function useWorkspace() {
     selectTrip,
     editBrief,
     changeClientLanguage,
+    updateTransitLegMode,
+    optimizeDayRoute,
+    addPoiToDay,
+    removeActivity,
+    addFreePeriodToDay,
+    adjustDayCapacity,
   };
 }

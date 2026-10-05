@@ -10,6 +10,7 @@ import { NewTripScreen } from "@/components/NewTripScreen";
 import { ItineraryWorkspace } from "@/components/ItineraryWorkspace";
 import { AIAssistantPanel } from "@/components/AIAssistantPanel";
 import { applyConfirmation } from "@/lib/activity-confirmation";
+import { ShareProposalModal } from "@/components/ShareProposalModal";
 
 export default function WorkspacePage() {
   const { locale } = useLocale();
@@ -17,6 +18,7 @@ export default function WorkspacePage() {
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [desktopAssistantCollapsed, setDesktopAssistantCollapsed] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const assistantLabel = useTranslated("Curation Assistant");
   const assistantButton = useRef<HTMLButtonElement>(null);
   const {
@@ -40,11 +42,18 @@ export default function WorkspacePage() {
     reopenLatest,
     generate,
     send,
+    assistantBusy,
     setEditing,
     startNewTrip,
     selectTrip,
     editBrief,
     changeClientLanguage,
+    updateTransitLegMode,
+    optimizeDayRoute,
+    addPoiToDay,
+    removeActivity,
+    addFreePeriodToDay,
+    adjustDayCapacity,
   } = useWorkspace();
   return (
     <div className="responsive-workspace relative flex flex-col lg:flex-row h-full bg-[#F4F0E7]">
@@ -194,6 +203,7 @@ export default function WorkspacePage() {
                     }))
                   }
                   onExportPdf={exportPdf}
+                  onShare={() => setShareOpen(true)}
                   isExporting={exporting || saving}
                   onEditBrief={editBrief}
                   onToggleLockActivity={(dayNumber, id) =>
@@ -211,7 +221,25 @@ export default function WorkspacePage() {
                       ),
                     }))
                   }
+                  onOptimizeDayRoute={optimizeDayRoute}
+                  onUpdateTransitLeg={updateTransitLegMode}
+                  onAddPoiToDay={addPoiToDay}
+                  onRemoveActivity={removeActivity}
+                  onAddFreePeriodToDay={addFreePeriodToDay}
+                  onAdjustDayCapacity={adjustDayCapacity}
                 />
+                {shareOpen && active.version && (
+                  <ShareProposalModal
+                    tripId={active.id}
+                    currentVersion={active.version}
+                    versions={history.id === active.id ? history.versions : []}
+                    defaultLocale={active.clientLanguage ?? clientLanguage}
+                    defaultEmail={active.brief.customerEmail}
+                    customerName={active.brief.customerName}
+                    destination={active.brief.destination}
+                    onClose={() => setShareOpen(false)}
+                  />
+                )}
                 <section
                   onKeyDown={(event) => {
                     if (event.key === "Escape" && assistantOpen) {
@@ -264,7 +292,7 @@ export default function WorkspacePage() {
                       }}
                       messages={active.messages}
                       onSendMessage={send}
-                      isProcessing={saving || exporting}
+                      isProcessing={assistantBusy}
                       onResetItinerary={editBrief}
                     />
                   </div>
