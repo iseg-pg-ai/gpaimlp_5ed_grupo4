@@ -2,7 +2,6 @@ import { CustomerBrief } from "@/types";
 
 export const initialBrief: CustomerBrief = {
   customerName: "Sarah & James",
-  customerEmail: "sarah.james@example.com",
   adults: 2,
   children: 0,
   childrenAges: "",

@@ -108,56 +108,6 @@ O orçamento discriminado apresenta preços calculáveis, valores por confirmar 
 totais separados por moeda. O orçamento disponível do cliente aparece separado do
 custo conhecido da proposta. Valores desconhecidos não são apresentados como zero.
 
-## Partilha com o cliente
-
-O botão **Partilhar** abre um painel para escolher a versão, o idioma e a forma de
-entrega. A ligação de acesso apresenta uma página simples da proposta; a opção
-Documento PDF abre diretamente o PDF imutável dessa versão e idioma. O email do
-cliente vem do briefing e pode ser alterado antes de preparar a mensagem.
-
-O portal abre o programa de email do computador com destinatário, assunto, texto e
-ligação preenchidos. O envio é confirmado nessa aplicação. As ligações ficam
-guardadas no histórico SQLite de exportações. Em instalações acessíveis fora do
-computador local, `BLU_PUBLIC_URL` deve conter a origem pública do portal, por
-exemplo `https://propostas.example.com`.
-
-## Planos ativos e Lixo
-
-O ícone de lixo de cada viagem na barra lateral retira a viagem dos planos ativos
-sem eliminar o seu briefing, roteiro, mensagens ou referência à versão. A página
-**Lixo** permite pesquisar as viagens removidas, consultar a data e distinguir a
-remoção manual da automática. A opção automática move apenas viagens cuja data de
-fim seja anterior ao dia atual.
-
-Cada versão no histórico tem uma ação própria para a enviar para o Lixo. Isto não
-remove a viagem nem uma atividade do roteiro. As versões removidas deixam de surgir
-no histórico ativo, mas os snapshots, PDFs e variantes linguísticas permanecem no
-SQLite e podem ser restaurados na página Lixo. A remoção de uma atividade continua
-a ser feita no cartão do respetivo dia e cria uma nova versão do roteiro.
-
-Com o portal em execução, `npm run test:trash` valida no navegador a remoção e o
-restauro de uma viagem e de uma versão.
-
-### Apresentação dos PDFs BLU
-
-As novas exportações têm capa em azul-petróleo e creme, apontamentos dourados,
-cliente e destino em destaque, datas, versão e estado preliminar. O resumo da
-viagem é separado dos dias; cada atividade apresenta horário, título,
-localização, descrição, preço e confirmações por ordem de leitura. Fontes e
-critérios aparecem com menor destaque. O rodapé identifica a versão e a
-paginação.
-
-Português e traduções usam o mesmo renderer, com quebra de linhas e paginação
-conforme o comprimento dos textos. Mandarim mantém a configuração
-`BLU_PDF_CJK_FONT`. O número de páginas pode variar entre idiomas. Os PDFs já
-arquivados não são redesenhados: continuam a ser entregues com os bytes
-originais; o novo desenho aplica-se a PDFs ainda não gerados.
-
-Não foram incluídas fotografias: o repositório não contém fotografias de destinos
-com autorização documentada. A introdução de fotografias fica dependente desses
-materiais e respetivos créditos. A decoração geométrica da capa é desenhada
-diretamente no PDF.
-
 ## Idiomas
 
 A interface suporta português, inglês, mandarim, espanhol, francês e alemão. Os

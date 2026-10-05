@@ -29,8 +29,6 @@ export interface ActivityItem {
   description?: string;
   category: ActivityCategory;
   location?: string;
-  latitude?: number;
-  longitude?: number;
   duration?: string;
   priceNote?: string;
   effortLevel?: "Baixo" | "Moderado" | "Alto";
@@ -44,19 +42,13 @@ export interface ActivityItem {
   pendingChecks?: string[];
 }
 
-export interface DailyRouteSummary {
+interface DailyRouteSummary {
   totalTransitTime: string; // e.g. "48 min"
   totalDistance: string; // e.g. "19.5 km"
   legsCount: number;
   walkingDistance: string; // e.g. "650 m (< 1km constraint met)"
   routePath: string[]; // e.g. ["LIS Airport", "Príncipe Real", "Campo de Ourique"]
-  algorithmStatus:
-    | "Feasible & Optimized"
-    | "Buffer Added"
-    | "Manual Adjusted"
-    | "Viável e Otimizado"
-    | "Margem Adicionada"
-    | "Ajustado Manualmente";
+  algorithmStatus: "Feasible & Optimized" | "Buffer Added" | "Manual Adjusted";
 }
 
 export interface ItineraryDay {
@@ -69,7 +61,6 @@ export interface ItineraryDay {
   items: ActivityItem[];
   routeSummary?: DailyRouteSummary;
   isRecentlyModified?: boolean;
-  dailyCapacity?: number;
 }
 
 export type PhysicalEffortLevel = "Baixo (Low)" | "Moderado (Moderate)" | "Alto (High)";
@@ -83,7 +74,6 @@ export type MorningPreference = "Early (08:30)" | "Standard (09:30)" | "Late Sta
 export interface CustomerBrief {
   personalization?: import("../lib/brief-personalization").Personalization;
   customerName: string;
-  customerEmail?: string;
   adults: number;
   children: number;
   childrenAges: string;

@@ -23,31 +23,31 @@ const modeConfig: Record<
   }
 > = {
   chauffeur: {
-    label: "Motorista Privado",
+    label: "Private Chauffeur",
     icon: Car,
     accentColor: "text-[#143F4B]",
     bgPill: "bg-[#F4F0E7] text-[#143F4B] border-[#D5D1C7]",
   },
   walk: {
-    label: "Caminhada Pedonal",
+    label: "Curated Flat Walk",
     icon: Footprints,
     accentColor: "text-[#2D5B67]",
     bgPill: "bg-[#EAF0F1] text-[#2D5B67] border-[#BCD0D4]",
   },
   boat: {
-    label: "Barco Cénico / Rabelo",
+    label: "Scenic Boat / Rabelo",
     icon: Ship,
     accentColor: "text-[#1A5C70]",
     bgPill: "bg-[#E5F3F7] text-[#1A5C70] border-[#A8D3E0]",
   },
   train: {
-    label: "Comboio Panorâmico",
+    label: "Scenic Rail",
     icon: Train,
     accentColor: "text-[#9E6E24]",
     bgPill: "bg-[#FBF4E8] text-[#9E6E24] border-[#E8D4B0]",
   },
   funicular: {
-    label: "Funicular Histórico",
+    label: "Historic Funicular",
     icon: Train,
     accentColor: "text-[#9E6E24]",
     bgPill: "bg-[#FBF4E8] text-[#9E6E24] border-[#E8D4B0]",
@@ -72,7 +72,6 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
       <button
         type="button"
         onClick={() => onInspect?.(leg)}
-        title="Clique para ver detalhes ou alterar modalidade de deslocação"
         className="group relative z-10 inline-flex max-w-full min-w-0 flex-wrap items-center gap-2.5 py-1.5 px-3 rounded-xl bg-white border border-[#E3DFD5] hover:border-[#143F4B]/50 hover:shadow-xs transition-all cursor-pointer text-xs"
       >
         {/* Time if this is a primary transfer */}
@@ -90,15 +89,7 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
         </div>
 
         {/* Title or Modality */}
-        {title ? (
-          <span className="font-semibold text-[#143F4B]">
-            <T text={title} source="pt" />
-          </span>
-        ) : (
-          <span className="font-semibold text-[#143F4B]">
-            <T text={config.label} source="pt" />
-          </span>
-        )}
+        {title ? <span className="font-semibold text-[#143F4B]">{title}</span> : null}
 
         {/* Duration & Distance */}
         <div className="flex items-center gap-1.5 font-medium text-[#143F4B]">
@@ -131,7 +122,7 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
           >
             <ShieldCheck className="w-2.5 h-2.5 text-[#2D5B67]" />
             <span>
-              <T text="Trajeto Verificado" source="pt" />
+              <T text="Algorithm Verified" source="en" />
             </span>
           </Badge>
         )}
@@ -142,7 +133,7 @@ export const TransitConnector: React.FC<TransitConnectorProps> = ({
             <Clock className="w-2.5 h-2.5" />
             <span>
               +{leg.bufferMinutes}
-              <T text=" min margem" source="pt" />
+              <T text="m buffer" source="en" />
             </span>
           </span>
         )}

@@ -8,10 +8,9 @@ import {
 } from "./itinerary-scheduling.ts";
 import type { Snapshot } from "./itinerary-pdf";
 import type { ActivityItem } from "../types/index";
-import { optimizeRouteSequence, buildCoordMap } from "./road-routing.ts";
 
 export const assistantHelp =
-  'Pedidos disponíveis: adicionar "nome do catálogo" ao dia 1; adicionar tarde livre ao dia 1; marcar dia 1 como dia livre; ajustar capacidade do dia 1 para 3; substituir atividade 1 do dia 1 por "nome do catálogo"; reagendar atividade 1 do dia 1 para 14:00; reorganizar dia 1 na ordem 2,1,3; otimizar rota do dia 1; remover atividade 1 do dia 1. Os números seguem a ordem dos cartões.';
+  'Pedidos disponíveis: adicionar "nome do catálogo" ao dia 1; substituir atividade 1 do dia 1 por "nome do catálogo"; reagendar atividade 1 do dia 1 para 14:00; reorganizar dia 1 na ordem 2,1,3; remover atividade 1 do dia 1. Os números seguem a ordem dos cartões.';
 const normalize = (s: string) =>
   s
     .normalize("NFD")
@@ -36,129 +35,6 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
   if (/^remover (?:a )?ultima atividade do dia \d+$/.test(command)) {
     const result = applyCommand(original, input);
     return { ...result, changed: result.itinerary !== original };
-  }
-  const optimize =
-    command.match(/^otimizar (?:a )?rota do dia (\d+)$/) ||
-    command.match(/^otimizar (?:o )?trajeto do dia (\d+)$/) ||
-    command.match(/^otimizar dia (\d+)$/);
-  if (optimize) {
-    const number = Number(optimize[1]);
-    const day = original.find((d) => d.dayNumber === number);
-    if (!day) return reject("Esse dia não existe.");
-    if (day.items.length <= 2) {
-      return reject("O dia já tem 2 ou menos atividades e não requer otimização de sequência.");
-    }
-    const allRecords = [...catalog.atracoes, ...catalog.experiencias, ...catalog.restaurantes];
-    const coordMap = buildCoordMap(allRecords);
-    const optimizedItems = optimizeRouteSequence(day.items, coordMap);
-    const itinerary = original.map((d) => (d === day ? { ...d, items: optimizedItems } : d));
-    return {
-      itinerary,
-      changed: true,
-      reply: `Rota do dia ${number} otimizada pelo BLU Routing Engine para o trajeto rodoviário mais eficiente. Horários sequenciais atualizados.`,
-    };
-  }
-
-  const adjustCapacity =
-    command.match(/^(?:ajustar|definir) capacidade do dia (\d+) para (\d+)(?: atividades)?$/) ||
-    command.match(/^(?:ajustar|definir) ritmo do dia (\d+) para (\d+)(?: atividades)?$/) ||
-    command.match(/^permitir ate (\d+) atividades no dia (\d+)$/);
-  if (adjustCapacity) {
-    const isPermit = command.startsWith("permitir");
-    const num = Number(isPermit ? adjustCapacity[2] : adjustCapacity[1]);
-    const cap = Number(isPermit ? adjustCapacity[1] : adjustCapacity[2]);
-    const day = original.find((d) => d.dayNumber === num);
-    if (!day) return reject("Esse dia não existe.");
-    if (cap < 1 || cap > 6) {
-      return reject("Indique uma capacidade entre 1 e 6 atividades por dia.");
-    }
-    const itinerary = original.map((d) => (d === day ? { ...d, dailyCapacity: cap } : d));
-    return {
-      itinerary,
-      changed: true,
-      reply: `Capacidade do dia ${num} ajustada para até ${cap} atividades. Pode agora adicionar mais pontos de interesse a este dia.`,
-    };
-  }
-
-  const addFreePeriod =
-    command.match(/^adicionar (?:uma )?(tarde livre|manha livre|tempo livre) ao dia (\d+)$/) ||
-    command.match(/^adicionar periodo livre ao dia (\d+)$/);
-  if (addFreePeriod) {
-    const isGeneric = command.includes("periodo livre");
-    const num = Number(isGeneric ? addFreePeriod[1] : addFreePeriod[2]);
-    const day = original.find((d) => d.dayNumber === num);
-    if (!day) return reject("Esse dia não existe.");
-    if (day.items.some((it) => it.category === "free_time")) {
-      return reject("O dia já contém um período de tempo livre.");
-    }
-
-    const isMorning = command.includes("manha livre");
-    const freeItem: ActivityItem = isMorning
-      ? {
-          id: `free_time:${day.dayNumber}:morning`,
-          time: "09:30–12:30 (proposto)",
-          title: "Manhã Livre — Despertar Tranquilo",
-          description:
-            "Tempo livre reservado para pequeno-almoço relaxado, descanso ou passeios locais sem pressas.",
-          category: "free_time",
-          location: day.location,
-          duration: "3h00",
-          appliedRules: ["Pacing: período livre matinal"],
-        }
-      : {
-          id: `free_time:${day.dayNumber}:afternoon`,
-          time: "14:30–18:00 (proposto)",
-          title: "Tarde Livre — Exploração e Lazer",
-          description:
-            "Tempo livre para compras de artesanato, descanso, cafés de bairro ou exploração espontânea ao ritmo próprio.",
-          category: "free_time",
-          location: day.location,
-          duration: "3h30",
-          appliedRules: ["Pacing: período livre para flexibilidade e descanso"],
-        };
-
-    const newItems = isMorning ? [freeItem, ...day.items] : [...day.items, freeItem];
-    const itinerary = original.map((d) => (d === day ? { ...d, items: newItems } : d));
-    return {
-      itinerary,
-      changed: true,
-      reply: `Período de ${isMorning ? "manhã livre" : "tarde livre"} adicionado ao dia ${num}.`,
-    };
-  }
-
-  const setFreeDay =
-    command.match(/^(?:marcar|definir) dia (\d+) como dia livre$/) ||
-    command.match(/^dia (\d+) livre$/);
-  if (setFreeDay) {
-    const num = Number(setFreeDay[1]);
-    const day = original.find((d) => d.dayNumber === num);
-    if (!day) return reject("Esse dia não existe.");
-    if (day.items.some(protectedItem)) {
-      return reject(
-        "O dia contém atividades protegidas ou confirmadas. Desproteja-as antes de marcar o dia como livre.",
-      );
-    }
-
-    const freeDayItem: ActivityItem = {
-      id: `free_time:${day.dayNumber}:fullday`,
-      time: "09:30–18:00 (proposto)",
-      title: "Dia Livre — Exploração ao Ritmo Próprio",
-      description:
-        "Dia inteiramente dedicado ao lazer, descanso, compras ou visitas espontâneas sem horários rígidos.",
-      category: "free_time",
-      location: day.location,
-      duration: "Dia inteiro",
-      appliedRules: ["Pacing: dia de descanso entre etapas da viagem"],
-    };
-
-    const itinerary = original.map((d) =>
-      d === day ? { ...d, items: [freeDayItem], dailyCapacity: 1 } : d,
-    );
-    return {
-      itinerary,
-      changed: true,
-      reply: `Dia ${num} definido como Dia Livre.`,
-    };
   }
   const add = command.match(/^adicionar "(.+)" ao dia (\d+)$/);
   const replace = command.match(/^substituir atividade (\d+) do dia (\d+) por "(.+)"$/);
@@ -235,15 +111,13 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
     description = `Reagendada ${item.title} para ${move![3]}`;
   }
   if (!remove) {
-    const defaultLimit =
+    const limit =
       snapshot.brief.personalization?.extraBreaks || snapshot.brief.pace === "Relaxed"
         ? 2
         : snapshot.brief.pace === "Balanced"
           ? 3
           : 4;
-    const limit = day.dailyCapacity ?? defaultLimit;
-    const poiCount = items.filter((it) => it.category !== "free_time").length;
-    if (poiCount > limit)
+    if (items.length > limit)
       return reject("O número de atividades excede o ritmo definido no briefing.");
     let cursor = snapshot.brief.morningPreference.startsWith("Early")
       ? 510
@@ -252,12 +126,8 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
         : 570;
     let previous: Row | undefined;
     for (let i = 0; i < items.length; i++) {
-      const a = items[i];
-      if (a.category === "free_time") {
-        cursor += 180;
-        continue;
-      }
-      const record = rowFor(a);
+      const a = items[i],
+        record = rowFor(a);
       const margin = i
         ? transferEstimate(
             previous,

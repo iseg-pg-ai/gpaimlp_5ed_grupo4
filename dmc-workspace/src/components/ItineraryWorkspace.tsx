@@ -3,26 +3,14 @@ import { T, useLocale, useTranslated } from "@/components/LocaleProvider";
 
 import type { ActivityConfirmation } from "@/lib/activity-confirmation";
 import React, { useState, useRef, useEffect } from "react";
-import { ItineraryDay, CustomerBrief, TransitLeg, TransitMode } from "@/types";
+import { ItineraryDay, CustomerBrief, TransitLeg } from "@/types";
 import { ProposalStatus } from "./ProposalStatus";
 import { ActivityCard } from "./ActivityCard";
 import { TransitConnector } from "./TransitConnector";
 import { TransitInspectorModal } from "./TransitInspectorModal";
-import { AddPoiModal } from "./AddPoiModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Calendar,
-  Users,
-  MapPin,
-  Download,
-  SlidersHorizontal,
-  Sparkles,
-  Route,
-  Plus,
-  Sun,
-  Share2,
-} from "lucide-react";
+import { Calendar, Users, MapPin, Download, SlidersHorizontal, Sparkles } from "lucide-react";
 
 interface ItineraryWorkspaceProps {
   brief: CustomerBrief;
@@ -30,7 +18,6 @@ interface ItineraryWorkspaceProps {
   highlightedDay: number | null;
   onEditBrief: () => void;
   onExportPdf: () => void;
-  onShare?: () => void;
   isExporting?: boolean;
   displayBudget: string;
   proposalTools?: React.ReactNode;
@@ -43,17 +30,6 @@ interface ItineraryWorkspaceProps {
   ) => Promise<boolean>;
   saving?: boolean;
   onToggleLockActivity?: (dayNumber: number, activityId: string) => void;
-  onOptimizeDayRoute?: (dayNumber: number) => void;
-  onUpdateTransitLeg?: (
-    dayNumber: number,
-    activityId: string,
-    newMode: TransitMode,
-    bufferMinutes?: number,
-  ) => void;
-  onAddPoiToDay?: (dayNumber: number, title: string) => void;
-  onRemoveActivity?: (dayNumber: number, activityId: string) => void;
-  onAddFreePeriodToDay?: (dayNumber: number, type: "afternoon" | "morning" | "fullday") => void;
-  onAdjustDayCapacity?: (dayNumber: number, newCapacity: number) => void;
 }
 
 export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
@@ -62,7 +38,6 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   highlightedDay,
   onEditBrief,
   onExportPdf,
-  onShare,
   isExporting,
   displayBudget,
   proposalTools,
@@ -70,12 +45,6 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   exported,
   onToggleLockActivity,
   onConfirmActivity,
-  onOptimizeDayRoute,
-  onUpdateTransitLeg,
-  onAddPoiToDay,
-  onRemoveActivity,
-  onAddFreePeriodToDay,
-  onAdjustDayCapacity,
   saving,
 }) => {
   const { locale } = useLocale();
@@ -87,12 +56,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
       year: "numeric",
     }).format(new Date(date + "T12:00:00"));
   const [selectedDayFilter, setSelectedDayFilter] = useState<number | "all">("all");
-  const [inspectedLegInfo, setInspectedLegInfo] = useState<{
-    leg: TransitLeg;
-    dayNumber: number;
-    activityId: string;
-  } | null>(null);
-  const [addPoiDay, setAddPoiDay] = useState<number | null>(null);
+  const [inspectedLeg, setInspectedLeg] = useState<TransitLeg | null>(null);
   const dayRefs = useRef<{ [key: number]: HTMLElement | null }>({});
 
   // Auto-scroll into view when a specific day is modified by the AI Assistant
@@ -149,12 +113,6 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               <SlidersHorizontal aria-hidden="true" className="size-4" />
               <T text="Edit Brief" />
             </Button>
-            {onShare && version && (
-              <Button variant="outline" onClick={onShare} className="min-h-11 text-sm">
-                <Share2 aria-hidden="true" className="size-4" />
-                <T text="Partilhar" source="pt" />
-              </Button>
-            )}
           </div>
           <p className="mt-4 text-sm leading-6 text-[#4A636B]">
             <T
@@ -344,155 +302,25 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                   </h2>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {onAdjustDayCapacity && (
-                    <div className="flex items-center gap-1 rounded-lg border border-[#D5D1C7] bg-[#FAF8F3] px-2 py-1 text-xs text-[#143F4B]">
-                      <span className="text-[#6A8288]">Capacidade:</span>
-                      <button
-                        type="button"
-                        disabled={
-                          saving ||
-                          (day.dailyCapacity ??
-                            (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) <= 1
-                        }
-                        onClick={() =>
-                          onAdjustDayCapacity(
-                            day.dayNumber,
-                            (day.dailyCapacity ??
-                              (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) -
-                              1,
-                          )
-                        }
-                        className="px-1 font-bold hover:bg-white rounded disabled:opacity-30"
-                        title="Diminuir limite de atividades"
-                      >
-                        -
-                      </button>
-                      <span className="font-semibold px-0.5">
-                        {day.items.filter((it) => it.category !== "free_time").length} /{" "}
-                        {day.dailyCapacity ??
-                          (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={
-                          saving ||
-                          (day.dailyCapacity ??
-                            (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) >= 6
-                        }
-                        onClick={() =>
-                          onAdjustDayCapacity(
-                            day.dayNumber,
-                            (day.dailyCapacity ??
-                              (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) +
-                              1,
-                          )
-                        }
-                        className="px-1 font-bold hover:bg-white rounded disabled:opacity-30"
-                        title="Aumentar limite de atividades deste dia"
-                      >
-                        +
-                      </button>
-                    </div>
-                  )}
-
-                  {onAddPoiToDay && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAddPoiDay(day.dayNumber)}
-                      disabled={saving}
-                      className="text-xs h-8 gap-1 border-[#D5D1C7] text-[#143F4B] hover:bg-[#FAF8F3]"
-                      title="Adicionar oferta do catálogo a este dia"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-[#143F4B]" />
-                      <T text="Atividade" source="pt" />
-                    </Button>
-                  )}
-
-                  {onAddFreePeriodToDay && !day.items.some((it) => it.category === "free_time") && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onAddFreePeriodToDay(day.dayNumber, "afternoon")}
-                      disabled={saving}
-                      className="text-xs h-8 gap-1 border-[#D5D1C7] text-[#765218] bg-amber-50/50 hover:bg-amber-100/50"
-                      title="Adicionar período de tarde livre para descanso ou compras"
-                    >
-                      <Sun className="w-3.5 h-3.5 text-[#D8A65C]" />
-                      <T text="+ Tempo Livre" source="pt" />
-                    </Button>
-                  )}
-
-                  {onOptimizeDayRoute && day.items.length > 2 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onOptimizeDayRoute(day.dayNumber)}
-                      disabled={saving}
-                      className="text-xs h-8 gap-1.5 border-[#D5D1C7] text-[#143F4B] hover:bg-[#FAF8F3]"
-                      title="Otimizar ordem das paragens para menor tempo de deslocação"
-                    >
-                      <Route className="w-3.5 h-3.5 text-[#D8A65C]" />
-                      <T text="Otimizar Rota" source="pt" />
-                    </Button>
-                  )}
-                  {isDayModified && (
-                    <Badge
-                      variant="gold"
-                      className="gap-1.5 py-1 px-2.5 font-medium shrink-0 animate-in fade-in"
-                    >
-                      <Sparkles className="w-3 h-3 text-[#D8A65C]" />
-                      <span>
-                        <T text="Updated by Assistant" source="en" />
-                      </span>
-                    </Badge>
-                  )}
-                </div>
+                {isDayModified && (
+                  <Badge
+                    variant="gold"
+                    className="gap-1.5 py-1 px-2.5 font-medium shrink-0 animate-in fade-in"
+                  >
+                    <Sparkles className="w-3 h-3 text-[#D8A65C]" />
+                    <span>
+                      <T text="Updated by Assistant" source="en" />
+                    </span>
+                  </Badge>
+                )}
               </div>
 
               {day.summary && (
-                <p className="text-sm leading-7 text-[#4A636B] mb-4">
+                <p className="text-sm leading-7 text-[#4A636B] mb-5">
                   &quot;
                   <T text={day.summary} source="pt" />
                   &quot;
                 </p>
-              )}
-
-              {day.routeSummary && (
-                <div className="mb-5 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#E6E1D5] bg-[#FAF8F3] px-3.5 py-2.5 text-xs text-[#2D5B67]">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-[#143F4B] flex items-center gap-1.5">
-                      <Route className="w-3.5 h-3.5 text-[#D8A65C]" />
-                      <T text="Resumo da Rota:" source="pt" />
-                    </span>
-                    <span>
-                      🚗 {day.routeSummary.totalTransitTime} · {day.routeSummary.totalDistance} (
-                      {day.routeSummary.legsCount}{" "}
-                      {day.routeSummary.legsCount === 1 ? "deslocação" : "deslocações"})
-                    </span>
-                    {day.routeSummary.walkingDistance &&
-                      day.routeSummary.walkingDistance !== "0 m" && (
-                        <span className="text-[#698288]">
-                          · 🚶 {day.routeSummary.walkingDistance} a pé
-                        </span>
-                      )}
-                  </div>
-                  <Badge variant="teal" className="text-[10px] py-0 px-2 font-normal">
-                    <T
-                      text={
-                        day.routeSummary.algorithmStatus === "Feasible & Optimized"
-                          ? "Viável e Otimizado"
-                          : day.routeSummary.algorithmStatus === "Buffer Added"
-                            ? "Margem Adicionada"
-                            : day.routeSummary.algorithmStatus === "Manual Adjusted"
-                              ? "Ajustado Manualmente"
-                              : day.routeSummary.algorithmStatus
-                      }
-                      source="pt"
-                    />
-                  </Badge>
-                </div>
               )}
 
               {/* Activities timeline with Stippl-inspired transit & dislocation cards */}
@@ -509,22 +337,11 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                             : undefined
                         }
                         onToggleLock={() => onToggleLockActivity?.(day.dayNumber, activity.id)}
-                        onRemove={
-                          onRemoveActivity
-                            ? () => onRemoveActivity(day.dayNumber, activity.id)
-                            : undefined
-                        }
                       />
                       {activity.transitToNext && (
                         <TransitConnector
                           leg={activity.transitToNext}
-                          onInspect={(leg) =>
-                            setInspectedLegInfo({
-                              leg,
-                              dayNumber: day.dayNumber,
-                              activityId: activity.id,
-                            })
-                          }
+                          onInspect={(leg) => setInspectedLeg(leg)}
                         />
                       )}
                     </React.Fragment>
@@ -537,43 +354,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
       </div>
 
       {/* Transit Routing Inspector Modal */}
-      <TransitInspectorModal
-        leg={inspectedLegInfo?.leg ?? null}
-        onClose={() => setInspectedLegInfo(null)}
-        onApplyMode={
-          onUpdateTransitLeg && inspectedLegInfo
-            ? (newMode, newBuffer) => {
-                onUpdateTransitLeg(
-                  inspectedLegInfo.dayNumber,
-                  inspectedLegInfo.activityId,
-                  newMode,
-                  newBuffer,
-                );
-                setInspectedLegInfo(null);
-              }
-            : undefined
-        }
-      />
-
-      {/* Add POI Modal */}
-      {addPoiDay !== null && (
-        <AddPoiModal
-          isOpen={true}
-          dayNumber={addPoiDay}
-          dayLocation={
-            itinerary.find((d) => d.dayNumber === addPoiDay)?.location || brief.destination
-          }
-          dayCapacity={
-            itinerary.find((d) => d.dayNumber === addPoiDay)?.dailyCapacity ??
-            (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)
-          }
-          currentItems={itinerary.find((d) => d.dayNumber === addPoiDay)?.items || []}
-          allItineraryItems={itinerary.flatMap((d) => d.items)}
-          onClose={() => setAddPoiDay(null)}
-          onAddPoi={(title) => onAddPoiToDay?.(addPoiDay, title)}
-          onAdjustCapacity={(cap) => onAdjustDayCapacity?.(addPoiDay, cap)}
-        />
-      )}
+      <TransitInspectorModal leg={inspectedLeg} onClose={() => setInspectedLeg(null)} />
     </div>
   );
 };
