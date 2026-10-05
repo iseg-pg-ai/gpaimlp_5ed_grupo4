@@ -41,6 +41,12 @@ type Stored = VersionMeta & {
   pdf: Uint8Array | null;
   pdfHash: string | null;
   exportedAt: string | null;
+  trashedAt: string | null;
+  trashReason: "manual" | null;
+};
+export type VersionRecord = VersionMeta & {
+  trashedAt?: string | null;
+  trashReason?: "manual" | null;
 };
 export type ShareMethod = "document" | "link";
 export type ProposalShare = {
@@ -83,26 +89,65 @@ export class VersionStore {
         locale TEXT NOT NULL, method TEXT NOT NULL, recipient TEXT NOT NULL,
         createdAt TEXT NOT NULL,
         FOREIGN KEY(tripId,version) REFERENCES versions(tripId,version));`);
+    const versionColumns = this.db
+      .prepare("PRAGMA table_info(versions)")
+      .all() as unknown as Array<{
+      name: string;
+    }>;
+    if (!versionColumns.some((column) => column.name === "trashedAt"))
+      this.db.exec("ALTER TABLE versions ADD COLUMN trashedAt TEXT");
+    if (!versionColumns.some((column) => column.name === "trashReason"))
+      this.db.exec("ALTER TABLE versions ADD COLUMN trashReason TEXT");
   }
   close() {
     this.db.close();
   }
-  list(tripId?: string): VersionMeta[] {
+  list(tripId?: string): VersionRecord[] {
     const columns =
-      "tripId, version, filename, createdAt, reason, snapshotHash, chainHash, parentVersion, exportedAt";
+      "tripId, version, filename, createdAt, reason, snapshotHash, chainHash, parentVersion, exportedAt, trashedAt, trashReason";
     if (tripId) {
       checkTripId(tripId);
       return (
         this.db
-          .prepare(`SELECT ${columns} FROM versions WHERE tripId=? ORDER BY version DESC`)
-          .all(tripId) as unknown as VersionMeta[]
+          .prepare(
+            `SELECT ${columns} FROM versions WHERE tripId=? AND trashedAt IS NULL ORDER BY version DESC`,
+          )
+          .all(tripId) as unknown as VersionRecord[]
       ).map(publicName);
     }
     return (
       this.db
-        .prepare(`SELECT ${columns} FROM versions ORDER BY createdAt DESC`)
-        .all() as unknown as VersionMeta[]
+        .prepare(`SELECT ${columns} FROM versions WHERE trashedAt IS NULL ORDER BY createdAt DESC`)
+        .all() as unknown as VersionRecord[]
     ).map(publicName);
+  }
+  listTrash(): VersionRecord[] {
+    const columns =
+      "tripId, version, filename, createdAt, reason, snapshotHash, chainHash, parentVersion, exportedAt, trashedAt, trashReason";
+    return (
+      this.db
+        .prepare(
+          `SELECT ${columns} FROM versions WHERE trashedAt IS NOT NULL ORDER BY trashedAt DESC`,
+        )
+        .all() as unknown as VersionRecord[]
+    ).map(publicName);
+  }
+  trashVersion(tripId: string, version: number) {
+    this.get(tripId, version);
+    const trashedAt = new Date().toISOString();
+    this.db
+      .prepare(
+        "UPDATE versions SET trashedAt=COALESCE(trashedAt,?), trashReason=COALESCE(trashReason,'manual') WHERE tripId=? AND version=?",
+      )
+      .run(trashedAt, tripId, version);
+    return this.listTrash().find((item) => item.tripId === tripId && item.version === version)!;
+  }
+  restoreVersion(tripId: string, version: number) {
+    this.get(tripId, version);
+    this.db
+      .prepare("UPDATE versions SET trashedAt=NULL, trashReason=NULL WHERE tripId=? AND version=?")
+      .run(tripId, version);
+    return this.list(tripId).find((item) => item.version === version)!;
   }
   get(tripId: string, version: number): Stored {
     checkTripId(tripId);
@@ -188,6 +233,7 @@ export class VersionStore {
         .prepare("SELECT * FROM versions WHERE tripId=? ORDER BY version DESC LIMIT 1")
         .get(tripId) as unknown as Stored | undefined;
       if (previous?.snapshotHash === snapshotHash) {
+        if (previous.trashedAt) this.restoreVersion(tripId, previous.version);
         this.db.exec("COMMIT");
         return this.list(tripId)[0];
       }

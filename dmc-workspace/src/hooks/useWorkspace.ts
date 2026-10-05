@@ -8,23 +8,24 @@ import { assistantHelp } from "@/lib/assistant-editing";
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { responseJson } from "@/lib/http-client";
 import type { Snapshot } from "@/lib/itinerary-pdf";
+import {
+  AUTO_TRASH_STORAGE,
+  TRASH_STORAGE,
+  TRIPS_STORAGE,
+  moveCompletedTripsToTrash,
+  moveTripToTrash,
+  readTripTrash,
+  type StoredTrip,
+} from "@/lib/trip-trash";
 
-type Trip = {
-  clientLanguage?: Locale;
-  version?: number;
-  id: string;
-  brief: CustomerBrief;
-  itinerary: ItineraryDay[];
-  pending: string[];
-  messages: ChatMessage[];
-};
+type Trip = StoredTrip;
 type HistoryVersion = {
   version: number;
   filename: string;
   createdAt: string;
   exportedAt?: string | null;
 };
-const STORAGE = "blu-trips-v1";
+const STORAGE = TRIPS_STORAGE;
 const emptyBrief = (): CustomerBrief => ({
   ...initialBrief,
   customerName: "",
@@ -96,6 +97,27 @@ export function useWorkspace() {
     }, 0);
     return () => clearTimeout(timer);
   }, []);
+  useEffect(() => {
+    if (!ready || localStorage.getItem(AUTO_TRASH_STORAGE) !== "true") return;
+    try {
+      const trash = readTripTrash(localStorage.getItem(TRASH_STORAGE));
+      const today = new Date().toLocaleDateString("sv-SE");
+      const moved = moveCompletedTripsToTrash(trips, trash, today);
+      if (moved.trips.length === trips.length) return;
+      localStorage.setItem(TRASH_STORAGE, JSON.stringify(moved.trash));
+      queueMicrotask(() => {
+        setTrips(moved.trips);
+        if (moved.trash.some((entry) => entry.trip.id === activeId)) {
+          setActiveId("");
+          setEditing(true);
+        }
+      });
+    } catch {
+      queueMicrotask(() =>
+        setStorageError("Não foi possível aplicar a remoção automática das viagens terminadas."),
+      );
+    }
+  }, [ready, trips, activeId]);
   useEffect(() => {
     if (!ready) return;
     try {
@@ -223,6 +245,31 @@ export function useWorkspace() {
       setSaving(false);
     }
   };
+  const trashVersion = async (version: number) => {
+    if (!activeId || operation.current) return;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/versions/trash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tripId: activeId, version, action: "trash" }),
+      });
+      if (!response.ok) await responseJson(response);
+      setHistory((current) => ({
+        ...current,
+        versions: current.versions.filter((item) => item.version !== version),
+      }));
+    } catch (versionError) {
+      setError(
+        versionError instanceof Error
+          ? versionError.message
+          : "Não foi possível enviar a versão para o Lixo.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
   const generate = async (brief: CustomerBrief) => {
     if (busy || operation.current) return;
     setError("");
@@ -314,6 +361,25 @@ export function useWorkspace() {
     setActiveId(id);
     setEditing(false);
     setError("");
+  };
+  const trashTrip = (id: string) => {
+    if (busy || operation.current) return;
+    try {
+      const trash = readTripTrash(localStorage.getItem(TRASH_STORAGE));
+      const moved = moveTripToTrash(trips, trash, id, "manual");
+      if (moved.trips.length === trips.length) return;
+      localStorage.setItem(TRASH_STORAGE, JSON.stringify(moved.trash));
+      setTrips(moved.trips);
+      if (activeId === id) {
+        setActiveId("");
+        setDraft(emptyBrief());
+        setEditing(true);
+        setFormKey((key) => key + 1);
+      }
+      setError("");
+    } catch {
+      setStorageError("Não foi possível enviar a viagem para o Lixo.");
+    }
   };
   const editBrief = () => {
     if (!active || operation.current) return;
@@ -454,11 +520,13 @@ export function useWorkspace() {
     update,
     exportPdf,
     reopenLatest,
+    trashVersion,
     generate,
     send,
     setEditing,
     startNewTrip,
     selectTrip,
+    trashTrip,
     editBrief,
     changeClientLanguage,
     updateTransitLegMode,

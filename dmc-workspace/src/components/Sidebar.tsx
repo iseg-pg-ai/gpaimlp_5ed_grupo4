@@ -2,7 +2,7 @@
 import { T } from "@/components/LocaleProvider";
 
 import React from "react";
-import { Plus, MapPin, ShieldCheck } from "lucide-react";
+import { Plus, MapPin, ShieldCheck, Trash2 } from "lucide-react";
 import { RecentTrip } from "@/types";
 import { Button } from "@/components/ui/button";
 
@@ -10,6 +10,7 @@ interface SidebarProps {
   currentTripId: string;
   onSelectTrip: (tripId: string) => void;
   onNewTrip: () => void;
+  onTrashTrip: (tripId: string) => void;
   recentTrips: RecentTrip[];
   isNewTripActive: boolean;
 }
@@ -18,6 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentTripId,
   onSelectTrip,
   onNewTrip,
+  onTrashTrip,
   recentTrips,
   isNewTripActive,
 }) => {
@@ -52,16 +54,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {recentTrips.map((trip) => {
               const isSelected = !isNewTripActive && currentTripId === trip.id;
               return (
-                <button
+                <div
                   key={trip.id}
-                  onClick={() => onSelectTrip(trip.id)}
-                  className={`w-full text-left p-2.5 rounded-lg transition-all text-sm cursor-pointer group flex items-center justify-between ${
+                  className={`w-full rounded-lg transition-all text-sm group flex items-center ${
                     isSelected
                       ? "bg-white border border-[#2D5B67]/40 text-[#143F4B] shadow-xs"
                       : "hover:bg-black/[0.04] text-[#2D4A52] border border-transparent"
                   }`}
                 >
-                  <div className="min-w-0 pr-2">
+                  <button
+                    type="button"
+                    onClick={() => onSelectTrip(trip.id)}
+                    className="min-w-0 flex-1 p-2.5 text-left"
+                  >
                     <div className="flex items-center gap-1.5">
                       <span
                         className={`font-medium truncate ${isSelected ? "text-[#2D5B67] font-semibold" : "text-[#143F4B]"}`}
@@ -75,9 +80,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <span>·</span>
                       <span className="shrink-0">{trip.dates}</span>
                     </div>
-                  </div>
+                  </button>
                   {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#D8A65C] shrink-0" />}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => onTrashTrip(trip.id)}
+                    className="m-1.5 inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg text-[#7D4A43] hover:bg-[#F7E9E6]"
+                    aria-label={`Enviar viagem ${trip.name} para o Lixo`}
+                    title="Enviar viagem para o Lixo"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
               );
             })}
           </div>
