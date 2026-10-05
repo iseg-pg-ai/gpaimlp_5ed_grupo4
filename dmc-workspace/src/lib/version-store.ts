@@ -48,6 +48,7 @@ export type VersionRecord = VersionMeta & {
   trashedAt?: string | null;
   trashReason?: "manual" | null;
   tripEndDate?: string;
+  isFinalVersion?: boolean;
 };
 export type TrashCleanupResult = {
   deletedTripIds: string[];
@@ -128,7 +129,7 @@ export class VersionStore {
   }
   listTrash(): VersionRecord[] {
     const columns =
-      "tripId, version, filename, createdAt, reason, snapshotHash, chainHash, parentVersion, exportedAt, trashedAt, trashReason, snapshot";
+      "tripId, version, filename, createdAt, reason, snapshotHash, chainHash, parentVersion, exportedAt, trashedAt, trashReason, snapshot, version=(SELECT MAX(v2.version) FROM versions v2 WHERE v2.tripId=versions.tripId) AS isFinalVersion";
     const rows = this.db
       .prepare(
         `SELECT ${columns} FROM versions WHERE trashedAt IS NOT NULL ORDER BY trashedAt DESC`,
@@ -159,10 +160,24 @@ export class VersionStore {
       .run(tripId, version);
     return this.list(tripId).find((item) => item.version === version)!;
   }
-  cleanupExpiredTrash(tripIds: string[], today: string): TrashCleanupResult {
+  cleanupExpiredTrash(
+    tripIds: string[],
+    today: string,
+    confirmedTripIds: string[] = [],
+    confirmedVersions: Array<{ tripId: string; version: number }> = [],
+  ): TrashCleanupResult {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) throw new Error("Data de limpeza inválida.");
     const candidates = [...new Set(tripIds)];
     candidates.forEach(checkTripId);
+    const confirmedTrips = new Set(confirmedTripIds);
+    confirmedTrips.forEach(checkTripId);
+    const confirmedVersionKeys = new Set(
+      confirmedVersions.map(({ tripId, version }) => {
+        checkTripId(tripId);
+        if (!Number.isSafeInteger(version) || version < 1) throw new Error("Versão inválida.");
+        return `${tripId}:${version}`;
+      }),
+    );
     const deletedTripIds: string[] = [];
     const deletedVersions: Array<{ tripId: string; version: number }> = [];
 
@@ -175,6 +190,16 @@ export class VersionStore {
         return snapshot.brief.endDate < today;
       });
       if (!allExpired) continue;
+      if (!confirmedTrips.has(tripId)) {
+        const finalVersion = rows.at(-1)?.version;
+        if (finalVersion)
+          this.db
+            .prepare(
+              "UPDATE versions SET trashedAt=COALESCE(trashedAt,?), trashReason=COALESCE(trashReason,'manual') WHERE tripId=? AND version<?",
+            )
+            .run(new Date().toISOString(), tripId, finalVersion);
+        continue;
+      }
       this.db.exec("BEGIN IMMEDIATE");
       try {
         this.db.prepare("DELETE FROM proposal_shares WHERE tripId=?").run(tripId);
@@ -205,6 +230,14 @@ export class VersionStore {
       if (deletedTripIds.includes(row.tripId)) continue;
       const snapshot = JSON.parse(row.snapshot) as Snapshot;
       if (snapshot.brief.endDate >= today) continue;
+      const latest = this.db
+        .prepare("SELECT MAX(version) AS version FROM versions WHERE tripId=?")
+        .get(row.tripId) as unknown as { version: number };
+      if (
+        row.version === latest.version &&
+        !confirmedVersionKeys.has(`${row.tripId}:${row.version}`)
+      )
+        continue;
       const localized = this.db
         .prepare("SELECT filename FROM localized_pdfs WHERE tripId=? AND version=?")
         .all(row.tripId, row.version) as unknown as Array<{ filename: string }>;

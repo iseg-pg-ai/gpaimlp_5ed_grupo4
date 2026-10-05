@@ -19,12 +19,8 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 87.24,
-      "missing_values_by_column": {
-        "encerramento_base_reconfirmar": 135,
-        "observacoes": 135,
-        "reservas_condicoes_base": 135
-      }
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
     },
     "restaurantes": {
       "record_count": 54,
@@ -33,11 +29,8 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 90.74,
+      "completeness_pct": 99.87,
       "missing_values_by_column": {
-        "dias_de_encerramento": 51,
-        "necessidade_de_reserva": 51,
-        "observacoes": 51,
         "latitude": 1,
         "longitude": 1
       }
@@ -49,15 +42,8 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 77.6,
-      "missing_values_by_column": {
-        "dias_de_encerramento": 56,
-        "encerramento_base_reconfirmar": 56,
-        "latitude": 56,
-        "longitude": 56,
-        "necessidade_de_reserva": 56,
-        "reservas_condicoes_base": 56
-      }
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
     },
     "curation_principles": {
       "record_count": 6,

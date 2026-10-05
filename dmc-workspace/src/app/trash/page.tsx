@@ -98,6 +98,43 @@ export default function TrashPage() {
     }
   };
 
+  const permanentlyDelete = async (tripId: string, version?: number) => {
+    const subject = version ? `a versão final ${version}` : "a versão final e a viagem";
+    if (!window.confirm(`Eliminar definitivamente ${subject}? Esta ação não pode ser anulada.`))
+      return;
+    try {
+      const response = await fetch("/api/trash/cleanup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tripIds: version ? [] : [tripId],
+          confirmedTripIds: version ? [] : [tripId],
+          confirmedVersions: version ? [{ tripId, version }] : [],
+        }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Não foi possível eliminar o elemento.");
+      if (version) {
+        setVersions((items) =>
+          items.filter((item) => item.tripId !== tripId || item.version !== version),
+        );
+      } else {
+        const remaining = trips.filter((entry) => entry.trip.id !== tripId);
+        localStorage.setItem(TRASH_STORAGE, JSON.stringify(remaining));
+        setTrips(remaining);
+        setVersions((items) => items.filter((item) => item.tripId !== tripId));
+      }
+      setCleanupMessage("Eliminação definitiva confirmada e concluída.");
+      setError("");
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Não foi possível eliminar o elemento.",
+      );
+    }
+  };
+
   const normalized = query.trim().toLocaleLowerCase();
   const today = new Date().toLocaleDateString("sv-SE");
   const visibleTrips = useMemo(
@@ -183,8 +220,8 @@ export default function TrashPage() {
             ` Próxima execução prevista após ${new Date(nextCleanupAt).toLocaleString()}.`}
         </p>
         <p className="mt-1">
-          Viagens terminadas deixam de poder ser restauradas e serão eliminadas definitivamente na
-          próxima limpeza.
+          As versões anteriores de viagens terminadas serão eliminadas na próxima limpeza. A versão
+          final só pode ser eliminada após confirmação do utilizador.
         </p>
       </div>
       {cleanupMessage && (
@@ -225,19 +262,28 @@ export default function TrashPage() {
                     </p>
                     {expired && (
                       <p className="mt-2 text-sm font-semibold text-red-800">
-                        A viagem já terminou. Será eliminada definitivamente na próxima limpeza e já
-                        não pode ser restaurada.
+                        A viagem já terminou. As versões anteriores serão eliminadas na próxima
+                        limpeza; a versão final exige confirmação.
                       </p>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => restoreTrip(entry.trip.id)}
-                    disabled={expired}
-                    className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#2D5B67] px-3 py-2 text-sm font-semibold text-[#143F4B] hover:bg-[#E7EEF0] disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <ArchiveRestore className="size-4" /> Restaurar viagem
-                  </button>
+                  {expired ? (
+                    <button
+                      type="button"
+                      onClick={() => void permanentlyDelete(entry.trip.id)}
+                      className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-700 px-3 py-2 text-sm font-semibold text-red-800 hover:bg-red-50"
+                    >
+                      <Trash2 className="size-4" /> Eliminar definitivamente
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => restoreTrip(entry.trip.id)}
+                      className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#2D5B67] px-3 py-2 text-sm font-semibold text-[#143F4B] hover:bg-[#E7EEF0]"
+                    >
+                      <ArchiveRestore className="size-4" /> Restaurar viagem
+                    </button>
+                  )}
                 </div>
               </article>
             );
@@ -268,10 +314,22 @@ export default function TrashPage() {
                   Removida em {entry.trashedAt ? new Date(entry.trashedAt).toLocaleString() : "—"} ·
                   remoção manual
                 </p>
-                {expired ? (
+                {expired && entry.isFinalVersion ? (
+                  <div>
+                    <p className="mb-3 text-sm font-semibold text-red-800">
+                      Esta é a versão final. A eliminação definitiva exige a sua confirmação.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void permanentlyDelete(entry.tripId, entry.version)}
+                      className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-700 px-3 py-2 text-sm font-semibold text-red-800 hover:bg-red-50"
+                    >
+                      <Trash2 className="size-4" /> Eliminar versão final
+                    </button>
+                  </div>
+                ) : expired ? (
                   <p className="text-sm font-semibold text-red-800">
-                    A viagem já terminou. Esta versão será eliminada definitivamente na próxima
-                    limpeza e já não pode ser restaurada.
+                    Esta versão anterior será eliminada definitivamente na próxima limpeza.
                   </p>
                 ) : (
                   <VersionTrashButton

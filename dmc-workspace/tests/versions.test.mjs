@@ -222,15 +222,26 @@ test("cleanup permanently removes only expired trash and preserves conserved ver
   assert.throws(() => readFileSync(path.join(directory, "mixed-trip", oldPdf.filename)));
 });
 
-test("cleanup of an expired trashed trip removes all associated versions and files", async (t) => {
+test("cleanup retains the final version until the user confirms permanent deletion", async (t) => {
   const { store, directory } = setup(t);
   const expired = structuredClone(snapshot);
   expired.brief.startDate = "2026-09-01";
   expired.brief.endDate = "2026-09-02";
   store.save("expired-trip", expired, "generated", null);
   await store.pdf("expired-trip", 1);
-  const result = store.cleanupExpiredTrash(["expired-trip"], "2026-10-05");
+  const revised = structuredClone(expired);
+  revised.brief.notes = "Versão final";
+  store.save("expired-trip", revised, "revised", 1);
+  const finalPdf = await store.pdf("expired-trip", 2);
+
+  const automatic = store.cleanupExpiredTrash(["expired-trip"], "2026-10-05");
+  assert.deepEqual(automatic.deletedVersions, [{ tripId: "expired-trip", version: 1 }]);
+  assert.deepEqual(automatic.deletedTripIds, []);
+  assert.equal(store.get("expired-trip", 2).version, 2);
+  assert.ok(readFileSync(path.join(directory, "expired-trip", finalPdf.filename)).length);
+
+  const result = store.cleanupExpiredTrash(["expired-trip"], "2026-10-05", ["expired-trip"]);
   assert.deepEqual(result.deletedTripIds, ["expired-trip"]);
-  assert.throws(() => store.get("expired-trip", 1), /não encontrada/);
+  assert.throws(() => store.get("expired-trip", 2), /não encontrada/);
   assert.equal(existsSync(path.join(directory, "expired-trip")), false);
 });
