@@ -135,6 +135,18 @@ no histórico ativo, mas os snapshots, PDFs e variantes linguísticas permanecem
 SQLite e podem ser restaurados na página Lixo. A remoção de uma atividade continua
 a ser feita no cartão do respetivo dia e cria uma nova versão do roteiro.
 
+A limpeza definitiva é verificada uma vez a cada 24 horas, ao abrir o portal ou a
+página Lixo. Uma viagem ou versão no Lixo expira quando a data de fim guardada na
+proposta é anterior ao dia atual em Lisboa. A página avisa que estes elementos
+serão eliminados na próxima limpeza e desativa o restauro assim que a viagem
+termina.
+
+Ao eliminar uma viagem completa, o portal remove as versões, partilhas, PDFs e
+variantes linguísticas associados apenas quando todos os snapshots dessa viagem já
+expiraram. Ao eliminar uma versão individual, remove apenas os ficheiros e registos
+dessa versão. As viagens e versões ainda dentro do período de conservação não são
+alteradas.
+
 Com o portal em execução, `npm run test:trash` valida no navegador a remoção e o
 restauro de uma viagem e de uma versão.
 

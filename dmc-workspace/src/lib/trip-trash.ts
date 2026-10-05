@@ -4,6 +4,8 @@ import type { ChatMessage, CustomerBrief, ItineraryDay } from "../types/index";
 export const TRIPS_STORAGE = "blu-trips-v1";
 export const TRASH_STORAGE = "blu-trip-trash-v1";
 export const AUTO_TRASH_STORAGE = "blu-auto-trash-completed-v1";
+export const LAST_TRASH_CLEANUP_STORAGE = "blu-last-trash-cleanup-v1";
+export const TRASH_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 export type StoredTrip = {
   clientLanguage?: Locale;
@@ -77,4 +79,12 @@ export function moveCompletedTripsToTrash(
       (state, trip) => moveTripToTrash(state.trips, state.trash, trip.id, "automatic", removedAt),
       { trips, trash },
     );
+}
+
+export function isTripPast(trip: StoredTrip, today: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(trip.brief.endDate) && trip.brief.endDate < today;
+}
+
+export function expiredTrashTripIds(trash: TripTrashEntry[], today: string) {
+  return trash.filter((entry) => isTripPast(entry.trip, today)).map((entry) => entry.trip.id);
 }

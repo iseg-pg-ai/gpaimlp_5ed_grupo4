@@ -1,6 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { createHash, randomBytes } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { renderLocalizedPdf } from "./localized-pdf.ts";
 import { isLocale, type Locale } from "./locales.ts";
@@ -47,6 +47,11 @@ type Stored = VersionMeta & {
 export type VersionRecord = VersionMeta & {
   trashedAt?: string | null;
   trashReason?: "manual" | null;
+  tripEndDate?: string;
+};
+export type TrashCleanupResult = {
+  deletedTripIds: string[];
+  deletedVersions: Array<{ tripId: string; version: number }>;
 };
 export type ShareMethod = "document" | "link";
 export type ProposalShare = {
@@ -123,14 +128,19 @@ export class VersionStore {
   }
   listTrash(): VersionRecord[] {
     const columns =
-      "tripId, version, filename, createdAt, reason, snapshotHash, chainHash, parentVersion, exportedAt, trashedAt, trashReason";
-    return (
-      this.db
-        .prepare(
-          `SELECT ${columns} FROM versions WHERE trashedAt IS NOT NULL ORDER BY trashedAt DESC`,
-        )
-        .all() as unknown as VersionRecord[]
-    ).map(publicName);
+      "tripId, version, filename, createdAt, reason, snapshotHash, chainHash, parentVersion, exportedAt, trashedAt, trashReason, snapshot";
+    const rows = this.db
+      .prepare(
+        `SELECT ${columns} FROM versions WHERE trashedAt IS NOT NULL ORDER BY trashedAt DESC`,
+      )
+      .all() as unknown as Array<VersionRecord & { snapshot: string }>;
+    return rows.map((row) => {
+      const { snapshot, ...record } = row;
+      return publicName({
+        ...record,
+        tripEndDate: (JSON.parse(snapshot) as Snapshot).brief.endDate,
+      });
+    });
   }
   trashVersion(tripId: string, version: number) {
     this.get(tripId, version);
@@ -148,6 +158,91 @@ export class VersionStore {
       .prepare("UPDATE versions SET trashedAt=NULL, trashReason=NULL WHERE tripId=? AND version=?")
       .run(tripId, version);
     return this.list(tripId).find((item) => item.version === version)!;
+  }
+  cleanupExpiredTrash(tripIds: string[], today: string): TrashCleanupResult {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) throw new Error("Data de limpeza inválida.");
+    const candidates = [...new Set(tripIds)];
+    candidates.forEach(checkTripId);
+    const deletedTripIds: string[] = [];
+    const deletedVersions: Array<{ tripId: string; version: number }> = [];
+
+    for (const tripId of candidates) {
+      const rows = this.db
+        .prepare("SELECT version,snapshot FROM versions WHERE tripId=? ORDER BY version")
+        .all(tripId) as unknown as Array<{ version: number; snapshot: string }>;
+      const allExpired = rows.every((row) => {
+        const snapshot = JSON.parse(row.snapshot) as Snapshot;
+        return snapshot.brief.endDate < today;
+      });
+      if (!allExpired) continue;
+      this.db.exec("BEGIN IMMEDIATE");
+      try {
+        this.db.prepare("DELETE FROM proposal_shares WHERE tripId=?").run(tripId);
+        this.db.prepare("DELETE FROM localized_pdfs WHERE tripId=?").run(tripId);
+        this.db.prepare("DELETE FROM versions WHERE tripId=?").run(tripId);
+        this.db.exec("COMMIT");
+      } catch (error) {
+        this.db.exec("ROLLBACK");
+        throw error;
+      }
+      const directory = path.resolve(this.root, tripId);
+      if (path.dirname(directory) !== path.resolve(this.root))
+        throw new Error("Pasta de viagem inválida.");
+      rmSync(directory, { recursive: true, force: true });
+      deletedTripIds.push(tripId);
+      deletedVersions.push(...rows.map((row) => ({ tripId, version: row.version })));
+    }
+
+    const trashed = this.db
+      .prepare("SELECT tripId,version,filename,snapshot FROM versions WHERE trashedAt IS NOT NULL")
+      .all() as unknown as Array<{
+      tripId: string;
+      version: number;
+      filename: string;
+      snapshot: string;
+    }>;
+    for (const row of trashed) {
+      if (deletedTripIds.includes(row.tripId)) continue;
+      const snapshot = JSON.parse(row.snapshot) as Snapshot;
+      if (snapshot.brief.endDate >= today) continue;
+      const localized = this.db
+        .prepare("SELECT filename FROM localized_pdfs WHERE tripId=? AND version=?")
+        .all(row.tripId, row.version) as unknown as Array<{ filename: string }>;
+      this.db.exec("BEGIN IMMEDIATE");
+      try {
+        this.db
+          .prepare("DELETE FROM proposal_shares WHERE tripId=? AND version=?")
+          .run(row.tripId, row.version);
+        this.db
+          .prepare("DELETE FROM localized_pdfs WHERE tripId=? AND version=?")
+          .run(row.tripId, row.version);
+        this.db
+          .prepare("DELETE FROM versions WHERE tripId=? AND version=?")
+          .run(row.tripId, row.version);
+        this.db.exec("COMMIT");
+      } catch (error) {
+        this.db.exec("ROLLBACK");
+        throw error;
+      }
+      const directory = path.resolve(this.root, row.tripId);
+      if (path.dirname(directory) !== path.resolve(this.root))
+        throw new Error("Pasta de viagem inválida.");
+      for (const filename of [
+        row.filename,
+        row.filename.replace(/\.pdf$/, ".json"),
+        ...localized.map((item) => item.filename),
+      ]) {
+        const target = path.resolve(directory, path.basename(filename));
+        if (path.dirname(target) !== directory) throw new Error("Ficheiro de versão inválido.");
+        try {
+          unlinkSync(target);
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+        }
+      }
+      deletedVersions.push({ tripId: row.tripId, version: row.version });
+    }
+    return { deletedTripIds, deletedVersions };
   }
   get(tripId: string, version: number): Stored {
     checkTripId(tripId);

@@ -17,6 +17,7 @@ import {
   readTripTrash,
   type StoredTrip,
 } from "@/lib/trip-trash";
+import { runScheduledTrashCleanup } from "@/lib/scheduled-trash-cleanup";
 
 type Trip = StoredTrip;
 type HistoryVersion = {
@@ -62,6 +63,7 @@ export function useWorkspace() {
   const [exporting, setExporting] = useState(false);
   const [assistantBusy, setAssistantBusy] = useState(false);
   const operation = useRef(false);
+  const cleanupStarted = useRef(false);
   const [history, setHistory] = useState<{ id: string; versions: HistoryVersion[] }>({
     id: "",
     versions: [],
@@ -118,6 +120,15 @@ export function useWorkspace() {
       );
     }
   }, [ready, trips, activeId]);
+  useEffect(() => {
+    if (!ready || cleanupStarted.current) return;
+    cleanupStarted.current = true;
+    runScheduledTrashCleanup().catch(() =>
+      setStorageError(
+        "A limpeza automática do Lixo não foi concluída. Os elementos foram preservados para nova tentativa.",
+      ),
+    );
+  }, [ready]);
   useEffect(() => {
     if (!ready) return;
     try {
