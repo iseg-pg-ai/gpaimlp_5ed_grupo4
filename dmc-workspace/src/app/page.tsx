@@ -175,7 +175,7 @@ export default function WorkspacePage() {
                               title="Enviar apenas esta versão para o Lixo"
                             >
                               <Trash2 className="size-3.5" />
-                              <T text="Enviar versão para o Lixo" source="pt" />
+                              <T text="Enviar para o Lixo" source="pt" />
                             </button>
                           </div>
                         ))}
