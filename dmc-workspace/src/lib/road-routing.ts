@@ -34,7 +34,7 @@ export async function calculateRoadLeg(
   const timeoutMs =
     typeof optionsOrTimeout === "number"
       ? optionsOrTimeout
-      : optionsOrTimeout?.timeoutMs ?? legacyTimeoutMs;
+      : (optionsOrTimeout?.timeoutMs ?? legacyTimeoutMs);
   const preferredMode =
     typeof optionsOrTimeout === "object" ? optionsOrTimeout?.preferredMode : undefined;
   const customBuffer =
@@ -450,11 +450,7 @@ export function realignTimeSlots(
       if (leg?.duration) {
         travelMins = parseInt(leg.duration, 10) || 15;
         buffer =
-          typeof leg.bufferMinutes === "number"
-            ? leg.bufferMinutes
-            : leg.mode === "walk"
-              ? 5
-              : 10;
+          typeof leg.bufferMinutes === "number" ? leg.bufferMinutes : leg.mode === "walk" ? 5 : 10;
       } else {
         const distM = distanceBetweenItems(item, next, coordMap);
         travelMins = Math.max(5, Math.ceil((distM / 1000 / 30) * 60));

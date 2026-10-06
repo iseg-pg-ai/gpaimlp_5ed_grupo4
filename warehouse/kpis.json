@@ -133,9 +133,9 @@
     "issues": 0,
     "table_completeness_pct": {
       "data_request": 95.42,
-      "atracoes": 87.24,
-      "restaurantes": 90.74,
-      "experiencias": 77.6,
+      "atracoes": 100.0,
+      "restaurantes": 99.87,
+      "experiencias": 100.0,
       "curation_principles": 100.0,
       "curation_rules": 100.0,
       "precos": 88.2,

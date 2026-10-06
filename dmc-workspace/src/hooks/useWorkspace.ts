@@ -8,23 +8,25 @@ import { assistantHelp } from "@/lib/assistant-editing";
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { responseJson } from "@/lib/http-client";
 import type { Snapshot } from "@/lib/itinerary-pdf";
+import {
+  AUTO_TRASH_STORAGE,
+  TRASH_STORAGE,
+  TRIPS_STORAGE,
+  moveCompletedTripsToTrash,
+  moveTripToTrash,
+  readTripTrash,
+  type StoredTrip,
+} from "@/lib/trip-trash";
+import { runScheduledTrashCleanup } from "@/lib/scheduled-trash-cleanup";
 
-type Trip = {
-  clientLanguage?: Locale;
-  version?: number;
-  id: string;
-  brief: CustomerBrief;
-  itinerary: ItineraryDay[];
-  pending: string[];
-  messages: ChatMessage[];
-};
+type Trip = StoredTrip;
 type HistoryVersion = {
   version: number;
   filename: string;
   createdAt: string;
   exportedAt?: string | null;
 };
-const STORAGE = "blu-trips-v1";
+const STORAGE = TRIPS_STORAGE;
 const emptyBrief = (): CustomerBrief => ({
   ...initialBrief,
   customerName: "",
@@ -61,6 +63,7 @@ export function useWorkspace() {
   const [exporting, setExporting] = useState(false);
   const [assistantBusy, setAssistantBusy] = useState(false);
   const operation = useRef(false);
+  const cleanupStarted = useRef(false);
   const [history, setHistory] = useState<{ id: string; versions: HistoryVersion[] }>({
     id: "",
     versions: [],
@@ -69,7 +72,9 @@ export function useWorkspace() {
   const [storageError, setStorageError] = useState("");
   const active = trips.find((t) => t.id === activeId);
   useEffect(() => {
-    const timer = setTimeout(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
       try {
         const raw = localStorage.getItem(STORAGE);
         if (raw) {
@@ -93,9 +98,41 @@ export function useWorkspace() {
           "Não foi possível ler as viagens guardadas. Os dados existentes não serão substituídos; exporte ou recupere o armazenamento do navegador antes de continuar.",
         );
       }
-    }, 0);
-    return () => clearTimeout(timer);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+  useEffect(() => {
+    if (!ready || localStorage.getItem(AUTO_TRASH_STORAGE) !== "true") return;
+    try {
+      const trash = readTripTrash(localStorage.getItem(TRASH_STORAGE));
+      const today = new Date().toLocaleDateString("sv-SE");
+      const moved = moveCompletedTripsToTrash(trips, trash, today);
+      if (moved.trips.length === trips.length) return;
+      localStorage.setItem(TRASH_STORAGE, JSON.stringify(moved.trash));
+      queueMicrotask(() => {
+        setTrips(moved.trips);
+        if (moved.trash.some((entry) => entry.trip.id === activeId)) {
+          setActiveId("");
+          setEditing(true);
+        }
+      });
+    } catch {
+      queueMicrotask(() =>
+        setStorageError("Não foi possível aplicar a remoção automática das viagens terminadas."),
+      );
+    }
+  }, [ready, trips, activeId]);
+  useEffect(() => {
+    if (!ready || cleanupStarted.current) return;
+    cleanupStarted.current = true;
+    runScheduledTrashCleanup().catch(() =>
+      setStorageError(
+        "A limpeza automática do Lixo não foi concluída. Os elementos foram preservados para nova tentativa.",
+      ),
+    );
+  }, [ready]);
   useEffect(() => {
     if (!ready) return;
     try {
@@ -223,6 +260,31 @@ export function useWorkspace() {
       setSaving(false);
     }
   };
+  const trashVersion = async (version: number) => {
+    if (!activeId || operation.current) return;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/versions/trash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tripId: activeId, version, action: "trash" }),
+      });
+      if (!response.ok) await responseJson(response);
+      setHistory((current) => ({
+        ...current,
+        versions: current.versions.filter((item) => item.version !== version),
+      }));
+    } catch (versionError) {
+      setError(
+        versionError instanceof Error
+          ? versionError.message
+          : "Não foi possível enviar a versão para o Lixo.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
   const generate = async (brief: CustomerBrief) => {
     if (busy || operation.current) return;
     setError("");
@@ -315,6 +377,25 @@ export function useWorkspace() {
     setEditing(false);
     setError("");
   };
+  const trashTrip = (id: string) => {
+    if (busy || operation.current) return;
+    try {
+      const trash = readTripTrash(localStorage.getItem(TRASH_STORAGE));
+      const moved = moveTripToTrash(trips, trash, id, "manual");
+      if (moved.trips.length === trips.length) return;
+      localStorage.setItem(TRASH_STORAGE, JSON.stringify(moved.trash));
+      setTrips(moved.trips);
+      if (activeId === id) {
+        setActiveId("");
+        setDraft(emptyBrief());
+        setEditing(true);
+        setFormKey((key) => key + 1);
+      }
+      setError("");
+    } catch {
+      setStorageError("Não foi possível enviar a viagem para o Lixo.");
+    }
+  };
   const editBrief = () => {
     if (!active || operation.current) return;
     setDraft(active.brief);
@@ -382,13 +463,17 @@ export function useWorkspace() {
       };
     });
 
-  const applyDeterministicCommand = (commandOrFn: string | ((trip: Trip) => string)) =>
+  const applyDeterministicCommand = (
+    commandOrFn: string | ((trip: Trip) => string),
+    prepareTrip: (trip: Trip) => Trip = (trip) => trip,
+  ) =>
     update(async (trip) => {
-      const command = typeof commandOrFn === "function" ? commandOrFn(trip) : commandOrFn;
+      const prepared = prepareTrip(trip);
+      const command = typeof commandOrFn === "function" ? commandOrFn(prepared) : commandOrFn;
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ snapshot: trip, input: command }),
+        body: JSON.stringify({ snapshot: prepared, input: command }),
       });
       if (!response.ok) {
         const err = await responseJson<{ error?: string }>(response).catch(() => null);
@@ -402,76 +487,37 @@ export function useWorkspace() {
       if (result.changed === false) {
         throw new Error(result.reply || "Não foi possível aplicar a alteração.");
       }
-      validateSnapshot({ ...trip, itinerary: result.itinerary });
+      validateSnapshot({ ...prepared, itinerary: result.itinerary });
       return {
-        ...trip,
+        ...prepared,
         itinerary: result.itinerary,
       };
     });
 
   const addPoiToDay = (dayNumber: number, title: string) =>
-    update(async (trip) => {
-      const day = trip.itinerary.find((d) => d.dayNumber === dayNumber);
-      if (!day) throw new Error("Dia não encontrado.");
+    applyDeterministicCommand(`adicionar "${title}" ao dia ${dayNumber}`, (trip) => {
       const defaultLimit =
         trip.brief.personalization?.extraBreaks || trip.brief.pace === "Relaxed"
           ? 2
           : trip.brief.pace === "Balanced"
             ? 3
             : 4;
-      const currentLimit = day.dailyCapacity ?? defaultLimit;
-      const poiCount = day.items.filter((it) => it.category !== "free_time").length;
-      let currentTrip = trip;
-
-      if (poiCount >= currentLimit) {
-        const nextCapacity = Math.min(6, poiCount + 1);
-        const capResponse = await fetch("/api/assistant", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            snapshot: currentTrip,
-            input: `ajustar capacidade do dia ${dayNumber} para ${nextCapacity}`,
-          }),
-        });
-        if (!capResponse.ok) {
-          const err = await responseJson<{ error?: string }>(capResponse).catch(() => null);
-          throw new Error(err?.error || "Não foi possível ajustar a capacidade.");
-        }
-        const capResult = await responseJson<{
-          itinerary: ItineraryDay[];
-          reply: string;
-          changed?: boolean;
-        }>(capResponse);
-        if (capResult.changed === false) {
-          throw new Error(capResult.reply || "Não foi possível ajustar a capacidade.");
-        }
-        currentTrip = { ...currentTrip, itinerary: capResult.itinerary };
-      }
-
-      const response = await fetch("/api/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          snapshot: currentTrip,
-          input: `adicionar "${title}" ao dia ${dayNumber}`,
-        }),
-      });
-      if (!response.ok) {
-        const err = await responseJson<{ error?: string }>(response).catch(() => null);
-        throw new Error(err?.error || "Não foi possível adicionar o ponto de interesse.");
-      }
-      const result = await responseJson<{
-        itinerary: ItineraryDay[];
-        reply: string;
-        changed?: boolean;
-      }>(response);
-      if (result.changed === false) {
-        throw new Error(result.reply || "Não foi possível adicionar o ponto de interesse.");
-      }
-      validateSnapshot({ ...currentTrip, itinerary: result.itinerary });
       return {
-        ...currentTrip,
-        itinerary: result.itinerary,
+        ...trip,
+        itinerary: trip.itinerary.map((day) =>
+          day.dayNumber === dayNumber
+            ? {
+                ...day,
+                dailyCapacity: Math.min(
+                  6,
+                  Math.max(
+                    day.dailyCapacity ?? defaultLimit,
+                    day.items.filter((item) => item.category !== "free_time").length + 1,
+                  ),
+                ),
+              }
+            : day,
+        ),
       };
     });
 
@@ -484,10 +530,7 @@ export function useWorkspace() {
       return `remover atividade ${index + 1} do dia ${dayNumber}`;
     });
 
-  const addFreePeriodToDay = (
-    dayNumber: number,
-    type: "afternoon" | "morning" | "fullday",
-  ) => {
+  const addFreePeriodToDay = (dayNumber: number, type: "afternoon" | "morning" | "fullday") => {
     const cmd =
       type === "morning"
         ? `adicionar manha livre ao dia ${dayNumber}`
@@ -520,11 +563,13 @@ export function useWorkspace() {
     update,
     exportPdf,
     reopenLatest,
+    trashVersion,
     generate,
     send,
     setEditing,
     startNewTrip,
     selectTrip,
+    trashTrip,
     editBrief,
     changeClientLanguage,
     updateTransitLegMode,

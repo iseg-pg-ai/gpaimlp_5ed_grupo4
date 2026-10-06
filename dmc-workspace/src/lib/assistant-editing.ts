@@ -106,11 +106,7 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
     if (day.items.length <= 2) {
       return reject("O dia já tem 2 ou menos atividades e não requer otimização de sequência.");
     }
-    const allRecords = [
-      ...catalog.atracoes,
-      ...catalog.experiencias,
-      ...catalog.restaurantes,
-    ];
+    const allRecords = [...catalog.atracoes, ...catalog.experiencias, ...catalog.restaurantes];
     const coordMap = buildCoordMap(allRecords);
     const optimizedItems = optimizeRouteSequence(day.items, coordMap);
     const itinerary = original.map((d) => (d === day ? { ...d, items: optimizedItems } : d));
@@ -134,9 +130,7 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
     if (cap < 1 || cap > 6) {
       return reject("Indique uma capacidade entre 1 e 6 atividades por dia.");
     }
-    const itinerary = original.map((d) =>
-      d === day ? { ...d, dailyCapacity: cap } : d,
-    );
+    const itinerary = original.map((d) => (d === day ? { ...d, dailyCapacity: cap } : d));
     return {
       itinerary,
       changed: true,
@@ -392,9 +386,38 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
       } else {
         const match = a.time.match(/^(\d{2}):(\d{2})(?:[–-](\d{2}):(\d{2}))?/);
         const duration = durationMinutes(a.duration);
-        if (!match || (!match[3] && !duration))
+        if (!match) {
+          if (!record || protectedItem(a))
+            return reject(
+              "Uma atividade existente não tem horário suficiente para validar conflitos. Complete os dados primeiro.",
+            );
+          const slot = proposeSlot(
+            record.row,
+            record.table === "restaurantes",
+            snapshot.brief,
+            cursor,
+            day.date,
+          );
+          if (slot.kind !== "scheduled") {
+            if (!duration)
+              return reject(
+                "Uma atividade existente continua por agendar e não tem duração suficiente para validar conflitos.",
+              );
+            cursor += duration;
+            previous = record.row;
+            continue;
+          }
+          items[i] = {
+            ...a,
+            time: `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`,
+          };
+          cursor = slot.end;
+          previous = record.row;
+          continue;
+        }
+        if (!match[3] && !duration)
           return reject(
-            "Uma atividade existente não tem horário ou duração suficientes para validar conflitos. Complete os dados primeiro.",
+            "Uma atividade existente não tem duração suficiente para validar conflitos.",
           );
         const start = Number(match[1]) * 60 + Number(match[2]);
         if (start < cursor)

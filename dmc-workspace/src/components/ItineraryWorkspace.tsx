@@ -11,7 +11,20 @@ import { TransitInspectorModal } from "./TransitInspectorModal";
 import { AddPoiModal } from "./AddPoiModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MapPin, Download, SlidersHorizontal, Sparkles, Route, Plus, Sun, Clock, Check } from "lucide-react";
+import {
+  Calendar,
+  Users,
+  MapPin,
+  Download,
+  SlidersHorizontal,
+  Sparkles,
+  Route,
+  Plus,
+  Sun,
+  Clock,
+  Check,
+  Share2,
+} from "lucide-react";
 
 function getTripPaceConfig(brief: CustomerBrief) {
   if (brief.personalization?.extraBreaks) {
@@ -35,6 +48,7 @@ interface ItineraryWorkspaceProps {
   highlightedDay: number | null;
   onEditBrief: () => void;
   onExportPdf: () => void;
+  onShare?: () => void;
   isExporting?: boolean;
   displayBudget: string;
   proposalTools?: React.ReactNode;
@@ -66,6 +80,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   highlightedDay,
   onEditBrief,
   onExportPdf,
+  onShare,
   isExporting,
   displayBudget,
   proposalTools,
@@ -152,6 +167,12 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               <SlidersHorizontal aria-hidden="true" className="size-4" />
               <T text="Edit Brief" />
             </Button>
+            {onShare && version && (
+              <Button variant="outline" onClick={onShare} className="min-h-11 text-sm">
+                <Share2 aria-hidden="true" className="size-4" />
+                <T text="Partilhar" source="pt" />
+              </Button>
+            )}
           </div>
           <p className="mt-4 text-sm leading-6 text-[#4A636B]">
             <T
@@ -500,14 +521,16 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                       <T text="Resumo da Rota:" source="pt" />
                     </span>
                     <span>
-                      🚗 {day.routeSummary.totalTransitTime} · {day.routeSummary.totalDistance} ({day.routeSummary.legsCount}{" "}
+                      🚗 {day.routeSummary.totalTransitTime} · {day.routeSummary.totalDistance} (
+                      {day.routeSummary.legsCount}{" "}
                       {day.routeSummary.legsCount === 1 ? "deslocação" : "deslocações"})
                     </span>
-                    {day.routeSummary.walkingDistance && day.routeSummary.walkingDistance !== "0 m" && (
-                      <span className="text-[#698288]">
-                        · 🚶 {day.routeSummary.walkingDistance} a pé
-                      </span>
-                    )}
+                    {day.routeSummary.walkingDistance &&
+                      day.routeSummary.walkingDistance !== "0 m" && (
+                        <span className="text-[#698288]">
+                          · 🚶 {day.routeSummary.walkingDistance} a pé
+                        </span>
+                      )}
                   </div>
                   <Badge variant="teal" className="text-[10px] py-0 px-2 font-normal">
                     <T
@@ -610,7 +633,9 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
           isOpen={true}
           dayNumber={addPoiDay}
           dayDate={itinerary.find((d) => d.dayNumber === addPoiDay)?.date}
-          dayLocation={itinerary.find((d) => d.dayNumber === addPoiDay)?.location || brief.destination}
+          dayLocation={
+            itinerary.find((d) => d.dayNumber === addPoiDay)?.location || brief.destination
+          }
           dayCapacity={
             itinerary.find((d) => d.dayNumber === addPoiDay)?.dailyCapacity ??
             getTripPaceConfig(brief).defaultCapacity
@@ -618,6 +643,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
           currentItems={itinerary.find((d) => d.dayNumber === addPoiDay)?.items || []}
           allItineraryItems={itinerary.flatMap((d) => d.items)}
           brief={brief}
+          itinerary={itinerary}
           onClose={() => setAddPoiDay(null)}
           onAddPoi={(title) => onAddPoiToDay?.(addPoiDay, title)}
           onAdjustCapacity={(cap) => onAdjustDayCapacity?.(addPoiDay, cap)}

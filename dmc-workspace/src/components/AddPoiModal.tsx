@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { ActivityItem, CustomerBrief } from "@/types";
+import type { ActivityItem, CustomerBrief, ItineraryDay } from "@/types";
 
 interface AddPoiModalProps {
   isOpen: boolean;
@@ -26,7 +26,8 @@ interface AddPoiModalProps {
   dayCapacity: number;
   currentItems: ActivityItem[];
   allItineraryItems: ActivityItem[];
-  brief?: CustomerBrief;
+  brief: CustomerBrief;
+  itinerary: ItineraryDay[];
   onClose: () => void;
   onAddPoi: (poiTitle: string) => Promise<boolean> | void;
   onAdjustCapacity: (newCapacity: number) => void;
@@ -59,6 +60,7 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
   currentItems,
   allItineraryItems,
   brief,
+  itinerary,
   onClose,
   onAddPoi,
   onAdjustCapacity,
@@ -73,7 +75,11 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/catalog", { cache: "no-store" })
+    fetch("/api/catalog/eligible", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brief, itinerary, dayNumber }),
+    })
       .then((res) => {
         if (!res.ok) throw new Error("Erro ao carregar catálogo.");
         return res.json();
@@ -93,7 +99,7 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [brief, itinerary, dayNumber]);
 
   const existingTitles = useMemo(() => {
     const titles = new Set<string>();
@@ -267,6 +273,12 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
 
         {/* Search and Filters */}
         <div className="p-4 sm:p-5 border-b border-[#DDD8CE] bg-white space-y-3">
+          <p className="text-xs text-[#4A636B]">
+            <T
+              text="São apresentadas apenas ofertas compatíveis com o briefing, a data, o orçamento, os horários e as regras de curadoria."
+              source="pt"
+            />
+          </p>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A49C]" />
             <input
@@ -339,7 +351,10 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
                 <T text="Nenhuma oferta encontrada" source="pt" />
               </p>
               <p className="text-xs mt-1">
-                <T text="Tente ajustar a pesquisa ou escolher outra categoria." source="pt" />
+                <T
+                  text="Não existem outras ofertas compatíveis para este dia. Reveja o briefing, o orçamento ou a capacidade do dia."
+                  source="pt"
+                />
               </p>
             </div>
           ) : (
@@ -367,7 +382,9 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
                 <div
                   key={rec.id}
                   className={`p-3.5 sm:p-4 rounded-xl border bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                    isAlreadyAdded ? "border-[#DDD8CE] opacity-60" : "border-[#E2DED5] hover:border-[#143F4B]"
+                    isAlreadyAdded
+                      ? "border-[#DDD8CE] opacity-60"
+                      : "border-[#E2DED5] hover:border-[#143F4B]"
                   }`}
                 >
                   <div className="space-y-1 min-w-0 flex-1">
@@ -415,21 +432,14 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
                       <Button
                         variant="primaryDark"
                         size="sm"
-                        disabled={Boolean(submittingTitle)}
-                        onClick={() => handleAddPoi(name)}
-                        className="text-xs h-8 gap-1.5 cursor-pointer"
+                        onClick={() => {
+                          onAddPoi(`${rec.category}:${rec.id}`);
+                          onClose();
+                        }}
+                        className="text-xs h-8 gap-1.5"
                       >
-                        {submittingTitle === name ? (
-                          <>
-                            <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <T text="A adicionar…" source="pt" />
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="w-3.5 h-3.5" />
-                            <T text="Adicionar ao Dia" source="pt" />
-                          </>
-                        )}
+                        <Plus className="w-3.5 h-3.5" />
+                        <T text="Adicionar ao Dia" source="pt" />
                       </Button>
                     )}
                   </div>

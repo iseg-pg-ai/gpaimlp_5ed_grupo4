@@ -108,6 +108,48 @@ O orçamento discriminado apresenta preços calculáveis, valores por confirmar 
 totais separados por moeda. O orçamento disponível do cliente aparece separado do
 custo conhecido da proposta. Valores desconhecidos não são apresentados como zero.
 
+## Partilha com o cliente
+
+O botão **Partilhar** abre um painel para escolher a versão, o idioma e a forma de
+entrega. A ligação de acesso apresenta uma página simples da proposta; a opção
+Documento PDF abre diretamente o PDF imutável dessa versão e idioma. O email do
+cliente vem do briefing e pode ser alterado antes de preparar a mensagem.
+
+O portal abre o programa de email do computador com destinatário, assunto, texto e
+ligação preenchidos. O envio é confirmado nessa aplicação. As ligações ficam
+guardadas no histórico SQLite de exportações. Em instalações acessíveis fora do
+computador local, `BLU_PUBLIC_URL` deve conter a origem pública do portal, por
+exemplo `https://propostas.example.com`.
+
+## Planos ativos e Lixo
+
+O ícone de lixo de cada viagem na barra lateral retira a viagem dos planos ativos
+sem eliminar o seu briefing, roteiro, mensagens ou referência à versão. A página
+**Lixo** permite pesquisar as viagens removidas, consultar a data e distinguir a
+remoção manual da automática. A opção automática move apenas viagens cuja data de
+fim seja anterior ao dia atual.
+
+Cada versão no histórico tem uma ação própria para a enviar para o Lixo. Isto não
+remove a viagem nem uma atividade do roteiro. As versões removidas deixam de surgir
+no histórico ativo, mas os snapshots, PDFs e variantes linguísticas permanecem no
+SQLite e podem ser restaurados na página Lixo. A remoção de uma atividade continua
+a ser feita no cartão do respetivo dia e cria uma nova versão do roteiro.
+
+A limpeza definitiva é verificada uma vez a cada 24 horas, ao abrir o portal ou a
+página Lixo. Uma viagem ou versão no Lixo expira quando a data de fim guardada na
+proposta é anterior ao dia atual em Lisboa. As versões anteriores são eliminadas
+automaticamente, mas a versão final de cada viagem fica protegida. A sua eliminação
+definitiva exige uma confirmação explícita do utilizador e não pode ser anulada.
+
+Depois dessa confirmação, o portal remove a viagem, a versão final, as partilhas,
+os PDFs e as variantes linguísticas associados apenas quando todos os snapshots já
+expiraram. Ao eliminar automaticamente uma versão anterior, remove apenas os
+ficheiros e registos dessa versão. As viagens e versões ainda dentro do período de
+conservação não são alteradas.
+
+Com o portal em execução, `npm run test:trash` valida no navegador a remoção e o
+restauro de uma viagem e de uma versão.
+
 ### Apresentação dos PDFs BLU
 
 As novas exportações têm capa em azul-petróleo e creme, apontamentos dourados,
