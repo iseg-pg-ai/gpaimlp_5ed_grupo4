@@ -410,7 +410,70 @@ export function useWorkspace() {
     });
 
   const addPoiToDay = (dayNumber: number, title: string) =>
-    applyDeterministicCommand(`adicionar "${title}" ao dia ${dayNumber}`);
+    update(async (trip) => {
+      const day = trip.itinerary.find((d) => d.dayNumber === dayNumber);
+      if (!day) throw new Error("Dia não encontrado.");
+      const defaultLimit =
+        trip.brief.personalization?.extraBreaks || trip.brief.pace === "Relaxed"
+          ? 2
+          : trip.brief.pace === "Balanced"
+            ? 3
+            : 4;
+      const currentLimit = day.dailyCapacity ?? defaultLimit;
+      const poiCount = day.items.filter((it) => it.category !== "free_time").length;
+      let currentTrip = trip;
+
+      if (poiCount >= currentLimit) {
+        const nextCapacity = Math.min(6, poiCount + 1);
+        const capResponse = await fetch("/api/assistant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            snapshot: currentTrip,
+            input: `ajustar capacidade do dia ${dayNumber} para ${nextCapacity}`,
+          }),
+        });
+        if (!capResponse.ok) {
+          const err = await responseJson<{ error?: string }>(capResponse).catch(() => null);
+          throw new Error(err?.error || "Não foi possível ajustar a capacidade.");
+        }
+        const capResult = await responseJson<{
+          itinerary: ItineraryDay[];
+          reply: string;
+          changed?: boolean;
+        }>(capResponse);
+        if (capResult.changed === false) {
+          throw new Error(capResult.reply || "Não foi possível ajustar a capacidade.");
+        }
+        currentTrip = { ...currentTrip, itinerary: capResult.itinerary };
+      }
+
+      const response = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          snapshot: currentTrip,
+          input: `adicionar "${title}" ao dia ${dayNumber}`,
+        }),
+      });
+      if (!response.ok) {
+        const err = await responseJson<{ error?: string }>(response).catch(() => null);
+        throw new Error(err?.error || "Não foi possível adicionar o ponto de interesse.");
+      }
+      const result = await responseJson<{
+        itinerary: ItineraryDay[];
+        reply: string;
+        changed?: boolean;
+      }>(response);
+      if (result.changed === false) {
+        throw new Error(result.reply || "Não foi possível adicionar o ponto de interesse.");
+      }
+      validateSnapshot({ ...currentTrip, itinerary: result.itinerary });
+      return {
+        ...currentTrip,
+        itinerary: result.itinerary,
+      };
+    });
 
   const removeActivity = (dayNumber: number, activityId: string) =>
     applyDeterministicCommand((trip) => {
