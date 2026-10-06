@@ -116,28 +116,65 @@ def extract_text_content(content: Any) -> str:
 
 def chat_copilot(
     user_instruction: str,
-    current_itinerary: Optional[Dict[str, Any]] = None,
-    brief: Optional[CustomerBrief] = None
+    current_itinerary: Optional[Any] = None,
+    brief: Optional[Any] = None
 ) -> Dict[str, Any]:
     """Co-Pilot interativo para assistência em linguagem natural e alterações em tempo real."""
     agent = build_curator_agent()
 
     context = ""
     if brief:
-        context += f"Briefing Atual: Cliente {brief.customerName}, Destino {brief.destination}, Restrições: {brief.mobilityRestrictions}, {brief.dietaryRestrictions}.\n"
+        if isinstance(brief, dict):
+            c_name = brief.get("customerName", "Cliente")
+            dest = brief.get("destination", "Portugal")
+            pace = brief.get("pace", "Balanced")
+            tier = brief.get("proposalTier", "Classic")
+            morning = brief.get("morningPreference", "Standard (09:30)")
+            dining = brief.get("diningPace", "Relaxed Dining (~90m)")
+            effort = brief.get("physicalEffort", "Moderado (Moderate)")
+            interests = brief.get("interests", [])
+            exclusions = brief.get("exclusions", [])
+            mob = brief.get("mobilityRestrictions", [])
+            diet = brief.get("dietaryRestrictions", [])
+        else:
+            c_name = getattr(brief, "customerName", "Cliente")
+            dest = getattr(brief, "destination", "Portugal")
+            pace = getattr(brief, "pace", "Balanced")
+            tier = getattr(brief, "proposalTier", "Classic")
+            morning = getattr(brief, "morningPreference", "Standard (09:30)")
+            dining = getattr(brief, "diningPace", "Relaxed Dining (~90m)")
+            effort = getattr(brief, "physicalEffort", "Moderado (Moderate)")
+            interests = getattr(brief, "interests", [])
+            exclusions = getattr(brief, "exclusions", [])
+            mob = getattr(brief, "mobilityRestrictions", [])
+            diet = getattr(brief, "dietaryRestrictions", [])
+
+        context += (
+            f"=== PERFIL & RESTRIÇÕES DO CLIENTE ===\n"
+            f"- Cliente: {c_name} | Destino: {dest} | Tier: {tier}\n"
+            f"- Ritmo: {pace} (Máximo 3 atividades/dia para Relaxed, 4 para Balanced)\n"
+            f"- Início Matinal: {morning} | Ritmo de Refeições: {dining}\n"
+            f"- Esforço Físico Máximo: {effort}\n"
+            f"- Interesses: {', '.join(interests) if interests else 'Cultura e Gastronomia'}\n"
+            f"- Exclusões Expressas: {', '.join(exclusions) if exclusions else 'Nenhuma'}\n"
+            f"- Restrições de Mobilidade: {', '.join(mob) if mob else 'Nenhuma'}\n"
+            f"- Restrições Alimentares / Alergias: {', '.join(diet) if diet else 'Nenhuma'}\n"
+        )
+
     if current_itinerary:
-        context += f"Itinerário em edição: {json.dumps(current_itinerary, ensure_ascii=False)[:1000]}...\n"
+        context += f"\nItinerário atual em edição: {json.dumps(current_itinerary, ensure_ascii=False)[:1000]}...\n"
 
     prompt = f"""
 {context}
 Instrução do Consultor:
 "{user_instruction}"
 
-Utiliza as tuas ferramentas (pesquisa de catálogo, meteorologia, validação) para cumprir o pedido.
-Indica claramente:
-1. A ação realizada (adicionar, trocar, reagendar ou explicar).
-2. As opções do catálogo selecionadas com base no pedido.
-3. O motivo e se alguma regra BLU foi salvaguardada.
+DIRETRIZES ESTRITAS DE EXECUÇÃO:
+1. Respeita a CADÊNCIA DA BLU COAST: Máximo 3 a 4 paragens no dia (1 atividade manhã, 1 almoço, 1 atividade tarde, 1 jantar). NUNCA agendes 2 jantares ou refeições duplicadas!
+2. Respeita a preferência de início ({morning if brief else '10:00'}).
+3. Coerência geográfica: Mantém as atividades nos mesmos bairros ou bairros adjacentes (evita deslocações caóticas na cidade).
+4. Usa a ferramenta `search_blu_catalog` para selecionar opções reais do catálogo BLU Coast.
+5. Apresenta o resultado estruturado com: Diagnóstico Curatorial, Proposta do Dia e Salvaguarda de Regras BLU.
 """
 
     inputs = {"messages": [HumanMessage(content=prompt)]}

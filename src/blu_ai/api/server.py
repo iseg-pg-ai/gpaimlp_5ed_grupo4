@@ -38,8 +38,8 @@ app.add_middleware(
 
 class ChatCopilotRequest(BaseModel):
     instruction: str
-    currentItinerary: Optional[Dict[str, Any]] = None
-    brief: Optional[CustomerBrief] = None
+    currentItinerary: Optional[Any] = None
+    brief: Optional[Any] = None
 
 
 @app.get("/api/health")

@@ -38,4 +38,4 @@ agent = [
 
 [tool.uv]
 package = false
-default-groups = []
+default-groups = ["translation", "agent"]
