@@ -363,18 +363,26 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
           requested,
           day.date,
         );
-        if (slot.kind !== "scheduled" || (move && slot.start !== requested))
+        if (
+          slot.kind === "unavailable" ||
+          (move && (slot.kind !== "scheduled" || slot.start !== requested))
+        )
           return reject(
             "Não há horário viável: confirme duração, funcionamento, encerramentos e refeições no catálogo.",
           );
+        const itemDuration =
+          durationMinutes(record.row.tempo_medio_de_visita ?? record.row.duracao) ?? 60;
+        const scheduled = slot.kind === "scheduled";
         items[i] = {
           ...a,
-          time: `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`,
+          time: scheduled
+            ? `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`
+            : "Por agendar",
           ...(a.confirmation
             ? {
                 confirmation: {
                   ...a.confirmation,
-                  time: clockTime(slot.start),
+                  time: scheduled ? clockTime(slot.start) : "Por agendar",
                   status: "pending" as const,
                   confirmedAt: null,
                   checks: a.confirmation.checks.map((c) => ({ ...c, resolved: false })),
@@ -382,7 +390,7 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
               }
             : {}),
         };
-        cursor = slot.end;
+        cursor = scheduled ? slot.end : cursor + itemDuration;
       } else {
         const match = a.time.match(/^(\d{2}):(\d{2})(?:[–-](\d{2}):(\d{2}))?/);
         const duration = durationMinutes(a.duration);
