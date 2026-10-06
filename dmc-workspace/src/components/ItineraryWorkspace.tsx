@@ -9,6 +9,7 @@ import { ActivityCard } from "./ActivityCard";
 import { TransitConnector } from "./TransitConnector";
 import { TransitInspectorModal } from "./TransitInspectorModal";
 import { AddPoiModal } from "./AddPoiModal";
+import { DayWeatherBadge } from "./DayWeatherBadge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,6 +25,7 @@ import {
   Clock,
   Check,
   Share2,
+  MoreHorizontal,
 } from "lucide-react";
 
 function getTripPaceConfig(brief: CustomerBrief) {
@@ -41,6 +43,229 @@ function getTripPaceConfig(brief: CustomerBrief) {
       return { defaultCapacity: 2, label: "Padrão", maxLabel: "máx. 2" };
   }
 }
+
+// ---------------------------------------------------------------------------
+// DayCardHeader — compact, clean day-level header
+// ---------------------------------------------------------------------------
+interface DayCardHeaderProps {
+  day: ItineraryDay;
+  isDayModified?: boolean;
+  paceConfig: { defaultCapacity: number; label: string; maxLabel: string };
+  effectiveCapacity: number;
+  poiCount: number;
+  isCustom: boolean;
+  isFull: boolean;
+  availableSlots: number;
+  saving?: boolean;
+  onAdjustDayCapacity?: (dayNumber: number, newCapacity: number) => void;
+  onAddPoiToDay?: () => void;
+  onAddFreePeriodToDay?: () => void;
+  onOptimizeDayRoute?: () => void;
+}
+
+function DayCardHeader({
+  day,
+  isDayModified,
+  paceConfig,
+  effectiveCapacity,
+  poiCount,
+  isCustom,
+  isFull,
+  availableSlots,
+  saving,
+  onAdjustDayCapacity,
+  onAddPoiToDay,
+  onAddFreePeriodToDay,
+  onOptimizeDayRoute,
+}: DayCardHeaderProps) {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  // Close kebab menu on outside click
+  React.useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
+  const hasActions = onAddPoiToDay || onAddFreePeriodToDay || onOptimizeDayRoute;
+
+  return (
+    <div className="pb-4 mb-5 border-b border-[#F0ECE4]">
+      {/* Single horizontal row */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        {/* ── LEFT: contextual info ───────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="teal" className="font-semibold text-sm shrink-0">
+            <T text="Day" source="en" /> {day.dayNumber}
+          </Badge>
+          <span className="text-sm text-[#4A636B]">{day.date}</span>
+          <span className="text-[#C9C6BD] select-none">·</span>
+          <span className="inline-flex items-center gap-1 text-sm text-[#4A636B]">
+            <MapPin className="w-3 h-3 text-[#A8A49C] shrink-0" />
+            <span>{day.location}</span>
+          </span>
+          <DayWeatherBadge date={day.date} location={day.location} items={day.items} />
+          {day.tier && (
+            <Badge variant="outline" className="text-xs py-0">
+              {day.tier}
+            </Badge>
+          )}
+          {isDayModified && (
+            <Badge variant="gold" className="gap-1 py-0.5 px-2 font-medium animate-in fade-in shrink-0">
+              <Sparkles className="w-3 h-3 text-[#D8A65C]" />
+              <span>
+                <T text="Updated" source="en" />
+              </span>
+            </Badge>
+          )}
+        </div>
+
+        {/* ── RIGHT: capacity + actions ───────────────────────── */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Capacity counter — always visible when adjustable */}
+          {onAdjustDayCapacity ? (
+            <div
+              className={`flex items-center rounded-lg border px-1.5 py-0.5 text-xs shadow-2xs ${
+                isCustom
+                  ? "border-[#FED7AA] bg-[#FFF7ED] text-[#9A3412]"
+                  : "border-[#D5D1C7] bg-white text-[#143F4B]"
+              }`}
+              title={
+                isCustom
+                  ? `Capacidade personalizada (${effectiveCapacity}/dia). Ritmo base: ${paceConfig.label} (${paceConfig.defaultCapacity}/dia).`
+                  : `Ritmo: ${paceConfig.label} — ${paceConfig.maxLabel} atividades/dia`
+              }
+            >
+              {isCustom && <Sparkles className="w-3 h-3 text-[#EA580C] mr-1 shrink-0" />}
+              <button
+                type="button"
+                disabled={saving || effectiveCapacity <= 1}
+                onClick={() => onAdjustDayCapacity(day.dayNumber, effectiveCapacity - 1)}
+                className="w-5 h-5 flex items-center justify-center font-bold hover:bg-black/5 rounded text-current disabled:opacity-30 cursor-pointer transition-colors"
+                aria-label="Diminuir limite de atividades"
+              >
+                −
+              </button>
+              <span className={`font-semibold px-1 tabular-nums ${isFull ? "text-emerald-700" : ""}`}>
+                {poiCount}/{effectiveCapacity}
+              </span>
+              <button
+                type="button"
+                disabled={saving || effectiveCapacity >= 6}
+                onClick={() => onAdjustDayCapacity(day.dayNumber, effectiveCapacity + 1)}
+                className="w-5 h-5 flex items-center justify-center font-bold hover:bg-black/5 rounded text-current disabled:opacity-30 cursor-pointer transition-colors"
+                aria-label="Aumentar limite de atividades"
+              >
+                +
+              </button>
+              {isCustom && (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onAdjustDayCapacity(day.dayNumber, paceConfig.defaultCapacity)}
+                  className="ml-1 text-[#C2410C] hover:text-[#7C2D12] text-[10px] underline cursor-pointer leading-none"
+                  title={`Repor ritmo base (${paceConfig.defaultCapacity}/dia)`}
+                >
+                  repor
+                </button>
+              )}
+            </div>
+          ) : null}
+
+          {/* Status chip */}
+          {isFull ? (
+            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-1 rounded-md font-medium">
+              <Check className="w-3 h-3 text-emerald-600" />
+              <T text="Completo" source="pt" />
+            </span>
+          ) : availableSlots > 0 ? (
+            <span className="inline-flex items-center gap-1 text-[11px] text-[#2D5B67] bg-[#E7EEF0] px-2 py-1 rounded-md font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2D5B67] animate-pulse shrink-0" />
+              {availableSlots} {availableSlots === 1 ? "vaga" : "vagas"}
+            </span>
+          ) : null}
+
+          {/* ⋯ kebab — action buttons */}
+          {hasActions && (
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((o) => !o)}
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#D5D1C7] bg-white text-[#4A636B] hover:bg-[#FAF8F3] hover:border-[#2D5B67] hover:text-[#143F4B] transition-colors"
+                title="Mais ações para este dia"
+                aria-label="Ações do dia"
+                aria-expanded={menuOpen}
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1.5 z-30 min-w-[220px] rounded-xl border border-[#E6E1D5] bg-white shadow-lg py-1.5 animate-in fade-in slide-in-from-top-1">
+                  {/* Pace info */}
+                  <div className="px-3 py-1.5 flex items-center gap-1.5 text-[11px] text-[#6A8288] border-b border-[#F0ECE4] mb-1">
+                    <Clock className="w-3 h-3 shrink-0" />
+                    <span>
+                      <T text={`Ritmo: ${paceConfig.label}`} source="pt" />
+                    </span>
+                  </div>
+
+                  {onAddPoiToDay && (
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => { onAddPoiToDay(); setMenuOpen(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#143F4B] hover:bg-[#F5F3EE] transition-colors disabled:opacity-40"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-[#2D5B67] shrink-0" />
+                      <T text="Adicionar Atividade" source="pt" />
+                    </button>
+                  )}
+
+                  {onAddFreePeriodToDay && (
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => { onAddFreePeriodToDay(); setMenuOpen(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#765218] hover:bg-amber-50 transition-colors disabled:opacity-40"
+                    >
+                      <Sun className="w-3.5 h-3.5 text-[#D8A65C] shrink-0" />
+                      <T text="Adicionar Tempo Livre" source="pt" />
+                    </button>
+                  )}
+
+                  {onOptimizeDayRoute && (
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => { onOptimizeDayRoute(); setMenuOpen(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#143F4B] hover:bg-[#F5F3EE] transition-colors disabled:opacity-40"
+                    >
+                      <Route className="w-3.5 h-3.5 text-[#D8A65C] shrink-0" />
+                      <T text="Otimizar Rota" source="pt" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Day title — second row */}
+      <h2 className="mt-1.5 font-serif-blu text-lg font-bold text-[#143F4B] tracking-tight">
+        <T text={day.title} source="pt" />
+      </h2>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 
 interface ItineraryWorkspaceProps {
   brief: CustomerBrief;
@@ -341,169 +566,29 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               }`}
             >
               {/* Day Header */}
-              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 pb-4 mb-5 border-b border-[#F0ECE4]">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="teal" className="font-semibold text-sm">
-                      <T text="Day" source="en" /> {day.dayNumber}
-                    </Badge>
-                    <span className="text-sm font-medium text-[#4A636B]">{day.date}</span>
-                    <span className="text-[#C9C6BD]">·</span>
-                    <span className="inline-flex items-center gap-1 text-sm text-[#4A636B]">
-                      <MapPin className="w-3 h-3 text-[#A8A49C]" />
-                      <span>{day.location}</span>
-                    </span>
-                    {day.tier && (
-                      <>
-                        <span className="text-[#C9C6BD]">·</span>
-                        <Badge variant="outline" className="text-sm py-0">
-                          {day.tier}
-                        </Badge>
-                      </>
-                    )}
-                  </div>
-
-                  <h2 className="mt-1.5 font-serif-blu text-lg font-bold text-[#143F4B] tracking-tight">
-                    <T text={day.title} source="pt" />
-                  </h2>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Rhythm / Custom Capacity Indicator */}
-                  {!isCustom ? (
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#DDD8CE] bg-[#FAF8F3] px-2.5 py-1 text-xs text-[#2D5B67] font-medium"
-                      title={`Ritmo da viagem: ${paceConfig.label} (${paceConfig.maxLabel} atividades por dia)`}
-                    >
-                      <Clock className="w-3.5 h-3.5 text-[#2D5B67]" />
-                      <span>
-                        <T text={`Ritmo: ${paceConfig.label}`} source="pt" />
-                      </span>
-                    </span>
-                  ) : (
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#FED7AA] bg-[#FFF7ED] px-2.5 py-1 text-xs text-[#9A3412] font-medium"
-                      title={`Capacidade personalizada de ${effectiveCapacity} atividades para este dia. Ritmo base da viagem: ${paceConfig.label} (${paceConfig.defaultCapacity}/dia).`}
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-[#EA580C]" />
-                      <span>
-                        <T text="Capacidade Personalizada" source="pt" />
-                      </span>
-                      {onAdjustDayCapacity && (
-                        <button
-                          type="button"
-                          disabled={saving}
-                          onClick={() => onAdjustDayCapacity(day.dayNumber, paceConfig.defaultCapacity)}
-                          className="ml-1 text-[#C2410C] hover:text-[#7C2D12] underline text-[10px] cursor-pointer"
-                          title={`Repor para o ritmo base (${paceConfig.defaultCapacity} atividades)`}
-                        >
-                          (<T text="repor" source="pt" />)
-                        </button>
-                      )}
-                    </span>
-                  )}
-
-                  {/* Interactive Capacity Counter */}
-                  {onAdjustDayCapacity && (
-                    <div className="flex items-center gap-1 rounded-lg border border-[#D5D1C7] bg-white px-2.5 py-1 text-xs text-[#143F4B] shadow-2xs">
-                      <span className="text-[#6A8288] font-medium">
-                        <T text="Capacidade:" source="pt" />
-                      </span>
-                      <button
-                        type="button"
-                        disabled={saving || effectiveCapacity <= 1}
-                        onClick={() => onAdjustDayCapacity(day.dayNumber, effectiveCapacity - 1)}
-                        className="px-1.5 py-0.5 font-bold hover:bg-[#FAF8F3] rounded text-[#2D5B67] disabled:opacity-30 cursor-pointer transition-colors"
-                        title="Diminuir limite de atividades deste dia"
-                        aria-label="Diminuir limite de atividades"
-                      >
-                        -
-                      </button>
-                      <span className={`font-semibold px-1 ${isFull ? "text-emerald-800" : "text-[#143F4B]"}`}>
-                        {poiCount} / {effectiveCapacity}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={saving || effectiveCapacity >= 6}
-                        onClick={() => onAdjustDayCapacity(day.dayNumber, effectiveCapacity + 1)}
-                        className="px-1.5 py-0.5 font-bold hover:bg-[#FAF8F3] rounded text-[#2D5B67] disabled:opacity-30 cursor-pointer transition-colors"
-                        title="Aumentar limite de atividades deste dia"
-                        aria-label="Aumentar limite de atividades"
-                      >
-                        +
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Available Slots / Full Status */}
-                  {availableSlots > 0 ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-[#2D5B67] bg-[#E7EEF0] px-2 py-1 rounded-md font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#2D5B67] animate-pulse" />
-                      {availableSlots} {availableSlots === 1 ? "vaga livre" : "vagas livres"}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-1 rounded-md font-medium">
-                      <Check className="w-3 h-3 text-emerald-600" />
-                      <T text="Completo" source="pt" />
-                    </span>
-                  )}
-
-                  {onAddPoiToDay && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAddPoiDay(day.dayNumber)}
-                      disabled={saving}
-                      className={`text-xs h-8 gap-1 border-[#D5D1C7] text-[#143F4B] hover:bg-[#FAF8F3] ${
-                        availableSlots > 0 ? "border-[#2D5B67] text-[#2D5B67] bg-[#FAF8F3] hover:bg-[#E7EEF0]" : ""
-                      }`}
-                      title="Adicionar oferta do catálogo a este dia"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <T text="Atividade" source="pt" />
-                    </Button>
-                  )}
-
-                  {onAddFreePeriodToDay && !day.items.some((it) => it.category === "free_time") && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onAddFreePeriodToDay(day.dayNumber, "afternoon")}
-                      disabled={saving}
-                      className="text-xs h-8 gap-1 border-[#D5D1C7] text-[#765218] bg-amber-50/50 hover:bg-amber-100/50"
-                      title="Adicionar período de tarde livre para descanso ou compras"
-                    >
-                      <Sun className="w-3.5 h-3.5 text-[#D8A65C]" />
-                      <T text="+ Tempo Livre" source="pt" />
-                    </Button>
-                  )}
-
-                  {onOptimizeDayRoute && day.items.length > 2 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onOptimizeDayRoute(day.dayNumber)}
-                      disabled={saving}
-                      className="text-xs h-8 gap-1.5 border-[#D5D1C7] text-[#143F4B] hover:bg-[#FAF8F3]"
-                      title="Otimizar ordem das paragens para menor tempo de deslocação"
-                    >
-                      <Route className="w-3.5 h-3.5 text-[#D8A65C]" />
-                      <T text="Otimizar Rota" source="pt" />
-                    </Button>
-                  )}
-                  {isDayModified && (
-                    <Badge
-                      variant="gold"
-                      className="gap-1.5 py-1 px-2.5 font-medium shrink-0 animate-in fade-in"
-                    >
-                      <Sparkles className="w-3 h-3 text-[#D8A65C]" />
-                      <span>
-                        <T text="Updated by Assistant" source="en" />
-                      </span>
-                    </Badge>
-                  )}
-                </div>
-              </div>
+              <DayCardHeader
+                day={day}
+                isDayModified={isDayModified}
+                paceConfig={paceConfig}
+                effectiveCapacity={effectiveCapacity}
+                poiCount={poiCount}
+                isCustom={isCustom}
+                isFull={isFull}
+                availableSlots={availableSlots}
+                saving={saving}
+                onAdjustDayCapacity={onAdjustDayCapacity}
+                onAddPoiToDay={onAddPoiToDay ? () => setAddPoiDay(day.dayNumber) : undefined}
+                onAddFreePeriodToDay={
+                  onAddFreePeriodToDay && !day.items.some((it) => it.category === "free_time")
+                    ? () => onAddFreePeriodToDay(day.dayNumber, "afternoon")
+                    : undefined
+                }
+                onOptimizeDayRoute={
+                  onOptimizeDayRoute && day.items.length > 2
+                    ? () => onOptimizeDayRoute(day.dayNumber)
+                    : undefined
+                }
+              />
 
               {day.summary && (
                 <p className="text-sm leading-7 text-[#4A636B] mb-4">
