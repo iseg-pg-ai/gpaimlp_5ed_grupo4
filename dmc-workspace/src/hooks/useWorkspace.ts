@@ -495,23 +495,31 @@ export function useWorkspace() {
     });
 
   const addPoiToDay = (dayNumber: number, title: string) =>
-    applyDeterministicCommand(`adicionar "${title}" ao dia ${dayNumber}`, (trip) => ({
-      ...trip,
-      itinerary: trip.itinerary.map((day) =>
-        day.dayNumber === dayNumber
-          ? {
-              ...day,
-              dailyCapacity: Math.min(
-                6,
-                Math.max(
-                  day.dailyCapacity ?? 1,
-                  day.items.filter((item) => item.category !== "free_time").length + 1,
+    applyDeterministicCommand(`adicionar "${title}" ao dia ${dayNumber}`, (trip) => {
+      const defaultLimit =
+        trip.brief.personalization?.extraBreaks || trip.brief.pace === "Relaxed"
+          ? 2
+          : trip.brief.pace === "Balanced"
+            ? 3
+            : 4;
+      return {
+        ...trip,
+        itinerary: trip.itinerary.map((day) =>
+          day.dayNumber === dayNumber
+            ? {
+                ...day,
+                dailyCapacity: Math.min(
+                  6,
+                  Math.max(
+                    day.dailyCapacity ?? defaultLimit,
+                    day.items.filter((item) => item.category !== "free_time").length + 1,
+                  ),
                 ),
-              ),
-            }
-          : day,
-      ),
-    }));
+              }
+            : day,
+        ),
+      };
+    });
 
   const removeActivity = (dayNumber: number, activityId: string) =>
     applyDeterministicCommand((trip) => {

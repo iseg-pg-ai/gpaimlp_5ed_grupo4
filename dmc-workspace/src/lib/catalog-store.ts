@@ -167,6 +167,14 @@ export class CatalogStore {
       .get(String(row._catalog_id));
     if (!saved) return false;
     const record: CatalogRecord = JSON.parse(String(saved.snapshot));
+    if (record.status !== "inactive" && record.revision < (Number(row._catalog_revision) || 0)) {
+      record.revision = Number(row._catalog_revision);
+      record.status = "approved";
+      this.db
+        .prepare("INSERT OR REPLACE INTO catalog_records VALUES (?,?)")
+        .run(record.id, JSON.stringify(record));
+      return true;
+    }
     return record.status === "approved" && record.revision === row._catalog_revision;
   }
 }

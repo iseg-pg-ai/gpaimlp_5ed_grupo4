@@ -21,8 +21,26 @@ import {
   Route,
   Plus,
   Sun,
+  Clock,
+  Check,
   Share2,
 } from "lucide-react";
+
+function getTripPaceConfig(brief: CustomerBrief) {
+  if (brief.personalization?.extraBreaks) {
+    return { defaultCapacity: 2, label: "Pausas Extras", maxLabel: "máx. 2" };
+  }
+  switch (brief.pace) {
+    case "Relaxed":
+      return { defaultCapacity: 2, label: "Relaxado", maxLabel: "máx. 2" };
+    case "Balanced":
+      return { defaultCapacity: 3, label: "Equilibrado", maxLabel: "máx. 3" };
+    case "Active":
+      return { defaultCapacity: 4, label: "Ativo", maxLabel: "máx. 4" };
+    default:
+      return { defaultCapacity: 2, label: "Padrão", maxLabel: "máx. 2" };
+  }
+}
 
 interface ItineraryWorkspaceProps {
   brief: CustomerBrief;
@@ -304,6 +322,12 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
       <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-5 sm:pt-8 space-y-8">
         {filteredDays.map((day) => {
           const isDayModified = highlightedDay === day.dayNumber || day.isRecentlyModified;
+          const paceConfig = getTripPaceConfig(brief);
+          const effectiveCapacity = day.dailyCapacity ?? paceConfig.defaultCapacity;
+          const poiCount = day.items.filter((it) => it.category !== "free_time").length;
+          const isCustom = typeof day.dailyCapacity === "number" && day.dailyCapacity !== paceConfig.defaultCapacity;
+          const isFull = poiCount >= effectiveCapacity;
+          const availableSlots = Math.max(0, effectiveCapacity - poiCount);
           return (
             <section
               key={day.dayNumber}
@@ -345,55 +369,83 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  {/* Rhythm / Custom Capacity Indicator */}
+                  {!isCustom ? (
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#DDD8CE] bg-[#FAF8F3] px-2.5 py-1 text-xs text-[#2D5B67] font-medium"
+                      title={`Ritmo da viagem: ${paceConfig.label} (${paceConfig.maxLabel} atividades por dia)`}
+                    >
+                      <Clock className="w-3.5 h-3.5 text-[#2D5B67]" />
+                      <span>
+                        <T text={`Ritmo: ${paceConfig.label}`} source="pt" />
+                      </span>
+                    </span>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#FED7AA] bg-[#FFF7ED] px-2.5 py-1 text-xs text-[#9A3412] font-medium"
+                      title={`Capacidade personalizada de ${effectiveCapacity} atividades para este dia. Ritmo base da viagem: ${paceConfig.label} (${paceConfig.defaultCapacity}/dia).`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#EA580C]" />
+                      <span>
+                        <T text="Capacidade Personalizada" source="pt" />
+                      </span>
+                      {onAdjustDayCapacity && (
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => onAdjustDayCapacity(day.dayNumber, paceConfig.defaultCapacity)}
+                          className="ml-1 text-[#C2410C] hover:text-[#7C2D12] underline text-[10px] cursor-pointer"
+                          title={`Repor para o ritmo base (${paceConfig.defaultCapacity} atividades)`}
+                        >
+                          (<T text="repor" source="pt" />)
+                        </button>
+                      )}
+                    </span>
+                  )}
+
+                  {/* Interactive Capacity Counter */}
                   {onAdjustDayCapacity && (
-                    <div className="flex items-center gap-1 rounded-lg border border-[#D5D1C7] bg-[#FAF8F3] px-2 py-1 text-xs text-[#143F4B]">
-                      <span className="text-[#6A8288]">Capacidade:</span>
-                      <button
-                        type="button"
-                        disabled={
-                          saving ||
-                          (day.dailyCapacity ??
-                            (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) <= 1
-                        }
-                        onClick={() =>
-                          onAdjustDayCapacity(
-                            day.dayNumber,
-                            (day.dailyCapacity ??
-                              (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) -
-                              1,
-                          )
-                        }
-                        className="px-1 font-bold hover:bg-white rounded disabled:opacity-30"
-                        title="Diminuir limite de atividades"
-                      >
-                        -
-                      </button>
-                      <span className="font-semibold px-0.5">
-                        {day.items.filter((it) => it.category !== "free_time").length} /{" "}
-                        {day.dailyCapacity ??
-                          (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)}
+                    <div className="flex items-center gap-1 rounded-lg border border-[#D5D1C7] bg-white px-2.5 py-1 text-xs text-[#143F4B] shadow-2xs">
+                      <span className="text-[#6A8288] font-medium">
+                        <T text="Capacidade:" source="pt" />
                       </span>
                       <button
                         type="button"
-                        disabled={
-                          saving ||
-                          (day.dailyCapacity ??
-                            (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) >= 6
-                        }
-                        onClick={() =>
-                          onAdjustDayCapacity(
-                            day.dayNumber,
-                            (day.dailyCapacity ??
-                              (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)) +
-                              1,
-                          )
-                        }
-                        className="px-1 font-bold hover:bg-white rounded disabled:opacity-30"
+                        disabled={saving || effectiveCapacity <= 1}
+                        onClick={() => onAdjustDayCapacity(day.dayNumber, effectiveCapacity - 1)}
+                        className="px-1.5 py-0.5 font-bold hover:bg-[#FAF8F3] rounded text-[#2D5B67] disabled:opacity-30 cursor-pointer transition-colors"
+                        title="Diminuir limite de atividades deste dia"
+                        aria-label="Diminuir limite de atividades"
+                      >
+                        -
+                      </button>
+                      <span className={`font-semibold px-1 ${isFull ? "text-emerald-800" : "text-[#143F4B]"}`}>
+                        {poiCount} / {effectiveCapacity}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={saving || effectiveCapacity >= 6}
+                        onClick={() => onAdjustDayCapacity(day.dayNumber, effectiveCapacity + 1)}
+                        className="px-1.5 py-0.5 font-bold hover:bg-[#FAF8F3] rounded text-[#2D5B67] disabled:opacity-30 cursor-pointer transition-colors"
                         title="Aumentar limite de atividades deste dia"
+                        aria-label="Aumentar limite de atividades"
                       >
                         +
                       </button>
                     </div>
+                  )}
+
+                  {/* Available Slots / Full Status */}
+                  {availableSlots > 0 ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-[#2D5B67] bg-[#E7EEF0] px-2 py-1 rounded-md font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#2D5B67] animate-pulse" />
+                      {availableSlots} {availableSlots === 1 ? "vaga livre" : "vagas livres"}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-1 rounded-md font-medium">
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      <T text="Completo" source="pt" />
+                    </span>
                   )}
 
                   {onAddPoiToDay && (
@@ -402,10 +454,12 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                       size="sm"
                       onClick={() => setAddPoiDay(day.dayNumber)}
                       disabled={saving}
-                      className="text-xs h-8 gap-1 border-[#D5D1C7] text-[#143F4B] hover:bg-[#FAF8F3]"
+                      className={`text-xs h-8 gap-1 border-[#D5D1C7] text-[#143F4B] hover:bg-[#FAF8F3] ${
+                        availableSlots > 0 ? "border-[#2D5B67] text-[#2D5B67] bg-[#FAF8F3] hover:bg-[#E7EEF0]" : ""
+                      }`}
                       title="Adicionar oferta do catálogo a este dia"
                     >
-                      <Plus className="w-3.5 h-3.5 text-[#143F4B]" />
+                      <Plus className="w-3.5 h-3.5" />
                       <T text="Atividade" source="pt" />
                     </Button>
                   )}
@@ -530,6 +584,24 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                     </React.Fragment>
                   );
                 })}
+
+                {/* Available Slot Card based on Trip Rhythm */}
+                {availableSlots > 0 && onAddPoiToDay && (
+                  <button
+                    type="button"
+                    onClick={() => setAddPoiDay(day.dayNumber)}
+                    disabled={saving}
+                    className="group flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#D5D1C7] bg-[#FAF8F3]/50 p-4 text-xs font-medium text-[#2D5B67] hover:border-[#2D5B67] hover:bg-[#FAF8F3] transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 text-[#2D5B67] transition-transform group-hover:scale-110" />
+                    <span>
+                      <T
+                        text={`Vaga disponível (${poiCount + 1}/${effectiveCapacity}) de acordo com o ritmo — clique para adicionar atividade`}
+                        source="pt"
+                      />
+                    </span>
+                  </button>
+                )}
               </div>
             </section>
           );
@@ -560,12 +632,13 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
         <AddPoiModal
           isOpen={true}
           dayNumber={addPoiDay}
+          dayDate={itinerary.find((d) => d.dayNumber === addPoiDay)?.date}
           dayLocation={
             itinerary.find((d) => d.dayNumber === addPoiDay)?.location || brief.destination
           }
           dayCapacity={
             itinerary.find((d) => d.dayNumber === addPoiDay)?.dailyCapacity ??
-            (brief.pace === "Relaxed" ? 2 : brief.pace === "Balanced" ? 3 : 4)
+            getTripPaceConfig(brief).defaultCapacity
           }
           currentItems={itinerary.find((d) => d.dayNumber === addPoiDay)?.items || []}
           allItineraryItems={itinerary.flatMap((d) => d.items)}

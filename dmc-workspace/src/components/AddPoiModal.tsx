@@ -21,6 +21,7 @@ import type { ActivityItem, CustomerBrief, ItineraryDay } from "@/types";
 interface AddPoiModalProps {
   isOpen: boolean;
   dayNumber: number;
+  dayDate?: string;
   dayLocation: string;
   dayCapacity: number;
   currentItems: ActivityItem[];
@@ -28,7 +29,7 @@ interface AddPoiModalProps {
   brief: CustomerBrief;
   itinerary: ItineraryDay[];
   onClose: () => void;
-  onAddPoi: (poiTitle: string) => void;
+  onAddPoi: (poiTitle: string) => Promise<boolean> | void;
   onAdjustCapacity: (newCapacity: number) => void;
 }
 
@@ -43,13 +44,17 @@ interface CatalogEntry {
     duration?: string;
     price?: string;
     address?: string;
+    effort?: string;
+    hours?: string;
   };
+  raw?: Record<string, unknown>;
   published?: boolean;
 }
 
 export const AddPoiModal: React.FC<AddPoiModalProps> = ({
   isOpen,
   dayNumber,
+  dayDate,
   dayLocation,
   dayCapacity,
   currentItems,
@@ -63,6 +68,8 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
   const [records, setRecords] = useState<CatalogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [submittingTitle, setSubmittingTitle] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
@@ -128,6 +135,45 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
       return matchesCity && matchesSearch;
     });
   }, [records, categoryFilter, search, dayLocation]);
+  const getCompatibilityIssue = (rec: CatalogEntry) => {
+    if (!brief) return null;
+    const raw = (rec.raw ?? {}) as Record<string, unknown>;
+    const closures = String(
+      raw.dias_de_encerramento ?? raw.encerramento_base_reconfirmar ?? rec.fields.hours ?? "",
+    );
+    if (closures && /obras|manutencao|temporariamente encerrad/i.test(closures)) {
+      return "Encerrado para obras";
+    }
+    const maxEffort = brief.physicalEffort.startsWith("Baixo")
+      ? 0
+      : brief.physicalEffort.startsWith("Moderado")
+        ? 1
+        : 2;
+    const effortStr = String(raw.esforco_fisico ?? rec.fields.effort ?? "").toLowerCase();
+    const effort = effortStr.includes("alto") ? 2 : effortStr.includes("moderado") ? 1 : 0;
+    if (effort > maxEffort) {
+      return `Esforço (${effort === 2 ? "Alto" : "Moderado"}) excede ${brief.physicalEffort.split(" ")[0]}`;
+    }
+    if (brief.mobilityRestrictions.length > 0 && effort > 0) {
+      return "Incompatível com mobilidade";
+    }
+    return null;
+  };
+
+  const handleAddPoi = async (name: string) => {
+    setSubmittingTitle(name);
+    setModalError(null);
+    try {
+      const res = await onAddPoi(name);
+      if (res !== false) {
+        onClose();
+      }
+    } catch (err) {
+      setModalError(err instanceof Error ? err.message : "Não foi possível adicionar a atividade.");
+    } finally {
+      setSubmittingTitle(null);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -172,10 +218,14 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
             <span className="text-[#4A636B]">
               {currentPoiCount} / {dayCapacity} <T text="atividades" source="pt" />
             </span>
-            {isAtCapacity && (
-              <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs">
-                <AlertCircle className="w-3 h-3" />
-                <T text="Limite atingido" source="pt" />
+            {isAtCapacity ? (
+              <span className="inline-flex items-center gap-1 text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-medium">
+                <AlertCircle className="w-3 h-3 text-amber-600" />
+                <T text="Capacidade será aumentada automaticamente ao adicionar" source="pt" />
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[#2D5B67] bg-[#E7EEF0] px-2 py-0.5 rounded text-xs font-medium">
+                {dayCapacity - currentPoiCount} <T text="vagas disponíveis" source="pt" />
               </span>
             )}
           </div>
@@ -207,6 +257,19 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
             </Button>
           </div>
         </div>
+
+        {/* Modal Error Banner */}
+        {modalError && (
+          <div className="mx-4 sm:mx-5 mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-start gap-2.5 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <span className="font-semibold block mb-0.5">
+                <T text="Não foi possível adicionar ao roteiro:" source="pt" />
+              </span>
+              <span>{modalError}</span>
+            </div>
+          </div>
+        )}
 
         {/* Search and Filters */}
         <div className="p-4 sm:p-5 border-b border-[#DDD8CE] bg-white space-y-3">
@@ -298,6 +361,7 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
             filteredRecords.map((rec) => {
               const name = rec.fields.name || "Sem título";
               const isAlreadyAdded = existingTitles.has(name.toLowerCase().trim());
+              const compatIssue = getCompatibilityIssue(rec);
               const catIcon =
                 rec.category === "restaurantes" ? (
                   <UtensilsCrossed className="w-3.5 h-3.5 text-[#D8A65C]" />
@@ -338,6 +402,15 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
                       {rec.fields.price && (
                         <span className="text-xs text-[#765218] bg-amber-50/80 px-2 py-0.5 rounded">
                           {rec.fields.price}
+                        </span>
+                      )}
+                      {compatIssue && (
+                        <span
+                          className="text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded flex items-center gap-1"
+                          title={compatIssue}
+                        >
+                          <AlertCircle className="w-3 h-3 text-amber-600" />
+                          {compatIssue}
                         </span>
                       )}
                     </div>

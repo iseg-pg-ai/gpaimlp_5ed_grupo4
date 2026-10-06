@@ -1,13 +1,25 @@
-import { applyCommand, generateItinerary, type Catalog, type Row } from "./curation.ts";
+import {
+  applyCommand,
+  generateItinerary,
+  type Catalog,
+  type Row,
+  norm,
+  text,
+  exclusions,
+  cities,
+  mentioned,
+} from "./curation.ts";
 import {
   clockTime,
   durationMinutes,
   knownCost,
   proposeSlot,
   transferEstimate,
+  closedOn,
+  closureState,
 } from "./itinerary-scheduling.ts";
 import type { Snapshot } from "./itinerary-pdf";
-import type { ActivityItem } from "../types/index";
+import type { ActivityItem, CustomerBrief } from "../types/index";
 import { optimizeRouteSequence, buildCoordMap } from "./road-routing.ts";
 
 export const assistantHelp =
@@ -24,6 +36,52 @@ const rowId = (table: string, row: Row) =>
   `${table}:${row._catalog_id ?? row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`;
 const title = (row: Row) =>
   String(row.nome_da_atracao || row.nome_da_experiencia || row.estabelecimento || "");
+
+function diagnoseIneligibility(
+  candidate: { table: string; row: Row },
+  brief: CustomerBrief,
+  date: string,
+  city: string,
+): string {
+  const row = candidate.row;
+  const table = candidate.table;
+  const closures = String(row.dias_de_encerramento ?? row.encerramento_base_reconfirmar ?? "");
+  if (closures && (closedOn(row, date) || closureState(closures, date) === "closed")) {
+    return `Oferta encerrada nesta data (${closures}).`;
+  }
+  const maxEffort = brief.physicalEffort.startsWith("Baixo")
+    ? 0
+    : brief.physicalEffort.startsWith("Moderado")
+      ? 1
+      : 2;
+  const effort = ["baixo", "moderado", "alto"].indexOf(norm(row.esforco_fisico));
+  if (effort > maxEffort) {
+    return `Esforço físico (${row.esforco_fisico || "não especificado"}) excede o limite do cliente (${brief.physicalEffort}).`;
+  }
+  const body = norm(Object.values(row).join(" "));
+  if (
+    brief.mobilityRestrictions.length &&
+    (effort > 0 || /escad|ingreme|subida|piso irregular/.test(body))
+  ) {
+    return `Incompatível com restrições de mobilidade (${brief.mobilityRestrictions.join(", ")}): piso irregular ou esforço físico.`;
+  }
+  const matchedExclusion = brief.exclusions.find((e) => exclusions[e]?.test(body));
+  if (matchedExclusion) {
+    return `Contém exclusão definida pelo cliente ("${matchedExclusion}").`;
+  }
+  const location = text(row, "cidade") || text(row, "localizacao");
+  if (cities[city] && !mentioned(location, cities[city])) {
+    return `Localização (${location}) não corresponde ao destino deste dia (${city}).`;
+  }
+  if (
+    brief.dietaryRestrictions.length &&
+    (table === "restaurantes" ||
+      /gastronom|comida|bebida|vinho|pastel|jantar|almoco|prova|culin/.test(body))
+  ) {
+    return `Restrições alimentares do cliente (${brief.dietaryRestrictions.join(", ")}) requerem acreditação prévia do fornecedor.`;
+  }
+  return "Oferta incompatível com o briefing, data, orçamento ou regras de curadoria.";
+}
 
 export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Catalog) {
   const original = snapshot.itinerary;
@@ -207,8 +265,10 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
       { ...snapshot.brief, startDate: day.date, endDate: day.date, destination: day.location },
       isolated,
     ).itinerary[0]?.items[0];
-    if (!eligible)
-      return reject("Oferta incompatível com o briefing, data, orçamento ou regras de curadoria.");
+    if (!eligible) {
+      const reason = diagnoseIneligibility(candidate, snapshot.brief, day.date, day.location);
+      return reject(reason);
+    }
     if (add) items.push(eligible);
     else items[index] = eligible;
     changedIds.add(eligible.id);
@@ -303,18 +363,26 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
           requested,
           day.date,
         );
-        if (slot.kind !== "scheduled" || (move && slot.start !== requested))
+        if (
+          slot.kind === "unavailable" ||
+          (move && (slot.kind !== "scheduled" || slot.start !== requested))
+        )
           return reject(
             "Não há horário viável: confirme duração, funcionamento, encerramentos e refeições no catálogo.",
           );
+        const itemDuration =
+          durationMinutes(record.row.tempo_medio_de_visita ?? record.row.duracao) ?? 60;
+        const scheduled = slot.kind === "scheduled";
         items[i] = {
           ...a,
-          time: `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`,
+          time: scheduled
+            ? `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`
+            : "Por agendar",
           ...(a.confirmation
             ? {
                 confirmation: {
                   ...a.confirmation,
-                  time: clockTime(slot.start),
+                  time: scheduled ? clockTime(slot.start) : "Por agendar",
                   status: "pending" as const,
                   confirmedAt: null,
                   checks: a.confirmation.checks.map((c) => ({ ...c, resolved: false })),
@@ -322,7 +390,7 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
               }
             : {}),
         };
-        cursor = slot.end;
+        cursor = scheduled ? slot.end : cursor + itemDuration;
       } else {
         const match = a.time.match(/^(\d{2}):(\d{2})(?:[–-](\d{2}):(\d{2}))?/);
         const duration = durationMinutes(a.duration);

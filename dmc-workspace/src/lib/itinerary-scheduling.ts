@@ -128,9 +128,10 @@ export function datedWindows(value: unknown, date: string): [number, number][] |
   const month = Number(date.slice(5, 7)) - 1,
     day = new Date(date + "T12:00:00Z").getUTCDay();
   const matches: [number, number][] = [];
-  for (const part of clean(value).split(/;\s*/)) {
+  const cleanedText = clean(value).replace(/;\s*confirmar.*$/, "");
+  for (const part of cleanedText.split(/;\s*/)) {
     const seasonal = part.match(/^(.*?)\s*\(([a-z]+)\.?[–-]([a-z]+)\.?\)$/);
-    const weekly = part.match(/^([a-z]+)(?:[–-]([a-z]+))?\s+(\d.*)$/);
+    const weekly = part.match(/^([a-z]+)\.?(?:[–-]([a-z]+)\.?)?\s+(\d.*)$/);
     if (seasonal) {
       const a = months.indexOf(seasonal[2]),
         b = months.indexOf(seasonal[3]);
@@ -149,13 +150,28 @@ export function datedWindows(value: unknown, date: string): [number, number][] |
 }
 export function closureState(value: unknown, date: string): "open" | "closed" | "unknown" {
   const text = clean(value);
-  if (!text || /^(nenhum indicado|nenhum|nao indicado)$/.test(text)) return "open";
+  if (
+    !text ||
+    /^(nenhum indicado|nenhum|nao indicado|sem encerramento.*|acesso livre)$/.test(text)
+  )
+    return "open";
   const month = Number(date.slice(5, 7)) - 1,
     day = Number(date.slice(8, 10));
   let unknown = false;
   for (const part of text.split(/;\s*/)) {
     if (closedOn({ dias_de_encerramento: part }, date)) return "closed";
-    if (/^(domingo|segunda|terca|quarta|quinta|sexta|sabado)(-feira)?$/.test(part)) continue;
+    if (
+      /^(domingo|segunda|terca|quarta|quinta|sexta|sabado|dom|seg|ter|qua|qui|sex|sab)(-feira)?\.?$/.test(
+        part,
+      )
+    )
+      continue;
+    if (
+      /^(domingo de pascoa|pascoa|sexta-feira santa|carnaval|feriados?.*)$/.test(part) ||
+      /^sem encerramento/.test(part) ||
+      /^confirmar/.test(part)
+    )
+      continue;
     const m = part.match(/^([\d ,e]+)\s+([a-z]+)\.?$/);
     if (m && months.includes(m[2])) {
       const days = m[1]

@@ -21,12 +21,12 @@ export type Catalog = {
   restaurantes: Row[];
   curation_rules: Row[];
 };
-const norm = (value: unknown) =>
+export const norm = (value: unknown) =>
   String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
-const text = (row: Row, key: string) => String(row[key] ?? "");
+export const text = (row: Row, key: string) => String(row[key] ?? "");
 
 export function validateBrief(value: unknown): asserts value is CustomerBrief {
   if (!value || typeof value !== "object") throw new Error("Briefing inválido.");
@@ -116,7 +116,7 @@ const interests: Record<string, RegExp> = {
   "Contemporary Art (Serralves)": /contemporan|serralves|arte/,
   "Bespoke Wellness & Spas": /spa|bem-estar|wellness/,
 };
-const exclusions: Record<string, RegExp> = {
+export const exclusions: Record<string, RegExp> = {
   "No Crowded Tour Buses": /autocarro|hop.on|bus tour/,
   "No Commercial Souvenir Shops": /souvenir|lembranc/,
   "No Standard Large Museums": /museu/,
@@ -124,14 +124,14 @@ const exclusions: Record<string, RegExp> = {
   "No Open Boats (Sea Sickness)": /barco|cruzeiro|rabelo|veleiro/,
   "No Alcohol / Wine Tastings": /vinho|prova|adega|enotur|cerveja/,
 };
-const cities: Record<string, string[]> = {
+export const cities: Record<string, string[]> = {
   Lisboa: ["lisboa", "lisbon", "lis"],
   Porto: ["porto", "opo"],
   Sintra: ["sintra"],
   Cascais: ["cascais"],
   Douro: ["douro", "pinhao", "regua"],
 };
-function mentioned(value: string, aliases: string[]) {
+export function mentioned(value: string, aliases: string[]) {
   return aliases.some((a) => new RegExp(`\\b${a}\\b`).test(norm(value)));
 }
 
