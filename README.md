@@ -51,6 +51,15 @@ python -m pip install -r translations/requirements.txt
 .\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse
 ```
 
+### Iniciar o Agente de IA (LangChain / Bedrock)
+
+Na raiz do repositório:
+
+- No macOS/Linux: `bash scripts/start_ai_agent.sh`
+- No Windows: `powershell -ExecutionPolicy Bypass -File .\scripts\start_ai_agent.ps1`
+
+O serviço inicia na porta 8000 (`http://localhost:8000/docs`).
+
 ### Iniciar o DMC Workspace
 
 ```powershell
@@ -59,8 +68,7 @@ npm ci
 npm run dev -- -p 3001
 ```
 
-Abrir [http://localhost:3001](http://localhost:3001). O portal requer o
-`warehouse/` e o `config/curation_rule_overrides.json` na pasta pai.
+Abrir [http://localhost:3001](http://localhost:3001). O portal comunica automaticamente com o Agente de IA na porta 8000 quando disponível.
 
 ### Iniciar o dashboard analítico
 
