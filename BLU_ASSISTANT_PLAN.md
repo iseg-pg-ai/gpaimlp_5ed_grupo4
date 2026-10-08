@@ -588,7 +588,12 @@ Esta fase é dependência de todas as restantes.
 - Apresentar pré-visualização antes/depois.
 - Permitir aceitar ou rejeitar.
 - Executar usando a lógica existente.
+- Permitir comandos compostos, como aliviar um dia, preservar reservas confirmadas e reduzir o custo numa única operação.
+- Adaptar a assistência à página aberta: briefing, catálogo, itinerário, confirmações ou exportação.
+- Apoiar o preenchimento das confirmações, referências, preços e evidências ainda em falta.
+- Disponibilizar um modo de simulação que calcule o impacto sem guardar imediatamente.
 - Criar uma versão após aceitação.
+- Resumir as alterações entre versões, incluindo atividades, horários, preços e orçamento.
 - Registar pedido, ação, validação e decisão.
 
 Resultado: o Blu passa a executar linguagem natural sem contornar regras.
@@ -601,6 +606,9 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - Pedir ao agente para ordenar candidatos elegíveis.
 - Recuperar casos históricos semelhantes.
 - Mostrar razões do ranking.
+- Explicar que respostas do briefing e regras de curadoria sustentam cada recomendação.
+- Diagnosticar conflitos de horário, deslocações inviáveis, excesso de atividades, orçamento ultrapassado e informação em falta.
+- Propor alternativas elegíveis quando uma atividade estiver fechada, exceder o orçamento ou contrariar restrições.
 - Comparar a proposta do agente com a proposta base.
 - Nunca permitir que o modelo introduza um item inexistente ou inativo.
 - Guardar a origem de cada recomendação.
@@ -615,6 +623,8 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - Guardar avaliações ligadas à versão e revisão do catálogo.
 - Criar página de histórico de avaliações.
 - Calcular tendências e alertas.
+- Detetar registos incompletos, duplicados, desatualizados ou com avaliações negativas.
+- Propor correções do catálogo para aprovação humana.
 - Permitir ao trabalhador colocar o item em revisão ou inativá-lo.
 - Preservar todas as avaliações após inativação.
 
@@ -626,6 +636,7 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - Indexar alterações e decisões do trabalhador.
 - Associar feedback.
 - Criar pesquisa por casos semelhantes.
+- Reutilizar estruturas de propostas bem avaliadas sem copiar dados pessoais dos clientes.
 - Usar filtros estruturados e pesquisa textual.
 - Avaliar ganhos antes de adicionar embeddings.
 - Excluir casos sem qualidade mínima ou sem resultado conhecido.
@@ -637,9 +648,12 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - Unificar meteorologia e rotas como adaptadores do portal.
 - Acrescentar cache, timeout e provenance.
 - Criar alertas de chuva, encerramento e conflito.
+- Apresentar indicadores proativos, incluindo reservas sem confirmação, desvio do orçamento e atividades exteriores afetadas pela meteorologia.
 - Permitir regeneração parcial de um dia.
+- Calcular deslocações e reorganizar o dia perante alterações meteorológicas, atrasos ou indisponibilidades.
 - Integrar voos quando existir uma API escolhida.
 - Preparar fornecedores, mapas ou reservas sem confirmar automaticamente.
+- Preparar o email de partilha e um resumo da proposta no idioma do cliente, sempre sujeitos a revisão.
 
 ## Fase 6 — Operação e melhoria contínua
 
@@ -647,6 +661,7 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - Taxa de aceitação das sugestões.
 - Motivos de rejeição.
 - Frequência de correções manuais.
+- Executar um controlo de qualidade antes da exportação, cobrindo conteúdo, idiomas, preços, reservas e campos pendentes.
 - Custos e latência.
 - Testes periódicos contra regressão e prompt injection.
 - Comparação controlada de modelos.
@@ -694,6 +709,15 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - `dmc-workspace/src/components/ActivityCard.tsx`
   - Estado do feedback e explicação da recomendação.
 
+- `dmc-workspace/src/lib/activity-confirmation.ts`
+  - Apoio do agente aos dados e evidências ainda em falta.
+
+- `dmc-workspace/src/lib/proposal-budget.ts` e `dmc-workspace/src/lib/itinerary-pdf.ts`
+  - Diagnóstico de preços, controlo de qualidade e validação antes da exportação.
+
+- `dmc-workspace/src/app/api/shares/route.ts`
+  - Preparação assistida e supervisionada da comunicação com o cliente.
+
 ## Novos módulos recomendados
 
 - `src/lib/assistant-actions.ts`
@@ -702,7 +726,10 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - `src/lib/feedback-store.ts`
 - `src/lib/catalog-quality.ts`
 - `src/lib/historical-cases.ts`
+- `src/lib/proposal-diagnostics.ts`
+- `src/lib/export-quality.ts`
 - `src/components/AssistantActionPreview.tsx`
+- `src/components/AssistantDiagnostics.tsx`
 - `src/components/PostTripFeedback.tsx`
 - `src/app/feedback/[tripId]/page.tsx`
 - `src/app/api/feedback/route.ts`
@@ -741,6 +768,10 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - Testes de feedback completo.
 - Testes de alertas e tendências.
 - Testes de preservação histórica.
+- Testes de diagnóstico, alternativas e comandos compostos.
+- Testes do modo de simulação e do resumo entre versões.
+- Testes de controlo de qualidade antes da exportação.
+- Testes da preparação de comunicações sem envio automático.
 - Testes do fallback quando Bedrock está indisponível.
 - Testes ponta a ponta: pedido → proposta → aprovação → versão.
 
@@ -759,4 +790,4 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 9. **Migrar a persistência para uma base central antes de utilização multiutilizador em produção.**
 10. **Manter itinerários e PDFs históricos imutáveis.**
 
-A primeira entrega deve abranger as **Fases 0 e 1**. Isso transforma o Blu num agente realmente útil sem comprometer catálogo, confirmações, versões ou supervisão humana.
+A primeira entrega deve abranger as **Fases 0 e 1**. Isso transforma o Blu num agente realmente útil sem comprometer catálogo, confirmações, versões ou supervisão humana. Todas as fases seguintes fazem parte do âmbito de implementação aprovado neste plano e devem manter a pré-visualização e a confirmação do trabalhador antes de alterar itinerários, catálogo, preços ou estados.
