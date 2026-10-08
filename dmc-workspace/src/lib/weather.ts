@@ -37,33 +37,147 @@ export type DayWeatherResult =
 
 export const WMO_WEATHER_MAP: Record<number, WeatherCondition> = {
   0: { code: 0, labelPt: "Céu limpo", labelEn: "Clear sky", icon: "☀️", isRainy: false },
-  1: { code: 1, labelPt: "Predominantemente limpo", labelEn: "Mainly clear", icon: "🌤️", isRainy: false },
-  2: { code: 2, labelPt: "Parcialmente nublado", labelEn: "Partly cloudy", icon: "⛅", isRainy: false },
+  1: {
+    code: 1,
+    labelPt: "Predominantemente limpo",
+    labelEn: "Mainly clear",
+    icon: "🌤️",
+    isRainy: false,
+  },
+  2: {
+    code: 2,
+    labelPt: "Parcialmente nublado",
+    labelEn: "Partly cloudy",
+    icon: "⛅",
+    isRainy: false,
+  },
   3: { code: 3, labelPt: "Encoberto", labelEn: "Overcast", icon: "☁️", isRainy: false },
   45: { code: 45, labelPt: "Nevoeiro", labelEn: "Fog", icon: "🌫️", isRainy: false },
-  48: { code: 48, labelPt: "Nevoeiro com geada", labelEn: "Depositing rime fog", icon: "🌫️", isRainy: false },
-  51: { code: 51, labelPt: "Chuvisco ligeiro", labelEn: "Light drizzle", icon: "🌦️", isRainy: true },
-  53: { code: 53, labelPt: "Chuvisco moderado", labelEn: "Moderate drizzle", icon: "🌦️", isRainy: true },
+  48: {
+    code: 48,
+    labelPt: "Nevoeiro com geada",
+    labelEn: "Depositing rime fog",
+    icon: "🌫️",
+    isRainy: false,
+  },
+  51: {
+    code: 51,
+    labelPt: "Chuvisco ligeiro",
+    labelEn: "Light drizzle",
+    icon: "🌦️",
+    isRainy: true,
+  },
+  53: {
+    code: 53,
+    labelPt: "Chuvisco moderado",
+    labelEn: "Moderate drizzle",
+    icon: "🌦️",
+    isRainy: true,
+  },
   55: { code: 55, labelPt: "Chuvisco denso", labelEn: "Dense drizzle", icon: "🌧️", isRainy: true },
-  56: { code: 56, labelPt: "Chuvisco gelado ligeiro", labelEn: "Light freezing drizzle", icon: "🌧️", isRainy: true },
-  57: { code: 57, labelPt: "Chuvisco gelado denso", labelEn: "Dense freezing drizzle", icon: "🌧️", isRainy: true },
+  56: {
+    code: 56,
+    labelPt: "Chuvisco gelado ligeiro",
+    labelEn: "Light freezing drizzle",
+    icon: "🌧️",
+    isRainy: true,
+  },
+  57: {
+    code: 57,
+    labelPt: "Chuvisco gelado denso",
+    labelEn: "Dense freezing drizzle",
+    icon: "🌧️",
+    isRainy: true,
+  },
   61: { code: 61, labelPt: "Chuva fraca", labelEn: "Slight rain", icon: "🌧️", isRainy: true },
   63: { code: 63, labelPt: "Chuva moderada", labelEn: "Moderate rain", icon: "🌧️", isRainy: true },
   65: { code: 65, labelPt: "Chuva forte", labelEn: "Heavy rain", icon: "🌧️", isRainy: true },
-  66: { code: 66, labelPt: "Chuva gelada fraca", labelEn: "Light freezing rain", icon: "🌧️", isRainy: true },
-  67: { code: 67, labelPt: "Chuva gelada forte", labelEn: "Heavy freezing rain", icon: "🌧️", isRainy: true },
-  71: { code: 71, labelPt: "Queda de neve fraca", labelEn: "Slight snow", icon: "🌨️", isRainy: false },
-  73: { code: 73, labelPt: "Queda de neve moderada", labelEn: "Moderate snow", icon: "🌨️", isRainy: false },
-  75: { code: 75, labelPt: "Queda de neve forte", labelEn: "Heavy snow", icon: "🌨️", isRainy: false },
+  66: {
+    code: 66,
+    labelPt: "Chuva gelada fraca",
+    labelEn: "Light freezing rain",
+    icon: "🌧️",
+    isRainy: true,
+  },
+  67: {
+    code: 67,
+    labelPt: "Chuva gelada forte",
+    labelEn: "Heavy freezing rain",
+    icon: "🌧️",
+    isRainy: true,
+  },
+  71: {
+    code: 71,
+    labelPt: "Queda de neve fraca",
+    labelEn: "Slight snow",
+    icon: "🌨️",
+    isRainy: false,
+  },
+  73: {
+    code: 73,
+    labelPt: "Queda de neve moderada",
+    labelEn: "Moderate snow",
+    icon: "🌨️",
+    isRainy: false,
+  },
+  75: {
+    code: 75,
+    labelPt: "Queda de neve forte",
+    labelEn: "Heavy snow",
+    icon: "🌨️",
+    isRainy: false,
+  },
   77: { code: 77, labelPt: "Grãos de neve", labelEn: "Snow grains", icon: "🌨️", isRainy: false },
-  80: { code: 80, labelPt: "Aguaceiros fracos", labelEn: "Slight rain showers", icon: "🌦️", isRainy: true },
-  81: { code: 81, labelPt: "Aguaceiros moderados", labelEn: "Moderate rain showers", icon: "🌧️", isRainy: true },
-  82: { code: 82, labelPt: "Aguaceiros violentos", labelEn: "Violent rain showers", icon: "⛈️", isRainy: true },
-  85: { code: 85, labelPt: "Aguaceiros de neve fracos", labelEn: "Slight snow showers", icon: "🌨️", isRainy: false },
-  86: { code: 86, labelPt: "Aguaceiros de neve fortes", labelEn: "Heavy snow showers", icon: "🌨️", isRainy: false },
+  80: {
+    code: 80,
+    labelPt: "Aguaceiros fracos",
+    labelEn: "Slight rain showers",
+    icon: "🌦️",
+    isRainy: true,
+  },
+  81: {
+    code: 81,
+    labelPt: "Aguaceiros moderados",
+    labelEn: "Moderate rain showers",
+    icon: "🌧️",
+    isRainy: true,
+  },
+  82: {
+    code: 82,
+    labelPt: "Aguaceiros violentos",
+    labelEn: "Violent rain showers",
+    icon: "⛈️",
+    isRainy: true,
+  },
+  85: {
+    code: 85,
+    labelPt: "Aguaceiros de neve fracos",
+    labelEn: "Slight snow showers",
+    icon: "🌨️",
+    isRainy: false,
+  },
+  86: {
+    code: 86,
+    labelPt: "Aguaceiros de neve fortes",
+    labelEn: "Heavy snow showers",
+    icon: "🌨️",
+    isRainy: false,
+  },
   95: { code: 95, labelPt: "Trovoada", labelEn: "Thunderstorm", icon: "⛈️", isRainy: true },
-  96: { code: 96, labelPt: "Trovoada com granizo", labelEn: "Thunderstorm with slight hail", icon: "⛈️", isRainy: true },
-  99: { code: 99, labelPt: "Trovoada com granizo forte", labelEn: "Thunderstorm with heavy hail", icon: "⛈️", isRainy: true },
+  96: {
+    code: 96,
+    labelPt: "Trovoada com granizo",
+    labelEn: "Thunderstorm with slight hail",
+    icon: "⛈️",
+    isRainy: true,
+  },
+  99: {
+    code: 99,
+    labelPt: "Trovoada com granizo forte",
+    labelEn: "Thunderstorm with heavy hail",
+    icon: "⛈️",
+    isRainy: true,
+  },
 };
 
 export const PORTUGAL_REGION_COORDINATES: Record<string, { lat: number; lon: number }> = {
@@ -135,7 +249,10 @@ export function resolveCoordinatesForDay(
   return PORTUGAL_REGION_COORDINATES.lisboa;
 }
 
-export function getHistoricalFallbackDate(dateStr: string): { targetDate: string; refYear: number } {
+export function getHistoricalFallbackDate(dateStr: string): {
+  targetDate: string;
+  refYear: number;
+} {
   const parts = dateStr.split("-");
   const month = parts[1] || "10";
   const day = parts[2] || "01";

@@ -54,7 +54,6 @@ interface CatalogEntry {
 export const AddPoiModal: React.FC<AddPoiModalProps> = ({
   isOpen,
   dayNumber,
-  dayDate,
   dayLocation,
   dayCapacity,
   currentItems,
@@ -432,14 +431,19 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
                       <Button
                         variant="primaryDark"
                         size="sm"
-                        onClick={() => {
-                          onAddPoi(`${rec.category}:${rec.id}`);
-                          onClose();
-                        }}
+                        disabled={submittingTitle !== null}
+                        onClick={() => handleAddPoi(`${rec.category}:${rec.id}`)}
                         className="text-xs h-8 gap-1.5"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <T text="Adicionar ao Dia" source="pt" />
+                        <T
+                          text={
+                            submittingTitle === `${rec.category}:${rec.id}`
+                              ? "A adicionar…"
+                              : "Adicionar ao Dia"
+                          }
+                          source="pt"
+                        />
                       </Button>
                     )}
                   </div>

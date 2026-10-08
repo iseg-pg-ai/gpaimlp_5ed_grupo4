@@ -10,9 +10,7 @@ import {
 } from "../src/lib/weather.ts";
 
 test("resolveCoordinatesForDay prioritizes item coordinates when present", () => {
-  const coords = resolveCoordinatesForDay("Lisboa", [
-    { latitude: 41.1579, longitude: -8.6291 },
-  ]);
+  const coords = resolveCoordinatesForDay("Lisboa", [{ latitude: 41.1579, longitude: -8.6291 }]);
   assert.equal(coords.lat, 41.1579);
   assert.equal(coords.lon, -8.6291);
 });
