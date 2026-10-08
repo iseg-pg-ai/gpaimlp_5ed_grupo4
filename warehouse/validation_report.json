@@ -29,11 +29,8 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 99.87,
-      "missing_values_by_column": {
-        "latitude": 1,
-        "longitude": 1
-      }
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
     },
     "experiencias": {
       "record_count": 60,

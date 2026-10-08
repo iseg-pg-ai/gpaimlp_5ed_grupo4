@@ -3,9 +3,9 @@
     "attractions": 138,
     "restaurants": 54,
     "experiences": 60,
-    "distinct_cities": 34,
+    "distinct_cities": 33,
     "records_by_city": {
-      "Lisboa": 94,
+      "Lisboa": 95,
       "Porto": 21,
       "Sintra": 14,
       "Braga": 6,
@@ -35,7 +35,6 @@
       "Lamego": 1,
       "Sanfins do Douro": 1,
       "Nafarros (Sintra)": 1,
-      "Por confirmar": 1,
       "Azenhas do Mar (Sintra)": 1,
       "Azóia (Sintra)": 1,
       "Batalha": 1
@@ -134,7 +133,7 @@
     "table_completeness_pct": {
       "data_request": 95.42,
       "atracoes": 100.0,
-      "restaurantes": 99.87,
+      "restaurantes": 100.0,
       "experiencias": 100.0,
       "curation_principles": 100.0,
       "curation_rules": 100.0,
