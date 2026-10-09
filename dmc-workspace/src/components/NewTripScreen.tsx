@@ -80,6 +80,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
       return;
     }
     try {
+      if (!brief.customerEmail?.trim()) throw new Error("Indique o email do cliente.");
       validateBrief(brief);
       onGenerate(brief);
     } catch (error) {
@@ -162,6 +163,20 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                       value={brief.customerName}
                       onChange={(e) => setBrief({ ...brief, customerName: e.target.value })}
                       placeholder="e.g. Sarah & James"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                      <T text="Email do cliente" source="pt" />
+                    </label>
+                    <LocalizedInput
+                      type="email"
+                      required
+                      value={brief.customerEmail ?? ""}
+                      onChange={(e) => setBrief({ ...brief, customerEmail: e.target.value })}
+                      placeholder="cliente@example.com"
+                      autoComplete="email"
                     />
                   </div>
 
@@ -870,6 +885,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
 const reviewLabels: Record<string, string> = {
   customerName: "Cliente",
+  customerEmail: "Email do cliente",
   adults: "Adultos",
   children: "Crianças",
   childrenAges: "Idades das crianças",

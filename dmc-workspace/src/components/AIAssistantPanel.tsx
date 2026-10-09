@@ -40,9 +40,10 @@ interface AIAssistantPanelProps {
 
 const suggestionChips = [
   "Ajuda",
+  "Recomenda alternativas para chuva",
+  "Sugerir restaurante sem glúten",
   "Reagendar atividade 1 do dia 1 para 14:00",
-  "Reorganizar dia 1 na ordem 2,1",
-  "Remover última atividade do dia 1",
+  "Otimizar rota do dia 1",
 ];
 
 export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
@@ -106,7 +107,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             </h3>
           </div>
           <p className="text-xs text-[#4A636B] mt-0.5">
-            <T text="Comandos de curadoria · sem modelo de IA" source="pt" />{" "}
+            <T text="Agente de IA · LangChain & Bedrock" source="pt" />{" "}
           </p>
         </div>
 

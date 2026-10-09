@@ -1,6 +1,6 @@
 {
   "pipeline": "blu-local-etl",
-  "ran_at_utc": "2026-09-28T21:39:38.724536+00:00",
+  "ran_at_utc": "2026-10-05T20:18:05.578038+00:00",
   "input_directory": "data",
   "workbook": "data/Requisitos informações Alunos ISEG.xlsx",
   "source": {
@@ -330,6 +330,12 @@
         "role": "catalog_workbook",
         "size_bytes": 116032,
         "sha256": "a35eb3b53732612139c4a0a11798ca8039462d68b25d5f6db8faf9462fa2e7d5"
+      },
+      {
+        "key": "portal/catalog.sqlite",
+        "role": "portal_catalog",
+        "records": 252,
+        "snapshot_sha256": "5f19cf37bae5585b77f2b86d409f48a3e4978c862aaacd0d1c157fd47d6c0fe3"
       }
     ]
   },

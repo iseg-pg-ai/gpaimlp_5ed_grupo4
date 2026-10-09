@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 import requests
@@ -11,6 +11,9 @@ import requests
 load_dotenv()
 
 Location = Union[Tuple[float, float], str]
+
+# In-memory cache for geocoded queries
+_GEOCODE_CACHE: Dict[str, Tuple[float, float, str]] = {}
 
 
 @dataclass
@@ -25,6 +28,137 @@ class TravelTimeResult:
     raw_status: str
     origin_address: Optional[str] = None
     destination_address: Optional[str] = None
+
+
+def format_seconds(total_seconds: int) -> tuple[int, int, int]:
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return hours, minutes, seconds
+
+
+def _human_duration(seconds: int) -> str:
+    h, m, _ = format_seconds(seconds)
+    if h > 0:
+        return f"{h} hour{'s' if h > 1 else ''} {m} min{'s' if m != 1 else ''}".strip()
+    return f"{m} min{'s' if m != 1 else ''}"
+
+
+def geocode_location(
+    location: Location, timeout_seconds: int = 8
+) -> Tuple[float, float, Optional[str]]:
+    """Resolves a Location (coordinate tuple or text address) into (latitude, longitude, resolved_address).
+
+    Uses OpenStreetMap Nominatim for address geocoding (free, keyless).
+    """
+    if isinstance(location, (tuple, list)) and len(location) == 2:
+        lat, lng = float(location[0]), float(location[1])
+        return lat, lng, None
+
+    if isinstance(location, str):
+        cleaned = location.strip()
+        if not cleaned:
+            raise ValueError("Location string cannot be empty.")
+
+        if cleaned in _GEOCODE_CACHE:
+            return _GEOCODE_CACHE[cleaned]
+
+        url = "https://nominatim.openstreetmap.org/search"
+        headers = {"User-Agent": "ISEG-PG-AppliedAI-Itinerary/1.0"}
+        params = {"q": cleaned, "format": "json", "limit": 1}
+
+        try:
+            resp = requests.get(url, params=params, headers=headers, timeout=timeout_seconds)
+            resp.raise_for_status()
+            data = resp.json()
+            if data and len(data) > 0:
+                lat = float(data[0]["lat"])
+                lng = float(data[0]["lon"])
+                display_name = data[0].get("display_name", cleaned)
+                _GEOCODE_CACHE[cleaned] = (lat, lng, display_name)
+                return lat, lng, display_name
+        except Exception as e:
+            raise ValueError(f"Failed to geocode address '{cleaned}' via Nominatim: {e}")
+
+        raise ValueError(f"Could not find coordinates for address: '{cleaned}'")
+
+    raise ValueError(f"Invalid location format: {location!r}")
+
+
+def get_driving_time_osrm(
+    origin: Location,
+    destination: Location,
+    timeout_seconds: int = 15,
+) -> TravelTimeResult:
+    """Calculates driving distance and travel duration using OSRM (Open Source Routing Machine).
+
+    Works with coordinates (lat, lng) or text addresses (geocoded via Nominatim).
+    Requires no API keys.
+    """
+    lat1, lon1, orig_addr = geocode_location(origin, timeout_seconds=timeout_seconds)
+    lat2, lon2, dest_addr = geocode_location(destination, timeout_seconds=timeout_seconds)
+
+    # OSRM coordinate format: {longitude},{latitude}
+    url = f"http://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=false"
+
+    resp = requests.get(url, timeout=timeout_seconds)
+    resp.raise_for_status()
+    data = resp.json()
+
+    if data.get("code") != "Ok" or not data.get("routes"):
+        raise ValueError(f"OSRM routing failed: code={data.get('code')}")
+
+    route = data["routes"][0]
+    dist_meters = int(round(route["distance"]))
+    dur_seconds = int(round(route["duration"]))
+
+    return TravelTimeResult(
+        origin=origin,
+        destination=destination,
+        distance_meters=dist_meters,
+        duration_seconds=dur_seconds,
+        duration_in_traffic_seconds=None,
+        duration_text=_human_duration(dur_seconds),
+        duration_in_traffic_text=None,
+        raw_status="OK",
+        origin_address=orig_addr or (f"{lat1:.5f}, {lon1:.5f}"),
+        destination_address=dest_addr or (f"{lat2:.5f}, {lon2:.5f}"),
+    )
+
+
+def get_travel_time_matrix_osrm(
+    locations: List[Location],
+    timeout_seconds: int = 25,
+) -> Dict[str, Union[List[List[float]], List[Dict]]]:
+    """Calculates NxN travel duration and distance matrix for a list of locations in a single API call.
+
+    Returns:
+        dict with:
+            'durations_seconds': 2D list of seconds
+            'distances_meters': 2D list of meters
+            'locations': list of resolved locations
+    """
+    coords = []
+    resolved_info = []
+    for loc in locations:
+        lat, lon, addr = geocode_location(loc, timeout_seconds=timeout_seconds)
+        coords.append(f"{lon},{lat}")
+        resolved_info.append({"input": loc, "latitude": lat, "longitude": lon, "address": addr})
+
+    coords_str = ";".join(coords)
+    url = f"http://router.project-osrm.org/table/v1/driving/{coords_str}?annotations=duration,distance"
+
+    resp = requests.get(url, timeout=timeout_seconds)
+    resp.raise_for_status()
+    data = resp.json()
+
+    if data.get("code") != "Ok":
+        raise ValueError(f"OSRM table request failed: code={data.get('code')}")
+
+    return {
+        "durations_seconds": data.get("durations", []),
+        "distances_meters": data.get("distances", []),
+        "locations": resolved_info,
+    }
 
 
 def _format_location(location: Location) -> str:
@@ -55,13 +189,13 @@ def get_driving_time_google_distance_matrix(
 ) -> TravelTimeResult:
     """Calculate driving distance and duration using Google Maps Distance Matrix API.
 
-    Supports both text addresses (e.g. "Lisboa, Portugal") and coordinate tuples (lat, lng).
+    Falls back automatically to free OSRM if no valid Google Maps API key is configured.
     """
     key = api_key or os.getenv("GOOGLE_MAPS_API_KEY")
-    if not key:
-        raise ValueError(
-            "API key must be provided or set in the GOOGLE_MAPS_API_KEY environment variable."
-        )
+
+    # If no key or placeholder key, seamlessly fall back to OSRM
+    if not key or key in {"111111111", "YOUR_API_KEY", ""}:
+        return get_driving_time_osrm(origin, destination, timeout_seconds=timeout_seconds)
 
     formatted_origin = _format_location(origin)
     formatted_destination = _format_location(destination)
@@ -138,50 +272,49 @@ def get_driving_time_google_distance_matrix(
     )
 
 
+# General alias
+get_driving_time = get_driving_time_osrm
+
+
 def best_duration(result: TravelTimeResult) -> int:
     if result.duration_in_traffic_seconds is not None:
         return result.duration_in_traffic_seconds
     return result.duration_seconds
 
 
-def format_seconds(total_seconds: int) -> tuple[int, int, int]:
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return hours, minutes, seconds
-
-
 if __name__ == "__main__":
-    # ---------------------------------------------
-    # Example 1: Using text addresses
-    # ---------------------------------------------
-    dt_local = datetime(2026, 9, 19, 14, 0, 0, tzinfo=ZoneInfo("Europe/Lisbon"))
+    print("=" * 70)
+    print("📍 TESTANDO CÁLCULO DE DISTÂNCIA E TEMPO COM OSRM (OPEN SOURCE)")
+    print("=" * 70)
 
-    print("Example usage with text addresses:")
-    try:
-        result = get_driving_time_google_distance_matrix(
-            origin="Praça do Comércio, Lisboa",
-            destination="Avenida dos Aliados, Porto",
-            departure_time=dt_local,
-            api_key=os.getenv("GOOGLE_MAPS_API_KEY", "111111111"),
-        )
-        secs = best_duration(result)
-        h, m, s = format_seconds(secs)
-        print(f"From: {result.origin_address or result.origin}")
-        print(f"To: {result.destination_address or result.destination}")
-        print(f"Distance: {result.distance_meters / 1000:.1f} km ({result.distance_meters} m)")
-        print(f"Duration: {h}h {m}m {s}s ({result.duration_text})")
-        if result.duration_in_traffic_text:
-            print(f"Duration in traffic: {result.duration_in_traffic_text}")
-    except Exception as e:
-        print(f"API Call Example Output: {e}")
+    # Example 1: Text addresses
+    print("\n1. Teste com Moradas de Texto (Geocodificação Automática):")
+    res1 = get_driving_time_osrm(
+        origin="Praça do Comércio, Lisboa",
+        destination="Avenida dos Aliados, Porto",
+    )
+    h, m, s = format_seconds(res1.duration_seconds)
+    print(f"  • Origem:     {res1.origin_address}")
+    print(f"  • Destino:    {res1.destination_address}")
+    print(f"  • Distância:  {res1.distance_meters / 1000:.1f} km")
+    print(f"  • Duração:    {h}h {m}m ({res1.duration_text})")
 
-    # ---------------------------------------------
-    # Example 2: Coordinates still work seamlessly!
-    # ---------------------------------------------
-    # result_coords = get_driving_time_google_distance_matrix(
-    #     origin=(38.7223, -9.1393),
-    #     destination=(41.1579, -8.6291),
-    #     departure_time=dt_local,
-    #     api_key=os.getenv("GOOGLE_MAPS_API_KEY", "111111111"),
-    # )
+    # Example 2: GPS coordinates
+    print("\n2. Teste com Coordenadas GPS (Castelo de São Jorge -> Belém):")
+    res2 = get_driving_time_osrm(
+        origin=(38.7139, -9.1335),
+        destination=(38.6916, -9.2160),
+    )
+    print(f"  • Distância:  {res2.distance_meters / 1000:.2f} km")
+    print(f"  • Duração:    {res2.duration_text}")
 
+    # Example 3: Matriz NxN em 1 única chamada
+    print("\n3. Teste de Matriz NxN (3 locais em 1 chamada de rede):")
+    locs = [
+        (38.7139, -9.1335),  # Castelo
+        (38.7224, -9.1352),  # Ramiro
+        (38.6916, -9.2160),  # Belém
+    ]
+    matrix = get_travel_time_matrix_osrm(locs)
+    durations_min = [[round(sec / 60, 1) for sec in row] for row in matrix["durations_seconds"]]
+    print("  • Matriz de tempos (em minutos):", durations_min)

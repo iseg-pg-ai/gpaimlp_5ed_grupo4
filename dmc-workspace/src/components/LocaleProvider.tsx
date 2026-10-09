@@ -215,13 +215,19 @@ export function ExportLanguageLinks({ tripId, version }: { tripId: string; versi
   const [language, setLanguage] = useState<Locale>("en");
   return (
     <div className="flex flex-wrap items-center gap-3 my-3">
-      <T text="Idioma do cliente (PDF)" source="pt" />
+      <T text="Idioma do cliente" source="pt" />
       <LanguagePicker value={language} onChange={setLanguage} />
       <a
         className="underline"
         href={`/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=bundle&locale=${language}`}
       >
         <T text="Descarregar PDFs" source="pt" />
+      </a>
+      <a
+        className="underline"
+        href={`/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=prompt&locale=${language}`}
+      >
+        <T text="TXT para Canva" source="pt" />
       </a>
     </div>
   );
