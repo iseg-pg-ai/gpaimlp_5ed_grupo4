@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 const browser = await chromium.launch({
   headless: true,
-  channel: process.env.BROWSER_CHANNEL || "msedge",
+  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
 });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -15,6 +15,8 @@ try {
     notes: "",
     accommodation: "Boutique",
     diningPace: "Relaxed Dining (~90m)",
+    startDate: "2099-10-10",
+    endDate: "2099-10-11",
   });
   const trip = { ...snapshot, id: "trash-browser", version: 1, messages: [] };
   await page.addInitScript((saved) => {

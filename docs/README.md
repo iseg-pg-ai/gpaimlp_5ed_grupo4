@@ -7,6 +7,7 @@
 | [README principal](../README.md) | Visão geral, requisitos, instalação e arranque rápido. |
 | [DMC Workspace](PORTAL.md) | Utilização do portal, arquitetura, exportação e testes. |
 | [Deployment e teste na AWS](AWS_PORTAL_TESTING.md) | Publicação do portal, validação dos assets JavaScript e recolha de feedback. |
+| [Validação e correções AWS](AWS_VALIDATION.md) | Resultados atuais dos testes de integração, agente, PDFs e navegação no SageMaker. |
 | [Estado das funcionalidades](STATUS.md) | Funcionalidades integradas, disponíveis em branches e pendentes. |
 | [ETL](../README_ETL.md) | Contrato de entrada, transformação, validação e outputs. |
 | [Automação](../AUTOMATION.md) | Execução completa, CI e resolução de problemas. |

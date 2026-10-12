@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 const browser = await chromium.launch({
   headless: true,
-  channel: process.env.BROWSER_CHANNEL || "msedge",
+  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
 });
 try {
   const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
@@ -49,8 +49,9 @@ try {
     .filter({ hasText: snapshot.brief.customerName })
     .click();
   await page
-    .getByRole("button", { name: "Remover última atividade do dia 1", exact: true })
-    .click();
+    .getByRole("textbox", { name: "Mensagem para o assistente" })
+    .fill("Remover última atividade do dia 1");
+  await page.getByRole("textbox", { name: "Mensagem para o assistente" }).press("Enter");
   await page.waitForFunction(
     () => JSON.parse(localStorage.getItem("blu-trips-v1"))[0].version === 2,
   );

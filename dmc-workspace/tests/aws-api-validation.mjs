@@ -86,29 +86,51 @@ for (const target of ["en", "es", "fr", "de", "zh"]) {
     return data.texts[0];
   });
 }
-await check("English PDF export", async () => {
-  const r = await request(`/api/versions?tripId=${tripId}&version=1&format=pdf&locale=en`);
-  const bytes = Buffer.from(await r.arrayBuffer());
-  assert.equal(r.status, 200, bytes.toString().slice(0, 300));
-  assert.equal(bytes.subarray(0, 4).toString(), "%PDF");
-  return `${bytes.length} bytes`;
-});
-await check("Public proposal share URL and document", async () => {
-  const r = await request("/api/shares", {
-    tripId,
-    version: 1,
-    locale: "pt",
-    method: "document",
-    recipient: "validation@example.com",
+for (const locale of ["en", "zh"])
+  await check(`${locale} PDF export`, async () => {
+    const r = await request(`/api/versions?tripId=${tripId}&version=1&format=pdf&locale=${locale}`);
+    const bytes = Buffer.from(await r.arrayBuffer());
+    assert.equal(r.status, 200, bytes.toString().slice(0, 300));
+    assert.equal(bytes.subarray(0, 4).toString(), "%PDF");
+    return `${bytes.length} bytes`;
   });
-  const data = await r.json();
-  assert.equal(r.status, 201, JSON.stringify(data));
-  const url = new URL(data.shareUrl);
-  const prefix = new URL(base).pathname;
-  assert.ok(url.pathname.startsWith(`${prefix}/api/shares/`));
-  const document = await fetch(`${new URL(base).origin}${url.pathname}`);
-  assert.equal(document.status, 200);
-  assert.equal(url.origin, publicOrigin, `Generated share URL has incorrect origin: ${url.origin}`);
+for (const method of ["document", "link"])
+  await check(`Public proposal ${method} share URL`, async () => {
+    const r = await request("/api/shares", {
+      tripId,
+      version: 1,
+      locale: "pt",
+      method,
+      recipient: "validation@example.com",
+    });
+    const data = await r.json();
+    assert.equal(r.status, 201, JSON.stringify(data));
+    const url = new URL(data.shareUrl);
+    const prefix = new URL(base).pathname;
+    assert.ok(
+      url.pathname.startsWith(`${prefix}${method === "document" ? "/api/shares/" : "/share/"}`),
+    );
+    const document = await fetch(`${new URL(base).origin}${url.pathname}`);
+    assert.equal(document.status, 200);
+    assert.equal(
+      url.origin,
+      publicOrigin,
+      `Generated share URL has incorrect origin: ${url.origin}`,
+    );
+  });
+await check("Catalog POST accepts Studio origin and rejects foreign origins", async () => {
+  for (const [origin, status] of [
+    [publicOrigin, 400],
+    ["https://foreign.example.test", 403],
+  ]) {
+    const r = await fetch(`${base}/api/catalog`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: origin },
+      body: "{}",
+      signal: AbortSignal.timeout(10000),
+    });
+    assert.equal(r.status, status);
+  }
 });
 await check("Version trash and restore", async () => {
   for (const action of ["trash", "restore"]) {
@@ -125,6 +147,7 @@ await check("AI agent service", async () => {
   const r = await fetch("http://127.0.0.1:8000/docs", { signal: AbortSignal.timeout(5000) });
   assert.equal(r.status, 200);
 });
+process.exitCode = results.some((result) => !result.ok) ? 1 : 0;
 console.log(
   `Passed ${results.filter((r) => r.ok).length}/${results.length} real integration checks`,
 );
