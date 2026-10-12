@@ -1,3 +1,4 @@
+import { portalFetch } from "@/lib/portal-url";
 import {
   LAST_TRASH_CLEANUP_STORAGE,
   TRASH_CLEANUP_INTERVAL_MS,
@@ -25,7 +26,7 @@ export async function runScheduledTrashCleanup(force = false) {
   const trash = readTripTrash(localStorage.getItem(TRASH_STORAGE));
   const today = new Date().toLocaleDateString("sv-SE");
   const candidates = expiredTrashTripIds(trash, today);
-  const response = await fetch("/api/trash/cleanup", {
+  const response = await portalFetch("/api/trash/cleanup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ tripIds: candidates }),

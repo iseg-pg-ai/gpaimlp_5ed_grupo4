@@ -4,12 +4,10 @@ import { existsSync, mkdirSync, openSync, closeSync, unlinkSync } from "node:fs"
 import path from "node:path";
 import { projectRoot, catalogRoot } from "@/lib/catalog-store";
 import { jsonError } from "@/lib/api-response";
+import { publicOrigin } from "@/lib/public-url";
 export const runtime = "nodejs";
 export async function POST(request: Request) {
-  if (
-    request.headers.get("origin") &&
-    request.headers.get("origin") !== new URL(request.url).origin
-  )
+  if (request.headers.get("origin") && request.headers.get("origin") !== publicOrigin(request.url))
     return jsonError("Origem inválida.", 403);
   const root = projectRoot();
   mkdirSync(catalogRoot(), { recursive: true });

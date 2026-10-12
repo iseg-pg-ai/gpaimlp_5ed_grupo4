@@ -117,7 +117,10 @@ function DayCardHeader({
             </Badge>
           )}
           {isDayModified && (
-            <Badge variant="gold" className="gap-1 py-0.5 px-2 font-medium animate-in fade-in shrink-0">
+            <Badge
+              variant="gold"
+              className="gap-1 py-0.5 px-2 font-medium animate-in fade-in shrink-0"
+            >
               <Sparkles className="w-3 h-3 text-[#D8A65C]" />
               <span>
                 <T text="Updated" source="en" />
@@ -152,7 +155,9 @@ function DayCardHeader({
               >
                 −
               </button>
-              <span className={`font-semibold px-1 tabular-nums ${isFull ? "text-emerald-700" : ""}`}>
+              <span
+                className={`font-semibold px-1 tabular-nums ${isFull ? "text-emerald-700" : ""}`}
+              >
                 {poiCount}/{effectiveCapacity}
               </span>
               <button
@@ -219,7 +224,10 @@ function DayCardHeader({
                     <button
                       type="button"
                       disabled={saving}
-                      onClick={() => { onAddPoiToDay(); setMenuOpen(false); }}
+                      onClick={() => {
+                        onAddPoiToDay();
+                        setMenuOpen(false);
+                      }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#143F4B] hover:bg-[#F5F3EE] transition-colors disabled:opacity-40"
                     >
                       <Plus className="w-3.5 h-3.5 text-[#2D5B67] shrink-0" />
@@ -231,7 +239,10 @@ function DayCardHeader({
                     <button
                       type="button"
                       disabled={saving}
-                      onClick={() => { onAddFreePeriodToDay(); setMenuOpen(false); }}
+                      onClick={() => {
+                        onAddFreePeriodToDay();
+                        setMenuOpen(false);
+                      }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#765218] hover:bg-amber-50 transition-colors disabled:opacity-40"
                     >
                       <Sun className="w-3.5 h-3.5 text-[#D8A65C] shrink-0" />
@@ -243,7 +254,10 @@ function DayCardHeader({
                     <button
                       type="button"
                       disabled={saving}
-                      onClick={() => { onOptimizeDayRoute(); setMenuOpen(false); }}
+                      onClick={() => {
+                        onOptimizeDayRoute();
+                        setMenuOpen(false);
+                      }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#143F4B] hover:bg-[#F5F3EE] transition-colors disabled:opacity-40"
                     >
                       <Route className="w-3.5 h-3.5 text-[#D8A65C] shrink-0" />
@@ -550,7 +564,9 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
           const paceConfig = getTripPaceConfig(brief);
           const effectiveCapacity = day.dailyCapacity ?? paceConfig.defaultCapacity;
           const poiCount = day.items.filter((it) => it.category !== "free_time").length;
-          const isCustom = typeof day.dailyCapacity === "number" && day.dailyCapacity !== paceConfig.defaultCapacity;
+          const isCustom =
+            typeof day.dailyCapacity === "number" &&
+            day.dailyCapacity !== paceConfig.defaultCapacity;
           const isFull = poiCount >= effectiveCapacity;
           const availableSlots = Math.max(0, effectiveCapacity - poiCount);
           return (

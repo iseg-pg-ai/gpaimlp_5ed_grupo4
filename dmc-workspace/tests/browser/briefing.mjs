@@ -2,7 +2,7 @@ import { chromium } from "playwright";
 import assert from "node:assert/strict";
 const browser = await chromium.launch({
   headless: true,
-  channel: process.env.BROWSER_CHANNEL ?? "msedge",
+  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
 });
 try {
   for (const width of [360, 1440]) {

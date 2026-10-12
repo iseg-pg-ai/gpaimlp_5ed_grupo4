@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchDayWeather, type DayWeatherResult } from "@/lib/weather";
 import { useLocale } from "./LocaleProvider";
-import { ExternalLink, X, Info, CheckCircle2, AlertCircle } from "lucide-react";
+import { ExternalLink, X, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface DayWeatherBadgeProps {
   date: string;
@@ -13,37 +13,43 @@ interface DayWeatherBadgeProps {
 
 export function DayWeatherBadge({ date, location, items }: DayWeatherBadgeProps) {
   const { locale } = useLocale();
-  const [result, setResult] = useState<DayWeatherResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  const requestKey = `${date}|${location ?? ""}|${(items ?? [])
+    .map((item) => `${item.latitude ?? ""},${item.longitude ?? ""}`)
+    .join(";")}`;
+  const [weatherState, setWeatherState] = useState<{
+    requestKey: string;
+    result: DayWeatherResult;
+  } | null>(null);
+  const loading = weatherState?.requestKey !== requestKey;
+  const result = loading ? null : weatherState.result;
   const [open, setOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-
     fetchDayWeather({ date, location, items })
       .then((res) => {
         if (active) {
-          setResult(res);
-          setLoading(false);
+          setWeatherState({ requestKey, result: res });
         }
       })
       .catch(() => {
         if (active) {
-          setResult({
-            status: "unavailable",
-            messagePt: "Meteorologia indisponível",
-            messageEn: "Weather unavailable",
+          setWeatherState({
+            requestKey,
+            result: {
+              status: "unavailable",
+              messagePt: "Meteorologia indisponível",
+              messageEn: "Weather unavailable",
+            },
           });
-          setLoading(false);
         }
       });
 
     return () => {
       active = false;
     };
-  }, [date, location, items]);
+  }, [date, location, items, requestKey]);
 
   // Close on outside click
   useEffect(() => {
@@ -113,9 +119,7 @@ export function DayWeatherBadge({ date, location, items }: DayWeatherBadgeProps)
           {weather.maxTemp}° / {weather.minTemp}°C
         </span>
         {weather.isHistorical ? (
-          <span className="text-[10px] tracking-tight text-[#6A8288] font-normal">
-            (Hist.)
-          </span>
+          <span className="text-[10px] tracking-tight text-[#6A8288] font-normal">(Hist.)</span>
         ) : (
           weather.precipitationProbability !== undefined &&
           weather.precipitationProbability > 0 && (
@@ -144,9 +148,7 @@ export function DayWeatherBadge({ date, location, items }: DayWeatherBadgeProps)
                 {weather.icon}
               </span>
               <div>
-                <h3 className="font-semibold text-sm leading-tight text-[#143F4B]">
-                  {condition}
-                </h3>
+                <h3 className="font-semibold text-sm leading-tight text-[#143F4B]">{condition}</h3>
                 <p className="text-xs text-[#6A8288]">
                   {location || "Destino"} · {date}
                 </p>
@@ -179,8 +181,8 @@ export function DayWeatherBadge({ date, location, items }: DayWeatherBadgeProps)
                     ? "Recorded Rain"
                     : "Chuva Medida"
                   : isEn
-                  ? "Rain Chance"
-                  : "Prob. Chuva"}
+                    ? "Rain Chance"
+                    : "Prob. Chuva"}
               </span>
               <span className="font-semibold text-sm text-[#143F4B]">
                 {weather.isHistorical
@@ -228,7 +230,9 @@ export function DayWeatherBadge({ date, location, items }: DayWeatherBadgeProps)
               rel="noreferrer"
               className="flex items-center justify-between w-full px-2.5 py-1.5 text-xs rounded-md bg-[#FAF8F3] hover:bg-[#F2ECE1] text-[#143F4B] border border-[#DDD8CE] transition-colors"
             >
-              <span>{isEn ? "Verify API response (Open-Meteo)" : "Verificar dados da API (Open-Meteo)"}</span>
+              <span>
+                {isEn ? "Verify API response (Open-Meteo)" : "Verificar dados da API (Open-Meteo)"}
+              </span>
               <ExternalLink className="w-3.5 h-3.5 text-[#6A8288]" />
             </a>
 

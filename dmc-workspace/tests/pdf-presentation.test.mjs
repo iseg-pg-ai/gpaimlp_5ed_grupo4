@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, existsSync } from "node:fs";
-import { renderPdf } from "../src/lib/itinerary-pdf.ts";
+import { readFileSync } from "node:fs";
+import { renderPdf, resolveChineseFont } from "../src/lib/itinerary-pdf.ts";
 const snapshot = JSON.parse(
   readFileSync(new URL("./browser/fixture.json", import.meta.url), "utf8"),
 );
@@ -33,7 +33,10 @@ test("presentation retains identity, proposal status and day sequence in every l
       capture.map((text) => [text, locale === "pt" ? text : `${locale}: ${text} ${text}`]),
     );
     const result = await renderPdf(snapshot, meta, { locale, translations: translated });
-    assert.ok(result.length > 10000);
+    assert.equal(result.subarray(0, 5).toString("ascii"), "%PDF-");
+    const xref = /startxref\s+(\d+)\s+%%EOF/.exec(result.toString("latin1"));
+    assert.ok(xref, `Missing PDF cross-reference offset for ${locale}`);
+    assert.equal(result.subarray(Number(xref[1]), Number(xref[1]) + 4).toString(), "xref");
     assert.match(result.toString("latin1"), /%%EOF/);
   }
 });
@@ -49,15 +52,11 @@ test("long customer and activity descriptions paginate without changing the snap
   assert.match(result.toString("latin1"), /%%EOF/);
 });
 
-test(
-  "Mandarin uses the same layout with a CJK font",
-  { skip: !existsSync(process.env.BLU_PDF_CJK_FONT ?? "C:/Windows/Fonts/msyh.ttc") },
-  async () => {
-    const capture = [];
-    await renderPdf(snapshot, meta, { capture });
-    const translations = new Map(capture.map((t) => [t, "行程提案 · " + t]));
-    const bytes = await renderPdf(snapshot, meta, { locale: "zh", translations });
-    assert.ok(bytes.length > 10000);
-    assert.match(bytes.toString("latin1"), /%%EOF/);
-  },
-);
+test("Mandarin uses the same layout with a CJK font", { skip: !resolveChineseFont() }, async () => {
+  const capture = [];
+  await renderPdf(snapshot, meta, { capture });
+  const translations = new Map(capture.map((t) => [t, "行程提案 · " + t]));
+  const bytes = await renderPdf(snapshot, meta, { locale: "zh", translations });
+  assert.equal(bytes.subarray(0, 5).toString("ascii"), "%PDF-");
+  assert.match(bytes.toString("latin1"), /%%EOF/);
+});

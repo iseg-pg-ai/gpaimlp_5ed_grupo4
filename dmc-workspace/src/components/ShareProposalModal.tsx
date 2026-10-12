@@ -1,4 +1,5 @@
 "use client";
+import { portalFetch } from "@/lib/portal-url";
 
 import { useState } from "react";
 import { Copy, Mail, Share2, X } from "lucide-react";
@@ -57,7 +58,7 @@ export function ShareProposalModal({
     setError("");
     setResult(null);
     try {
-      const response = await fetch("/api/shares", {
+      const response = await portalFetch("/api/shares", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tripId, version, locale, method, recipient }),

@@ -201,6 +201,38 @@ npm test
 npm run build
 ```
 
+## Execução na AWS
+
+O portal é uma aplicação Next.js com rotas de servidor e não pode ser publicado
+como um conjunto de ficheiros estáticos num bucket S3. O diretório de trabalho
+tem de ser `dmc-workspace`, pois os dados operacionais são lidos nas pastas irmãs
+`warehouse`, `config`, `data` e `exports`.
+
+Numa máquina Linux com Node.js 22.13 a 24.x, executar a partir da raiz:
+
+```bash
+chmod +x scripts/start_portal.sh
+PORT=3001 ./scripts/start_portal.sh
+```
+
+O script instala as dependências, cria um build limpo, confirma que
+`.next/static` contém os assets JavaScript e inicia o servidor em `0.0.0.0`.
+Para reutilizar uma instalação ou build já validado, podem ser definidos
+`SKIP_INSTALL=true` e `SKIP_BUILD=true`.
+
+Para ECS, App Runner ou uma instância com Docker:
+
+```bash
+docker build -f Dockerfile.portal -t blu-dmc-portal .
+docker run --rm -p 3001:3001 --env-file .env blu-dmc-portal
+```
+
+O `Dockerfile.portal` copia o build completo, incluindo `.next/static`, e inicia
+o Next.js a partir da pasta correta. As pastas `data/portal` e `exports` devem ser
+associadas a armazenamento persistente em produção. Depois de cada deployment,
+qualquer cache do CloudFront para HTML deve ser invalidado para que não aponte
+para chunks de um build anterior.
+
 `npm run check` acrescenta `format:check` a estas verificações e deve terminar sem
 avisos antes de integrar alterações no portal.
 

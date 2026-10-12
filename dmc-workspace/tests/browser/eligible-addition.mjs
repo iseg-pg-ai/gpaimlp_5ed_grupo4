@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 const browser = await chromium.launch({
   headless: true,
-  channel: process.env.BROWSER_CHANNEL || "msedge",
+  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
 });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -102,21 +102,22 @@ try {
     .filter({ hasText: snapshot.brief.customerName });
   await tripButton.waitFor();
   await tripButton.click();
-  await page.getByTitle("Adicionar oferta do catálogo a este dia").first().click();
+  await page.getByRole("button", { name: "Ações do dia", exact: true }).first().click();
+  await page.getByRole("button", { name: "Adicionar Atividade", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByText("Experiência compatível", { exact: true }).waitFor();
   assert.equal(await dialog.getByText("Museu incompatível", { exact: true }).count(), 0);
   await dialog.getByRole("button", { name: /Adicionar ao Dia/i }).click();
+  await dialog.waitFor({ state: "hidden" });
   await page.getByText("Experiência compatível", { exact: true }).waitFor();
   assert.equal(eligibilityRequest.dayNumber, 1);
   assert.match(assistantRequest.input, /experiencias:cat-compatible0001/);
   assert.ok(assistantRequest.snapshot.itinerary[0].dailyCapacity >= 2);
-  assert.ok(
-    await page
-      .getByText(/12 min/)
-      .first()
-      .isVisible(),
-  );
+  await page
+    .getByText(/12 min/)
+    .filter({ visible: true })
+    .first()
+    .waitFor();
   console.log("Eligible addition: filtered catalog, atomic capacity and transit connector OK");
 } finally {
   await browser.close();
