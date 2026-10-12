@@ -1,4 +1,6 @@
 "use client";
+import { portalFetch } from "@/lib/portal-url";
+
 
 import React, { useState, useEffect, useMemo } from "react";
 import { T } from "@/components/LocaleProvider";
@@ -74,7 +76,7 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/catalog/eligible", {
+    portalFetch("/api/catalog/eligible", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ brief, itinerary, dayNumber }),

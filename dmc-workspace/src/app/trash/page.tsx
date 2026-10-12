@@ -1,4 +1,6 @@
 "use client";
+import { portalFetch } from "@/lib/portal-url";
+
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -31,7 +33,7 @@ export default function TrashPage() {
   const [cleanupMessage, setCleanupMessage] = useState("");
 
   const loadVersions = async () => {
-    const response = await fetch("/api/versions/trash", { cache: "no-store" });
+    const response = await portalFetch("/api/versions/trash", { cache: "no-store" });
     const result = (await response.json()) as VersionRecord[] | { error?: string };
     if (!response.ok || !Array.isArray(result))
       throw new Error(
@@ -103,7 +105,7 @@ export default function TrashPage() {
     if (!window.confirm(`Eliminar definitivamente ${subject}? Esta ação não pode ser anulada.`))
       return;
     try {
-      const response = await fetch("/api/trash/cleanup", {
+      const response = await portalFetch("/api/trash/cleanup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

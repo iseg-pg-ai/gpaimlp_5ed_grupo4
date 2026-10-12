@@ -1,4 +1,6 @@
 "use client";
+
+import { portalUrl } from "@/lib/portal-url";
 import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
@@ -160,7 +162,7 @@ export default function WorkspacePage() {
                           <div key={v.version} className="my-2 break-words">
                             <a
                               className="underline"
-                              href={`/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`}
+                              href={portalUrl(`/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`)}
                             >
                               {v.filename}
                             </a>

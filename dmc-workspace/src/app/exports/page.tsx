@@ -1,3 +1,5 @@
+
+import { portalUrl } from "@/lib/portal-url";
 import { T, ExportLanguageLinks } from "@/components/LocaleProvider";
 import Link from "next/link";
 import { VersionStore } from "@/lib/version-store";
@@ -69,7 +71,7 @@ export default function ExportHistory() {
             <ExportLanguageLinks tripId={v.tripId} version={v.version} />
             <a
               className="underline"
-              href={`/api/versions?tripId=${v.tripId}&version=${v.version}`}
+              href={portalUrl(`/api/versions?tripId=${v.tripId}&version=${v.version}`)}
               target="_blank"
             >
               <T text="Consultar conteúdo guardado" source="pt" />

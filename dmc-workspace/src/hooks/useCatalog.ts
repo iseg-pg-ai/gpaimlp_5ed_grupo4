@@ -1,4 +1,5 @@
 "use client";
+import { portalFetch } from "@/lib/portal-url";
 import { operationalFromSource } from "@/lib/catalog-operational";
 import { useEffect, useRef, useState } from "react";
 import { responseJson } from "@/lib/http-client";
@@ -26,12 +27,12 @@ export function useCatalog() {
   const editorRef = useRef<HTMLFormElement>(null);
   const historyRef = useRef<HTMLElement>(null);
   async function load() {
-    const data = await responseJson<Entry[]>(await fetch("/api/catalog", { cache: "no-store" }));
+    const data = await responseJson<Entry[]>(await portalFetch("/api/catalog", { cache: "no-store" }));
     setRecords(data);
   }
   useEffect(() => {
     let active = true;
-    fetch("/api/catalog", { cache: "no-store" })
+    portalFetch("/api/catalog", { cache: "no-store" })
       .then(responseJson<Entry[]>)
       .then((data) => {
         if (active) setRecords(data);
@@ -116,7 +117,7 @@ export function useCatalog() {
     setError("");
     setNotice("");
     try {
-      const response = await fetch("/api/catalog", {
+      const response = await portalFetch("/api/catalog", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -146,7 +147,7 @@ export function useCatalog() {
     try {
       setHistory(
         await responseJson<CatalogRecord[]>(
-          await fetch(`/api/catalog?id=${encodeURIComponent(record.id)}`),
+          await portalFetch(`/api/catalog?id=${encodeURIComponent(record.id)}`),
         ),
       );
       requestAnimationFrame(() => historyRef.current?.scrollIntoView({ block: "start" }));
@@ -164,7 +165,7 @@ export function useCatalog() {
     setError("");
     setNotice("");
     try {
-      await responseJson(await fetch("/api/catalog/publish", { method: "POST" }));
+      await responseJson(await portalFetch("/api/catalog/publish", { method: "POST" }));
       await load();
       setNotice(
         "Catálogo atualizado. Apenas as revisões aprovadas ficam disponíveis para novos roteiros.",

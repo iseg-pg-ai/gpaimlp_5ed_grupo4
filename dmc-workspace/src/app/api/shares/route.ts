@@ -1,3 +1,4 @@
+import { portalUrl } from "@/lib/portal-url";
 import { isLocale } from "@/lib/locales";
 import { jsonError, noStoreHeaders } from "@/lib/api-response";
 import { checkTripId, VersionStore, type ShareMethod } from "@/lib/version-store";
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
       share.method === "document" ? `/api/shares/${share.token}/document` : `/share/${share.token}`;
     return Response.json(
       {
-        shareUrl: `${origin}${path}`,
+        shareUrl: `${origin}${configuredOrigin ? path : portalUrl(path)}`,
         recipient: share.recipient,
         version: share.version,
         locale: share.locale,
