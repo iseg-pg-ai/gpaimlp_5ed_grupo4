@@ -1,4 +1,5 @@
 "use client";
+import { portalFetch } from "@/lib/portal-url";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { T } from "@/components/LocaleProvider";
@@ -74,7 +75,7 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/catalog/eligible", {
+    portalFetch("/api/catalog/eligible", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ brief, itinerary, dayNumber }),
@@ -431,12 +432,19 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
                       <Button
                         variant="primaryDark"
                         size="sm"
-                        onClick={() => handleAddPoi(`${rec.category}:${rec.id}`)}
                         disabled={submittingTitle !== null}
+                        onClick={() => handleAddPoi(`${rec.category}:${rec.id}`)}
                         className="text-xs h-8 gap-1.5"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <T text="Adicionar ao Dia" source="pt" />
+                        <T
+                          text={
+                            submittingTitle === `${rec.category}:${rec.id}`
+                              ? "A adicionar…"
+                              : "Adicionar ao Dia"
+                          }
+                          source="pt"
+                        />
                       </Button>
                     )}
                   </div>

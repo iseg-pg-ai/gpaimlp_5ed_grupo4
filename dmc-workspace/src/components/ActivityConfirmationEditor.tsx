@@ -1,4 +1,6 @@
 "use client";
+import { portalFetch } from "@/lib/portal-url";
+
 import { useEffect, useRef, useState } from "react";
 import type { ActivityItem } from "@/types";
 import {
@@ -42,7 +44,7 @@ export function ActivityConfirmationEditor({
       }
     });
     if (!activity.catalogDetails && !activity.confirmation) {
-      fetch(`/api/catalog/itinerary?id=${encodeURIComponent(activity.id)}`)
+      portalFetch(`/api/catalog/itinerary?id=${encodeURIComponent(activity.id)}`)
         .then(async (response) => (response.ok ? response.json() : null))
         .then((data) => {
           if (active && data) {

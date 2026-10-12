@@ -1,4 +1,8 @@
 "use client";
+import { portalFetch } from "@/lib/portal-url";
+
+import { portalUrl } from "@/lib/portal-url";
+
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { languages, isLocale, type Locale } from "@/lib/locales";
 import { Input } from "@/components/ui/input";
@@ -141,7 +145,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
         for (const target of languages.map((l) => l.code)) {
           const group = batch.filter(([, item]) => item.target === target);
           if (!group.length) continue;
-          fetch("/api/translate", {
+          portalFetch("/api/translate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -219,13 +223,17 @@ export function ExportLanguageLinks({ tripId, version }: { tripId: string; versi
       <LanguagePicker value={language} onChange={setLanguage} />
       <a
         className="underline"
-        href={`/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=bundle&locale=${language}`}
+        href={portalUrl(
+          `/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=bundle&locale=${language}`,
+        )}
       >
         <T text="Descarregar PDFs" source="pt" />
       </a>
       <a
         className="underline"
-        href={`/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=prompt&locale=${language}`}
+        href={portalUrl(
+          `/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=prompt&locale=${language}`,
+        )}
       >
         <T text="TXT para Canva" source="pt" />
       </a>

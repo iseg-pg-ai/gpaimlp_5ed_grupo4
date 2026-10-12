@@ -1,4 +1,6 @@
 "use client";
+import { portalFetch } from "@/lib/portal-url";
+
 import { useEffect, useState } from "react";
 import { T } from "./LocaleProvider";
 import { SourceFields } from "./SourceFields";
@@ -19,7 +21,7 @@ export function DatasetExplorer() {
   useEffect(() => {
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      fetch(
+      portalFetch(
         `/api/dataset?${new URLSearchParams({ ...(table ? { table } : {}), q: query, page: String(page) })}`,
         { signal: controller.signal },
       )

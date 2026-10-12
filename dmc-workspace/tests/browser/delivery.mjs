@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 const browser = await chromium.launch({
   headless: true,
-  channel: process.env.BROWSER_CHANNEL || "msedge",
+  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
 });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

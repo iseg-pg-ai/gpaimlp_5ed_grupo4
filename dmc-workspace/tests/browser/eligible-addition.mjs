@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 const browser = await chromium.launch({
   headless: true,
-  channel: process.env.BROWSER_CHANNEL || "msedge",
+  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
 });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -125,12 +125,11 @@ try {
   assert.equal(eligibilityRequest.dayNumber, 1);
   assert.match(assistantRequest.input, /experiencias:cat-compatible0001/);
   assert.ok(assistantRequest.snapshot.itinerary[0].dailyCapacity >= 2);
-  assert.ok(
-    await page
-      .getByText(/12 min/)
-      .first()
-      .isVisible(),
-  );
+  await page
+    .getByText(/12 min/)
+    .filter({ visible: true })
+    .first()
+    .waitFor();
   console.log("Eligible addition: filtered catalog, atomic capacity and transit connector OK");
 } finally {
   await browser.close();

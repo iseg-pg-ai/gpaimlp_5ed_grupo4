@@ -1,6 +1,10 @@
 import { spawnSync } from "node:child_process";
 
-const portal = process.env.PORTAL_URL ?? "http://localhost:3001";
+const portal =
+  process.env.PORTAL_URL ??
+  (process.env.SAGEMAKER_APP_TYPE === "CodeEditor"
+    ? `http://localhost:3001${process.env.PORTAL_ASSET_PREFIX ?? "/codeeditor/default/ports/3001"}`
+    : "http://localhost:3001");
 try {
   const response = await fetch(portal);
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -20,7 +24,11 @@ const [checkCommand, checkArgs] = npmStep("check");
 const [buildCommand, buildArgs] = npmStep("build");
 const steps = [
   [checkCommand, checkArgs, "Qualidade, tipos e regressão unitária"],
-  [process.execPath, ["tests/catalog-etl.mjs"], "Integração catálogo → ETL → warehouse"],
+  [
+    process.execPath,
+    ["--experimental-strip-types", "tests/catalog-etl.mjs"],
+    "Integração catálogo → ETL → warehouse",
+  ],
   ...[
     "briefing",
     "catalog",
@@ -34,7 +42,12 @@ const steps = [
     "dataset",
     "trash",
     "workspace-recovery",
-  ].map((name) => [process.execPath, [`tests/browser/${name}.mjs`], `Browser: ${name}`]),
+    "canva-prompt",
+  ].map((name) => [
+    process.execPath,
+    ["--experimental-strip-types", `tests/browser/${name}.mjs`],
+    `Browser: ${name}`,
+  ]),
   [buildCommand, buildArgs, "Build de produção"],
 ];
 

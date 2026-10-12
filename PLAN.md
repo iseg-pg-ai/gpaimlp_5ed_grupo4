@@ -1,5 +1,16 @@
 # Plano de evolução do BLU AI System
 
+## Integração de dev no branch plugin_TXT_export — 2026-10-12
+
+- [x] Atualizar origin/dev e confirmar o branch ativo e os ficheiros locais.
+- [x] Conciliar os conflitos, preservando TXT/Canva, meteorologia e adição assíncrona.
+- [x] Incorporar os caminhos públicos AWS, a partilha e o agente com credenciais IAM.
+- [x] Regenerar e validar o warehouse através do ETL.
+- [x] Executar check, build, testes Python, browser, TXT/Canva e integração AWS.
+- [x] Concluir o merge local e confirmar origin/dev como antepassado de HEAD.
+
+Integração autorizada pelo utilizador no branch ativo, sem publicação remota.
+
 Revisto em 2026-10-09 contra a integração local de dev, commit `bbd58c8`.
 A pasta ativa foi atualizada; as alterações anteriores permanecem no backup.
 Inclui a implementação local em `txt_export_plugin` e validação do portal.

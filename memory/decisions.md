@@ -146,6 +146,16 @@ a dmc-workspace/src/components/.
 
 ## Questões abertas após integração
 
+### Integração autorizada de dev em plugin_TXT_export — 2026-10-12
+
+- Referências: HEAD inicial `def34fa` e origin/dev atualizado em `ceae821`.
+- Manter o branch ativo e incorporar o histórico de dev por merge local.
+- Preservar TXT/Canva 1.1.0, snapshots, privacidade e estado de exportação PDF.
+- Conciliar caminhos AWS e correções IAM/Bedrock com as melhorias da interface.
+- Regenerar o warehouse pelo ETL; testar propostas em armazenamento temporário.
+- Evidência e limites em `docs/DEV_TXT_MERGE_VALIDATION.md`.
+- Não publicar o branch ou atualizar a instalação Canva sem nova autorização.
+
 - O-001 - Confirmar base dos próximos PRs face à política dev e referência main.
   A responsabilidade operacional Next.js/analítica Streamlit está resolvida.
 - O-002 - Definir Bedrock/OpenAI, contratos, avaliação e revisão antes de integrar.
