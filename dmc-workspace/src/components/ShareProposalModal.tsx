@@ -1,7 +1,6 @@
 "use client";
 import { portalFetch } from "@/lib/portal-url";
 
-
 import { useState } from "react";
 import { Copy, Mail, Share2, X } from "lucide-react";
 import { LanguagePicker, T } from "@/components/LocaleProvider";

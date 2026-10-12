@@ -223,7 +223,9 @@ export function ExportLanguageLinks({ tripId, version }: { tripId: string; versi
       <LanguagePicker value={language} onChange={setLanguage} />
       <a
         className="underline"
-        href={portalUrl(`/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=bundle&locale=${language}`)}
+        href={portalUrl(
+          `/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=bundle&locale=${language}`,
+        )}
       >
         <T text="Descarregar PDFs" source="pt" />
       </a>

@@ -1,4 +1,3 @@
-
 import { portalUrl } from "@/lib/portal-url";
 import { notFound } from "next/navigation";
 import { VersionStore } from "@/lib/version-store";

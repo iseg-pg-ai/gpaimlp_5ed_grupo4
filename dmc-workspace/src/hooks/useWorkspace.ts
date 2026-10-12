@@ -178,7 +178,9 @@ export function useWorkspace() {
     });
     if (!response.ok) {
       if (response.status === 409) {
-        const historyResponse = await portalFetch(`/api/versions?tripId=${encodeURIComponent(trip.id)}`);
+        const historyResponse = await portalFetch(
+          `/api/versions?tripId=${encodeURIComponent(trip.id)}`,
+        );
         if (historyResponse.ok) setHistory({ id: trip.id, versions: await historyResponse.json() });
       }
       await responseJson(response);

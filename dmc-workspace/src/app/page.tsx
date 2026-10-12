@@ -162,7 +162,9 @@ export default function WorkspacePage() {
                           <div key={v.version} className="my-2 break-words">
                             <a
                               className="underline"
-                              href={portalUrl(`/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`)}
+                              href={portalUrl(
+                                `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`,
+                              )}
                             >
                               {v.filename}
                             </a>

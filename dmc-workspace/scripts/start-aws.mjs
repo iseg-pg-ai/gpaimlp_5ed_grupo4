@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import next from "next";
 
 const portIndex = process.argv.indexOf("-p");
-const port = Number(portIndex >= 0 ? process.argv[portIndex + 1] : process.env.PORT ?? 3001);
+const port = Number(portIndex >= 0 ? process.argv[portIndex + 1] : (process.env.PORT ?? 3001));
 const prefix = process.env.PORTAL_ASSET_PREFIX ?? `/codeeditor/default/ports/${port}`;
 process.env.PORTAL_ASSET_PREFIX = prefix;
 const app = next({ dev: false });
@@ -13,8 +13,11 @@ createServer((req, res) => {
   // public URL for Next.js redirects (including RSC cache-key corrections).
   const setHeader = res.setHeader.bind(res);
   res.setHeader = (name, value) => {
-    if (name.toLowerCase() === "location" && typeof value === "string" &&
-        (value === prefix || value.startsWith(`${prefix}/`) || value.startsWith(`${prefix}?`))) {
+    if (
+      name.toLowerCase() === "location" &&
+      typeof value === "string" &&
+      (value === prefix || value.startsWith(`${prefix}/`) || value.startsWith(`${prefix}?`))
+    ) {
       const host = req.headers["x-forwarded-host"] ?? req.headers.host;
       const protocol = req.headers["x-forwarded-proto"] ?? "https";
       const origin = process.env.PORTAL_PUBLIC_ORIGIN ?? `${protocol}://${host}`;

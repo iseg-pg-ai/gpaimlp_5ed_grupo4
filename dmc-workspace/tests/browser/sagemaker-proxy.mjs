@@ -35,8 +35,10 @@ try {
     if (response.status() >= 300 && response.status() < 400 && headers.location) {
       const destination = new URL(headers.location);
       assert.equal(destination.origin, origin);
-      assert.ok(destination.pathname === prefix || destination.pathname.startsWith(`${prefix}/`),
-        `Redirect escaped portal: ${headers.location}`);
+      assert.ok(
+        destination.pathname === prefix || destination.pathname.startsWith(`${prefix}/`),
+        `Redirect escaped portal: ${headers.location}`,
+      );
       // Playwright routing does not intercept redirected requests. Resolve the
       // checked public redirect through the same stripped-prefix proxy here.
       response = await route.fetch({
@@ -59,19 +61,25 @@ try {
   assert.equal(rscStatus, 200, "RSC correction should remain inside the public proxy");
   for (const path of ["/catalog", "/exports", "/references", "/trash", "/"]) {
     const publicPath = path === "/" ? prefix : `${prefix}${path}`;
-    const selector = path === "/"
-      ? `header nav:visible a[href="${prefix}"], header nav:visible a[href="${prefix}/"]`
-      : `header nav:visible a[href="${publicPath}"]`;
+    const selector =
+      path === "/"
+        ? `header nav:visible a[href="${prefix}"], header nav:visible a[href="${prefix}/"]`
+        : `header nav:visible a[href="${publicPath}"]`;
     await page.locator(selector).first().click();
-    await page.waitForURL((url) => url.origin === origin &&
-      (url.pathname === publicPath || (path === "/" && url.pathname === `${prefix}/`)));
+    await page.waitForURL(
+      (url) =>
+        url.origin === origin &&
+        (url.pathname === publicPath || (path === "/" && url.pathname === `${prefix}/`)),
+    );
     await page.waitForLoadState("networkidle");
     console.log(`Navigation OK: ${path}`);
   }
   for (const path of ["/api/translate", "/api/trash/cleanup"]) {
     const status = await page.evaluate(async (url) => {
       const response = await fetch(url, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
       });
       return response.status;
     }, `${prefix}${path}`);

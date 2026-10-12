@@ -27,7 +27,9 @@ export function useCatalog() {
   const editorRef = useRef<HTMLFormElement>(null);
   const historyRef = useRef<HTMLElement>(null);
   async function load() {
-    const data = await responseJson<Entry[]>(await portalFetch("/api/catalog", { cache: "no-store" }));
+    const data = await responseJson<Entry[]>(
+      await portalFetch("/api/catalog", { cache: "no-store" }),
+    );
     setRecords(data);
   }
   useEffect(() => {
