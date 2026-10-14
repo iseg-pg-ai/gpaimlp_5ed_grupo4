@@ -5,10 +5,11 @@ import { fileURLToPath } from "node:url";
 
 process.chdir(fileURLToPath(new URL("..", import.meta.url)));
 const { port, prefix, origin } = awsConfig();
-validateBuild(prefix);
+const dev = process.argv.includes("--dev");
+if (!dev) validateBuild(prefix);
 process.env.PORTAL_ASSET_PREFIX = prefix;
 process.env.PORTAL_PUBLIC_ORIGIN = origin;
-const app = next({ dev: false });
+const app = next({ dev, hostname: "0.0.0.0", port });
 await app.prepare();
 const handle = app.getRequestHandler();
 createServer((req, res) => {
@@ -34,6 +35,13 @@ createServer((req, res) => {
     res.end();
   });
 })
+  .on("upgrade", (req) => {
+    const url = req.url ?? "/";
+    const pathname = url.split("?")[0];
+    if (pathname !== prefix && !pathname.startsWith(`${prefix}/`)) req.url = `${prefix}${url}`;
+    // Next registers its dev upgrade handler after the first HTTP request.
+    // This listener runs first and restores the URL before that handler.
+  })
   .on("error", (error) => {
     console.error(
       error.code === "EADDRINUSE"
