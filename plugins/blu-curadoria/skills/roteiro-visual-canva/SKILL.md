@@ -43,7 +43,7 @@ O curador escolhe o canal de entrega após aprovar a composição final.
 ## Referência Obrigatória
 
 Ler [a referência visual e os critérios de revisão](references/modelo-blu.md).
-Modelo indicado pelo utilizador: https://canva.link/5u8zxudd1vkcbth.
+Modelo indicado pelo utilizador: [LISBON IN PERSPECTIVE](https://canva.link/5u8zxudd1vkcbth).
 Resolver o shortlink e usar a ligação completa devolvida nas ferramentas que
 aceitam URLs de partilha, preservando o acesso. O design é DAHDpPXVRsU,
 LISBON IN PERSPECTIVE; não é um Brand Template com identificador BTM.

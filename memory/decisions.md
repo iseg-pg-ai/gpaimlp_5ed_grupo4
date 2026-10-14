@@ -127,7 +127,7 @@ a dmc-workspace/src/components/.
 - Estado: exportação implementada e plugin privado criado em 2026-10-08.
 - Decisão: exportar instruções e JSON do snapshot guardado, não apenas orientação
   genérica de curadoria. Usar os PDFs existentes como estrutura e o modelo
-  https://canva.link/5u8zxudd1vkcbth como identidade visual.
+  [modelo Canva](https://canva.link/5u8zxudd1vkcbth) como identidade visual.
 - Evidência: modelo resolvido para DAHDpPXVRsU, LISBON IN PERSPECTIVE, 87 páginas
   de 672 x 1056; conteúdo e miniaturas inspecionados sem editar o original.
 - Limites: excluir contactos, referências e notas internas; preservar incertezas,
