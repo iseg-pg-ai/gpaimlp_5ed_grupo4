@@ -13,29 +13,31 @@ interface DayWeatherBadgeProps {
 
 export function DayWeatherBadge({ date, location, items }: DayWeatherBadgeProps) {
   const { locale } = useLocale();
-  const requestKey = `${date}|${location ?? ""}|${(items ?? [])
-    .map((item) => `${item.latitude ?? ""},${item.longitude ?? ""}`)
-    .join(";")}`;
-  const [weatherState, setWeatherState] = useState<{
+  const requestKey = JSON.stringify({
+    date,
+    location,
+    items: items?.map(({ latitude, longitude }) => ({ latitude, longitude })),
+  });
+  const [response, setResponse] = useState<{
     requestKey: string;
     result: DayWeatherResult;
   } | null>(null);
-  const loading = weatherState?.requestKey !== requestKey;
-  const result = loading ? null : weatherState.result;
+  const result = response?.requestKey === requestKey ? response.result : null;
+  const loading = result === null;
   const [open, setOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
-    fetchDayWeather({ date, location, items })
+    fetchDayWeather(JSON.parse(requestKey))
       .then((res) => {
         if (active) {
-          setWeatherState({ requestKey, result: res });
+          setResponse({ requestKey, result: res });
         }
       })
       .catch(() => {
         if (active) {
-          setWeatherState({
+          setResponse({
             requestKey,
             result: {
               status: "unavailable",
@@ -49,7 +51,7 @@ export function DayWeatherBadge({ date, location, items }: DayWeatherBadgeProps)
     return () => {
       active = false;
     };
-  }, [date, location, items, requestKey]);
+  }, [requestKey]);
 
   // Close on outside click
   useEffect(() => {

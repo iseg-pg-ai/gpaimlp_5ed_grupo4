@@ -59,8 +59,17 @@ try {
     });
   });
   let assistantRequest;
+  let attempts = 0;
   await page.route("**/api/assistant", (route) => {
     assistantRequest = route.request().postDataJSON();
+    if (++attempts === 1)
+      return route.fulfill({
+        json: {
+          itinerary: assistantRequest.snapshot.itinerary,
+          changed: false,
+          reply: "Não foi possível adicionar a atividade de teste.",
+        },
+      });
     const itinerary = structuredClone(assistantRequest.snapshot.itinerary);
     const day = itinerary[0];
     day.items[0].transitToNext = {
@@ -79,7 +88,7 @@ try {
       time: "15:00–16:00 (proposto)",
       title: "Experiência compatível",
       description: "Opção validada pelo briefing e pelas regras.",
-      category: "experience",
+      category: "activity",
       location: "Lisboa",
       duration: "60 min",
       pendingChecks: ["Confirmar disponibilidade"],
@@ -102,11 +111,14 @@ try {
     .filter({ hasText: snapshot.brief.customerName });
   await tripButton.waitFor();
   await tripButton.click();
-  await page.getByRole("button", { name: "Ações do dia", exact: true }).first().click();
+  await page.getByRole("button", { name: "Ações do dia" }).first().click();
   await page.getByRole("button", { name: "Adicionar Atividade", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByText("Experiência compatível", { exact: true }).waitFor();
   assert.equal(await dialog.getByText("Museu incompatível", { exact: true }).count(), 0);
+  await dialog.getByRole("button", { name: /Adicionar ao Dia/i }).click();
+  await page.getByRole("alert").filter({ hasText: "atividade de teste" }).waitFor();
+  assert.equal(await dialog.isVisible(), true);
   await dialog.getByRole("button", { name: /Adicionar ao Dia/i }).click();
   await dialog.waitFor({ state: "hidden" });
   await page.getByText("Experiência compatível", { exact: true }).waitFor();

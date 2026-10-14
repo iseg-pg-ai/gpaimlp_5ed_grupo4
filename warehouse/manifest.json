@@ -1,6 +1,6 @@
 {
   "pipeline": "blu-local-etl",
-  "ran_at_utc": "2026-10-12T22:00:34.350047+00:00",
+  "ran_at_utc": "2026-10-12T22:33:47.686087+00:00",
   "input_directory": "data",
   "workbook": "data/Requisitos informações Alunos ISEG.xlsx",
   "source": {

@@ -40,7 +40,7 @@ def build_day_itinerary(
 
     # Insert lunch around midday (after 2nd morning activity if available)
     ordered_sequence: List[tuple[PointOfInterest, str, int]] = []
-    
+
     morning_pois = selected_pois[:2]
     afternoon_pois = selected_pois[2:]
 

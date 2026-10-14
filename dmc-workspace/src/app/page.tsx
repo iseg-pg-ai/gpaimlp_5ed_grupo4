@@ -41,6 +41,7 @@ export default function WorkspacePage() {
     recent,
     update,
     exportPdf,
+    exportPrompt,
     reopenLatest,
     trashVersion,
     generate,
@@ -131,7 +132,7 @@ export default function WorkspacePage() {
                   proposalTools={
                     <>
                       <div className="px-4 py-3 flex flex-wrap items-center gap-3">
-                        <T text="Idioma do cliente (PDF)" source="pt" />
+                        <T text="Idioma do cliente" source="pt" />
                         <LanguagePicker
                           value={active.clientLanguage ?? clientLanguage}
                           onChange={changeClientLanguage}
@@ -181,6 +182,14 @@ export default function WorkspacePage() {
                               <Trash2 className="size-3.5" />
                               <T text="Enviar para o Lixo" source="pt" />
                             </button>
+                            <a
+                              className="ml-3 underline"
+                              href={portalUrl(
+                                `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=prompt&locale=${active.clientLanguage ?? clientLanguage}`,
+                              )}
+                            >
+                              <T text="TXT para Canva" source="pt" />
+                            </a>
                           </div>
                         ))}
                       </details>
@@ -221,6 +230,7 @@ export default function WorkspacePage() {
                   }
                   onExportPdf={exportPdf}
                   onShare={() => setShareOpen(true)}
+                  onExportPrompt={exportPrompt}
                   isExporting={exporting || saving}
                   onEditBrief={editBrief}
                   onToggleLockActivity={(dayNumber, id) =>

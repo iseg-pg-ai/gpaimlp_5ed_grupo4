@@ -207,7 +207,7 @@ export function useWorkspace() {
       setSaving(false);
     }
   };
-  const exportPdf = async () => {
+  const exportProposal = async (format: "bundle" | "prompt") => {
     if (!active || operation.current) return;
     operation.current = true;
     setExporting(true);
@@ -216,7 +216,7 @@ export function useWorkspace() {
       const saved = await saveVersion(active, "export");
       setTrips((prev) => prev.map((t) => (t.id === saved.id ? saved : t)));
       const response = await portalFetch(
-        `/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`,
+        `/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=${format}&locale=${active.clientLanguage ?? clientLanguage}`,
       );
       if (!response.ok) await responseJson(response);
       const url = URL.createObjectURL(await response.blob());
@@ -224,11 +224,12 @@ export function useWorkspace() {
       link.href = url;
       link.download =
         response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ??
-        "roteiro.zip";
+        (format === "prompt" ? "roteiro-canva.txt" : "roteiro.zip");
       document.body.appendChild(link);
       link.click();
       link.remove();
-      setExportedVersions((prev) => ({ ...prev, [`${saved.id}:${saved.version}`]: true }));
+      if (format === "bundle")
+        setExportedVersions((prev) => ({ ...prev, [`${saved.id}:${saved.version}`]: true }));
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha na exportação.");
@@ -237,6 +238,8 @@ export function useWorkspace() {
       setExporting(false);
     }
   };
+  const exportPdf = () => exportProposal("bundle");
+  const exportPrompt = () => exportProposal("prompt");
   const reopenLatest = async () => {
     const latest = history.id === activeId ? history.versions[0] : undefined;
     if (!latest || !active || operation.current) return;
@@ -565,6 +568,7 @@ export function useWorkspace() {
     recent,
     update,
     exportPdf,
+    exportPrompt,
     reopenLatest,
     trashVersion,
     generate,

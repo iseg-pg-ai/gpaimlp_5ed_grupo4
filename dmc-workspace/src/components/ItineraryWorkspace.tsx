@@ -17,6 +17,7 @@ import {
   Users,
   MapPin,
   Download,
+  FileText,
   SlidersHorizontal,
   Sparkles,
   Route,
@@ -288,6 +289,7 @@ interface ItineraryWorkspaceProps {
   onEditBrief: () => void;
   onExportPdf: () => void;
   onShare?: () => void;
+  onExportPrompt: () => void;
   isExporting?: boolean;
   displayBudget: string;
   proposalTools?: React.ReactNode;
@@ -307,7 +309,7 @@ interface ItineraryWorkspaceProps {
     newMode: TransitMode,
     bufferMinutes?: number,
   ) => void;
-  onAddPoiToDay?: (dayNumber: number, title: string) => void;
+  onAddPoiToDay?: (dayNumber: number, title: string) => Promise<boolean> | void;
   onRemoveActivity?: (dayNumber: number, activityId: string) => void;
   onAddFreePeriodToDay?: (dayNumber: number, type: "afternoon" | "morning" | "fullday") => void;
   onAdjustDayCapacity?: (dayNumber: number, newCapacity: number) => void;
@@ -320,6 +322,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   onEditBrief,
   onExportPdf,
   onShare,
+  onExportPrompt,
   isExporting,
   displayBudget,
   proposalTools,
@@ -401,6 +404,17 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
             >
               <Download aria-hidden="true" className="size-4" />
               <T text={isExporting ? "A exportar…" : "Exportar PDF"} source="pt" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onExportPrompt}
+              disabled={isExporting}
+              className="min-h-11 text-sm"
+              data-testid="export-canva-prompt"
+              style={{ minHeight: 44 }}
+            >
+              <FileText aria-hidden="true" className="size-4" />
+              <T text="Exportar TXT para Canva" source="pt" />
             </Button>
             <Button variant="outline" onClick={onEditBrief} className="min-h-11 text-sm">
               <SlidersHorizontal aria-hidden="true" className="size-4" />
