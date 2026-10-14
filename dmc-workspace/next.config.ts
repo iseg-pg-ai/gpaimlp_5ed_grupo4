@@ -5,6 +5,9 @@ const portalPrefix =
   (process.env.SAGEMAKER_APP_TYPE === "CodeEditor" ? "/codeeditor/default/ports/3001" : "");
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: process.env.PORTAL_PUBLIC_ORIGIN
+    ? [new URL(process.env.PORTAL_PUBLIC_ORIGIN).hostname]
+    : undefined,
   basePath: portalPrefix,
   skipTrailingSlashRedirect: Boolean(portalPrefix),
   assetPrefix: portalPrefix,
