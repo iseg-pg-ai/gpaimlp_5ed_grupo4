@@ -70,6 +70,16 @@ npm run dev -- -p 3001
 
 Abrir [http://localhost:3001](http://localhost:3001). O portal comunica automaticamente com o Agente de IA na porta 8000 quando disponível.
 
+No SageMaker Code Editor, definir a origem pública antes de iniciar. O comando
+`dev` usa automaticamente o adaptador que repõe o prefixo removido pelo proxy:
+
+```bash
+PORTAL_PUBLIC_ORIGIN=https://<dominio>.studio.eu-west-1.sagemaker.aws npm run dev -- -p 3001
+```
+
+Abrir a porta 3001 pelo Code Editor. Para o arranque de produção, consultar
+[o guia do DMC Workspace](dmc-workspace/README.md).
+
 ### Iniciar o dashboard analítico
 
 Na raiz do repositório:
