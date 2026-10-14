@@ -239,6 +239,34 @@ npm run build
 
 ## Execução na AWS
 
+### SageMaker Studio Code Editor
+
+O proxy do Code Editor acrescenta um prefixo ao endereço. Usar o script
+específico, a partir da raiz, com a origem HTTPS da instância do utilizador:
+
+```bash
+cd dmc-workspace
+npm ci
+cd ..
+PORTAL_PUBLIC_ORIGIN=https://DOMINIO-DO-TEU-STUDIO bash scripts/start_aws_portal.sh
+```
+
+Abrir `https://DOMINIO-DO-TEU-STUDIO/codeeditor/default/ports/3001/`.
+Substituir o domínio pelo da própria instância. O script recompila com o prefixo
+antes de iniciar; um build criado sem esse prefixo não serve para este proxy.
+Requer Node 22.13 a 24.x; preserva uma versão compatível já selecionada.
+O serviço Python é opcional. Para o iniciar juntamente com o portal, acrescentar
+`BLU_START_AGENT=1` ao comando, depois de preparar as dependências Python.
+
+O arranque valida a origem (apenas HTTPS, sem caminho), a porta e o prefixo.
+Se a porta estiver ocupada, termina antes de recompilar: encerrar o processo
+anterior ou definir outra `PORT`. O prefixo por defeito acompanha essa porta.
+`npm run start:aws` exige um build completo com o mesmo prefixo e a origem
+configurada; perante incompatibilidade, usar novamente o script da raiz.
+Não reutilizar builds de outra configuração nem copiar apenas parte de `.next`.
+
+### Servidor direto ou contentor
+
 O portal é uma aplicação Next.js com rotas de servidor e não pode ser publicado
 como um conjunto de ficheiros estáticos num bucket S3. O diretório de trabalho
 tem de ser `dmc-workspace`, pois os dados operacionais são lidos nas pastas irmãs

@@ -1,5 +1,15 @@
 # Decisões e questões abertas
 
+## Integração de dev em plugin_TXT_export — 2026-10-15
+
+- Estado: conflitos documentais resolvidos; integração local validada.
+- Base: origin/dev em `e62398e`; branch inicial em `d890740`.
+- Causa: PLAN.md e memory/decisions.md foram adicionados independentemente,
+  produzindo conflitos add/add. Preservar os conteúdos de ambos os branches.
+- O código integrou-se automaticamente, mantendo TXT/Canva e o arranque SageMaker.
+- Evidência: check passou com 99 testes aprovados e um ignorado; build passou;
+  sintaxe Bash e verificação do diff passaram. Sem publicação remota.
+
 Revisto em 2026-10-08. Decisões anteriores válidas preservadas; evidência atualizada
 contra o checkout atual de main, commit f090e53.
 
@@ -169,3 +179,19 @@ a dmc-workspace/src/components/.
 - O-008 - Definir provisionamento Python/modelos/fontes em deployment.
 - O-009 - Definir partilha, Lixo/restauro, retenção e imagens licenciadas.
 - O-010 - Definir autenticação, permissões, sincronização e recuperação.
+
+## 2026-10-13 — Arranque portátil no SageMaker
+
+Estado: implementado e validado localmente.
+
+O arranque preserva Node compatível, inicia o agente Python apenas com
+`BLU_START_AGENT=1` e valida a origem HTTPS, porta, prefixo e build. Recusa uma
+porta ocupada antes de recompilar para proteger o servidor já em execução.
+O servidor usa a origem configurada nos redirecionamentos e resolve a pasta
+do portal a partir do próprio script.
+
+Evidência: `npm run check` passou (93 testes aprovados, um ignorado), build
+AWS passou, testes `aws-config.test.mjs` passaram e conflito de porta foi
+confirmado por execução. O teste de navegador está limitado por bibliotecas
+Chromium ausentes. Sem os erros do colega, a causa na sua instância não foi
+confirmada. Não foi efetuado push nem deployment.

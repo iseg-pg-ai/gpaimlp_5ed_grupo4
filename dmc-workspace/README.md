@@ -14,6 +14,19 @@ npm run dev -- -p 3001
 
 Abrir [http://localhost:3001](http://localhost:3001).
 
+No SageMaker, o modo de desenvolvimento também precisa do adaptador do proxy.
+O comando `dev` seleciona-o automaticamente no Code Editor:
+
+```bash
+PORTAL_PUBLIC_ORIGIN=https://<dominio>.studio.eu-west-1.sagemaker.aws npm run dev -- -p 3001
+```
+
+O `package.json` substitui `fast-glob` por um adaptador local de `tinyglobby` apenas no plugin ESLint do
+Next.js, removendo a cadeia vulnerável de `braces` (GHSA-vfj7-8cjw-p6xm), ainda
+sem versão corrigida. Reavaliar este override quando o plugin remover essa
+dependência. O aviso de descontinuação do ESLint 9 permanece: os plugins React
+da configuração atual ainda não declaram compatibilidade com ESLint 10.
+
 No SageMaker Code Editor, compilar e arrancar com Node.js 22.13 ou superior:
 
 ```bash
