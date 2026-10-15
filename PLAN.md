@@ -65,6 +65,15 @@ aprovados numa instância de produção com armazenamento temporário.
 
 100 testes aprovados e um ignorado; fonte e stack frames HTTP 200.
 
+## Identificação e rótulos dos formulários
+
+- [x] Associar os rótulos do briefing e identificar os campos sem id/name.
+- [x] Usar fieldset/legend nos grupos de escolhas e nome acessível na pesquisa.
+- [x] Verificar campos, rótulos e IDs no teste de navegador do briefing.
+
+Check aprovado (100 testes e um ignorado), build aprovado e briefing validado
+em 360 e 1440 px, incluindo edição, revisão e payload.
+
 ## Próxima iteração do agente
 
 - [ ] Definir o objetivo, as operações autorizadas e os critérios de aceitação.

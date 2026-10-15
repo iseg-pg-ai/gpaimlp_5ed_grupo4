@@ -99,6 +99,7 @@ export default function CatalogPage() {
           <label className="text-sm">
             <T text="Pesquisar" source="pt" />
             <input
+              name="catalogSearch"
               data-testid="catalog-search"
               className={`${control} mt-1`}
               value={query}
@@ -108,6 +109,7 @@ export default function CatalogPage() {
           <label className="text-sm">
             <T text="Estado" source="pt" />
             <select
+              name="catalogStatus"
               style={selectStyle}
               className={`${control} mt-1`}
               value={status}
@@ -126,6 +128,7 @@ export default function CatalogPage() {
           <label className="text-sm">
             <T text="Localização" source="pt" />
             <select
+              name="catalogLocation"
               style={selectStyle}
               className={`${control} mt-1`}
               value={location}

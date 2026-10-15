@@ -16,6 +16,34 @@ try {
       .locator("main button")
       .filter({ has: page.locator("svg.lucide-rotate-ccw") })
       .click();
+    const formIssues = await page.locator("main").evaluate((main) => {
+      const fields = [...main.querySelectorAll("input, select, textarea")];
+      return {
+        unidentified: fields
+          .filter((field) => !field.id && !field.name)
+          .map((field) => field.outerHTML),
+        unlabelled: fields
+          .filter(
+            (field) =>
+              !field.labels?.length &&
+              !field.getAttribute("aria-label") &&
+              !field.getAttribute("aria-labelledby"),
+          )
+          .map((field) => field.name),
+        orphanLabels: [...main.querySelectorAll("label")]
+          .filter((label) => !label.control)
+          .map((label) => label.textContent),
+        duplicateIds: fields
+          .filter((field) => field.id && document.querySelectorAll(`[id="${field.id}"]`).length > 1)
+          .map((field) => field.id),
+      };
+    });
+    assert.deepEqual(formIssues, {
+      unidentified: [],
+      unlabelled: [],
+      orphanLabels: [],
+      duplicateIds: [],
+    });
     const navigation = page.getByRole("navigation", { name: "Etapas do briefing" });
     await navigation.getByRole("button").nth(2).click();
     const personal = page.getByTestId("brief-personalization");

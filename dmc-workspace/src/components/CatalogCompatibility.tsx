@@ -54,6 +54,7 @@ export function CatalogCompatibility({
               {matchingOptions[key].map((option) => (
                 <label key={option} className="flex min-w-0 items-start gap-3 text-sm leading-6">
                   <input
+                    name="compatibleProfiles"
                     type="checkbox"
                     className="mt-1 size-4 shrink-0 accent-[#2D5B67]"
                     disabled={!onChange}

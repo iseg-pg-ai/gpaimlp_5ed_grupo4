@@ -289,3 +289,15 @@ Validação: check aprovado (100 testes e um ignorado), build aprovado e Chromiu
 local com os caminhos raiz bloqueados e atributos Grammarly simulados. A fonte
 e o endpoint de stack frames responderam HTTP 200 no prefixo; não houve avisos
 de hidratação. A sessão autenticada remota do Studio não foi testada.
+
+## 2026-10-15 — Identificação e acessibilidade dos formulários
+
+Os campos sem identificação passam a ter nomes explícitos. No briefing, os
+rótulos usam htmlFor e IDs estáveis; títulos de grupos de botões usam legend
+dentro de fieldset. As notas referenciam o título visível e a pesquisa de
+experiências tem nome acessível. Não foram alterados os contratos dos pedidos.
+
+O teste de briefing verifica campos sem identificação ou rótulo, labels órfãs
+e IDs duplicados. Chromium aprovou os cenários de 360 e 1440 px, incluindo
+revisão, edição e payload. Check aprovado (100 testes e um ignorado) e build
+de produção aprovado.

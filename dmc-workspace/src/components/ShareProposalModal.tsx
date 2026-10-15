@@ -109,6 +109,7 @@ export function ShareProposalModal({
           <label className="block text-sm font-medium text-[#143F4B]">
             <T text="Email do destinatário" source="pt" />
             <Input
+              name="recipientEmail"
               className="mt-1.5 h-11 text-sm"
               type="email"
               required
@@ -123,6 +124,7 @@ export function ShareProposalModal({
             <label className="text-sm font-medium text-[#143F4B]">
               <T text="Versão" source="pt" />
               <select
+                name="proposalVersion"
                 className="mt-1.5 h-11 w-full rounded-lg border border-[#DFD9CE] bg-white px-3 text-sm"
                 value={version}
                 onChange={(event) => setVersion(Number(event.target.value))}
