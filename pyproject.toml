@@ -12,11 +12,11 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest==9.0.0", "complexipy>=5.5.0"]
+dev = ["pytest==9.1.1", "complexipy>=5.5.0"]
 translation = ["argostranslate==1.11.0", "ctranslate2>=4.0,<5"]
 sagemaker = [
     "boto3>=1.41,<2",
-    "sagemaker==2.254.1",
+    "sagemaker==2.257.7",
     "sagemaker-mlflow>=0.4,<1",
     "ipython>=9.16.1",
     "numpy==2.3.4",
@@ -39,3 +39,14 @@ agent = [
 [tool.uv]
 package = false
 default-groups = ["translation", "agent"]
+# Versões mínimas corrigidas para os alertas Dependabot de outubro de 2026.
+constraint-dependencies = [
+    "gitpython>=3.1.60",
+    "urllib3>=2.8.0",
+    "sqlparse>=0.6.0",
+    "cryptography>=50.0.0",
+    "protobuf>=6.33.5,<7",
+]
+# Argos 1.11.0 fixa Stanza 1.10.1, afetado por GHSA-v5jw-96jm-7h2c.
+# Manter a primeira série corrigida até o Argos atualizar esse requisito.
+override-dependencies = ["stanza>=1.12.2,<1.13"]

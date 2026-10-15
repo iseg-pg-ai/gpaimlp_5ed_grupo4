@@ -1,5 +1,17 @@
 # Decisões e questões abertas
 
+## Dependências Python corrigidas — 2026-10-15
+
+- Estado: implementado e validado localmente em fix/dependabot-python.
+- Base: origin/dev em `f0d4476`; oito pacotes atualizados pelos alertas Dependabot.
+- Preservar SageMaker 2.x e protobuf 6.x; impor mínimos corrigidos no pyproject.
+- Argos 1.11.0 fixa Stanza vulnerável. Usar override Stanza 1.12.2 e instalar
+  o export completo de tradução com pip `--no-deps`, ou preferir uv.
+- Evidência: 20 testes Python e cinco de tradução aprovados; auditoria dos
+  220 pacotes de registry do lockfile sem vulnerabilidades conhecidas.
+- Sem modelos de tradução locais ou validação de serviços AWS reais.
+  Detalhes em [docs/DEPENDABOT_PYTHON.md](../docs/DEPENDABOT_PYTHON.md).
+
 ## Integração de dev em plugin_TXT_export — 2026-10-15
 
 - Estado: conflitos documentais resolvidos; integração local validada.

@@ -1,5 +1,16 @@
 # Plano de evolução do BLU AI System
 
+## Correção dos alertas Dependabot Python — 2026-10-15
+
+- [x] Criar fix/dependabot-python a partir de origin/dev e auditar todos os grupos.
+- [x] Atualizar os oito pacotes afetados e regenerar o lockfile e os exports pip.
+- [x] Validar os testes Python, a tradução e os contratos de dependências.
+- [x] Repetir a auditoria de todos os grupos e documentar resultados e limites.
+
+20 testes Python e cinco de tradução aprovados; auditoria dos 220 pacotes de
+registry do lockfile sem vulnerabilidades conhecidas. Override Stanza e limites
+documentados em [docs/DEPENDABOT_PYTHON.md](docs/DEPENDABOT_PYTHON.md).
+
 ## Integração de dev no branch plugin_TXT_export — 2026-10-15
 
 - [x] Atualizar origin/dev e identificar os conflitos add/add nos documentos.
