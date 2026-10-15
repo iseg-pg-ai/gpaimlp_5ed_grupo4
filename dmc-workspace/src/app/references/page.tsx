@@ -1,6 +1,6 @@
 import { DatasetExplorer } from "@/components/DatasetExplorer";
 import { T } from "@/components/LocaleProvider";
-import { datasetRequest } from "@/lib/dataset-source";
+import { portalRequest } from "@/lib/python-portal";
 import { warehouseRoot } from "@/lib/catalog-store";
 import Link from "next/link";
 import type { Row } from "@/lib/curation";
@@ -24,7 +24,7 @@ export default async function ReferencesPage({
   );
   let data: References;
   try {
-    data = await datasetRequest("references", warehouseRoot(), {});
+    data = await portalRequest("references", warehouseRoot(), {});
   } catch {
     return (
       <main className="p-8">

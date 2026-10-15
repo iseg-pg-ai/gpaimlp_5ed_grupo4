@@ -1,4 +1,4 @@
-import { enrichRecords } from "@/lib/dataset-source";
+import { enrichRecords } from "@/lib/python-portal";
 import { publicOrigin, jsonError, noStoreHeaders } from "@/lib/server-http";
 import { CatalogStore, CatalogConflict, warehouseRoot } from "@/lib/catalog-store";
 import { validateCatalogInput, categories } from "@/lib/catalog-schema";

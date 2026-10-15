@@ -10,7 +10,7 @@ export type Dataset = {
   total: number;
   page: number;
 };
-export class DatasetError extends Error {
+export class PortalPythonError extends Error {
   code: string;
   constructor(code: string, message: string) {
     super(message);
@@ -19,7 +19,7 @@ export class DatasetError extends Error {
 }
 
 // Processo local sem shell, serviço HTTP adicional ou dependências do agente.
-export function datasetRequest<T>(operation: string, root: string, params: object): Promise<T> {
+export function portalRequest<T>(operation: string, root: string, params: object): Promise<T> {
   const repository = path.resolve(process.cwd(), "..");
   const localPython = path.join(
     repository,
@@ -36,7 +36,7 @@ export function datasetRequest<T>(operation: string, root: string, params: objec
   return new Promise((resolve, reject) => {
     const child = execFile(
       /* turbopackIgnore: true */ python,
-      ["-B", "-m", "portal.data", operation, root],
+      ["-X", "utf8", "-B", "-m", "portal.data", operation, root],
       {
         cwd: repository,
         timeout: 15000,
@@ -47,17 +47,19 @@ export function datasetRequest<T>(operation: string, root: string, params: objec
       (error, stdout) => {
         if (error)
           return reject(
-            new DatasetError(
+            new PortalPythonError(
               "DATASET_UNAVAILABLE",
               "Python do portal indisponível. Verifique BLU_PYTHON e a instalação Python.",
             ),
           );
         try {
           const response = JSON.parse(stdout);
-          if (!response.ok) return reject(new DatasetError(response.code, response.error));
+          if (!response.ok) return reject(new PortalPythonError(response.code, response.error));
           resolve(response.data);
         } catch {
-          reject(new DatasetError("DATASET_UNAVAILABLE", "Resposta inválida do Python do portal."));
+          reject(
+            new PortalPythonError("DATASET_UNAVAILABLE", "Resposta inválida do Python do portal."),
+          );
         }
       },
     );
@@ -68,6 +70,6 @@ export function datasetRequest<T>(operation: string, root: string, params: objec
   });
 }
 export const queryDataset = (root: string, params: object) =>
-  datasetRequest<Dataset>("query", root, params);
+  portalRequest<Dataset>("query", root, params);
 export const enrichRecords = (root: string, records: CatalogRecord[]) =>
-  datasetRequest<CatalogRecord[]>("enrich", root, { records });
+  portalRequest<CatalogRecord[]>("enrich", root, { records });

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { enrichRecords, queryDataset } from "../src/lib/dataset-source.ts";
+import { enrichRecords, queryDataset } from "../src/lib/python-portal.ts";
 import { operationalFromSource, validateOperational } from "../src/lib/catalog-operational.ts";
 test("source enrichment preserves curator edits and links reference tariffs by exact ID", async () => {
   const root = mkdtempSync(path.join(tmpdir(), "blu-source-"));
@@ -44,4 +44,15 @@ test("operational data retains explicit unknowns and rejects incomplete coordina
   assert.throws(() => validateOperational({ ...value, latitude: "91" }));
   assert.throws(() => validateOperational({ ...value, longitude: "" }));
   assert.doesNotThrow(() => validateOperational(operationalFromSource({})));
+});
+
+test("missing Python fails explicitly without hanging or falling back to duplicated rules", async () => {
+  const previous = process.env.BLU_PYTHON;
+  process.env.BLU_PYTHON = path.join(tmpdir(), "blu-no-such-python", "python");
+  try {
+    await assert.rejects(queryDataset(tmpdir(), {}), /Python do portal indisponível/);
+  } finally {
+    if (previous === undefined) delete process.env.BLU_PYTHON;
+    else process.env.BLU_PYTHON = previous;
+  }
 });

@@ -7,6 +7,7 @@ Base: `chore/project-cleanup` em `da8de67`; branch `refactor/html-python`.
 - [x] Centralizar leitura, pesquisa e enriquecimento das fontes em Python.
 - [x] Substituir estado e fetch do explorador por formulário HTML no servidor.
 - [x] Mover a preparação das referências históricas para Python.
+- [x] Migrar a composição TXT/Canva para Python mantendo regras de domínio partilhadas.
 - [ ] Validar APIs, erros, escaping, navegação sem JavaScript e idiomas.
 - [ ] Atualizar arquitetura e comandos, com commits separados por etapa.
 

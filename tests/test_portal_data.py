@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from portal.prompt import render_prompt
 from portal.data import UnknownTable, dataset_tables, enrich_records, query_dataset, render_dataset, historical_references
 
 
@@ -74,6 +75,23 @@ class PortalDataTest(unittest.TestCase):
         self.assertEqual(result["routes"][1]["prices"][0]["value"], 9)
         self.assertEqual(result["priceCount"], 1)
         self.assertEqual(result["conflicts"], [{"record_id": "conflict"}])
+
+    def test_txt_whitelist_does_not_export_private_fields(self):
+        payload = {"snapshot": {
+            "brief": {"customerName": "Cliente", "notes": "PRIVATE_NOTES", "customerEmail": "PRIVATE_EMAIL", "budget": 100, "currency": "EUR"},
+            "itinerary": [{"dayNumber": 1, "items": [{"id": "A", "title": "Visita", "category": "poi", "confirmation": {"status": "pending", "price": "", "contact": "PRIVATE_CONTACT", "reference": "PRIVATE_REFERENCE"}}]}],
+            "pending": ["Confirmar"]},
+            "meta": {"tripId": "test", "version": 1}, "budget": {"lines": [], "totals": {}, "incomplete": True, "terms": []},
+            "checks": [[["Disponibilidade"]]], "languageName": "Português", "locale": "pt", "instructions": " Instruções "}
+        original = json.dumps(payload)
+        text = render_prompt(payload)
+        self.assertNotIn("PRIVATE_", text)
+        self.assertEqual(json.dumps(payload), original)
+        result = json.loads(text.split("\n\n", 1)[1])
+        self.assertEqual(result["dias"][0]["atividades"][0]["pendencias"], ["Disponibilidade"])
+        self.assertTrue(result["orcamento"]["incompleto"])
+        self.assertTrue(text.startswith("Instruções\n\n"))
+        self.assertTrue(text.endswith("\n"))
 
     def test_empty_and_invalid_data(self):
         self.assertEqual(query_dataset(self.root, {}), {"tables": [], "rows": [], "total": 0, "page": 1})

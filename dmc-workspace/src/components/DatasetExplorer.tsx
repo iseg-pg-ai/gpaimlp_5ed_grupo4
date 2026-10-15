@@ -1,12 +1,12 @@
 import { portalUrl } from "@/lib/http-client";
-import { datasetRequest, type Dataset } from "@/lib/dataset-source";
+import { portalRequest, type Dataset } from "@/lib/python-portal";
 import { warehouseRoot } from "@/lib/catalog-store";
 import { T } from "./LocaleProvider";
 
 export async function DatasetExplorer({ params }: { params: Record<string, string> }) {
   let data: Dataset & { html: string };
   try {
-    data = await datasetRequest("explore", warehouseRoot(), params);
+    data = await portalRequest("explore", warehouseRoot(), params);
   } catch (error) {
     return (
       <section className="my-6 rounded-xl border bg-white p-4" data-testid="dataset-explorer">

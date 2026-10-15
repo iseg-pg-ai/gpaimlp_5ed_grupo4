@@ -121,6 +121,9 @@ def main() -> None:
     try:
         if operation == "query":
             result = query_dataset(root, params)
+        elif operation == "prompt":
+            from portal.prompt import render_prompt
+            result = render_prompt(params)
         elif operation == "references":
             result = historical_references(root)
         elif operation == "explore":
@@ -134,7 +137,9 @@ def main() -> None:
     except UnknownTable:
         response = {"ok": False, "code": "UNKNOWN_TABLE", "error": "Folha indisponível."}
     except (OSError, ValueError, KeyError, TypeError):
-        response = {"ok": False, "code": "DATASET_UNAVAILABLE", "error": "Dataset indisponível. Execute o ETL."}
+        response = {"ok": False,
+                    "code": "EXPORT_UNAVAILABLE" if operation == "prompt" else "DATASET_UNAVAILABLE",
+                    "error": "Não foi possível preparar o TXT da versão guardada." if operation == "prompt" else "Dataset indisponível. Execute o ETL."}
     print(json.dumps(response, ensure_ascii=False))
 
 
