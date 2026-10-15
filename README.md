@@ -40,8 +40,15 @@ Para instalar por `pip`:
 
 ```powershell
 python -m pip install -r requirements.txt
-python -m pip install -r translations/requirements.txt
+python -m pip install --no-deps -r translations/requirements.txt
 ```
+
+Preferir `uv sync --locked` para respeitar os overrides de segurança.
+O export de tradução inclui todas as dependências resolvidas e exige `--no-deps`:
+Argos Translate 1.11.0 ainda fixa Stanza 1.10.1, substituído neste projeto por
+Stanza 1.12.2 para corrigir GHSA-v5jw-96jm-7h2c. Sem essa opção, o resolver do
+`pip` rejeita o requisito antigo do Argos. Reavaliar o override quando o Argos
+publicar uma versão com Stanza corrigido.
 
 ## Arranque rápido
 

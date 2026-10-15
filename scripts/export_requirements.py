@@ -24,7 +24,11 @@ def main():
             cwd=ROOT, check=True, capture_output=True, text=True, encoding="utf-8",
         )
         content = "# Generated from pyproject.toml and uv.lock. Do not edit manually.\n"
-        content += "# Regenerate: python scripts/export_requirements.py\n" + result.stdout
+        content += "# Regenerate: python scripts/export_requirements.py\n"
+        if name == "translations/requirements.txt":
+            content += "# Install: python -m pip install --no-deps -r translations/requirements.txt\n"
+            content += "# Full resolved graph; --no-deps preserves the Stanza security override.\n"
+        content += result.stdout
         destination = ROOT / name
         if args.check:
             if not destination.exists() or destination.read_text(encoding="utf-8") != content:
