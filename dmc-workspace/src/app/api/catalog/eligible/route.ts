@@ -1,8 +1,7 @@
 import { jsonError, noStoreHeaders } from "@/lib/server-http";
 import { editWithAssistant } from "@/lib/assistant-editing";
 import { validateBrief } from "@/lib/curation";
-import { CatalogStore } from "@/lib/catalog-store";
-import { loadPublishedCatalog } from "@/lib/published-catalog";
+import { CatalogStore, loadPublishedCatalog } from "@/lib/catalog-store";
 import type { ItineraryDay } from "@/types";
 
 export const runtime = "nodejs";

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { enrichRecords, queryDataset } from "../src/lib/python-portal.ts";
+import { portalRequest, queryDataset } from "../src/lib/python-portal.ts";
 import { operationalFromSource, validateOperational } from "../src/lib/catalog-operational.ts";
 test("source enrichment preserves curator edits and links reference tariffs by exact ID", async () => {
   const root = mkdtempSync(path.join(tmpdir(), "blu-source-"));
@@ -21,7 +21,7 @@ test("source enrichment preserves curator edits and links reference tariffs by e
       raw: { id: "LIS-1" },
       fields: { hours: "Horário editado" },
     };
-    const [result] = await enrichRecords(root, [original]);
+    const [result] = await portalRequest("enrich", root, { records: [original] });
     assert.equal(result.fields.hours, "Horário editado");
     assert.equal(result.sourceData.latitude, 38.7);
     assert.equal(result.sourceData.tarifas_de_referencia[0].preco_referencia_eur, 17);

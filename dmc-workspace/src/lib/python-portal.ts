@@ -1,7 +1,6 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import type { CatalogRecord } from "./catalog-schema";
 
 export type Dataset = {
   tables: string[];
@@ -71,5 +70,3 @@ export function portalRequest<T>(operation: string, root: string, params: object
 }
 export const queryDataset = (root: string, params: object) =>
   portalRequest<Dataset>("query", root, params);
-export const enrichRecords = (root: string, records: CatalogRecord[]) =>
-  portalRequest<CatalogRecord[]>("enrich", root, { records });

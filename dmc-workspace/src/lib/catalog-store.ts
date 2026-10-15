@@ -1,4 +1,5 @@
 import path from "node:path";
+import type { Catalog } from "./curation";
 import { portalRequest, PortalPythonError } from "./python-portal.ts";
 import {
   emptyFields,
@@ -8,10 +9,10 @@ import {
 } from "./catalog-schema.ts";
 
 export const projectRoot = () => path.resolve(process.cwd(), "..");
-export const dataRoot = () => process.env.BLU_DATA_DIR ?? path.join(projectRoot(), "data");
+export const dataRoot = () => path.resolve(projectRoot(), process.env.BLU_DATA_DIR ?? "data");
 export const catalogRoot = () => path.join(dataRoot(), "portal");
 export const warehouseRoot = () =>
-  process.env.BLU_WAREHOUSE_DIR ?? path.join(projectRoot(), "warehouse");
+  path.resolve(projectRoot(), process.env.BLU_WAREHOUSE_DIR ?? "warehouse");
 export const legacyId = (category: Category, row: Record<string, unknown>) =>
   portalRequest<string>("catalog-id", "", { category, row });
 export class CatalogConflict extends Error {}
@@ -36,6 +37,7 @@ export class CatalogStore {
     const allowed = emptyFields();
     const normalized = {
       ...input,
+      reason: input.reason.trim(),
       fields: Object.fromEntries(
         Object.entries(input.fields)
           .filter(([key]) => Object.hasOwn(allowed, key))
@@ -59,4 +61,11 @@ export class CatalogStore {
   publishedFlags(rows: Record<string, unknown>[]) {
     return portalRequest<boolean[]>("catalog-published", this.root, { rows });
   }
+}
+
+export function loadPublishedCatalog(): Promise<Catalog> {
+  return portalRequest("catalog-load-published", catalogRoot(), {
+    warehouse: warehouseRoot(),
+    overrides: path.join(projectRoot(), "config/curation_rule_overrides.json"),
+  });
 }

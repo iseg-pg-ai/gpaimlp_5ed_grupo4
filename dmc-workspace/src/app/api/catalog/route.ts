@@ -1,36 +1,17 @@
-import { enrichRecords, PortalPythonError } from "@/lib/python-portal";
+import { portalRequest, PortalPythonError } from "@/lib/python-portal";
 import { publicOrigin, jsonError, noStoreHeaders } from "@/lib/server-http";
-import { CatalogStore, CatalogConflict, warehouseRoot } from "@/lib/catalog-store";
-import { categories } from "@/lib/catalog-schema";
-import { readFileSync } from "node:fs";
-import path from "node:path";
+import { CatalogStore, CatalogConflict, catalogRoot, warehouseRoot } from "@/lib/catalog-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
-  const store = new CatalogStore();
   try {
-    await store.importWarehouse();
     const id = new URL(request.url).searchParams.get("id");
-    if (id) return Response.json(await store.history(id), { headers: noStoreHeaders });
-    const published = new Map<string, number>();
-    for (const category of categories) {
-      for (const line of readFileSync(path.join(warehouseRoot(), `${category}.jsonl`), "utf8")
-        .split(/\r?\n/)
-        .filter(Boolean)) {
-        const row = JSON.parse(line);
-        if (row._catalog_status === "approved")
-          published.set(row._catalog_id, row._catalog_revision);
-      }
-    }
-    const records = await enrichRecords(warehouseRoot(), await store.list());
-    return Response.json(
-      records.map((record) => ({
-        ...record,
-        published: record.status === "approved" && published.get(record.id) === record.revision,
-      })),
-      { headers: noStoreHeaders },
-    );
+    const records = await portalRequest("catalog-query", catalogRoot(), {
+      id,
+      warehouse: warehouseRoot(),
+    });
+    return Response.json(records, { headers: noStoreHeaders });
   } catch {
     return jsonError(
       "Não foi possível ler o catálogo. Verifique o warehouse e execute o ETL inicial.",

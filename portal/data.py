@@ -2,7 +2,7 @@
 
 from contextlib import closing
 import sqlite3
-from etl.portal_catalog import CatalogStore, CatalogConflict, legacy_id
+from etl.portal_catalog import CatalogStore, CatalogConflict, legacy_id, load_published_catalog
 from html import escape
 import json
 import math
@@ -126,7 +126,26 @@ def main() -> None:
             result = legacy_id(params["category"], params["row"])
         elif operation.startswith("catalog-"):
             with closing(CatalogStore(root)) as store:
-                if operation == "catalog-list":
+                if operation == "catalog-query":
+                    warehouse = Path(params["warehouse"])
+                    store.import_warehouse(warehouse)
+                    if params.get("id"):
+                        result = store.history(params["id"])
+                    else:
+                        published = {}
+                        for category in ("atracoes", "restaurantes", "experiencias"):
+                            with (warehouse / f"{category}.jsonl").open(encoding="utf-8") as stream:
+                                for line in stream:
+                                    if line.strip():
+                                        row = json.loads(line)
+                                        if row.get("_catalog_status") == "approved":
+                                            published[row.get("_catalog_id")] = row.get("_catalog_revision")
+                        result = [{**record, "published": record["status"] == "approved" and
+                                   same_identifier(published.get(record["id"]), record["revision"])}
+                                  for record in enrich_records(warehouse, store.list())]
+                elif operation == "catalog-load-published":
+                    result = load_published_catalog(store, params["warehouse"], params["overrides"])
+                elif operation == "catalog-list":
                     result = store.list()
                 elif operation == "catalog-history":
                     result = store.history(params["id"])

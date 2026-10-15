@@ -199,7 +199,7 @@ class CatalogStore:
                     record[key] = source[key]
             if value.get('matching') is not None and value['category'] == 'restaurantes':
                 record['matching'] = {**value['matching'], 'food': 'yes'}
-            record.update(raw=(previous or {}).get('raw') or {}, updatedAt=self._now(), reason=value['reason'].strip())
+            record.update(raw=(previous or {}).get('raw') or {}, updatedAt=self._now(), reason=value['reason'])
             self._write(record)
             return record
 
@@ -226,3 +226,20 @@ class CatalogStore:
                 else:
                     result.append(record['status'] == 'approved' and type(revision) in (int, float) and record['revision'] == revision)
         return result
+
+
+def load_published_catalog(store, warehouse, overrides_file):
+    """Aplicar a mesma barreira de revisão numa transação para todo o catálogo."""
+    catalog = {}
+    for name in (*CATEGORIES, 'curation_rules'):
+        with (Path(warehouse) / f'{name}.jsonl').open(encoding='utf-8') as stream:
+            catalog[name] = [json.loads(line) for line in stream if line.strip()]
+    rows = [row for category in CATEGORIES for row in catalog[category]]
+    flags = iter(store.published_flags(rows))
+    for category in CATEGORIES:
+        catalog[category] = [row for row in catalog[category] if next(flags)]
+    with Path(overrides_file).open(encoding='utf-8') as stream:
+        overrides = json.load(stream)
+    catalog['curation_rules'] = [{**rule, **overrides.get(_source_string(rule.get('id', _MISSING)), {})}
+                                for rule in catalog['curation_rules']]
+    return catalog

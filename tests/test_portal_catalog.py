@@ -133,6 +133,23 @@ class CatalogStoreTest(unittest.TestCase):
         self.assertEqual(len(self.store.history(first['id'])), 2)
         self.assertEqual(self.store.list()[0]['revision'], 2)
 
+    def test_published_catalog_applies_revision_gate_and_rule_overrides(self):
+        from etl.portal_catalog import load_published_catalog
+        record = self.store.save_validated(self.value(status='approved'))
+        warehouse = self.root / 'warehouse'
+        warehouse.mkdir()
+        row = {'_catalog_id': record['id'], '_catalog_status': 'approved', '_catalog_revision': 1}
+        for category in ('atracoes', 'restaurantes', 'experiencias'):
+            (warehouse / f'{category}.jsonl').write_text(json.dumps(row) if category == 'atracoes' else '', encoding='utf-8')
+        (warehouse / 'curation_rules.jsonl').write_text(json.dumps({'id': 'R01', 'state': 'old', 'other': 1}), encoding='utf-8')
+        overrides = self.root / 'overrides.json'
+        overrides.write_text(json.dumps({'R01': {'state': 'new'}}), encoding='utf-8')
+        catalog = load_published_catalog(self.store, warehouse, overrides)
+        self.assertEqual(catalog['atracoes'], [row])
+        self.assertEqual(catalog['curation_rules'], [{'id': 'R01', 'state': 'new', 'other': 1}])
+        self.store.save_validated(self.value(id=record['id'], baseRevision=1, status='inactive'))
+        self.assertEqual(load_published_catalog(self.store, warehouse, overrides)['atracoes'], [])
+
     def test_transaction_rolls_back_both_tables_when_second_write_fails(self):
         self.store.db.execute("CREATE TRIGGER fail_record BEFORE INSERT ON catalog_records BEGIN SELECT RAISE(ABORT, 'forced'); END")
         with self.assertRaises(sqlite3.IntegrityError):
