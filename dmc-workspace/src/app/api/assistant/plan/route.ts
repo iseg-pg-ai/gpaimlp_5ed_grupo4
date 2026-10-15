@@ -3,6 +3,7 @@ import {
   plannerContext,
   simulatePlan,
   validatePlan,
+  resolveAlternatives,
   type AgentPlan,
 } from "@/lib/assistant-actions";
 import { AgentAuditStore } from "@/lib/agent-audit-store";
@@ -16,6 +17,7 @@ import { portalRequest, PortalPythonError } from "@/lib/python-portal";
 import { jsonError, noStoreHeaders, publicOrigin } from "@/lib/server-http";
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { agentFailure } from "@/lib/agent-errors";
+import { recentConversation } from "@/lib/assistant-conversation";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
@@ -41,10 +43,26 @@ export async function POST(request: Request) {
       throw new Error();
     if (
       body.runId &&
-      (typeof body.runId !== "string" || !["accept", "reject"].includes(body.decision))
+      (typeof body.runId !== "string" || !["accept", "reject", "select"].includes(body.decision))
+    )
+      throw new Error();
+    if (
+      body.decision === "select" &&
+      (!Number.isSafeInteger(body.dayNumber) ||
+        body.dayNumber < 1 ||
+        typeof body.itemId !== "string" ||
+        body.itemId.length > 300 ||
+        typeof body.catalogId !== "string" ||
+        body.catalogId.length > 300)
     )
       throw new Error();
     if (!body.runId) validateSnapshot(body.snapshot);
+    recentConversation(body.conversation);
+    if (
+      body.pendingRunId !== undefined &&
+      (typeof body.pendingRunId !== "string" || body.pendingRunId.length > 80)
+    )
+      throw new Error();
   } catch {
     return jsonError("Pedido inválido. Guarde a viagem antes de usar o assistente.", 400);
   }
@@ -53,9 +71,21 @@ export async function POST(request: Request) {
     const audit = new AgentAuditStore(store);
     if (body.runId) {
       const catalog =
-        body.decision === "accept"
+        body.decision !== "reject"
           ? await loadPublishedCatalog()
           : { atracoes: [], experiencias: [], restaurantes: [], curation_rules: [] };
+      if (body.decision === "select")
+        return Response.json(
+          audit.selectAlternative(
+            body.runId,
+            body.tripId,
+            body.dayNumber,
+            body.itemId,
+            body.catalogId,
+            catalog,
+          ),
+          { headers: noStoreHeaders },
+        );
       return Response.json(
         audit.decide(body.runId, body.tripId, body.decision, catalog) ?? { rejected: true },
         { headers: noStoreHeaders },
@@ -74,7 +104,13 @@ export async function POST(request: Request) {
         "Há alterações locais por guardar. Guarde ou reabra a versão antes de pedir uma proposta.",
       );
     const catalog = await loadPublishedCatalog();
-    const context = plannerContext(snapshot, catalog);
+    const context = {
+      ...plannerContext(snapshot, catalog),
+      conversation: recentConversation(body.conversation),
+      pendingPlan: body.pendingRunId
+        ? audit.pendingPlan(body.tripId, body.baseVersion, body.pendingRunId)
+        : undefined,
+    };
     const result = await portalRequest<{
       plan: AgentPlan;
       provider: string;
@@ -85,6 +121,7 @@ export async function POST(request: Request) {
     }>("agent-plan", "", { instruction: body.input, context });
     validatePlan(result.plan);
     const preview = simulatePlan(snapshot, result.plan, catalog);
+    const alternatives = resolveAlternatives(snapshot, result.plan, catalog);
     const { plan, ...metadata } = result;
     const runId = audit.propose(body.tripId, body.baseVersion, body.input, plan, preview, metadata);
     return Response.json(
@@ -93,6 +130,7 @@ export async function POST(request: Request) {
         tripId: body.tripId,
         baseVersion: body.baseVersion,
         plan,
+        alternatives,
         before: snapshot.itinerary,
         after: preview.itinerary,
         provider: result.provider,

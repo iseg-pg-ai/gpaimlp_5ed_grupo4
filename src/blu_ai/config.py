@@ -20,7 +20,7 @@ AWS_REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "eu-w
 # Modelo Bedrock configurável.
 BEDROCK_MODEL_ID = os.getenv(
     "BEDROCK_MODEL_ID",
-    "eu.amazon.nova-lite-v1:0"
+    "eu.amazon.nova-pro-v1:0"
 )
 
 # Optional OpenAI key if available

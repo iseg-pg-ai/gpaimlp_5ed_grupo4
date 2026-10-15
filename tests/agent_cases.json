@@ -1,0 +1,85 @@
+[
+  {
+    "name": "refinar_remocao_e_apresentar_alternativas",
+    "request": {
+      "instruction": "Em vez de remover a primeira, remove apenas a segunda atividade do mesmo dia e apresenta duas opções de substituição, sem adicionar nenhuma opção ao roteiro.",
+      "context": {
+        "brief": {
+          "destination": "Lisboa",
+          "pace": "Balanced"
+        },
+        "itinerary": [
+          {
+            "dayNumber": 1,
+            "items": [
+              {
+                "id": "atracoes:a",
+                "title": "Passeio sintético A",
+                "time": "09:30",
+                "locked": false
+              },
+              {
+                "id": "atracoes:b",
+                "title": "Passeio sintético B",
+                "time": "14:00",
+                "locked": false
+              }
+            ]
+          }
+        ],
+        "candidates": [
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-a",
+            "title": "Museu sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          },
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-b",
+            "title": "Jardim sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          }
+        ],
+        "conversation": [
+          {
+            "sender": "user",
+            "text": "Remove a primeira atividade do dia 1"
+          },
+          {
+            "sender": "assistant",
+            "text": "Propus remover a primeira atividade. Ainda não foi aplicada."
+          }
+        ],
+        "pendingPlan": {
+          "summary": "Remover a primeira atividade",
+          "actions": [
+            {
+              "type": "remove_item",
+              "dayNumber": 1,
+              "itemId": "atracoes:a"
+            }
+          ],
+          "warnings": [],
+          "requiresConfirmation": true
+        }
+      }
+    },
+    "expected": {
+      "actions": [
+        {
+          "type": "remove_item",
+          "dayNumber": 1,
+          "itemId": "atracoes:b"
+        }
+      ],
+      "targetItemId": "atracoes:b",
+      "catalogIds": [
+        "atracoes:option-a",
+        "atracoes:option-b"
+      ]
+    }
+  }
+]

@@ -16,6 +16,20 @@ def proposal():
 
 
 class PlannerTest(unittest.TestCase):
+    def test_synthetic_evaluation_detects_accumulated_actions_and_missing_edits(self):
+        from scripts.evaluate_agent import evaluate
+        expected = {"actions": [{"type": "remove_item", "dayNumber": 1, "itemId": "b"}], "targetItemId": "b", "catalogIds": ["c", "d"]}
+        plan = {"actions": expected["actions"], "alternatives": [{"dayNumber": 1, "itemId": "b", "catalogIds": ["d", "c"]}]}
+        self.assertTrue(evaluate({"plan": plan}, expected))
+        plan["actions"] = []
+        self.assertFalse(evaluate({"plan": plan}, expected))
+    def test_shared_contract_accepts_grounded_identifiers_not_free_form_option_facts(self):
+        plan = proposal()
+        plan["alternatives"] = [{"dayNumber": 1, "itemId": "atracoes:test", "catalogIds": ["atracoes:other"]}]
+        self.assertEqual(validate_plan(plan), plan)
+        plan["alternatives"][0]["title"] = "Facto inventado pelo modelo"
+        with self.assertRaises(ValueError):
+            validate_plan(plan)
     def test_failures_distinguish_contract_permissions_and_timeout_without_raw_details(self):
         for error, expected in [
             (AgentResponseError("conteúdo privado"), "AGENT_INVALID_RESPONSE"),

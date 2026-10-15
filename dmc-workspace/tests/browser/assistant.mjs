@@ -17,6 +17,13 @@ try {
       item.isLocked = false;
       delete item.confirmation;
     });
+    snapshot.itinerary[0].items.push({
+      id: "synthetic-extra",
+      title: "Outra atividade sintética",
+      time: "15:00 (proposto)",
+      category: "activity",
+      duration: "60 min",
+    });
     // O histórico devolve as chaves ordenadas, ao contrário do rascunho original.
     const sorted = (value) =>
       Array.isArray(value)
@@ -31,6 +38,13 @@ try {
     const before = sorted(structuredClone(snapshot));
     const after = structuredClone(snapshot);
     after.itinerary[0].items.pop();
+    const selected = structuredClone(after);
+    selected.itinerary[0].items[0] = {
+      ...selected.itinerary[0].items[0],
+      id: "atracoes:Choice2",
+      title: "Museu alternativo",
+      priceNote: "Preço por confirmar",
+    };
     let accepted = 0;
     let rejected = 0;
     let versionWrites = 0;
@@ -56,6 +70,101 @@ try {
     await page.route("**/api/assistant/plan", (route) => {
       planRequests++;
       const body = route.request().postDataJSON();
+      if (
+        body.input === "Mostra alternativas para a primeira atividade" ||
+        body.input === "A segunda, por favor"
+      ) {
+        const refining = body.input === "A segunda, por favor";
+        if (refining) {
+          assert.equal(body.pendingRunId, "options-run");
+          assert.ok(
+            body.conversation.some(
+              (turn) =>
+                turn.sender === "user" &&
+                turn.text === "Mostra alternativas para a primeira atividade",
+            ),
+          );
+          assert.ok(
+            body.conversation.every((turn) => Object.keys(turn).sort().join(",") === "sender,text"),
+          );
+        }
+        const options = [
+          {
+            catalogId: "atracoes:Choice1",
+            title: "Jardim alternativo",
+            time: "10:00 (proposto)",
+            price: "Preço por confirmar",
+            pendingChecks: [],
+          },
+          {
+            catalogId: "atracoes:Choice2",
+            title: "Museu alternativo",
+            time: "10:00 (proposto)",
+            price: "Preço por confirmar",
+            pendingChecks: [],
+          },
+        ].slice(refining ? 1 : 0);
+        return route.fulfill({
+          json: {
+            runId: refining ? "options-refined" : "options-run",
+            tripId: "assistant-browser",
+            baseVersion: 2,
+            provider: "mock",
+            modelId: "mock",
+            before: after.itinerary,
+            after: after.itinerary,
+            plan: {
+              summary: "Opções para revisão",
+              actions: [],
+              warnings: [],
+              requiresConfirmation: true,
+              alternatives: [
+                {
+                  dayNumber: 1,
+                  itemId: after.itinerary[0].items[0].id,
+                  catalogIds: options.map((option) => option.catalogId),
+                },
+              ],
+            },
+            alternatives: [
+              {
+                dayNumber: 1,
+                itemId: after.itinerary[0].items[0].id,
+                itemTitle: after.itinerary[0].items[0].title,
+                options,
+              },
+            ],
+          },
+        });
+      }
+      if (body.decision === "select") {
+        assert.equal(body.runId, "options-refined");
+        assert.equal(body.catalogId, "atracoes:Choice2");
+        return route.fulfill({
+          json: {
+            runId: "selected-run",
+            tripId: "assistant-browser",
+            baseVersion: 2,
+            provider: "catalog",
+            modelId: "human-selection",
+            before: after.itinerary,
+            after: selected.itinerary,
+            plan: {
+              summary: "Substituir por Museu alternativo",
+              actions: [
+                {
+                  type: "replace_item",
+                  dayNumber: 1,
+                  itemId: after.itinerary[0].items[0].id,
+                  catalogId: "atracoes:Choice2",
+                },
+              ],
+              warnings: [],
+              requiresConfirmation: true,
+            },
+          },
+        });
+      }
       if (body.input === "Pergunta sem alterações")
         return route.fulfill({
           json: {
@@ -84,7 +193,12 @@ try {
       }
       if (body.decision === "accept") {
         accepted++;
-        return route.fulfill({ json: { snapshot: after, version: 2 } });
+        return route.fulfill({
+          json: {
+            snapshot: body.runId === "selected-run" ? selected : after,
+            version: body.runId === "selected-run" ? 3 : 2,
+          },
+        });
       }
       if (body.decision === "reject") {
         rejected++;
@@ -207,6 +321,38 @@ try {
       "Cada envio deve aparecer uma única vez, incluindo falhas",
     );
     assert.equal(rejected, 1);
+    await input.fill("Mostra alternativas para a primeira atividade");
+    await input.press("Enter");
+    await page.getByTestId("agent-alternatives").waitFor();
+    assert.equal(
+      await page.getByRole("button", { name: "Aceitar e guardar versão", exact: true }).count(),
+      0,
+    );
+    const optionsRequests = planRequests;
+    await input.fill("ok");
+    await input.press("Enter");
+    await page.waitForFunction(() =>
+      JSON.parse(localStorage.getItem("blu-trips-v1"))[0]
+        .messages.at(-1)
+        ?.text.includes("Escolha uma das alternativas"),
+    );
+    assert.equal(planRequests, optionsRequests);
+    await input.fill("A segunda, por favor");
+    await input.press("Enter");
+    await page.waitForFunction(
+      () => document.querySelectorAll('[data-testid="agent-alternatives"] button').length === 1,
+    );
+    await page
+      .getByRole("button", { name: "Pré-visualizar esta substituição", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Aceitar e guardar versão", exact: true }).waitFor();
+    assert.deepEqual((await readTrip()).itinerary, after.itinerary);
+    assert.equal((await readTrip()).version, 2);
+    await page.getByRole("button", { name: "Aceitar e guardar versão", exact: true }).click();
+    await page.waitForFunction(
+      () => JSON.parse(localStorage.getItem("blu-trips-v1"))[0].version === 3,
+    );
+    assert.deepEqual((await readTrip()).itinerary, selected.itinerary);
     assert.equal(versionWrites, 0, "As mensagens e decisões não devem criar versões duplicadas");
     assert.deepEqual(errors, []);
     console.log(`Proposta → rejeitar → propor → aceitar: ${width}px OK`);

@@ -364,9 +364,11 @@ export function useWorkspace() {
         const pending =
           agentProposal?.tripId === active.id && agentProposal.baseVersion === active.version;
         appendReply(
-          pending
+          pending && agentProposal.plan.actions.length
             ? "Existe uma pré-visualização pendente. Para aplicar as alterações, clique em «Aceitar e guardar versão». Escrever «ok» não altera o roteiro."
-            : "Não existe uma proposta de alteração pendente para confirmar. A resposta anterior não criou ações para aplicar. Indique a alteração concreta que pretende, por exemplo: remover a primeira atividade do dia 1.",
+            : pending && agentProposal.alternatives?.length
+              ? "Escolha uma das alternativas apresentadas para preparar a substituição. Ainda não há uma alteração para aceitar."
+              : "Não existe uma proposta de alteração pendente para confirmar. A resposta anterior não criou ações para aplicar. Indique a alteração concreta que pretende, por exemplo: remover a primeira atividade do dia 1.",
         );
         return true;
       }
@@ -386,16 +388,25 @@ export function useWorkspace() {
           baseVersion: active.version,
           snapshot: active,
           input,
+          conversation: active.messages
+            .slice(-8)
+            .map(({ sender, text }) => ({ sender, text: text.slice(0, 4000) })),
+          pendingRunId:
+            agentProposal?.tripId === active.id && agentProposal.baseVersion === active.version
+              ? agentProposal.runId
+              : undefined,
         }),
       });
       const result = await responseJson<AgentProposal>(response);
       validateSnapshot({ ...active, itinerary: result.after });
-      setAgentProposal(result.plan.actions.length ? result : null);
+      setAgentProposal(result.plan.actions.length || result.alternatives?.length ? result : null);
       appendReply(
         result.plan.summary +
           (result.plan.actions.length
             ? "\n\nReveja a pré-visualização e escolha «Aceitar e guardar versão» ou «Rejeitar»."
-            : "\n\nEsta resposta não contém alterações para aceitar. O roteiro permanece igual."),
+            : result.alternatives?.length
+              ? "\n\nEscolha uma alternativa para preparar a sua substituição. O roteiro permanece igual."
+              : "\n\nEsta resposta não contém alterações para aceitar. O roteiro permanece igual."),
       );
       return true;
     } catch (error) {
@@ -404,6 +415,62 @@ export function useWorkspace() {
       setError(reason);
       appendReply(reason);
       return false;
+    } finally {
+      operation.current = false;
+      setAssistantBusy(false);
+    }
+  };
+  const selectAgentAlternative = async (dayNumber: number, itemId: string, catalogId: string) => {
+    if (!active || !agentProposal || operation.current) return;
+    operation.current = true;
+    setAssistantBusy(true);
+    setError("");
+    try {
+      if (agentProposal.tripId !== active.id || agentProposal.baseVersion !== active.version)
+        throw new Error("A viagem mudou. Peça novas alternativas.");
+      const response = await portalFetch("/api/assistant/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tripId: active.id,
+          baseVersion: active.version,
+          runId: agentProposal.runId,
+          decision: "select",
+          dayNumber,
+          itemId,
+          catalogId,
+        }),
+      });
+      const result = await responseJson<AgentProposal>(response);
+      validateSnapshot({ ...active, itinerary: result.after });
+      setAgentProposal(result);
+      setTrips((prev) =>
+        prev.map((trip) =>
+          trip.id === active.id
+            ? {
+                ...trip,
+                messages: [
+                  ...trip.messages,
+                  message(
+                    "assistant",
+                    result.plan.summary + " Reveja a pré-visualização antes de aceitar.",
+                  ),
+                ],
+              }
+            : trip,
+        ),
+      );
+    } catch (error) {
+      const reason =
+        error instanceof Error ? error.message : "Não foi possível preparar a alternativa.";
+      setError(reason);
+      setTrips((prev) =>
+        prev.map((trip) =>
+          trip.id === active.id
+            ? { ...trip, messages: [...trip.messages, message("assistant", reason)] }
+            : trip,
+        ),
+      );
     } finally {
       operation.current = false;
       setAssistantBusy(false);
@@ -673,6 +740,10 @@ export function useWorkspace() {
         ? agentProposal
         : null,
     decideAgentProposal,
+    selectAgentAlternative,
+    dismissAgentProposal: () => {
+      if (!operation.current) setAgentProposal(null);
+    },
     editing,
     ready,
     draft,

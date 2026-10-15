@@ -49,6 +49,8 @@ export default function WorkspacePage() {
     assistantBusy,
     agentProposal,
     decideAgentProposal,
+    selectAgentAlternative,
+    dismissAgentProposal,
     setEditing,
     startNewTrip,
     selectTrip,
@@ -317,6 +319,8 @@ export default function WorkspacePage() {
                     <AIAssistantPanel
                       proposal={agentProposal}
                       onDecideProposal={decideAgentProposal}
+                      onSelectAlternative={selectAgentAlternative}
+                      onDismissProposal={dismissAgentProposal}
                       onCollapse={() => {
                         setDesktopAssistantCollapsed(true);
                         requestAnimationFrame(() => assistantButton.current?.focus());

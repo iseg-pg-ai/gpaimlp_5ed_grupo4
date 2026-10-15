@@ -1,6 +1,11 @@
 import { randomUUID, createHash } from "node:crypto";
 import { VersionStore, VersionConflict, snapshotFingerprint } from "./version-store.ts";
-import { simulatePlan, validatePlan, type AgentPlan } from "./assistant-actions.ts";
+import {
+  simulatePlan,
+  validatePlan,
+  resolveAlternatives,
+  type AgentPlan,
+} from "./assistant-actions.ts";
 import type { Snapshot } from "./itinerary-pdf";
 import type { Catalog } from "./curation.ts";
 
@@ -61,6 +66,67 @@ export class AgentAuditStore {
         new Date().toISOString(),
       );
     return id;
+  }
+  pendingPlan(tripId: string, baseVersion: number, id: string): AgentPlan | undefined {
+    const row = this.store.db
+      .prepare(
+        "SELECT * FROM agent_runs WHERE id=? AND tripId=? AND baseVersion=? AND status IN ('proposed','answered')",
+      )
+      .get(id, tripId, baseVersion) as unknown as Run | undefined;
+    if (!row || Date.now() - Date.parse(row.createdAt) > 30 * 60 * 1000) return undefined;
+    const plan = JSON.parse(row.plan);
+    validatePlan(plan);
+    return plan;
+  }
+  selectAlternative(
+    id: string,
+    tripId: string,
+    dayNumber: number,
+    itemId: string,
+    catalogId: string,
+    catalog: Catalog,
+  ) {
+    const run = this.store.db
+      .prepare("SELECT * FROM agent_runs WHERE id=? AND tripId=?")
+      .get(id, tripId) as unknown as Run | undefined;
+    if (
+      !run ||
+      !["proposed", "answered"].includes(run.status) ||
+      Date.now() - Date.parse(run.createdAt) > 30 * 60 * 1000
+    )
+      throw new VersionConflict("As opções já não estão disponíveis. Peça novas alternativas.");
+    const before = this.base(tripId, run.baseVersion);
+    const groups = resolveAlternatives(before, JSON.parse(run.plan), catalog);
+    const group = groups.find((g) => g.dayNumber === dayNumber && g.itemId === itemId);
+    const option = group?.options.find((candidate) => candidate.catalogId === catalogId);
+    if (!group || !option)
+      throw new VersionConflict("Escolha uma das alternativas apresentadas para esta atividade.");
+    const plan: AgentPlan = {
+      summary: `Substituir ${group.itemTitle} por ${option.title} no dia ${dayNumber}.`,
+      actions: [{ type: "replace_item", dayNumber, itemId, catalogId }],
+      warnings: [],
+      requiresConfirmation: true,
+    };
+    const after = simulatePlan(before, plan, catalog);
+    const runId = this.propose(
+      tripId,
+      run.baseVersion,
+      `Selecionar alternativa ${catalogId}`,
+      plan,
+      after,
+      { provider: "catalog", modelId: "human-selection", parentRunId: id },
+    );
+    return {
+      runId,
+      tripId,
+      baseVersion: run.baseVersion,
+      plan,
+      before: before.itinerary,
+      after: after.itinerary,
+      alternatives: [],
+      provider: "catalog",
+      modelId: "human-selection",
+    };
   }
   decide(id: string, tripId: string, decision: "accept" | "reject", catalog: Catalog) {
     const run = this.store.db

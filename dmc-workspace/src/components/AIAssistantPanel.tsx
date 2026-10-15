@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Check, RotateCcw, Loader2, Copy, PanelRightClose } from "lucide-react";
 import { ChatMessage } from "@/types";
 import type { AgentProposal } from "@/lib/assistant-actions";
+import { canonicalSnapshot } from "@/lib/snapshot-validation";
 import {
   Conversation,
   ConversationContent,
@@ -34,6 +35,8 @@ import { Badge } from "@/components/ui/badge";
 interface AIAssistantPanelProps {
   proposal?: AgentProposal | null;
   onDecideProposal?: (decision: "accept" | "reject") => void;
+  onSelectAlternative?: (dayNumber: number, itemId: string, catalogId: string) => void;
+  onDismissProposal?: () => void;
   messages: ChatMessage[];
   onSendMessage: (text: string) => void;
   isProcessing: boolean;
@@ -44,8 +47,6 @@ interface AIAssistantPanelProps {
 const suggestionChips = [
   "Ajuda",
   "Recomenda alternativas para chuva",
-  "Sugerir restaurante sem glúten",
-  "Reagendar atividade 1 do dia 1 para 14:00",
   "Otimizar rota do dia 1",
 ];
 
@@ -57,6 +58,8 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   onCollapse,
   proposal,
   onDecideProposal,
+  onSelectAlternative,
+  onDismissProposal,
 }) => {
   const collapseLabel = useTranslated("Recolher assistente", "pt");
   const promptPlaceholder = useTranslated("Ask me to adapt anything…");
@@ -215,7 +218,14 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
               data-testid="agent-preview"
             >
               <h4 className="font-semibold">
-                <T text="Rever alterações antes de aceitar" source="pt" />
+                <T
+                  text={
+                    proposal.plan.actions.length
+                      ? "Rever alterações antes de aceitar"
+                      : "Escolher alternativa de substituição"
+                  }
+                  source="pt"
+                />
               </h4>
               <p>{proposal.plan.summary}</p>
               {proposal.plan.warnings.map((warning, index) => (
@@ -229,7 +239,8 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
               </p>
               {proposal.after
                 .filter(
-                  (day, index) => JSON.stringify(day) !== JSON.stringify(proposal.before[index]),
+                  (day, index) =>
+                    canonicalSnapshot(day) !== canonicalSnapshot(proposal.before[index]),
                 )
                 .map((day) => (
                   <div key={day.dayNumber} className="mt-3 border-t pt-2">
@@ -259,18 +270,57 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                     </ul>
                   </div>
                 ))}
-              <div className="mt-3 flex gap-2">
-                <Button disabled={isProcessing} onClick={() => onDecideProposal?.("accept")}>
-                  <T text="Aceitar e guardar versão" source="pt" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  disabled={isProcessing}
-                  onClick={() => onDecideProposal?.("reject")}
+              {proposal.alternatives?.map((group) => (
+                <div
+                  key={`${group.dayNumber}:${group.itemId}`}
+                  className="mt-3 border-t pt-2"
+                  data-testid="agent-alternatives"
                 >
-                  <T text="Rejeitar" source="pt" />
+                  <h5 className="font-semibold">
+                    Alternativas · Dia {group.dayNumber} · {group.itemTitle}
+                  </h5>
+                  {group.options.map((option) => (
+                    <div
+                      key={option.catalogId}
+                      className="mt-2 rounded border border-[#D5D1C7] p-2"
+                    >
+                      <p className="font-semibold">{option.title}</p>
+                      <p>
+                        {option.time} · {option.price}
+                      </p>
+                      {option.pendingChecks.map((check, index) => (
+                        <p key={index}>{check}</p>
+                      ))}
+                      <Button
+                        disabled={isProcessing}
+                        onClick={() =>
+                          onSelectAlternative?.(group.dayNumber, group.itemId, option.catalogId)
+                        }
+                      >
+                        <T text="Pré-visualizar esta substituição" source="pt" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              {proposal.plan.actions.length > 0 ? (
+                <div className="mt-3 flex gap-2">
+                  <Button disabled={isProcessing} onClick={() => onDecideProposal?.("accept")}>
+                    <T text="Aceitar e guardar versão" source="pt" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={isProcessing}
+                    onClick={() => onDecideProposal?.("reject")}
+                  >
+                    <T text="Rejeitar" source="pt" />
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="ghost" disabled={isProcessing} onClick={onDismissProposal}>
+                  <T text="Fechar opções" source="pt" />
                 </Button>
-              </div>
+              )}
             </section>
           )}
 

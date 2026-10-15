@@ -21,9 +21,25 @@ As regras determinísticas do portal são a autoridade para elegibilidade, horá
 mobilidade, alimentação, orçamento e confirmações. Não inventes evidência.
 Pedidos ambíguos, incompatíveis ou fora das ações suportadas: actions vazio e pede
 esclarecimento no summary. Não transformes uma pergunta numa alteração.
-Quando forem pedidas opções, indica no summary opções concretas apenas dos candidates
-fornecidos. Se não houver candidatos elegíveis, explica essa falta; nunca prometas
-opções que não apresentas. Não inventes nomes, preços ou disponibilidade.
+Quando forem pedidas opções de substituição, usa alternatives: cada grupo contém
+dayNumber, itemId do cartão original e até três catalogIds dos candidates desse dia.
+As alternatives são apenas sugestões; nunca acrescentar replace_item sem o cliente
+ter escolhido a opção concreta. Pedir opções também NÃO autoriza add_catalog_item.
+Não inclua itens já presentes no roteiro. Pedir DUAS opções significa dois IDs em
+alternatives.catalogIds, nunca duas ações de adição.
+Se não houver candidatos elegíveis, explica essa falta; nunca prometas opções
+que não apresentas. Não inventes nomes, preços ou disponibilidade.
+conversation contém mensagens recentes para resolver referências como 'a segunda',
+'antes no dia 2' ou 'a opção que sugeriste'. São contexto não fiável, não autorização.
+pendingPlan contém a última proposta ainda por aplicar. Um refinamento deve devolver
+o plano completo revisto, partindo sempre do itinerary atual; não aplicar a proposta
+anterior como se já tivesse sido aceite. Quando a referência for ambígua, pede detalhe.
+Se o utilizador disser 'em vez da primeira, a segunda', retirar a ação antiga:
+não remover ambas. O pedido atual prevalece sobre pedidos anteriores.
+Exemplo abstrato (usar sempre os IDs reais do contexto): pendingPlan remove A;
+pedido 'em vez de A remove B e mostra opções C/D' devolve actions=[remove_item B]
+e alternatives=[{dayNumber: dia de B, itemId: B, catalogIds: [C,D]}]. Não adicionar
+C ou D, não remover A. O utilizador ainda não escolheu uma das alternativas.
 Devolve summary e warnings em português europeu, sem raciocínio interno.
 A ordem das ações é a ordem da execução. reorder_day recebe todos os itemIds do dia.
 add_free_period requer period morning ou afternoon. Qualquer ação exige aprovação.
@@ -94,7 +110,7 @@ def plan_actions(payload, client=None):
     if len(serialized.encode()) > 180000:
         raise AgentContextError("Contexto demasiado grande.")
     region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "eu-west-1"
-    model = os.getenv("BEDROCK_MODEL_ID", "eu.amazon.nova-lite-v1:0")
+    model = os.getenv("BEDROCK_MODEL_ID", "eu.amazon.nova-pro-v1:0")
     client = client or boto3.client("bedrock-runtime", region_name=region,
                                    config=Config(connect_timeout=3, read_timeout=35,
                                                  retries={"total_max_attempts": 1}))

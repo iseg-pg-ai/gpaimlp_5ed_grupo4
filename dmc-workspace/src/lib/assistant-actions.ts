@@ -20,6 +20,19 @@ export type AgentPlan = {
   actions: AgentAction[];
   warnings: string[];
   requiresConfirmation: true;
+  alternatives?: Array<{ dayNumber: number; itemId: string; catalogIds: string[] }>;
+};
+export type AgentAlternatives = {
+  dayNumber: number;
+  itemId: string;
+  itemTitle: string;
+  options: Array<{
+    catalogId: string;
+    title: string;
+    time: string;
+    price: string;
+    pendingChecks: string[];
+  }>;
 };
 export type AgentProposal = {
   runId: string;
@@ -30,6 +43,7 @@ export type AgentProposal = {
   after: Snapshot["itinerary"];
   provider: string;
   modelId: string;
+  alternatives?: AgentAlternatives[];
 };
 type Schema = {
   type: string;
@@ -105,6 +119,7 @@ const protectedItem = (item: Snapshot["itinerary"][number]["items"][number]) =>
   item.isLocked || item.confirmation?.status === "confirmed";
 export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catalog): Snapshot {
   validatePlan(plan);
+  resolveAlternatives(snapshot, plan, catalog);
   if (!plan.actions.length) return structuredClone(snapshot);
   let current = structuredClone(snapshot);
   for (const action of plan.actions) {
@@ -194,6 +209,52 @@ export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catal
   return current;
 }
 
+export function resolveAlternatives(
+  snapshot: Snapshot,
+  plan: AgentPlan,
+  catalog: Catalog,
+): AgentAlternatives[] {
+  validatePlan(plan);
+  const targets = new Set<string>();
+  return (plan.alternatives ?? []).map((group) => {
+    const day = snapshot.itinerary.find((d) => d.dayNumber === group.dayNumber);
+    const index = day?.items.findIndex((item) => item.id === group.itemId) ?? -1;
+    const key = `${group.dayNumber}:${group.itemId}`;
+    if (
+      !day ||
+      index < 0 ||
+      targets.has(key) ||
+      new Set(group.catalogIds).size !== group.catalogIds.length
+    )
+      throw new Error("Alvo ou opções de substituição inválidos.");
+    targets.add(key);
+    const options = group.catalogIds.map((catalogId) => {
+      if (/["\r\n]/.test(catalogId)) throw new Error("Identificador de alternativa inválido.");
+      const result = editWithAssistant(
+        snapshot,
+        `substituir atividade ${index + 1} do dia ${day.dayNumber} por "${catalogId}"`,
+        catalog,
+      );
+      if (!result.changed) throw new Error(result.reply);
+      const item = result.itinerary.find((d) => d.dayNumber === day.dayNumber)!.items[index];
+      if (item.id !== catalogId) throw new Error("Alternativa inexistente no catálogo aprovado.");
+      return {
+        catalogId: item.id,
+        title: item.title,
+        time: item.time,
+        price: item.priceNote ?? "Preço por confirmar",
+        pendingChecks: item.pendingChecks ?? [],
+      };
+    });
+    return {
+      dayNumber: day.dayNumber,
+      itemId: group.itemId,
+      itemTitle: day.items[index].title,
+      options,
+    };
+  });
+}
+
 export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
   // Lista explícita: campos futuros do briefing não são enviados implicitamente.
   const brief: Record<string, unknown> = Object.fromEntries(
@@ -235,7 +296,14 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
       ).map((key) => [key, p[key]]),
     );
   }
-  const candidates = [];
+  const candidates: Array<{
+    dayNumber: number;
+    id: string;
+    title: string;
+    category: string;
+    time: string;
+    price?: string;
+  }> = [];
   for (const day of snapshot.itinerary) {
     for (const table of ["atracoes", "restaurantes", "experiencias"] as const)
       for (const row of catalog[table]) {
@@ -245,7 +313,12 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
           { ...snapshot.brief, startDate: day.date, endDate: day.date, destination: day.location },
           isolated,
         ).itinerary[0]?.items[0];
-        if (item)
+        if (
+          item &&
+          !snapshot.itinerary.some((existingDay) =>
+            existingDay.items.some((existing) => existing.id === item.id),
+          )
+        )
           candidates.push({
             dayNumber: day.dayNumber,
             id: item.id,
@@ -255,6 +328,19 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
             price: item.priceNote,
           });
       }
+  }
+  // Distribuir o limite entre dias, para não excluir os últimos dias da viagem.
+  const byDay = snapshot.itinerary.map((day) =>
+    candidates.filter((candidate) => candidate.dayNumber === day.dayNumber),
+  );
+  const selected = [];
+  for (
+    let offset = 0;
+    selected.length < 120 && byDay.some((items) => offset < items.length);
+    offset++
+  ) {
+    for (const items of byDay)
+      if (items[offset] && selected.length < 120) selected.push(items[offset]);
   }
   return {
     brief,
@@ -271,7 +357,7 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
         locked: Boolean(protectedItem(item)),
       })),
     })),
-    candidates: candidates.slice(0, 120),
+    candidates: selected,
     candidatesTruncated: candidates.length > 120,
   };
 }

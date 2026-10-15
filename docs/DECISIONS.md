@@ -1,5 +1,39 @@
 # Decisões e questões abertas
 
+## Conversa contextual e alternativas verificadas — 2026-10-16
+
+Estado: implementação da continuação das Fases 0 e 1, iniciada em 2026-10-15.
+
+Enviar apenas texto/papel das oito mensagens recentes da mesma viagem, com
+limite de 6000 caracteres. A proposta pendente é lida pelo servidor e vinculada
+à viagem, versão, estado e prazo. O contexto anterior não autoriza aplicação.
+
+Acrescentar alternativas opcionais ao contrato partilhado, preservando planos
+anteriores. O modelo escolhe identificadores; a simulação determinística obtém
+os factos e valida cada substituição. Distribuir os 120 candidatos pelos dias
+e excluir ofertas já presentes no roteiro. A seleção humana cria uma nova
+pré-visualização, vinculada ao pedido anterior na auditoria, sem inferência
+adicional nem alteração de versão. A aceitação mantém a transação existente.
+
+Não acrescentar outro catálogo, base de conversas ou permissões de escrita ao
+modelo. A conversa permanece no navegador; o texto recente passa a ser enviado
+ao Bedrock. Ver [configuração e limites](ASSISTANT.md).
+
+Avaliação real com dados sintéticos: Nova Lite acumulou uma ação anterior e
+tratou opções como adições; com instruções mais explícitas devolveu alternativas
+mas omitiu a remoção. Nova Pro passou o mesmo cenário explícito (2177 tokens de
+entrada, 117 de saída). Usar Nova Pro como predefinido configurável, sem fallback
+automático. Esta observação não substitui uma avaliação ampla de modelos.
+Conservar o caso em `tests/agent_cases.json` e exigir `--live` no avaliador para
+qualquer nova chamada paga. Nenhum destes testes alterou viagens reais.
+
+Validação: check do portal aprovado (104 testes, um ignorado), 13 testes do
+agente aprovados e build aprovado. Navegador em 390/1600 px com inferência e APIs
+simuladas: histórico enviado com limites, refinamento da segunda opção, seleção
+sem alteração imediata e aceitação numa nova versão. Testes de domínio cobrem
+IDs inventados, proteções, encerramentos posteriores e concorrência. Não foi
+publicado Lambda nem efetuado commit ou push nesta continuação.
+
 ## Pré-visualização visível e confirmação contextual — 2026-10-15
 
 A auditoria confirmou uma proposta com ação válida, embora o utilizador apenas

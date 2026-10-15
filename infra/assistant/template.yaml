@@ -4,7 +4,7 @@ Description: Planeador BLU privado com Amazon Bedrock e autenticacao IAM.
 Parameters:
   ModelId:
     Type: String
-    Default: eu.amazon.nova-lite-v1:0
+    Default: eu.amazon.nova-pro-v1:0
   ModelResources:
     Type: CommaDelimitedList
     Description: ARNs explicitos do perfil de inferencia e dos modelos nas regioes de destino.

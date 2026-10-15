@@ -1,5 +1,23 @@
 # Plano de evolução do BLU AI System
 
+## Conversa contextual e alternativas — 2026-10-15
+
+- [x] Transmitir contexto recente limitado à viagem e proposta corrente validada.
+- [x] Acrescentar alternativas estruturadas ao contrato partilhado.
+- [x] Validar substituições com o catálogo e a lógica determinística existentes.
+- [x] Preparar a alternativa escolhida sem inferência adicional nem escrita imediata.
+- [x] Validar contexto, opções, proteções, concorrência, UI e documentação.
+
+Concluído em 2026-10-16: 104 testes do portal aprovados, um ignorado; 13 testes
+do agente aprovados; build e UI em 390/1600 px aprovados. UI e persistência usam
+mocks e diretórios temporários. Nova Pro passou um cenário real explícito de
+refinamento e duas alternativas; os dois testes anteriores com Nova Lite falharam
+semanticamente. Conservar o caso e não apresentar esta amostra como avaliação
+ampla. Nova Pro passa a predefinido configurável. Fontes e warehouse preservados.
+
+Preservar confirmação humana, catálogo e warehouse. Modelo continua no Bedrock;
+testes com fornecedores simulados e armazenamento temporário por defeito.
+
 ## Respostas sem ações e confirmação no chat — 2026-10-15
 
 A auditoria revelou uma proposta com ação válida. A pré-visualização estava
@@ -69,7 +87,7 @@ de integração isolados em diretórios temporários. Lambda não publicado.
   de `warehouse/`, conforme correção explícita do utilizador.
 - [x] Rever o serviço existente e `BLU_ASSISTANT_PLAN.md`.
 - [x] Validar a base integrada antes de implementar as Fases 0 e 1.
-- [ ] Propor ações estruturadas, pré-visualizar e confirmar antes de aplicar.
+- [x] Propor ações estruturadas, pré-visualizar e confirmar antes de aplicar.
 
 O plano específico tem avaliações anteriores à migração; confirmar as premissas
 no código. Reutilizar o catálogo Python e as validações do portal. Modelos usam
