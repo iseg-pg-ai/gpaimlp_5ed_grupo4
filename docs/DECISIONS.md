@@ -354,3 +354,32 @@ TXT em francês e ZIP PDF em duas larguras, com e sem JS, e privacidade preserva
 Exports isolados em pasta temporária. Validação de erros da API sem contactar o
 fornecedor. Testes meteorológicos Python incluídos no CI de dados. Sem push,
 merge ou publicação.
+
+## 2026-10-15 — Catálogo SQLite Python e ação HTML de Lixo
+
+Continuação em `refactor/html-python`, a partir de `d22c13e`.
+`etl/portal_catalog.py` concentra a persistência operacional e a integração ETL.
+O esquema mantém as tabelas de registos e histórico. Escritas e verificações de
+revisão usam transações; o ETL continua a ler a fonte em modo read-only.
+As entradas são validadas e normalizadas pelo contrato TypeScript partilhado com
+o editor, antes do processo Python. Não há segundo esquema de validação.
+
+A seleção de IDs é partilhada com o ETL, preservando a semântica nullish do portal;
+267 IDs de dados e casos sintéticos coincidiram com a implementação anterior.
+A leitura elegível e os overrides de regras passam para Python; removeu-se o
+módulo TypeScript `published-catalog.ts`. As APIs usam chamadas assíncronas e
+continuam a devolver conflito 409 para revisões obsoletas.
+
+Os caminhos `BLU_DATA_DIR` e `BLU_WAREHOUSE_DIR` aplicam-se também à publicação,
+permitindo testes completos isolados. Os padrões de produção não mudam.
+O formulário POST do histórico envia versões para o Lixo sem JavaScript,
+valida a origem e redireciona com 303; erros regressam ao histórico. O contrato
+JSON do editor e do Lixo interativo permanece disponível. Não foram alterados os
+snapshots, hashes ou bytes PDF das versões existentes.
+
+Evidência: 96 testes Node aprovados e um ignorado; 44 Python aprovados; build
+aprovado; integração catálogo → ETL → geração → inativação aprovada. Em produção
+isolada passaram edição HTTP, conflitos, publicação e inativação; o editor passou
+em seis idiomas e duas larguras com mocks; formulários, downloads, Lixo/restauro,
+erros e origens passaram com e sem JS. Usaram-se cópias temporárias de fontes,
+warehouse e exports. Sem merge, push ou publicação externa.

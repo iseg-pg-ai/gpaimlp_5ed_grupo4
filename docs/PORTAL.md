@@ -44,6 +44,11 @@ A página `/catalog` permite pesquisar, filtrar, criar, editar e inativar
 atividades, restaurantes e experiências. Os registos seguem os estados Rascunho,
 Em revisão, Aprovado e Inativo. Apenas os aprovados podem entrar na geração.
 
+A persistência do catálogo usa SQLite Python e mantém o esquema existente.
+As validações de entrada são partilhadas com o editor em TypeScript; cada edição
+é guardada com verificação de revisão numa transação. Uma edição concorrente
+obsoleta devolve conflito 409 e exige reabrir o registo.
+
 O editor guarda a oferta e o histórico em `data/portal/catalog.sqlite`. O ETL
 publica os registos aprovados no warehouse; não se deve editar `warehouse/`
 manualmente. Os preços estruturados incluem valor, moeda, unidade e estado
@@ -328,6 +333,11 @@ O painel de detalhes abre num popover HTML nativo. Pode ser fechado com Escape,
 clique fora ou o botão Fechar. A consulta dinâmica continua a precisar de
 JavaScript; a gestão de abertura e fecho é feita pelo navegador.
 
+Em `/exports`, **Enviar para o Lixo** usa um formulário HTML e funciona sem
+JavaScript. Após o POST, o histórico é recarregado; erros aparecem no próprio
+histórico. Os formulários exigem origem válida. A API JSON e o restauro no Lixo
+interativo continuam disponíveis.
+
 Em `/exports`, escolher o idioma e carregar em **Descarregar PDFs** ou **TXT para
 Canva**. O formulário transmite versão, idioma e formato sem estado React e
 funciona sem JavaScript. O ZIP preserva os PDFs da versão; o TXT continua a
@@ -346,6 +356,14 @@ padrão Python. O portal usa `BLU_PYTHON`, o ambiente `.venv` ou o Python do sis
 por esta ordem. Não é necessário iniciar o agente ou outro servidor. Os registos
 são renderizados pelo template `dmc-workspace/templates/dataset-row.html`, com
 escaping das fontes; valores vazios aparecem como «—».
+
+### Isolar dados de testes
+
+`BLU_DATA_DIR` define a pasta de fontes e a base `portal/catalog.sqlite`;
+`BLU_WAREHOUSE_DIR` define a entrega publicada. O endpoint de publicação usa os
+mesmos caminhos, permitindo testar edição e ETL sem tocar nas pastas reais.
+Para versões e PDFs temporários, definir também `BLU_EXPORT_DIR`. As fontes
+necessárias devem existir no diretório de dados escolhido.
 
 ## Resolução de problemas
 

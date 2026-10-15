@@ -56,6 +56,25 @@ Continuação validada em 2026-10-15: 96 testes Node aprovados e um ignorado,
 exports temporários; meteorologia e tradução de interface com mocks. Não foi
 validado o fornecedor meteorológico real nesta execução.
 
+A migração do catálogo é coberta por `tests/test_portal_catalog.py`: leitura do
+esquema existente sem reescrita, revisões, conflitos entre duas ligações,
+rollback das duas tabelas, importação idempotente, inativação e regras publicadas.
+`catalog.test.mjs` verifica as mesmas operações pelo adaptador assíncrono e as
+validações partilhadas. `npm run test:catalog-etl` cobre a integração real em
+pastas temporárias e inclui suporte explícito a TypeScript no Node 22.13.
+
+O cenário `export-downloads.mjs` cobre também envio para o Lixo por formulário,
+restauro JSON, erros apresentados no histórico e rejeição de origens externas ou
+ausentes. Passou em 320/1440 px, com e sem JavaScript.
+
+Validação desta continuação em 2026-10-15: 96 testes Node aprovados e um ignorado,
+44 Python aprovados, build e catálogo → ETL → geração aprovados. Compararam-se
+267 identificadores com a implementação anterior, todos iguais. Na produção
+isolada passaram as APIs reais de edição, conflito 409, publicação e inativação;
+o editor passou nos seis idiomas e duas larguras com API simulada. O formulário
+do histórico foi testado com downloads reais. Dados, warehouse e exports estavam
+em cópias temporárias. Não foi executado o comando integral de conformidade.
+
 | Requisito | Cobertura principal |
 | --- | --- |
 | Categorias, horários, preços e curadoria | `curation`, `scheduling`, `catalog-matching`, `proposal-budget` |

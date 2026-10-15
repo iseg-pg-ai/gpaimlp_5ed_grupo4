@@ -33,7 +33,7 @@ não requer SageMaker SDK, MLflow ou outro ambiente experimental de treino.
 | --- | --- | --- |
 | ETL | `etl/pipeline.py` | Orquestrar ingestão, validação, analytics e publicação |
 | Fontes | `etl/sources.py`, `etl/structured.py` | Ler origens, preservar linhagem e auditar conflitos |
-| Catálogo operacional | `etl/portal_catalog.py` | Integrar as revisões aprovadas na publicação |
+| Catálogo operacional | `etl/portal_catalog.py` | Persistir revisões em SQLite e integrar a fonte na publicação ETL |
 | Análise | `dashboard/app.py` | Consumir a entrega do warehouse |
 | Portal | `dmc-workspace/src/app/page.tsx` | Compor o workspace e o fluxo do curador |
 | Estado do portal | `src/hooks/useWorkspace.ts`, `src/hooks/useCatalog.ts` | Coordenar estado e pedidos da interface |
@@ -72,7 +72,7 @@ As referências históricas chegam já relacionadas do Python. O TXT usa whiteli
 em Python, mantendo orçamento e pendências nas regras partilhadas com editor/PDF.
 
 O editor, estado local, curadoria e horários usados no navegador continuam em
-TypeScript. Versões/SQLite e PDFKit mantêm os seus contratos no servidor Node.
+TypeScript. O histórico de versões e PDFKit mantêm os contratos no servidor Node.
 A otimização de percursos ainda tem consumidores no navegador e no servidor;
 a sua migração exige rever essa fronteira sem duplicar regras.
 
@@ -83,9 +83,29 @@ POST aceita coordenadas dos itens do dia. As respostas disponíveis têm cache d
 implementação e distingue histórico de previsão, sem inventar um clima favorável
 quando a consulta falha. Não foram acrescentadas dependências Python.
 
+A persistência do catálogo pertence agora ao Python em `etl/portal_catalog.py`,
+com o mesmo esquema `catalog_records`/`catalog_history` e transações
+`BEGIN IMMEDIATE`. O adaptador `src/lib/catalog-store.ts` valida e normaliza as
+entradas com o contrato já usado no editor; Python recebe esses dados preparados.
+Não duplicar a validação na ferramenta do agente: escritas devem usar a API
+validada do portal. Identificadores de importação são partilhados com o ETL.
+
+A leitura do catálogo elegível, a verificação das revisões e os overrides de
+regras também ficam em Python. O antigo módulo `published-catalog.ts` foi removido.
+O ETL continua a ler o catálogo operacional em modo read-only, sem o modificar.
+Cada operação do portal abre e fecha a sua ligação; não há processo servidor novo.
+
+Para testes isolados, `BLU_DATA_DIR` e `BLU_WAREHOUSE_DIR` substituem os diretórios
+padrão, incluindo no endpoint de publicação. Caminhos relativos resolvem a partir
+da raiz do projeto. A base operacional fica em `BLU_DATA_DIR/portal/catalog.sqlite`.
+`BLU_EXPORT_DIR` continua a controlar apenas o histórico de versões e PDFs.
+
 O painel meteorológico usa `popover`, `popovertarget` e fecho HTML nativo, sem
 estado React de abertura nem listeners globais. O histórico usa formulário GET
 com idioma e dois botões de download, funcionando também sem JavaScript.
+O envio de versões para o Lixo no histórico
+também usa formulário POST, com verificação de origem e redirecionamento 303.
+A API JSON mantém o contrato do editor e do Lixo interativo.
 
 ## Contratos a preservar
 

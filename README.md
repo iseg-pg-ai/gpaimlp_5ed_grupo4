@@ -89,9 +89,9 @@ npm ci
 npm run dev -- -p 3001
 ```
 
-A consulta das fontes, a meteorologia e o TXT/Canva usam Python 3.12 ou 3.13 local,
-sem bibliotecas adicionais. O portal usa `BLU_PYTHON`, `.venv` ou o Python do
-sistema. O agente continua opcional. O explorador em `/references` usa um
+O catálogo, a consulta das fontes, a meteorologia e o TXT/Canva usam Python
+3.12 ou 3.13 local, sem bibliotecas adicionais. O portal usa `BLU_PYTHON`, `.venv`
+ou o Python do sistema. O agente continua opcional. O explorador em `/references` usa um
 formulário HTML: selecionar a folha e carregar em **Filtrar**.
 
 Abrir [http://localhost:3001](http://localhost:3001). O portal comunica automaticamente com o Agente de IA na porta 8000 quando disponível.

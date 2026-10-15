@@ -42,8 +42,13 @@ Meteorologia simulada e exports isolados num diretório temporário.
 - [x] Adaptar APIs e testes para operações assíncronas e validar conflitos.
 - [x] Centralizar publicação e leitura do catálogo elegível em Python.
 - [x] Converter a ação de Lixo no histórico para formulário HTML.
-- [ ] Validar bases temporárias, ETL, APIs e navegação sem JavaScript.
-- [ ] Atualizar documentação e CI com commits separados.
+- [x] Validar bases temporárias, ETL, APIs e navegação sem JavaScript.
+- [x] Atualizar documentação e CI com commits separados.
+
+96 testes Node aprovados e um ignorado; 44 Python aprovados; build e integração
+catálogo/ETL aprovados. 267 identificadores equivalentes. APIs reais com edição,
+conflito e publicação em dados temporários; editor em seis idiomas; histórico
+com e sem JavaScript em duas larguras.
 
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
