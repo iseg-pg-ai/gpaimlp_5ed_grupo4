@@ -303,8 +303,7 @@ avisos antes de integrar alterações no portal.
 Com o portal iniciado na porta 3001:
 
 ```powershell
-npm run test:responsive
-npm run test:navigation
+npm run test:ui
 npm run test:catalog
 npm run test:confirmations
 npm run test:itinerary

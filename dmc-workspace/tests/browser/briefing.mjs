@@ -1,23 +1,11 @@
-import { chromium } from "playwright";
+import { launchBrowser, mockTranslation } from "./helpers.mjs";
 import assert from "node:assert/strict";
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
-});
+const browser = await launchBrowser();
 try {
   for (const width of [360, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     await page.addInitScript(() => localStorage.setItem("blu-portal-language", "pt"));
-    await page.route("**/api/translate", (r) =>
-      r.fulfill({
-        json: {
-          texts: r
-            .request()
-            .postDataJSON()
-            .items.map((i) => i.text),
-        },
-      }),
-    );
+    await mockTranslation(page);
     let submitted;
     await page.route("**/api/itineraries", (r) => {
       submitted = r.request().postDataJSON();

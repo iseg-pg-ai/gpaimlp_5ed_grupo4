@@ -45,6 +45,18 @@ permanece disponível na instância.
 Sete ficheiros passam a três, mantendo a separação cliente/servidor e os mesmos
 exports públicos. Registar esta etapa num commit separado.
 
+## Consolidação dos testes — 2026-10-15
+
+- [x] Reunir navegação e responsividade em browser/ui.mjs, mantendo todos os cenários.
+- [x] Reunir configuração, URLs públicas e compatibilidade em infrastructure.test.mjs.
+- [x] Partilhar arranque do browser, leitura de fixtures e mock de tradução.
+- [x] Comparar verificações, executar testes e atualizar os comandos e documentação.
+
+As asserções e condições de falha originais foram comparadas automaticamente.
+99 testes unitários aprovados e um ignorado; build aprovado; 42 cenários de
+interface, stress, dois cenários de briefing e apresentação do itinerário
+aprovados numa instância de produção com armazenamento temporário.
+
 ## Próxima iteração do agente
 
 - [ ] Definir o objetivo, as operações autorizadas e os critérios de aceitação.

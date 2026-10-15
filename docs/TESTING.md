@@ -11,13 +11,21 @@ npm run test:compliance
 Use `PORTAL_URL` para testar outra origem e `BROWSER_CHANNEL` para escolher o
 browser instalado.
 
+`npm run test:ui` executa responsividade e navegação na mesma bateria, mantendo
+contextos isolados por cenário. `npm run test:responsive` e `npm run test:navigation`
+continuam disponíveis para executar apenas um desses grupos.
+Configuração AWS, URLs públicas e compatibilidade do plugin ESLint estão em
+`dmc-workspace/tests/infrastructure.test.mjs` e continuam incluídas em `npm test`.
+Os testes de navegador partilham o arranque do Chromium, uma leitura nova da
+fixture por chamada e o mock de tradução em `tests/browser/helpers.mjs`.
+
 | Requisito | Cobertura principal |
 | --- | --- |
 | Categorias, horários, preços e curadoria | `curation`, `scheduling`, `catalog-matching`, `proposal-budget` |
 | Edição, confirmações e assistente | `activity-confirmation`, `assistant-editing`, browser `confirmations` e `assistant` |
 | Adição compatível e deslocações | browser `eligible-addition`, `road-routing` |
-| Seis idiomas | browser `catalog`, `navigation`, `responsive`; `pdf-presentation` |
-| Computador, tablet e telemóvel | browser `responsive` e `briefing` |
+| Seis idiomas | browser `catalog`, `ui`; `pdf-presentation` |
+| Computador, tablet e telemóvel | browser `ui` e `briefing` |
 | PDFs e orçamento | `pdf-presentation`, `proposal-budget`, `versions` |
 | Partilha, versão e idioma | browser `delivery`, `versions` |
 | Preservação e recuperação | `versions`, browser `workspace-recovery` |
@@ -29,6 +37,24 @@ qualidade, tipos, testes unitários, ETL, build de produção e todos os fluxos 
 browser.
 
 ## Histórico de validação
+
+### Consolidação das baterias — 2026-10-15
+
+- Asserções e condições de falha preservadas por comparação com os originais.
+- `npm run check`: 99 testes aprovados, um ignorado; lint, tipos e formatação aprovados.
+- Build de produção aprovado.
+- `npm run test:ui`: 30 combinações de largura/idioma em responsividade e 12 em navegação.
+- Alias `test:responsive` com `STRESS=1`: aprovado.
+- Briefing em 360/1440 px e apresentação do itinerário: aprovados.
+- Esperas por estado visível/oculto nos diálogos substituem leituras prematuras
+  dos limites; as verificações de dimensões, foco e fecho permanecem.
+
+Os testes de browser usaram uma instância local de produção na porta 3002 com
+armazenamento temporário. As bibliotecas nativas do Chromium foram disponibilizadas
+temporariamente fora do repositório. Não foi executada a bateria completa de
+conformidade nem foram usadas chamadas reais ao agente ou ao Canva nesta etapa.
+
+### Execuções anteriores
 
 Os registos seguintes descrevem as execuções nas datas indicadas; não substituem
 a execução dos testes no branch atual.

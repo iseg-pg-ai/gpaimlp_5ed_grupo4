@@ -5,6 +5,19 @@ está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
+### Consolidação dos testes
+
+- Navegação e responsividade passam a `tests/browser/ui.mjs`; os comandos antigos
+  continuam como aliases para selecionar apenas um grupo.
+- Configuração AWS, URLs públicas e compatibilidade ESLint passam a
+  `tests/infrastructure.test.mjs`, preservando os quatro testes originais.
+- O helper de navegador centraliza apenas arranque, leitura nova da fixture e
+  mock de tradução. Cada cenário mantém o seu contexto e mocks específicos.
+- As asserções e condições de falha foram preservadas por comparação automática.
+- Validação: 99 testes unitários aprovados, um ignorado; build aprovado;
+  42 cenários de interface, stress, dois de briefing e apresentação aprovados.
+- Total versionado: 303 ficheiros. Não foi removida cobertura funcional.
+
 ### Revisão integral posterior do diretório
 
 - Inventariar recursivamente ficheiros e pastas, sem seguir montagens ou ler
