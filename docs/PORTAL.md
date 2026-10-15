@@ -323,7 +323,8 @@ A seleção e a pesquisa ficam no URL; os links Anterior/Seguinte conservam os
 filtros. O formulário, a paginação e os detalhes funcionam sem JavaScript.
 A tradução da interface continua disponível quando JavaScript está ativo.
 
-A pesquisa e o enriquecimento de fontes usam `portal/data.py`, com a biblioteca
+A pesquisa e o enriquecimento de fontes usam `portal/data.py`; a composição
+TXT/Canva usa `portal/prompt.py`. Ambos usam apenas a biblioteca
 padrão Python. O portal usa `BLU_PYTHON`, o ambiente `.venv` ou o Python do sistema,
 por esta ordem. Não é necessário iniciar o agente ou outro servidor. Os registos
 são renderizados pelo template `dmc-workspace/templates/dataset-row.html`, com

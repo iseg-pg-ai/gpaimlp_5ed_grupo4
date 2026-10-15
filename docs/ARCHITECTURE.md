@@ -1,6 +1,7 @@
 # Arquitetura e âmbito do BLU AI System
 
-Revisto em 2026-10-15, a partir de `dev` em `a4b7626`.
+Revisto em 2026-10-15; migração incremental em `refactor/html-python`,
+a partir de `chore/project-cleanup` em `da8de67`.
 Este documento concentra o mapa do projeto, as capacidades e as fronteiras para
 a próxima iteração do agente. Os comandos estão no [README](../README.md),
 as tarefas no [plano](../PLAN.md) e o histórico em [decisões](DECISIONS.md).
@@ -37,12 +38,15 @@ não requer SageMaker SDK, MLflow ou outro ambiente experimental de treino.
 | Portal | `dmc-workspace/src/app/page.tsx` | Compor o workspace e o fluxo do curador |
 | Estado do portal | `src/hooks/useWorkspace.ts`, `src/hooks/useCatalog.ts` | Coordenar estado e pedidos da interface |
 | API | `src/app/api/` | Validar pedidos e invocar os módulos de domínio |
+| Fontes e referências | `portal/data.py` | Ler, pesquisar, paginar e enriquecer dados históricos |
+| Consulta HTML | `dmc-workspace/templates/dataset-row.html` | Apresentar fontes escapadas; formulário e paginação no servidor |
+| TXT/Canva Python | `portal/prompt.py` | Compor o TXT do snapshot com campos explícitos destinados ao cliente |
 | Domínio | `src/lib/` | Curadoria, compatibilidade, horários, orçamento e versões |
 | Serviço do agente | `src/blu_ai/api/server.py` | Expor saúde, curadoria e chat em FastAPI |
 | Orquestração do agente | `src/blu_ai/agents/curator_agent.py` | Coordenar modelo e ferramentas |
 | Ferramentas do agente | `src/blu_ai/tools/` | Pesquisa, meteorologia e verificação de restrições |
 | Tradução | `translations/worker.py` | Protocolo JSON-lines, modelos locais e cache |
-| TXT/Canva | `src/lib/itinerary-prompt.ts`, `plugins/blu-curadoria/` | Exportar o snapshot e orientar a composição visual |
+| Adaptador TXT/Canva | `src/lib/itinerary-prompt.ts`, `plugins/blu-curadoria/` | Reutilizar regras partilhadas e orientar a composição visual |
 
 Na tabela, `src/` pertence a `dmc-workspace/`, exceto os caminhos `src/blu_ai/`,
 que são relativos à raiz. As APIs e páginas do Next.js são entradas do framework;
@@ -51,6 +55,27 @@ não precisam de ser importadas por outro ficheiro para estarem em utilização.
 Os auxiliares HTTP partilhados ficam em `src/lib/http-client.ts`; os auxiliares
 das APIs do servidor em `src/lib/server-http.ts`. Os controlos básicos de
 formulário e o estilo de select ficam em `src/components/ui/form-controls.tsx`.
+
+## Fronteira HTML/Python
+
+`src/lib/python-portal.ts` executa operações locais em Python por stdin/stdout
+JSON, sem shell, servidor adicional ou dependências do agente. Há timeout e limite
+de saída; falhas do Python são reportadas sem manter uma segunda implementação
+TypeScript. A seleção do executável segue `BLU_PYTHON`, `.venv`, Python do sistema.
+O deployment conserva a raiz do repositório e os templates do portal.
+
+O explorador de fontes usa HTML servido pelo servidor: formulário GET, links e
+`details` nativos. Filtros ficam no URL e funcionam sem JavaScript. As partes
+traduzíveis mantêm o provider existente; valores de origem são dados escapados.
+As referências históricas chegam já relacionadas do Python. O TXT usa whitelist
+em Python, mantendo orçamento e pendências nas regras partilhadas com editor/PDF.
+
+O editor, estado local, curadoria e horários usados no navegador continuam em
+TypeScript. Versões/SQLite e PDFKit mantêm os seus contratos no servidor Node.
+A meteorologia e a otimização de percursos têm consumidores no navegador e no
+servidor; a sua migração exigiria alterar essa fronteira. Converter estes módulos
+isoladamente criaria pedidos adicionais ou regras duplicadas. O objetivo desta
+etapa é migrar fluxos completos que não precisam dessa duplicação.
 
 ## Contratos a preservar
 

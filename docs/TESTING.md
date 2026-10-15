@@ -19,6 +19,27 @@ Configuração AWS, URLs públicas e compatibilidade do plugin ESLint estão em
 Os testes de navegador partilham o arranque do Chromium, uma leitura nova da
 fixture por chamada e o mock de tradução em `tests/browser/helpers.mjs`.
 
+A migração HTML/Python acrescenta `tests/test_portal_data.py`: allowlist,
+pesquisa, paginação, enriquecimento, relações históricas, escaping de HTML e
+whitelist TXT. Executar da raiz com Python padrão:
+
+```bash
+python -B -m unittest tests.test_portal_data -v
+```
+
+`tests/browser/dataset.mjs` verifica formulário GET, filtros, detalhes e
+paginação em 360/1440 px, com e sem JavaScript. `itinerary-prompt.test.mjs` chama
+a implementação Python através do adaptador; `dataset.test.mjs` cobre também
+Python indisponível. Estes testes Node precisam de Python instalado. A seleção
+segue `BLU_PYTHON`, `.venv` e Python do sistema. O CI de dados inclui os testes
+Python do portal e é acionado por alterações em `portal/` e nos templates HTML.
+
+Validação da migração em 2026-10-15: 101 testes Node e 27 Python aprovados, um
+Node ignorado; build aprovado; 24 TXT idênticos byte a byte à versão anterior.
+No build de produção passaram dataset, 12 cenários de navegação, dois de briefing
+e TXT/download em três larguras. Os cenários com escrita usaram exports
+num diretório temporário; as traduções usaram mocks.
+
 | Requisito | Cobertura principal |
 | --- | --- |
 | Categorias, horários, preços e curadoria | `curation`, `scheduling`, `catalog-matching`, `proposal-budget` |

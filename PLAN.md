@@ -8,8 +8,14 @@ Base: `chore/project-cleanup` em `da8de67`; branch `refactor/html-python`.
 - [x] Substituir estado e fetch do explorador por formulário HTML no servidor.
 - [x] Mover a preparação das referências históricas para Python.
 - [x] Migrar a composição TXT/Canva para Python mantendo regras de domínio partilhadas.
-- [ ] Validar APIs, erros, escaping, navegação sem JavaScript e idiomas.
-- [ ] Atualizar arquitetura e comandos, com commits separados por etapa.
+- [x] Validar APIs, erros, escaping, navegação sem JavaScript e idiomas.
+- [x] Atualizar arquitetura e comandos, com commits separados por etapa.
+
+Resultados: 101 testes do portal aprovados e um ignorado; 27 testes Python
+aprovados; build aprovado. Consulta HTML em 360/1440 px, com e sem JavaScript;
+12 cenários de navegação em seis idiomas; briefing em duas larguras; downloads
+TXT em três larguras. 24 exportações TXT comparadas byte a byte com a versão
+anterior. Exports de navegador num diretório temporário.
 
 Preservar o editor interativo, os contratos das versões, PDFs e tradução.
 Python usa a biblioteca padrão e não requer outro serviço nem instalação de

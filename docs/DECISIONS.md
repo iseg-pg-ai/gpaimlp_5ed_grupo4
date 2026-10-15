@@ -301,3 +301,31 @@ O teste de briefing verifica campos sem identificação ou rótulo, labels órf�
 e IDs duplicados. Chromium aprovou os cenários de 360 e 1440 px, incluindo
 revisão, edição e payload. Check aprovado (100 testes e um ignorado) e build
 de produção aprovado.
+
+## 2026-10-15 — Migração incremental HTML/Python
+
+Branch `refactor/html-python`, criado de `chore/project-cleanup` em `da8de67`.
+A consulta, paginação, enriquecimento e preparação de referências históricas
+passam para `portal/data.py`. O explorador passa a formulário GET e links HTML,
+com registos renderizados por template local escapado. A pesquisa é aplicada
+explicitamente com Filtrar; filtros e página ficam no URL e funcionam sem JS.
+Valores vazios nas fontes são apresentados como «—» em todos os idiomas.
+
+A composição TXT/Canva passa para `portal/prompt.py`; orçamento e pendências
+continuam calculados pelas regras usadas pelo editor/PDF. O adaptador assíncrono
+`src/lib/python-portal.ts` usa stdin/stdout JSON, UTF-8, timeout e limite de saída.
+Não há novo servidor, dependências Python adicionais ou implementação duplicada.
+A consulta de fontes e TXT requerem agora Python mesmo sem tradução ou agente.
+
+O editor e as regras executadas no navegador permanecem em TypeScript. Não se
+migrou SQLite/versionamento ou PDFKit nesta etapa: preservar os contratos e a
+biblioteca atual evita reconstruir persistência e PDFs durante a simplificação.
+Meteorologia e otimização de percursos têm consumidores em ambos os ambientes.
+Uma migração futura deve rever essa fronteira antes de mudar a linguagem.
+
+Evidência: 101 testes do portal e 27 Python aprovados, um teste do portal
+ignorado, build aprovado; 24 TXT idênticos byte a byte à implementação anterior.
+Chromium de produção: consulta HTML com/sem JS em duas larguras; navegação em
+seis idiomas e duas larguras; briefing em duas larguras; TXT em três larguras,
+privacidade, Lixo/restauro e estado PDF preservado. Exports em armazenamento
+temporário e traduções com mocks. Sem publicação ou validação de fornecedores reais.
