@@ -15,6 +15,7 @@ import {
 import { portalRequest, PortalPythonError } from "@/lib/python-portal";
 import { jsonError, noStoreHeaders, publicOrigin } from "@/lib/server-http";
 import { validateSnapshot } from "@/lib/snapshot-validation";
+import { agentFailure } from "@/lib/agent-errors";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
@@ -24,7 +25,10 @@ export async function POST(request: Request) {
       request.headers.get("origin") &&
       request.headers.get("origin") !== publicOrigin(request.url)
     )
-      return jsonError("Origem inválida.", 403);
+      return jsonError(
+        "A ligação usada para abrir o portal não corresponde à configuração do servidor. Reabra o portal pela ligação configurada.",
+        403,
+      );
     const raw = await request.text();
     if (raw.length > 2000000) return jsonError("Pedido demasiado grande.", 413);
     body = JSON.parse(raw);
@@ -98,14 +102,15 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     if (error instanceof VersionConflict) return jsonError(error.message, 409, noStoreHeaders);
-    if (error instanceof PortalPythonError)
-      return jsonError(
-        error.code === "AGENT_UNAVAILABLE"
-          ? "O planeador AWS está indisponível. Nada foi alterado."
-          : "O catálogo ou o adaptador Python está indisponível. Nada foi alterado.",
-        503,
-        noStoreHeaders,
+    if (error instanceof PortalPythonError) {
+      const failure = agentFailure(error.code);
+      // Apenas um código controlado, sem input, contexto ou exceção do SDK.
+      console.warn(`[assistant] ${failure.code}`);
+      return Response.json(
+        { error: failure.message, code: failure.code },
+        { status: failure.status, headers: noStoreHeaders },
       );
+    }
     return jsonError(
       "A proposta não passou a validação do catálogo e das regras. Nada foi alterado.",
       422,

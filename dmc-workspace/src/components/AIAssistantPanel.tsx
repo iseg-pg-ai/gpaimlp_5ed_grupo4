@@ -69,7 +69,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
     if (conversationContainerRef.current) {
       conversationContainerRef.current.scrollTop = conversationContainerRef.current.scrollHeight;
     }
-  }, [messages, isProcessing]);
+  }, [messages, isProcessing, proposal]);
 
   const handleSubmit = () => {
     if (!inputText.trim() || isProcessing) return;
@@ -143,7 +143,71 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
 
       {/* 2. Standardized AI Elements Conversation & Message Components */}
       <Conversation ref={conversationContainerRef} className="bg-[#FAF8F3]">
-        <ConversationContent>
+        <ConversationContent className="flex flex-col">
+          {messages.length === 0 ? (
+            <ConversationEmptyState
+              icon={<Sparkles className="size-8 text-[#D8A65C]" />}
+              title="Curator Ready"
+              description="Use Edit Brief para alterar preferências; remova atividades através dos comandos sugeridos."
+            />
+          ) : (
+            messages.map((message) => {
+              const isAssistant = message.sender === "assistant";
+              return (
+                <Message key={message.id} from={message.sender}>
+                  <div className="flex items-center gap-1.5 mb-1 px-1">
+                    <MessageAvatar from={message.sender} />
+                    <span className="text-xs font-medium text-[#4A636B]">
+                      {isAssistant ? "BLU Costa Curator" : "Travel Designer"}
+                    </span>
+                    <span className="text-xs text-[#4A636B] ml-auto">{message.timestamp}</span>
+                  </div>
+
+                  <MessageContent
+                    from={message.sender}
+                    className={
+                      isAssistant
+                        ? "bg-white border border-[#D5D1C7] text-[#143F4B]"
+                        : "bg-[#143F4B] text-[#F4F0E7]"
+                    }
+                  >
+                    <MessageResponse>
+                      {message.sender === "assistant" ? (
+                        <T text={message.text} source="pt" />
+                      ) : (
+                        message.text
+                      )}
+                    </MessageResponse>
+                  </MessageContent>
+
+                  {/* Status update indicator */}
+                  {isAssistant && message.statusTag && (
+                    <div className="flex items-center gap-1 text-xs font-medium text-[#2D5B67] mt-1 px-1 animate-in fade-in">
+                      <Check className="w-3 h-3 text-[#2D5B67] stroke-[2.5]" />
+                      <span>{message.statusTag}</span>
+                    </div>
+                  )}
+
+                  {/* Hover Actions */}
+                  {isAssistant && (
+                    <MessageActions>
+                      <MessageAction
+                        label="Copy response"
+                        onClick={() => handleCopyMessage(message.id, message.text)}
+                      >
+                        {copiedId === message.id ? (
+                          <Check className="size-3 text-emerald-600" />
+                        ) : (
+                          <Copy className="size-3" />
+                        )}
+                      </MessageAction>
+                    </MessageActions>
+                  )}
+                </Message>
+              );
+            })
+          )}
+
           {proposal && (
             <section
               aria-label="Pré-visualização da proposta"
@@ -208,69 +272,6 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                 </Button>
               </div>
             </section>
-          )}
-          {messages.length === 0 ? (
-            <ConversationEmptyState
-              icon={<Sparkles className="size-8 text-[#D8A65C]" />}
-              title="Curator Ready"
-              description="Use Edit Brief para alterar preferências; remova atividades através dos comandos sugeridos."
-            />
-          ) : (
-            messages.map((message) => {
-              const isAssistant = message.sender === "assistant";
-              return (
-                <Message key={message.id} from={message.sender}>
-                  <div className="flex items-center gap-1.5 mb-1 px-1">
-                    <MessageAvatar from={message.sender} />
-                    <span className="text-xs font-medium text-[#4A636B]">
-                      {isAssistant ? "BLU Costa Curator" : "Travel Designer"}
-                    </span>
-                    <span className="text-xs text-[#4A636B] ml-auto">{message.timestamp}</span>
-                  </div>
-
-                  <MessageContent
-                    from={message.sender}
-                    className={
-                      isAssistant
-                        ? "bg-white border border-[#D5D1C7] text-[#143F4B]"
-                        : "bg-[#143F4B] text-[#F4F0E7]"
-                    }
-                  >
-                    <MessageResponse>
-                      {message.sender === "assistant" ? (
-                        <T text={message.text} source="pt" />
-                      ) : (
-                        message.text
-                      )}
-                    </MessageResponse>
-                  </MessageContent>
-
-                  {/* Status update indicator */}
-                  {isAssistant && message.statusTag && (
-                    <div className="flex items-center gap-1 text-xs font-medium text-[#2D5B67] mt-1 px-1 animate-in fade-in">
-                      <Check className="w-3 h-3 text-[#2D5B67] stroke-[2.5]" />
-                      <span>{message.statusTag}</span>
-                    </div>
-                  )}
-
-                  {/* Hover Actions */}
-                  {isAssistant && (
-                    <MessageActions>
-                      <MessageAction
-                        label="Copy response"
-                        onClick={() => handleCopyMessage(message.id, message.text)}
-                      >
-                        {copiedId === message.id ? (
-                          <Check className="size-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="size-3" />
-                        )}
-                      </MessageAction>
-                    </MessageActions>
-                  )}
-                </Message>
-              );
-            })
           )}
 
           {/* Assistant Thinking State */}

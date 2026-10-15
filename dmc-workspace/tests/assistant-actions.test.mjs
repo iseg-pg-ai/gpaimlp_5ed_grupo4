@@ -6,6 +6,16 @@ import path from "node:path";
 import { validatePlan, simulatePlan, plannerContext } from "../src/lib/assistant-actions.ts";
 import { AgentAuditStore } from "../src/lib/agent-audit-store.ts";
 import { VersionStore } from "../src/lib/version-store.ts";
+import { agentFailure } from "../src/lib/agent-errors.ts";
+
+test("uma resposta inválida do modelo não é apresentada como indisponibilidade AWS", () => {
+  assert.equal(agentFailure("AGENT_INVALID_RESPONSE").status, 422);
+  assert.match(agentFailure("AGENT_INVALID_RESPONSE").message, /modelo respondeu/);
+  assert.equal(agentFailure("AGENT_TIMEOUT").status, 504);
+  assert.match(agentFailure("AGENT_ACCESS_DENIED").message, /recusou/);
+  assert.equal(agentFailure("AGENT_CONTEXT_TOO_LARGE").status, 413);
+  assert.ok(!agentFailure("segredo de um fornecedor").message.includes("segredo"));
+});
 
 const fixture = () => {
   const s = JSON.parse(readFileSync(new URL("./browser/fixture.json", import.meta.url)));

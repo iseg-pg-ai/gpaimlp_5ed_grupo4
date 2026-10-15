@@ -1,5 +1,47 @@
 # Decisões e questões abertas
 
+## Pré-visualização visível e confirmação contextual — 2026-10-15
+
+A auditoria confirmou uma proposta com ação válida, embora o utilizador apenas
+visse a resposta textual. A pré-visualização estava antes das mensagens e o
+scroll automático deslocava o painel para o fim. Colocar a proposta após as
+mensagens e incluir a proposta nas dependências do scroll. O teste deve verificar
+que o botão fica dentro do viewport e dos ancestrais com clipping, antes de o
+Playwright poder deslocar automaticamente a página para clicar.
+
+Um «ok» não inicia outra inferência nem apaga a proposta pendente: orienta para
+o botão de aceitação. Sem proposta pendente, explica essa ausência. Respostas
+sem ações são explicitamente informativas. Não converter texto em aceitação
+implícita nem contornar as validações do roteiro.
+
+Separar também falha de formato do modelo, permissões IAM, contexto demasiado
+grande, timeout e ligação. O diagnóstico usa apenas códigos controlados, sem
+texto de pedidos, respostas brutas ou credenciais nos logs. A mensagem antiga
+«AWS indisponível» não distinguia estes casos.
+
+## Correção da origem em execução — 2026-10-15
+
+O utilizador confirmou que o navegador usava uma origem SageMaker diferente da
+configurada pelo agente no arranque. Corrigir a variável de ambiente do processo
+e reiniciar, mantendo a validação exata de origem. Não acrescentar uma exceção
+que confie em domínios arbitrários do pedido. Verificação local: portal 200,
+origem correta chega à validação do corpo (400 num pedido vazio) e origem externa
+é recusada (403). Sem chamadas ao Bedrock ou alterações a propostas neste teste.
+
+## Mensagens do assistente perante falhas — 2026-10-15
+
+Guardar a mensagem no navegador antes de iniciar a chamada ao planeador e
+acrescentar qualquer erro no próprio chat. Antes, as mensagens só eram guardadas
+após uma resposta bem-sucedida, pelo que uma recusa da API fazia o envio parecer
+ignorado. Não criar versões de itinerário para mensagens ou falhas.
+
+Evidência: check e build aprovados; teste de resposta 503 atrasada em 390/1600 px
+confirma mensagem imediata, erro visível e roteiro preservado. A chamada real
+API → adaptador Python → Bedrock com o pedido de remover a primeira atividade
+passou num catálogo/export temporário. Não foi alterada a viagem do utilizador.
+O erro da sessão original não foi observado diretamente; a correção permite
+identificar a razão de futuras recusas sem expor pedidos nos logs.
+
 ## Primeiro incremento do agente AWS — 2026-10-15
 
 Estado: implementado localmente; primeira parte das Fases 0 e 1.

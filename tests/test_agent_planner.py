@@ -4,7 +4,8 @@ import json
 import unittest
 from unittest.mock import MagicMock, patch
 
-from blu_ai.planner import plan_actions, validate_plan
+from blu_ai.planner import plan_actions, validate_plan, execute, failure_code, AgentResponseError, AgentContextError
+from botocore.exceptions import ClientError, ReadTimeoutError
 from blu_ai.agents.curator_agent import extract_text_content
 
 
@@ -15,6 +16,21 @@ def proposal():
 
 
 class PlannerTest(unittest.TestCase):
+    def test_failures_distinguish_contract_permissions_and_timeout_without_raw_details(self):
+        for error, expected in [
+            (AgentResponseError("conteúdo privado"), "AGENT_INVALID_RESPONSE"),
+            (AgentContextError("conteúdo privado"), "AGENT_CONTEXT_TOO_LARGE"),
+            (ReadTimeoutError(endpoint_url="https://private.example"), "AGENT_TIMEOUT"),
+            (ClientError({"Error": {"Code": "AccessDeniedException", "Message": "segredo"}}, "Converse"), "AGENT_ACCESS_DENIED"),
+            (ClientError({"Error": {"Code": "ThrottlingException", "Message": "segredo"}}, "Converse"), "AGENT_BUSY"),
+        ]:
+            self.assertEqual(failure_code(error), expected)
+            with patch("blu_ai.planner.plan_actions", side_effect=error), patch.dict("os.environ", {"BLU_AGENT_LAMBDA_FUNCTION": ""}):
+                result = execute({"instruction": "teste", "context": {}})
+                self.assertEqual(result["code"], expected)
+                self.assertNotIn("privado", json.dumps(result))
+                self.assertNotIn("segredo", json.dumps(result))
+
     def test_bedrock_receives_contract_and_returns_only_tool_input(self):
         client = MagicMock()
         plan = proposal()

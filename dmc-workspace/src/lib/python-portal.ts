@@ -55,7 +55,11 @@ export function portalRequest<T>(operation: string, root: string, params: object
         if (error)
           return reject(
             new PortalPythonError(
-              operation === "agent-plan" ? "AGENT_UNAVAILABLE" : "DATASET_UNAVAILABLE",
+              operation === "agent-plan"
+                ? error.killed
+                  ? "AGENT_TIMEOUT"
+                  : "AGENT_PROCESS_UNAVAILABLE"
+                : "DATASET_UNAVAILABLE",
               operation === "agent-plan"
                 ? "Planeador AWS indisponível. Verifique o grupo agent e as permissões IAM."
                 : "Python do portal indisponível. Verifique BLU_PYTHON e a instalação Python.",
@@ -67,7 +71,10 @@ export function portalRequest<T>(operation: string, root: string, params: object
           resolve(response.data);
         } catch {
           reject(
-            new PortalPythonError("DATASET_UNAVAILABLE", "Resposta inválida do Python do portal."),
+            new PortalPythonError(
+              operation === "agent-plan" ? "AGENT_INVALID_RESPONSE" : "DATASET_UNAVAILABLE",
+              "Resposta inválida do Python do portal.",
+            ),
           );
         }
       },

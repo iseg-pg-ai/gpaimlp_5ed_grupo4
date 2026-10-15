@@ -1,5 +1,47 @@
 # Plano de evolução do BLU AI System
 
+## Respostas sem ações e confirmação no chat — 2026-10-15
+
+A auditoria revelou uma proposta com ação válida. A pré-visualização estava
+antes das mensagens, fora da zona visível após o scroll automático. Corrigir a
+ordem no DOM e verificar o botão no viewport, sem o scroll automático do teste.
+
+- [x] Explicitar quando uma resposta textual não contém ações para aplicar.
+- [x] Tratar «ok» sem nova inferência e preservar a proposta pendente.
+- [x] Separar formato inválido, permissões, ligação, timeout e indisponibilidade.
+- [x] Colocar a pré-visualização após as mensagens, junto da resposta mais recente.
+- [x] Validar os novos caminhos e reiniciar o portal com Bedrock real.
+
+Check aprovado (100 testes, um ignorado), 11 testes do agente aprovados e build
+aprovado. Navegador em 390/1600 px: botão de aceitação no viewport, «ok» não chama
+o fornecedor nem apaga a proposta e uma resposta sem ações fica identificada.
+Interface validada com mocks em exports temporários, sem alterar viagens reais.
+
+## Origem do portal em execução — 2026-10-15
+
+- [x] Identificar a recusa: domínio configurado no arranque diferente do navegador.
+- [x] Reiniciar com a origem confirmada pelo utilizador e verificar a barreira de origem.
+
+Portal HTTP 200; pedido vazio com a origem confirmada chega à validação (400),
+enquanto uma origem externa continua recusada (403). Sem chamadas ao modelo nesta
+verificação. Não foi alterada nenhuma viagem.
+
+Manter a comparação exata de origem; não confiar em qualquer domínio recebido
+no pedido para contornar uma configuração errada.
+
+## Correção do envio no chat — 2026-10-15
+
+- [x] Guardar imediatamente a mensagem enviada, mesmo quando o pedido falha.
+- [x] Apresentar o erro no próprio chat, preservando roteiro e versões.
+- [x] Validar falhas, sucesso e persistência no navegador e reiniciar o portal.
+
+Check aprovado (99 testes e um ignorado), build aprovado e navegador em
+390/1600 px: mensagem visível durante o pedido, erro no chat sem alterar versões,
+envios sem duplicação e aceitação/rejeição preservadas. Pedido de remover a primeira
+atividade reproduzido pela API e Bedrock reais com dados sintéticos: HTTP 200.
+Esta reprodução não identifica o erro específico da sessão do utilizador; agora
+o erro fica visível no chat em vez de a mensagem desaparecer.
+
 ## Agente AWS — primeira entrega de 2026-10-15
 
 - [x] Confirmar IAM Role e perfil Nova Lite em eu-west-1 sem credenciais fixas.

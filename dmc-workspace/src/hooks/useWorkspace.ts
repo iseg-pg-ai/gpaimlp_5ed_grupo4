@@ -338,34 +338,46 @@ export function useWorkspace() {
     }
   };
   const send = async (input: string) => {
-    if (!active || operation.current) return false;
+    input = input.trim();
+    if (!active || !input || operation.current) return false;
     operation.current = true;
     setAssistantBusy(true);
-    setAgentProposal(null);
     setError("");
+    // Guardar a mensagem antes da chamada: uma falha nunca apaga a conversa.
+    const appendReply = (text: string) =>
+      setTrips((prev) =>
+        prev.map((trip) =>
+          trip.id === active.id
+            ? { ...trip, messages: [...trip.messages, message("assistant", text)] }
+            : trip,
+        ),
+      );
+    setTrips((prev) =>
+      prev.map((trip) =>
+        trip.id === active.id
+          ? { ...trip, messages: [...trip.messages, message("user", input)] }
+          : trip,
+      ),
+    );
     try {
-      if (!active.version) throw new Error("Guarde a viagem antes de usar o assistente.");
-      if (input.trim().toLowerCase() === "ajuda") {
-        setTrips((prev) =>
-          prev.map((trip) =>
-            trip.id === active.id
-              ? {
-                  ...trip,
-                  messages: [
-                    ...trip.messages,
-                    message("user", input),
-                    message(
-                      "assistant",
-                      assistantHelp +
-                        " Os pedidos ao agente apresentam uma proposta para aceitar ou rejeitar.",
-                    ),
-                  ],
-                }
-              : trip,
-          ),
+      if (/^(ok|sim|confirmo|aceito|podes aplicar)[.!?]*$/i.test(input)) {
+        const pending =
+          agentProposal?.tripId === active.id && agentProposal.baseVersion === active.version;
+        appendReply(
+          pending
+            ? "Existe uma pré-visualização pendente. Para aplicar as alterações, clique em «Aceitar e guardar versão». Escrever «ok» não altera o roteiro."
+            : "Não existe uma proposta de alteração pendente para confirmar. A resposta anterior não criou ações para aplicar. Indique a alteração concreta que pretende, por exemplo: remover a primeira atividade do dia 1.",
         );
         return true;
       }
+      setAgentProposal(null);
+      if (input.trim().toLowerCase() === "ajuda") {
+        appendReply(
+          assistantHelp + " Os pedidos ao agente apresentam uma proposta para aceitar ou rejeitar.",
+        );
+        return true;
+      }
+      if (!active.version) throw new Error("Guarde a viagem antes de usar o assistente.");
       const response = await portalFetch("/api/assistant/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -379,23 +391,18 @@ export function useWorkspace() {
       const result = await responseJson<AgentProposal>(response);
       validateSnapshot({ ...active, itinerary: result.after });
       setAgentProposal(result.plan.actions.length ? result : null);
-      setTrips((prev) =>
-        prev.map((trip) =>
-          trip.id === active.id
-            ? {
-                ...trip,
-                messages: [
-                  ...trip.messages,
-                  message("user", input),
-                  message("assistant", result.plan.summary),
-                ],
-              }
-            : trip,
-        ),
+      appendReply(
+        result.plan.summary +
+          (result.plan.actions.length
+            ? "\n\nReveja a pré-visualização e escolha «Aceitar e guardar versão» ou «Rejeitar»."
+            : "\n\nEsta resposta não contém alterações para aceitar. O roteiro permanece igual."),
       );
       return true;
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Não foi possível preparar a proposta.");
+      const reason =
+        error instanceof Error ? error.message : "Não foi possível preparar a proposta.";
+      setError(reason);
+      appendReply(reason);
       return false;
     } finally {
       operation.current = false;

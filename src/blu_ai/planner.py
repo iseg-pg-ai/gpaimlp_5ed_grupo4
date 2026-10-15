@@ -9,6 +9,7 @@ import time
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError, ConnectTimeoutError, ReadTimeoutError, EndpointConnectionError, NoCredentialsError, PartialCredentialsError
 
 SCHEMA = json.loads((Path(__file__).parent / "schemas/action-plan.json").read_text())
 SYSTEM = """És o assistente de curadoria BLU. Propõe alterações através de propose_actions.
@@ -20,10 +21,26 @@ As regras determinísticas do portal são a autoridade para elegibilidade, horá
 mobilidade, alimentação, orçamento e confirmações. Não inventes evidência.
 Pedidos ambíguos, incompatíveis ou fora das ações suportadas: actions vazio e pede
 esclarecimento no summary. Não transformes uma pergunta numa alteração.
+Quando forem pedidas opções, indica no summary opções concretas apenas dos candidates
+fornecidos. Se não houver candidatos elegíveis, explica essa falta; nunca prometas
+opções que não apresentas. Não inventes nomes, preços ou disponibilidade.
 Devolve summary e warnings em português europeu, sem raciocínio interno.
 A ordem das ações é a ordem da execução. reorder_day recebe todos os itemIds do dia.
 add_free_period requer period morning ou afternoon. Qualquer ação exige aprovação.
+Um pedido explícito de remover um item existente e não bloqueado exige uma ação
+remove_item com o seu itemId exato; uma frase no summary não é uma ação.
+Se não propuseres ações, não escrevas que existe uma proposta para aplicar: explica
+o impedimento ou responde à pergunta. Nunca peças um 'ok' para ações ausentes.
 """
+SYSTEM += "\nCada ação contém apenas type, dayNumber e os argumentos indicados para esse tipo: " + json.dumps(SCHEMA["x-action-fields"]) + ". Não incluir outros argumentos, nem campos null."
+
+
+class AgentResponseError(ValueError):
+    """O fornecedor respondeu, mas a resposta não cumpre o contrato."""
+
+
+class AgentContextError(ValueError):
+    """O contexto excede o limite antes da chamada ao fornecedor."""
 
 
 def validate_value(value, schema):
@@ -75,7 +92,7 @@ def plan_actions(payload, client=None):
         raise ValueError("Instrução inválida.")
     serialized = json.dumps(payload, ensure_ascii=False)
     if len(serialized.encode()) > 180000:
-        raise ValueError("Contexto demasiado grande.")
+        raise AgentContextError("Contexto demasiado grande.")
     region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "eu-west-1"
     model = os.getenv("BEDROCK_MODEL_ID", "eu.amazon.nova-lite-v1:0")
     client = client or boto3.client("bedrock-runtime", region_name=region,
@@ -94,8 +111,11 @@ def plan_actions(payload, client=None):
     blocks = response.get("output", {}).get("message", {}).get("content", [])
     calls = [block["toolUse"] for block in blocks if "toolUse" in block]
     if response.get("stopReason") != "tool_use" or len(calls) != 1 or calls[0].get("name") != "propose_actions":
-        raise ValueError("O modelo não devolveu uma proposta estruturada completa.")
-    plan = validate_plan(calls[0]["input"])
+        raise AgentResponseError("O modelo não devolveu uma proposta estruturada completa.")
+    try:
+        plan = validate_plan(calls[0]["input"])
+    except (ValueError, KeyError, TypeError) as error:
+        raise AgentResponseError("Resposta fora do contrato.") from error
     usage = response.get("usage", {})
     return {"plan": plan, "provider": "bedrock", "modelId": model,
             "latencyMs": round((time.monotonic() - started) * 1000),
@@ -104,12 +124,40 @@ def plan_actions(payload, client=None):
 
 def lambda_handler(event, context):
     """Entrada para Lambda privado, invocado através de IAM, sem URL público."""
-    return plan_actions(event)
-
-
-def main():
     try:
-        payload = json.loads(sys.stdin.buffer.read(200001))
+        return plan_actions(event)
+    except Exception as error:
+        return {"ok": False, "code": failure_code(error), "error": "Não foi possível preparar a proposta."}
+
+
+def failure_code(error):
+    """Classificar sem publicar mensagens brutas, pedidos ou credenciais do SDK."""
+    if isinstance(error, AgentResponseError):
+        return "AGENT_INVALID_RESPONSE"
+    if isinstance(error, AgentContextError):
+        return "AGENT_CONTEXT_TOO_LARGE"
+    if isinstance(error, (NoCredentialsError, PartialCredentialsError)):
+        return "AGENT_ACCESS_DENIED"
+    if isinstance(error, (ConnectTimeoutError, ReadTimeoutError)):
+        return "AGENT_TIMEOUT"
+    if isinstance(error, EndpointConnectionError):
+        return "AGENT_CONNECTION_FAILED"
+    if isinstance(error, ClientError):
+        return {
+            "AccessDeniedException": "AGENT_ACCESS_DENIED",
+            "UnrecognizedClientException": "AGENT_ACCESS_DENIED",
+            "ExpiredTokenException": "AGENT_ACCESS_DENIED",
+            "ThrottlingException": "AGENT_BUSY",
+            "ModelTimeoutException": "AGENT_TIMEOUT",
+            "ValidationException": "AGENT_CONFIGURATION_ERROR",
+            "ResourceNotFoundException": "AGENT_CONFIGURATION_ERROR",
+        }.get(error.response.get("Error", {}).get("Code"), "AGENT_UNAVAILABLE")
+    return "AGENT_UNAVAILABLE"
+
+
+def execute(payload):
+    """Protocolo comum ao processo da instância e à função Lambda."""
+    try:
         function = os.getenv("BLU_AGENT_LAMBDA_FUNCTION")
         if function:
             client = boto3.client("lambda", config=Config(connect_timeout=3, read_timeout=45,
@@ -119,14 +167,30 @@ def main():
             if response.get("FunctionError"):
                 raise RuntimeError("Lambda indisponível.")
             result = json.load(response["Payload"])
-            validate_plan(result["plan"])
+            if isinstance(result, dict) and result.get("ok") is False:
+                code = result.get("code")
+                return {"ok": False, "code": code if code in ERROR_CODES else "AGENT_UNAVAILABLE", "error": "Não foi possível preparar a proposta."}
+            try:
+                validate_plan(result["plan"])
+            except (ValueError, KeyError, TypeError) as error:
+                raise AgentResponseError("Resposta Lambda inválida.") from error
         else:
             result = plan_actions(payload)
-        output = {"ok": True, "data": result}
-    except Exception:
+        return {"ok": True, "data": result}
+    except Exception as error:
         # Nunca devolver mensagens do SDK, pedidos, credenciais ou respostas brutas.
-        output = {"ok": False, "code": "AGENT_UNAVAILABLE",
-                  "error": "Não foi possível obter uma proposta AWS válida. Nada foi alterado."}
+        return {"ok": False, "code": failure_code(error),
+                "error": "Não foi possível obter uma proposta AWS válida. Nada foi alterado."}
+
+
+ERROR_CODES = {"AGENT_INVALID_RESPONSE", "AGENT_CONTEXT_TOO_LARGE", "AGENT_ACCESS_DENIED", "AGENT_TIMEOUT", "AGENT_CONNECTION_FAILED", "AGENT_BUSY", "AGENT_CONFIGURATION_ERROR", "AGENT_UNAVAILABLE"}
+
+
+def main():
+    try:
+        output = execute(json.loads(sys.stdin.buffer.read(200001)))
+    except (ValueError, TypeError):
+        output = {"ok": False, "code": "AGENT_INVALID_REQUEST", "error": "Pedido inválido."}
     print(json.dumps(output, ensure_ascii=False))
 
 

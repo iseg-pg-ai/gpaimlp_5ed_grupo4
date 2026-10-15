@@ -12,6 +12,13 @@ versão e a decisão na mesma transação SQLite. Rejeitar não cria uma versão
 Uma proposta expira após 30 minutos. Alterações concorrentes ou mudanças no
 resultado da validação exigem outra pré-visualização.
 
+A pré-visualização aparece após as mensagens, junto da resposta mais recente.
+Escrever «ok» não executa alterações nem inicia outra inferência: se existir
+uma proposta, o chat orienta para **Aceitar e guardar versão**; caso contrário,
+explica que não há ações pendentes. Respostas informativas são identificadas
+como não contendo alterações para aplicar. Erros de formato, permissões,
+timeout e ligação são apresentados separadamente de indisponibilidade geral.
+
 Ações iniciais: adicionar oferta, substituir, remover, reagendar, reorganizar,
 ajustar capacidade, reservar manhã/tarde livre e marcar dia livre. É possível
 combinar até oito ações; se uma falhar, nenhuma é aplicada. Identificadores
