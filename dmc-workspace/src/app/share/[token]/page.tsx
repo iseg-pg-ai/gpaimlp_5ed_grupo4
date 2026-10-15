@@ -1,3 +1,4 @@
+import { portalUrl } from "@/lib/http-client";
 import { notFound } from "next/navigation";
 import { VersionStore } from "@/lib/version-store";
 
@@ -47,7 +48,7 @@ export default async function SharedProposalPage({
           </div>
         </dl>
         <a
-          href={`/api/shares/${share.token}/document`}
+          href={portalUrl(`/api/shares/${share.token}/document`)}
           className="mt-8 inline-flex min-h-11 items-center rounded-lg bg-[#143F4B] px-5 py-3 font-semibold text-white hover:bg-[#2D5B67]"
         >
           Abrir proposta em PDF

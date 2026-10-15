@@ -1,4 +1,6 @@
 "use client";
+import { portalFetch } from "@/lib/http-client";
+
 import { useEffect, useRef, useState } from "react";
 import type { ActivityItem } from "@/types";
 import {
@@ -42,7 +44,7 @@ export function ActivityConfirmationEditor({
       }
     });
     if (!activity.catalogDetails && !activity.confirmation) {
-      fetch(`/api/catalog/itinerary?id=${encodeURIComponent(activity.id)}`)
+      portalFetch(`/api/catalog/itinerary?id=${encodeURIComponent(activity.id)}`)
         .then(async (response) => (response.ok ? response.json() : null))
         .then((data) => {
           if (active && data) {
@@ -211,6 +213,7 @@ export function ActivityConfirmationEditor({
             <label className="block text-sm">
               <T text={check.label} source="pt" />
               <textarea
+                name="confirmationDetails"
                 aria-label={check.label}
                 maxLength={4000}
                 value={check.details}
@@ -226,6 +229,7 @@ export function ActivityConfirmationEditor({
             </label>
             <label className="mt-2 flex items-center gap-2 text-sm">
               <input
+                name="confirmationResolved"
                 type="checkbox"
                 checked={check.resolved}
                 onChange={(e) =>

@@ -51,5 +51,5 @@ coordenadas e a relação entre documentos e páginas. O relatório de validaç�
 mantém a completude dos campos opcionais para orientar o enriquecimento de atributos
 geográficos, operacionais e comerciais.
 
-Consulte o [contrato do ETL](../README_ETL.md) para os artefactos publicados e as
+Consulte o [contrato do ETL](../docs/DATA_PIPELINE.md) para os artefactos publicados e as
 regras de substituição do warehouse.

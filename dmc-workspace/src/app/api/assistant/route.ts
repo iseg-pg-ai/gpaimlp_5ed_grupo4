@@ -1,7 +1,7 @@
 import { validateSnapshot } from "@/lib/snapshot-validation";
-import { loadPublishedCatalog } from "@/lib/published-catalog";
+import { loadPublishedCatalog } from "@/lib/catalog-store";
 import { editWithAssistant } from "@/lib/assistant-editing";
-import { jsonError } from "@/lib/api-response";
+import { jsonError } from "@/lib/server-http";
 import { enrichItineraryWithRoadRouting } from "@/lib/road-routing";
 
 export const runtime = "nodejs";

@@ -1,4 +1,5 @@
 "use client";
+import { portalFetch } from "@/lib/http-client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -24,7 +25,7 @@ export function VersionTrashButton({
     setBusy(true);
     setError("");
     try {
-      const response = await fetch("/api/versions/trash", {
+      const response = await portalFetch("/api/versions/trash", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tripId, version, action }),

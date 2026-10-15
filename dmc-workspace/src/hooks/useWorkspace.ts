@@ -1,4 +1,5 @@
 "use client";
+import { portalFetch, responseJson } from "@/lib/http-client";
 import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/locales";
 import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip, TransitMode } from "@/types";
@@ -6,7 +7,7 @@ import { initialBrief } from "@/data/initialBrief";
 import { assistantHelp } from "@/lib/assistant-editing";
 
 import { validateSnapshot } from "@/lib/snapshot-validation";
-import { responseJson } from "@/lib/http-client";
+
 import type { Snapshot } from "@/lib/itinerary-pdf";
 import {
   AUTO_TRASH_STORAGE,
@@ -149,7 +150,7 @@ export function useWorkspace() {
   useEffect(() => {
     if (!activeId) return;
     let cancelled = false;
-    fetch(`/api/versions?tripId=${encodeURIComponent(activeId)}`)
+    portalFetch(`/api/versions?tripId=${encodeURIComponent(activeId)}`)
       .then(async (response) => {
         if (!response.ok) throw new Error("Não foi possível carregar o histórico.");
         return response.json();
@@ -165,7 +166,7 @@ export function useWorkspace() {
     };
   }, [activeId, active?.version]);
   const saveVersion = async (trip: Trip, reason: string) => {
-    const response = await fetch("/api/versions", {
+    const response = await portalFetch("/api/versions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -177,7 +178,9 @@ export function useWorkspace() {
     });
     if (!response.ok) {
       if (response.status === 409) {
-        const historyResponse = await fetch(`/api/versions?tripId=${encodeURIComponent(trip.id)}`);
+        const historyResponse = await portalFetch(
+          `/api/versions?tripId=${encodeURIComponent(trip.id)}`,
+        );
         if (historyResponse.ok) setHistory({ id: trip.id, versions: await historyResponse.json() });
       }
       await responseJson(response);
@@ -204,7 +207,7 @@ export function useWorkspace() {
       setSaving(false);
     }
   };
-  const exportPdf = async () => {
+  const exportProposal = async (format: "bundle" | "prompt") => {
     if (!active || operation.current) return;
     operation.current = true;
     setExporting(true);
@@ -212,8 +215,8 @@ export function useWorkspace() {
     try {
       const saved = await saveVersion(active, "export");
       setTrips((prev) => prev.map((t) => (t.id === saved.id ? saved : t)));
-      const response = await fetch(
-        `/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`,
+      const response = await portalFetch(
+        `/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=${format}&locale=${active.clientLanguage ?? clientLanguage}`,
       );
       if (!response.ok) await responseJson(response);
       const url = URL.createObjectURL(await response.blob());
@@ -221,11 +224,12 @@ export function useWorkspace() {
       link.href = url;
       link.download =
         response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ??
-        "roteiro.zip";
+        (format === "prompt" ? "roteiro-canva.txt" : "roteiro.zip");
       document.body.appendChild(link);
       link.click();
       link.remove();
-      setExportedVersions((prev) => ({ ...prev, [`${saved.id}:${saved.version}`]: true }));
+      if (format === "bundle")
+        setExportedVersions((prev) => ({ ...prev, [`${saved.id}:${saved.version}`]: true }));
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha na exportação.");
@@ -234,13 +238,15 @@ export function useWorkspace() {
       setExporting(false);
     }
   };
+  const exportPdf = () => exportProposal("bundle");
+  const exportPrompt = () => exportProposal("prompt");
   const reopenLatest = async () => {
     const latest = history.id === activeId ? history.versions[0] : undefined;
     if (!latest || !active || operation.current) return;
     operation.current = true;
     setSaving(true);
     try {
-      const response = await fetch(
+      const response = await portalFetch(
         `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${latest.version}`,
       );
       if (!response.ok) throw new Error("Não foi possível reabrir a versão.");
@@ -265,7 +271,7 @@ export function useWorkspace() {
     setSaving(true);
     setError("");
     try {
-      const response = await fetch("/api/versions/trash", {
+      const response = await portalFetch("/api/versions/trash", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tripId: activeId, version, action: "trash" }),
@@ -302,7 +308,7 @@ export function useWorkspace() {
     setBusy(true);
     operation.current = true;
     try {
-      const response = await fetch("/api/itineraries", {
+      const response = await portalFetch("/api/itineraries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(brief),
@@ -334,7 +340,7 @@ export function useWorkspace() {
     setAssistantBusy(true);
     try {
       return await update(async (trip) => {
-        const response = await fetch("/api/assistant", {
+        const response = await portalFetch("/api/assistant", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ snapshot: trip, input }),
@@ -416,7 +422,7 @@ export function useWorkspace() {
     bufferMinutes?: number,
   ) =>
     update(async (trip) => {
-      const response = await fetch("/api/routing", {
+      const response = await portalFetch("/api/routing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -442,7 +448,7 @@ export function useWorkspace() {
 
   const optimizeDayRoute = (dayNumber: number) =>
     update(async (trip) => {
-      const response = await fetch("/api/routing", {
+      const response = await portalFetch("/api/routing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -470,7 +476,7 @@ export function useWorkspace() {
     update(async (trip) => {
       const prepared = prepareTrip(trip);
       const command = typeof commandOrFn === "function" ? commandOrFn(prepared) : commandOrFn;
-      const response = await fetch("/api/assistant", {
+      const response = await portalFetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ snapshot: prepared, input: command }),
@@ -562,6 +568,7 @@ export function useWorkspace() {
     recent,
     update,
     exportPdf,
+    exportPrompt,
     reopenLatest,
     trashVersion,
     generate,

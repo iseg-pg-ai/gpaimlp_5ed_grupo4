@@ -13,5 +13,13 @@ else
 fi
 
 echo "Starting BLU AI Agent Service on http://127.0.0.1:8000..."
+if ! "$PYTHON_EXEC" -c 'import uvicorn, fastapi, langgraph, langchain_aws' >/dev/null 2>&1; then
+    echo "Instalar o agente: uv sync --locked --inexact --group agent" >&2
+    exit 1
+fi
 export PYTHONPATH="$ROOT_DIR/src:$PYTHONPATH"
-exec "$PYTHON_EXEC" -m uvicorn blu_ai.api.server:app --host 127.0.0.1 --port 8000 --reload
+AGENT_ARGS=(--host 127.0.0.1 --port 8000)
+if [ "${BLU_AGENT_RELOAD:-0}" = "1" ]; then
+    AGENT_ARGS+=(--reload --reload-dir "$ROOT_DIR/src")
+fi
+exec "$PYTHON_EXEC" -m uvicorn blu_ai.api.server:app "${AGENT_ARGS[@]}"

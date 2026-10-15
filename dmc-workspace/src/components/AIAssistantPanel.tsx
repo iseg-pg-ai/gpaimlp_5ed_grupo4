@@ -259,6 +259,8 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
           {/* Input text body */}
           <PromptInputBody>
             <PromptInputTextarea
+              name="assistantMessage"
+              aria-label="Mensagem para o assistente"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onEnterSubmit={handleSubmit}

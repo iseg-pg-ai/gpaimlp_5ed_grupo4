@@ -6,7 +6,7 @@ import {
   accompanimentLabels,
   type Personalization,
 } from "@/lib/brief-personalization";
-import { selectStyle } from "./ui/select-style";
+import { selectStyle } from "./ui/form-controls";
 const control = "mt-1 w-full min-w-0 rounded-lg border border-[#9DB3B8] bg-white p-3 text-base";
 export function BriefPersonalization({
   value,

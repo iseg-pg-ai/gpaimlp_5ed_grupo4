@@ -1,14 +1,11 @@
-import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
+import { launchBrowser, readSnapshot, mockTranslation } from "./helpers.mjs";
+
 import assert from "node:assert/strict";
 
-const browser = await chromium.launch({
-  headless: true,
-  channel: process.env.BROWSER_CHANNEL || "msedge",
-});
+const browser = await launchBrowser();
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  const snapshot = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
+  const snapshot = readSnapshot();
   Object.assign(snapshot.brief, {
     childrenAges: "",
     specialOccasion: "",
@@ -23,16 +20,7 @@ try {
       JSON.stringify([{ ...trip, id: "eligible-browser", version: 1, messages: [] }]),
     );
   }, snapshot);
-  await page.route("**/api/translate", (route) =>
-    route.fulfill({
-      json: {
-        texts: route
-          .request()
-          .postDataJSON()
-          .items.map((item) => item.text),
-      },
-    }),
-  );
+  await mockTranslation(page);
   await page.route("**/api/trash/cleanup", (route) =>
     route.fulfill({ json: { deletedTripIds: [], deletedVersions: [] } }),
   );
@@ -59,8 +47,17 @@ try {
     });
   });
   let assistantRequest;
+  let attempts = 0;
   await page.route("**/api/assistant", (route) => {
     assistantRequest = route.request().postDataJSON();
+    if (++attempts === 1)
+      return route.fulfill({
+        json: {
+          itinerary: assistantRequest.snapshot.itinerary,
+          changed: false,
+          reply: "Não foi possível adicionar a atividade de teste.",
+        },
+      });
     const itinerary = structuredClone(assistantRequest.snapshot.itinerary);
     const day = itinerary[0];
     day.items[0].transitToNext = {
@@ -79,7 +76,7 @@ try {
       time: "15:00–16:00 (proposto)",
       title: "Experiência compatível",
       description: "Opção validada pelo briefing e pelas regras.",
-      category: "experience",
+      category: "activity",
       location: "Lisboa",
       duration: "60 min",
       pendingChecks: ["Confirmar disponibilidade"],
@@ -102,21 +99,25 @@ try {
     .filter({ hasText: snapshot.brief.customerName });
   await tripButton.waitFor();
   await tripButton.click();
-  await page.getByTitle("Adicionar oferta do catálogo a este dia").first().click();
+  await page.getByRole("button", { name: "Ações do dia" }).first().click();
+  await page.getByRole("button", { name: "Adicionar Atividade", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByText("Experiência compatível", { exact: true }).waitFor();
   assert.equal(await dialog.getByText("Museu incompatível", { exact: true }).count(), 0);
   await dialog.getByRole("button", { name: /Adicionar ao Dia/i }).click();
+  await page.getByRole("alert").filter({ hasText: "atividade de teste" }).waitFor();
+  assert.equal(await dialog.isVisible(), true);
+  await dialog.getByRole("button", { name: /Adicionar ao Dia/i }).click();
+  await dialog.waitFor({ state: "hidden" });
   await page.getByText("Experiência compatível", { exact: true }).waitFor();
   assert.equal(eligibilityRequest.dayNumber, 1);
   assert.match(assistantRequest.input, /experiencias:cat-compatible0001/);
   assert.ok(assistantRequest.snapshot.itinerary[0].dailyCapacity >= 2);
-  assert.ok(
-    await page
-      .getByText(/12 min/)
-      .first()
-      .isVisible(),
-  );
+  await page
+    .getByText(/12 min/)
+    .filter({ visible: true })
+    .first()
+    .waitFor();
   console.log("Eligible addition: filtered catalog, atomic capacity and transit connector OK");
 } finally {
   await browser.close();

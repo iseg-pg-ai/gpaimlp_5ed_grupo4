@@ -1,14 +1,11 @@
-import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
+import { launchBrowser, readSnapshot, mockTranslation } from "./helpers.mjs";
+
 import assert from "node:assert/strict";
 
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
-});
+const browser = await launchBrowser();
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  const snapshot = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
+  const snapshot = readSnapshot();
   Object.assign(snapshot.brief, {
     childrenAges: "",
     specialOccasion: "",
@@ -26,16 +23,7 @@ try {
       JSON.stringify([{ ...snapshot, id: "visual-test", version: 1, messages: [] }]),
     );
   }, snapshot);
-  await page.route("**/api/translate", (r) =>
-    r.fulfill({
-      json: {
-        texts: r
-          .request()
-          .postDataJSON()
-          .items.map((i) => i.text),
-      },
-    }),
-  );
+  await mockTranslation(page);
   await page.route("**/api/versions?*", (r) =>
     r.fulfill({
       json: [

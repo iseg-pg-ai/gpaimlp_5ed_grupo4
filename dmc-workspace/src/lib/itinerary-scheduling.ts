@@ -150,10 +150,7 @@ export function datedWindows(value: unknown, date: string): [number, number][] |
 }
 export function closureState(value: unknown, date: string): "open" | "closed" | "unknown" {
   const text = clean(value);
-  if (
-    !text ||
-    /^(nenhum indicado|nenhum|nao indicado|sem encerramento.*|acesso livre)$/.test(text)
-  )
+  if (!text || /^(nenhum indicado|nenhum|nao indicado|sem encerramento.*|acesso livre)$/.test(text))
     return "open";
   const month = Number(date.slice(5, 7)) - 1,
     day = Number(date.slice(8, 10));

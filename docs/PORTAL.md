@@ -19,7 +19,7 @@ Abrir [http://localhost:3001](http://localhost:3001).
 Para exportar PDFs traduzidos, preparar também o ambiente Python na raiz:
 
 ```powershell
-python -m uv sync --locked --group translation
+python -m uv sync --locked --inexact --group translation
 python translations/setup_models.py
 ```
 
@@ -43,6 +43,11 @@ separado nem fornecer credenciais externas.
 A página `/catalog` permite pesquisar, filtrar, criar, editar e inativar
 atividades, restaurantes e experiências. Os registos seguem os estados Rascunho,
 Em revisão, Aprovado e Inativo. Apenas os aprovados podem entrar na geração.
+
+A persistência do catálogo usa SQLite Python e mantém o esquema existente.
+As validações de entrada são partilhadas com o editor em TypeScript; cada edição
+é guardada com verificação de revisão numa transação. Uma edição concorrente
+obsoleta devolve conflito 409 e exige reabrir o registo.
 
 O editor guarda a oferta e o histórico em `data/portal/catalog.sqlite`. O ETL
 publica os registos aprovados no warehouse; não se deve editar `warehouse/`
@@ -170,6 +175,42 @@ com autorização documentada. A introdução de fotografias fica dependente des
 materiais e respetivos créditos. A decoração geométrica da capa é desenhada
 diretamente no PDF.
 
+## TXT para Canva
+
+O contrato atual é `blu-roteiro-canva/1.1.0`; o plugin local 0.3.0 aceita também
+TXT 1.0.0. O idioma escolhido aplica-se ao TXT e aos PDFs.
+
+1. Rever o roteiro e escolher o idioma do cliente.
+2. Clicar **Exportar TXT para Canva**. O portal guarda uma versão antes do download.
+   As versões anteriores também têm ligação TXT no histórico.
+3. Abrir [BLU | Roteiros no Canva](https://chatgpt.com/plugins/Plugin_600e0d208a74819191cafc6c69a90579)
+   e anexar o TXT. A ligação ao Canva deve estar autorizada.
+4. Rever a composição numa cópia do
+   [modelo BLU](https://canva.link/5u8zxudd1vkcbth), mantendo o original intacto.
+5. Aprovar a pré-visualização e exportar o PDF com as ferramentas disponíveis no
+   Canva; caso não exista exportação na integração, usar o editor Canva.
+
+O TXT contém instruções e dados JSON da versão guardada, não um PDF nem uma
+tradução já realizada. O plugin recebe a orientação do idioma e compõe o texto.
+Mantém preços, moedas, restrições e pendências; exclui contactos, referências de
+reserva e notas internas, mas inclui o nome do cliente. A partilha é manual.
+Descarregar TXT não altera os PDFs persistidos nem o estado de exportação PDF.
+O visual segue LISBON IN PERSPECTIVE (672 x 1056), com os PDFs atuais como base
+de estrutura. Os exemplos do modelo não são dados da nova proposta.
+
+O histórico global de versões também oferece TXT por idioma. Versões no Lixo
+devem ser restauradas antes da exportação. O TXT inclui períodos livres,
+personalização estruturada, capacidade diária e resumos de deslocações guardados.
+As rotas continuam estimativas sujeitas a revisão; a meteorologia consultada
+dinamicamente não pertence ao snapshot e não é incluída no TXT.
+
+A partilha integrada continua a entregar o PDF DMC da versão selecionada.
+O PDF Canva é uma entrega independente aprovada pelo curador; não substitui
+artefactos históricos, não atualiza ligações públicas e não marca a versão
+como PDF exportado no portal. Alterar o roteiro exige exportar a nova versão
+antes de adaptar a composição Canva. Atualizar instruções do plugin exige
+reconstruir/importar o pacote; anexar um novo TXT não atualiza a instalação.
+
 ## Idiomas
 
 A interface suporta português, inglês, mandarim, espanhol, francês e alemão. Os
@@ -201,24 +242,128 @@ npm test
 npm run build
 ```
 
+## Execução na AWS
+
+### SageMaker Studio Code Editor
+
+O proxy do Code Editor acrescenta um prefixo ao endereço. Usar o script
+específico, a partir da raiz, com a origem HTTPS da instância do utilizador:
+
+```bash
+cd dmc-workspace
+npm ci
+cd ..
+PORTAL_PUBLIC_ORIGIN=https://DOMINIO-DO-TEU-STUDIO bash scripts/start_aws_portal.sh
+```
+
+Abrir `https://DOMINIO-DO-TEU-STUDIO/codeeditor/default/ports/3001/`.
+Substituir o domínio pelo da própria instância. O script recompila com o prefixo
+antes de iniciar; um build criado sem esse prefixo não serve para este proxy.
+Requer Node 22.13 a 24.x; preserva uma versão compatível já selecionada.
+O serviço HTTP do agente Python é opcional. Para o iniciar com o portal, acrescentar
+`BLU_START_AGENT=1` ao comando, depois de preparar as dependências Python.
+
+O arranque valida a origem (apenas HTTPS, sem caminho), a porta e o prefixo.
+Se a porta estiver ocupada, termina antes de recompilar: encerrar o processo
+anterior ou definir outra `PORT`. O prefixo por defeito acompanha essa porta.
+`npm run start:aws` exige um build completo com o mesmo prefixo e a origem
+configurada; perante incompatibilidade, usar novamente o script da raiz.
+Não reutilizar builds de outra configuração nem copiar apenas parte de `.next`.
+
+### Servidor direto ou contentor
+
+O portal é uma aplicação Next.js com rotas de servidor e não pode ser publicado
+como um conjunto de ficheiros estáticos num bucket S3. O diretório de trabalho
+tem de ser `dmc-workspace`, pois os dados operacionais são lidos nas pastas irmãs
+`warehouse`, `config`, `data` e `exports`.
+
+Numa máquina Linux com Node.js 22.13 a 24.x, executar a partir da raiz:
+
+```bash
+chmod +x scripts/start_portal.sh
+PORT=3001 ./scripts/start_portal.sh
+```
+
+O script instala as dependências, cria um build limpo, confirma que
+`.next/static` contém os assets JavaScript e inicia o servidor em `0.0.0.0`.
+Para reutilizar uma instalação ou build já validado, podem ser definidos
+`SKIP_INSTALL=true` e `SKIP_BUILD=true`.
+
+Para ECS, App Runner ou uma instância com Docker:
+
+```bash
+docker build -f Dockerfile.portal -t blu-dmc-portal .
+docker run --rm -p 3001:3001 --env-file .env blu-dmc-portal
+```
+
+O `Dockerfile.portal` copia o build completo, incluindo `.next/static`, e inicia
+o Next.js a partir da pasta correta. As pastas `data/portal` e `exports` devem ser
+associadas a armazenamento persistente em produção. Depois de cada deployment,
+qualquer cache do CloudFront para HTML deve ser invalidado para que não aponte
+para chunks de um build anterior.
+
 `npm run check` acrescenta `format:check` a estas verificações e deve terminar sem
 avisos antes de integrar alterações no portal.
 
 Com o portal iniciado na porta 3001:
 
 ```powershell
-npm run test:responsive
-npm run test:navigation
+npm run test:ui
 npm run test:catalog
 npm run test:confirmations
 npm run test:itinerary
 node tests/browser/briefing.mjs
 node tests/browser/assistant.mjs
 node tests/browser/delivery.mjs
+node tests/browser/canva-prompt.mjs
 ```
 
 No Windows, definir `$env:BROWSER_CHANNEL = "msedge"` quando o Chromium do
 Playwright não estiver instalado.
+
+## Meteorologia e controlos HTML nativos
+
+O navegador consulta `/api/weather` no próprio portal. O servidor chama
+`portal/weather.py`, sem serviço adicional ou bibliotecas Python extra. Previsão
+e referência histórica são identificadas separadamente. Uma falha ou resposta
+incompleta não é substituída por temperaturas fixas. Precipitação ausente aparece
+como «Por confirmar». A mesma consulta é reutilizada pela ferramenta do agente.
+
+O painel de detalhes abre num popover HTML nativo. Pode ser fechado com Escape,
+clique fora ou o botão Fechar. A consulta dinâmica continua a precisar de
+JavaScript; a gestão de abertura e fecho é feita pelo navegador.
+
+Em `/exports`, **Enviar para o Lixo** usa um formulário HTML e funciona sem
+JavaScript. Após o POST, o histórico é recarregado; erros aparecem no próprio
+histórico. Os formulários exigem origem válida. A API JSON e o restauro no Lixo
+interativo continuam disponíveis.
+
+Em `/exports`, escolher o idioma e carregar em **Descarregar PDFs** ou **TXT para
+Canva**. O formulário transmite versão, idioma e formato sem estado React e
+funciona sem JavaScript. O ZIP preserva os PDFs da versão; o TXT continua a
+excluir notas internas e contactos. PDF traduzido requer os modelos locais.
+
+## Consulta das fontes em HTML
+
+Em `/references`, escolher a folha, escrever a pesquisa e carregar em **Filtrar**.
+A seleção e a pesquisa ficam no URL; os links Anterior/Seguinte conservam os
+filtros. O formulário, a paginação e os detalhes funcionam sem JavaScript.
+A tradução da interface continua disponível quando JavaScript está ativo.
+
+A pesquisa e o enriquecimento de fontes usam `portal/data.py`; a composição
+TXT/Canva usa `portal/prompt.py`. Ambos usam apenas a biblioteca
+padrão Python. O portal usa `BLU_PYTHON`, o ambiente `.venv` ou o Python do sistema,
+por esta ordem. Não é necessário iniciar o agente ou outro servidor. Os registos
+são renderizados pelo template `dmc-workspace/templates/dataset-row.html`, com
+escaping das fontes; valores vazios aparecem como «—».
+
+### Isolar dados de testes
+
+`BLU_DATA_DIR` define a pasta de fontes e a base `portal/catalog.sqlite`;
+`BLU_WAREHOUSE_DIR` define a entrega publicada. O endpoint de publicação usa os
+mesmos caminhos, permitindo testar edição e ETL sem tocar nas pastas reais.
+Para versões e PDFs temporários, definir também `BLU_EXPORT_DIR`. As fontes
+necessárias devem existir no diretório de dados escolhido.
 
 ## Resolução de problemas
 
@@ -231,3 +376,12 @@ Playwright não estiver instalado.
 - **PDF mandarim sem fonte:** configurar `BLU_PDF_CJK_FONT`.
 - **Dados locais ilegíveis:** não limpar o armazenamento antes de recuperar ou
   exportar as viagens existentes.
+
+- **Geist ou stack frames com 404 no Studio:** reiniciar o servidor após alterar
+  a configuração Next.js e atualizar a página sem cache. O loader de
+  desenvolvimento aplica o prefixo aos caminhos internos do overlay Next 16.4;
+  reavaliar esta adaptação quando atualizar o Next.js.
+- **Atributos Grammarly no body:** a extensão acrescenta atributos antes da
+  hidratação. O layout suprime apenas diferenças de atributos nesse elemento;
+  os componentes descendentes continuam sujeitos à validação React.
+- **React DevTools e HMR connected:** mensagens informativas de desenvolvimento.

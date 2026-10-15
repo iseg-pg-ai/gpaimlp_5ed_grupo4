@@ -1,8 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
-import { translateLocal } from "../src/lib/local-translation.ts";
-import { TranslationError } from "../src/lib/translation-error.ts";
+import { translateLocal, TranslationError } from "../src/lib/local-translation.ts";
 
 test("missing Python produces actionable error before spawning or waiting", async (t) => {
   const previous = process.env.BLU_TRANSLATION_PYTHON;
@@ -27,7 +26,7 @@ test("missing Python produces actionable error before spawning or waiting", asyn
 test("setup errors provide distinct repair instructions without exposing raw diagnostics", () => {
   assert.match(
     new TranslationError("TRANSLATION_DEPENDENCIES_MISSING").message,
-    /pip install -r translations\/requirements.txt/,
+    /pip install --no-deps -r translations\/requirements.txt/,
   );
   assert.match(
     new TranslationError("TRANSLATION_MODELS_MISSING").message,
