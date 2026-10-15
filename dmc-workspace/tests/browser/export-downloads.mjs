@@ -29,6 +29,7 @@ try {
       });
       const page = await context.newPage();
       await mockTranslation(page);
+      await page.addInitScript(() => localStorage.setItem("blu-portal-language", "pt"));
       await page.goto(`${portal}/exports`);
       const form = page
         .getByTestId("export-downloads")
@@ -51,10 +52,54 @@ try {
         await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
         false,
       );
+      const trashAction = { tripId, version: 1, action: "trash" };
+      const denied = await context.request.post(`${portal}/api/versions/trash`, {
+        headers: { Origin: "https://untrusted.example" },
+        data: trashAction,
+      });
+      assert.equal(denied.status(), 403);
+      const deniedForm = await context.request.post(`${portal}/api/versions/trash`, {
+        headers: { Origin: "https://untrusted.example" },
+        form: { tripId, version: "1", action: "trash" },
+      });
+      assert.equal(deniedForm.status(), 403);
+      const missingOrigin = await context.request.post(`${portal}/api/versions/trash`, {
+        form: { tripId, version: "1", action: "trash" },
+      });
+      assert.equal(missingOrigin.status(), 403);
+      const nativeTrash = page
+        .getByTestId("version-trash-form")
+        .filter({ has: page.locator(`input[name="tripId"][value="${tripId}"]`) });
+      await Promise.all([
+        page.waitForResponse(
+          (response) =>
+            response.request().method() === "POST" &&
+            response.url().includes("/api/versions/trash") &&
+            response.status() === 303,
+        ),
+        nativeTrash.locator('button[type="submit"]').click(),
+      ]);
+      await nativeTrash.waitFor({ state: "detached" });
+      const trashed = await context.request.get(`${portal}/api/versions/trash`);
+      assert.ok((await trashed.json()).some((version) => version.tripId === tripId));
+      const restored = await context.request.post(`${portal}/api/versions/trash`, {
+        data: { ...trashAction, action: "restore" },
+      });
+      assert.equal(restored.status(), 200);
+      await page.goto(`${portal}/exports`);
+      await nativeTrash.locator('input[name="version"]').evaluate((input) => {
+        input.value = "999";
+      });
+      await nativeTrash.locator('button[type="submit"]').click();
+      await page.getByRole("alert").filter({ hasText: "Versão não encontrada." }).waitFor();
+      assert.equal(
+        (await context.request.get(`${portal}/api/versions?tripId=${tripId}&version=1`)).status(),
+        200,
+      );
       console.log(
         width,
         `JavaScript=${javaScriptEnabled}`,
-        "native form TXT language/privacy and PDF bundle downloads OK",
+        "native downloads, version trash, JSON restore, form errors and origin validation OK",
       );
       await context.close();
     }

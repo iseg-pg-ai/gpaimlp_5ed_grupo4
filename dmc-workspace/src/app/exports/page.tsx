@@ -3,10 +3,21 @@ import { T } from "@/components/LocaleProvider";
 import Link from "next/link";
 import { languages } from "@/lib/locales";
 import { VersionStore } from "@/lib/version-store";
-import { VersionTrashButton } from "@/components/VersionTrashButton";
+import { Trash2 } from "lucide-react";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export default function ExportHistory() {
+export default async function ExportHistory({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const error = (await searchParams).versionActionError;
+  const actionError =
+    error === "invalid"
+      ? "Pedido inválido."
+      : error === "not-found"
+        ? "Versão não encontrada."
+        : "";
   const store = new VersionStore();
   const versions = store.list();
   store.close();
@@ -24,6 +35,11 @@ export default function ExportHistory() {
           source="pt"
         />
       </p>
+      {actionError && (
+        <p role="alert" className="mb-4 text-red-800">
+          <T text={actionError} source="pt" />
+        </p>
+      )}
       {!versions.length && (
         <p>
           <T text="Ainda não existem versões guardadas." source="pt" />
@@ -116,7 +132,22 @@ export default function ExportHistory() {
             </a>
           </div>
           <div className="flex shrink-0 items-center sm:border-l sm:border-[#E6E1D5] sm:pl-4">
-            <VersionTrashButton tripId={v.tripId} version={v.version} />
+            <form
+              method="post"
+              action={portalUrl("/api/versions/trash")}
+              data-testid="version-trash-form"
+            >
+              <input type="hidden" name="tripId" value={v.tripId} />
+              <input type="hidden" name="version" value={v.version} />
+              <input type="hidden" name="action" value="trash" />
+              <button
+                type="submit"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#D5D1C7] px-3 py-2 text-sm text-[#70443E] hover:bg-[#F7E9E6]"
+              >
+                <Trash2 className="size-4" />
+                <T text="Enviar para o Lixo" source="pt" />
+              </button>
+            </form>
           </div>
         </article>
       ))}

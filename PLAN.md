@@ -41,7 +41,7 @@ Meteorologia simulada e exports isolados num diretório temporário.
 - [x] Migrar a persistência do catálogo para SQLite Python, preservando o esquema.
 - [x] Adaptar APIs e testes para operações assíncronas e validar conflitos.
 - [x] Centralizar publicação e leitura do catálogo elegível em Python.
-- [ ] Converter a ação de Lixo no histórico para formulário HTML.
+- [x] Converter a ação de Lixo no histórico para formulário HTML.
 - [ ] Validar bases temporárias, ETL, APIs e navegação sem JavaScript.
 - [ ] Atualizar documentação e CI com commits separados.
 
