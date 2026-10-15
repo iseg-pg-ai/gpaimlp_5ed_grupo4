@@ -28,7 +28,7 @@ eliminar operações existentes ou exigir uma segunda implementação em JavaScr
 - [x] Manter o navegador como consumidor da API do portal, com cache e falhas explícitas.
 - [x] Substituir a abertura/fecho do painel por popover HTML nativo.
 - [ ] Migrar os downloads do histórico para formulário HTML sem estado React.
-- [ ] Reutilizar a meteorologia Python na ferramenta do agente.
+- [x] Reutilizar a meteorologia Python na ferramenta do agente.
 - [ ] Validar fornecedor simulado, indisponibilidade, histórico, cache e navegação.
 - [ ] Atualizar arquitetura e evidência com commits separados.
 
