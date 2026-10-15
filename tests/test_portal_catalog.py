@@ -51,3 +51,91 @@ class PortalCatalogTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class CatalogStoreTest(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        from etl.portal_catalog import CatalogStore
+        self.store = CatalogStore(self.root / 'portal')
+        self.addCleanup(self.store.close)
+
+    def value(self, **changes):
+        return {'category': 'atracoes', 'status': 'draft', 'baseRevision': None,
+                'fields': {'name': 'Jardim'}, 'reason': 'Teste', **changes}
+
+    def test_revisions_history_inheritance_and_rollback(self):
+        from etl.portal_catalog import CatalogConflict
+        first = self.store.save_validated(self.value(pricing={'amount': '12,50'}, matching={'food': 'no'}))
+        approved = self.store.save_validated(self.value(id=first['id'], baseRevision=1, status='approved'))
+        self.assertEqual(approved['revision'], 2)
+        self.assertEqual(approved['pricing'], first['pricing'])
+        with self.assertRaises(CatalogConflict):
+            self.store.save_validated(self.value(id=first['id'], baseRevision=1))
+        with self.assertRaisesRegex(ValueError, 'categoria'):
+            self.store.save_validated(self.value(id=first['id'], baseRevision=2, category='experiencias'))
+        self.assertEqual([row['revision'] for row in self.store.history(first['id'])], [2, 1])
+        self.assertEqual(self.store.list()[0]['status'], 'approved')
+
+    def test_existing_database_is_read_without_schema_or_history_rewrite(self):
+        before = (self.root / 'portal/catalog.sqlite').read_bytes()
+        from etl.portal_catalog import CatalogStore
+        second = CatalogStore(self.root / 'portal')
+        try:
+            self.assertEqual(second.list(), [])
+        finally:
+            second.close()
+        self.assertEqual((self.root / 'portal/catalog.sqlite').read_bytes(), before)
+
+    def test_concurrent_edits_allow_only_one_revision(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+        from etl.portal_catalog import CatalogStore, CatalogConflict
+        first = self.store.save_validated(self.value())
+        barrier = Barrier(2)
+        def edit(name):
+            store = CatalogStore(self.root / 'portal')
+            try:
+                barrier.wait(timeout=5)
+                return store.save_validated(self.value(id=first['id'], baseRevision=1, fields={'name': name}))
+            except CatalogConflict:
+                return 'conflict'
+            finally:
+                store.close()
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(edit, ['A', 'B']))
+        self.assertEqual(results.count('conflict'), 1)
+        self.assertEqual(len(self.store.history(first['id'])), 2)
+
+    def test_import_is_idempotent_and_preserves_edits(self):
+        warehouse = self.root / 'warehouse'
+        warehouse.mkdir()
+        for category in ('atracoes', 'restaurantes', 'experiencias'):
+            (warehouse / f'{category}.jsonl').write_text(json.dumps({'id': category, 'nome_da_atracao': 'Original'}), encoding='utf-8')
+        self.store.import_warehouse(warehouse)
+        records = self.store.list()
+        self.assertEqual(len(records), 3)
+        self.assertTrue(all(row['status'] == 'review' for row in records))
+        first = records[0]
+        self.store.save_validated(self.value(id=first['id'], category=first['category'], baseRevision=1, fields={'name': 'Editado'}))
+        self.store.import_warehouse(warehouse)
+        self.assertEqual(len(self.store.list()), 3)
+        self.assertEqual(self.store.history(first['id'])[0]['fields']['name'], 'Editado')
+
+    def test_inactivation_revokes_publication_and_old_history_is_preserved(self):
+        first = self.store.save_validated(self.value(status='approved'))
+        row = {'_catalog_id': first['id'], '_catalog_status': 'approved', '_catalog_revision': 1}
+        self.assertEqual(self.store.published_flags([row]), [True])
+        self.store.save_validated(self.value(id=first['id'], baseRevision=1, status='inactive'))
+        self.assertEqual(self.store.published_flags([{**row, '_catalog_revision': 5}]), [False])
+        self.assertEqual(len(self.store.history(first['id'])), 2)
+        self.assertEqual(self.store.list()[0]['revision'], 2)
+
+    def test_transaction_rolls_back_both_tables_when_second_write_fails(self):
+        self.store.db.execute("CREATE TRIGGER fail_record BEFORE INSERT ON catalog_records BEGIN SELECT RAISE(ABORT, 'forced'); END")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.store.save_validated(self.value())
+        self.assertEqual(self.store.db.execute('SELECT COUNT(*) FROM catalog_history').fetchone()[0], 0)
+        self.assertEqual(self.store.list(), [])

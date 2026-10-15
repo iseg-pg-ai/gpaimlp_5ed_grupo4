@@ -1,16 +1,41 @@
-"""Merge the editable portal source into ETL output, never mutate the source."""
+"""Catálogo operacional e integração ETL, que lê a fonte sem a modificar."""
 import hashlib
 import json
 import sqlite3
-from contextlib import closing
+from contextlib import closing, contextmanager
 from pathlib import Path
+from datetime import datetime, timezone
+from uuid import uuid4
 
 CATEGORIES = ('atracoes', 'restaurantes', 'experiencias')
 
 
+_MISSING = object()
+
+
+def _source_string(value):
+    if value is _MISSING:
+        return 'undefined'
+    if value is None:
+        return 'null'
+    if isinstance(value, bool):
+        return str(value).lower()
+    if isinstance(value, dict):
+        return '[object Object]'
+    if isinstance(value, list):
+        return ','.join('' if item is None else _source_string(item) for item in value)
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
+
+
 def legacy_id(category, row):
-    key = row.get('id', row.get('id_blu', row.get('nome_da_experiencia', f"{row.get('_source_sheet')}:{row.get('_source_row')}")))
-    return 'cat-' + hashlib.sha256(f'{category}:{key}'.encode()).hexdigest()[:32]
+    # Preservar a seleção nullish e a representação dos IDs do portal existente.
+    key = next((row[name] for name in ('id', 'id_blu', 'nome_da_experiencia')
+                if row.get(name) is not None), _MISSING)
+    if key is _MISSING:
+        key = f"{_source_string(row.get('_source_sheet', _MISSING))}:{_source_string(row.get('_source_row', _MISSING))}"
+    return 'cat-' + hashlib.sha256(f'{category}:{_source_string(key)}'.encode()).hexdigest()[:32]
 
 
 def integrate_portal(data_dir: Path, tables: dict):
@@ -82,3 +107,122 @@ def integrate_portal(data_dir: Path, tables: dict):
     # Record the exact revisions consumed rather than hashing a changing live SQLite file.
     return {'key': 'portal/catalog.sqlite', 'role': 'portal_catalog', 'records': len(managed),
             'snapshot_sha256': hashlib.sha256(json.dumps(managed, sort_keys=True, ensure_ascii=False).encode()).hexdigest()}
+
+
+class CatalogConflict(ValueError):
+    """A revisão recebida já não é a revisão atual."""
+
+
+class CatalogStore:
+    """Mesmo ficheiro e esquema SQLite; uma ligação por operação do portal."""
+    def __init__(self, root):
+        root = Path(root)
+        root.mkdir(parents=True, exist_ok=True)
+        self.db = sqlite3.connect(root / 'catalog.sqlite', timeout=5, isolation_level=None)
+        self.db.executescript('''CREATE TABLE IF NOT EXISTS catalog_records (id TEXT PRIMARY KEY, snapshot TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS catalog_history (id TEXT NOT NULL, revision INTEGER NOT NULL,
+            snapshot TEXT NOT NULL, PRIMARY KEY(id,revision));''')
+
+    def close(self):
+        self.db.close()
+
+    @contextmanager
+    def transaction(self):
+        self.db.execute('BEGIN IMMEDIATE')
+        try:
+            yield
+            self.db.execute('COMMIT')
+        except BaseException:
+            self.db.execute('ROLLBACK')
+            raise
+
+    def list(self):
+        return [json.loads(row[0]) for row in self.db.execute('SELECT snapshot FROM catalog_records ORDER BY id')]
+
+    def history(self, identity):
+        return [json.loads(row[0]) for row in self.db.execute(
+            'SELECT snapshot FROM catalog_history WHERE id=? ORDER BY revision DESC', (identity,))]
+
+    def _write(self, record):
+        snapshot = json.dumps(record, ensure_ascii=False, separators=(',', ':'))
+        self.db.execute('INSERT INTO catalog_history VALUES (?,?,?)', (record['id'], record['revision'], snapshot))
+        self.db.execute('INSERT OR REPLACE INTO catalog_records VALUES (?,?)', (record['id'], snapshot))
+
+    def import_warehouse(self, root):
+        inputs = []
+        for category in CATEGORIES:
+            with (Path(root) / f'{category}.jsonl').open(encoding='utf-8') as stream:
+                inputs.extend((category, json.loads(line)) for line in stream if line.strip())
+        fields_map = {
+            'name': ('nome_da_atracao', 'estabelecimento', 'nome_da_experiencia'),
+            'location': ('cidade', 'localizacao'), 'address': ('morada', 'zona_bairro', 'zona_localidade'),
+            'description': ('descricao_curada', 'descricao', 'proposta_de_curadoria_blu_nao_aprovada'),
+            'duration': ('tempo_medio_de_visita', 'duracao', 'duracao_blu_estimativa'),
+            'price': ('preco_da_atracao', 'preco', 'preco_nao_cotacao'), 'contacts': ('contactos',),
+            'accessibility': ('acessibilidade_nivel_de_confirmacao',),
+            'source': ('site_fonte', 'fonte_indicada_na_base'), 'effort': ('esforco_fisico',),
+            'kind': ('categoria',), 'hours': ('horario', 'horario_base_reconfirmar'),
+            'cuisine': ('tipo_gastronomia_base',), 'dietary': ('opcoes_alimentares_alergenios',),
+            'provider': ('fornecedor',), 'modality': ('modalidade',)}
+        with self.transaction():
+            for category, row in inputs:
+                identity = row.get('_catalog_id') if row.get('_catalog_id') is not None else legacy_id(category, row)
+                if self.db.execute('SELECT id FROM catalog_records WHERE id=?', (identity,)).fetchone():
+                    continue
+                fields = {name: _source_string(next((row[key] for key in keys
+                          if row.get(key) is not None and row[key] != ''), '')) for name, keys in fields_map.items()}
+                fields['source'] = fields['source'] or f"{_source_string(row.get('_source_sheet', _MISSING))}, linha {_source_string(row.get('_source_row', _MISSING))}"
+                fields['effort'] = fields['effort'] or 'Por confirmar'
+                self._write({'id': identity, 'category': category, 'status': 'review', 'revision': 1,
+                             'fields': fields, 'raw': row, 'updatedAt': self._now(),
+                             'reason': 'Importação da base existente; requer revisão.'})
+
+    @staticmethod
+    def _now():
+        return datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+
+    def save_validated(self, value):
+        """Recebe dados validados e normalizados pelo contrato partilhado do editor/API."""
+        with self.transaction():
+            saved = self.db.execute('SELECT snapshot FROM catalog_records WHERE id=?', (value['id'],)).fetchone() if value.get('id') else None
+            previous = json.loads(saved[0]) if saved else None
+            if value.get('id') and (previous is None or previous['revision'] != value['baseRevision']):
+                raise CatalogConflict('Existe uma revisão mais recente. Reabra o registo antes de guardar.')
+            if previous and previous['category'] != value['category']:
+                raise ValueError('A categoria de um registo existente não pode ser alterada.')
+            record = {'id': previous['id'] if previous else f'cat-{uuid4()}',
+                      'category': value['category'], 'status': value['status'],
+                      'revision': previous['revision'] + 1 if previous else 1, 'fields': value['fields']}
+            for key in ('operational', 'subcategory', 'pricing', 'matching'):
+                source = value if value.get(key) is not None else previous or {}
+                if key in source:
+                    record[key] = source[key]
+            if value.get('matching') is not None and value['category'] == 'restaurantes':
+                record['matching'] = {**value['matching'], 'food': 'yes'}
+            record.update(raw=(previous or {}).get('raw') or {}, updatedAt=self._now(), reason=value['reason'].strip())
+            self._write(record)
+            return record
+
+    def published_flags(self, rows):
+        result = []
+        with self.transaction():
+            for row in rows:
+                saved = self.db.execute('SELECT snapshot FROM catalog_records WHERE id=?',
+                                        (str(row['_catalog_id']),)).fetchone() if row.get('_catalog_status') == 'approved' and row.get('_catalog_id') else None
+                if not saved:
+                    result.append(False)
+                    continue
+                record = json.loads(saved[0])
+                revision = row.get('_catalog_revision')
+                try:
+                    number = float(revision) if revision is not None else 0
+                except (ValueError, TypeError):
+                    number = 0
+                if record['status'] != 'inactive' and record['revision'] < number:
+                    record.update(revision=int(number), status='approved')
+                    self.db.execute('INSERT OR REPLACE INTO catalog_records VALUES (?,?)',
+                                    (record['id'], json.dumps(record, ensure_ascii=False, separators=(',', ':'))))
+                    result.append(True)
+                else:
+                    result.append(record['status'] == 'approved' and type(revision) in (int, float) and record['revision'] == revision)
+        return result
