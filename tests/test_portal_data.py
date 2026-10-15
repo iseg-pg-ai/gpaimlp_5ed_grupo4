@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from portal.data import UnknownTable, dataset_tables, enrich_records, query_dataset, render_dataset
+from portal.data import UnknownTable, dataset_tables, enrich_records, query_dataset, render_dataset, historical_references
 
 
 class PortalDataTest(unittest.TestCase):
@@ -61,6 +61,19 @@ class PortalDataTest(unittest.TestCase):
         self.assertIn(">false</dd>", html)
         self.assertIn(">0</dd>", html)
         self.assertEqual(html.count(">—</dd>"), 2)
+
+    def test_historical_relationships_preserve_order_and_do_not_mix_routes(self):
+        self.write("structured_roteiros", [{"id_roteiro": "A"}, {"id_roteiro": "B"}])
+        self.write("structured_atividades", [{"id_roteiro": "B", "title": "B"}, {"id_roteiro": "A", "title": "A1"}])
+        self.write("structured_experiencias", [{"id_roteiro": "A", "title": "A2"}])
+        self.write("structured_precos_propostas", [{"id_roteiro": "B", "value": 9}])
+        self.write("structured_merge_conflicts", [{"record_id": "conflict"}])
+        result = historical_references(self.root)
+        self.assertEqual([r["title"] for r in result["routes"][0]["mentions"]], ["A1", "A2"])
+        self.assertEqual(result["routes"][0]["prices"], [])
+        self.assertEqual(result["routes"][1]["prices"][0]["value"], 9)
+        self.assertEqual(result["priceCount"], 1)
+        self.assertEqual(result["conflicts"], [{"record_id": "conflict"}])
 
     def test_empty_and_invalid_data(self):
         self.assertEqual(query_dataset(self.root, {}), {"tables": [], "rows": [], "total": 0, "page": 1})

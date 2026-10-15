@@ -79,6 +79,21 @@ def enrich_records(root: Path, records: list[dict]) -> list[dict]:
     return enriched
 
 
+def historical_references(root: Path) -> dict:
+    routes, activities, experiences, prices, conflicts = [source_rows(root, name) for name in (
+        "structured_roteiros", "structured_atividades", "structured_experiencias",
+        "structured_precos_propostas", "structured_merge_conflicts")]
+    # Preparar as relações uma única vez, em vez de filtrar todas as folhas por roteiro.
+    mentions_by_route, prices_by_route = {}, {}
+    for row in activities + experiences:
+        mentions_by_route.setdefault(row.get("id_roteiro"), []).append(row)
+    for row in prices:
+        prices_by_route.setdefault(row.get("id_roteiro"), []).append(row)
+    return {"routes": [{**route, "mentions": mentions_by_route.get(route.get("id_roteiro"), []),
+                        "prices": prices_by_route.get(route.get("id_roteiro"), [])} for route in routes],
+            "priceCount": len(prices), "conflicts": conflicts}
+
+
 def render_dataset(data: dict) -> str:
     """HTML sem scripts; todos os valores das fontes são escapados."""
     template = Template((Path(__file__).resolve().parents[1] / "dmc-workspace/templates/dataset-row.html").read_text(encoding="utf-8"))
@@ -106,6 +121,8 @@ def main() -> None:
     try:
         if operation == "query":
             result = query_dataset(root, params)
+        elif operation == "references":
+            result = historical_references(root)
         elif operation == "explore":
             result = query_dataset(root, params)
             result["html"] = render_dataset(result)
