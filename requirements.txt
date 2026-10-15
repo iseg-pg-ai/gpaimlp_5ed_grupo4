@@ -22,7 +22,7 @@ et-xmlfile==2.0.0
     # via openpyxl
 gitdb==4.0.12
     # via gitpython
-gitpython==3.1.58
+gitpython==3.2.1
     # via streamlit
 idna==3.18
     # via requests
@@ -60,7 +60,7 @@ pillow==12.3.0
     # via streamlit
 plotly==6.5.2
     # via gpaimlp-5ed-grupo4
-protobuf==6.31.1
+protobuf==6.33.6
     # via streamlit
 pyarrow==25.0.1
     # via streamlit
@@ -101,7 +101,7 @@ typing-extensions==4.16.0
     #   streamlit
 tzdata==2026.3
     # via pandas
-urllib3==2.7.0
+urllib3==2.8.0
     # via requests
 watchdog==6.0.0 ; sys_platform != 'darwin'
     # via streamlit

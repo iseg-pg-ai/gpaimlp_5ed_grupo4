@@ -4,6 +4,9 @@ import { TranslationError } from "@/lib/translation-error";
 import { isLocale } from "@/lib/locales";
 import { VersionStore, VersionConflict, checkTripId } from "@/lib/version-store";
 import { jsonError, noStoreHeaders } from "@/lib/api-response";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { renderItineraryPrompt } from "@/lib/itinerary-prompt";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
@@ -73,6 +76,27 @@ export async function GET(request: Request) {
     }
     const language = params.get("locale") ?? "pt";
     if (!isLocale(language)) return jsonError("Idioma inválido.", 400);
+    if (params.get("format") === "prompt") {
+      if (row.trashedAt)
+        return jsonError(
+          "Restaure esta versão do Lixo antes de exportar o TXT.",
+          409,
+          noStoreHeaders,
+        );
+      const instructions = await readFile(
+        path.resolve(process.cwd(), "../config/prompts/roteiro-visual-canva.txt"),
+        "utf8",
+      );
+      const text = renderItineraryPrompt(JSON.parse(row.snapshot), row, language, instructions);
+      const filename = row.filename.replace(/\.pdf$/, `_Canva_${language.toUpperCase()}.txt`);
+      return new Response(text, {
+        headers: {
+          ...noStoreHeaders,
+          "Content-Type": "text/plain; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+        },
+      });
+    }
     if (params.get("format") === "bundle") {
       const company = await store.localizedPdf(id, version, "pt");
       const files: Record<string, Uint8Array> = {
@@ -119,9 +143,10 @@ export async function GET(request: Request) {
         { error: error.message, code: error.code },
         { status: 503, headers: noStoreHeaders },
       );
-    console.error("PDF export failed", error);
     return jsonError(
-      "Não foi possível gerar ou carregar o PDF. A versão guardada foi preservada.",
+      params.get("format") === "prompt"
+        ? "Não foi possível exportar o TXT. A versão guardada foi preservada."
+        : "Não foi possível gerar ou carregar o PDF. A versão guardada foi preservada.",
       500,
       noStoreHeaders,
     );

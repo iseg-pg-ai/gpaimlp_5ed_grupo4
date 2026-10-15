@@ -40,8 +40,15 @@ Para instalar por `pip`:
 
 ```powershell
 python -m pip install -r requirements.txt
-python -m pip install -r translations/requirements.txt
+python -m pip install --no-deps -r translations/requirements.txt
 ```
+
+Preferir `uv sync --locked` para respeitar os overrides de segurança.
+O export de tradução inclui todas as dependências resolvidas e exige `--no-deps`:
+Argos Translate 1.11.0 ainda fixa Stanza 1.10.1, substituído neste projeto por
+Stanza 1.12.2 para corrigir GHSA-v5jw-96jm-7h2c. Sem essa opção, o resolver do
+`pip` rejeita o requisito antigo do Argos. Reavaliar o override quando o Argos
+publicar uma versão com Stanza corrigido.
 
 ## Arranque rápido
 
@@ -51,6 +58,15 @@ python -m pip install -r translations/requirements.txt
 .\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse
 ```
 
+### Iniciar o Agente de IA (LangChain / Bedrock)
+
+Na raiz do repositório:
+
+- No macOS/Linux: `bash scripts/start_ai_agent.sh`
+- No Windows: `powershell -ExecutionPolicy Bypass -File .\scripts\start_ai_agent.ps1`
+
+O serviço inicia na porta 8000 (`http://localhost:8000/docs`).
+
 ### Iniciar o DMC Workspace
 
 ```powershell
@@ -59,8 +75,17 @@ npm ci
 npm run dev -- -p 3001
 ```
 
-Abrir [http://localhost:3001](http://localhost:3001). O portal requer o
-`warehouse/` e o `config/curation_rule_overrides.json` na pasta pai.
+Abrir [http://localhost:3001](http://localhost:3001). O portal comunica automaticamente com o Agente de IA na porta 8000 quando disponível.
+
+No SageMaker Code Editor, definir a origem pública antes de iniciar. O comando
+`dev` usa automaticamente o adaptador que repõe o prefixo removido pelo proxy:
+
+```bash
+PORTAL_PUBLIC_ORIGIN=https://<dominio>.studio.eu-west-1.sagemaker.aws npm run dev -- -p 3001
+```
+
+Abrir a porta 3001 pelo Code Editor. Para o arranque de produção, consultar
+[o guia do DMC Workspace](dmc-workspace/README.md).
 
 ### Iniciar o dashboard analítico
 

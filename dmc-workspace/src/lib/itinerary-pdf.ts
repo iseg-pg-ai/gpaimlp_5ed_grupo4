@@ -21,6 +21,21 @@ export type PdfLanguageOptions = {
   normalize?: (text: string) => string;
   translations?: Map<string, string>;
 };
+export function resolveChineseFont() {
+  const configured = process.env.BLU_PDF_CJK_FONT;
+  const candidates = configured
+    ? [{ path: configured, face: process.env.BLU_PDF_CJK_FACE ?? "MicrosoftYaHei" }]
+    : [
+        { path: "C:/Windows/Fonts/msyh.ttc", face: "MicrosoftYaHei" },
+        { path: "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", face: "WenQuanYiZenHei" },
+        {
+          path: "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+          face: "NotoSansCJKsc-Regular",
+        },
+      ];
+  return candidates.find((font) => existsSync(/* turbopackIgnore: true */ font.path));
+}
+
 export function renderPdf(
   snapshot: Snapshot,
   meta: VersionMeta,
@@ -45,15 +60,16 @@ export function renderPdf(
       const font = [
         process.env.BLU_PDF_FONT,
         "C:/Windows/Fonts/arial.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/Library/Fonts/Arial.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
       ].find((p) => p && existsSync(p));
       if (options.locale === "zh") {
-        const chineseFont = process.env.BLU_PDF_CJK_FONT ?? "C:/Windows/Fonts/msyh.ttc";
-        if (!existsSync(/* turbopackIgnore: true */ chineseFont))
-          throw new Error("Configure BLU_PDF_CJK_FONT with a Chinese font.");
-        if (chineseFont.endsWith(".ttc"))
-          doc.font(chineseFont, process.env.BLU_PDF_CJK_FACE ?? "MicrosoftYaHei");
-        else doc.font(chineseFont);
+        const chineseFont = resolveChineseFont();
+        if (!chineseFont) throw new Error("Configure BLU_PDF_CJK_FONT with a Chinese font.");
+        if (chineseFont.path.endsWith(".ttc")) doc.font(chineseFont.path, chineseFont.face);
+        else doc.font(chineseFont.path);
       } else if (font) doc.font(font);
       const decorate = () => {
         doc.save();

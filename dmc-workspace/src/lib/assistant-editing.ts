@@ -1,16 +1,29 @@
-import { applyCommand, generateItinerary, type Catalog, type Row } from "./curation.ts";
+import {
+  applyCommand,
+  generateItinerary,
+  type Catalog,
+  type Row,
+  norm,
+  text,
+  exclusions,
+  cities,
+  mentioned,
+} from "./curation.ts";
 import {
   clockTime,
   durationMinutes,
   knownCost,
   proposeSlot,
   transferEstimate,
+  closedOn,
+  closureState,
 } from "./itinerary-scheduling.ts";
 import type { Snapshot } from "./itinerary-pdf";
-import type { ActivityItem } from "../types/index";
+import type { ActivityItem, CustomerBrief } from "../types/index";
+import { optimizeRouteSequence, buildCoordMap } from "./road-routing.ts";
 
 export const assistantHelp =
-  'Pedidos disponíveis: adicionar "nome do catálogo" ao dia 1; substituir atividade 1 do dia 1 por "nome do catálogo"; reagendar atividade 1 do dia 1 para 14:00; reorganizar dia 1 na ordem 2,1,3; remover atividade 1 do dia 1. Os números seguem a ordem dos cartões.';
+  'Pedidos disponíveis: adicionar "nome do catálogo" ao dia 1; adicionar tarde livre ao dia 1; marcar dia 1 como dia livre; ajustar capacidade do dia 1 para 3; substituir atividade 1 do dia 1 por "nome do catálogo"; reagendar atividade 1 do dia 1 para 14:00; reorganizar dia 1 na ordem 2,1,3; otimizar rota do dia 1; remover atividade 1 do dia 1. Os números seguem a ordem dos cartões.';
 const normalize = (s: string) =>
   s
     .normalize("NFD")
@@ -24,6 +37,52 @@ const rowId = (table: string, row: Row) =>
 const title = (row: Row) =>
   String(row.nome_da_atracao || row.nome_da_experiencia || row.estabelecimento || "");
 
+function diagnoseIneligibility(
+  candidate: { table: string; row: Row },
+  brief: CustomerBrief,
+  date: string,
+  city: string,
+): string {
+  const row = candidate.row;
+  const table = candidate.table;
+  const closures = String(row.dias_de_encerramento ?? row.encerramento_base_reconfirmar ?? "");
+  if (closures && (closedOn(row, date) || closureState(closures, date) === "closed")) {
+    return `Oferta encerrada nesta data (${closures}).`;
+  }
+  const maxEffort = brief.physicalEffort.startsWith("Baixo")
+    ? 0
+    : brief.physicalEffort.startsWith("Moderado")
+      ? 1
+      : 2;
+  const effort = ["baixo", "moderado", "alto"].indexOf(norm(row.esforco_fisico));
+  if (effort > maxEffort) {
+    return `Esforço físico (${row.esforco_fisico || "não especificado"}) excede o limite do cliente (${brief.physicalEffort}).`;
+  }
+  const body = norm(Object.values(row).join(" "));
+  if (
+    brief.mobilityRestrictions.length &&
+    (effort > 0 || /escad|ingreme|subida|piso irregular/.test(body))
+  ) {
+    return `Incompatível com restrições de mobilidade (${brief.mobilityRestrictions.join(", ")}): piso irregular ou esforço físico.`;
+  }
+  const matchedExclusion = brief.exclusions.find((e) => exclusions[e]?.test(body));
+  if (matchedExclusion) {
+    return `Contém exclusão definida pelo cliente ("${matchedExclusion}").`;
+  }
+  const location = text(row, "cidade") || text(row, "localizacao");
+  if (cities[city] && !mentioned(location, cities[city])) {
+    return `Localização (${location}) não corresponde ao destino deste dia (${city}).`;
+  }
+  if (
+    brief.dietaryRestrictions.length &&
+    (table === "restaurantes" ||
+      /gastronom|comida|bebida|vinho|pastel|jantar|almoco|prova|culin/.test(body))
+  ) {
+    return `Restrições alimentares do cliente (${brief.dietaryRestrictions.join(", ")}) requerem acreditação prévia do fornecedor.`;
+  }
+  return "Oferta incompatível com o briefing, data, orçamento ou regras de curadoria.";
+}
+
 export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Catalog) {
   const original = snapshot.itinerary;
   const reject = (reason: string) => ({
@@ -35,6 +94,129 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
   if (/^remover (?:a )?ultima atividade do dia \d+$/.test(command)) {
     const result = applyCommand(original, input);
     return { ...result, changed: result.itinerary !== original };
+  }
+  const optimize =
+    command.match(/^otimizar (?:a )?rota do dia (\d+)$/) ||
+    command.match(/^otimizar (?:o )?trajeto do dia (\d+)$/) ||
+    command.match(/^otimizar dia (\d+)$/);
+  if (optimize) {
+    const number = Number(optimize[1]);
+    const day = original.find((d) => d.dayNumber === number);
+    if (!day) return reject("Esse dia não existe.");
+    if (day.items.length <= 2) {
+      return reject("O dia já tem 2 ou menos atividades e não requer otimização de sequência.");
+    }
+    const allRecords = [...catalog.atracoes, ...catalog.experiencias, ...catalog.restaurantes];
+    const coordMap = buildCoordMap(allRecords);
+    const optimizedItems = optimizeRouteSequence(day.items, coordMap);
+    const itinerary = original.map((d) => (d === day ? { ...d, items: optimizedItems } : d));
+    return {
+      itinerary,
+      changed: true,
+      reply: `Rota do dia ${number} otimizada pelo BLU Routing Engine para o trajeto rodoviário mais eficiente. Horários sequenciais atualizados.`,
+    };
+  }
+
+  const adjustCapacity =
+    command.match(/^(?:ajustar|definir) capacidade do dia (\d+) para (\d+)(?: atividades)?$/) ||
+    command.match(/^(?:ajustar|definir) ritmo do dia (\d+) para (\d+)(?: atividades)?$/) ||
+    command.match(/^permitir ate (\d+) atividades no dia (\d+)$/);
+  if (adjustCapacity) {
+    const isPermit = command.startsWith("permitir");
+    const num = Number(isPermit ? adjustCapacity[2] : adjustCapacity[1]);
+    const cap = Number(isPermit ? adjustCapacity[1] : adjustCapacity[2]);
+    const day = original.find((d) => d.dayNumber === num);
+    if (!day) return reject("Esse dia não existe.");
+    if (cap < 1 || cap > 6) {
+      return reject("Indique uma capacidade entre 1 e 6 atividades por dia.");
+    }
+    const itinerary = original.map((d) => (d === day ? { ...d, dailyCapacity: cap } : d));
+    return {
+      itinerary,
+      changed: true,
+      reply: `Capacidade do dia ${num} ajustada para até ${cap} atividades. Pode agora adicionar mais pontos de interesse a este dia.`,
+    };
+  }
+
+  const addFreePeriod =
+    command.match(/^adicionar (?:uma )?(tarde livre|manha livre|tempo livre) ao dia (\d+)$/) ||
+    command.match(/^adicionar periodo livre ao dia (\d+)$/);
+  if (addFreePeriod) {
+    const isGeneric = command.includes("periodo livre");
+    const num = Number(isGeneric ? addFreePeriod[1] : addFreePeriod[2]);
+    const day = original.find((d) => d.dayNumber === num);
+    if (!day) return reject("Esse dia não existe.");
+    if (day.items.some((it) => it.category === "free_time")) {
+      return reject("O dia já contém um período de tempo livre.");
+    }
+
+    const isMorning = command.includes("manha livre");
+    const freeItem: ActivityItem = isMorning
+      ? {
+          id: `free_time:${day.dayNumber}:morning`,
+          time: "09:30–12:30 (proposto)",
+          title: "Manhã Livre — Despertar Tranquilo",
+          description:
+            "Tempo livre reservado para pequeno-almoço relaxado, descanso ou passeios locais sem pressas.",
+          category: "free_time",
+          location: day.location,
+          duration: "3h00",
+          appliedRules: ["Pacing: período livre matinal"],
+        }
+      : {
+          id: `free_time:${day.dayNumber}:afternoon`,
+          time: "14:30–18:00 (proposto)",
+          title: "Tarde Livre — Exploração e Lazer",
+          description:
+            "Tempo livre para compras de artesanato, descanso, cafés de bairro ou exploração espontânea ao ritmo próprio.",
+          category: "free_time",
+          location: day.location,
+          duration: "3h30",
+          appliedRules: ["Pacing: período livre para flexibilidade e descanso"],
+        };
+
+    const newItems = isMorning ? [freeItem, ...day.items] : [...day.items, freeItem];
+    const itinerary = original.map((d) => (d === day ? { ...d, items: newItems } : d));
+    return {
+      itinerary,
+      changed: true,
+      reply: `Período de ${isMorning ? "manhã livre" : "tarde livre"} adicionado ao dia ${num}.`,
+    };
+  }
+
+  const setFreeDay =
+    command.match(/^(?:marcar|definir) dia (\d+) como dia livre$/) ||
+    command.match(/^dia (\d+) livre$/);
+  if (setFreeDay) {
+    const num = Number(setFreeDay[1]);
+    const day = original.find((d) => d.dayNumber === num);
+    if (!day) return reject("Esse dia não existe.");
+    if (day.items.some(protectedItem)) {
+      return reject(
+        "O dia contém atividades protegidas ou confirmadas. Desproteja-as antes de marcar o dia como livre.",
+      );
+    }
+
+    const freeDayItem: ActivityItem = {
+      id: `free_time:${day.dayNumber}:fullday`,
+      time: "09:30–18:00 (proposto)",
+      title: "Dia Livre — Exploração ao Ritmo Próprio",
+      description:
+        "Dia inteiramente dedicado ao lazer, descanso, compras ou visitas espontâneas sem horários rígidos.",
+      category: "free_time",
+      location: day.location,
+      duration: "Dia inteiro",
+      appliedRules: ["Pacing: dia de descanso entre etapas da viagem"],
+    };
+
+    const itinerary = original.map((d) =>
+      d === day ? { ...d, items: [freeDayItem], dailyCapacity: 1 } : d,
+    );
+    return {
+      itinerary,
+      changed: true,
+      reply: `Dia ${num} definido como Dia Livre.`,
+    };
   }
   const add = command.match(/^adicionar "(.+)" ao dia (\d+)$/);
   const replace = command.match(/^substituir atividade (\d+) do dia (\d+) por "(.+)"$/);
@@ -83,8 +265,10 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
       { ...snapshot.brief, startDate: day.date, endDate: day.date, destination: day.location },
       isolated,
     ).itinerary[0]?.items[0];
-    if (!eligible)
-      return reject("Oferta incompatível com o briefing, data, orçamento ou regras de curadoria.");
+    if (!eligible) {
+      const reason = diagnoseIneligibility(candidate, snapshot.brief, day.date, day.location);
+      return reject(reason);
+    }
     if (add) items.push(eligible);
     else items[index] = eligible;
     changedIds.add(eligible.id);
@@ -111,13 +295,15 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
     description = `Reagendada ${item.title} para ${move![3]}`;
   }
   if (!remove) {
-    const limit =
+    const defaultLimit =
       snapshot.brief.personalization?.extraBreaks || snapshot.brief.pace === "Relaxed"
         ? 2
         : snapshot.brief.pace === "Balanced"
           ? 3
           : 4;
-    if (items.length > limit)
+    const limit = day.dailyCapacity ?? defaultLimit;
+    const poiCount = items.filter((it) => it.category !== "free_time").length;
+    if (poiCount > limit)
       return reject("O número de atividades excede o ritmo definido no briefing.");
     let cursor = snapshot.brief.morningPreference.startsWith("Early")
       ? 510
@@ -126,8 +312,12 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
         : 570;
     let previous: Row | undefined;
     for (let i = 0; i < items.length; i++) {
-      const a = items[i],
-        record = rowFor(a);
+      const a = items[i];
+      if (a.category === "free_time") {
+        cursor += 180;
+        continue;
+      }
+      const record = rowFor(a);
       const margin = i
         ? transferEstimate(
             previous,
@@ -173,18 +363,26 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
           requested,
           day.date,
         );
-        if (slot.kind !== "scheduled" || (move && slot.start !== requested))
+        if (
+          slot.kind === "unavailable" ||
+          (move && (slot.kind !== "scheduled" || slot.start !== requested))
+        )
           return reject(
             "Não há horário viável: confirme duração, funcionamento, encerramentos e refeições no catálogo.",
           );
+        const itemDuration =
+          durationMinutes(record.row.tempo_medio_de_visita ?? record.row.duracao) ?? 60;
+        const scheduled = slot.kind === "scheduled";
         items[i] = {
           ...a,
-          time: `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`,
+          time: scheduled
+            ? `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`
+            : "Por agendar",
           ...(a.confirmation
             ? {
                 confirmation: {
                   ...a.confirmation,
-                  time: clockTime(slot.start),
+                  time: scheduled ? clockTime(slot.start) : "Por agendar",
                   status: "pending" as const,
                   confirmedAt: null,
                   checks: a.confirmation.checks.map((c) => ({ ...c, resolved: false })),
@@ -192,13 +390,42 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
               }
             : {}),
         };
-        cursor = slot.end;
+        cursor = scheduled ? slot.end : cursor + itemDuration;
       } else {
         const match = a.time.match(/^(\d{2}):(\d{2})(?:[–-](\d{2}):(\d{2}))?/);
         const duration = durationMinutes(a.duration);
-        if (!match || (!match[3] && !duration))
+        if (!match) {
+          if (!record || protectedItem(a))
+            return reject(
+              "Uma atividade existente não tem horário suficiente para validar conflitos. Complete os dados primeiro.",
+            );
+          const slot = proposeSlot(
+            record.row,
+            record.table === "restaurantes",
+            snapshot.brief,
+            cursor,
+            day.date,
+          );
+          if (slot.kind !== "scheduled") {
+            if (!duration)
+              return reject(
+                "Uma atividade existente continua por agendar e não tem duração suficiente para validar conflitos.",
+              );
+            cursor += duration;
+            previous = record.row;
+            continue;
+          }
+          items[i] = {
+            ...a,
+            time: `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`,
+          };
+          cursor = slot.end;
+          previous = record.row;
+          continue;
+        }
+        if (!match[3] && !duration)
           return reject(
-            "Uma atividade existente não tem horário ou duração suficientes para validar conflitos. Complete os dados primeiro.",
+            "Uma atividade existente não tem duração suficiente para validar conflitos.",
           );
         const start = Number(match[1]) * 60 + Number(match[2]);
         if (start < cursor)

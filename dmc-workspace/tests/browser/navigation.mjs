@@ -4,6 +4,8 @@ const browser = await chromium.launch({
   ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
   headless: true,
 });
+const portal = process.env.PORTAL_URL ?? "http://127.0.0.1:3001";
+const prefix = new URL(portal).pathname.replace(/\/$/, "");
 try {
   for (const width of [320, 1440])
     for (const locale of ["pt", "en", "es", "fr", "de", "zh"]) {
@@ -23,7 +25,7 @@ try {
           },
         }),
       );
-      await page.goto(process.env.PORTAL_URL ?? "http://127.0.0.1:3001");
+      await page.goto(portal);
       await page.waitForFunction(
         (locale) => document.documentElement.lang.startsWith(locale),
         locale,
@@ -31,15 +33,23 @@ try {
       for (const route of ["/catalog", "/exports", "/references", "/trash", "/"]) {
         const bar = page.getByTestId("top-bar");
         if (width < 1024) await bar.locator("details").first().locator("summary").click();
-        await bar.locator("nav:visible").locator(`a[href="${route}"]`).click();
-        await page.waitForURL((url) => url.pathname === route);
+        const href = route === "/" ? prefix || "/" : `${prefix}${route}`;
+        await bar
+          .locator("nav:visible")
+          .locator(`a[href="${href}"], a[href="${href}/"]`)
+          .first()
+          .click();
+        await page.waitForURL((url) => url.pathname.replace(/\/$/, "") === href.replace(/\/$/, ""));
         if (width < 1024) {
           assert.equal(await bar.locator("nav:visible").count(), 0);
           await bar.locator("details").first().locator("summary").click();
         }
         assert.equal(
-          await bar.locator('nav:visible a[aria-current="page"]').getAttribute("href"),
-          route,
+          (await bar.locator('nav:visible a[aria-current="page"]').getAttribute("href")).replace(
+            /\/$/,
+            "",
+          ),
+          href.replace(/\/$/, ""),
         );
         if (width < 1024) await bar.locator("details").first().locator("summary").click();
         await page.evaluate(() => {

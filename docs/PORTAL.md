@@ -108,6 +108,104 @@ O orçamento discriminado apresenta preços calculáveis, valores por confirmar 
 totais separados por moeda. O orçamento disponível do cliente aparece separado do
 custo conhecido da proposta. Valores desconhecidos não são apresentados como zero.
 
+## Partilha com o cliente
+
+O botão **Partilhar** abre um painel para escolher a versão, o idioma e a forma de
+entrega. A ligação de acesso apresenta uma página simples da proposta; a opção
+Documento PDF abre diretamente o PDF imutável dessa versão e idioma. O email do
+cliente vem do briefing e pode ser alterado antes de preparar a mensagem.
+
+O portal abre o programa de email do computador com destinatário, assunto, texto e
+ligação preenchidos. O envio é confirmado nessa aplicação. As ligações ficam
+guardadas no histórico SQLite de exportações. Em instalações acessíveis fora do
+computador local, `BLU_PUBLIC_URL` deve conter a origem pública do portal, por
+exemplo `https://propostas.example.com`.
+
+## Planos ativos e Lixo
+
+O ícone de lixo de cada viagem na barra lateral retira a viagem dos planos ativos
+sem eliminar o seu briefing, roteiro, mensagens ou referência à versão. A página
+**Lixo** permite pesquisar as viagens removidas, consultar a data e distinguir a
+remoção manual da automática. A opção automática move apenas viagens cuja data de
+fim seja anterior ao dia atual.
+
+Cada versão no histórico tem uma ação própria para a enviar para o Lixo. Isto não
+remove a viagem nem uma atividade do roteiro. As versões removidas deixam de surgir
+no histórico ativo, mas os snapshots, PDFs e variantes linguísticas permanecem no
+SQLite e podem ser restaurados na página Lixo. A remoção de uma atividade continua
+a ser feita no cartão do respetivo dia e cria uma nova versão do roteiro.
+
+A limpeza definitiva é verificada uma vez a cada 24 horas, ao abrir o portal ou a
+página Lixo. Uma viagem ou versão no Lixo expira quando a data de fim guardada na
+proposta é anterior ao dia atual em Lisboa. As versões anteriores são eliminadas
+automaticamente, mas a versão final de cada viagem fica protegida. A sua eliminação
+definitiva exige uma confirmação explícita do utilizador e não pode ser anulada.
+
+Depois dessa confirmação, o portal remove a viagem, a versão final, as partilhas,
+os PDFs e as variantes linguísticas associados apenas quando todos os snapshots já
+expiraram. Ao eliminar automaticamente uma versão anterior, remove apenas os
+ficheiros e registos dessa versão. As viagens e versões ainda dentro do período de
+conservação não são alteradas.
+
+Com o portal em execução, `npm run test:trash` valida no navegador a remoção e o
+restauro de uma viagem e de uma versão.
+
+### Apresentação dos PDFs BLU
+
+As novas exportações têm capa em azul-petróleo e creme, apontamentos dourados,
+cliente e destino em destaque, datas, versão e estado preliminar. O resumo da
+viagem é separado dos dias; cada atividade apresenta horário, título,
+localização, descrição, preço e confirmações por ordem de leitura. Fontes e
+critérios aparecem com menor destaque. O rodapé identifica a versão e a
+paginação.
+
+Português e traduções usam o mesmo renderer, com quebra de linhas e paginação
+conforme o comprimento dos textos. Mandarim mantém a configuração
+`BLU_PDF_CJK_FONT`. O número de páginas pode variar entre idiomas. Os PDFs já
+arquivados não são redesenhados: continuam a ser entregues com os bytes
+originais; o novo desenho aplica-se a PDFs ainda não gerados.
+
+Não foram incluídas fotografias: o repositório não contém fotografias de destinos
+com autorização documentada. A introdução de fotografias fica dependente desses
+materiais e respetivos créditos. A decoração geométrica da capa é desenhada
+diretamente no PDF.
+
+## TXT para Canva
+
+O contrato atual é `blu-roteiro-canva/1.1.0`; o plugin local 0.3.0 aceita também
+TXT 1.0.0. O idioma escolhido aplica-se ao TXT e aos PDFs.
+
+1. Rever o roteiro e escolher o idioma do cliente.
+2. Clicar **Exportar TXT para Canva**. O portal guarda uma versão antes do download.
+   As versões anteriores também têm ligação TXT no histórico.
+3. Abrir [BLU | Roteiros no Canva](https://chatgpt.com/plugins/Plugin_600e0d208a74819191cafc6c69a90579)
+   e anexar o TXT. A ligação ao Canva deve estar autorizada.
+4. Rever a composição numa cópia do
+   [modelo BLU](https://canva.link/5u8zxudd1vkcbth), mantendo o original intacto.
+5. Aprovar a pré-visualização e exportar o PDF com as ferramentas disponíveis no
+   Canva; caso não exista exportação na integração, usar o editor Canva.
+
+O TXT contém instruções e dados JSON da versão guardada, não um PDF nem uma
+tradução já realizada. O plugin recebe a orientação do idioma e compõe o texto.
+Mantém preços, moedas, restrições e pendências; exclui contactos, referências de
+reserva e notas internas, mas inclui o nome do cliente. A partilha é manual.
+Descarregar TXT não altera os PDFs persistidos nem o estado de exportação PDF.
+O visual segue LISBON IN PERSPECTIVE (672 x 1056), com os PDFs atuais como base
+de estrutura. Os exemplos do modelo não são dados da nova proposta.
+
+O histórico global de versões também oferece TXT por idioma. Versões no Lixo
+devem ser restauradas antes da exportação. O TXT inclui períodos livres,
+personalização estruturada, capacidade diária e resumos de deslocações guardados.
+As rotas continuam estimativas sujeitas a revisão; a meteorologia consultada
+dinamicamente não pertence ao snapshot e não é incluída no TXT.
+
+A partilha integrada continua a entregar o PDF DMC da versão selecionada.
+O PDF Canva é uma entrega independente aprovada pelo curador; não substitui
+artefactos históricos, não atualiza ligações públicas e não marca a versão
+como PDF exportado no portal. Alterar o roteiro exige exportar a nova versão
+antes de adaptar a composição Canva. Atualizar instruções do plugin exige
+reconstruir/importar o pacote; anexar um novo TXT não atualiza a instalação.
+
 ## Idiomas
 
 A interface suporta português, inglês, mandarim, espanhol, francês e alemão. Os
@@ -139,6 +237,66 @@ npm test
 npm run build
 ```
 
+## Execução na AWS
+
+### SageMaker Studio Code Editor
+
+O proxy do Code Editor acrescenta um prefixo ao endereço. Usar o script
+específico, a partir da raiz, com a origem HTTPS da instância do utilizador:
+
+```bash
+cd dmc-workspace
+npm ci
+cd ..
+PORTAL_PUBLIC_ORIGIN=https://DOMINIO-DO-TEU-STUDIO bash scripts/start_aws_portal.sh
+```
+
+Abrir `https://DOMINIO-DO-TEU-STUDIO/codeeditor/default/ports/3001/`.
+Substituir o domínio pelo da própria instância. O script recompila com o prefixo
+antes de iniciar; um build criado sem esse prefixo não serve para este proxy.
+Requer Node 22.13 a 24.x; preserva uma versão compatível já selecionada.
+O serviço Python é opcional. Para o iniciar juntamente com o portal, acrescentar
+`BLU_START_AGENT=1` ao comando, depois de preparar as dependências Python.
+
+O arranque valida a origem (apenas HTTPS, sem caminho), a porta e o prefixo.
+Se a porta estiver ocupada, termina antes de recompilar: encerrar o processo
+anterior ou definir outra `PORT`. O prefixo por defeito acompanha essa porta.
+`npm run start:aws` exige um build completo com o mesmo prefixo e a origem
+configurada; perante incompatibilidade, usar novamente o script da raiz.
+Não reutilizar builds de outra configuração nem copiar apenas parte de `.next`.
+
+### Servidor direto ou contentor
+
+O portal é uma aplicação Next.js com rotas de servidor e não pode ser publicado
+como um conjunto de ficheiros estáticos num bucket S3. O diretório de trabalho
+tem de ser `dmc-workspace`, pois os dados operacionais são lidos nas pastas irmãs
+`warehouse`, `config`, `data` e `exports`.
+
+Numa máquina Linux com Node.js 22.13 a 24.x, executar a partir da raiz:
+
+```bash
+chmod +x scripts/start_portal.sh
+PORT=3001 ./scripts/start_portal.sh
+```
+
+O script instala as dependências, cria um build limpo, confirma que
+`.next/static` contém os assets JavaScript e inicia o servidor em `0.0.0.0`.
+Para reutilizar uma instalação ou build já validado, podem ser definidos
+`SKIP_INSTALL=true` e `SKIP_BUILD=true`.
+
+Para ECS, App Runner ou uma instância com Docker:
+
+```bash
+docker build -f Dockerfile.portal -t blu-dmc-portal .
+docker run --rm -p 3001:3001 --env-file .env blu-dmc-portal
+```
+
+O `Dockerfile.portal` copia o build completo, incluindo `.next/static`, e inicia
+o Next.js a partir da pasta correta. As pastas `data/portal` e `exports` devem ser
+associadas a armazenamento persistente em produção. Depois de cada deployment,
+qualquer cache do CloudFront para HTML deve ser invalidado para que não aponte
+para chunks de um build anterior.
+
 `npm run check` acrescenta `format:check` a estas verificações e deve terminar sem
 avisos antes de integrar alterações no portal.
 
@@ -153,6 +311,7 @@ npm run test:itinerary
 node tests/browser/briefing.mjs
 node tests/browser/assistant.mjs
 node tests/browser/delivery.mjs
+node tests/browser/canva-prompt.mjs
 ```
 
 No Windows, definir `$env:BROWSER_CHANNEL = "msedge"` quando o Chromium do
