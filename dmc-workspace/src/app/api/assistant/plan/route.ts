@@ -18,6 +18,7 @@ import { jsonError, noStoreHeaders, publicOrigin } from "@/lib/server-http";
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { agentFailure } from "@/lib/agent-errors";
 import { recentConversation } from "@/lib/assistant-conversation";
+import { proposalImpact } from "@/lib/assistant-impact";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
@@ -133,6 +134,7 @@ export async function POST(request: Request) {
         alternatives,
         before: snapshot.itinerary,
         after: preview.itinerary,
+        impact: proposalImpact(snapshot, preview),
         provider: result.provider,
         modelId: result.modelId,
       },

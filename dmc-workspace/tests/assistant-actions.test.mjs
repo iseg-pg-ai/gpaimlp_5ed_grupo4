@@ -14,6 +14,7 @@ import { generateItinerary } from "../src/lib/curation.ts";
 import { AgentAuditStore } from "../src/lib/agent-audit-store.ts";
 import { VersionStore } from "../src/lib/version-store.ts";
 import { agentFailure } from "../src/lib/agent-errors.ts";
+import { proposalImpact } from "../src/lib/assistant-impact.ts";
 
 test("uma resposta inválida do modelo não é apresentada como indisponibilidade AWS", () => {
   assert.equal(agentFailure("AGENT_INVALID_RESPONSE").status, 422);
@@ -49,6 +50,78 @@ const plan = (actions) => ({
   actions,
   warnings: [],
   requiresConfirmation: true,
+});
+
+test("impacto compara dias por número e distingue remoção, horário, ordem e capacidade", () => {
+  const before = fixture();
+  const day = before.itinerary[0];
+  day.items = [
+    { id: "a", title: "Museu", time: "09:00", category: "activity" },
+    { id: "b", title: "Jardim", time: "11:00", category: "activity" },
+    { id: "c", title: "Passeio", time: "14:00", category: "activity" },
+  ];
+  const after = structuredClone(before);
+  after.itinerary[0].items = [after.itinerary[0].items[1], after.itinerary[0].items[0]];
+  after.itinerary[0].items[0].time = "15:00";
+  after.itinerary[0].dailyCapacity = 2;
+  after.itinerary.reverse();
+  const frozen = JSON.stringify({ before, after });
+  const impact = proposalImpact(before, after);
+  assert.ok(impact.changes.some((text) => text.includes("removida Passeio")));
+  assert.ok(impact.changes.some((text) => text.includes("11:00 → 15:00")));
+  assert.ok(impact.changes.some((text) => text.includes("ordem")));
+  assert.ok(impact.changes.some((text) => text.includes("capacidade 6 → 2")));
+  assert.equal(JSON.stringify({ before, after }), frozen);
+});
+
+test("impacto mantém custos conhecidos por moeda e não converte desconhecidos em gratuitos", () => {
+  const before = fixture();
+  before.itinerary = [before.itinerary[0]];
+  before.itinerary[0].items = [
+    {
+      id: "eur",
+      title: "Museu",
+      time: "09:00",
+      category: "activity",
+      priceNote: "10 EUR por grupo",
+    },
+    {
+      id: "usd",
+      title: "Passeio",
+      time: "11:00",
+      category: "activity",
+      priceNote: "20 USD por grupo",
+    },
+    { id: "pending", title: "Jardim", time: "14:00", category: "activity" },
+  ];
+  const after = structuredClone(before);
+  after.itinerary[0].items[0].priceNote = "Por confirmar";
+  const impact = proposalImpact(before, after);
+  assert.deepEqual(impact.costs, [
+    {
+      currency: "EUR",
+      beforeCents: 1000,
+      afterCents: 0,
+      beforeConfirmedCents: 0,
+      afterConfirmedCents: 0,
+    },
+    {
+      currency: "USD",
+      beforeCents: 2000,
+      afterCents: 2000,
+      beforeConfirmedCents: 0,
+      afterConfirmedCents: 0,
+    },
+  ]);
+  assert.equal(impact.pendingBefore, 1);
+  assert.equal(impact.pendingAfter, 2);
+  assert.equal(impact.incomplete, true);
+  assert.ok(impact.changes.some((text) => text.includes("condições de preço")));
+});
+
+test("impacto sem edição não inventa alterações nem chama fornecedores", () => {
+  const snapshot = fixture();
+  assert.deepEqual(proposalImpact(snapshot, structuredClone(snapshot)).changes, []);
 });
 
 function alternativesSetup() {
@@ -181,6 +254,7 @@ test("escolher uma alternativa cria outra pré-visualização e só a aceitaçã
     assert.equal(store.list("options").length, 1);
     c.atracoes[1].dias_de_encerramento = "";
     const proposal = audit.selectAlternative(id, "options", 1, group.itemId, "atracoes:Museu", c);
+    assert.ok(proposal.impact.changes.some((text) => text.includes("adicionada Museu")));
     assert.equal(store.list("options").length, 1);
     assert.equal(proposal.after[0].items[0].title, "Museu");
     const accepted = audit.decide(proposal.runId, "options", "accept", c);

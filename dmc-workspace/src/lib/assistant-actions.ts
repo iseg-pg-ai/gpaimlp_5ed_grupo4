@@ -35,6 +35,7 @@ export type AgentAlternatives = {
   }>;
 };
 export type AgentProposal = {
+  impact?: import("./assistant-impact").AgentImpact;
   runId: string;
   tripId: string;
   baseVersion: number;

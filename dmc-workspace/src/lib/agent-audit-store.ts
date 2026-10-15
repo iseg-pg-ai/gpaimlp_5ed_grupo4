@@ -8,6 +8,7 @@ import {
 } from "./assistant-actions.ts";
 import type { Snapshot } from "./itinerary-pdf";
 import type { Catalog } from "./curation.ts";
+import { proposalImpact } from "./assistant-impact.ts";
 
 type Run = {
   id: string;
@@ -123,6 +124,7 @@ export class AgentAuditStore {
       plan,
       before: before.itinerary,
       after: after.itinerary,
+      impact: proposalImpact(before, after),
       alternatives: [],
       provider: "catalog",
       modelId: "human-selection",

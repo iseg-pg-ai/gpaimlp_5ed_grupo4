@@ -1,5 +1,17 @@
 # Plano de evolução do BLU AI System
 
+## Impacto das propostas do agente — 2026-10-16
+
+- [x] Calcular diferenças de atividades, horários, ordem e capacidade no servidor.
+- [x] Reutilizar o orçamento existente, separando moedas e valores pendentes.
+- [x] Apresentar o resumo nas propostas e na seleção de alternativas.
+- [x] Validar domínio, interface, build e atualizar o plano específico.
+
+Concluído: 107 testes do portal aprovados, um ignorado; build aprovado.
+Resumo validado em 390/1600 px com fornecedor simulado e exports temporários.
+Abrir os detalhes não cria versões nem chamadas adicionais ao modelo. Sem
+chamadas AWS nesta entrega; portal reiniciado com a configuração Nova Pro.
+
 ## Avaliação de grounding e injeção — 2026-10-16
 
 - [x] Alargar os casos sintéticos a ambiguidade, proteções e dados maliciosos.

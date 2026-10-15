@@ -44,11 +44,7 @@ interface AIAssistantPanelProps {
   onCollapse?: () => void;
 }
 
-const suggestionChips = [
-  "Ajuda",
-  "Recomenda alternativas para chuva",
-  "Otimizar rota do dia 1",
-];
+const suggestionChips = ["Ajuda", "Recomenda alternativas para chuva", "Otimizar rota do dia 1"];
 
 export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   messages,
@@ -237,6 +233,48 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   source="pt"
                 />
               </p>
+              {proposal.impact && proposal.plan.actions.length > 0 && (
+                <details className="mt-3 border-t pt-2" data-testid="agent-impact">
+                  <summary className="cursor-pointer font-semibold">
+                    <T text="Resumo do impacto e custos conhecidos" source="pt" />
+                  </summary>
+                  <ul className="list-disc pl-4">
+                    {proposal.impact.changes.map((change, index) => (
+                      <li key={index}>
+                        <T text={change} source="pt" />
+                      </li>
+                    ))}
+                  </ul>
+                  <p>
+                    <T
+                      text="Subtotais conhecidos (confirmados e estimados), sem conversão de moeda:"
+                      source="pt"
+                    />
+                  </p>
+                  {proposal.impact.costs.map((cost) => (
+                    <p key={cost.currency}>
+                      {cost.currency}: {(cost.beforeCents / 100).toFixed(2)} →{" "}
+                      {(cost.afterCents / 100).toFixed(2)}
+                      {" · "}
+                      <T text="Confirmados" source="pt" />:{" "}
+                      {(cost.beforeConfirmedCents / 100).toFixed(2)} →{" "}
+                      {(cost.afterConfirmedCents / 100).toFixed(2)}
+                    </p>
+                  ))}
+                  <p>
+                    <T text="Linhas com custo por confirmar" source="pt" />:{" "}
+                    {proposal.impact.pendingBefore} → {proposal.impact.pendingAfter}
+                  </p>
+                  {proposal.impact.incomplete && (
+                    <p>
+                      <T
+                        text="Custos incompletos: valores desconhecidos não são gratuitos. Os subtotais não representam o custo final da viagem."
+                        source="pt"
+                      />
+                    </p>
+                  )}
+                </details>
+              )}
               {proposal.after
                 .filter(
                   (day, index) =>

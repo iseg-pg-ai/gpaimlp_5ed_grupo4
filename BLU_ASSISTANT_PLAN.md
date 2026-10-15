@@ -35,6 +35,8 @@ Implementados nos primeiros incrementos das Fases 0 e 1:
 - Contexto recente limitado à viagem e proposta pendente validada no servidor.
 - Alternativas reais do catálogo, sem inventar nomes, preços ou disponibilidade.
 - Escolha de uma alternativa sem nova inferência; gravação só após aceitação.
+- Resumo do impacto calculado no servidor: atividades, horários, ordem, capacidade
+  e subtotais conhecidos por moeda, distinguindo custos pendentes.
 - Mensagens e erros preservados no chat; «ok» não executa nem chama o modelo.
 - Classificação segura de erros de permissões, formato, timeout e ligação.
 - Template Lambda privado preparado, ainda sem deployment.
@@ -45,7 +47,7 @@ o modelo continuam pendentes. As Fases 2–6 não estão concluídas.
 
 ### Evidência e limites
 
-- Última validação do portal: 104 testes aprovados, um ignorado; build aprovado.
+- Última validação do portal: 107 testes aprovados, um ignorado; build aprovado.
 - Interface em 390/1600 px validada com fornecedor simulado e dados temporários.
 - Última validação Python do agente: 15 testes aprovados sem chamadas externas.
 - Avaliador com 11 cenários sintéticos e comparação estrita de ações, dias, alvos
@@ -115,6 +117,7 @@ A otimização geográfica do editor existente ainda não é uma ação do plane
 Os caminhos seguintes são relativos a `dmc-workspace/`:
 
 - `src/lib/assistant-editing.ts`: regras determinísticas reutilizadas.
+- `src/lib/assistant-impact.ts`: diferenças e custos conhecidos antes/depois.
 - `src/lib/assistant-actions.ts`: contrato, contexto, simulação e alternativas.
 - `src/lib/agent-audit-store.ts`: proposta, decisão e ligação à versão.
 - `src/app/api/assistant/plan/route.ts`: entrada do novo fluxo estruturado.
@@ -613,8 +616,10 @@ Prioridade: crítica.
 Estado parcial: até oito ações compostas são simuladas atomicamente; interpretação
 ampla de pedidos compostos e redução de custos ainda exigem avaliação. Auditoria
 de plano, hash do pedido e decisão implementada; identidade do operador e registo
-detalhado de cada validação continuam pendentes. Há pré-visualização antes/depois,
-mas não um resumo completo de diferenças de horários, preços e orçamento.
+detalhado de cada validação continuam pendentes. Há resumo do impacto
+na proposta, com diferenças de atividades/horários e subtotais por moeda,
+reutilizando o orçamento existente. Comparação arbitrária entre versões do
+histórico e diagnóstico completo de desvios do orçamento continuam pendentes.
 
 Resultado pretendido: executar linguagem natural sem contornar regras.
 

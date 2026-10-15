@@ -58,6 +58,26 @@ esta seleção ainda não é um ranking semântico. Nomes, emails, notas e campo
 confirmação não integram o contexto preparado. O texto escrito pelo utilizador
 é enviado ao modelo: não incluir contactos ou outros dados pessoais no pedido.
 
+## Resumo do impacto antes de aceitar
+
+Nas propostas com ações, **Resumo do impacto e custos conhecidos** permite
+consultar atividades adicionadas/removidas, alterações de horário, ordem e
+capacidade e percursos anteriores invalidados. É calculado no servidor a partir
+da versão de origem e da simulação validada; não depende das afirmações do modelo.
+Também aparece ao pré-visualizar uma alternativa escolhida.
+
+O cálculo reutiliza `proposalBudget`: mostra subtotais conhecidos antes/depois
+por moeda, a parcela confirmada e o número de linhas cujo custo continua por
+confirmar. Não converte moedas nem trata preços desconhecidos como gratuitos.
+Os valores conhecidos incluem estimativas e não representam necessariamente o
+custo final. A remoção de uma deslocação obsoleta pode reduzir linhas pendentes;
+isso não comprova que a nova deslocação não tenha custos. Os percursos afetados
+continuam a necessitar de validação.
+
+Abrir o resumo não chama o modelo nem guarda uma versão. É uma comparação da
+proposta atual com a sua origem, não uma comparação genérica entre versões do
+histórico nem uma nova verificação de disponibilidade de fornecedores.
+
 ## Execução na instância AWS
 
 Preparar o grupo Python opcional, preservando os outros grupos necessários:

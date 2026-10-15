@@ -1,5 +1,19 @@
 # Decisões e questões abertas
 
+## 2026-10-16 — Resumo determinístico do impacto das propostas
+
+As propostas e alternativas selecionadas incluem diferenças calculadas no
+servidor a partir dos snapshots validados. O painel apresenta atividades,
+horários, ordem, capacidade e percursos invalidados em detalhes expansíveis.
+Reutiliza `proposalBudget` para subtotais conhecidos por moeda e parcela
+confirmada, mantendo linhas pendentes explícitas. Não calcula uma poupança
+final nem converte moedas. Não há nova inferência ou persistência ao consultar.
+
+Evidência: 107 testes do portal aprovados, um ignorado; build aprovado; navegador
+em 390/1600 px com API simulada e exports temporários. A seleção de alternativa
+inclui o mesmo resumo. Sem chamadas externas ao modelo nem alterações a viagens
+reais nos testes. Comparação genérica entre versões do histórico fica pendente.
+
 ## 2026-10-16 — Avaliação sintética mais estrita do agente
 
 O avaliador de alternativas comparava o alvo e os IDs, mas omitia o dia e

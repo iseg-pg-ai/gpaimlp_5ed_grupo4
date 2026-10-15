@@ -207,6 +207,21 @@ try {
       return route.fulfill({
         json: {
           runId: "synthetic-run",
+          impact: {
+            changes: ["Dia 1: removida Outra atividade sintética."],
+            costs: [
+              {
+                currency: "EUR",
+                beforeCents: 1000,
+                afterCents: 1000,
+                beforeConfirmedCents: 0,
+                afterConfirmedCents: 0,
+              },
+            ],
+            pendingBefore: 2,
+            pendingAfter: 1,
+            incomplete: true,
+          },
           tripId: "assistant-browser",
           baseVersion: 1,
           provider: "bedrock",
@@ -290,6 +305,14 @@ try {
       return true;
     });
     const pendingRequests = planRequests;
+    const impact = page.getByTestId("agent-impact");
+    await impact.locator("summary").click();
+    assert.match(await impact.innerText(), /EUR: 10.00 → 10.00/);
+    assert.match(await impact.innerText(), /valores desconhecidos não são gratuitos/);
+    assert.match(await impact.innerText(), /removida Outra atividade sintética/);
+    assert.equal((await readTrip()).version, 1);
+    assert.equal(planRequests, pendingRequests);
+    await impact.locator("summary").click();
     await input.fill("ok");
     await input.press("Enter");
     await page.waitForFunction(() =>
