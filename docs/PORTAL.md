@@ -83,6 +83,11 @@ pelo assistente.
 
 ## Assistente
 
+O painel usa agora propostas estruturadas do Amazon Bedrock com pré-visualização,
+aceitação ou rejeição. A aceitação valida novamente e cria a versão; o pedido
+isolado não modifica o roteiro. Ver [configuração e limites](ASSISTANT.md).
+Os comandos abaixo continuam a ser a base determinística das ações dos cartões.
+
 O assistente aceita comandos explícitos em português:
 
 ```text

@@ -1,5 +1,29 @@
 # Decisões e questões abertas
 
+## Primeiro incremento do agente AWS — 2026-10-15
+
+Estado: implementado localmente; primeira parte das Fases 0 e 1.
+
+Usar Amazon Bedrock Converse com IAM Role e contrato partilhado de propostas.
+Não instalar um modelo local nem criar outro catálogo. O portal valida as ações,
+apresenta antes/depois e exige aceitação ou rejeição. A aceitação volta a validar,
+deteta concorrência e grava versão e auditoria na mesma transação do histórico.
+Não registar o texto do pedido nos logs ou na auditoria; guardar apenas o seu hash.
+O contexto usa campos explícitos e omite contactos, notas e confirmações internas.
+
+O processo Python curto na instância apenas adapta a chamada AWS. Foi preparada
+a mesma implementação para Lambda privado, invocado por IAM; não foi publicado
+nenhum recurso cloud nesta entrega. O serviço FastAPI anterior deixa de ser
+necessário ao painel e exige token para os consumidores legados.
+
+Evidência: uma chamada real ao Nova Lite em eu-west-1 com dados sintéticos
+devolveu a ação correta (1183 tokens de entrada, 74 de saída). Check do portal
+aprovado (99 testes, um ignorado), 50 testes Python aprovados e build aprovado.
+Interface validada em 390/1600 px com propostas simuladas; API real validada com
+planeador simulado, exports e catálogo em diretórios temporários. Template Lambda
+inspecionado estruturalmente; não validado por deployment. Ver limites e trabalho
+pendente em [ASSISTANT.md](ASSISTANT.md) e [PLAN.md](../PLAN.md).
+
 ## Base do assistente — 2026-10-15
 
 Estado: integração local validada no branch `pc/assistant-agent-for-blu-curator`.

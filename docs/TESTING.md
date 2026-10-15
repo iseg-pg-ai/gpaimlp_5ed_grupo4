@@ -1,5 +1,20 @@
 # Testes de conformidade e regressão
 
+## Assistente AWS
+
+`tests/test_agent_planner.py` valida Bedrock com mocks, contrato partilhado,
+respostas incompletas, proteção do raciocínio e token do serviço legado.
+`dmc-workspace/tests/assistant-actions.test.mjs` cobre simulação, catálogo,
+proteções, auditoria, concorrência, expiração e rollback com versões temporárias.
+`tests/browser/assistant.mjs` usa propostas simuladas e verifica rejeição e
+aceitação em 390/1600 px, sem criar versões ao enviar mensagens.
+
+Uma chamada real ao perfil Nova Lite em eu-west-1 passou em 2026-10-15, apenas
+com dois itens sintéticos: devolveu a remoção correta com confirmação obrigatória
+(1183 tokens de entrada, 74 de saída). Isto confirma acesso e contrato básico,
+não uma avaliação ampla do modelo nem um deployment Lambda. Ver
+[configuração e limites](ASSISTANT.md).
+
 O comando integrado pressupõe o portal em execução na porta 3001:
 
 ```powershell

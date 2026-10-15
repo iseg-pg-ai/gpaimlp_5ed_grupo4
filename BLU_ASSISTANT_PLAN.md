@@ -1,6 +1,11 @@
 # Blu — Assistente de Curadoria
 
-Não alterei código. A análise abaixo baseia-se no estado atual de `dev`, incluindo o agente Bedrock recentemente integrado.
+Plano de âmbito com análise histórica anterior à migração HTML/Python.
+A implementação começou em 2026-10-15 no branch
+`pc/assistant-agent-for-blu-curator`. O estado do primeiro incremento AWS,
+as operações disponíveis e os limites estão em [docs/ASSISTANT.md](docs/ASSISTANT.md)
+e [PLAN.md](PLAN.md). Confirmar as avaliações abaixo no código atual: a cadeia
+IAM, a meteorologia partilhada e o fluxo de propostas já evoluíram.
 
 ## Avaliação geral
 
@@ -25,9 +30,9 @@ A evolução recomendada é fazer o modelo **propor ações estruturadas** e man
 
 ---
 
-# 1. O que já existe
+## 1. O que já existe
 
-## Geração de itinerários
+### Geração de itinerários
 
 Já está implementado:
 
@@ -49,7 +54,7 @@ A geração principal é determinística e passa por:
 - `src/lib/itinerary-scheduling.ts`
 - `src/lib/road-routing.ts`
 
-## Edição pelo assistente
+### Edição pelo assistente
 
 O Blu já consegue executar comandos explícitos para:
 
@@ -71,7 +76,7 @@ A lógica está principalmente em:
 - `src/app/api/assistant/route.ts`
 - `src/hooks/useWorkspace.ts`
 
-## Matching do catálogo
+### Matching do catálogo
 
 Já existe um perfil estruturado que permite associar registos a:
 
@@ -89,7 +94,7 @@ Já existe um perfil estruturado que permite associar registos a:
 
 Apenas itens aprovados devem entrar na geração determinística.
 
-## Persistência e versionamento
+### Persistência e versionamento
 
 Já existe:
 
@@ -101,7 +106,7 @@ Já existe:
 - Histórico de revisões do catálogo.
 - Estados Rascunho, Em revisão, Aprovado e Inativo.
 
-## Integrações existentes
+### Integrações existentes
 
 - Open-Meteo para meteorologia.
 - OSRM para rotas.
@@ -112,9 +117,9 @@ Já existe:
 
 ---
 
-# 2. O que está incompleto
+## 2. O que está incompleto
 
-## O agente não executa linguagem natural livre
+### O agente não executa linguagem natural livre
 
 O endpoint do portal segue atualmente esta ordem:
 
@@ -125,7 +130,7 @@ O endpoint do portal segue atualmente esta ordem:
 
 Isto significa que o Blu pode explicar uma alteração sem conseguir aplicá-la.
 
-## O agente e o portal usam regras diferentes
+### O agente e o portal usam regras diferentes
 
 A implementação Python volta a implementar:
 
@@ -144,7 +149,7 @@ Essa lógica já existe de forma mais completa no portal. A duplicação pode pr
 
 A ferramenta Python de catálogo também não demonstra o mesmo controlo de estado de aprovação usado pelo portal.
 
-## A geração do agente não está ligada ao fluxo principal
+### A geração do agente não está ligada ao fluxo principal
 
 Existe `/api/agent/curate`, mas:
 
@@ -153,7 +158,7 @@ Existe `/api/agent/curate`, mas:
 - O schema `AgentCuratorResponse` não é imposto à saída do modelo.
 - O itinerário do agente não passa obrigatoriamente pelas validações completas do portal.
 
-## Persistência das conversas é limitada
+### Persistência das conversas é limitada
 
 As mensagens do assistente ficam na viagem guardada em `localStorage`, mas não fazem parte do snapshot persistido no histórico de versões.
 
@@ -173,13 +178,13 @@ Não guarda de forma estruturada:
 - Regras verificadas.
 - Resultado da execução.
 
-## Serviço Bedrock em AWS
+### Serviço Bedrock em AWS
 
 A configuração atual apenas tenta usar Bedrock quando encontra `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`.
 
 Num deployment AWS, o recomendado é usar uma IAM Role e a cadeia normal de credenciais do SDK. Com a implementação atual, uma máquina com IAM Role mas sem chaves explícitas pode acabar por usar o modelo falso de desenvolvimento.
 
-## Segurança
+### Segurança
 
 Foram identificados estes pontos:
 
@@ -191,7 +196,7 @@ Foram identificados estes pontos:
 - O agente pode expor blocos de raciocínio interno.
 - Não existe registo formal de consentimento, operador ou finalidade da ação.
 
-## Testes do agente
+### Testes do agente
 
 A lógica determinística tem boa cobertura, mas o agente Python não tem uma suite automatizada equivalente.
 
@@ -209,9 +214,9 @@ O notebook existente avalia algumas personas, mas não substitui testes para:
 
 ---
 
-# 3. O que falta desenvolver
+## 3. O que falta desenvolver
 
-## Feedback pós-viagem
+### Feedback pós-viagem
 
 Não existe atualmente um modelo de feedback individual por atividade.
 
@@ -234,7 +239,7 @@ Será necessário guardar:
 
 O questionário deve exigir uma resposta para cada card, mas permitir “Não aplicável” quando a atividade não se realizou.
 
-## Qualidade do catálogo
+### Qualidade do catálogo
 
 É necessário criar agregados por item:
 
@@ -258,7 +263,7 @@ Um alerta não deve desativar automaticamente o item. O trabalhador deverá pode
 
 A inativação deve impedir novas recomendações e preservar todo o histórico.
 
-## Knowledge Base histórica
+### Knowledge Base histórica
 
 Existem itinerários e PDFs históricos, mas não existe uma camada operacional que os transforme em casos reutilizáveis.
 
@@ -282,7 +287,7 @@ Embeddings devem ser adicionados apenas se os testes mostrarem que a pesquisa es
 
 ---
 
-# 4. Arquitetura recomendada
+## 4. Arquitetura recomendada
 
 ```mermaid
 flowchart TD
@@ -300,7 +305,7 @@ flowchart TD
     KB --> ORQ
 ```
 
-## Princípio central
+### Princípio central
 
 O modelo não deve alterar diretamente:
 
@@ -344,7 +349,7 @@ Depois:
 6. A alteração aceite cria uma versão.
 7. A decisão fica registada para aprendizagem futura.
 
-## Registo de ações
+### Registo de ações
 
 Criaria inicialmente estas ações:
 
@@ -363,7 +368,7 @@ Criaria inicialmente estas ações:
 
 As ações destrutivas, alterações a itens confirmados e alterações ao catálogo exigem sempre confirmação humana.
 
-## Fonte única de regras
+### Fonte única de regras
 
 A lógica TypeScript deve continuar a ser a autoridade para:
 
@@ -381,9 +386,9 @@ O Python deve consultar essa lógica através de APIs ou receber candidatos já 
 
 ---
 
-# 5. Modelo de dados recomendado
+## 5. Modelo de dados recomendado
 
-## Auditoria do agente
+### Auditoria do agente
 
 Nova tabela `agent_runs`:
 
@@ -414,7 +419,7 @@ Nova tabela `agent_actions`:
 - `executed_version`
 - `rejection_reason`
 
-## Feedback
+### Feedback
 
 Nova tabela `trip_feedback`:
 
@@ -453,7 +458,7 @@ Nova tabela `catalog_quality_alerts`:
 - `resolved_by`
 - `resolution`
 
-## Casos históricos
+### Casos históricos
 
 Nova tabela `historical_cases` ou uma vista materializada com:
 
@@ -469,11 +474,11 @@ Os dados históricos devem referenciar identificadores estáveis, nunca apenas n
 
 ---
 
-# 6. Funcionalidades adicionais de IA
+## 6. Funcionalidades adicionais de IA
 
-## Prioridade alta
+### Prioridade alta
 
-### Verificação preventiva da proposta
+#### Verificação preventiva da proposta
 
 Antes de exportar:
 
@@ -484,7 +489,7 @@ Antes de exportar:
 - Sinalizar dias demasiado preenchidos.
 - Confirmar que todas as deslocações são possíveis.
 
-### Recomendações proativas
+#### Recomendações proativas
 
 O Blu pode apresentar sugestões sem alterar:
 
@@ -495,7 +500,7 @@ O Blu pode apresentar sugestões sem alterar:
 - Atividade próxima para reduzir deslocações.
 - Restaurante compatível com a dieta.
 
-### Explicabilidade
+#### Explicabilidade
 
 Cada recomendação deve mostrar:
 
@@ -506,7 +511,7 @@ Cada recomendação deve mostrar:
 - Informação desconhecida.
 - Razão para rejeitar alternativas.
 
-### Qualidade do briefing
+#### Qualidade do briefing
 
 Antes de gerar, o agente pode identificar:
 
@@ -516,9 +521,9 @@ Antes de gerar, o agente pode identificar:
 - Mobilidade que exige esclarecimento.
 - Restrições alimentares sem detalhe suficiente.
 
-## Prioridade média
+### Prioridade média
 
-### Gestão de perturbações
+#### Gestão de perturbações
 
 - Chuva.
 - Encerramento inesperado.
@@ -528,7 +533,7 @@ Antes de gerar, o agente pode identificar:
 
 O Blu deve propor um plano alternativo e mostrar o impacto antes da aplicação.
 
-### Análise das decisões dos trabalhadores
+#### Análise das decisões dos trabalhadores
 
 Registar:
 
@@ -540,7 +545,7 @@ Registar:
 
 Isto permite ajustar o ranking sem treinar diretamente o modelo com dados não revistos.
 
-### Qualidade de conteúdo
+#### Qualidade de conteúdo
 
 - Detetar descrições desatualizadas.
 - Identificar duplicados no catálogo.
@@ -548,7 +553,7 @@ Isto permite ajustar o ranking sem treinar diretamente o modelo com dados não r
 - Verificar consistência entre idiomas.
 - Detetar texto pouco adequado a uma proposta para cliente.
 
-## Prioridade posterior
+### Prioridade posterior
 
 - Previsão de probabilidade de aceitação de uma proposta.
 - Estimativa de risco operacional.
@@ -559,11 +564,11 @@ Estas funcionalidades exigem dados de resultado suficientes e não devem ser imp
 
 ---
 
-# 7. Plano por fases
+## 7. Plano por fases
 
-## Fase 0 — Contratos, segurança e avaliação
+### Fase 0 — Contratos, segurança e avaliação
 
-**Prioridade crítica**
+Prioridade: crítica.
 
 - Definir ações estruturadas do agente.
 - Definir quais exigem confirmação humana.
@@ -578,9 +583,9 @@ Estas funcionalidades exigem dados de resultado suficientes e não devem ser imp
 
 Esta fase é dependência de todas as restantes.
 
-## Fase 1 — Blu como editor transacional
+### Fase 1 — Blu como editor transacional
 
-**Prioridade crítica**
+Prioridade: crítica.
 
 - Criar endpoint de planeamento de ações.
 - Fazer o Bedrock devolver ações estruturadas.
@@ -598,9 +603,9 @@ Esta fase é dependência de todas as restantes.
 
 Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 
-## Fase 2 — Geração e matching assistidos
+### Fase 2 — Geração e matching assistidos
 
-**Prioridade alta**
+Prioridade: alta.
 
 - Manter a geração determinística como base.
 - Pedir ao agente para ordenar candidatos elegíveis.
@@ -613,9 +618,9 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - Nunca permitir que o modelo introduza um item inexistente ou inativo.
 - Guardar a origem de cada recomendação.
 
-## Fase 3 — Feedback pós-viagem
+### Fase 3 — Feedback pós-viagem
 
-**Prioridade alta**
+Prioridade: alta.
 
 - Criar estado “Viagem concluída — feedback pendente”.
 - Apresentar questionário card a card.
@@ -628,9 +633,9 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - Permitir ao trabalhador colocar o item em revisão ou inativá-lo.
 - Preservar todas as avaliações após inativação.
 
-## Fase 4 — Knowledge Base histórica
+### Fase 4 — Knowledge Base histórica
 
-**Prioridade média**
+Prioridade: média.
 
 - Indexar snapshots finais.
 - Indexar alterações e decisões do trabalhador.
@@ -641,9 +646,9 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - Avaliar ganhos antes de adicionar embeddings.
 - Excluir casos sem qualidade mínima ou sem resultado conhecido.
 
-## Fase 5 — Integrações e proatividade
+### Fase 5 — Integrações e proatividade
 
-**Prioridade média**
+Prioridade: média.
 
 - Unificar meteorologia e rotas como adaptadores do portal.
 - Acrescentar cache, timeout e provenance.
@@ -655,7 +660,7 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - Preparar fornecedores, mapas ou reservas sem confirmar automaticamente.
 - Preparar o email de partilha e um resumo da proposta no idioma do cliente, sempre sujeitos a revisão.
 
-## Fase 6 — Operação e melhoria contínua
+### Fase 6 — Operação e melhoria contínua
 
 - Dashboard de desempenho do Blu.
 - Taxa de aceitação das sugestões.
@@ -669,9 +674,9 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 
 ---
 
-# 8. Ficheiros a alterar
+## 8. Ficheiros a alterar
 
-## Portal existente
+### Portal existente
 
 - `dmc-workspace/src/app/api/assistant/route.ts`
   - Orquestração, validação e execução das ações.
@@ -718,7 +723,7 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - `dmc-workspace/src/app/api/shares/route.ts`
   - Preparação assistida e supervisionada da comunicação com o cliente.
 
-## Novos módulos recomendados
+### Novos módulos recomendados
 
 - `src/lib/assistant-actions.ts`
 - `src/lib/assistant-policy.ts`
@@ -735,7 +740,7 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - `src/app/api/feedback/route.ts`
 - `src/app/api/catalog/quality/route.ts`
 
-## Serviço Python
+### Serviço Python
 
 - `src/blu_ai/api/server.py`
   - Endpoints autenticados e contratos estruturados.
@@ -758,7 +763,7 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 - `src/blu_ai/config.py` e `src/blu_ai/llm.py`
   - IAM Role, configuração segura e falha explícita.
 
-## Testes
+### Testes
 
 - Testes dos schemas de ação.
 - Testes de autorização e confirmação.
@@ -777,7 +782,7 @@ Resultado: o Blu passa a executar linguagem natural sem contornar regras.
 
 ---
 
-# 9. Decisões recomendadas
+## 9. Decisões recomendadas
 
 1. **Manter a lógica de negócio no Next.js/TypeScript.**
 2. **Usar o Bedrock para interpretar, planear, explicar e ordenar.**

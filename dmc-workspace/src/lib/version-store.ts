@@ -5,17 +5,9 @@ import path from "node:path";
 import { renderLocalizedPdf } from "./localized-pdf.ts";
 import { isLocale, type Locale } from "./locales.ts";
 import { renderPdf, type Snapshot, type VersionMeta } from "./itinerary-pdf.ts";
+import { canonicalSnapshot as canonical } from "./snapshot-validation.ts";
 const hash = (s: string | Buffer) => createHash("sha256").update(s).digest("hex");
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (value && typeof value === "object")
-    return `{${Object.entries(value)
-      .filter(([, v]) => v !== undefined)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`)
-      .join(",")}}`;
-  return JSON.stringify(value);
-}
+export const snapshotFingerprint = (snapshot: Snapshot) => hash(canonical(snapshot));
 const slug = (s: string) =>
   s
     .normalize("NFKD")
@@ -351,6 +343,7 @@ export class VersionStore {
     snapshot: Snapshot,
     reason: string,
     baseVersion: number | null,
+    onSaved?: (version: number) => void,
   ): VersionMeta {
     checkTripId(tripId);
     const serialized = canonical(snapshot),
@@ -362,6 +355,7 @@ export class VersionStore {
         .get(tripId) as unknown as Stored | undefined;
       if (previous?.snapshotHash === snapshotHash) {
         if (previous.trashedAt) this.restoreVersion(tripId, previous.version);
+        onSaved?.(previous.version);
         this.db.exec("COMMIT");
         return this.list(tripId)[0];
       }
@@ -390,6 +384,7 @@ export class VersionStore {
           previous?.version ?? null,
           serialized,
         );
+      onSaved?.(version);
       this.db.exec("COMMIT");
       return {
         tripId,

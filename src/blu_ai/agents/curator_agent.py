@@ -102,16 +102,9 @@ def extract_text_content(content: Any) -> str:
             if isinstance(item, dict):
                 if item.get("type") == "text" and "text" in item:
                     parts.append(item["text"])
-                elif item.get("type") == "reasoning_content" and "reasoning_content" in item:
-                    rc = item["reasoning_content"]
-                    if isinstance(rc, dict) and "text" in rc:
-                        parts.append(f"> *Raciocínio:* {rc['text']}\n")
-                elif "text" in item:
-                    parts.append(str(item["text"]))
-            else:
-                parts.append(str(item))
+                # Blocos de raciocínio, ferramentas e metadados não são conteúdo público.
         return "\n".join(parts).strip()
-    return str(content).strip()
+    return ""
 
 
 def chat_copilot(

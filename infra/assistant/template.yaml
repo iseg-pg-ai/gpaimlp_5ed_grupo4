@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Planeador BLU privado com Amazon Bedrock e autenticacao IAM.
+Parameters:
+  ModelId:
+    Type: String
+    Default: eu.amazon.nova-lite-v1:0
+  ModelResources:
+    Type: CommaDelimitedList
+    Description: ARNs explicitos do perfil de inferencia e dos modelos nas regioes de destino.
+Resources:
+  Planner:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../../src/
+      Handler: blu_ai.planner.lambda_handler
+      Runtime: python3.12
+      Timeout: 45
+      MemorySize: 256
+      ReservedConcurrentExecutions: 2
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID: !Ref ModelId
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource: !Ref ModelResources
+Outputs:
+  FunctionName:
+    Value: !Ref Planner

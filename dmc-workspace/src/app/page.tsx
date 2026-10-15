@@ -47,6 +47,8 @@ export default function WorkspacePage() {
     generate,
     send,
     assistantBusy,
+    agentProposal,
+    decideAgentProposal,
     setEditing,
     startNewTrip,
     selectTrip,
@@ -313,6 +315,8 @@ export default function WorkspacePage() {
                     className={`fixed right-4 bottom-20 z-40 w-[calc(100%-2rem)] max-w-sm h-[min(70dvh,36rem)] overflow-hidden rounded-2xl border border-[#D5D1C7] shadow-xl [&>aside]:h-full xl:static xl:w-full xl:max-w-none xl:h-full xl:rounded-none xl:border-0 xl:shadow-none ${assistantOpen ? "block" : "hidden"} ${desktopAssistantCollapsed ? "xl:hidden" : "xl:block"}`}
                   >
                     <AIAssistantPanel
+                      proposal={agentProposal}
+                      onDecideProposal={decideAgentProposal}
                       onCollapse={() => {
                         setDesktopAssistantCollapsed(true);
                         requestAnimationFrame(() => assistantButton.current?.focus());

@@ -4,6 +4,7 @@ import { T, useTranslated } from "@/components/LocaleProvider";
 import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Check, RotateCcw, Loader2, Copy, PanelRightClose } from "lucide-react";
 import { ChatMessage } from "@/types";
+import type { AgentProposal } from "@/lib/assistant-actions";
 import {
   Conversation,
   ConversationContent,
@@ -31,6 +32,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface AIAssistantPanelProps {
+  proposal?: AgentProposal | null;
+  onDecideProposal?: (decision: "accept" | "reject") => void;
   messages: ChatMessage[];
   onSendMessage: (text: string) => void;
   isProcessing: boolean;
@@ -52,6 +55,8 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   isProcessing,
   onResetItinerary,
   onCollapse,
+  proposal,
+  onDecideProposal,
 }) => {
   const collapseLabel = useTranslated("Recolher assistente", "pt");
   const promptPlaceholder = useTranslated("Ask me to adapt anything…");
@@ -107,7 +112,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             </h3>
           </div>
           <p className="text-xs text-[#4A636B] mt-0.5">
-            <T text="Agente de IA · LangChain & Bedrock" source="pt" />{" "}
+            <T text="Propostas de curadoria · Amazon Bedrock" source="pt" />{" "}
           </p>
         </div>
 
@@ -139,6 +144,71 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
       {/* 2. Standardized AI Elements Conversation & Message Components */}
       <Conversation ref={conversationContainerRef} className="bg-[#FAF8F3]">
         <ConversationContent>
+          {proposal && (
+            <section
+              aria-label="Pré-visualização da proposta"
+              className="rounded-lg border border-[#D5D1C7] bg-white p-3 text-sm text-[#143F4B]"
+              data-testid="agent-preview"
+            >
+              <h4 className="font-semibold">
+                <T text="Rever alterações antes de aceitar" source="pt" />
+              </h4>
+              <p>{proposal.plan.summary}</p>
+              {proposal.plan.warnings.map((warning, index) => (
+                <p key={index}>{warning}</p>
+              ))}
+              <p>
+                <T
+                  text="Preços, disponibilidade e reservas continuam sujeitos a confirmação humana."
+                  source="pt"
+                />
+              </p>
+              {proposal.after
+                .filter(
+                  (day, index) => JSON.stringify(day) !== JSON.stringify(proposal.before[index]),
+                )
+                .map((day) => (
+                  <div key={day.dayNumber} className="mt-3 border-t pt-2">
+                    <h5 className="font-semibold">Dia {day.dayNumber}</h5>
+                    <p>
+                      <T text="Antes" source="pt" />
+                    </p>
+                    <ul>
+                      {proposal.before
+                        .find((d) => d.dayNumber === day.dayNumber)
+                        ?.items.map((item) => (
+                          <li key={item.id}>
+                            {item.time} · {item.title}
+                          </li>
+                        ))}
+                    </ul>
+                    <p>
+                      <T text="Depois" source="pt" /> · Capacidade:{" "}
+                      {day.dailyCapacity ?? "briefing"}
+                    </p>
+                    <ul>
+                      {day.items.map((item) => (
+                        <li key={item.id}>
+                          {item.time} · {item.title} · {item.priceNote ?? "Preço por confirmar"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              <div className="mt-3 flex gap-2">
+                <Button disabled={isProcessing} onClick={() => onDecideProposal?.("accept")}>
+                  <T text="Aceitar e guardar versão" source="pt" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  disabled={isProcessing}
+                  onClick={() => onDecideProposal?.("reject")}
+                >
+                  <T text="Rejeitar" source="pt" />
+                </Button>
+              </div>
+            </section>
+          )}
           {messages.length === 0 ? (
             <ConversationEmptyState
               icon={<Sparkles className="size-8 text-[#D8A65C]" />}
@@ -218,7 +288,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
               >
                 <Loader2 className="size-3.5 animate-spin text-[#2D5B67]" />
                 <span>
-                  <T text="Validating rules & updating proposal…" source="en" />
+                  <T text="A preparar e validar a proposta…" source="pt" />
                 </span>
               </MessageContent>
             </Message>
@@ -280,7 +350,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
               <T text="Press Enter to curate" source="en" />
             </span>
             <span>
-              <T text="Real-time itinerary sync" source="en" />
+              <T text="Alterações só após confirmação" source="pt" />
             </span>
           </PromptInputFooter>
         </PromptInput>

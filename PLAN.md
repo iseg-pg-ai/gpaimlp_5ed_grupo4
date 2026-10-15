@@ -1,5 +1,25 @@
 # Plano de evolução do BLU AI System
 
+## Agente AWS — primeira entrega de 2026-10-15
+
+- [x] Confirmar IAM Role e perfil Nova Lite em eu-west-1 sem credenciais fixas.
+- [x] Implementar contrato partilhado e propostas estruturadas via Bedrock Converse.
+- [x] Reutilizar validação determinística e candidatos aprovados do portal.
+- [x] Implementar pré-visualização, aceitação, rejeição e versão com auditoria atómica.
+- [x] Reduzir contexto pessoal, remover logs do pedido e bloquear raciocínio interno.
+- [x] Restringir o serviço HTTP legado com token e sem CORS público.
+- [x] Preparar entrada Lambda privada e template SAM, sem deployment automático.
+- [x] Concluir testes unitários, build, navegador e documentação desta entrega.
+
+Âmbito inicial: adicionar, substituir, remover, reagendar, reorganizar, capacidade,
+períodos livres e dias livres. Operações compostas são validadas integralmente.
+Mover entre dias, otimizar percursos pelo agente, editar briefing/confirmações,
+feedback, ranking histórico e restantes Fases 2–6 ficam por implementar.
+Uma chamada Bedrock com dados sintéticos passou; não usar dados reais nos testes.
+Validação: 99 testes Node aprovados, um ignorado; 50 Python aprovados; build,
+API com fornecedor simulado e UI em 390/1600 px aprovados. Exports e catálogo
+de integração isolados em diretórios temporários. Lambda não publicado.
+
 ## Base do assistente — integração de 2026-10-15
 
 - [x] Atualizar referências e selecionar `pc/assistant-agent-for-blu-curator`.

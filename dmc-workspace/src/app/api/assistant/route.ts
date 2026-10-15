@@ -23,44 +23,13 @@ export async function POST(request: Request) {
       try {
         const allRecords = [...catalog.atracoes, ...catalog.experiencias, ...catalog.restaurantes];
         result.itinerary = await enrichItineraryWithRoadRouting(result.itinerary, allRecords);
-      } catch (routingErr) {
-        console.warn("Could not enrich assistant road routes:", routingErr);
+      } catch {
+        console.warn("Não foi possível atualizar os percursos do assistente.");
       }
       return Response.json(result);
     }
 
-    // Se o comando determinístico não alterou o itinerário (perguntas, linguagem natural, sugestões),
-    // invocar o Agente de IA LangChain / Bedrock em http://127.0.0.1:8000
-    const agentUrl = process.env.BLU_AI_AGENT_URL || "http://127.0.0.1:8000";
-    try {
-      console.log(`[Assistant API] Calling AI Agent at ${agentUrl} with input: "${body.input}"`);
-      const agentResp = await fetch(`${agentUrl}/api/agent/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          instruction: body.input,
-          currentItinerary: body.snapshot.itinerary,
-          brief: body.snapshot.brief,
-        }),
-        signal: AbortSignal.timeout(20000),
-      });
-      console.log(`[Assistant API] AI Agent response status: ${agentResp.status}`);
-      if (agentResp.ok) {
-        const agentData = (await agentResp.json()) as { reply?: string };
-        if (agentData?.reply) {
-          console.log(`[Assistant API] Returning AI Agent reply!`);
-          return Response.json({
-            itinerary: body.snapshot.itinerary,
-            changed: false,
-            reply: agentData.reply,
-          });
-        }
-      } else {
-        console.warn(`[Assistant API] AI Agent returned error status: ${agentResp.status}`);
-      }
-    } catch (agentErr) {
-      console.warn("[Assistant API] Agent service error:", agentErr);
-    }
+    // As ações dos cartões continuam determinísticas; linguagem natural usa /plan.
 
     return Response.json(result);
   } catch {

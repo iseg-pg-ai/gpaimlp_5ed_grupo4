@@ -15,7 +15,7 @@ DATABASE_PATH = WAREHOUSE_DIR / "blu_etl.sqlite"
 load_dotenv(ROOT_DIR / ".env")
 
 # AWS Bedrock configuration
-AWS_REGION = os.getenv("AWS_REGION", "eu-north-1")
+AWS_REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "eu-west-1"
 
 # Modelo Bedrock configurável.
 BEDROCK_MODEL_ID = os.getenv(

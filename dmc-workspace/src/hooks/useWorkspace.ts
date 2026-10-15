@@ -6,9 +6,10 @@ import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip, TransitMode 
 import { initialBrief } from "@/data/initialBrief";
 import { assistantHelp } from "@/lib/assistant-editing";
 
-import { validateSnapshot } from "@/lib/snapshot-validation";
+import { validateSnapshot, canonicalSnapshot } from "@/lib/snapshot-validation";
 
 import type { Snapshot } from "@/lib/itinerary-pdf";
+import type { AgentProposal } from "@/lib/assistant-actions";
 import {
   AUTO_TRASH_STORAGE,
   TRASH_STORAGE,
@@ -63,6 +64,7 @@ export function useWorkspace() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [assistantBusy, setAssistantBusy] = useState(false);
+  const [agentProposal, setAgentProposal] = useState<AgentProposal | null>(null);
   const operation = useRef(false);
   const cleanupStarted = useRef(false);
   const [history, setHistory] = useState<{ id: string; versions: HistoryVersion[] }>({
@@ -337,25 +339,130 @@ export function useWorkspace() {
   };
   const send = async (input: string) => {
     if (!active || operation.current) return false;
+    operation.current = true;
     setAssistantBusy(true);
+    setAgentProposal(null);
+    setError("");
     try {
-      return await update(async (trip) => {
-        const response = await portalFetch("/api/assistant", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ snapshot: trip, input }),
-        });
-        const result = await responseJson<{ itinerary: ItineraryDay[]; reply: string }>(response);
-        validateSnapshot({ ...trip, itinerary: result.itinerary });
-        if (typeof result.reply !== "string") throw new Error("Resposta inválida do assistente.");
-        const { itinerary, reply } = result;
-        return {
-          ...trip,
-          itinerary,
-          messages: [...trip.messages, message("user", input), message("assistant", reply)],
-        };
+      if (!active.version) throw new Error("Guarde a viagem antes de usar o assistente.");
+      if (input.trim().toLowerCase() === "ajuda") {
+        setTrips((prev) =>
+          prev.map((trip) =>
+            trip.id === active.id
+              ? {
+                  ...trip,
+                  messages: [
+                    ...trip.messages,
+                    message("user", input),
+                    message(
+                      "assistant",
+                      assistantHelp +
+                        " Os pedidos ao agente apresentam uma proposta para aceitar ou rejeitar.",
+                    ),
+                  ],
+                }
+              : trip,
+          ),
+        );
+        return true;
+      }
+      const response = await portalFetch("/api/assistant/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tripId: active.id,
+          baseVersion: active.version,
+          snapshot: active,
+          input,
+        }),
       });
+      const result = await responseJson<AgentProposal>(response);
+      validateSnapshot({ ...active, itinerary: result.after });
+      setAgentProposal(result.plan.actions.length ? result : null);
+      setTrips((prev) =>
+        prev.map((trip) =>
+          trip.id === active.id
+            ? {
+                ...trip,
+                messages: [
+                  ...trip.messages,
+                  message("user", input),
+                  message("assistant", result.plan.summary),
+                ],
+              }
+            : trip,
+        ),
+      );
+      return true;
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Não foi possível preparar a proposta.");
+      return false;
     } finally {
+      operation.current = false;
+      setAssistantBusy(false);
+    }
+  };
+  const decideAgentProposal = async (decision: "accept" | "reject") => {
+    if (!active || !agentProposal || operation.current) return;
+    operation.current = true;
+    setAssistantBusy(true);
+    setError("");
+    try {
+      if (
+        agentProposal.tripId !== active.id ||
+        agentProposal.baseVersion !== active.version ||
+        canonicalSnapshot(agentProposal.before) !== canonicalSnapshot(active.itinerary)
+      )
+        throw new Error("A viagem mudou. Peça uma nova proposta antes de confirmar.");
+      const response = await portalFetch("/api/assistant/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runId: agentProposal.runId,
+          tripId: active.id,
+          baseVersion: active.version,
+          decision,
+        }),
+      });
+      const result = await responseJson<{ snapshot?: Snapshot; version?: number }>(response);
+      if (decision === "accept") {
+        validateSnapshot(result.snapshot);
+        if (!Number.isSafeInteger(result.version)) throw new Error("Versão inválida.");
+        setTrips((prev) =>
+          prev.map((trip) =>
+            trip.id === active.id
+              ? {
+                  ...trip,
+                  ...result.snapshot!,
+                  version: result.version,
+                  messages: [
+                    ...trip.messages,
+                    message("assistant", "Proposta aceite e guardada numa nova versão."),
+                  ],
+                }
+              : trip,
+          ),
+        );
+      } else {
+        setTrips((prev) =>
+          prev.map((trip) =>
+            trip.id === active.id
+              ? {
+                  ...trip,
+                  messages: [
+                    ...trip.messages,
+                    message("assistant", "Proposta rejeitada. O roteiro foi preservado."),
+                  ],
+                }
+              : trip,
+          ),
+        );
+      }
+      setAgentProposal(null);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Não foi possível confirmar a proposta.");
+    } finally {
+      operation.current = false;
       setAssistantBusy(false);
     }
   };
@@ -554,6 +661,11 @@ export function useWorkspace() {
     active,
     busy,
     assistantBusy,
+    agentProposal:
+      agentProposal?.tripId === activeId && agentProposal.baseVersion === active?.version
+        ? agentProposal
+        : null,
+    decideAgentProposal,
     editing,
     ready,
     draft,

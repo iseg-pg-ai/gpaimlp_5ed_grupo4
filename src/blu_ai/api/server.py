@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import sys
+import os
+import hmac
 from pathlib import Path
 from typing import Dict, Any, Optional
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 # Ensure src is on path
@@ -26,14 +28,16 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Enable CORS for DMC Workspace (running on port 3000 / 3001)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Serviço legado entre servidores: sem CORS público; o portal usa o planeador AWS.
+@app.middleware("http")
+async def authenticate(request: Request, call_next):
+    if request.url.path != "/api/health":
+        token = os.getenv("BLU_AGENT_API_TOKEN")
+        if not token:
+            return JSONResponse({"detail": "Serviço não configurado para acesso autenticado."}, status_code=503)
+        if not hmac.compare_digest(request.headers.get("authorization", ""), f"Bearer {token}"):
+            return JSONResponse({"detail": "Acesso não autorizado."}, status_code=401)
+    return await call_next(request)
 
 
 class ChatCopilotRequest(BaseModel):
@@ -57,8 +61,8 @@ def api_curate_itinerary(brief: CustomerBrief):
     try:
         result = curate_itinerary(brief)
         return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro na execução do agente: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=503, detail="Agente indisponível.") from None
 
 
 @app.post("/api/agent/chat")
@@ -71,8 +75,8 @@ def api_chat_copilot(req: ChatCopilotRequest):
             brief=req.brief,
         )
         return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro no Co-Pilot: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=503, detail="Agente indisponível.") from None
 
 
 @app.get("/api/tools/catalog")

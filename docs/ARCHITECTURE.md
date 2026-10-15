@@ -127,9 +127,12 @@ determinística, horários, edição, confirmações manuais, orçamento, versõ
 PDF/ZIP, tradução opcional, partilha e Lixo com restauro. Inclui rotas e
 meteorologia com fallback e uma interface em seis idiomas.
 
-O assistente aplica comandos determinísticos e pode recorrer ao serviço Python
-LangChain/Bedrock em `BLU_AI_AGENT_URL`. A existência desse serviço não comprova
-a sua disponibilidade nem autoriza chamadas reais. O portal funciona sem ele.
+Os cartões aplicam comandos determinísticos. O painel do assistente pede propostas
+estruturadas ao Amazon Bedrock, valida-as e apresenta uma pré-visualização antes
+da aceitação que cria a versão. A ponte Python pode chamar Bedrock diretamente
+ou um Lambda privado com a mesma implementação. O serviço FastAPI anterior fica
+como legado autenticado e deixa de ser necessário ao painel. Ver
+[assistente AWS](ASSISTANT.md) para configuração, limites e estado da entrega.
 
 TXT 1.1.0 preserva personalização, capacidade diária, períodos livres e percursos
 guardados. O plugin-fonte 0.3.0 aceita TXT 1.0.0 e 1.1.0; a atualização de uma

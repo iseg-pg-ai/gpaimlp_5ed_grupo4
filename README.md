@@ -70,7 +70,14 @@ publicar uma versão com Stanza corrigido.
 .\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse
 ```
 
-### Iniciar o Agente de IA (LangChain / Bedrock)
+### Assistente AWS e serviço legado
+
+O painel usa propostas estruturadas do Amazon Bedrock, com pré-visualização e
+confirmação humana. Não exige um modelo local nem o servidor da porta 8000.
+Preparar o grupo `agent` e seguir [a configuração AWS](docs/ASSISTANT.md).
+O mesmo planeador tem uma entrada Lambda privada preparada para publicação.
+
+Para consumidores do serviço HTTP legado, que exige `BLU_AGENT_API_TOKEN`:
 
 Na raiz do repositório:
 
@@ -79,7 +86,7 @@ Instalar primeiro o grupo opcional `agent` indicado acima.
 - No macOS/Linux: `bash scripts/start_ai_agent.sh`
 - No Windows: `powershell -ExecutionPolicy Bypass -File .\scripts\start_ai_agent.ps1`
 
-O serviço inicia na porta 8000 (`http://localhost:8000/docs`).
+O serviço inicia na porta 8000. Os endpoints, exceto saúde, exigem Bearer token.
 
 ### Iniciar o DMC Workspace
 
@@ -94,7 +101,8 @@ O catálogo, a consulta das fontes, a meteorologia e o TXT/Canva usam Python
 ou o Python do sistema. O agente continua opcional. O explorador em `/references` usa um
 formulário HTML: selecionar a folha e carregar em **Filtrar**.
 
-Abrir [http://localhost:3001](http://localhost:3001). O portal comunica automaticamente com o Agente de IA na porta 8000 quando disponível.
+Abrir [http://localhost:3001](http://localhost:3001). O assistente usa Bedrock ou
+o Lambda configurado; o portal mantém as operações determinísticas sem o modelo.
 
 No SageMaker Code Editor, definir a origem pública antes de iniciar. O comando
 `dev` usa automaticamente o adaptador que repõe o prefixo removido pelo proxy:

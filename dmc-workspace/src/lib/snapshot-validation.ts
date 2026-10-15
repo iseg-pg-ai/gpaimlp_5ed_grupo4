@@ -3,6 +3,18 @@ import { validateCatalogDetails } from "./catalog-details.ts";
 import { validateBrief } from "./curation.ts";
 import type { Snapshot } from "./itinerary-pdf";
 
+// A mesma representação no navegador e no histórico, sem alterar hashes existentes.
+export function canonicalSnapshot(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalSnapshot).join(",")}]`;
+  if (value && typeof value === "object")
+    return `{${Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${JSON.stringify(k)}:${canonicalSnapshot(v)}`)
+      .join(",")}}`;
+  return JSON.stringify(value);
+}
+
 export function validateSnapshot(value: unknown): asserts value is Snapshot {
   if (!value || typeof value !== "object") throw new Error("Roteiro inválido.");
   const s = value as Snapshot;

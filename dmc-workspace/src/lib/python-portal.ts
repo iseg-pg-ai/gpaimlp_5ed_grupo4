@@ -35,10 +35,18 @@ export function portalRequest<T>(operation: string, root: string, params: object
   return new Promise((resolve, reject) => {
     const child = execFile(
       /* turbopackIgnore: true */ python,
-      ["-X", "utf8", "-B", "-m", "portal.data", operation, root],
+      operation === "agent-plan"
+        ? ["-X", "utf8", "-B", "-m", "blu_ai.planner"]
+        : ["-X", "utf8", "-B", "-m", "portal.data", operation, root],
       {
         cwd: repository,
-        timeout: 15000,
+        timeout: operation === "agent-plan" ? 55000 : 15000,
+        env: {
+          ...process.env,
+          PYTHONPATH: [path.join(repository, "src"), process.env.PYTHONPATH]
+            .filter(Boolean)
+            .join(path.delimiter),
+        },
         maxBuffer: 16 * 1024 * 1024,
         windowsHide: true,
         encoding: "utf8",
@@ -47,8 +55,10 @@ export function portalRequest<T>(operation: string, root: string, params: object
         if (error)
           return reject(
             new PortalPythonError(
-              "DATASET_UNAVAILABLE",
-              "Python do portal indisponível. Verifique BLU_PYTHON e a instalação Python.",
+              operation === "agent-plan" ? "AGENT_UNAVAILABLE" : "DATASET_UNAVAILABLE",
+              operation === "agent-plan"
+                ? "Planeador AWS indisponível. Verifique o grupo agent e as permissões IAM."
+                : "Python do portal indisponível. Verifique BLU_PYTHON e a instalação Python.",
             ),
           );
         try {
