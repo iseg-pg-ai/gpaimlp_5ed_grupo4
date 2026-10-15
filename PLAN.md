@@ -1,5 +1,25 @@
 # Plano de evolução do BLU AI System
 
+## Simplificação para a próxima iteração do agente — 2026-10-15
+
+Base: origin/dev em `a4b7626`; branch `chore/project-cleanup`.
+Âmbito autorizado: limpeza e consolidação, com commits separados por etapa.
+
+- [x] Inventariar os 345 ficheiros versionados e analisar os imports do portal.
+- [ ] Remover artefactos locais, placeholders redundantes e experiências substituídas.
+- [ ] Consolidar documentação e instruções duplicadas; preservar os contratos ativos.
+- [ ] Atualizar referências e exclusões e validar Python, portal, build e Markdown.
+
+Evidência do inventário: todos os módulos TypeScript do portal são alcançáveis
+pelas entradas de produção. Não eliminar módulos funcionais com base na sua
+dimensão. O prompt de curadoria tem duas cópias idênticas; os scripts antigos
+de distâncias e planeamento apenas se referenciam entre si e foram substituídos
+pelo portal e pelo serviço `blu_ai`. Há ficheiros locais do sistema, SVGs do
+template Next.js e placeholders de pastas já preenchidas versionados.
+
+Preservar as fontes Excel/PDF, o catálogo operacional, versões exportadas e o
+warehouse gerado. A próxima iteração do agente fica fora desta limpeza.
+
 ## Correção dos alertas Dependabot Python — 2026-10-15
 
 - [x] Criar fix/dependabot-python a partir de origin/dev e auditar todos os grupos.
