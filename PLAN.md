@@ -1,5 +1,20 @@
 # Plano de evolução do BLU AI System
 
+## Migração incremental HTML/Python — 2026-10-15
+
+Base: `chore/project-cleanup` em `da8de67`; branch `refactor/html-python`.
+
+- [ ] Centralizar leitura, pesquisa e enriquecimento das fontes em Python.
+- [ ] Substituir estado e fetch do explorador por formulário HTML no servidor.
+- [ ] Mover a preparação das referências históricas para Python.
+- [ ] Validar APIs, erros, escaping, navegação sem JavaScript e idiomas.
+- [ ] Atualizar arquitetura e comandos, com commits separados por etapa.
+
+Preservar o editor interativo, os contratos das versões, PDFs e tradução.
+Python usa a biblioteca padrão e não requer outro serviço nem instalação de
+framework. Não converter componentes interativos para HTML estático quando isso
+eliminar operações existentes ou exigir uma segunda implementação em JavaScript.
+
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
 Base: dev em `a4b7626`; branch `chore/project-cleanup`.
