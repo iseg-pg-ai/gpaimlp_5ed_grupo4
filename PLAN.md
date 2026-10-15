@@ -3,8 +3,8 @@
 ## Base do assistente — integração de 2026-10-15
 
 - [x] Atualizar referências e selecionar `pc/assistant-agent-for-blu-curator`.
-- [x] Integrar `refactor/html-python`, preservando a entrega completa de
-  `warehouse/` do destino na resolução dos conflitos de ficheiros gerados.
+- [x] Integrar `refactor/html-python`, preservando também a sua entrega completa
+  de `warehouse/`, conforme correção explícita do utilizador.
 - [x] Rever o serviço existente e `BLU_ASSISTANT_PLAN.md`.
 - [x] Validar a base integrada antes de implementar as Fases 0 e 1.
 - [ ] Propor ações estruturadas, pré-visualizar e confirmar antes de aplicar.

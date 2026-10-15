@@ -9,8 +9,11 @@ suite Python aprovada e verificador documental aprovado. Modelos testados com
 mocks; não foram realizadas chamadas reais ao Bedrock. Não foi efetuado push.
 
 Integrar o código de `refactor/html-python` em `ff1559a`. Os conflitos estavam
-limitados aos artefactos gerados do warehouse; preservar a entrega completa do
-branch de destino, sem misturar JSONL, manifest e SQLite de entregas diferentes.
+limitados aos artefactos gerados do warehouse. A escolha inicial da entrega do
+destino foi corrigida por indicação explícita do utilizador: preservar a entrega
+completa de `refactor/html-python`, incluindo JSONL, manifest e SQLite.
+Verificação desta correção: comparação Git integral do diretório sem diferenças
+face a `origin/refactor/html-python`. Os testes acima antecedem esta correção.
 Não regenerar o warehouse nem modificar fontes nesta integração.
 
 Reutilizar o serviço `src/blu_ai/` e os contratos existentes. Começar pelas
