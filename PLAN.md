@@ -20,20 +20,22 @@ apenas para reduzir a contagem. Fontes Excel/PDF, catálogo, exports e warehouse
 ficam preservados. A implementação da próxima iteração do agente está fora
 desta entrega.
 
-## Próxima iteração do agente
-
 ## Revisão integral do diretório — 2026-10-15
 
 - [x] Inventariar recursivamente o diretório, sem seguir a montagem EFS.
-- [ ] Remover ficheiros órfãos, experiências não integradas e artefactos locais.
-- [ ] Retirar dependências experimentais e tornar os grupos ativos opcionais explícitos.
-- [ ] Regenerar dependências e validar instalação, Python, tradução, portal e CI.
+- [x] Remover ficheiros órfãos, experiências não integradas e artefactos locais.
+- [x] Retirar dependências experimentais e tornar os grupos ativos opcionais explícitos.
+- [x] Regenerar dependências e validar instalação, Python, tradução, portal e CI.
+
+Lockfile de 221 para 148 entradas; a instalação mínima usa nove pacotes e passa
+18 testes do ETL. Ambiente completo: 21 testes Python, cinco de tradução e 99 do
+portal aprovados, um ignorado; auditoria dos 147 pacotes sem avisos conhecidos.
 
 Preservar as ferramentas do ambiente/IDE, fontes, propostas, backups, modelos
 locais e a entrega warehouse usada pelo portal. A montagem EFS sai do Git mas
 permanece disponível na instância.
 
-### Trabalho do agente
+## Próxima iteração do agente
 
 - [ ] Definir o objetivo, as operações autorizadas e os critérios de aceitação.
 - [ ] Rever o serviço existente `src/blu_ai/` e os contratos de domínio do portal.

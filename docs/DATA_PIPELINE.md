@@ -135,6 +135,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1 `
 
 ### Dashboard analítico
 
+Instalar o componente opcional: `uv sync --locked --inexact --group dashboard`.
+
 Depois de publicar o warehouse:
 
 ```powershell

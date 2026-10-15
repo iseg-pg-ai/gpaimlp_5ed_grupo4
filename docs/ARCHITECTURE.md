@@ -24,6 +24,10 @@ no catálogo não altera uma proposta já guardada.
 
 ## Pontos de entrada e responsabilidades
 
+A instalação Python base cobre o ETL. Dashboard, agente e tradução têm grupos
+opcionais explícitos no `pyproject.toml`. O código do agente usa boto3/Bedrock;
+não requer SageMaker SDK, MLflow ou outro ambiente experimental de treino.
+
 | Área | Entrada | Responsabilidade |
 | --- | --- | --- |
 | ETL | `etl/pipeline.py` | Orquestrar ingestão, validação, analytics e publicação |
@@ -94,6 +98,13 @@ paralelo de catálogo, planeamento ou persistência.
 Esta limpeza não implementa essa iteração nem muda os contratos atuais.
 
 ## Verificação e manutenção
+
+Neste ambiente, a raiz do repositório coincide com a pasta pessoal do SageMaker.
+As pastas ocultas do IDE, credenciais, gestores de pacotes e runtimes não são
+código do projeto. A ligação `user-default-efs` é uma montagem da instância e
+não deve ser versionada nem seguida por tarefas de limpeza. `.venv`,
+`dmc-workspace/node_modules` e `.next` são ambientes ou entregas geradas necessárias
+enquanto os componentes estão instalados ou em execução.
 
 - Python: `tests/` cobre fontes, publicação, catálogo, agente e textos da interface.
 - Portal: `dmc-workspace/tests/` cobre domínio, APIs e apresentação; `tests/browser/`

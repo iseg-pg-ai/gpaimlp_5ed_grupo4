@@ -64,6 +64,9 @@ Python 3.12 ou 3.13; Node >=22.13 e <25, preferindo Node 24 LTS.
 definem o portal. Requirements são exports: usar `scripts/export_requirements.py`.
 Consultar [a exceção Stanza/Argos](docs/DEPENDABOT_PYTHON.md) antes de instalar tradução.
 `uv sync` pode remover pacotes dos grupos não selecionados.
+O ambiente base é apenas ETL. `dashboard`, `agent` e `translation` são grupos
+opcionais explícitos; preparar todos com `uv sync --locked --all-groups` para
+executar a bateria completa. Não há grupos `dev` ou SDK `sagemaker` neste checkout.
 
 Executar apenas as verificações relevantes:
 

@@ -5,6 +5,27 @@ está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
+### Revisão integral posterior do diretório
+
+- Inventariar recursivamente ficheiros e pastas, sem seguir montagens ou ler
+  credenciais do ambiente. Conservar ferramentas do IDE e dados operacionais.
+- Eliminar o CSV do processamento antigo, o notebook experimental sem execução,
+  o esquema Python sem consumidores e o lockfile npm vazio da raiz.
+- Retirar `user-default-efs` do Git mantendo a montagem física na instância.
+- Remover os grupos de experiências SageMaker/MLflow e ferramentas dev sem uso.
+  Declarar LangGraph diretamente e retirar LangChain/Community sem consumidores.
+- Instalação base limitada ao ETL; dashboard, agente e tradução são opcionais.
+  Os scripts indicam como instalar cada grupo quando faltar uma dependência.
+- Resultado: lockfile com 148 entradas em vez de 221; instalação base com nove
+  pacotes. Os 147 pacotes de registry passaram a auditoria sem vulnerabilidades
+  conhecidas. Restam 309 ficheiros versionados, incluindo fontes e warehouse.
+- Validação: 18 testes do ETL numa instalação mínima limpa; 21 testes Python,
+  cinco de tradução e 99 testes do portal no ambiente completo; um teste ignorado.
+- A fábrica do agente foi exercitada com um modelo simulado sem chamadas externas.
+  A API ReAct atual mantém LangGraph na série 1.x até à próxima iteração.
+
+### Primeira etapa de consolidação
+
 - Estado: limpeza e consolidação locais no branch chore/project-cleanup.
 - Base: dev em `a4b7626`; inventário inicial de 345 ficheiros versionados.
 - Remover experiências de planeamento/distâncias sem consumidores, recursos do

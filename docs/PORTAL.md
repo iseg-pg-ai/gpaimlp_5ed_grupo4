@@ -19,7 +19,7 @@ Abrir [http://localhost:3001](http://localhost:3001).
 Para exportar PDFs traduzidos, preparar também o ambiente Python na raiz:
 
 ```powershell
-python -m uv sync --locked --group translation
+python -m uv sync --locked --inexact --group translation
 python translations/setup_models.py
 ```
 

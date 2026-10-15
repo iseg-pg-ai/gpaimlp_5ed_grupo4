@@ -28,9 +28,21 @@ Na raiz do repositório:
 
 ```powershell
 python -m pip install uv==0.12.19
-python -m uv sync --locked --group translation
-python translations/setup_models.py
+python -m uv sync --locked
 ```
+
+A instalação base contém apenas o necessário ao ETL. Instalar os componentes
+opcionais quando forem usados, preservando os outros grupos já instalados:
+
+```bash
+uv sync --locked --inexact --group dashboard
+uv sync --locked --inexact --group agent
+uv sync --locked --inexact --group translation
+```
+
+Para tradução, executar também `python translations/setup_models.py`.
+Para desenvolvimento com todos os componentes: `uv sync --locked --all-groups`.
+O portal tem dependências próprias em `dmc-workspace/`.
 
 O `pyproject.toml` é a fonte das dependências Python. O `uv.lock`, o
 `requirements.txt` e o `translations/requirements.txt` fixam ou exportam essas
@@ -62,6 +74,8 @@ publicar uma versão com Stanza corrigido.
 
 Na raiz do repositório:
 
+Instalar primeiro o grupo opcional `agent` indicado acima.
+
 - No macOS/Linux: `bash scripts/start_ai_agent.sh`
 - No Windows: `powershell -ExecutionPolicy Bypass -File .\scripts\start_ai_agent.ps1`
 
@@ -91,6 +105,8 @@ Abrir a porta 3001 pelo Code Editor. Para o arranque de produção, consultar
 
 Na raiz do repositório:
 
+Instalar primeiro o grupo opcional `dashboard` indicado acima.
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1
 ```
@@ -98,6 +114,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1
 Abrir [http://localhost:8501](http://localhost:8501).
 
 ## Testes
+
+Os testes completos de Python exigem o grupo `agent`; os de tradução exigem
+`translation`. Para preparar ambos: `uv sync --locked --inexact --group agent --group translation`.
 
 Verificar a estrutura e as ligações locais, sem instalar dependências:
 

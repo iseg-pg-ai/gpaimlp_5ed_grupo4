@@ -3,6 +3,13 @@
 Revisão de 2026-10-15 no branch `fix/dependabot-python`, criado a partir de
 `origin/dev` em `f0d4476`. A alteração cobre os oito pacotes dos alertas anexados.
 
+Nota de manutenção: na limpeza posterior em `chore/project-cleanup`, os grupos
+experimentais SageMaker/MLflow e ferramentas de desenvolvimento sem utilização
+foram removidos. SageMaker, pytest, sqlparse e cryptography deixam de integrar o
+lockfile. As versões abaixo registam a correção anterior; não são requisitos
+para voltar a instalar esses pacotes. Os grupos ativos são `dashboard`, `agent`
+e `translation`, todos opcionais.
+
 ## Versões resolvidas
 
 | Pacote | Antes | Depois |

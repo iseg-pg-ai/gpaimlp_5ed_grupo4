@@ -8,6 +8,7 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL_FILES = {".DS_Store", ".bash_history", ".bashrc", ".wget-hsts"}
+LOCAL_ROOT_FILES = {Path("package-lock.json"), Path("user-default-efs")}
 LINK = re.compile(r'\]\(([^\s)]+)(?:\s+"[^"]*")?\)')
 
 
@@ -19,7 +20,7 @@ def check_project():
     problems = []
     for name in files:
         source = ROOT / name
-        if name.name in LOCAL_FILES:
+        if name.name in LOCAL_FILES or name in LOCAL_ROOT_FILES:
             problems.append(f"Artefacto local versionado: {name}")
         if not source.is_file() or name.suffix != ".md":
             continue
