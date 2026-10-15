@@ -31,7 +31,7 @@ O ficheiro contém o nome do cliente; não é anónimo.
 - `skills/curadoria-blu/SKILL.md`: workflow e referência ao prompt.
 - `skills/curadoria-blu/references/curadoria-blu.txt`: prompt completo.
 
-O prompt genérico de curadoria continua em `config/prompts/curadoria-blu.txt`.
+A fonte única do prompt de curadoria é `skills/curadoria-blu/references/curadoria-blu.txt`.
 Para o PDF visual, usar o TXT específico descarregado pelo botão
 **Exportar TXT para Canva** na proposta ou no histórico do DMC.
 O TXT inclui os dados do roteiro, idioma, versão, orçamento e pendências.

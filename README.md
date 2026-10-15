@@ -111,15 +111,15 @@ npm run build
 Os testes de navegador exigem o portal iniciado na porta 3001. No Windows pode
 ser necessário definir `BROWSER_CHANNEL=msedge` antes de executar os scripts.
 O agregador `npm run check` executa também `format:check`; consulte o
-[estado das funcionalidades](docs/STATUS.md) para a situação atual dessa verificação.
+[estado das funcionalidades](docs/ARCHITECTURE.md) para a situação atual dessa verificação.
 
 ## Documentação
 
-- [Índice da documentação](docs/README.md)
+- [Arquitetura e âmbito](docs/ARCHITECTURE.md)
 - [DMC Workspace](docs/PORTAL.md)
-- [Estado das funcionalidades](docs/STATUS.md)
-- [ETL e contrato dos dados](README_ETL.md)
-- [Automação e operações](AUTOMATION.md)
+- [ETL e contrato dos dados](docs/DATA_PIPELINE.md)
+- [Testes e histórico de validação](docs/TESTING.md)
+- [Decisões do projeto](docs/DECISIONS.md)
 - [Modelo analítico do warehouse](reports/data_model_report.md)
 
 ## Limites atuais
@@ -128,5 +128,5 @@ O portal não efetua reservas nem confirma automaticamente preços,
 disponibilidade, acessibilidade ou condições alimentares. O catálogo aprovado e
 as regras estruturadas orientam a proposta; dados ambíguos ficam por confirmar.
 O armazenamento é local e não inclui autenticação ou sincronização entre
-utilizadores. Consulte [o estado detalhado](docs/STATUS.md) antes de planear novas
+utilizadores. Consulte [o estado detalhado](docs/ARCHITECTURE.md) antes de planear novas
 alterações.

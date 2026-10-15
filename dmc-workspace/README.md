@@ -70,5 +70,5 @@ Os testes de navegador exigem o portal iniciado na porta 3001.
 ## Documentação
 
 Consulte o [guia completo do portal](../docs/PORTAL.md), o
-[estado das funcionalidades](../docs/STATUS.md) e o
+[estado das funcionalidades](../docs/ARCHITECTURE.md) e o
 [README principal](../README.md).

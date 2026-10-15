@@ -1,5 +1,8 @@
 # Decisões e questões abertas
 
+Os registos históricos conservam as datas e a evidência original. O mapa atual
+está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
+
 ## Dependências Python corrigidas — 2026-10-15
 
 - Estado: implementado e validado localmente em fix/dependabot-python.
@@ -10,7 +13,7 @@
 - Evidência: 20 testes Python e cinco de tradução aprovados; auditoria dos
   220 pacotes de registry do lockfile sem vulnerabilidades conhecidas.
 - Sem modelos de tradução locais ou validação de serviços AWS reais.
-  Detalhes em [docs/DEPENDABOT_PYTHON.md](../docs/DEPENDABOT_PYTHON.md).
+  Detalhes em [docs/DEPENDABOT_PYTHON.md](DEPENDABOT_PYTHON.md).
 
 ## Integração de dev em plugin_TXT_export — 2026-10-15
 
@@ -69,7 +72,7 @@ contra o checkout atual de main, commit f090e53.
   main é a referência funcional desta revisão.
 - Razão: preservar revisão sem inventar uma alteração de política.
 - Evidência: instrução de equipa registada anteriormente;
-  memory/development-workflow.md.
+  AGENTS.md.
 - Âmbito: desenvolvimento Git.
 
 ## D-006 - Concentrar operação no DMC Workspace
@@ -129,7 +132,7 @@ a dmc-workspace/src/components/.
 - Decisão: configuração no DMC para editar/guardar/exportar TXT e plugin novo
   blu-curadoria apenas com instruções. Ambos exportam a mesma revisão guardada.
 - Razão: reutilizar orientação de curadoria sem introduzir chamadas a modelos.
-- Evidência: escolhas explícitas do utilizador, config/prompts/curadoria-blu.txt
+- Evidência: escolhas explícitas do utilizador, plugins/blu-curadoria/skills/curadoria-blu/references/curadoria-blu.txt
   e plugins/blu-curadoria/.
 - Âmbito: funcionalidade futura em branch/worktree separado de main; nenhuma
   integração LLM, ligação aos dados ou instalação automática nesta entrega.
@@ -175,7 +178,7 @@ a dmc-workspace/src/components/.
 - Preservar TXT/Canva 1.1.0, snapshots, privacidade e estado de exportação PDF.
 - Conciliar caminhos AWS e correções IAM/Bedrock com as melhorias da interface.
 - Regenerar o warehouse pelo ETL; testar propostas em armazenamento temporário.
-- Evidência e limites em `docs/DEV_TXT_MERGE_VALIDATION.md`.
+- Evidência e limites em `docs/TESTING.md`.
 - Não publicar o branch ou atualizar a instalação Canva sem nova autorização.
 
 - O-001 - Confirmar base dos próximos PRs face à política dev e referência main.
