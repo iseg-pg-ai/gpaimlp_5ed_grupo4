@@ -36,6 +36,15 @@ eliminar operações existentes ou exigir uma segunda implementação em JavaScr
 Popover em 320/1440 px; downloads TXT e ZIP PDF em duas larguras, com e sem JS.
 Meteorologia simulada e exports isolados num diretório temporário.
 
+## Continuação HTML/Python — catálogo e histórico
+
+- [ ] Migrar a persistência do catálogo para SQLite Python, preservando o esquema.
+- [ ] Adaptar APIs e testes para operações assíncronas e validar conflitos.
+- [ ] Centralizar publicação e leitura do catálogo elegível em Python.
+- [ ] Converter a ação de Lixo no histórico para formulário HTML.
+- [ ] Validar bases temporárias, ETL, APIs e navegação sem JavaScript.
+- [ ] Atualizar documentação e CI com commits separados.
+
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
 Base: dev em `a4b7626`; branch `chore/project-cleanup`.
