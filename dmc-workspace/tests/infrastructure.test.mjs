@@ -115,3 +115,18 @@ test("Next ESLint root directory patterns keep exact directory matches", () => {
     ]);
   }
 });
+
+test("Dev overlay prefixes root endpoints without changing external or already prefixed URLs", () => {
+  const transform = require("../scripts/devtools-prefix-loader.cjs");
+  const prefix = "/codeeditor/default/ports/3001";
+  const source = `fetch('/__nextjs_original-stack-frames');
+    const font = "url(/__nextjs_font/geist-latin.woff2)";
+    fetch('${prefix}/__nextjs_original-stack-frames');
+    fetch('https://example.test/__nextjs_original-stack-frames');`;
+  const transformed = transform.call({ getOptions: () => ({ prefix }) }, source);
+  assert.ok(transformed.includes(`fetch('${prefix}/__nextjs_original-stack-frames')`));
+  assert.ok(transformed.includes(`url(${prefix}/__nextjs_font/geist-latin.woff2)`));
+  assert.ok(transformed.includes("https://example.test/__nextjs_original-stack-frames"));
+  assert.ok(!transformed.includes(`${prefix}${prefix}`));
+  assert.equal(transform.call({ getOptions: () => ({ prefix: "" }) }, source), source);
+});

@@ -57,6 +57,14 @@ As asserções e condições de falha originais foram comparadas automaticamente
 interface, stress, dois cenários de briefing e apresentação do itinerário
 aprovados numa instância de produção com armazenamento temporário.
 
+## Consola de desenvolvimento no SageMaker
+
+- [x] Corrigir URLs da fonte e stack frames do overlay para respeitarem o prefixo.
+- [x] Limitar a supressão de atributos de extensões à hidratação do body.
+- [x] Validar check, build e navegador com prefixo e atributos Grammarly simulados.
+
+100 testes aprovados e um ignorado; fonte e stack frames HTTP 200.
+
 ## Próxima iteração do agente
 
 - [ ] Definir o objetivo, as operações autorizadas e os critérios de aceitação.

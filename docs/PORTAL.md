@@ -327,3 +327,12 @@ Playwright não estiver instalado.
 - **PDF mandarim sem fonte:** configurar `BLU_PDF_CJK_FONT`.
 - **Dados locais ilegíveis:** não limpar o armazenamento antes de recuperar ou
   exportar as viagens existentes.
+
+- **Geist ou stack frames com 404 no Studio:** reiniciar o servidor após alterar
+  a configuração Next.js e atualizar a página sem cache. O loader de
+  desenvolvimento aplica o prefixo aos caminhos internos do overlay Next 16.4;
+  reavaliar esta adaptação quando atualizar o Next.js.
+- **Atributos Grammarly no body:** a extensão acrescenta atributos antes da
+  hidratação. O layout suprime apenas diferenças de atributos nesse elemento;
+  os componentes descendentes continuam sujeitos à validação React.
+- **React DevTools e HMR connected:** mensagens informativas de desenvolvimento.

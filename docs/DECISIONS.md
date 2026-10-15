@@ -274,3 +274,18 @@ AWS passou, testes `aws-config.test.mjs` passaram e conflito de porta foi
 confirmado por execução. O teste de navegador está limitado por bibliotecas
 Chromium ausentes. Sem os erros do colega, a causa na sua instância não foi
 confirmada. Não foi efetuado push nem deployment.
+
+## 2026-10-15 — Recursos do overlay e atributos de extensões
+
+O overlay Next 16.4 usa caminhos absolutos para Geist e stack frames, que saem
+do prefixo do proxy SageMaker. Um loader Turbopack limitado aos dois módulos
+de desenvolvimento aplica o prefixo configurado, sem editar node_modules.
+Reavaliar a adaptação quando atualizar o Next.js.
+
+O body usa suppressHydrationWarning para atributos acrescentados por extensões
+como Grammarly antes da hidratação; a validação dos descendentes permanece ativa.
+
+Validação: check aprovado (100 testes e um ignorado), build aprovado e Chromium
+local com os caminhos raiz bloqueados e atributos Grammarly simulados. A fonte
+e o endpoint de stack frames responderam HTTP 200 no prefixo; não houve avisos
+de hidratação. A sessão autenticada remota do Studio não foi testada.
