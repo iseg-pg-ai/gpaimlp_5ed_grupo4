@@ -169,8 +169,16 @@ export function DayWeatherBadge({ date, location, items }: DayWeatherBadgeProps)
             </span>
             <span className="font-semibold text-sm text-[#143F4B]">
               {weather.isHistorical
-                ? `${(weather.precipitationSum ?? 0).toFixed(1)} mm`
-                : `${weather.precipitationProbability ?? 0}%`}
+                ? weather.precipitationSum === undefined
+                  ? isEn
+                    ? "Unconfirmed"
+                    : "Por confirmar"
+                  : `${weather.precipitationSum.toFixed(1)} mm`
+                : weather.precipitationProbability === undefined
+                  ? isEn
+                    ? "Unconfirmed"
+                    : "Por confirmar"
+                  : `${weather.precipitationProbability}%`}
             </span>
           </div>
         </div>

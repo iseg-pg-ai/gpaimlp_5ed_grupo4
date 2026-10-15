@@ -24,7 +24,7 @@ try {
             icon: "⛅",
             maxTemp: 24,
             minTemp: 16,
-            precipitationProbability: 10,
+            ...(date.endsWith("11") ? {} : { precipitationProbability: 10 }),
             isRainy: false,
             isHistorical: false,
             latitude: 38.7223,
