@@ -1,4 +1,4 @@
-import { sourceEnricher } from "@/lib/dataset-source";
+import { enrichRecords } from "@/lib/dataset-source";
 import { publicOrigin, jsonError, noStoreHeaders } from "@/lib/server-http";
 import { CatalogStore, CatalogConflict, warehouseRoot } from "@/lib/catalog-store";
 import { validateCatalogInput, categories } from "@/lib/catalog-schema";
@@ -23,15 +23,12 @@ export async function GET(request: Request) {
           published.set(row._catalog_id, row._catalog_revision);
       }
     }
-    const enrich = sourceEnricher(warehouseRoot());
+    const records = await enrichRecords(warehouseRoot(), store.list());
     return Response.json(
-      store
-        .list()
-        .map(enrich)
-        .map((record) => ({
-          ...record,
-          published: record.status === "approved" && published.get(record.id) === record.revision,
-        })),
+      records.map((record) => ({
+        ...record,
+        published: record.status === "approved" && published.get(record.id) === record.revision,
+      })),
       { headers: noStoreHeaders },
     );
   } catch {
