@@ -49,10 +49,6 @@ class PortalCatalogTest(unittest.TestCase):
                 integrate_portal(Path(temporary), {'atracoes': [{'id': 'LIS-001'}, {'id': 'LIS-001'}]})
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-
 class CatalogStoreTest(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -156,3 +152,7 @@ class CatalogStoreTest(unittest.TestCase):
             self.store.save_validated(self.value())
         self.assertEqual(self.store.db.execute('SELECT COUNT(*) FROM catalog_history').fetchone()[0], 0)
         self.assertEqual(self.store.list(), [])
+
+
+if __name__ == '__main__':
+    unittest.main()

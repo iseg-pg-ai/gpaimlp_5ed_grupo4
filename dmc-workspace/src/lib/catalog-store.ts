@@ -1,20 +1,13 @@
 import path from "node:path";
 import type { Catalog } from "./curation";
 import { portalRequest, PortalPythonError } from "./python-portal.ts";
-import {
-  emptyFields,
-  validateCatalogInput,
-  type CatalogRecord,
-  type Category,
-} from "./catalog-schema.ts";
+import { emptyFields, validateCatalogInput, type CatalogRecord } from "./catalog-schema.ts";
 
 export const projectRoot = () => path.resolve(process.cwd(), "..");
 export const dataRoot = () => path.resolve(projectRoot(), process.env.BLU_DATA_DIR ?? "data");
 export const catalogRoot = () => path.join(dataRoot(), "portal");
 export const warehouseRoot = () =>
   path.resolve(projectRoot(), process.env.BLU_WAREHOUSE_DIR ?? "warehouse");
-export const legacyId = (category: Category, row: Record<string, unknown>) =>
-  portalRequest<string>("catalog-id", "", { category, row });
 export class CatalogConflict extends Error {}
 
 // As ligações SQLite pertencem ao processo Python e fecham no fim de cada operação.
@@ -57,9 +50,6 @@ export class CatalogStore {
       rows: [row],
     });
     return published;
-  }
-  publishedFlags(rows: Record<string, unknown>[]) {
-    return portalRequest<boolean[]>("catalog-published", this.root, { rows });
   }
 }
 

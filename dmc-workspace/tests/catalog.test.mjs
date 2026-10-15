@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { CatalogStore, CatalogConflict, legacyId } from "../src/lib/catalog-store.ts";
+import { CatalogStore, CatalogConflict } from "../src/lib/catalog-store.ts";
 import { emptyFields } from "../src/lib/catalog-schema.ts";
 import { emptyMatching } from "../src/lib/catalog-matching.ts";
 
@@ -116,10 +116,6 @@ test("warehouse import is idempotent and does not overwrite edits or approve leg
     assert.equal((await store.list()).length, initial.length);
     assert.equal((await store.history(first.id)).length, 2);
     assert.equal((await store.history(first.id))[0].fields.name, "Nome alterado");
-    assert.equal(
-      await legacyId("atracoes", { id: "LIS-001" }),
-      "cat-6b1b41b232f37c32ae029219552d3716",
-    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

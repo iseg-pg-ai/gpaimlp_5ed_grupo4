@@ -2,7 +2,7 @@
 
 from contextlib import closing
 import sqlite3
-from etl.portal_catalog import CatalogStore, CatalogConflict, legacy_id, load_published_catalog
+from etl.portal_catalog import CatalogStore, CatalogConflict, load_published_catalog
 from html import escape
 import json
 import math
@@ -122,9 +122,7 @@ def main() -> None:
     root = Path(directory)
     params = json.load(sys.stdin)
     try:
-        if operation == "catalog-id":
-            result = legacy_id(params["category"], params["row"])
-        elif operation.startswith("catalog-"):
+        if operation.startswith("catalog-"):
             with closing(CatalogStore(root)) as store:
                 if operation == "catalog-query":
                     warehouse = Path(params["warehouse"])
@@ -171,8 +169,6 @@ def main() -> None:
         elif operation == "explore":
             result = query_dataset(root, params)
             result["html"] = render_dataset(result)
-        elif operation == "enrich":
-            result = enrich_records(root, params["records"])
         else:
             raise ValueError("Operação desconhecida.")
         response = {"ok": True, "data": result}
