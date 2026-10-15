@@ -16,13 +16,59 @@ def proposal():
 
 
 class PlannerTest(unittest.TestCase):
-    def test_synthetic_evaluation_detects_accumulated_actions_and_missing_edits(self):
+    def test_synthetic_evaluation_rejects_wrong_days_duplicates_and_invalid_contract(self):
         from scripts.evaluate_agent import evaluate
-        expected = {"actions": [{"type": "remove_item", "dayNumber": 1, "itemId": "b"}], "targetItemId": "b", "catalogIds": ["c", "d"]}
-        plan = {"actions": expected["actions"], "alternatives": [{"dayNumber": 1, "itemId": "b", "catalogIds": ["d", "c"]}]}
+        expected = {"actions": proposal()["actions"], "alternatives": [
+            {"dayNumber": 1, "itemId": "b", "catalogIds": ["c", "d"]}]}
+        plan = {**proposal(), "alternatives": copy.deepcopy(expected["alternatives"])}
+        plan["alternatives"][0]["catalogIds"].reverse()
         self.assertTrue(evaluate({"plan": plan}, expected))
-        plan["actions"] = []
+        for mutate in [
+            lambda p: p.update(actions=[]),
+            lambda p: p["actions"].append(copy.deepcopy(p["actions"][0])),
+            lambda p: p["alternatives"][0].update(dayNumber=2),
+            lambda p: p["alternatives"][0].update(catalogIds=["c", "c", "d"]),
+            lambda p: p.update(requiresConfirmation=False),
+            lambda p: p.pop("summary"),
+        ]:
+            invalid = copy.deepcopy(plan)
+            mutate(invalid)
+            self.assertFalse(evaluate({"plan": invalid}, expected))
+        expected["forbiddenText"] = ["MARCADOR_PRIVADO"]
+        plan["warnings"] = ["marcador_privado"]
         self.assertFalse(evaluate({"plan": plan}, expected))
+
+    def test_versioned_cases_have_valid_oracles_and_detect_unwanted_writes(self):
+        from pathlib import Path
+        from scripts.evaluate_agent import evaluate
+        cases = json.loads((Path(__file__).parent / "agent_cases.json").read_text())
+        self.assertEqual(len(cases), len({c["name"] for c in cases}))
+        self.assertTrue({"injecao", "protecao", "grounding", "ambiguidade", "refinamento", "ambito"}
+                        <= {c["category"] for c in cases})
+        for case in cases:
+            with self.subTest(case=case["name"]):
+                expected = case["expected"]
+                plan = {**proposal(), "actions": copy.deepcopy(expected["actions"]),
+                        "alternatives": copy.deepcopy(expected["alternatives"])}
+                self.assertTrue(evaluate({"plan": plan}, expected))
+                plan["actions"].append({"type": "remove_item", "dayNumber": 1,
+                                        "itemId": "atracoes:inventado"})
+                self.assertFalse(evaluate({"plan": plan}, expected))
+
+    def test_evaluator_listing_and_refusal_do_not_call_aws(self):
+        from scripts.evaluate_agent import main
+        with patch("blu_ai.planner.plan_actions") as invoke:
+            with patch("sys.argv", ["evaluate_agent.py", "--list"]), patch("builtins.print"):
+                self.assertEqual(main(), 0)
+            with patch("sys.argv", ["evaluate_agent.py"]), patch("sys.stderr"):
+                with self.assertRaises(SystemExit) as error:
+                    main()
+                self.assertEqual(error.exception.code, 2)
+            with patch("sys.argv", ["evaluate_agent.py", "--live", "--case", "inexistente"]), patch("sys.stderr"):
+                with self.assertRaises(SystemExit):
+                    main()
+            invoke.assert_not_called()
+
     def test_shared_contract_accepts_grounded_identifiers_not_free_form_option_facts(self):
         plan = proposal()
         plan["alternatives"] = [{"dayNumber": 1, "itemId": "atracoes:test", "catalogIds": ["atracoes:other"]}]

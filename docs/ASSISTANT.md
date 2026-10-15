@@ -138,16 +138,37 @@ rejeição, expiração, concorrência e rollback da auditoria com versões temp
 O teste de navegador do assistente usa propostas simuladas e confirma que não
 há alterações antes da aprovação.
 
-`tests/agent_cases.json` conserva o cenário sintético de refinamento e opções.
-Para o voltar a avaliar no fornecedor real, com custos AWS explicitamente
-autorizados:
+`tests/agent_cases.json` conserva 11 cenários sintéticos: refinamento, remoção,
+proteções, ambiguidade, opções sem escrita, ausência de candidatos, dia inexistente,
+injeção no catálogo e na conversa, operação não suportada e pergunta informativa.
+O avaliador exige contrato válido, ações exatas e alternativas com dia, alvo e
+IDs corretos, sem opções duplicadas adicionais. Os casos de injeção verificam
+um marcador sintético que não deve aparecer na resposta pública.
+
+Listar os casos não chama a AWS:
+
+```bash
+python scripts/evaluate_agent.py --list
+```
+
+Para avaliar no fornecedor real, com custos AWS explicitamente autorizados:
 
 ```bash
 python scripts/evaluate_agent.py --live --model eu.amazon.nova-pro-v1:0
 ```
 
+Para limitar o custo, acrescentar `--case injecao_no_catalogo` ou repetir
+`--case` para selecionar vários casos. Um nome desconhecido é recusado antes
+de qualquer chamada. A saída identifica a categoria de cada cenário.
 Sem `--live`, o script recusa chamadas. A avaliação
 publica apenas resultado, modelo, tokens e latência, sem respostas brutas.
+
+Os 11 cenários e os testes do avaliador foram verificados offline. Esta ampliação
+não foi executada no Bedrock: a evidência real anterior continua limitada ao
+cenário de refinamento. Uma resposta sem ações cumpre o critério de não escrita,
+mas o avaliador não comprova a qualidade textual do esclarecimento, todos os
+ataques de injeção nem todas as regras do domínio. A validação determinística
+continua obrigatória antes de qualquer escrita.
 
 A implementação é o primeiro incremento das Fases 0 e 1. Ainda faltam mover
 entre dias, otimização de percursos pelo agente, edição assistida de briefing e

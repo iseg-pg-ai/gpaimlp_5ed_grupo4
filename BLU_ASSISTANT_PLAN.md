@@ -1,32 +1,70 @@
 # Blu — Assistente de Curadoria
 
-Plano de âmbito com análise histórica anterior à migração HTML/Python.
-A implementação começou em 2026-10-15 no branch
-`pc/assistant-agent-for-blu-curator`. O estado do primeiro incremento AWS,
-as operações disponíveis e os limites estão em [docs/ASSISTANT.md](docs/ASSISTANT.md)
-e [PLAN.md](PLAN.md). Confirmar as avaliações abaixo no código atual: a cadeia
-IAM, a meteorologia partilhada e o fluxo de propostas já evoluíram.
+Revisto em 2026-10-16. Desenvolvimento no branch
+`pc/assistant-agent-for-blu-curator`, preservando a integração HTML/Python.
+Este documento mantém o âmbito e o estado das fases. Os contratos e comandos
+operacionais estão em [docs/ASSISTANT.md](docs/ASSISTANT.md), as tarefas de cada
+incremento em [PLAN.md](PLAN.md) e a evidência datada em
+[docs/DECISIONS.md](docs/DECISIONS.md). Código e testes prevalecem sobre o plano.
 
-## Avaliação geral
+## Estado atual
 
-O projeto já tem uma boa base para o Blu, mas o agente atual ainda funciona sobretudo como **assistente textual**.
-
-Existem atualmente duas camadas:
+O Blu já propõe alterações estruturadas em linguagem natural através de Amazon
+Bedrock Converse. O modelo predefinido é `eu.amazon.nova-pro-v1:0`, configurável.
+Não existe modelo local nem fallback silencioso. A instância AWS executa apenas
+orquestração e validação; o modelo executa no Bedrock com credenciais IAM.
 
 ```mermaid
 flowchart LR
     U[Trabalhador] --> P[Portal Next.js]
-    P --> D[Lógica determinística TypeScript]
-    D --> C[Catálogo e regras]
-    D --> V[Versões e PDFs]
-    P --> A[Agente Python]
-    A --> B[Amazon Bedrock]
-    A --> W[Warehouse]
+    P --> A[Planeador Python]
+    A --> B[Amazon Bedrock Converse]
+    B --> S[Proposta estruturada]
+    S --> D[Validação determinística do portal]
+    C[Catálogo aprovado] --> D
+    D --> R[Pré-visualização]
+    R --> H[Aceitar ou rejeitar]
+    H --> V[Versão e auditoria atómicas]
 ```
 
-A lógica TypeScript executa alterações seguras quando reconhece comandos com um formato específico. Se não reconhecer o comando, envia-o ao agente Bedrock, que devolve uma resposta em texto, sem alterar efetivamente o itinerário.
+Implementados nos primeiros incrementos das Fases 0 e 1:
 
-A evolução recomendada é fazer o modelo **propor ações estruturadas** e manter o portal responsável por validá-las, aplicá-las e versioná-las.
+- Contrato partilhado Python/TypeScript e oito tipos de ações.
+- Validação integral, pré-visualização e aceitação/rejeição explícitas.
+- Proteções, expiração, concorrência e auditoria na base de versões existente.
+- Contexto recente limitado à viagem e proposta pendente validada no servidor.
+- Alternativas reais do catálogo, sem inventar nomes, preços ou disponibilidade.
+- Escolha de uma alternativa sem nova inferência; gravação só após aceitação.
+- Mensagens e erros preservados no chat; «ok» não executa nem chama o modelo.
+- Classificação segura de erros de permissões, formato, timeout e ligação.
+- Template Lambda privado preparado, ainda sem deployment.
+
+As Fases 0 e 1 permanecem parciais. Mover entre dias, otimizar percursos pelo
+agente, editar briefing/confirmações, identificar o operador e avaliar amplamente
+o modelo continuam pendentes. As Fases 2–6 não estão concluídas.
+
+### Evidência e limites
+
+- Última validação do portal: 104 testes aprovados, um ignorado; build aprovado.
+- Interface em 390/1600 px validada com fornecedor simulado e dados temporários.
+- Última validação Python do agente: 15 testes aprovados sem chamadas externas.
+- Avaliador com 11 cenários sintéticos e comparação estrita de ações, dias, alvos
+  e alternativas; recusa contrato inválido, ações adicionais e opções duplicadas.
+- Casos incluem ambiguidade, proteções, ausência de candidatos e injeção em dados.
+  A nova bateria ainda não foi executada no Bedrock.
+- Nova Pro passou um cenário real de refinamento e alternativas; Nova Lite falhou
+  duas tentativas anteriores. Esta amostra não comprova qualidade geral.
+- Tokens e latência são registados; cálculo monetário de custos continua pendente.
+
+Consultar os casos sem chamadas AWS:
+
+```bash
+python scripts/evaluate_agent.py --list
+```
+
+Execução real exige autorização aplicável para custos e `--live`; `--case`
+permite selecionar cenários. Testes offline verificam o avaliador e os contratos,
+não demonstram que o modelo resiste a todos os ataques ou interpreta todos os pedidos.
 
 ---
 
@@ -56,7 +94,7 @@ A geração principal é determinística e passa por:
 
 ### Edição pelo assistente
 
-O Blu já consegue executar comandos explícitos para:
+A lógica determinística existente suporta comandos explícitos para:
 
 - Adicionar uma oferta do catálogo.
 - Substituir uma atividade.
@@ -70,11 +108,17 @@ O Blu já consegue executar comandos explícitos para:
 
 Também já protege atividades bloqueadas ou confirmadas e impede alterações incompatíveis com orçamento, horários, exclusões e regras.
 
-A lógica está principalmente em:
+O novo fluxo Bedrock permite adicionar, substituir, remover, reagendar,
+reorganizar, ajustar capacidade, reservar manhã/tarde livre e marcar dia livre.
+A otimização geográfica do editor existente ainda não é uma ação do planeador.
 
-- `src/lib/assistant-editing.ts`
-- `src/app/api/assistant/route.ts`
-- `src/hooks/useWorkspace.ts`
+Os caminhos seguintes são relativos a `dmc-workspace/`:
+
+- `src/lib/assistant-editing.ts`: regras determinísticas reutilizadas.
+- `src/lib/assistant-actions.ts`: contrato, contexto, simulação e alternativas.
+- `src/lib/agent-audit-store.ts`: proposta, decisão e ligação à versão.
+- `src/app/api/assistant/plan/route.ts`: entrada do novo fluxo estruturado.
+- `src/hooks/useWorkspace.ts`: conversa e interação com as propostas.
 
 ### Matching do catálogo
 
@@ -110,7 +154,7 @@ Já existe:
 
 - Open-Meteo para meteorologia.
 - OSRM para rotas.
-- Amazon Bedrock através de LangChain/LangGraph.
+- Amazon Bedrock Converse no novo planeador; LangChain/LangGraph no serviço legado.
 - Tradução local.
 - Exportação PDF.
 - Partilha por ligação ou documento.
@@ -119,98 +163,61 @@ Já existe:
 
 ## 2. O que está incompleto
 
-### O agente não executa linguagem natural livre
+### Edição e contexto ainda parciais
 
-O endpoint do portal segue atualmente esta ordem:
+O novo endpoint `/api/assistant/plan` já interpreta pedidos e valida ações antes
+de propor qualquer escrita. Ainda faltam mover entre dias, otimizar percursos
+através do agente, editar o briefing e apoiar confirmações. Não há assistência
+contextual completa em todas as páginas.
 
-1. Tenta interpretar o texto com expressões regulares.
-2. Se reconhecer o comando, altera o itinerário.
-3. Se não reconhecer, chama o agente Bedrock.
-4. O Bedrock devolve apenas uma resposta textual com `changed: false`.
+As propostas podem combinar até oito ações. Uma falha invalida o conjunto;
+a capacidade diária e as atividades protegidas continuam a ser verificadas.
+Isto não comprova interpretação correta de todos os pedidos compostos.
 
-Isto significa que o Blu pode explicar uma alteração sem conseguir aplicá-la.
+### Separação do serviço legado
 
-### O agente e o portal usam regras diferentes
+O fluxo principal usa `src/blu_ai/planner.py`, candidatos aprovados pelo portal
+e regras determinísticas existentes. Não usa a geração textual do endpoint
+legado `/api/agent/curate`. Essa geração não está integrada no fluxo principal.
+As ferramentas legadas não devem ser tratadas como autoridade paralela de regras.
+A meteorologia Python já é partilhada entre portal e ferramenta do agente.
 
-A implementação Python volta a implementar:
+### Conversas e auditoria
 
-- Pesquisa no catálogo.
-- Restrições de mobilidade.
-- Alimentação.
-- Limites de esforço.
-- Meteorologia.
+As mensagens ficam no `localStorage`, separadas do snapshot autoritativo.
+O planeador recebe até oito mensagens recentes, limitadas a 1000 caracteres por
+mensagem e 6000 no total. Não há memória entre viagens.
 
-Essa lógica já existe de forma mais completa no portal. A duplicação pode produzir situações em que:
+A tabela `agent_runs`, na mesma `history.sqlite` das versões, guarda plano,
+hash do pedido, decisão, versão de origem/executada e métricas. O texto original
+do pedido não é guardado nesta tabela. Proposta e decisão não substituem uma
+identidade autenticada do operador, ainda por implementar.
 
-- O agente recomenda uma opção.
-- O portal considera-a incompatível.
-- O agente consulta dados não publicados.
-- Uma alteração futura é aplicada apenas numa das implementações.
+### Operação AWS e segurança
 
-A ferramenta Python de catálogo também não demonstra o mesmo controlo de estado de aprovação usado pelo portal.
+A cadeia normal de credenciais IAM está implementada, sem exigir chaves fixas.
+A chamada tem timeout e falha explícita, sem modelo falso de fallback.
+A orquestração Lambda está preparada, mas não publicada.
 
-### A geração do agente não está ligada ao fluxo principal
+O serviço HTTP legado exige Bearer token, exceto na saúde, e não tem CORS público.
+O fluxo principal valida a origem exata do portal. O contexto usa campos explícitos
+para reduzir dados pessoais; o texto escrito no chat continua a ser enviado ao
+Bedrock. Fontes e respostas externas são dados não fiáveis, nunca instruções.
+Blocos de raciocínio interno e detalhes privados do SDK não são apresentados.
 
-Existe `/api/agent/curate`, mas:
+Continuam pendentes autenticação dos trabalhadores, permissões, consentimento,
+finalidade e retenção operacional. O portal não está validado para exposição
+pública multiutilizador. As proteções atuais não equivalem a resistência geral
+comprovada contra injeção de instruções.
 
-- O formulário chama a geração determinística do Next.js.
-- A resposta do agente é principalmente textual.
-- O schema `AgentCuratorResponse` não é imposto à saída do modelo.
-- O itinerário do agente não passa obrigatoriamente pelas validações completas do portal.
+### Avaliação ainda limitada
 
-### Persistência das conversas é limitada
-
-As mensagens do assistente ficam na viagem guardada em `localStorage`, mas não fazem parte do snapshot persistido no histórico de versões.
-
-O snapshot guarda:
-
-- Briefing.
-- Itinerário.
-- Pendências.
-
-Não guarda de forma estruturada:
-
-- Pedido enviado ao Blu.
-- Ação proposta.
-- Ação aceite ou rejeitada.
-- Justificação.
-- Modelo utilizado.
-- Regras verificadas.
-- Resultado da execução.
-
-### Serviço Bedrock em AWS
-
-A configuração atual apenas tenta usar Bedrock quando encontra `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`.
-
-Num deployment AWS, o recomendado é usar uma IAM Role e a cadeia normal de credenciais do SDK. Com a implementação atual, uma máquina com IAM Role mas sem chaves explícitas pode acabar por usar o modelo falso de desenvolvimento.
-
-### Segurança
-
-Foram identificados estes pontos:
-
-- CORS do agente permite qualquer origem.
-- O pedido completo e dados do cliente podem ser enviados ao modelo.
-- O input do utilizador é escrito nos logs.
-- Não existe autenticação entre o portal e o serviço Python.
-- Textos livres do catálogo podem conter conteúdo interpretável como instruções.
-- O agente pode expor blocos de raciocínio interno.
-- Não existe registo formal de consentimento, operador ou finalidade da ação.
-
-### Testes do agente
-
-A lógica determinística tem boa cobertura, mas o agente Python não tem uma suite automatizada equivalente.
-
-O notebook existente avalia algumas personas, mas não substitui testes para:
-
-- Grounding.
-- Ações inválidas.
-- Prompt injection.
-- Itens inativos.
-- Alucinações de catálogo.
-- Preservação de atividades confirmadas.
-- Custos e latência.
-- Indisponibilidade do Bedrock.
-- Reprodutibilidade.
+Há testes automatizados de contrato, falhas AWS simuladas, propostas, proteções,
+concorrência, rollback e interface. O avaliador foi alargado a 11 casos sintéticos,
+mas esta bateria ainda não foi executada no fornecedor real. Falta avaliação ampla
+por personas, qualidade das explicações, grounding, injeção, latência e custo
+monetário. Uma resposta sem ações passa o critério de não escrita; não comprova
+que o esclarecimento textual seja adequado.
 
 ---
 
@@ -316,7 +323,8 @@ O modelo não deve alterar diretamente:
 - Estado de aprovação.
 - Lixo.
 
-O agente deve devolver ações estruturadas, por exemplo:
+O contrato atual (`src/blu_ai/schemas/action-plan.json`) exige ações estruturadas,
+por exemplo (identificadores ilustrativos):
 
 ```json
 {
@@ -326,13 +334,8 @@ O agente deve devolver ações estruturadas, por exemplo:
       "type": "replace_item",
       "dayNumber": 2,
       "itemId": "catalog:item-123",
-      "replacementCatalogId": "catalog:item-456"
+      "catalogId": "catalog:item-456"
     }
-  ],
-  "evidence": [
-    "Previsão de chuva",
-    "Compatível com mobilidade",
-    "Dentro do orçamento"
   ],
   "warnings": [],
   "requiresConfirmation": true
@@ -351,22 +354,17 @@ Depois:
 
 ### Registo de ações
 
-Criaria inicialmente estas ações:
+Disponíveis: `add_catalog_item`, `replace_item`, `remove_item`,
+`reschedule_item`, `reorder_day`, `set_day_capacity`, `add_free_period` e
+`set_free_day`. `alternatives` é um campo separado para opções de substituição,
+não uma ação que as aplique.
 
-- `add_catalog_item`
-- `replace_item`
-- `remove_item`
-- `reschedule_item`
-- `move_item`
-- `reorder_day`
-- `set_day_capacity`
-- `add_free_period`
-- `optimize_route`
-- `update_brief`
-- `update_pending_confirmation`
-- `suggest_alternatives`
+Por implementar: `move_item`, `optimize_route`, `update_brief` e
+`update_pending_confirmation`. Os nomes são propostas, não contratos ativos.
 
-As ações destrutivas, alterações a itens confirmados e alterações ao catálogo exigem sempre confirmação humana.
+Todas as ações atuais exigem confirmação humana. Atividades bloqueadas ou
+confirmadas são recusadas; a aceitação de uma proposta não contorna essa proteção.
+O agente não dispõe de ações de edição do catálogo.
 
 ### Fonte única de regras
 
@@ -390,7 +388,13 @@ O Python deve consultar essa lógica através de APIs ou receber candidatos já 
 
 ### Auditoria do agente
 
-Nova tabela `agent_runs`:
+A implementação atual usa uma única tabela `agent_runs` na base de versões,
+com plano JSON e decisão; não criou `agent_actions` nem outra persistência.
+Guarda hash do pedido em vez do texto original e ainda não identifica o operador.
+Os campos e a segunda tabela abaixo são propostas históricas para revisão,
+não o esquema implementado. Confirmar o esquema em `agent-audit-store.ts`.
+
+Proposta histórica para `agent_runs`:
 
 - `id`
 - `trip_id`
@@ -406,7 +410,7 @@ Nova tabela `agent_runs`:
 - `input_hash`
 - `error_code`
 
-Nova tabela `agent_actions`:
+Proposta histórica para `agent_actions` (não implementada):
 
 - `run_id`
 - `sequence`
@@ -570,16 +574,21 @@ Estas funcionalidades exigem dados de resultado suficientes e não devem ser imp
 
 Prioridade: crítica.
 
-- Definir ações estruturadas do agente.
-- Definir quais exigem confirmação humana.
-- Criar schemas comuns entre TypeScript e Python.
-- Corrigir Bedrock para usar IAM Role.
-- Restringir CORS.
-- Remover dados pessoais e instruções dos logs.
-- Impedir que conteúdo do catálogo seja tratado como instrução.
-- Não expor raciocínio interno do modelo.
-- Criar conjunto de testes e personas.
-- Medir grounding, validade, latência e custo.
+- [x] Definir ações estruturadas do agente.
+- [x] Definir quais exigem confirmação humana.
+- [x] Criar schemas comuns entre TypeScript e Python.
+- [x] Corrigir Bedrock para usar IAM Role.
+- [x] Restringir CORS.
+- [x] Remover dados pessoais e instruções dos logs.
+- [ ] Impedir que conteúdo do catálogo seja tratado como instrução.
+- [x] Não expor raciocínio interno do modelo.
+- [ ] Criar conjunto de testes e personas.
+- [ ] Medir grounding, validade, latência e custo.
+
+Estado parcial: separação entre dados e instruções implementada no prompt e
+validação, mas resistência ampla a injeção ainda não comprovada. Existem 11 casos
+sintéticos e testes automatizados; personas e avaliação real ampla estão pendentes.
+Latência e tokens são medidos; custo monetário não é calculado.
 
 Esta fase é dependência de todas as restantes.
 
@@ -587,21 +596,27 @@ Esta fase é dependência de todas as restantes.
 
 Prioridade: crítica.
 
-- Criar endpoint de planeamento de ações.
-- Fazer o Bedrock devolver ações estruturadas.
-- Validar cada ação no Next.js.
-- Apresentar pré-visualização antes/depois.
-- Permitir aceitar ou rejeitar.
-- Executar usando a lógica existente.
-- Permitir comandos compostos, como aliviar um dia, preservar reservas confirmadas e reduzir o custo numa única operação.
-- Adaptar a assistência à página aberta: briefing, catálogo, itinerário, confirmações ou exportação.
-- Apoiar o preenchimento das confirmações, referências, preços e evidências ainda em falta.
-- Disponibilizar um modo de simulação que calcule o impacto sem guardar imediatamente.
-- Criar uma versão após aceitação.
-- Resumir as alterações entre versões, incluindo atividades, horários, preços e orçamento.
-- Registar pedido, ação, validação e decisão.
+- [x] Criar endpoint de planeamento de ações.
+- [x] Fazer o Bedrock devolver ações estruturadas.
+- [x] Validar cada ação no Next.js.
+- [x] Apresentar pré-visualização antes/depois.
+- [x] Permitir aceitar ou rejeitar.
+- [x] Executar usando a lógica existente.
+- [ ] Permitir comandos compostos, como aliviar um dia, preservar reservas confirmadas e reduzir o custo numa única operação.
+- [ ] Adaptar a assistência à página aberta: briefing, catálogo, itinerário, confirmações ou exportação.
+- [ ] Apoiar o preenchimento das confirmações, referências, preços e evidências ainda em falta.
+- [x] Disponibilizar um modo de simulação que calcule o impacto sem guardar imediatamente.
+- [x] Criar uma versão após aceitação.
+- [ ] Resumir as alterações entre versões, incluindo atividades, horários, preços e orçamento.
+- [ ] Registar pedido, ação, validação e decisão.
 
-Resultado: o Blu passa a executar linguagem natural sem contornar regras.
+Estado parcial: até oito ações compostas são simuladas atomicamente; interpretação
+ampla de pedidos compostos e redução de custos ainda exigem avaliação. Auditoria
+de plano, hash do pedido e decisão implementada; identidade do operador e registo
+detalhado de cada validação continuam pendentes. Há pré-visualização antes/depois,
+mas não um resumo completo de diferenças de horários, preços e orçamento.
+
+Resultado pretendido: executar linguagem natural sem contornar regras.
 
 ### Fase 2 — Geração e matching assistidos
 
@@ -674,12 +689,16 @@ Prioridade: média.
 
 ---
 
-## 8. Ficheiros a alterar
+## 8. Mapa de implementação e evolução
 
 ### Portal existente
 
-- `dmc-workspace/src/app/api/assistant/route.ts`
-  - Orquestração, validação e execução das ações.
+Os itens seguintes incluem evolução futura. O fluxo atual usa
+`src/lib/assistant-actions.ts`, `src/lib/assistant-conversation.ts` e
+`src/lib/agent-audit-store.ts`, relativos a `dmc-workspace/`.
+
+- `dmc-workspace/src/app/api/assistant/plan/route.ts`
+  - Orquestração, validação e decisões das propostas estruturadas.
 
 - `dmc-workspace/src/components/AIAssistantPanel.tsx`
   - Pré-visualização, explicações, aceitar e rejeitar.
@@ -723,7 +742,10 @@ Prioridade: média.
 - `dmc-workspace/src/app/api/shares/route.ts`
   - Preparação assistida e supervisionada da comunicação com o cliente.
 
-### Novos módulos recomendados
+### Módulos existentes e módulos futuros
+
+`assistant-actions.ts` e `agent-audit-store.ts` já existem. Os restantes nomes
+abaixo são sugestões de decomposição futura, não módulos obrigatórios.
 
 - `src/lib/assistant-actions.ts`
 - `src/lib/assistant-policy.ts`
@@ -741,6 +763,11 @@ Prioridade: média.
 - `src/app/api/catalog/quality/route.ts`
 
 ### Serviço Python
+
+O planeador atual é `src/blu_ai/planner.py`; o contrato partilhado está em
+`src/blu_ai/schemas/action-plan.json`. O template privado encontra-se em
+`infra/assistant/template.yaml`. Os módulos LangGraph abaixo são legados e não
+são a entrada do novo fluxo.
 
 - `src/blu_ai/api/server.py`
   - Endpoints autenticados e contratos estruturados.
@@ -777,7 +804,7 @@ Prioridade: média.
 - Testes do modo de simulação e do resumo entre versões.
 - Testes de controlo de qualidade antes da exportação.
 - Testes da preparação de comunicações sem envio automático.
-- Testes do fallback quando Bedrock está indisponível.
+- Testes de falha explícita quando Bedrock está indisponível, sem fallback de modelo.
 - Testes ponta a ponta: pedido → proposta → aprovação → versão.
 
 ---

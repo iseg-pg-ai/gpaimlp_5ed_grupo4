@@ -1,5 +1,16 @@
 # Plano de evolução do BLU AI System
 
+## Avaliação de grounding e injeção — 2026-10-16
+
+- [x] Alargar os casos sintéticos a ambiguidade, proteções e dados maliciosos.
+- [x] Exigir contrato completo e correspondência exata de ações e alternativas.
+- [x] Permitir inspeção offline e seleção de casos antes de chamadas pagas.
+- [x] Testar falsos positivos da avaliação e documentar os limites.
+
+Concluído: 11 casos sintéticos e 15 testes do agente aprovados sem chamadas
+externas. Corrigido falso positivo para alternativas no dia errado. A nova
+bateria ainda não foi executada no Bedrock; não inferir sucesso do modelo.
+
 ## Conversa contextual e alternativas — 2026-10-15
 
 - [x] Transmitir contexto recente limitado à viagem e proposta corrente validada.

@@ -1,5 +1,19 @@
 # Decisões e questões abertas
 
+## 2026-10-16 — Avaliação sintética mais estrita do agente
+
+O avaliador de alternativas comparava o alvo e os IDs, mas omitia o dia e
+aceitava duplicados por conversão para conjuntos. Passa a validar o contrato
+completo, ações e grupos exatos, conservando liberdade na ordem das opções.
+Acrescentados 11 casos versionados, incluindo ambiguidade, proteção, ausência
+de candidatos e instruções maliciosas em dados. `--list` funciona offline e
+`--case` limita uma execução explicitamente autorizada com `--live`.
+
+Evidência: 15 testes do agente aprovados com mocks e oráculos sintéticos;
+falsos positivos de dia, duplicados, ações adicionais e contrato incompleto
+são recusados. Não foram feitas chamadas AWS nesta alteração. Os testes
+verificam o avaliador, não a capacidade do modelo de passar a nova bateria.
+
 ## Conversa contextual e alternativas verificadas — 2026-10-16
 
 Estado: implementação da continuação das Fases 0 e 1, iniciada em 2026-10-15.
