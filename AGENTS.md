@@ -67,7 +67,7 @@ Consultar [a exceção Stanza/Argos](docs/DEPENDABOT_PYTHON.md) antes de instala
 
 Executar apenas as verificações relevantes:
 
-- Documentação: Markdown, referências locais e `git diff --check`.
+- Documentação: `python scripts/check_project.py`, Markdown e `git diff --check`.
 - Python/ETL: `PYTHONPATH=src .venv/bin/python -B -m unittest discover -s tests -v`;
   no Windows, usar `.venv\Scripts\python.exe` e definir `PYTHONPATH` equivalente.
   Usar diretórios temporários; não regenerar fontes ou warehouse sem necessidade.

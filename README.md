@@ -99,6 +99,12 @@ Abrir [http://localhost:8501](http://localhost:8501).
 
 ## Testes
 
+Verificar a estrutura e as ligações locais, sem instalar dependências:
+
+```bash
+python scripts/check_project.py
+```
+
 ```powershell
 .\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
 cd dmc-workspace

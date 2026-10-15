@@ -8,7 +8,11 @@ Base: dev em `a4b7626`; branch `chore/project-cleanup`.
 - [x] Inventariar os 345 ficheiros versionados e analisar os imports do portal.
 - [x] Remover artefactos locais, placeholders e experiências sem consumidores.
 - [x] Consolidar documentação, prompt duplicado e módulo de tradução.
-- [ ] Atualizar exclusões, verificar referências e concluir a validação.
+- [x] Atualizar exclusões, verificar referências e concluir a validação.
+
+Validação: 99 testes do portal aprovados, um ignorado; build aprovado;
+20 testes Python e cinco de tradução aprovados; Markdown e ligações locais
+sem erros. O CI documental passa a verificar artefactos locais e links.
 
 Todos os módulos TypeScript eram alcançáveis pelas entradas de produção.
 Preservar as fronteiras funcionais e os contratos, em vez de juntar módulos

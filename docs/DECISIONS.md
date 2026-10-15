@@ -3,6 +3,25 @@
 Os registos históricos conservam as datas e a evidência original. O mapa atual
 está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
+## Simplificação para a próxima iteração do agente — 2026-10-15
+
+- Estado: limpeza e consolidação locais no branch chore/project-cleanup.
+- Base: dev em `a4b7626`; inventário inicial de 345 ficheiros versionados.
+- Remover experiências de planeamento/distâncias sem consumidores, recursos do
+  template e placeholders redundantes. Os ficheiros pessoais do shell saem do
+  Git e permanecem no disco, ignorados.
+- Concentrar arquitetura e capacidades, dados e operações, decisões e validação.
+  Preservar o histórico datado e usar o Git para versões anteriores dos planos.
+- Manter uma única cópia do prompt no pacote autocontido do plugin. Os erros
+  de tradução passam a ser exportados pelo módulo do worker que os produz.
+- Todos os módulos do portal eram alcançáveis pelas entradas de produção.
+  Manter as fronteiras de domínio; não fundir funcionalidades independentes.
+- Resultado: 314 ficheiros versionados; documentação Markdown de 29 para 20.
+- Verificação: 99 testes do portal aprovados e um ignorado; build aprovado;
+  20 testes Python e cinco de tradução aprovados; Markdown e links sem erros.
+- Acrescentar verificação de artefactos locais e ligações ao CI documental.
+  Não alterar fontes, warehouse, catálogo operacional ou versões dos clientes.
+
 ## Dependências Python corrigidas — 2026-10-15
 
 - Estado: implementado e validado localmente em fix/dependabot-python.
