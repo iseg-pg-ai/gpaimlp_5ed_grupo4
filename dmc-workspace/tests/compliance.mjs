@@ -42,6 +42,8 @@ const steps = [
     "trash",
     "workspace-recovery",
     "canva-prompt",
+    "export-downloads",
+    "weather",
   ].map((name) => [
     process.execPath,
     ["--experimental-strip-types", `tests/browser/${name}.mjs`],

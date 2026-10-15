@@ -1,6 +1,7 @@
 import { portalUrl } from "@/lib/http-client";
-import { T, ExportLanguageLinks } from "@/components/LocaleProvider";
+import { T } from "@/components/LocaleProvider";
 import Link from "next/link";
+import { languages } from "@/lib/locales";
 import { VersionStore } from "@/lib/version-store";
 import { VersionTrashButton } from "@/components/VersionTrashButton";
 export const dynamic = "force-dynamic";
@@ -67,7 +68,45 @@ export default function ExportHistory() {
                 source="pt"
               />
             </p>
-            <ExportLanguageLinks tripId={v.tripId} version={v.version} />
+            <form
+              action={portalUrl("/api/versions")}
+              method="get"
+              className="flex flex-wrap items-center gap-3 my-3"
+              data-testid="export-downloads"
+            >
+              <input type="hidden" name="tripId" value={v.tripId} />
+              <input type="hidden" name="version" value={v.version} />
+              <label className="flex flex-wrap items-center gap-2">
+                <T text="Idioma do cliente" source="pt" />
+                <select
+                  name="locale"
+                  defaultValue="en"
+                  className="rounded border border-[#D5D1C7] bg-white px-2 py-1"
+                >
+                  {languages.map((language) => (
+                    <option key={language.code} value={language.code}>
+                      {language.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="submit"
+                name="format"
+                value="bundle"
+                className="underline cursor-pointer"
+              >
+                <T text="Descarregar PDFs" source="pt" />
+              </button>
+              <button
+                type="submit"
+                name="format"
+                value="prompt"
+                className="underline cursor-pointer"
+              >
+                <T text="TXT para Canva" source="pt" />
+              </button>
+            </form>
             <a
               className="underline"
               href={portalUrl(`/api/versions?tripId=${v.tripId}&version=${v.version}`)}
