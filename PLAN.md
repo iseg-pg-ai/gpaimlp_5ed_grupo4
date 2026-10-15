@@ -35,6 +35,16 @@ Preservar as ferramentas do ambiente/IDE, fontes, propostas, backups, modelos
 locais e a entrega warehouse usada pelo portal. A montagem EFS sai do Git mas
 permanece disponível na instância.
 
+## Fusão dos módulos auxiliares — 2026-10-15
+
+- [x] Reunir caminhos e leitura de respostas em `http-client.ts`.
+- [x] Reunir respostas e URLs públicas das APIs em `server-http.ts`.
+- [x] Reunir input, textarea e estilo de select em `ui/form-controls.tsx`.
+- [x] Validar imports, lint, tipos, testes, build e documentação.
+
+Sete ficheiros passam a três, mantendo a separação cliente/servidor e os mesmos
+exports públicos. Registar esta etapa num commit separado.
+
 ## Próxima iteração do agente
 
 - [ ] Definir o objetivo, as operações autorizadas e os critérios de aceitação.

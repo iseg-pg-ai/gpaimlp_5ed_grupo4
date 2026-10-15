@@ -2,7 +2,7 @@
 import { formatPricing } from "@/lib/catalog-schema";
 import { T } from "@/components/LocaleProvider";
 import { Button } from "@/components/ui/button";
-import { selectStyle } from "@/components/ui/select-style";
+import { selectStyle } from "@/components/ui/form-controls";
 import { CatalogEditor } from "@/components/catalog/CatalogEditor";
 import { CatalogHistory } from "@/components/catalog/CatalogHistory";
 import { catalogControl as control, catalogButton as button } from "@/components/catalog/styles";

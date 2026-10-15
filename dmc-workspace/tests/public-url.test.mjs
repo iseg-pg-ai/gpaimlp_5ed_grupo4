@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { publicUrl, publicOrigin } from "../src/lib/public-url.ts";
+import { publicUrl, publicOrigin } from "../src/lib/server-http.ts";
 
 test("public share URLs preserve the Studio origin and prefix once", () => {
   const keys = ["BLU_PUBLIC_URL", "PORTAL_PUBLIC_ORIGIN", "NEXT_PUBLIC_PORTAL_BASE_PATH"];

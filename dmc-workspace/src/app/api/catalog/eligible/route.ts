@@ -1,4 +1,4 @@
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+import { jsonError, noStoreHeaders } from "@/lib/server-http";
 import { editWithAssistant } from "@/lib/assistant-editing";
 import { validateBrief } from "@/lib/curation";
 import { CatalogStore } from "@/lib/catalog-store";

@@ -1,10 +1,10 @@
 import { sourceEnricher } from "@/lib/dataset-source";
-import { publicOrigin } from "@/lib/public-url";
+import { publicOrigin, jsonError, noStoreHeaders } from "@/lib/server-http";
 import { CatalogStore, CatalogConflict, warehouseRoot } from "@/lib/catalog-store";
 import { validateCatalogInput, categories } from "@/lib/catalog-schema";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {

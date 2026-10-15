@@ -1,10 +1,10 @@
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch, responseJson } from "@/lib/http-client";
 
 import { useEffect, useState } from "react";
 import { T } from "./LocaleProvider";
 import { SourceFields } from "./SourceFields";
-import { responseJson } from "@/lib/http-client";
+
 type Data = {
   tables: string[];
   table?: string;

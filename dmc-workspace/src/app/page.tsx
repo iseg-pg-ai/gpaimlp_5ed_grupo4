@@ -1,6 +1,6 @@
 "use client";
 
-import { portalUrl } from "@/lib/portal-url";
+import { portalUrl } from "@/lib/http-client";
 import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import { useWorkspace } from "@/hooks/useWorkspace";
 

@@ -1,5 +1,5 @@
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch, responseJson } from "@/lib/http-client";
 import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/locales";
 import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip, TransitMode } from "@/types";
@@ -7,7 +7,7 @@ import { initialBrief } from "@/data/initialBrief";
 import { assistantHelp } from "@/lib/assistant-editing";
 
 import { validateSnapshot } from "@/lib/snapshot-validation";
-import { responseJson } from "@/lib/http-client";
+
 import type { Snapshot } from "@/lib/itinerary-pdf";
 import {
   AUTO_TRASH_STORAGE,

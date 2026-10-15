@@ -1,6 +1,6 @@
 import { translateLocal, TranslationError } from "@/lib/local-translation";
 import { isLocale } from "@/lib/locales";
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+import { jsonError, noStoreHeaders } from "@/lib/server-http";
 export const runtime = "nodejs";
 export async function POST(request: Request) {
   let body;

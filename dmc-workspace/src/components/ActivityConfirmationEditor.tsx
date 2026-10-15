@@ -1,5 +1,5 @@
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch } from "@/lib/http-client";
 
 import { useEffect, useRef, useState } from "react";
 import type { ActivityItem } from "@/types";

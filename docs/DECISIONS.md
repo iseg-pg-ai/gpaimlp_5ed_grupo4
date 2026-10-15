@@ -24,6 +24,17 @@ está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 - A fábrica do agente foi exercitada com um modelo simulado sem chamadas externas.
   A API ReAct atual mantém LangGraph na série 1.x até à próxima iteração.
 
+### Fusão dos auxiliares HTTP e de formulário
+
+- Estado: implementado em chore/project-cleanup, em commit próprio.
+- `http-client.ts` reúne caminhos do portal, fetch e leitura de respostas.
+- `server-http.ts` reúne URLs públicas e respostas das APIs, usado apenas no servidor.
+- `ui/form-controls.tsx` reúne Input, Textarea e estilo de select, preservando refs,
+  propriedades e classes. Todos os consumidores usam os novos caminhos.
+- Sete ficheiros passam a três; total versionado reduzido de 309 para 305.
+- Validação: lint, tipos, formatação e build aprovados; 99 testes passaram e um
+  ficou ignorado. Não foram modificados os contratos de curadoria ou persistência.
+
 ### Primeira etapa de consolidação
 
 - Estado: limpeza e consolidação locais no branch chore/project-cleanup.

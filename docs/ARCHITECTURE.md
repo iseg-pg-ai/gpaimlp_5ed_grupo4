@@ -48,6 +48,10 @@ Na tabela, `src/` pertence a `dmc-workspace/`, exceto os caminhos `src/blu_ai/`,
 que são relativos à raiz. As APIs e páginas do Next.js são entradas do framework;
 não precisam de ser importadas por outro ficheiro para estarem em utilização.
 
+Os auxiliares HTTP partilhados ficam em `src/lib/http-client.ts`; os auxiliares
+das APIs do servidor em `src/lib/server-http.ts`. Os controlos básicos de
+formulário e o estilo de select ficam em `src/components/ui/form-controls.tsx`.
+
 ## Contratos a preservar
 
 - Apenas oferta aprovada e compatível com a revisão publicada é elegível.

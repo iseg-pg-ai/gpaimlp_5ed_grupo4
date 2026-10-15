@@ -1,5 +1,5 @@
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch } from "@/lib/http-client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { T } from "@/components/LocaleProvider";

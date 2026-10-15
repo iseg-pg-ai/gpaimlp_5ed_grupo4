@@ -1,6 +1,6 @@
 import { generateItinerary, validateBrief, type Catalog } from "@/lib/curation";
 import { loadPublishedCatalog } from "@/lib/published-catalog";
-import { jsonError } from "@/lib/api-response";
+import { jsonError } from "@/lib/server-http";
 import { enrichItineraryWithRoadRouting } from "@/lib/road-routing";
 
 export const runtime = "nodejs";

@@ -1,5 +1,5 @@
 "use client";
-import { selectStyle } from "./ui/select-style";
+import { selectStyle } from "./ui/form-controls";
 import { T } from "./LocaleProvider";
 import { matchingOptions, matchingLabels, type MatchingProfile } from "@/lib/catalog-matching";
 
