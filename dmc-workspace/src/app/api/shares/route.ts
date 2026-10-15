@@ -1,6 +1,6 @@
-import { publicUrl } from "@/lib/public-url";
+import { publicUrl, jsonError, noStoreHeaders } from "@/lib/server-http";
 import { isLocale } from "@/lib/locales";
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+
 import { checkTripId, VersionStore, type ShareMethod } from "@/lib/version-store";
 
 export const runtime = "nodejs";

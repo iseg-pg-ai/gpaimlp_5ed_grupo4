@@ -5,7 +5,7 @@ import type { RefObject } from "react";
 import { T } from "@/components/LocaleProvider";
 import { CatalogCompatibility } from "@/components/CatalogCompatibility";
 import { emptyMatching } from "@/lib/catalog-matching";
-import { selectStyle } from "@/components/ui/select-style";
+import { selectStyle } from "@/components/ui/form-controls";
 import {
   categories,
   subcategories,

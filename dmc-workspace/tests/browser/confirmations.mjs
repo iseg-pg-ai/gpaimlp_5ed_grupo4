@@ -1,14 +1,11 @@
-import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
+import { launchBrowser, readSnapshot, mockTranslation } from "./helpers.mjs";
+
 import assert from "node:assert/strict";
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
-});
+const browser = await launchBrowser();
 try {
   for (const width of [360, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 800 } });
-    const snapshot = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
+    const snapshot = readSnapshot();
     Object.assign(snapshot.brief, {
       childrenAges: "",
       specialOccasion: "",
@@ -55,16 +52,7 @@ try {
       }
       return r.fulfill({ json: { version: ++version } });
     });
-    await page.route("**/api/translate", (r) =>
-      r.fulfill({
-        json: {
-          texts: r
-            .request()
-            .postDataJSON()
-            .items.map((i) => i.text),
-        },
-      }),
-    );
+    await mockTranslation(page);
     await page.goto(process.env.PORTAL_URL ?? "http://127.0.0.1:3001");
     async function selectTrip() {
       if (width < 1024) await page.locator('[aria-controls="trip-navigation"]').click();

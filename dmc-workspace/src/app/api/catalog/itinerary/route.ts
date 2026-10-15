@@ -1,6 +1,6 @@
 import { detailsFromRecord } from "@/lib/catalog-details";
 import { CatalogStore } from "@/lib/catalog-store";
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+import { jsonError, noStoreHeaders } from "@/lib/server-http";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // Read-only fallback for trips created before catalog details were included in snapshots.

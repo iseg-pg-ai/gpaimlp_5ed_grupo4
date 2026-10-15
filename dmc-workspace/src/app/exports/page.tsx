@@ -1,4 +1,4 @@
-import { portalUrl } from "@/lib/portal-url";
+import { portalUrl } from "@/lib/http-client";
 import { T, ExportLanguageLinks } from "@/components/LocaleProvider";
 import Link from "next/link";
 import { VersionStore } from "@/lib/version-store";

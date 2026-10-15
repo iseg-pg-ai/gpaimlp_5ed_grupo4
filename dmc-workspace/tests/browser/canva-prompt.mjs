@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { launchBrowser, readSnapshot, mockTranslation } from "./helpers.mjs";
 import assert from "node:assert/strict";
 import { readFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -7,13 +7,10 @@ import { initialConfirmation } from "../../src/lib/activity-confirmation.ts";
 const base = process.env.PORTAL_URL ?? "http://127.0.0.1:3001";
 const output = new URL("../../../.tools/canva-smoke/", import.meta.url);
 mkdirSync(output, { recursive: true });
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
-});
+const browser = await launchBrowser();
 try {
   const context = await browser.newContext();
-  const snapshot = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
+  const snapshot = readSnapshot();
   Object.assign(snapshot.brief, {
     customerName: "Cliente de teste TXT",
     childrenAges: "",
@@ -90,16 +87,7 @@ try {
       },
       { snapshot: changed, tripId, version: second.version },
     );
-    await page.route("**/api/translate", (route) =>
-      route.fulfill({
-        json: {
-          texts: route
-            .request()
-            .postDataJSON()
-            .items.map((i) => i.text),
-        },
-      }),
-    );
+    await mockTranslation(page);
     await page.goto(base);
     if (width < 1024) await page.locator('button[aria-controls="trip-navigation"]').click();
     await page

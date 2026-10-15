@@ -1,6 +1,6 @@
 import { datasetTables, sourceRows } from "@/lib/dataset-source";
 import { warehouseRoot } from "@/lib/catalog-store";
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+import { jsonError, noStoreHeaders } from "@/lib/server-http";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {

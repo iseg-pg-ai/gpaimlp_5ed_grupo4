@@ -1,9 +1,6 @@
-import { chromium } from "playwright";
+import { launchBrowser } from "./helpers.mjs";
 import assert from "node:assert/strict";
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
-});
+const browser = await launchBrowser();
 try {
   for (const width of [360, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });

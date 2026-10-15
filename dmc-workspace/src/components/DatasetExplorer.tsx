@@ -1,10 +1,10 @@
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch, responseJson } from "@/lib/http-client";
 
 import { useEffect, useState } from "react";
 import { T } from "./LocaleProvider";
 import { SourceFields } from "./SourceFields";
-import { responseJson } from "@/lib/http-client";
+
 type Data = {
   tables: string[];
   table?: string;
@@ -54,6 +54,7 @@ export function DatasetExplorer() {
         <label className="min-w-0">
           <T text="Folha" source="pt" />
           <select
+            name="datasetTable"
             className="block max-w-full border rounded p-2"
             value={table || data?.table || ""}
             onChange={(e) => {
@@ -71,6 +72,7 @@ export function DatasetExplorer() {
         <label>
           <T text="Pesquisar nos dados" source="pt" />
           <input
+            name="datasetSearch"
             className="block w-full border rounded p-2"
             value={query}
             onChange={(e) => {

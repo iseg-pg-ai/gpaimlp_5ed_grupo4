@@ -20,7 +20,7 @@ cd "$REPOSITORY_ROOT"
 
 # A dashboard without a warehouse would only show an error state.
 if [[ ! -f "$WAREHOUSE" ]]; then
-    echo "Error: Warehouse missing. Run ./scripts/run_full_pipeline.sh first." >&2
+    echo "Warehouse ausente. Executar: uv run --no-default-groups python -m etl.pipeline --data-dir data --output-dir warehouse" >&2
     exit 1
 fi
 
@@ -28,6 +28,11 @@ fi
 if [[ ! -x "$PYTHON" ]]; then
     echo "Error: Python interpreter not found at $PYTHON" >&2
     echo "Create it with: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt" >&2
+    exit 1
+fi
+
+if ! "$PYTHON" -c 'import streamlit, plotly' >/dev/null 2>&1; then
+    echo "Instalar o dashboard: uv sync --locked --inexact --group dashboard" >&2
     exit 1
 fi
 

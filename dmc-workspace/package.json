@@ -13,8 +13,8 @@
     "agent": "bash ../scripts/start_ai_agent.sh",
     "lint": "eslint --max-warnings=0",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
-    "test:responsive": "node tests/browser/responsive.mjs",
-    "test:navigation": "node tests/browser/navigation.mjs",
+    "test:responsive": "node tests/browser/ui.mjs responsive",
+    "test:navigation": "node tests/browser/ui.mjs navigation",
     "test:catalog": "node --experimental-strip-types tests/browser/catalog.mjs",
     "test:catalog-etl": "node tests/catalog-etl.mjs",
     "typecheck": "tsc --noEmit",
@@ -28,7 +28,8 @@
     "test:compliance": "node tests/compliance.mjs",
     "check": "npm run lint && npm run typecheck && npm run format:check && npm test",
     "start:aws": "node scripts/start-aws.mjs",
-    "test:aws": "node tests/browser/sagemaker-proxy.mjs"
+    "test:aws": "node tests/browser/sagemaker-proxy.mjs",
+    "test:ui": "node tests/browser/ui.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

@@ -1,5 +1,5 @@
 import { fetchDayWeather } from "@/lib/weather";
-import { jsonError } from "@/lib/api-response";
+import { jsonError } from "@/lib/server-http";
 
 export const runtime = "nodejs";
 

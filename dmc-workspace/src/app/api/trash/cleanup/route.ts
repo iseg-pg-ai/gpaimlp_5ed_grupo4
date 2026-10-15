@@ -1,4 +1,4 @@
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+import { jsonError, noStoreHeaders } from "@/lib/server-http";
 import { checkTripId, VersionStore } from "@/lib/version-store";
 
 export const runtime = "nodejs";

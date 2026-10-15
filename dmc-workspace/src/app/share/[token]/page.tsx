@@ -1,4 +1,4 @@
-import { portalUrl } from "@/lib/portal-url";
+import { portalUrl } from "@/lib/http-client";
 import { notFound } from "next/navigation";
 import { VersionStore } from "@/lib/version-store";
 

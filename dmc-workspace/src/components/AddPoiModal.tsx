@@ -1,5 +1,5 @@
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch } from "@/lib/http-client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { T } from "@/components/LocaleProvider";
@@ -282,6 +282,8 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A49C]" />
             <input
+              name="poiSearch"
+              aria-label="Pesquisar experiências"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}

@@ -1,5 +1,5 @@
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch } from "@/lib/http-client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -178,6 +178,7 @@ export default function TrashPage() {
         </div>
         <label className="flex max-w-md items-start gap-3 rounded-xl border border-[#D5D1C7] bg-white p-4 text-sm">
           <input
+            name="automaticTrash"
             type="checkbox"
             className="mt-1"
             checked={autoTrash}
@@ -200,6 +201,7 @@ export default function TrashPage() {
       <label className="relative mt-6 block">
         <Search className="absolute left-3 top-3 size-4 text-[#698288]" />
         <input
+          name="trashSearch"
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}

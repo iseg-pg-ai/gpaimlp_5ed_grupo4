@@ -28,9 +28,21 @@ Na raiz do repositório:
 
 ```powershell
 python -m pip install uv==0.12.19
-python -m uv sync --locked --group translation
-python translations/setup_models.py
+python -m uv sync --locked
 ```
+
+A instalação base contém apenas o necessário ao ETL. Instalar os componentes
+opcionais quando forem usados, preservando os outros grupos já instalados:
+
+```bash
+uv sync --locked --inexact --group dashboard
+uv sync --locked --inexact --group agent
+uv sync --locked --inexact --group translation
+```
+
+Para tradução, executar também `python translations/setup_models.py`.
+Para desenvolvimento com todos os componentes: `uv sync --locked --all-groups`.
+O portal tem dependências próprias em `dmc-workspace/`.
 
 O `pyproject.toml` é a fonte das dependências Python. O `uv.lock`, o
 `requirements.txt` e o `translations/requirements.txt` fixam ou exportam essas
@@ -62,6 +74,8 @@ publicar uma versão com Stanza corrigido.
 
 Na raiz do repositório:
 
+Instalar primeiro o grupo opcional `agent` indicado acima.
+
 - No macOS/Linux: `bash scripts/start_ai_agent.sh`
 - No Windows: `powershell -ExecutionPolicy Bypass -File .\scripts\start_ai_agent.ps1`
 
@@ -91,6 +105,8 @@ Abrir a porta 3001 pelo Code Editor. Para o arranque de produção, consultar
 
 Na raiz do repositório:
 
+Instalar primeiro o grupo opcional `dashboard` indicado acima.
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1
 ```
@@ -98,6 +114,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1
 Abrir [http://localhost:8501](http://localhost:8501).
 
 ## Testes
+
+Os testes completos de Python exigem o grupo `agent`; os de tradução exigem
+`translation`. Para preparar ambos: `uv sync --locked --inexact --group agent --group translation`.
+
+Verificar a estrutura e as ligações locais, sem instalar dependências:
+
+```bash
+python scripts/check_project.py
+```
 
 ```powershell
 .\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
@@ -111,15 +136,15 @@ npm run build
 Os testes de navegador exigem o portal iniciado na porta 3001. No Windows pode
 ser necessário definir `BROWSER_CHANNEL=msedge` antes de executar os scripts.
 O agregador `npm run check` executa também `format:check`; consulte o
-[estado das funcionalidades](docs/STATUS.md) para a situação atual dessa verificação.
+[estado das funcionalidades](docs/ARCHITECTURE.md) para a situação atual dessa verificação.
 
 ## Documentação
 
-- [Índice da documentação](docs/README.md)
+- [Arquitetura e âmbito](docs/ARCHITECTURE.md)
 - [DMC Workspace](docs/PORTAL.md)
-- [Estado das funcionalidades](docs/STATUS.md)
-- [ETL e contrato dos dados](README_ETL.md)
-- [Automação e operações](AUTOMATION.md)
+- [ETL e contrato dos dados](docs/DATA_PIPELINE.md)
+- [Testes e histórico de validação](docs/TESTING.md)
+- [Decisões do projeto](docs/DECISIONS.md)
 - [Modelo analítico do warehouse](reports/data_model_report.md)
 
 ## Limites atuais
@@ -128,5 +153,5 @@ O portal não efetua reservas nem confirma automaticamente preços,
 disponibilidade, acessibilidade ou condições alimentares. O catálogo aprovado e
 as regras estruturadas orientam a proposta; dados ambíguos ficam por confirmar.
 O armazenamento é local e não inclui autenticação ou sincronização entre
-utilizadores. Consulte [o estado detalhado](docs/STATUS.md) antes de planear novas
+utilizadores. Consulte [o estado detalhado](docs/ARCHITECTURE.md) antes de planear novas
 alterações.

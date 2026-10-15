@@ -1,3 +1,11 @@
+# Artefactos locais do sistema e do shell
+.DS_Store
+/.bash_history
+/.bashrc
+/.wget-hsts
+/package-lock.json
+/user-default-efs
+
 # Python
 __pycache__/
 *.py[cod]

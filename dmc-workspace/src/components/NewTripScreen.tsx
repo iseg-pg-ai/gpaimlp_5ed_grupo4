@@ -155,10 +155,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
               <CardContent className="pt-5 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-customerName"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Customer / Group Name" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-customerName"
+                      name="customerName"
                       required
                       value={brief.customerName}
                       onChange={(e) => setBrief({ ...brief, customerName: e.target.value })}
@@ -167,10 +172,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-customerEmail"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Email do cliente" source="pt" />
                     </label>
                     <LocalizedInput
+                      id="brief-customerEmail"
+                      name="customerEmail"
                       type="email"
                       required
                       value={brief.customerEmail ?? ""}
@@ -181,10 +191,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-specialOccasion"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Special Occasion (R04)" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-specialOccasion"
+                      name="specialOccasion"
                       value={brief.specialOccasion}
                       onChange={(e) => setBrief({ ...brief, specialOccasion: e.target.value })}
                       placeholder="e.g. 10th Anniversary"
@@ -192,10 +207,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-adults"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Adults" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-adults"
+                      name="adults"
                       type="number"
                       min={1}
                       value={brief.adults}
@@ -206,10 +226,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-children"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Children" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-children"
+                      name="children"
                       type="number"
                       min={0}
                       value={brief.children}
@@ -223,10 +248,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-childrenAges"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Children Ages (if any)" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-childrenAges"
+                      name="childrenAges"
                       value={brief.childrenAges}
                       onChange={(e) => setBrief({ ...brief, childrenAges: e.target.value })}
                       placeholder="e.g. 8 and 11"
@@ -256,10 +286,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
               <CardContent className="pt-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-destination"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Destination Region" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-destination"
+                      name="destination"
                       required
                       value={brief.destination}
                       onChange={(e) => setBrief({ ...brief, destination: e.target.value })}
@@ -268,10 +303,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-startDate"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Start Date" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-startDate"
+                      name="startDate"
                       type="date"
                       required
                       value={brief.startDate}
@@ -280,10 +320,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-endDate"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="End Date" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-endDate"
+                      name="endDate"
                       type="date"
                       required
                       value={brief.endDate}
@@ -292,10 +337,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-arrivalLocation"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Arrival Airport / Point" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-arrivalLocation"
+                      name="arrivalLocation"
                       value={brief.arrivalLocation}
                       onChange={(e) => setBrief({ ...brief, arrivalLocation: e.target.value })}
                       placeholder="e.g. Lisbon Humberto Delgado Airport (LIS)"
@@ -303,10 +353,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-departureLocation"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Departure Airport / Point" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-departureLocation"
+                      name="departureLocation"
                       value={brief.departureLocation}
                       onChange={(e) => setBrief({ ...brief, departureLocation: e.target.value })}
                       placeholder="e.g. Porto Francisco Sá Carneiro Airport (OPO)"
@@ -384,10 +439,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
               <CardContent className="pt-5 space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-budget"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Approximate Total Budget" source="en" />{" "}
                     </label>
                     <LocalizedInput
+                      id="brief-budget"
+                      name="budget"
                       type="number"
                       step="500"
                       value={brief.budget}
@@ -402,10 +462,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-1">
+                    <label
+                      htmlFor="brief-currency"
+                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                    >
                       <T text="Currency" source="en" />{" "}
                     </label>
                     <select
+                      id="brief-currency"
+                      name="currency"
                       value={brief.currency}
                       onChange={(e) => setBrief({ ...brief, currency: e.target.value })}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-[#D5D1C7] bg-[#FAF8F3] text-[#143F4B] focus:outline-hidden focus:border-[#2D5B67] focus:ring-1 focus:ring-[#2D5B67] transition-all cursor-pointer"
@@ -418,10 +483,10 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </div>
 
                 {/* Interests multi-select pills */}
-                <div>
-                  <label className="block text-sm font-medium text-[#143F4B] mb-2">
+                <fieldset>
+                  <legend className="block text-sm font-medium text-[#143F4B] mb-2">
                     <T text="Themes & Narrative Elements" source="en" />{" "}
-                  </label>
+                  </legend>
                   <div className="flex flex-wrap gap-2">
                     {interestOptions.map((interest) => {
                       const isSelected = brief.interests.includes(interest);
@@ -444,13 +509,13 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                       );
                     })}
                   </div>
-                </div>
+                </fieldset>
 
                 {/* Travel Pace */}
-                <div>
-                  <label className="block text-sm font-medium text-[#143F4B] mb-2">
+                <fieldset>
+                  <legend className="block text-sm font-medium text-[#143F4B] mb-2">
                     <T text="Travel Pace (Thoughtfully Paced)" source="en" />{" "}
-                  </label>
+                  </legend>
                   <div className="grid grid-cols-3 gap-3">
                     {paceOptions.map((pace) => {
                       const isSelected = brief.pace === pace;
@@ -470,13 +535,13 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                       );
                     })}
                   </div>
-                </div>
+                </fieldset>
 
                 {/* Accommodation */}
-                <div>
-                  <label className="block text-sm font-medium text-[#143F4B] mb-2">
+                <fieldset>
+                  <legend className="block text-sm font-medium text-[#143F4B] mb-2">
                     <T text="Preferred Accommodation Standard" source="en" />{" "}
-                  </label>
+                  </legend>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     {accommodationOptions.map((acc) => {
                       const isSelected = brief.accommodation === acc;
@@ -496,7 +561,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                       );
                     })}
                   </div>
-                </div>
+                </fieldset>
               </CardContent>
             </Card>
 
@@ -540,10 +605,10 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </CardHeader>
 
                 <CardContent className="pt-5 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-2">
+                  <fieldset>
+                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
                       <T text="Physical Effort Tolerance (Esforço Físico)" source="en" />{" "}
-                    </label>
+                    </legend>
                     <div className="grid grid-cols-3 gap-3">
                       {effortLevels.map((lvl) => {
                         const isSelected = brief.physicalEffort === lvl;
@@ -569,12 +634,12 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         source="en"
                       />{" "}
                     </p>
-                  </div>
+                  </fieldset>
 
-                  <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-2">
+                  <fieldset>
+                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
                       <T text="Specific Mobility Needs & Terrain Adjustments" source="en" />{" "}
-                    </label>
+                    </legend>
                     <div className="flex flex-wrap gap-2">
                       {mobilityOptions.map((opt) => {
                         const isSelected = brief.mobilityRestrictions.includes(opt);
@@ -597,7 +662,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         );
                       })}
                     </div>
-                  </div>
+                  </fieldset>
                 </CardContent>
               </Card>
 
@@ -621,13 +686,13 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </CardHeader>
 
                 <CardContent className="pt-5 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-2">
+                  <fieldset>
+                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
                       <T
                         text="Dietary Restrictions & Allergens (Cross-checks Restaurant Database)"
                         source="en"
                       />{" "}
-                    </label>
+                    </legend>
                     <div className="flex flex-wrap gap-2">
                       {dietaryOptions.map((opt) => {
                         const isSelected = brief.dietaryRestrictions.includes(opt);
@@ -650,12 +715,12 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         );
                       })}
                     </div>
-                  </div>
+                  </fieldset>
 
-                  <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-2">
+                  <fieldset>
+                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
                       <T text="Dining Pace & Table Duration" source="en" />{" "}
-                    </label>
+                    </legend>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {diningPaces.map((dp) => {
                         const isSelected = brief.diningPace === dp;
@@ -675,7 +740,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         );
                       })}
                     </div>
-                  </div>
+                  </fieldset>
                 </CardContent>
               </Card>
 
@@ -694,13 +759,13 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                 </CardHeader>
 
                 <CardContent className="pt-5 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-2">
+                  <fieldset>
+                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
                       <T
                         text="Morning Start Preference (Horários e Hábitos Pessoais)"
                         source="en"
                       />{" "}
-                    </label>
+                    </legend>
                     <div className="grid grid-cols-3 gap-3">
                       {morningPaces.map((mp) => {
                         const isSelected = brief.morningPreference === mp;
@@ -720,15 +785,15 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         );
                       })}
                     </div>
-                  </div>
+                  </fieldset>
 
-                  <div>
-                    <label className="block text-sm font-medium text-[#143F4B] mb-2">
+                  <fieldset>
+                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
                       <T
                         text="Atividades Expressamente Indesejadas (Do Not Propose)"
                         source="pt"
                       />{" "}
-                    </label>
+                    </legend>
                     <div className="flex flex-wrap gap-2">
                       {exclusionOptions.map((opt) => {
                         const isSelected = brief.exclusions.includes(opt);
@@ -751,7 +816,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         );
                       })}
                     </div>
-                  </div>
+                  </fieldset>
                 </CardContent>
               </Card>
             </div>
@@ -761,7 +826,10 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
               <CardHeader className="pb-3 border-b border-[#F0ECE4]">
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-[#2D5B67]" />
-                  <CardTitle className="text-sm font-serif-blu text-[#143F4B]">
+                  <CardTitle
+                    id="brief-notes-label"
+                    className="text-sm font-serif-blu text-[#143F4B]"
+                  >
                     <T text="Curator Perspective & Personal Nuances" source="en" />{" "}
                   </CardTitle>
                 </div>
@@ -769,6 +837,9 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
               <CardContent className="pt-4">
                 <LocalizedTextarea
+                  aria-labelledby="brief-notes-label"
+                  id="brief-notes"
+                  name="notes"
                   rows={3}
                   value={brief.notes}
                   onChange={(e) => setBrief({ ...brief, notes: e.target.value })}

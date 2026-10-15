@@ -1,5 +1,72 @@
 # Decisões e questões abertas
 
+Os registos históricos conservam as datas e a evidência original. O mapa atual
+está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
+
+## Simplificação para a próxima iteração do agente — 2026-10-15
+
+### Consolidação dos testes
+
+- Navegação e responsividade passam a `tests/browser/ui.mjs`; os comandos antigos
+  continuam como aliases para selecionar apenas um grupo.
+- Configuração AWS, URLs públicas e compatibilidade ESLint passam a
+  `tests/infrastructure.test.mjs`, preservando os quatro testes originais.
+- O helper de navegador centraliza apenas arranque, leitura nova da fixture e
+  mock de tradução. Cada cenário mantém o seu contexto e mocks específicos.
+- As asserções e condições de falha foram preservadas por comparação automática.
+- Validação: 99 testes unitários aprovados, um ignorado; build aprovado;
+  42 cenários de interface, stress, dois de briefing e apresentação aprovados.
+- Total versionado: 303 ficheiros. Não foi removida cobertura funcional.
+
+### Revisão integral posterior do diretório
+
+- Inventariar recursivamente ficheiros e pastas, sem seguir montagens ou ler
+  credenciais do ambiente. Conservar ferramentas do IDE e dados operacionais.
+- Eliminar o CSV do processamento antigo, o notebook experimental sem execução,
+  o esquema Python sem consumidores e o lockfile npm vazio da raiz.
+- Retirar `user-default-efs` do Git mantendo a montagem física na instância.
+- Remover os grupos de experiências SageMaker/MLflow e ferramentas dev sem uso.
+  Declarar LangGraph diretamente e retirar LangChain/Community sem consumidores.
+- Instalação base limitada ao ETL; dashboard, agente e tradução são opcionais.
+  Os scripts indicam como instalar cada grupo quando faltar uma dependência.
+- Resultado: lockfile com 148 entradas em vez de 221; instalação base com nove
+  pacotes. Os 147 pacotes de registry passaram a auditoria sem vulnerabilidades
+  conhecidas. Restam 309 ficheiros versionados, incluindo fontes e warehouse.
+- Validação: 18 testes do ETL numa instalação mínima limpa; 21 testes Python,
+  cinco de tradução e 99 testes do portal no ambiente completo; um teste ignorado.
+- A fábrica do agente foi exercitada com um modelo simulado sem chamadas externas.
+  A API ReAct atual mantém LangGraph na série 1.x até à próxima iteração.
+
+### Fusão dos auxiliares HTTP e de formulário
+
+- Estado: implementado em chore/project-cleanup, em commit próprio.
+- `http-client.ts` reúne caminhos do portal, fetch e leitura de respostas.
+- `server-http.ts` reúne URLs públicas e respostas das APIs, usado apenas no servidor.
+- `ui/form-controls.tsx` reúne Input, Textarea e estilo de select, preservando refs,
+  propriedades e classes. Todos os consumidores usam os novos caminhos.
+- Sete ficheiros passam a três; total versionado reduzido de 309 para 305.
+- Validação: lint, tipos, formatação e build aprovados; 99 testes passaram e um
+  ficou ignorado. Não foram modificados os contratos de curadoria ou persistência.
+
+### Primeira etapa de consolidação
+
+- Estado: limpeza e consolidação locais no branch chore/project-cleanup.
+- Base: dev em `a4b7626`; inventário inicial de 345 ficheiros versionados.
+- Remover experiências de planeamento/distâncias sem consumidores, recursos do
+  template e placeholders redundantes. Os ficheiros pessoais do shell saem do
+  Git e permanecem no disco, ignorados.
+- Concentrar arquitetura e capacidades, dados e operações, decisões e validação.
+  Preservar o histórico datado e usar o Git para versões anteriores dos planos.
+- Manter uma única cópia do prompt no pacote autocontido do plugin. Os erros
+  de tradução passam a ser exportados pelo módulo do worker que os produz.
+- Todos os módulos do portal eram alcançáveis pelas entradas de produção.
+  Manter as fronteiras de domínio; não fundir funcionalidades independentes.
+- Resultado: 314 ficheiros versionados; documentação Markdown de 29 para 20.
+- Verificação: 99 testes do portal aprovados e um ignorado; build aprovado;
+  20 testes Python e cinco de tradução aprovados; Markdown e links sem erros.
+- Acrescentar verificação de artefactos locais e ligações ao CI documental.
+  Não alterar fontes, warehouse, catálogo operacional ou versões dos clientes.
+
 ## Dependências Python corrigidas — 2026-10-15
 
 - Estado: implementado e validado localmente em fix/dependabot-python.
@@ -10,7 +77,7 @@
 - Evidência: 20 testes Python e cinco de tradução aprovados; auditoria dos
   220 pacotes de registry do lockfile sem vulnerabilidades conhecidas.
 - Sem modelos de tradução locais ou validação de serviços AWS reais.
-  Detalhes em [docs/DEPENDABOT_PYTHON.md](../docs/DEPENDABOT_PYTHON.md).
+  Detalhes em [docs/DEPENDABOT_PYTHON.md](DEPENDABOT_PYTHON.md).
 
 ## Integração de dev em plugin_TXT_export — 2026-10-15
 
@@ -69,7 +136,7 @@ contra o checkout atual de main, commit f090e53.
   main é a referência funcional desta revisão.
 - Razão: preservar revisão sem inventar uma alteração de política.
 - Evidência: instrução de equipa registada anteriormente;
-  memory/development-workflow.md.
+  AGENTS.md.
 - Âmbito: desenvolvimento Git.
 
 ## D-006 - Concentrar operação no DMC Workspace
@@ -129,7 +196,7 @@ a dmc-workspace/src/components/.
 - Decisão: configuração no DMC para editar/guardar/exportar TXT e plugin novo
   blu-curadoria apenas com instruções. Ambos exportam a mesma revisão guardada.
 - Razão: reutilizar orientação de curadoria sem introduzir chamadas a modelos.
-- Evidência: escolhas explícitas do utilizador, config/prompts/curadoria-blu.txt
+- Evidência: escolhas explícitas do utilizador, plugins/blu-curadoria/skills/curadoria-blu/references/curadoria-blu.txt
   e plugins/blu-curadoria/.
 - Âmbito: funcionalidade futura em branch/worktree separado de main; nenhuma
   integração LLM, ligação aos dados ou instalação automática nesta entrega.
@@ -175,7 +242,7 @@ a dmc-workspace/src/components/.
 - Preservar TXT/Canva 1.1.0, snapshots, privacidade e estado de exportação PDF.
 - Conciliar caminhos AWS e correções IAM/Bedrock com as melhorias da interface.
 - Regenerar o warehouse pelo ETL; testar propostas em armazenamento temporário.
-- Evidência e limites em `docs/DEV_TXT_MERGE_VALIDATION.md`.
+- Evidência e limites em `docs/TESTING.md`.
 - Não publicar o branch ou atualizar a instalação Canva sem nova autorização.
 
 - O-001 - Confirmar base dos próximos PRs face à política dev e referência main.
@@ -207,3 +274,30 @@ AWS passou, testes `aws-config.test.mjs` passaram e conflito de porta foi
 confirmado por execução. O teste de navegador está limitado por bibliotecas
 Chromium ausentes. Sem os erros do colega, a causa na sua instância não foi
 confirmada. Não foi efetuado push nem deployment.
+
+## 2026-10-15 — Recursos do overlay e atributos de extensões
+
+O overlay Next 16.4 usa caminhos absolutos para Geist e stack frames, que saem
+do prefixo do proxy SageMaker. Um loader Turbopack limitado aos dois módulos
+de desenvolvimento aplica o prefixo configurado, sem editar node_modules.
+Reavaliar a adaptação quando atualizar o Next.js.
+
+O body usa suppressHydrationWarning para atributos acrescentados por extensões
+como Grammarly antes da hidratação; a validação dos descendentes permanece ativa.
+
+Validação: check aprovado (100 testes e um ignorado), build aprovado e Chromium
+local com os caminhos raiz bloqueados e atributos Grammarly simulados. A fonte
+e o endpoint de stack frames responderam HTTP 200 no prefixo; não houve avisos
+de hidratação. A sessão autenticada remota do Studio não foi testada.
+
+## 2026-10-15 — Identificação e acessibilidade dos formulários
+
+Os campos sem identificação passam a ter nomes explícitos. No briefing, os
+rótulos usam htmlFor e IDs estáveis; títulos de grupos de botões usam legend
+dentro de fieldset. As notas referenciam o título visível e a pesquisa de
+experiências tem nome acessível. Não foram alterados os contratos dos pedidos.
+
+O teste de briefing verifica campos sem identificação ou rótulo, labels órfãs
+e IDs duplicados. Chromium aprovou os cenários de 360 e 1440 px, incluindo
+revisão, edição e payload. Check aprovado (100 testes e um ignorado) e build
+de produção aprovado.

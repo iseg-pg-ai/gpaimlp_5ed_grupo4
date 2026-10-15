@@ -5,6 +5,20 @@ from blu_ai.llm import get_llm
 
 
 class AgentLlmTest(unittest.TestCase):
+    def test_agent_graph_runs_with_declared_dependencies_without_provider_calls(self):
+        from langchain_core.language_models.fake_chat_models import FakeListChatModel
+        from blu_ai.agents.curator_agent import build_curator_agent
+
+        class ToolCapableFakeModel(FakeListChatModel):
+            def bind_tools(self, tools, **kwargs):
+                return self
+
+        model = ToolCapableFakeModel(responses=["Resposta controlada"])
+        with patch("blu_ai.agents.curator_agent.get_llm", return_value=model):
+            graph = build_curator_agent()
+            result = graph.invoke({"messages": [("user", "Teste sem fornecedores externos")]})
+        self.assertEqual(result["messages"][-1].content, "Resposta controlada")
+
     @patch("langchain_aws.ChatBedrockConverse")
     @patch("blu_ai.llm.boto3.Session")
     def test_uses_default_iam_credentials_and_converse_tools(self, session, model):

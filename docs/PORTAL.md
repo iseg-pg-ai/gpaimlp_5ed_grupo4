@@ -19,7 +19,7 @@ Abrir [http://localhost:3001](http://localhost:3001).
 Para exportar PDFs traduzidos, preparar também o ambiente Python na raiz:
 
 ```powershell
-python -m uv sync --locked --group translation
+python -m uv sync --locked --inexact --group translation
 python translations/setup_models.py
 ```
 
@@ -303,8 +303,7 @@ avisos antes de integrar alterações no portal.
 Com o portal iniciado na porta 3001:
 
 ```powershell
-npm run test:responsive
-npm run test:navigation
+npm run test:ui
 npm run test:catalog
 npm run test:confirmations
 npm run test:itinerary
@@ -328,3 +327,12 @@ Playwright não estiver instalado.
 - **PDF mandarim sem fonte:** configurar `BLU_PDF_CJK_FONT`.
 - **Dados locais ilegíveis:** não limpar o armazenamento antes de recuperar ou
   exportar as viagens existentes.
+
+- **Geist ou stack frames com 404 no Studio:** reiniciar o servidor após alterar
+  a configuração Next.js e atualizar a página sem cache. O loader de
+  desenvolvimento aplica o prefixo aos caminhos internos do overlay Next 16.4;
+  reavaliar esta adaptação quando atualizar o Next.js.
+- **Atributos Grammarly no body:** a extensão acrescenta atributos antes da
+  hidratação. O layout suprime apenas diferenças de atributos nesse elemento;
+  os componentes descendentes continuam sujeitos à validação React.
+- **React DevTools e HMR connected:** mensagens informativas de desenvolvimento.

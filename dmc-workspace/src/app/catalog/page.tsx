@@ -2,7 +2,7 @@
 import { formatPricing } from "@/lib/catalog-schema";
 import { T } from "@/components/LocaleProvider";
 import { Button } from "@/components/ui/button";
-import { selectStyle } from "@/components/ui/select-style";
+import { selectStyle } from "@/components/ui/form-controls";
 import { CatalogEditor } from "@/components/catalog/CatalogEditor";
 import { CatalogHistory } from "@/components/catalog/CatalogHistory";
 import { catalogControl as control, catalogButton as button } from "@/components/catalog/styles";
@@ -99,6 +99,7 @@ export default function CatalogPage() {
           <label className="text-sm">
             <T text="Pesquisar" source="pt" />
             <input
+              name="catalogSearch"
               data-testid="catalog-search"
               className={`${control} mt-1`}
               value={query}
@@ -108,6 +109,7 @@ export default function CatalogPage() {
           <label className="text-sm">
             <T text="Estado" source="pt" />
             <select
+              name="catalogStatus"
               style={selectStyle}
               className={`${control} mt-1`}
               value={status}
@@ -126,6 +128,7 @@ export default function CatalogPage() {
           <label className="text-sm">
             <T text="Localização" source="pt" />
             <select
+              name="catalogLocation"
               style={selectStyle}
               className={`${control} mt-1`}
               value={location}

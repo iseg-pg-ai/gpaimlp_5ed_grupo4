@@ -1,5 +1,5 @@
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch } from "@/lib/http-client";
 
 import { useEffect, useRef, useState } from "react";
 import type { ActivityItem } from "@/types";
@@ -213,6 +213,7 @@ export function ActivityConfirmationEditor({
             <label className="block text-sm">
               <T text={check.label} source="pt" />
               <textarea
+                name="confirmationDetails"
                 aria-label={check.label}
                 maxLength={4000}
                 value={check.details}
@@ -228,6 +229,7 @@ export function ActivityConfirmationEditor({
             </label>
             <label className="mt-2 flex items-center gap-2 text-sm">
               <input
+                name="confirmationResolved"
                 type="checkbox"
                 checked={check.resolved}
                 onChange={(e) =>
