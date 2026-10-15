@@ -24,8 +24,8 @@ eliminar operações existentes ou exigir uma segunda implementação em JavaScr
 
 ## Continuação HTML/Python — meteorologia
 
-- [ ] Migrar coordenadas, códigos WMO, previsão e fallback histórico para Python.
-- [ ] Manter o navegador como consumidor da API do portal, com cache e falhas explícitas.
+- [x] Migrar coordenadas, códigos WMO, previsão e fallback histórico para Python.
+- [x] Manter o navegador como consumidor da API do portal, com cache e falhas explícitas.
 - [ ] Substituir a abertura/fecho do painel por popover HTML nativo.
 - [ ] Validar fornecedor simulado, indisponibilidade, histórico, cache e navegação.
 - [ ] Atualizar arquitetura e evidência com commits separados.

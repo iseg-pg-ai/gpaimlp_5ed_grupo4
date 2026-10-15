@@ -121,6 +121,9 @@ def main() -> None:
     try:
         if operation == "query":
             result = query_dataset(root, params)
+        elif operation == "weather":
+            from portal.weather import fetch_day_weather
+            result = fetch_day_weather(params)
         elif operation == "prompt":
             from portal.prompt import render_prompt
             result = render_prompt(params)
