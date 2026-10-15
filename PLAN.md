@@ -22,6 +22,14 @@ Python usa a biblioteca padrão e não requer outro serviço nem instalação de
 framework. Não converter componentes interativos para HTML estático quando isso
 eliminar operações existentes ou exigir uma segunda implementação em JavaScript.
 
+## Continuação HTML/Python — meteorologia
+
+- [ ] Migrar coordenadas, códigos WMO, previsão e fallback histórico para Python.
+- [ ] Manter o navegador como consumidor da API do portal, com cache e falhas explícitas.
+- [ ] Substituir a abertura/fecho do painel por popover HTML nativo.
+- [ ] Validar fornecedor simulado, indisponibilidade, histórico, cache e navegação.
+- [ ] Atualizar arquitetura e evidência com commits separados.
+
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
 Base: dev em `a4b7626`; branch `chore/project-cleanup`.
