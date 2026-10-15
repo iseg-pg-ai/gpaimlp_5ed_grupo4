@@ -1,14 +1,11 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Catalog } from "./curation";
-import { CatalogStore } from "./catalog-store";
+import { CatalogStore, warehouseRoot } from "./catalog-store";
 export async function loadPublishedCatalog(): Promise<Catalog> {
   const entries = await Promise.all(
     ["atracoes", "experiencias", "restaurantes", "curation_rules"].map(async (name) => {
-      const contents = await readFile(
-        path.resolve(process.cwd(), "../warehouse", `${name}.jsonl`),
-        "utf8",
-      );
+      const contents = await readFile(path.join(warehouseRoot(), `${name}.jsonl`), "utf8");
       return [
         name,
         contents
@@ -20,11 +17,9 @@ export async function loadPublishedCatalog(): Promise<Catalog> {
   );
   const catalog = Object.fromEntries(entries) as Catalog;
   const store = new CatalogStore();
-  try {
-    for (const category of ["atracoes", "restaurantes", "experiencias"] as const)
-      catalog[category] = catalog[category].filter((row) => store.isPublished(row));
-  } finally {
-    store.close();
+  for (const category of ["atracoes", "restaurantes", "experiencias"] as const) {
+    const flags = await store.publishedFlags(catalog[category]);
+    catalog[category] = catalog[category].filter((_, index) => flags[index]);
   }
   const overrides = JSON.parse(
     await readFile(path.resolve(process.cwd(), "../config/curation_rule_overrides.json"), "utf8"),

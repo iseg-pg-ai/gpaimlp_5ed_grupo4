@@ -1,5 +1,8 @@
 """Fontes do portal: pesquisa, paginação e enriquecimento sem alterar o warehouse."""
 
+from contextlib import closing
+import sqlite3
+from etl.portal_catalog import CatalogStore, CatalogConflict, legacy_id
 from html import escape
 import json
 import math
@@ -119,7 +122,24 @@ def main() -> None:
     root = Path(directory)
     params = json.load(sys.stdin)
     try:
-        if operation == "query":
+        if operation == "catalog-id":
+            result = legacy_id(params["category"], params["row"])
+        elif operation.startswith("catalog-"):
+            with closing(CatalogStore(root)) as store:
+                if operation == "catalog-list":
+                    result = store.list()
+                elif operation == "catalog-history":
+                    result = store.history(params["id"])
+                elif operation == "catalog-import":
+                    store.import_warehouse(params["warehouse"])
+                    result = None
+                elif operation == "catalog-save":
+                    result = store.save_validated(params["input"])
+                elif operation == "catalog-published":
+                    result = store.published_flags(params["rows"])
+                else:
+                    raise ValueError("Operação de catálogo desconhecida.")
+        elif operation == "query":
             result = query_dataset(root, params)
         elif operation == "weather":
             from portal.weather import fetch_day_weather
@@ -137,10 +157,17 @@ def main() -> None:
         else:
             raise ValueError("Operação desconhecida.")
         response = {"ok": True, "data": result}
+    except CatalogConflict as error:
+        response = {"ok": False, "code": "CATALOG_CONFLICT", "error": str(error)}
     except UnknownTable:
         response = {"ok": False, "code": "UNKNOWN_TABLE", "error": "Folha indisponível."}
-    except (OSError, ValueError, KeyError, TypeError):
-        response = {"ok": False,
+    except (OSError, ValueError, KeyError, TypeError, sqlite3.Error) as error:
+        if operation == "catalog-save" and isinstance(error, ValueError):
+            response = {"ok": False, "code": "CATALOG_INVALID", "error": str(error)}
+        elif operation.startswith("catalog-"):
+            response = {"ok": False, "code": "CATALOG_UNAVAILABLE", "error": "Não foi possível consultar ou guardar o catálogo."}
+        else:
+            response = {"ok": False,
                     "code": "EXPORT_UNAVAILABLE" if operation == "prompt" else "DATASET_UNAVAILABLE",
                     "error": "Não foi possível preparar o TXT da versão guardada." if operation == "prompt" else "Dataset indisponível. Execute o ETL."}
     print(json.dumps(response, ensure_ascii=False))

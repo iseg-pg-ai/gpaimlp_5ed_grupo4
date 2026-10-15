@@ -1,4 +1,4 @@
-// Real Node source -> Python ETL -> itinerary generation, in isolated directories.
+// Contrato do portal → SQLite Python → ETL → geração, em diretórios isolados.
 import assert from "node:assert/strict";
 import {
   mkdtempSync,
@@ -33,43 +33,41 @@ try {
   copyFileSync(path.join(project, "data", workbook), path.join(data, workbook));
   const store = new CatalogStore(path.join(data, "portal"));
   let record;
-  try {
-    record = store.save({
-      category: "atracoes",
-      subcategory: "Museu e galeria",
-      operational: {
-        latitude: "38.71",
-        longitude: "-9.13",
-        closures: "Segunda-feira",
-        observations: "Reserva prévia",
-        reservations: "Obrigatória",
-      },
-      status: "approved",
-      baseRevision: null,
-      reason: "Integration test",
-      pricing: { amount: "12,50", currency: "EUR", unit: "person", status: "estimated" },
-      matching: {
-        ...emptyMatching(),
-        interests: ["Culture & Heritage"],
-        children: "allowed",
-        food: "no",
-        pricePerPerson: 10,
-      },
-      fields: {
-        ...emptyFields(),
-        name: "Jardim de teste",
-        location: "Lisboa",
-        description: "Passeio cultural",
-        duration: "60 min",
-        price: "10 EUR por pessoa",
-        accessibility: "Entrada sem degraus",
-        source: "Fornecedor",
-        effort: "Baixo",
-      },
-    });
-  } finally {
-    store.close();
-  }
+
+  record = await store.save({
+    category: "atracoes",
+    subcategory: "Museu e galeria",
+    operational: {
+      latitude: "38.71",
+      longitude: "-9.13",
+      closures: "Segunda-feira",
+      observations: "Reserva prévia",
+      reservations: "Obrigatória",
+    },
+    status: "approved",
+    baseRevision: null,
+    reason: "Integration test",
+    pricing: { amount: "12,50", currency: "EUR", unit: "person", status: "estimated" },
+    matching: {
+      ...emptyMatching(),
+      interests: ["Culture & Heritage"],
+      children: "allowed",
+      food: "no",
+      pricePerPerson: 10,
+    },
+    fields: {
+      ...emptyFields(),
+      name: "Jardim de teste",
+      location: "Lisboa",
+      description: "Passeio cultural",
+      duration: "60 min",
+      price: "10 EUR por pessoa",
+      accessibility: "Entrada sem degraus",
+      source: "Fornecedor",
+      effort: "Baixo",
+    },
+  });
+
   const run = () =>
     execFileSync(
       python,
@@ -115,12 +113,10 @@ try {
     [`atracoes:${record.id}`],
   );
   const reopened = new CatalogStore(path.join(data, "portal"));
-  try {
-    reopened.save({ ...record, status: "inactive", baseRevision: 1, reason: "Inactive test" });
-    assert.equal(reopened.isPublished(row), false);
-  } finally {
-    reopened.close();
-  }
+
+  await reopened.save({ ...record, status: "inactive", baseRevision: 1, reason: "Inactive test" });
+  assert.equal(await reopened.isPublished(row), false);
+
   run();
   assert.equal(generateItinerary(brief, readCatalog()).itinerary.flatMap((d) => d.items).length, 0);
   console.log("Catalog source -> ETL -> approved generation -> inactivation OK");

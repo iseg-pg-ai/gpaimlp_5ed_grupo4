@@ -39,7 +39,7 @@ Meteorologia simulada e exports isolados num diretório temporário.
 ## Continuação HTML/Python — catálogo e histórico
 
 - [x] Migrar a persistência do catálogo para SQLite Python, preservando o esquema.
-- [ ] Adaptar APIs e testes para operações assíncronas e validar conflitos.
+- [x] Adaptar APIs e testes para operações assíncronas e validar conflitos.
 - [ ] Centralizar publicação e leitura do catálogo elegível em Python.
 - [ ] Converter a ação de Lixo no histórico para formulário HTML.
 - [ ] Validar bases temporárias, ETL, APIs e navegação sem JavaScript.
