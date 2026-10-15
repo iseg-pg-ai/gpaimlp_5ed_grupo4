@@ -22,6 +22,19 @@ desta entrega.
 
 ## Próxima iteração do agente
 
+## Revisão integral do diretório — 2026-10-15
+
+- [x] Inventariar recursivamente o diretório, sem seguir a montagem EFS.
+- [ ] Remover ficheiros órfãos, experiências não integradas e artefactos locais.
+- [ ] Retirar dependências experimentais e tornar os grupos ativos opcionais explícitos.
+- [ ] Regenerar dependências e validar instalação, Python, tradução, portal e CI.
+
+Preservar as ferramentas do ambiente/IDE, fontes, propostas, backups, modelos
+locais e a entrega warehouse usada pelo portal. A montagem EFS sai do Git mas
+permanece disponível na instância.
+
+### Trabalho do agente
+
 - [ ] Definir o objetivo, as operações autorizadas e os critérios de aceitação.
 - [ ] Rever o serviço existente `src/blu_ai/` e os contratos de domínio do portal.
 - [ ] Definir esquemas de ações e validar respostas antes de alterar itinerários.
