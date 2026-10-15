@@ -329,3 +329,28 @@ Chromium de produção: consulta HTML com/sem JS em duas larguras; navegação e
 seis idiomas e duas larguras; briefing em duas larguras; TXT em três larguras,
 privacidade, Lixo/restauro e estado PDF preservado. Exports em armazenamento
 temporário e traduções com mocks. Sem publicação ou validação de fornecedores reais.
+
+## 2026-10-15 — Meteorologia Python e controlos HTML nativos
+
+Continuação no branch `refactor/html-python`, a partir de `cfcf325`.
+Coordenadas, WMO, leitura da previsão e fallback histórico passam integralmente
+para `portal/weather.py`. O navegador usa apenas a API local, com cache de
+resultados disponíveis. A API mantém GET e acrescenta POST para itens do dia;
+limita o pedido e não guarda indisponibilidade em cache. Dados ausentes não
+originam temperaturas fixas nem precipitação zero na apresentação.
+
+A ferramenta meteorológica do agente reutiliza essa implementação. Foram
+removidos as coordenadas duplicadas e o fallback que inventava temperaturas e
+condições favoráveis. Histórico é identificado como referência, não previsão.
+
+O painel usa popover HTML nativo com fecho por Escape, clique fora e botão.
+O histórico usa formulário GET para idioma e formato, sem estado React para
+construir os links; downloads funcionam sem JavaScript. Não se alteraram hashes,
+snapshots, contratos de persistência nem bytes PDF já guardados.
+
+Evidência: 96 testes Node aprovados e um ignorado; 37 Python aprovados; build
+aprovado. Chromium de produção: meteorologia simulada em 320/1440 px; downloads
+TXT em francês e ZIP PDF em duas larguras, com e sem JS, e privacidade preservada.
+Exports isolados em pasta temporária. Validação de erros da API sem contactar o
+fornecedor. Testes meteorológicos Python incluídos no CI de dados. Sem push,
+merge ou publicação.

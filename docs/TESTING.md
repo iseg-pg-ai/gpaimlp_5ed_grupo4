@@ -40,6 +40,22 @@ No build de produção passaram dataset, 12 cenários de navegação, dois de br
 e TXT/download em três larguras. Os cenários com escrita usaram exports
 num diretório temporário; as traduções usaram mocks.
 
+A continuação da migração acrescenta `tests/test_weather.py`: coordenadas,
+condições WMO, datas, previsão, histórico, falhas e ausência de dados, sempre com
+fornecedor simulado. Os testes do agente confirmam reutilização e ausência de
+valores inventados. Os testes Node de meteorologia cobrem o cliente HTTP e cache;
+as regras migradas são agora verificadas em Python.
+
+No navegador, `weather.mjs` verifica o popover nativo e precipitação desconhecida
+em 320/1440 px. `export-downloads.mjs` verifica TXT em francês, privacidade e ZIP
+PDF em 320/1440 px, com e sem JavaScript. Ambos integram `test:compliance`.
+Executar cenários com escrita numa instância com `BLU_EXPORT_DIR` temporário.
+
+Continuação validada em 2026-10-15: 96 testes Node aprovados e um ignorado,
+37 Python aprovados e build aprovado. Downloads reais no build de produção com
+exports temporários; meteorologia e tradução de interface com mocks. Não foi
+validado o fornecedor meteorológico real nesta execução.
+
 | Requisito | Cobertura principal |
 | --- | --- |
 | Categorias, horários, preços e curadoria | `curation`, `scheduling`, `catalog-matching`, `proposal-budget` |

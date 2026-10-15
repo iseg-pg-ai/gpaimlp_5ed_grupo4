@@ -40,6 +40,7 @@ não requer SageMaker SDK, MLflow ou outro ambiente experimental de treino.
 | API | `src/app/api/` | Validar pedidos e invocar os módulos de domínio |
 | Fontes e referências | `portal/data.py` | Ler, pesquisar, paginar e enriquecer dados históricos |
 | Consulta HTML | `dmc-workspace/templates/dataset-row.html` | Apresentar fontes escapadas; formulário e paginação no servidor |
+| Meteorologia | `portal/weather.py` | Coordenadas, condições WMO, previsão e histórico usados pelo portal e agente |
 | TXT/Canva Python | `portal/prompt.py` | Compor o TXT do snapshot com campos explícitos destinados ao cliente |
 | Domínio | `src/lib/` | Curadoria, compatibilidade, horários, orçamento e versões |
 | Serviço do agente | `src/blu_ai/api/server.py` | Expor saúde, curadoria e chat em FastAPI |
@@ -72,10 +73,19 @@ em Python, mantendo orçamento e pendências nas regras partilhadas com editor/P
 
 O editor, estado local, curadoria e horários usados no navegador continuam em
 TypeScript. Versões/SQLite e PDFKit mantêm os seus contratos no servidor Node.
-A meteorologia e a otimização de percursos têm consumidores no navegador e no
-servidor; a sua migração exigiria alterar essa fronteira. Converter estes módulos
-isoladamente criaria pedidos adicionais ou regras duplicadas. O objetivo desta
-etapa é migrar fluxos completos que não precisam dessa duplicação.
+A otimização de percursos ainda tem consumidores no navegador e no servidor;
+a sua migração exige rever essa fronteira sem duplicar regras.
+
+A meteorologia passou para `portal/weather.py`: o navegador chama a API local
+`/api/weather`, que usa o adaptador Python. GET mantém a consulta por coordenadas;
+POST aceita coordenadas dos itens do dia. As respostas disponíveis têm cache de
+30 minutos; indisponibilidade não é guardada em cache. O agente usa a mesma
+implementação e distingue histórico de previsão, sem inventar um clima favorável
+quando a consulta falha. Não foram acrescentadas dependências Python.
+
+O painel meteorológico usa `popover`, `popovertarget` e fecho HTML nativo, sem
+estado React de abertura nem listeners globais. O histórico usa formulário GET
+com idioma e dois botões de download, funcionando também sem JavaScript.
 
 ## Contratos a preservar
 

@@ -255,7 +255,7 @@ Abrir `https://DOMINIO-DO-TEU-STUDIO/codeeditor/default/ports/3001/`.
 Substituir o domínio pelo da própria instância. O script recompila com o prefixo
 antes de iniciar; um build criado sem esse prefixo não serve para este proxy.
 Requer Node 22.13 a 24.x; preserva uma versão compatível já selecionada.
-O serviço Python é opcional. Para o iniciar juntamente com o portal, acrescentar
+O serviço HTTP do agente Python é opcional. Para o iniciar com o portal, acrescentar
 `BLU_START_AGENT=1` ao comando, depois de preparar as dependências Python.
 
 O arranque valida a origem (apenas HTTPS, sem caminho), a porta e o prefixo.
@@ -315,6 +315,23 @@ node tests/browser/canva-prompt.mjs
 
 No Windows, definir `$env:BROWSER_CHANNEL = "msedge"` quando o Chromium do
 Playwright não estiver instalado.
+
+## Meteorologia e controlos HTML nativos
+
+O navegador consulta `/api/weather` no próprio portal. O servidor chama
+`portal/weather.py`, sem serviço adicional ou bibliotecas Python extra. Previsão
+e referência histórica são identificadas separadamente. Uma falha ou resposta
+incompleta não é substituída por temperaturas fixas. Precipitação ausente aparece
+como «Por confirmar». A mesma consulta é reutilizada pela ferramenta do agente.
+
+O painel de detalhes abre num popover HTML nativo. Pode ser fechado com Escape,
+clique fora ou o botão Fechar. A consulta dinâmica continua a precisar de
+JavaScript; a gestão de abertura e fecho é feita pelo navegador.
+
+Em `/exports`, escolher o idioma e carregar em **Descarregar PDFs** ou **TXT para
+Canva**. O formulário transmite versão, idioma e formato sem estado React e
+funciona sem JavaScript. O ZIP preserva os PDFs da versão; o TXT continua a
+excluir notas internas e contactos. PDF traduzido requer os modelos locais.
 
 ## Consulta das fontes em HTML
 

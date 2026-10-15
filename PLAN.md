@@ -29,8 +29,12 @@ eliminar operações existentes ou exigir uma segunda implementação em JavaScr
 - [x] Substituir a abertura/fecho do painel por popover HTML nativo.
 - [x] Migrar os downloads do histórico para formulário HTML sem estado React.
 - [x] Reutilizar a meteorologia Python na ferramenta do agente.
-- [ ] Validar fornecedor simulado, indisponibilidade, histórico, cache e navegação.
-- [ ] Atualizar arquitetura e evidência com commits separados.
+- [x] Validar fornecedor simulado, indisponibilidade, histórico, cache e navegação.
+- [x] Atualizar arquitetura e evidência com commits separados.
+
+96 testes Node aprovados e um ignorado; 37 Python aprovados; build aprovado.
+Popover em 320/1440 px; downloads TXT e ZIP PDF em duas larguras, com e sem JS.
+Meteorologia simulada e exports isolados num diretório temporário.
 
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
