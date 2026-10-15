@@ -81,7 +81,7 @@ def enrich_records(root: Path, records: list[dict]) -> list[dict]:
 
 def render_dataset(data: dict) -> str:
     """HTML sem scripts; todos os valores das fontes são escapados."""
-    template = Template((Path(__file__).parent / "templates/dataset-row.html").read_text(encoding="utf-8"))
+    template = Template((Path(__file__).resolve().parents[1] / "dmc-workspace/templates/dataset-row.html").read_text(encoding="utf-8"))
     fragments = []
     for index, row in enumerate(data["rows"]):
         title = next((row[key] for key in ("nome_da_atracao", "estabelecimento", "nome_da_experiencia", "id", "id_roteiro", "_source_sheet")

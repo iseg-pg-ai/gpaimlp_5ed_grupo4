@@ -316,6 +316,19 @@ node tests/browser/canva-prompt.mjs
 No Windows, definir `$env:BROWSER_CHANNEL = "msedge"` quando o Chromium do
 Playwright não estiver instalado.
 
+## Consulta das fontes em HTML
+
+Em `/references`, escolher a folha, escrever a pesquisa e carregar em **Filtrar**.
+A seleção e a pesquisa ficam no URL; os links Anterior/Seguinte conservam os
+filtros. O formulário, a paginação e os detalhes funcionam sem JavaScript.
+A tradução da interface continua disponível quando JavaScript está ativo.
+
+A pesquisa e o enriquecimento de fontes usam `portal/data.py`, com a biblioteca
+padrão Python. O portal usa `BLU_PYTHON`, o ambiente `.venv` ou o Python do sistema,
+por esta ordem. Não é necessário iniciar o agente ou outro servidor. Os registos
+são renderizados pelo template `dmc-workspace/templates/dataset-row.html`, com
+escaping das fontes; valores vazios aparecem como «—».
+
 ## Resolução de problemas
 
 - **Warehouse indisponível:** executar o ETL a partir da raiz.

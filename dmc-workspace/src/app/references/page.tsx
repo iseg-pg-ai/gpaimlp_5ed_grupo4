@@ -13,7 +13,17 @@ async function rows(name: string): Promise<Row[]> {
     .filter(Boolean)
     .map((line) => JSON.parse(line));
 }
-export default async function ReferencesPage() {
+export default async function ReferencesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = Object.fromEntries(
+    Object.entries(await searchParams).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? value[0] : (value ?? ""),
+    ]),
+  );
   let data: Row[][];
   try {
     data = await Promise.all(
@@ -46,7 +56,7 @@ export default async function ReferencesPage() {
       <Link href="/" className="underline">
         <T text="Voltar ao workspace" source="pt" />
       </Link>
-      <DatasetExplorer />
+      <DatasetExplorer params={params} />
       <h1 className="text-3xl mt-6 mb-3">
         <T text="Referências históricas" source="pt" />
       </h1>
