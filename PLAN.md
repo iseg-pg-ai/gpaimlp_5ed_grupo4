@@ -1,5 +1,16 @@
 # Plano de evolução do BLU AI System
 
+## Limpeza após migrações — 2026-10-15
+
+- [x] Remover adaptadores e operações sem consumidores de produção.
+- [x] Consolidar testes úteis e retirar cobertura duplicada entre Node e Python.
+- [x] Validar portal, Python e integração ETL; atualizar referências.
+
+Removido `dataset.test.mjs`; testes úteis integrados em infraestrutura e matching.
+Retirados comandos `enrich`/`catalog-id` e adaptadores sem consumidores de produção.
+95 testes Node aprovados, um ignorado; 44 Python aprovados; build e integração
+catálogo/ETL aprovados. Fontes e dados operacionais preservados.
+
 ## Migração incremental HTML/Python — 2026-10-15
 
 Base: `chore/project-cleanup` em `da8de67`; branch `refactor/html-python`.

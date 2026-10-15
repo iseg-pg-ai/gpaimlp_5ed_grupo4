@@ -383,3 +383,19 @@ isolada passaram edição HTTP, conflitos, publicação e inativação; o editor
 em seis idiomas e duas larguras com mocks; formulários, downloads, Lixo/restauro,
 erros e origens passaram com e sem JS. Usaram-se cópias temporárias de fontes,
 warehouse e exports. Sem merge, push ou publicação externa.
+
+## 2026-10-15 — limpeza após migração do catálogo
+
+Removidos os comandos internos `enrich` e `catalog-id`, usados apenas por testes
+Node que repetiam cobertura Python. A identidade histórica e o enriquecimento
+continuam implementados e testados em Python. Retirados o adaptador `legacyId` e
+o método `CatalogStore.publishedFlags`, sem consumidores de produção.
+
+Eliminado `dataset.test.mjs`: o teste de Python indisponível passa para
+`infrastructure.test.mjs` e as validações operacionais para
+`catalog-matching.test.mjs`. Corrigida a posição de `unittest.main()` para a
+execução direta incluir todas as classes do catálogo.
+
+Evidência: `npm run check` com 95 testes aprovados e um ignorado; 44 testes
+Python aprovados; build e integração catálogo/ETL aprovados em dados temporários.
+Não foram repetidos os cenários de navegador nesta limpeza.

@@ -29,7 +29,7 @@ python -B -m unittest tests.test_portal_data -v
 
 `tests/browser/dataset.mjs` verifica formulário GET, filtros, detalhes e
 paginação em 360/1440 px, com e sem JavaScript. `itinerary-prompt.test.mjs` chama
-a implementação Python através do adaptador; `dataset.test.mjs` cobre também
+a implementação Python através do adaptador; `infrastructure.test.mjs` cobre também
 Python indisponível. Estes testes Node precisam de Python instalado. A seleção
 segue `BLU_PYTHON`, `.venv` e Python do sistema. O CI de dados inclui os testes
 Python do portal e é acionado por alterações em `portal/` e nos templates HTML.
