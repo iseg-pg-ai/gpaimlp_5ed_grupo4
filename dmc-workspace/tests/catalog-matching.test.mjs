@@ -1,3 +1,4 @@
+import { operationalFromSource, validateOperational } from "../src/lib/catalog-operational.ts";
 import { emptyPersonalization, validatePersonalization } from "../src/lib/brief-personalization.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -243,4 +244,18 @@ test("accompaniment requires explicit matching modality, not inferred descriptio
     }).map((i) => i.title),
     ["NoGuide"],
   );
+});
+
+test("operational data retains explicit unknowns and rejects incomplete coordinates", () => {
+  const value = operationalFromSource({
+    latitude: 38.7,
+    longitude: -9.1,
+    dias_de_encerramento: "Segunda",
+    observacoes: "Por confirmar",
+  });
+  assert.doesNotThrow(() => validateOperational(value));
+  assert.equal(value.closures, "Segunda");
+  assert.throws(() => validateOperational({ ...value, latitude: "91" }));
+  assert.throws(() => validateOperational({ ...value, longitude: "" }));
+  assert.doesNotThrow(() => validateOperational(operationalFromSource({})));
 });

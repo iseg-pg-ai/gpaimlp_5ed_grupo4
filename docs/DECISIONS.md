@@ -301,3 +301,101 @@ O teste de briefing verifica campos sem identificação ou rótulo, labels órf�
 e IDs duplicados. Chromium aprovou os cenários de 360 e 1440 px, incluindo
 revisão, edição e payload. Check aprovado (100 testes e um ignorado) e build
 de produção aprovado.
+
+## 2026-10-15 — Migração incremental HTML/Python
+
+Branch `refactor/html-python`, criado de `chore/project-cleanup` em `da8de67`.
+A consulta, paginação, enriquecimento e preparação de referências históricas
+passam para `portal/data.py`. O explorador passa a formulário GET e links HTML,
+com registos renderizados por template local escapado. A pesquisa é aplicada
+explicitamente com Filtrar; filtros e página ficam no URL e funcionam sem JS.
+Valores vazios nas fontes são apresentados como «—» em todos os idiomas.
+
+A composição TXT/Canva passa para `portal/prompt.py`; orçamento e pendências
+continuam calculados pelas regras usadas pelo editor/PDF. O adaptador assíncrono
+`src/lib/python-portal.ts` usa stdin/stdout JSON, UTF-8, timeout e limite de saída.
+Não há novo servidor, dependências Python adicionais ou implementação duplicada.
+A consulta de fontes e TXT requerem agora Python mesmo sem tradução ou agente.
+
+O editor e as regras executadas no navegador permanecem em TypeScript. Não se
+migrou SQLite/versionamento ou PDFKit nesta etapa: preservar os contratos e a
+biblioteca atual evita reconstruir persistência e PDFs durante a simplificação.
+Meteorologia e otimização de percursos têm consumidores em ambos os ambientes.
+Uma migração futura deve rever essa fronteira antes de mudar a linguagem.
+
+Evidência: 101 testes do portal e 27 Python aprovados, um teste do portal
+ignorado, build aprovado; 24 TXT idênticos byte a byte à implementação anterior.
+Chromium de produção: consulta HTML com/sem JS em duas larguras; navegação em
+seis idiomas e duas larguras; briefing em duas larguras; TXT em três larguras,
+privacidade, Lixo/restauro e estado PDF preservado. Exports em armazenamento
+temporário e traduções com mocks. Sem publicação ou validação de fornecedores reais.
+
+## 2026-10-15 — Meteorologia Python e controlos HTML nativos
+
+Continuação no branch `refactor/html-python`, a partir de `cfcf325`.
+Coordenadas, WMO, leitura da previsão e fallback histórico passam integralmente
+para `portal/weather.py`. O navegador usa apenas a API local, com cache de
+resultados disponíveis. A API mantém GET e acrescenta POST para itens do dia;
+limita o pedido e não guarda indisponibilidade em cache. Dados ausentes não
+originam temperaturas fixas nem precipitação zero na apresentação.
+
+A ferramenta meteorológica do agente reutiliza essa implementação. Foram
+removidos as coordenadas duplicadas e o fallback que inventava temperaturas e
+condições favoráveis. Histórico é identificado como referência, não previsão.
+
+O painel usa popover HTML nativo com fecho por Escape, clique fora e botão.
+O histórico usa formulário GET para idioma e formato, sem estado React para
+construir os links; downloads funcionam sem JavaScript. Não se alteraram hashes,
+snapshots, contratos de persistência nem bytes PDF já guardados.
+
+Evidência: 96 testes Node aprovados e um ignorado; 37 Python aprovados; build
+aprovado. Chromium de produção: meteorologia simulada em 320/1440 px; downloads
+TXT em francês e ZIP PDF em duas larguras, com e sem JS, e privacidade preservada.
+Exports isolados em pasta temporária. Validação de erros da API sem contactar o
+fornecedor. Testes meteorológicos Python incluídos no CI de dados. Sem push,
+merge ou publicação.
+
+## 2026-10-15 — Catálogo SQLite Python e ação HTML de Lixo
+
+Continuação em `refactor/html-python`, a partir de `d22c13e`.
+`etl/portal_catalog.py` concentra a persistência operacional e a integração ETL.
+O esquema mantém as tabelas de registos e histórico. Escritas e verificações de
+revisão usam transações; o ETL continua a ler a fonte em modo read-only.
+As entradas são validadas e normalizadas pelo contrato TypeScript partilhado com
+o editor, antes do processo Python. Não há segundo esquema de validação.
+
+A seleção de IDs é partilhada com o ETL, preservando a semântica nullish do portal;
+267 IDs de dados e casos sintéticos coincidiram com a implementação anterior.
+A leitura elegível e os overrides de regras passam para Python; removeu-se o
+módulo TypeScript `published-catalog.ts`. As APIs usam chamadas assíncronas e
+continuam a devolver conflito 409 para revisões obsoletas.
+
+Os caminhos `BLU_DATA_DIR` e `BLU_WAREHOUSE_DIR` aplicam-se também à publicação,
+permitindo testes completos isolados. Os padrões de produção não mudam.
+O formulário POST do histórico envia versões para o Lixo sem JavaScript,
+valida a origem e redireciona com 303; erros regressam ao histórico. O contrato
+JSON do editor e do Lixo interativo permanece disponível. Não foram alterados os
+snapshots, hashes ou bytes PDF das versões existentes.
+
+Evidência: 96 testes Node aprovados e um ignorado; 44 Python aprovados; build
+aprovado; integração catálogo → ETL → geração → inativação aprovada. Em produção
+isolada passaram edição HTTP, conflitos, publicação e inativação; o editor passou
+em seis idiomas e duas larguras com mocks; formulários, downloads, Lixo/restauro,
+erros e origens passaram com e sem JS. Usaram-se cópias temporárias de fontes,
+warehouse e exports. Sem merge, push ou publicação externa.
+
+## 2026-10-15 — limpeza após migração do catálogo
+
+Removidos os comandos internos `enrich` e `catalog-id`, usados apenas por testes
+Node que repetiam cobertura Python. A identidade histórica e o enriquecimento
+continuam implementados e testados em Python. Retirados o adaptador `legacyId` e
+o método `CatalogStore.publishedFlags`, sem consumidores de produção.
+
+Eliminado `dataset.test.mjs`: o teste de Python indisponível passa para
+`infrastructure.test.mjs` e as validações operacionais para
+`catalog-matching.test.mjs`. Corrigida a posição de `unittest.main()` para a
+execução direta incluir todas as classes do catálogo.
+
+Evidência: `npm run check` com 95 testes aprovados e um ignorado; 44 testes
+Python aprovados; build e integração catálogo/ETL aprovados em dados temporários.
+Não foram repetidos os cenários de navegador nesta limpeza.

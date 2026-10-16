@@ -1,5 +1,66 @@
 # Plano de evolução do BLU AI System
 
+## Limpeza após migrações — 2026-10-15
+
+- [x] Remover adaptadores e operações sem consumidores de produção.
+- [x] Consolidar testes úteis e retirar cobertura duplicada entre Node e Python.
+- [x] Validar portal, Python e integração ETL; atualizar referências.
+
+Removido `dataset.test.mjs`; testes úteis integrados em infraestrutura e matching.
+Retirados comandos `enrich`/`catalog-id` e adaptadores sem consumidores de produção.
+95 testes Node aprovados, um ignorado; 44 Python aprovados; build e integração
+catálogo/ETL aprovados. Fontes e dados operacionais preservados.
+
+## Migração incremental HTML/Python — 2026-10-15
+
+Base: `chore/project-cleanup` em `da8de67`; branch `refactor/html-python`.
+
+- [x] Centralizar leitura, pesquisa e enriquecimento das fontes em Python.
+- [x] Substituir estado e fetch do explorador por formulário HTML no servidor.
+- [x] Mover a preparação das referências históricas para Python.
+- [x] Migrar a composição TXT/Canva para Python mantendo regras de domínio partilhadas.
+- [x] Validar APIs, erros, escaping, navegação sem JavaScript e idiomas.
+- [x] Atualizar arquitetura e comandos, com commits separados por etapa.
+
+Resultados: 101 testes do portal aprovados e um ignorado; 27 testes Python
+aprovados; build aprovado. Consulta HTML em 360/1440 px, com e sem JavaScript;
+12 cenários de navegação em seis idiomas; briefing em duas larguras; downloads
+TXT em três larguras. 24 exportações TXT comparadas byte a byte com a versão
+anterior. Exports de navegador num diretório temporário.
+
+Preservar o editor interativo, os contratos das versões, PDFs e tradução.
+Python usa a biblioteca padrão e não requer outro serviço nem instalação de
+framework. Não converter componentes interativos para HTML estático quando isso
+eliminar operações existentes ou exigir uma segunda implementação em JavaScript.
+
+## Continuação HTML/Python — meteorologia
+
+- [x] Migrar coordenadas, códigos WMO, previsão e fallback histórico para Python.
+- [x] Manter o navegador como consumidor da API do portal, com cache e falhas explícitas.
+- [x] Substituir a abertura/fecho do painel por popover HTML nativo.
+- [x] Migrar os downloads do histórico para formulário HTML sem estado React.
+- [x] Reutilizar a meteorologia Python na ferramenta do agente.
+- [x] Validar fornecedor simulado, indisponibilidade, histórico, cache e navegação.
+- [x] Atualizar arquitetura e evidência com commits separados.
+
+96 testes Node aprovados e um ignorado; 37 Python aprovados; build aprovado.
+Popover em 320/1440 px; downloads TXT e ZIP PDF em duas larguras, com e sem JS.
+Meteorologia simulada e exports isolados num diretório temporário.
+
+## Continuação HTML/Python — catálogo e histórico
+
+- [x] Migrar a persistência do catálogo para SQLite Python, preservando o esquema.
+- [x] Adaptar APIs e testes para operações assíncronas e validar conflitos.
+- [x] Centralizar publicação e leitura do catálogo elegível em Python.
+- [x] Converter a ação de Lixo no histórico para formulário HTML.
+- [x] Validar bases temporárias, ETL, APIs e navegação sem JavaScript.
+- [x] Atualizar documentação e CI com commits separados.
+
+96 testes Node aprovados e um ignorado; 44 Python aprovados; build e integração
+catálogo/ETL aprovados. 267 identificadores equivalentes. APIs reais com edição,
+conflito e publicação em dados temporários; editor em seis idiomas; histórico
+com e sem JavaScript em duas larguras.
+
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
 Base: dev em `a4b7626`; branch `chore/project-cleanup`.

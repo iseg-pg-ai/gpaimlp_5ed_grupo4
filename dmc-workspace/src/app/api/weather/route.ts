@@ -1,39 +1,61 @@
-import { fetchDayWeather } from "@/lib/weather";
-import { jsonError } from "@/lib/server-http";
-
+import type { DayWeatherResult, WeatherOptions } from "@/lib/weather";
+import { portalRequest } from "@/lib/python-portal";
+import { jsonError, noStoreHeaders } from "@/lib/server-http";
 export const runtime = "nodejs";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const date = searchParams.get("date");
-  const location = searchParams.get("location") || undefined;
-  const latStr = searchParams.get("lat");
-  const lonStr = searchParams.get("lon");
+const cache = new Map<string, { expires: number; result: DayWeatherResult }>();
 
-  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+async function respond(options: WeatherOptions) {
+  if (typeof options.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(options.date))
     return jsonError("Data inválida. Use o formato AAAA-MM-DD.", 400);
-  }
-
-  const latitude = latStr ? Number(latStr) : undefined;
-  const longitude = lonStr ? Number(lonStr) : undefined;
-
+  if (
+    (options.location !== undefined &&
+      (typeof options.location !== "string" || options.location.length > 500)) ||
+    (options.items !== undefined &&
+      (!Array.isArray(options.items) ||
+        options.items.length > 250 ||
+        options.items.some((item) => !item || typeof item !== "object")))
+  )
+    return jsonError("Localização inválida.", 400);
   try {
-    const result = await fetchDayWeather({
-      date,
-      location,
-      latitude,
-      longitude,
-    });
-
+    const key = JSON.stringify(options);
+    const cached = cache.get(key);
+    const result =
+      cached && cached.expires > Date.now()
+        ? cached.result
+        : await portalRequest<DayWeatherResult>("weather", "", options);
+    if (result.status === "available" && result !== cached?.result) {
+      if (cache.size >= 256) cache.delete(cache.keys().next().value!);
+      cache.set(key, { expires: Date.now() + 30 * 60 * 1000, result });
+    }
     return Response.json(result, {
-      headers: {
-        "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=86400",
-      },
+      headers:
+        result.status === "available"
+          ? { "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=86400" }
+          : noStoreHeaders,
     });
-  } catch (error) {
-    return jsonError(
-      error instanceof Error ? error.message : "Erro ao consultar a meteorologia.",
-      500,
-    );
+  } catch {
+    return jsonError("Meteorologia temporariamente indisponível.", 503, noStoreHeaders);
+  }
+}
+export async function GET(request: Request) {
+  const p = new URL(request.url).searchParams;
+  return respond({
+    date: p.get("date") ?? "",
+    location: p.get("location") || undefined,
+    latitude: p.get("lat") ? Number(p.get("lat")) : undefined,
+    longitude: p.get("lon") ? Number(p.get("lon")) : undefined,
+  });
+}
+export async function POST(request: Request) {
+  try {
+    const body = await request.text();
+    if (body.length > 64000) return jsonError("Pedido demasiado grande.", 413);
+    const options = JSON.parse(body);
+    if (!options || typeof options !== "object" || Array.isArray(options))
+      return jsonError("Pedido inválido.", 400);
+    return await respond(options);
+  } catch {
+    return jsonError("Pedido inválido.", 400);
   }
 }

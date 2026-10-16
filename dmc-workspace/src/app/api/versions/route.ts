@@ -87,7 +87,12 @@ export async function GET(request: Request) {
         path.resolve(process.cwd(), "../config/prompts/roteiro-visual-canva.txt"),
         "utf8",
       );
-      const text = renderItineraryPrompt(JSON.parse(row.snapshot), row, language, instructions);
+      const text = await renderItineraryPrompt(
+        JSON.parse(row.snapshot),
+        row,
+        language,
+        instructions,
+      );
       const filename = row.filename.replace(/\.pdf$/, `_Canva_${language.toUpperCase()}.txt`);
       return new Response(text, {
         headers: {

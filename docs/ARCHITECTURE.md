@@ -1,6 +1,7 @@
 # Arquitetura e âmbito do BLU AI System
 
-Revisto em 2026-10-15, a partir de `dev` em `a4b7626`.
+Revisto em 2026-10-15; migração incremental em `refactor/html-python`,
+a partir de `chore/project-cleanup` em `da8de67`.
 Este documento concentra o mapa do projeto, as capacidades e as fronteiras para
 a próxima iteração do agente. Os comandos estão no [README](../README.md),
 as tarefas no [plano](../PLAN.md) e o histórico em [decisões](DECISIONS.md).
@@ -32,17 +33,21 @@ não requer SageMaker SDK, MLflow ou outro ambiente experimental de treino.
 | --- | --- | --- |
 | ETL | `etl/pipeline.py` | Orquestrar ingestão, validação, analytics e publicação |
 | Fontes | `etl/sources.py`, `etl/structured.py` | Ler origens, preservar linhagem e auditar conflitos |
-| Catálogo operacional | `etl/portal_catalog.py` | Integrar as revisões aprovadas na publicação |
+| Catálogo operacional | `etl/portal_catalog.py` | Persistir revisões em SQLite e integrar a fonte na publicação ETL |
 | Análise | `dashboard/app.py` | Consumir a entrega do warehouse |
 | Portal | `dmc-workspace/src/app/page.tsx` | Compor o workspace e o fluxo do curador |
 | Estado do portal | `src/hooks/useWorkspace.ts`, `src/hooks/useCatalog.ts` | Coordenar estado e pedidos da interface |
 | API | `src/app/api/` | Validar pedidos e invocar os módulos de domínio |
+| Fontes e referências | `portal/data.py` | Ler, pesquisar, paginar e enriquecer dados históricos |
+| Consulta HTML | `dmc-workspace/templates/dataset-row.html` | Apresentar fontes escapadas; formulário e paginação no servidor |
+| Meteorologia | `portal/weather.py` | Coordenadas, condições WMO, previsão e histórico usados pelo portal e agente |
+| TXT/Canva Python | `portal/prompt.py` | Compor o TXT do snapshot com campos explícitos destinados ao cliente |
 | Domínio | `src/lib/` | Curadoria, compatibilidade, horários, orçamento e versões |
 | Serviço do agente | `src/blu_ai/api/server.py` | Expor saúde, curadoria e chat em FastAPI |
 | Orquestração do agente | `src/blu_ai/agents/curator_agent.py` | Coordenar modelo e ferramentas |
 | Ferramentas do agente | `src/blu_ai/tools/` | Pesquisa, meteorologia e verificação de restrições |
 | Tradução | `translations/worker.py` | Protocolo JSON-lines, modelos locais e cache |
-| TXT/Canva | `src/lib/itinerary-prompt.ts`, `plugins/blu-curadoria/` | Exportar o snapshot e orientar a composição visual |
+| Adaptador TXT/Canva | `src/lib/itinerary-prompt.ts`, `plugins/blu-curadoria/` | Reutilizar regras partilhadas e orientar a composição visual |
 
 Na tabela, `src/` pertence a `dmc-workspace/`, exceto os caminhos `src/blu_ai/`,
 que são relativos à raiz. As APIs e páginas do Next.js são entradas do framework;
@@ -51,6 +56,56 @@ não precisam de ser importadas por outro ficheiro para estarem em utilização.
 Os auxiliares HTTP partilhados ficam em `src/lib/http-client.ts`; os auxiliares
 das APIs do servidor em `src/lib/server-http.ts`. Os controlos básicos de
 formulário e o estilo de select ficam em `src/components/ui/form-controls.tsx`.
+
+## Fronteira HTML/Python
+
+`src/lib/python-portal.ts` executa operações locais em Python por stdin/stdout
+JSON, sem shell, servidor adicional ou dependências do agente. Há timeout e limite
+de saída; falhas do Python são reportadas sem manter uma segunda implementação
+TypeScript. A seleção do executável segue `BLU_PYTHON`, `.venv`, Python do sistema.
+O deployment conserva a raiz do repositório e os templates do portal.
+
+O explorador de fontes usa HTML servido pelo servidor: formulário GET, links e
+`details` nativos. Filtros ficam no URL e funcionam sem JavaScript. As partes
+traduzíveis mantêm o provider existente; valores de origem são dados escapados.
+As referências históricas chegam já relacionadas do Python. O TXT usa whitelist
+em Python, mantendo orçamento e pendências nas regras partilhadas com editor/PDF.
+
+O editor, estado local, curadoria e horários usados no navegador continuam em
+TypeScript. O histórico de versões e PDFKit mantêm os contratos no servidor Node.
+A otimização de percursos ainda tem consumidores no navegador e no servidor;
+a sua migração exige rever essa fronteira sem duplicar regras.
+
+A meteorologia passou para `portal/weather.py`: o navegador chama a API local
+`/api/weather`, que usa o adaptador Python. GET mantém a consulta por coordenadas;
+POST aceita coordenadas dos itens do dia. As respostas disponíveis têm cache de
+30 minutos; indisponibilidade não é guardada em cache. O agente usa a mesma
+implementação e distingue histórico de previsão, sem inventar um clima favorável
+quando a consulta falha. Não foram acrescentadas dependências Python.
+
+A persistência do catálogo pertence agora ao Python em `etl/portal_catalog.py`,
+com o mesmo esquema `catalog_records`/`catalog_history` e transações
+`BEGIN IMMEDIATE`. O adaptador `src/lib/catalog-store.ts` valida e normaliza as
+entradas com o contrato já usado no editor; Python recebe esses dados preparados.
+Não duplicar a validação na ferramenta do agente: escritas devem usar a API
+validada do portal. Identificadores de importação são partilhados com o ETL.
+
+A leitura do catálogo elegível, a verificação das revisões e os overrides de
+regras também ficam em Python. O antigo módulo `published-catalog.ts` foi removido.
+O ETL continua a ler o catálogo operacional em modo read-only, sem o modificar.
+Cada operação do portal abre e fecha a sua ligação; não há processo servidor novo.
+
+Para testes isolados, `BLU_DATA_DIR` e `BLU_WAREHOUSE_DIR` substituem os diretórios
+padrão, incluindo no endpoint de publicação. Caminhos relativos resolvem a partir
+da raiz do projeto. A base operacional fica em `BLU_DATA_DIR/portal/catalog.sqlite`.
+`BLU_EXPORT_DIR` continua a controlar apenas o histórico de versões e PDFs.
+
+O painel meteorológico usa `popover`, `popovertarget` e fecho HTML nativo, sem
+estado React de abertura nem listeners globais. O histórico usa formulário GET
+com idioma e dois botões de download, funcionando também sem JavaScript.
+O envio de versões para o Lixo no histórico
+também usa formulário POST, com verificação de origem e redirecionamento 303.
+A API JSON mantém o contrato do editor e do Lixo interativo.
 
 ## Contratos a preservar
 

@@ -1,3 +1,4 @@
+import { queryDataset } from "../src/lib/python-portal.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
@@ -129,4 +130,15 @@ test("Dev overlay prefixes root endpoints without changing external or already p
   assert.ok(transformed.includes("https://example.test/__nextjs_original-stack-frames"));
   assert.ok(!transformed.includes(`${prefix}${prefix}`));
   assert.equal(transform.call({ getOptions: () => ({ prefix: "" }) }, source), source);
+});
+
+test("missing Python fails explicitly without hanging or falling back to duplicated rules", async () => {
+  const previous = process.env.BLU_PYTHON;
+  process.env.BLU_PYTHON = path.join(tmpdir(), "blu-no-such-python", "python");
+  try {
+    await assert.rejects(queryDataset(tmpdir(), {}), /Python do portal indisponível/);
+  } finally {
+    if (previous === undefined) delete process.env.BLU_PYTHON;
+    else process.env.BLU_PYTHON = previous;
+  }
 });

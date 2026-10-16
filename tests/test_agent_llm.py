@@ -36,3 +36,28 @@ class AgentLlmTest(unittest.TestCase):
         session.return_value.get_credentials.return_value = None
         with self.assertRaisesRegex(RuntimeError, "Modelo de IA indisponível"):
             get_llm()
+
+
+class AgentWeatherTest(unittest.TestCase):
+    @patch("blu_ai.tools.weather_tools.fetch_day_weather")
+    def test_tool_reuses_portal_weather_and_labels_historical_data(self, weather):
+        from blu_ai.tools.weather_tools import get_weather_forecast
+        weather.return_value = {"status": "available", "weather": {
+            "maxTemp": 27, "minTemp": 17, "isRainy": False, "isHistorical": True,
+            "sourceUrl": "https://archive-api.open-meteo.com/v1/archive"}}
+        result = get_weather_forecast.invoke({"city": "Évora", "date": "2027-06-15"})
+        weather.assert_called_once_with({"date": "2027-06-15", "location": "Évora"})
+        self.assertTrue(result["is_historical"])
+        self.assertEqual(result["temp_max_c"], 27)
+        self.assertNotIn("precipitation_probability", result)
+        self.assertIn("não previsão", result["recommendation"])
+
+    @patch("blu_ai.tools.weather_tools.fetch_day_weather")
+    def test_unavailable_weather_does_not_invent_temperatures_or_dry_conditions(self, weather):
+        from blu_ai.tools.weather_tools import get_weather_forecast
+        weather.return_value = {"status": "unavailable", "messagePt": "Indisponível", "messageEn": "Unavailable"}
+        result = get_weather_forecast.invoke({"city": "Porto", "date": "2027-06-15"})
+        self.assertEqual(result["status"], "unavailable")
+        self.assertNotIn("temp_max_c", result)
+        self.assertNotIn("is_rainy", result)
+        self.assertNotIn("is_climatological_estimate", result)

@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { existsSync, mkdirSync, openSync, closeSync, unlinkSync } from "node:fs";
 import path from "node:path";
-import { projectRoot, catalogRoot } from "@/lib/catalog-store";
+import { projectRoot, catalogRoot, dataRoot, warehouseRoot } from "@/lib/catalog-store";
 import { jsonError, publicOrigin } from "@/lib/server-http";
 
 export const runtime = "nodejs";
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       (existsSync(localPython) ? localPython : process.platform === "win32" ? "python" : "python3");
     await promisify(execFile)(
       python,
-      ["-B", "-m", "etl.pipeline", "--data-dir", "data", "--output-dir", "warehouse"],
+      ["-B", "-m", "etl.pipeline", "--data-dir", dataRoot(), "--output-dir", warehouseRoot()],
       { cwd: root, timeout: 180000, maxBuffer: 4 * 1024 * 1024, windowsHide: true },
     );
     return Response.json({ ok: true });

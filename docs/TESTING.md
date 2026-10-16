@@ -19,6 +19,62 @@ Configuração AWS, URLs públicas e compatibilidade do plugin ESLint estão em
 Os testes de navegador partilham o arranque do Chromium, uma leitura nova da
 fixture por chamada e o mock de tradução em `tests/browser/helpers.mjs`.
 
+A migração HTML/Python acrescenta `tests/test_portal_data.py`: allowlist,
+pesquisa, paginação, enriquecimento, relações históricas, escaping de HTML e
+whitelist TXT. Executar da raiz com Python padrão:
+
+```bash
+python -B -m unittest tests.test_portal_data -v
+```
+
+`tests/browser/dataset.mjs` verifica formulário GET, filtros, detalhes e
+paginação em 360/1440 px, com e sem JavaScript. `itinerary-prompt.test.mjs` chama
+a implementação Python através do adaptador; `infrastructure.test.mjs` cobre também
+Python indisponível. Estes testes Node precisam de Python instalado. A seleção
+segue `BLU_PYTHON`, `.venv` e Python do sistema. O CI de dados inclui os testes
+Python do portal e é acionado por alterações em `portal/` e nos templates HTML.
+
+Validação da migração em 2026-10-15: 101 testes Node e 27 Python aprovados, um
+Node ignorado; build aprovado; 24 TXT idênticos byte a byte à versão anterior.
+No build de produção passaram dataset, 12 cenários de navegação, dois de briefing
+e TXT/download em três larguras. Os cenários com escrita usaram exports
+num diretório temporário; as traduções usaram mocks.
+
+A continuação da migração acrescenta `tests/test_weather.py`: coordenadas,
+condições WMO, datas, previsão, histórico, falhas e ausência de dados, sempre com
+fornecedor simulado. Os testes do agente confirmam reutilização e ausência de
+valores inventados. Os testes Node de meteorologia cobrem o cliente HTTP e cache;
+as regras migradas são agora verificadas em Python.
+
+No navegador, `weather.mjs` verifica o popover nativo e precipitação desconhecida
+em 320/1440 px. `export-downloads.mjs` verifica TXT em francês, privacidade e ZIP
+PDF em 320/1440 px, com e sem JavaScript. Ambos integram `test:compliance`.
+Executar cenários com escrita numa instância com `BLU_EXPORT_DIR` temporário.
+
+Continuação validada em 2026-10-15: 96 testes Node aprovados e um ignorado,
+37 Python aprovados e build aprovado. Downloads reais no build de produção com
+exports temporários; meteorologia e tradução de interface com mocks. Não foi
+validado o fornecedor meteorológico real nesta execução.
+
+A migração do catálogo é coberta por `tests/test_portal_catalog.py`: leitura do
+esquema existente sem reescrita, revisões, conflitos entre duas ligações,
+rollback das duas tabelas, importação idempotente, inativação e regras publicadas.
+`catalog.test.mjs` verifica as mesmas operações pelo adaptador assíncrono e as
+validações partilhadas. `npm run test:catalog-etl` cobre a integração real em
+pastas temporárias e inclui suporte explícito a TypeScript no Node 22.13.
+
+O cenário `export-downloads.mjs` cobre também envio para o Lixo por formulário,
+restauro JSON, erros apresentados no histórico e rejeição de origens externas ou
+ausentes. Passou em 320/1440 px, com e sem JavaScript.
+
+Validação desta continuação em 2026-10-15: 96 testes Node aprovados e um ignorado,
+44 Python aprovados, build e catálogo → ETL → geração aprovados. Compararam-se
+267 identificadores com a implementação anterior, todos iguais. Na produção
+isolada passaram as APIs reais de edição, conflito 409, publicação e inativação;
+o editor passou nos seis idiomas e duas larguras com API simulada. O formulário
+do histórico foi testado com downloads reais. Dados, warehouse e exports estavam
+em cópias temporárias. Não foi executado o comando integral de conformidade.
+
 | Requisito | Cobertura principal |
 | --- | --- |
 | Categorias, horários, preços e curadoria | `curation`, `scheduling`, `catalog-matching`, `proposal-budget` |

@@ -44,6 +44,11 @@ A página `/catalog` permite pesquisar, filtrar, criar, editar e inativar
 atividades, restaurantes e experiências. Os registos seguem os estados Rascunho,
 Em revisão, Aprovado e Inativo. Apenas os aprovados podem entrar na geração.
 
+A persistência do catálogo usa SQLite Python e mantém o esquema existente.
+As validações de entrada são partilhadas com o editor em TypeScript; cada edição
+é guardada com verificação de revisão numa transação. Uma edição concorrente
+obsoleta devolve conflito 409 e exige reabrir o registo.
+
 O editor guarda a oferta e o histórico em `data/portal/catalog.sqlite`. O ETL
 publica os registos aprovados no warehouse; não se deve editar `warehouse/`
 manualmente. Os preços estruturados incluem valor, moeda, unidade e estado
@@ -255,7 +260,7 @@ Abrir `https://DOMINIO-DO-TEU-STUDIO/codeeditor/default/ports/3001/`.
 Substituir o domínio pelo da própria instância. O script recompila com o prefixo
 antes de iniciar; um build criado sem esse prefixo não serve para este proxy.
 Requer Node 22.13 a 24.x; preserva uma versão compatível já selecionada.
-O serviço Python é opcional. Para o iniciar juntamente com o portal, acrescentar
+O serviço HTTP do agente Python é opcional. Para o iniciar com o portal, acrescentar
 `BLU_START_AGENT=1` ao comando, depois de preparar as dependências Python.
 
 O arranque valida a origem (apenas HTTPS, sem caminho), a porta e o prefixo.
@@ -315,6 +320,50 @@ node tests/browser/canva-prompt.mjs
 
 No Windows, definir `$env:BROWSER_CHANNEL = "msedge"` quando o Chromium do
 Playwright não estiver instalado.
+
+## Meteorologia e controlos HTML nativos
+
+O navegador consulta `/api/weather` no próprio portal. O servidor chama
+`portal/weather.py`, sem serviço adicional ou bibliotecas Python extra. Previsão
+e referência histórica são identificadas separadamente. Uma falha ou resposta
+incompleta não é substituída por temperaturas fixas. Precipitação ausente aparece
+como «Por confirmar». A mesma consulta é reutilizada pela ferramenta do agente.
+
+O painel de detalhes abre num popover HTML nativo. Pode ser fechado com Escape,
+clique fora ou o botão Fechar. A consulta dinâmica continua a precisar de
+JavaScript; a gestão de abertura e fecho é feita pelo navegador.
+
+Em `/exports`, **Enviar para o Lixo** usa um formulário HTML e funciona sem
+JavaScript. Após o POST, o histórico é recarregado; erros aparecem no próprio
+histórico. Os formulários exigem origem válida. A API JSON e o restauro no Lixo
+interativo continuam disponíveis.
+
+Em `/exports`, escolher o idioma e carregar em **Descarregar PDFs** ou **TXT para
+Canva**. O formulário transmite versão, idioma e formato sem estado React e
+funciona sem JavaScript. O ZIP preserva os PDFs da versão; o TXT continua a
+excluir notas internas e contactos. PDF traduzido requer os modelos locais.
+
+## Consulta das fontes em HTML
+
+Em `/references`, escolher a folha, escrever a pesquisa e carregar em **Filtrar**.
+A seleção e a pesquisa ficam no URL; os links Anterior/Seguinte conservam os
+filtros. O formulário, a paginação e os detalhes funcionam sem JavaScript.
+A tradução da interface continua disponível quando JavaScript está ativo.
+
+A pesquisa e o enriquecimento de fontes usam `portal/data.py`; a composição
+TXT/Canva usa `portal/prompt.py`. Ambos usam apenas a biblioteca
+padrão Python. O portal usa `BLU_PYTHON`, o ambiente `.venv` ou o Python do sistema,
+por esta ordem. Não é necessário iniciar o agente ou outro servidor. Os registos
+são renderizados pelo template `dmc-workspace/templates/dataset-row.html`, com
+escaping das fontes; valores vazios aparecem como «—».
+
+### Isolar dados de testes
+
+`BLU_DATA_DIR` define a pasta de fontes e a base `portal/catalog.sqlite`;
+`BLU_WAREHOUSE_DIR` define a entrega publicada. O endpoint de publicação usa os
+mesmos caminhos, permitindo testar edição e ETL sem tocar nas pastas reais.
+Para versões e PDFs temporários, definir também `BLU_EXPORT_DIR`. As fontes
+necessárias devem existir no diretório de dados escolhido.
 
 ## Resolução de problemas
 

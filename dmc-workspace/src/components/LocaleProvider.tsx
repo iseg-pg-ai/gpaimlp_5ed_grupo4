@@ -1,5 +1,5 @@
 "use client";
-import { portalFetch, portalUrl } from "@/lib/http-client";
+import { portalFetch } from "@/lib/http-client";
 
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { languages, isLocale, type Locale } from "@/lib/locales";
@@ -212,29 +212,4 @@ export function LocalizedInput(props: React.InputHTMLAttributes<HTMLInputElement
 export function LocalizedTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const placeholder = useTranslated(props.placeholder ?? "");
   return <Textarea {...props} placeholder={placeholder} />;
-}
-export function ExportLanguageLinks({ tripId, version }: { tripId: string; version: number }) {
-  const [language, setLanguage] = useState<Locale>("en");
-  return (
-    <div className="flex flex-wrap items-center gap-3 my-3">
-      <T text="Idioma do cliente" source="pt" />
-      <LanguagePicker value={language} onChange={setLanguage} />
-      <a
-        className="underline"
-        href={portalUrl(
-          `/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=bundle&locale=${language}`,
-        )}
-      >
-        <T text="Descarregar PDFs" source="pt" />
-      </a>
-      <a
-        className="underline"
-        href={portalUrl(
-          `/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=prompt&locale=${language}`,
-        )}
-      >
-        <T text="TXT para Canva" source="pt" />
-      </a>
-    </div>
-  );
 }
