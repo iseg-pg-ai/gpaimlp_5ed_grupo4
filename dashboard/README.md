@@ -21,8 +21,8 @@ altura de 420 px e largura adaptável ao cartão, evitando bandas laterais.
 - As camadas do mapa não alteram os filtros ou a comparação do catálogo.
 - Compare duas a quatro opções da seleção atual, preservando unidades e condições
   nas descrições da fonte; não é calculado um vencedor ou preço agregado.
-- O painel Destinos usa a localização literal da fonte, sem geocodificar ou atribuir
-  experiências regionais a cidades por aproximação.
+- O painel Destinos usa a harmonização do ETL, preservando a localização original
+  e o âmbito regional. Não geocodifica ou atribui locais ambíguos por aproximação.
 - As fichas de atrações consultam `id_atracao_base` para contar roteiros distintos.
   Ausência de relação não significa ausência de procura. Restaurantes e experiências
   não recebem correspondências inferidas por nome.
@@ -34,3 +34,12 @@ altura de 420 px e largura adaptável ao cartão, evitando bandas laterais.
 
 Validação dos contratos: `PYTHONPATH=src .venv/bin/python -B -m unittest tests.test_dashboard -v`.
 Os testes são ignorados se o grupo opcional `dashboard` não estiver instalado.
+
+## Conclusão dos contratos
+
+Destinos e unidades seguem o contrato partilhado do ETL. As fichas e a área de
+qualidade mostram confirmação e validade por campo, reavaliadas à data atual.
+O painel Destinos apresenta fotografias locais de Lisboa e Porto com licença
+CC0 e créditos; os restantes destinos não recebem imagens por aproximação.
+
+Ver [contratos, metadados na origem e créditos](../docs/OBSERVATORY.md).

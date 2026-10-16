@@ -353,8 +353,8 @@ planos anteriores permanece no Git.
 - [x] Comparar preços por categoria, unidade e natureza comercial declaradas.
 - [x] Distinguir integridade, preenchimento e confirmação; expor lacunas e revisão.
 - [x] Validar execução das cinco páginas e navegação local no navegador.
-- [ ] Harmonizar localizações e unidades através dos contratos do ETL.
-- [ ] Definir confirmação comercial e validade temporal por campo na fonte.
+- [x] Harmonizar localizações e unidades através dos contratos do ETL.
+- [x] Definir confirmação comercial e validade temporal por campo na fonte.
 
 Dashboard só de leitura; sem alteração das fontes, catálogo operacional ou warehouse.
 Mapa com contornos locais Natural Earth da Europa e norte de África, sem mosaicos externos; coordenadas válidas em intervalo não certificam a
@@ -364,15 +364,35 @@ localização. Experiências sem coordenadas continuam pesquisáveis na lista.
 
 - [x] Ligar seleção de pontos às fichas, preservando identificadores por tipo.
 - [x] Comparar duas a quatro opções com duração, condições, acessibilidade e fonte.
-- [x] Acrescentar painel por destino com correspondência literal das localizações.
+- [x] Acrescentar painel por destino harmonizado, preservando as localizações originais.
 - [x] Acrescentar camadas, nomes de lugares e agrupamento aproximado com membros.
 - [x] Acrescentar fila de revisão com prioridades explícitas e acesso às fichas.
 - [x] Mostrar presença histórica apenas através da relação explícita de atrações.
 - [x] Acrescentar modo apresentação com navegação e saída acessíveis.
 - [x] Alinhar mapas, tabelas e gráficos adjacentes em 420 px e uniformizar as divisórias da navegação.
-- [ ] Acrescentar fotografias quando existirem imagens com autorização e créditos.
+- [x] Acrescentar fotografias quando existirem imagens com autorização e créditos (Lisboa e Porto, CC0).
 
 Validação desta etapa: 51 testes Python aprovados, incluindo sete contratos do
 dashboard. AppTest nas seis áreas, comparação, filtros e camadas vazias; navegador
 local com cliques em pontos/grupos, comparação, destino Lisboa, apresentação e
 vista móvel sem transbordo horizontal. Sem chamadas a IA ou alteração dos dados.
+
+### Conclusão do Observatório — 2026-10-16
+
+Contratos versionados para destinos, âmbito geográfico, unidades e condições;
+valores originais preservados. Modelos ETL com evidência por campo, confirmação
+vinculada ao valor e validade reavaliada à data da consulta. Metadados opcionais
+na fonte definidos no [guia do Observatório](docs/OBSERVATORY.md). Fotografias
+locais CC0 de Lisboa e Porto, com créditos, origem e SHA-256.
+
+Na entrega atual, 251 de 252 localizações têm destino harmonizado; o registo
+«Por confirmar» continua pendente. Unidades sem base de cobrança explícita e
+campos sem evidência comercial continuam desconhecidos; a implementação não
+substitui a confirmação pelos responsáveis das fontes. Compatibilidade com o
+warehouse existente através do mesmo contrato, sem reescrever dados reais.
+
+Validação final: 66 testes Python aprovados, integração catálogo/ETL aprovada
+em armazenamento temporário, seis áreas verificadas em AppTest e navegador
+local com seleção, grupos, comparação, destino Lisboa, fotografia, apresentação
+e vista móvel sem transbordo. Markdown e ligações locais sem erros. Fontes e
+warehouse reais inalterados; sem chamadas pagas ou publicação cloud.

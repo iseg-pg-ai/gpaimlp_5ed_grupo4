@@ -4,6 +4,8 @@ from __future__ import annotations
 import json
 from html import escape as escape_plot_text
 import math
+import hashlib
+from datetime import datetime, timezone
 import sqlite3
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -24,6 +26,28 @@ def query(sql: str, params: tuple = ()) -> pd.DataFrame:
     """Ler a entrega publicada, sem cache que sobreviva a uma nova publicação."""
     with sqlite3.connect(f"file:{DATABASE.as_posix()}?mode=ro", uri=True) as connection:
         return pd.read_sql_query(sql, connection, params=params)
+
+
+def table_exists(name: str) -> bool:
+    return not query("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (name,)).empty
+
+
+def model_data(name: str) -> pd.DataFrame:
+    from etl.observatory import build_observatory
+    allowed = {"model_observatory_catalog", "model_observatory_prices", "model_field_evidence"}
+    if name not in allowed:
+        raise ValueError("Modelo analítico desconhecido")
+    if table_exists(name):
+        return query(f'SELECT * FROM "{name}"')
+    # Compatibilidade com entregas anteriores: usar o mesmo contrato do ETL
+    # sobre um snapshot só de leitura, sem reescrever ou criar outro catálogo.
+    with sqlite3.connect(f"file:{DATABASE.as_posix()}?mode=ro", uri=True) as connection:
+        connection.execute("BEGIN")
+        tables = {}
+        for table in ("atracoes", "restaurantes", "experiencias", "precos"):
+            data = pd.read_sql_query(f'SELECT * FROM "{table}"', connection)
+            tables[table] = data.astype(object).where(pd.notna(data), None).to_dict("records")
+    return pd.DataFrame(build_observatory(tables)[name])
 
 
 def load_json(name: str) -> dict:
@@ -48,8 +72,62 @@ def catalog_data() -> pd.DataFrame:
         modalidade, acessibilidade_nivel_de_confirmacao FROM experiencias
     """)
     frame["Chave"] = frame.Tipo + ":" + frame.Identificador.astype(str)
+    normalized = model_data("model_observatory_catalog").rename(columns={"entity_key": "Chave", "destination": "Destino", "geographic_scope": "Âmbito geográfico", "location_rule": "Regra geográfica"})
+    frame = frame.merge(normalized[["Chave", "Destino", "Âmbito geográfico", "Regra geográfica"]], on="Chave", how="left", validate="one_to_one")
     return frame
 
+
+
+def evidence_frame(entity_key: str | None = None) -> pd.DataFrame:
+    from etl.observatory import iso_date, temporal_state
+    rows = model_data("model_field_evidence")
+    if entity_key:
+        rows = rows[rows.entity_key == entity_key]
+    today = datetime.now(timezone.utc).date()
+    temporal_labels = {"vigente": "Dentro do prazo", "expirada": "Expirado", "não_iniciada": "Ainda não iniciado", "prazo_desconhecido": "Sem prazo definido"}
+    confirmation_labels = {"confirmado": "Confirmado", "estimado": "Estimado", "pendente": "Por confirmar", "contestado": "Contestado"}
+    output = []
+    for row in rows.to_dict("records"):
+        # SQLite devolve ausências como None ou NaN, conforme a afinidade da coluna.
+        clean = lambda value: None if pd.isna(value) else value
+        temporal = temporal_state(iso_date(clean(row["valid_from"])), iso_date(clean(row["valid_until"])), today)
+        output.append({"Registo": row["name"], "Campo": row["field_label"],
+                       "Confirmação": confirmation_labels[row["confirmation"]],
+                       "Verificado em": clean(row["verified_on"]), "Válido desde": clean(row["valid_from"]),
+                       "Válido até": clean(row["valid_until"]), "Estado temporal": temporal_labels[temporal],
+                       "Fonte de confirmação": clean(row["evidence_source"]),
+                       "Evidência vigente": "Sim" if row["confirmation"] == "confirmado" and temporal == "vigente" else "Não",
+                       "Reavaliado em": today.isoformat()})
+    return pd.DataFrame(output)
+
+
+def field_evidence(row: pd.Series) -> None:
+    with st.expander("Confirmação e validade dos campos"):
+        st.dataframe(evidence_frame(row.Chave), hide_index=True, width="stretch")
+        st.caption("Confirmação exige fonte, data de verificação e o mesmo valor. Evidência vigente exige ainda uma janela temporal completa. Não certifica disponibilidade nem reserva.")
+
+
+def destination_photo(destination: str) -> None:
+    folder = Path(__file__).with_name("assets")
+    manifest = folder / "photos.json"
+    if not manifest.exists():
+        return
+    for photo in json.loads(manifest.read_text(encoding="utf-8")):
+        if photo.get("destination") != destination:
+            continue
+        image = (folder / photo["file"]).resolve()
+        if not image.is_relative_to(folder.resolve()) or not image.is_file():
+            continue
+        if photo.get("license") != "CC0 1.0" or not photo.get("author") or not photo.get("source"):
+            continue
+        if hashlib.sha256(image.read_bytes()).hexdigest() != photo.get("sha256"):
+            st.warning("A fotografia foi alterada e precisa de revisão dos seus créditos.")
+            return
+        with st.container(key="destination_photo"):
+            st.image(str(image), caption=photo["caption"], width="stretch")
+        st.caption(f"Fotografia: {photo['author']} · {photo['license']}. Imagem histórica de enquadramento, sem representar uma atividade específica.")
+        st.link_button("Origem e direitos da fotografia", photo["source"])
+        return
 
 
 def style() -> None:
@@ -200,7 +278,7 @@ def historical_mentions(row: pd.Series) -> pd.DataFrame:
 def record_detail(row: pd.Series) -> None:
     with st.container(border=True):
         st.subheader(str(row.Nome))
-        for field in ("Tipo", "Localização", "Categoria", "Descrição", "Duração", "Horário", "Preço", "Condições", "Acessibilidade", "Fonte"):
+        for field in ("Tipo", "Destino", "Âmbito geográfico", "Localização", "Categoria", "Descrição", "Duração", "Horário", "Preço", "Condições", "Acessibilidade", "Fonte"):
             st.text(f"{field}: {display_value(row[field])}")
         source = display_value(row.Fonte).strip()
         try:
@@ -210,6 +288,7 @@ def record_detail(row: pd.Series) -> None:
         except ValueError:
             pass  # Uma fonte textual ou URL inválida continua visível na ficha.
         st.caption("Referência de catálogo. Durações podem ser estimativas; confirmar preços, condições e acessibilidade antes de apresentar ao cliente.")
+        field_evidence(row)
         mentions = historical_mentions(row)
         if row.Tipo != "Atração":
             st.info("Esta entidade não dispõe de uma relação explícita com o catálogo no histórico. Não foi inferida uma correspondência pelo nome.")
@@ -249,7 +328,7 @@ def comparison(frame: pd.DataFrame) -> None:
     if len(chosen) < 2:
         st.caption("Selecione pelo menos duas opções da seleção atual.")
         return
-    fields = ["Tipo", "Localização", "Categoria", "Duração", "Horário", "Preço", "Condições", "Acessibilidade", "Fonte"]
+    fields = ["Tipo", "Destino", "Localização", "Categoria", "Duração", "Horário", "Preço", "Condições", "Acessibilidade", "Fonte"]
     table = indexed.loc[chosen, fields].map(display_value).T
     table.columns = [f"{indexed.at[value, 'Nome']} · {indexed.at[value, 'Tipo']}" for value in chosen]
     st.dataframe(table, width="stretch")
@@ -288,11 +367,16 @@ def review_queue(frame: pd.DataFrame) -> None:
 
 def destinations(frame: pd.DataFrame) -> None:
     heading("03 — TERRITÓRIO", "Um destino, muitas perspetivas.", "Explore a profundidade da oferta e as referências que ainda precisam de revisão.")
-    place = st.selectbox("Destino / localização registada", sorted(frame.Localização.dropna().unique()))
-    subset = frame[frame.Localização == place]
+    options = sorted(frame.Destino.dropna().unique())
+    if not options:
+        st.info("Atualize a entrega ETL para publicar os destinos harmonizados.")
+        return
+    place = st.selectbox("Destino harmonizado", options)
+    subset = frame[frame.Destino == place]
+    destination_photo(place)
     counts = subset.Tipo.value_counts()
     metrics([(kind.upper(), int(counts.get(kind, 0)), "registos nesta localização") for kind in ("Atração", "Restaurante", "Experiência")])
-    st.caption("Correspondência exata com a localização da fonte. Experiências descritas por região ou por vários lugares não são atribuídas automaticamente a uma cidade.")
+    st.caption("Destinos harmonizados pelo contrato do ETL. A descrição original e o âmbito geográfico são preservados; localizações ambíguas ficam por confirmar.")
     selected = map_chart(subset, key="destination_map")
     a, b = st.columns(2)
     with a:
@@ -325,11 +409,11 @@ def overview(frame: pd.DataFrame, validation: dict) -> None:
             show_selection(frame, selected, key="overview_detail")
     with right:
         st.subheader("Oferta por localização")
-        cities = frame[frame.Tipo != "Experiência"].groupby(["Localização", "Tipo"]).size().reset_index(name="Registos")
+        cities = frame.groupby(["Destino", "Tipo"]).size().reset_index(name="Registos").rename(columns={"Destino": "Localização"})
         top = cities.groupby("Localização").Registos.sum().nlargest(8).index
         chart(px.bar(cities[cities.Localização.isin(top)], x="Registos", y="Localização", color="Tipo",
                      orientation="h", color_discrete_sequence=COLORS, height=MAP_HEIGHT))
-        st.caption("Top 8 das localizações registadas em atrações e restaurantes. As experiências usam descrições de localização distintas e são exploradas separadamente.")
+        st.caption("Top 8 dos destinos harmonizados, incluindo experiências. As descrições originais são preservadas nas fichas; destinos regionais não são apresentados como cidades.")
     st.divider()
     st.subheader("O próximo passo começa nos dados")
     metrics([("INTEGRIDADE", validation["issue_count"], "ocorrências nos controlos do ETL"),
@@ -343,9 +427,9 @@ def explore(frame: pd.DataFrame) -> None:
     a, b, c = st.columns(3)
     kinds = a.multiselect("Tipo de oferta", sorted(frame.Tipo.unique()))
     subset = frame[frame.Tipo.isin(kinds)] if kinds else frame
-    places = b.multiselect("Localização registada", sorted(subset.Localização.dropna().unique()))
+    places = b.multiselect("Destino harmonizado", sorted(subset.Destino.dropna().unique()))
     if places:
-        subset = subset[subset.Localização.isin(places)]
+        subset = subset[subset.Destino.isin(places)]
     categories = c.multiselect("Categoria", sorted(subset.Categoria.dropna().unique()))
     if categories:
         subset = subset[subset.Categoria.isin(categories)]
@@ -358,7 +442,7 @@ def explore(frame: pd.DataFrame) -> None:
     with left:
         selected_keys = map_chart(subset, key="explore_map", options=options)
     with right:
-        st.dataframe(subset[["Nome", "Tipo", "Localização", "Categoria"]], hide_index=True, width="stretch", height=MAP_HEIGHT)
+        st.dataframe(subset[["Nome", "Tipo", "Destino", "Localização", "Categoria"]], hide_index=True, width="stretch", height=MAP_HEIGHT)
     if subset.empty:
         st.info("Nenhum resultado. Experimente retirar um filtro.")
         return
@@ -368,22 +452,30 @@ def explore(frame: pd.DataFrame) -> None:
 
 def pricing() -> None:
     heading("04 — REFERÊNCIAS", "Cada preço tem um contexto.", "Compare apenas referências com a mesma categoria, unidade e natureza comercial declarada.")
-    frame = query("SELECT categoria AS Categoria, nome_modalidade AS Modalidade, local AS Local, unidade AS Unidade, preco_referencia_eur AS 'Referência EUR', preco_publico_vs_custo AS Natureza, estado AS Estado, fonte AS Fonte, data_de_verificacao AS Verificação FROM precos")
+    frame = query("SELECT id AS Identificador, categoria AS Categoria, nome_modalidade AS Modalidade, local AS Local, unidade AS Unidade, preco_referencia_eur AS 'Referência EUR', preco_publico_vs_custo AS Natureza, estado AS Estado, fonte AS Fonte, data_de_verificacao AS Verificação FROM precos")
     metrics([("REFERÊNCIAS", len(frame), "registos de preço; não ofertas únicas"),
              ("COM VALOR", int(frame['Referência EUR'].notna().sum()), "valores de referência em EUR"),
              ("SEM VALOR", int(frame['Referência EUR'].isna().sum()), "desconhecido não significa zero")])
+    units = model_data("model_observatory_prices").rename(columns={"record_id": "Identificador", "normalized_unit": "Unidade normalizada", "unit_rule": "Regra de unidade", "destination": "Destino"})
+    frame = frame.merge(units[["Identificador", "Unidade normalizada", "Regra de unidade", "Destino"]], on="Identificador", how="left", validate="one_to_one")
     a, b, c = st.columns(3)
     category = a.selectbox("Categoria", sorted(frame.Categoria.dropna().unique()))
     subset = frame[frame.Categoria == category]
-    unit = b.selectbox("Unidade declarada", sorted(subset.Unidade.dropna().unique()))
-    subset = subset[subset.Unidade == unit]
+    subset = subset.copy()
+    subset["Unidade normalizada"] = subset["Unidade normalizada"].fillna("Por confirmar")
+    unit = b.selectbox("Unidade harmonizada", sorted(subset['Unidade normalizada'].unique()))
+    subset = subset[subset['Unidade normalizada'] == unit]
     nature = c.selectbox("Natureza comercial", sorted(subset.Natureza.dropna().unique()))
     subset = subset[subset.Natureza == nature]
-    values = subset.dropna(subset=["Referência EUR"])
+    raw_unit = st.selectbox("Condições / unidade na fonte", sorted(subset.Unidade.dropna().unique()))
+    subset = subset[subset.Unidade == raw_unit]
+    values = subset.dropna(subset=["Referência EUR"]) if unit != "Por confirmar" else subset.iloc[0:0]
+    if unit == "Por confirmar":
+        st.warning("A unidade não está confirmada. Os valores são apresentados sem estatística comparativa.")
     if not values.empty:
         st.metric("Mediana da seleção · EUR", f"{values['Referência EUR'].median():.2f}")
         chart(px.box(values, y="Referência EUR", points="all", hover_name="Modalidade", color_discrete_sequence=COLORS))
-    else:
+    elif unit != "Por confirmar":
         st.info("Esta seleção não tem valores numéricos de referência.")
     st.dataframe(subset, hide_index=True, width="stretch")
     st.caption("A mesma unidade pode ter condições diferentes. Valores públicos, custos e referências por validar não constituem uma cotação nem permitem calcular margens.")
@@ -421,7 +513,17 @@ def quality(validation: dict) -> None:
         st.subheader("Lacunas declaradas na entrega")
         st.dataframe(frame.sort_values("Em falta", ascending=False), hide_index=True, width="stretch")
         st.caption("As tabelas estruturadas e o catálogo são camadas distintas; não somar estas lacunas como entidades únicas. Texto como «por confirmar» também exige revisão, mesmo estando preenchido.")
-    review_queue(catalog_data())
+    st.subheader("Confirmação e validade por campo")
+    fields = evidence_frame()
+    metrics([("CONFIRMAÇÃO PENDENTE", int((fields['Confirmação'] == 'Por confirmar').sum()), "campos sem evidência completa"),
+             ("PRAZO DESCONHECIDO", int((fields['Estado temporal'] == 'Sem prazo definido').sum()), "campos sem janela temporal completa"),
+             ("PRAZO EXPIRADO", int((fields['Estado temporal'] == 'Expirado').sum()), "campos a rever na fonte")])
+    st.dataframe(fields, hide_index=True, width="stretch")
+    st.caption("Estado reavaliado à data da consulta; não é prolongado pela publicação do ETL. Ausência de evidência permanece pendente.")
+    st.subheader("Localizações por harmonizar")
+    catalog = catalog_data()
+    st.dataframe(catalog.loc[catalog.Destino.isna(), ["Nome", "Tipo", "Localização", "Regra geográfica"]], hide_index=True, width="stretch")
+    review_queue(catalog)
     st.subheader("Fila de revisão de preços")
     pending = query("SELECT nome_modalidade AS Modalidade, local AS Local, preco_publico_vs_custo AS Motivo, fonte AS Fonte FROM precos WHERE preco_publico_vs_custo = 'Referência anterior — validar'")
     st.dataframe(pending, hide_index=True, width="stretch")

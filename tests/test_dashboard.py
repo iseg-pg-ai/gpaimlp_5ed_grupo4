@@ -3,6 +3,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import hashlib
+import sqlite3
+import tempfile
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 
@@ -65,6 +69,50 @@ class DashboardContractsTest(unittest.TestCase):
         pending = app.review_items(frame)
         self.assertEqual(set(pending.Campo), {"Horário", "Condições"})
         self.assertEqual(pending.loc[pending.Campo == "Condições", "Prioridade"].iloc[0], "1 · Condições comerciais")
+
+    def test_existing_delivery_uses_etl_contract_without_writing_database(self):
+        from etl.pipeline import load_table
+        from etl.observatory import build_observatory
+        tables = {
+            'atracoes': [{'id': 'A1', 'cidade': 'Lisboa — Chiado', 'nome_da_atracao': 'Jardim'}],
+            'restaurantes': [{'id_blu': 'R1', 'cidade': 'Porto', 'estabelecimento': 'Mesa'}],
+            'experiencias': [{'nome_da_experiencia': 'Prova', 'localizacao': 'Azeitão'}],
+            'precos': [{'id': 'P1', 'unidade': 'Compartilhada'}],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / 'warehouse.sqlite'
+            with sqlite3.connect(database) as connection:
+                for name, rows in tables.items():
+                    load_table(connection, name, rows)
+            before = database.read_bytes()
+            with patch.object(app, 'DATABASE', database):
+                frame = app.model_data('model_observatory_catalog')
+            self.assertEqual(frame.to_dict('records'), build_observatory(tables)['model_observatory_catalog'])
+            self.assertEqual(database.read_bytes(), before)
+
+    def test_evidence_is_reassessed_after_publication(self):
+        row = {'name': 'Jardim', 'field_label': 'Preço', 'confirmation': 'confirmado',
+               'verified_on': '2020-01-01', 'valid_from': '2020-01-01', 'valid_until': '2020-01-31',
+               'evidence_source': 'Fornecedor', 'commercially_usable': True, 'temporal_state': 'vigente'}
+        with patch.object(app, 'model_data', return_value=pd.DataFrame([row])):
+            result = app.evidence_frame().iloc[0]
+        self.assertEqual(result['Estado temporal'], 'Expirado')
+        self.assertEqual(result['Evidência vigente'], 'Não')
+
+    def test_local_photos_have_license_credit_and_matching_bytes(self):
+        from PIL import Image
+        folder = app.ROOT / 'dashboard/assets'
+        photos = json.loads((folder / 'photos.json').read_text())
+        self.assertEqual({row['destination'] for row in photos}, {'Lisboa', 'Porto'})
+        for row in photos:
+            photo = (folder / row['file']).resolve()
+            self.assertTrue(photo.is_relative_to(folder.resolve()))
+            self.assertEqual(row['license'], 'CC0 1.0')
+            self.assertTrue(row['author'])
+            self.assertTrue(row['source'].startswith('https://commons.wikimedia.org/wiki/File:'))
+            self.assertEqual(hashlib.sha256(photo.read_bytes()).hexdigest(), row['sha256'])
+            with Image.open(photo) as image:
+                image.verify()
 
 
 if __name__ == "__main__":

@@ -433,3 +433,27 @@ nomes semelhantes. Destinos mantêm correspondência literal das localizações.
 A fila de revisão sinaliza desconhecidos e expressões de confirmação; prioridade
 comercial para preço/condições e operacional para os restantes campos analisados.
 O modo apresentação é apenas uma disposição local, com navegação e saída visíveis.
+
+## Contratos finais do Observatório — 2026-10-16
+
+Normalização conservadora em `etl/observatory.py`, com vocabulário e aliases
+versionados em `config/observatory.json`. O ETL publica três modelos analíticos;
+a definição inclui a versão e o hash das regras. O dashboard reutiliza o mesmo
+módulo em memória para entregas antigas, sem escrever no warehouse ou consultar
+rascunhos do catálogo. Descrições originais e condições das unidades são mantidas.
+
+Confirmação por campo exige estado explícito, fonte, data e valor correspondente.
+Datas gerais de pesquisa e aprovação do catálogo não confirmam preços. Janela
+completa e data atual são necessárias para evidência vigente; o dashboard reavalia
+expiração sem prolongar prazos. Metadados inválidos impedem a publicação do ETL.
+Os dados reais sem evidência permanecem pendentes; nenhum valor foi confirmado
+por inferência. Contrato de origem e limites no [guia do Observatório](OBSERVATORY.md).
+
+Fotografias CC0 de Lisboa e Porto guardadas localmente com atribuição, origem e
+hashes em `dashboard/assets/photos.json`. São enquadramento de destinos, sem
+associação inferida a atividades. Não há downloads automáticos no dashboard.
+
+Evidência: 66 testes Python aprovados, incluindo entrega ETL temporária,
+normalização, evidências inválidas, expiração e fotografias; integração catálogo/ETL
+aprovada. Navegador local e AppTest nas seis áreas aprovados. `git diff` confirma
+que fontes e warehouse reais não foram alterados.
