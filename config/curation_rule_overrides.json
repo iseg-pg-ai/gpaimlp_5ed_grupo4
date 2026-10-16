@@ -1,0 +1,19 @@
+{
+  "R33": {
+    "regra_blu": "Tratar Soft, Classic e Signature como interpretações da mesma jornada."
+  },
+  "R34": {
+    "regra_blu": "Soft: oferecer a jornada essencial, completa e coerente.",
+    "informacao_necessaria_perfil_dados": "Interesses, duração e inclusões aprovadas do Soft."
+  },
+  "R35": {
+    "regra_blu": "Classic: acrescentar camadas pertinentes à jornada essencial.",
+    "informacao_necessaria_perfil_dados": "Interesses, tempo, inclusões aprovadas do Classic."
+  },
+  "R38": {
+    "aplicacao_pratica_decisao_da_ia": "Soft não deve ser tratado como jornada incompleta ou de qualidade inferior."
+  },
+  "R47": {
+    "aplicacao_pratica_decisao_da_ia": "Em sete dias, cliente pode combinar Soft, Classic e Signature sem escolher um tier único para toda a viagem."
+  }
+}

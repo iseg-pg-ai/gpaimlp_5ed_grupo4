@@ -1,0 +1,64 @@
+{
+  "name": "dmc-workspace",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.13 <25"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "next build",
+    "start": "next start",
+    "agent": "bash ../scripts/start_ai_agent.sh",
+    "lint": "eslint --max-warnings=0",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:responsive": "node tests/browser/ui.mjs responsive",
+    "test:navigation": "node tests/browser/ui.mjs navigation",
+    "test:catalog": "node --experimental-strip-types tests/browser/catalog.mjs",
+    "test:catalog-etl": "node --experimental-strip-types tests/catalog-etl.mjs",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"tests/**/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.mjs\"",
+    "test:confirmations": "node tests/browser/confirmations.mjs",
+    "test:itinerary": "node tests/browser/itinerary-visual.mjs",
+    "test:canva": "node --experimental-strip-types tests/browser/canva-prompt.mjs",
+    "test:trash": "node tests/browser/trash.mjs",
+    "test:delivery": "node tests/browser/delivery.mjs",
+    "test:compliance": "node tests/compliance.mjs",
+    "check": "npm run lint && npm run typecheck && npm run format:check && npm test",
+    "start:aws": "node scripts/start-aws.mjs",
+    "test:aws": "node tests/browser/sagemaker-proxy.mjs",
+    "test:ui": "node tests/browser/ui.mjs"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "fflate": "^0.8.3",
+    "lucide-react": "^1.48.0",
+    "next": "^16.4.0",
+    "pdfkit": "^0.20.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "tailwind-merge": "^3.7.0"
+  },
+  "overrides": {
+    "@next/eslint-plugin-next": {
+      "fast-glob": "file:../../../tools/next-eslint-glob"
+    }
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^24.19.0",
+    "@types/pdfkit": "^0.17.6",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "^16.4.1",
+    "playwright": "^1.63.0",
+    "prettier": "3.6.2",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

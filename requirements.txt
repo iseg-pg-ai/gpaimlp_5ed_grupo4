@@ -1,5 +1,20 @@
+# Generated from pyproject.toml and uv.lock. Do not edit manually.
+# Regenerate: python scripts/export_requirements.py
+et-xmlfile==2.0.0
+    # via openpyxl
+numpy==2.3.4
+    # via pandas
 openpyxl==3.1.5
-pypdf==6.19.0
+    # via gpaimlp-5ed-grupo4
 pandas==2.3.3
-plotly==6.5.2
-streamlit==1.55.0
+    # via gpaimlp-5ed-grupo4
+pypdf==6.19.0
+    # via gpaimlp-5ed-grupo4
+python-dateutil==2.9.0.post0
+    # via pandas
+pytz==2026.3.post1
+    # via pandas
+six==1.17.0
+    # via python-dateutil
+tzdata==2026.3
+    # via pandas
