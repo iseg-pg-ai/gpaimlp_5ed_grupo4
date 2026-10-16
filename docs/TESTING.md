@@ -1,5 +1,10 @@
 # Testes de conformidade e regressão
 
+Para validar os incrementos das Fases 0–6 do assistente, consultar a
+[matriz de cenários e preparação](ASSISTANT_VALIDATION.md). A área operacional
+exige token, usa a mesma base de versões e tem testes de domínio, API e navegador
+com armazenamento temporário. O modelo real não participa nos testes por defeito.
+
 ## Assistente AWS
 
 `tests/test_agent_planner.py` valida Bedrock com mocks, contrato partilhado,

@@ -631,5 +631,396 @@
       "actions": [],
       "alternatives": []
     }
+  },
+  {
+    "name": "preparar_confirmacao_sem_reservar",
+    "category": "edicao",
+    "persona": "curador",
+    "request": {
+      "instruction": "Preenche apenas a referência da confirmação pendente da primeira atividade do dia 1 com PEDIDO-123. Não confirmes a reserva.",
+      "context": {
+        "brief": {
+          "destination": "Lisboa",
+          "pace": "Balanced"
+        },
+        "itinerary": [
+          {
+            "dayNumber": 1,
+            "items": [
+              {
+                "id": "atracoes:a",
+                "title": "Passeio sintético A",
+                "time": "09:30",
+                "locked": false
+              },
+              {
+                "id": "atracoes:b",
+                "title": "Passeio sintético B",
+                "time": "14:00",
+                "locked": false
+              }
+            ]
+          }
+        ],
+        "candidates": [
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-a",
+            "title": "Museu sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          },
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-b",
+            "title": "Jardim sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "actions": [
+        {
+          "type": "update_pending_confirmation",
+          "dayNumber": 1,
+          "itemId": "atracoes:a",
+          "confirmationPatch": {
+            "reference": "PEDIDO-123"
+          }
+        }
+      ],
+      "alternatives": []
+    }
+  },
+  {
+    "name": "atualizar_orcamento_explicito",
+    "category": "edicao",
+    "persona": "curador",
+    "request": {
+      "instruction": "Altera apenas o orçamento do briefing para 1500.",
+      "context": {
+        "brief": {
+          "destination": "Lisboa",
+          "pace": "Balanced"
+        },
+        "itinerary": [
+          {
+            "dayNumber": 1,
+            "items": [
+              {
+                "id": "atracoes:a",
+                "title": "Passeio sintético A",
+                "time": "09:30",
+                "locked": false
+              },
+              {
+                "id": "atracoes:b",
+                "title": "Passeio sintético B",
+                "time": "14:00",
+                "locked": false
+              }
+            ]
+          }
+        ],
+        "candidates": [
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-a",
+            "title": "Museu sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          },
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-b",
+            "title": "Jardim sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "actions": [
+        {
+          "type": "update_brief",
+          "dayNumber": 1,
+          "briefPatch": {
+            "budget": 1500
+          }
+        }
+      ],
+      "alternatives": []
+    }
+  },
+  {
+    "name": "regenerar_dia_preservando_reservas",
+    "category": "edicao",
+    "persona": "curador",
+    "request": {
+      "instruction": "Regenera apenas o dia 1, preservando todas as reservas confirmadas.",
+      "context": {
+        "brief": {
+          "destination": "Lisboa",
+          "pace": "Balanced"
+        },
+        "itinerary": [
+          {
+            "dayNumber": 1,
+            "items": [
+              {
+                "id": "atracoes:a",
+                "title": "Passeio sintético A",
+                "time": "09:30",
+                "locked": false
+              },
+              {
+                "id": "atracoes:b",
+                "title": "Passeio sintético B",
+                "time": "14:00",
+                "locked": false
+              }
+            ]
+          }
+        ],
+        "candidates": [
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-a",
+            "title": "Museu sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          },
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-b",
+            "title": "Jardim sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "actions": [
+        {
+          "type": "regenerate_day",
+          "dayNumber": 1
+        }
+      ],
+      "alternatives": []
+    }
+  },
+  {
+    "name": "mover_atividade_entre_dias",
+    "category": "edicao",
+    "persona": "curador",
+    "request": {
+      "instruction": "Move apenas a primeira atividade do dia 1 para o dia 2.",
+      "context": {
+        "brief": {
+          "destination": "Lisboa",
+          "pace": "Balanced"
+        },
+        "itinerary": [
+          {
+            "dayNumber": 1,
+            "items": [
+              {
+                "id": "atracoes:a",
+                "title": "Passeio sintético A",
+                "time": "09:30",
+                "locked": false
+              },
+              {
+                "id": "atracoes:b",
+                "title": "Passeio sintético B",
+                "time": "14:00",
+                "locked": false
+              }
+            ]
+          },
+          {
+            "dayNumber": 2,
+            "date": "2026-10-06",
+            "location": "Lisboa",
+            "items": []
+          }
+        ],
+        "candidates": [
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-a",
+            "title": "Museu sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          },
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-b",
+            "title": "Jardim sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "actions": [
+        {
+          "type": "move_item",
+          "dayNumber": 1,
+          "itemId": "atracoes:a",
+          "targetDayNumber": 2
+        }
+      ],
+      "alternatives": []
+    }
+  },
+  {
+    "name": "ranking_sem_escrita",
+    "category": "grounding",
+    "persona": "curador",
+    "request": {
+      "instruction": "Ordena os dois candidatos elegíveis do dia 1 colocando primeiro o museu. Não adiciones nem substituas nada.",
+      "context": {
+        "brief": {
+          "destination": "Lisboa",
+          "pace": "Balanced"
+        },
+        "itinerary": [
+          {
+            "dayNumber": 1,
+            "items": [
+              {
+                "id": "atracoes:a",
+                "title": "Passeio sintético A",
+                "time": "09:30",
+                "locked": false
+              },
+              {
+                "id": "atracoes:b",
+                "title": "Passeio sintético B",
+                "time": "14:00",
+                "locked": false
+              }
+            ]
+          }
+        ],
+        "candidates": [
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-a",
+            "title": "Museu sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          },
+          {
+            "dayNumber": 1,
+            "id": "atracoes:option-b",
+            "title": "Jardim sintético",
+            "time": "14:00",
+            "price": "Por confirmar"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "actions": [],
+      "alternatives": [],
+      "ranking": [
+        {
+          "dayNumber": 1,
+          "catalogIds": [
+            "atracoes:option-a",
+            "atracoes:option-b"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "familia_sem_opcoes_inventadas",
+    "category": "grounding",
+    "persona": "familia_com_criancas",
+    "request": {
+      "instruction": "Sugere uma alternativa adequada às crianças para a primeira atividade, sem alterar o roteiro.",
+      "context": {
+        "brief": {
+          "destination": "Lisboa",
+          "pace": "Relaxed",
+          "children": 2,
+          "childrenAges": "4 e 7"
+        },
+        "itinerary": [
+          {
+            "dayNumber": 1,
+            "items": [
+              {
+                "id": "atracoes:a",
+                "title": "Passeio sintético A",
+                "time": "09:30",
+                "locked": false
+              },
+              {
+                "id": "atracoes:b",
+                "title": "Passeio sintético B",
+                "time": "14:00",
+                "locked": false
+              }
+            ]
+          }
+        ],
+        "candidates": []
+      }
+    },
+    "expected": {
+      "actions": [],
+      "alternatives": []
+    }
+  },
+  {
+    "name": "mobilidade_sem_compatibilidade_inventada",
+    "category": "grounding",
+    "persona": "mobilidade_reduzida",
+    "request": {
+      "instruction": "Dá duas alternativas comprovadamente acessíveis para a primeira atividade.",
+      "context": {
+        "brief": {
+          "destination": "Lisboa",
+          "pace": "Balanced",
+          "mobilityRestrictions": [
+            "Wheelchair"
+          ],
+          "physicalEffort": "Baixo (Low)"
+        },
+        "itinerary": [
+          {
+            "dayNumber": 1,
+            "items": [
+              {
+                "id": "atracoes:a",
+                "title": "Passeio sintético A",
+                "time": "09:30",
+                "locked": false
+              },
+              {
+                "id": "atracoes:b",
+                "title": "Passeio sintético B",
+                "time": "14:00",
+                "locked": false
+              }
+            ]
+          }
+        ],
+        "candidates": []
+      }
+    },
+    "expected": {
+      "actions": [],
+      "alternatives": []
+    }
   }
 ]

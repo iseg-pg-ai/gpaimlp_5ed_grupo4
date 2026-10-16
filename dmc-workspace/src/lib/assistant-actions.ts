@@ -1,9 +1,11 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { editWithAssistant } from "./assistant-editing.ts";
+import { editWithAssistant, moveWithAssistant } from "./assistant-editing.ts";
 import { generateItinerary, type Catalog } from "./curation.ts";
 import { validateSnapshot } from "./snapshot-validation.ts";
 import type { Snapshot } from "./itinerary-pdf";
+import { initialConfirmation, validateConfirmation } from "./activity-confirmation.ts";
+import { proposalBudget } from "./proposal-budget.ts";
 
 export type AgentAction = {
   type: string;
@@ -14,6 +16,9 @@ export type AgentAction = {
   itemIds?: string[];
   capacity?: number;
   period?: string;
+  targetDayNumber?: number;
+  briefPatch?: Partial<Snapshot["brief"]>;
+  confirmationPatch?: Record<string, string>;
 };
 export type AgentPlan = {
   summary: string;
@@ -21,6 +26,7 @@ export type AgentPlan = {
   warnings: string[];
   requiresConfirmation: true;
   alternatives?: Array<{ dayNumber: number; itemId: string; catalogIds: string[] }>;
+  ranking?: Array<{ dayNumber: number; catalogIds: string[] }>;
 };
 export type AgentAlternatives = {
   dayNumber: number;
@@ -35,6 +41,7 @@ export type AgentAlternatives = {
   }>;
 };
 export type AgentProposal = {
+  rankedCandidates?: ReturnType<typeof resolveRanking>;
   impact?: import("./assistant-impact").AgentImpact;
   runId: string;
   tripId: string;
@@ -121,6 +128,7 @@ const protectedItem = (item: Snapshot["itinerary"][number]["items"][number]) =>
 export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catalog): Snapshot {
   validatePlan(plan);
   resolveAlternatives(snapshot, plan, catalog);
+  resolveRanking(snapshot, plan, catalog);
   if (!plan.actions.length) return structuredClone(snapshot);
   let current = structuredClone(snapshot);
   for (const action of plan.actions) {
@@ -130,11 +138,148 @@ export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catal
     if (action.itemId && index < 0) throw new Error("A proposta refere uma atividade inexistente.");
     const n = day.dayNumber;
     const position = index + 1;
+    if (action.type === "regenerate_day") {
+      const protectedIds = day.items.filter(protectedItem).map((item) => item.id);
+      let regenerated = structuredClone(current);
+      for (const item of day.items.filter((item) => !protectedIds.includes(item.id))) {
+        const source = regenerated.itinerary.find((d) => d.dayNumber === n)!;
+        const result = editWithAssistant(
+          regenerated,
+          `remover atividade ${source.items.findIndex((i) => i.id === item.id) + 1} do dia ${n}`,
+          catalog,
+        );
+        if (!result.changed) throw new Error(result.reply);
+        regenerated = { ...regenerated, itinerary: result.itinerary };
+      }
+      const available: Catalog = { ...catalog };
+      for (const table of ["atracoes", "restaurantes", "experiencias"] as const)
+        available[table] = catalog[table].filter(
+          (row) =>
+            !regenerated.itinerary.some((d) =>
+              d.items.some(
+                (i) =>
+                  i.id ===
+                  `${table}:${row._catalog_id ?? row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`,
+              ),
+            ),
+        );
+      const candidates =
+        generateItinerary(
+          { ...current.brief, startDate: day.date, endDate: day.date, destination: day.location },
+          available,
+        ).itinerary[0]?.items ?? [];
+      let additions = 0;
+      for (const candidate of candidates) {
+        if (/["\r\n]/.test(candidate.id)) continue;
+        const result = editWithAssistant(
+          regenerated,
+          `adicionar "${candidate.id}" ao dia ${n}`,
+          catalog,
+        );
+        if (result.changed) {
+          regenerated = { ...regenerated, itinerary: result.itinerary };
+          additions++;
+        }
+      }
+      if (!additions)
+        throw new Error(
+          "Não há opções elegíveis com horários viáveis para regenerar este dia sem alterar as marcações protegidas.",
+        );
+      current = regenerated;
+      continue;
+    }
+    if (action.type === "update_pending_confirmation") {
+      if (!Object.keys(action.confirmationPatch ?? {}).length)
+        throw new Error("A confirmação não contém campos para preparar.");
+      const item = day.items[index];
+      if (protectedItem(item))
+        throw new Error("A confirmação protegida não pode ser alterada pelo agente.");
+      const confirmation = {
+        ...initialConfirmation(item),
+        ...action.confirmationPatch,
+        status: "pending" as const,
+        confirmedAt: null,
+      };
+      confirmation.checks = confirmation.checks.map((check) => ({ ...check, resolved: false }));
+      validateConfirmation(item, confirmation);
+      item.confirmation = confirmation;
+      continue;
+    }
+    if (action.type === "update_brief") {
+      if (!Object.keys(action.briefPatch ?? {}).length)
+        throw new Error("O briefing não contém alterações.");
+      current.brief = { ...current.brief, ...action.briefPatch };
+      validateSnapshot(current);
+      for (const existingDay of current.itinerary)
+        for (const item of existingDay.items.filter((item) => item.category !== "free_time")) {
+          const eligible = generateItinerary(
+            {
+              ...current.brief,
+              startDate: existingDay.date,
+              endDate: existingDay.date,
+              destination: existingDay.location,
+            },
+            catalog,
+          ).itinerary[0]?.items;
+          // Gerar só o candidato para que o limite de capacidade não esconda elegibilidade.
+          const isolated: Catalog = {
+            ...catalog,
+            atracoes: [],
+            restaurantes: [],
+            experiencias: [],
+          };
+          for (const table of ["atracoes", "restaurantes", "experiencias"] as const)
+            isolated[table] = catalog[table].filter(
+              (row) =>
+                item.id ===
+                `${table}:${row._catalog_id ?? row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`,
+            );
+          if (
+            !eligible?.some((candidate) => candidate.id === item.id) &&
+            !generateItinerary(
+              {
+                ...current.brief,
+                startDate: existingDay.date,
+                endDate: existingDay.date,
+                destination: existingDay.location,
+              },
+              isolated,
+            ).itinerary[0]?.items.some((candidate) => candidate.id === item.id)
+          )
+            throw new Error(
+              "O novo briefing é incompatível com uma atividade existente. Proponha primeiro uma substituição ou remoção permitida.",
+            );
+        }
+      const budget = proposalBudget(current);
+      const total = budget.totals[current.brief.currency];
+      if (
+        total &&
+        total.confirmed + total.estimated >
+          current.brief.budget * 100 * (1 + (current.brief.personalization?.budgetFlex ?? 0) / 100)
+      )
+        throw new Error("O novo orçamento é inferior aos custos conhecidos.");
+      continue;
+    }
+    if (action.type === "move_item") {
+      const result = moveWithAssistant(
+        current,
+        n,
+        action.itemId!,
+        action.targetDayNumber!,
+        catalog,
+      );
+      if (!result.changed) throw new Error(result.reply);
+      current = { ...current, itinerary: result.itinerary };
+      continue;
+    }
     // Os argumentos nunca podem introduzir sintaxe adicional no comando existente.
     if (action.catalogId && /["\r\n]/.test(action.catalogId))
       throw new Error("Identificador inválido.");
     let command: string;
     switch (action.type) {
+      case "optimize_route":
+        command = `otimizar rota do dia ${n}`;
+        break;
       case "add_catalog_item":
         command = `adicionar "${action.catalogId}" ao dia ${n}`;
         break;
@@ -208,6 +353,34 @@ export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catal
   }
   validateSnapshot(current);
   return current;
+}
+
+export function resolveRanking(snapshot: Snapshot, plan: AgentPlan, catalog: Catalog) {
+  validatePlan(plan);
+  const context = plan.ranking?.length ? plannerContext(snapshot, catalog) : undefined;
+  const seen = new Set<number>();
+  return (plan.ranking ?? []).map((group) => {
+    if (seen.has(group.dayNumber) || new Set(group.catalogIds).size !== group.catalogIds.length)
+      throw new Error("Ranking duplicado.");
+    seen.add(group.dayNumber);
+    return {
+      dayNumber: group.dayNumber,
+      options: group.catalogIds.map((id) => {
+        const candidate = context!.candidates.find(
+          (candidate) => candidate.dayNumber === group.dayNumber && candidate.id === id,
+        );
+        if (!candidate)
+          throw new Error("O ranking contém uma oferta fora dos candidatos elegíveis.");
+        return {
+          ...candidate,
+          baselinePosition:
+            context!.candidates
+              .filter((item) => item.dayNumber === group.dayNumber)
+              .findIndex((item) => item.id === id) + 1,
+        };
+      }),
+    };
+  });
 }
 
 export function resolveAlternatives(
@@ -304,6 +477,8 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
     category: string;
     time: string;
     price?: string;
+    reasons: string[];
+    catalogRevision: number | null;
   }> = [];
   for (const day of snapshot.itinerary) {
     for (const table of ["atracoes", "restaurantes", "experiencias"] as const)
@@ -327,6 +502,8 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
             category: item.category,
             time: item.time,
             price: item.priceNote,
+            reasons: item.appliedRules ?? [],
+            catalogRevision: item.catalogRevision ?? null,
           });
       }
   }

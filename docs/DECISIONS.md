@@ -1,5 +1,38 @@
 # Decisões e questões abertas
 
+## 2026-10-16 — Incrementos funcionais das Fases 0–6 para validação conjunta
+
+Por pedido explícito, a implementação das seis fases precedeu a ronda técnica.
+O contrato passa a treze ações, incluindo mover entre dias, regenerar um dia,
+propor sequência geográfica e preparar briefing/confirmações pendentes. A lógica
+determinística continua a validar e a aceitação continua a guardar atomicamente.
+Ranking ordena IDs elegíveis e mostra razões, revisão e posição na base.
+
+Feedback e casos revistos usam tabelas na mesma base das versões. Há uma versão
+realizada por viagem, questionário integral e feedback imutável; revisões antigas
+desconhecidas não são inventadas. Casos exigem aprovação, média mínima 4 e ausência
+de incidentes; o contexto contém perfil/IDs e decisões reduzidas, sem comentários
+ou contactos. A inativação mantém feedback e histórico.
+
+A revisão automática recusou a primeira proposta de API operacional sem
+barreira de autenticação. A versão implementada exige token de pelo menos 32
+caracteres e identidade definida no servidor, inclusive na leitura; fecha quando
+não configurada. Não é SSO individual. Decisões de catálogo exigem confirmação,
+motivo e revisão atual. Token fica só na memória da página.
+
+Também foram recusados o agendamento semanal de CI e a consulta meteorológica
+automática pelo planeador. O workflow é apenas manual. O planeador só lê cache
+de consultas explícitas; a interface informa o envio de datas/localidades e
+coordenadas à Open-Meteo. Não há chamadas pagas, envio de emails ou deployment.
+
+Evidência técnica: 116 testes do portal aprovados, um ignorado; 23 testes Python
+aprovados; build e integração catálogo/ETL aprovados. Chat e operações em
+390/1600 px com API simulada; ciclo real da API operacional com autenticação,
+feedback, caso e inativação em diretórios temporários. Snapshots originais
+preservados. O avaliador conserva 18 cenários; não foram executados no Bedrock.
+A matriz está em [validação](ASSISTANT_VALIDATION.md). Voos, SSO, Lambda e validação
+real de modelos/fornecedores continuam dependências explícitas.
+
 ## 2026-10-16 — Resumo determinístico do impacto das propostas
 
 As propostas e alternativas selecionadas incluem diferenças calculadas no

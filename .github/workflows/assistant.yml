@@ -1,0 +1,29 @@
+name: Validação manual do portal e assistente
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: dmc-workspace/package-lock.json
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked --group agent --python 3.12
+      - run: uv run --no-sync python -B -m unittest tests.test_agent_planner tests.test_agent_llm -v
+        env:
+          PYTHONPATH: src
+          AWS_EC2_METADATA_DISABLED: 'true'
+      - run: npm ci
+        working-directory: dmc-workspace
+      - run: npm run check
+        working-directory: dmc-workspace
+      - run: npm run build
+        working-directory: dmc-workspace
+        env:
+          PORTAL_ASSET_PREFIX: /codeeditor/default/ports/3001

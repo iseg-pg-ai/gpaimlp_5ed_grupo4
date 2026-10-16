@@ -1,9 +1,7 @@
-import type { DayWeatherResult, WeatherOptions } from "@/lib/weather";
-import { portalRequest } from "@/lib/python-portal";
+import type { WeatherOptions } from "@/lib/weather";
+import { readDayWeather } from "@/lib/weather-provider";
 import { jsonError, noStoreHeaders } from "@/lib/server-http";
 export const runtime = "nodejs";
-
-const cache = new Map<string, { expires: number; result: DayWeatherResult }>();
 
 async function respond(options: WeatherOptions) {
   if (typeof options.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(options.date))
@@ -18,16 +16,7 @@ async function respond(options: WeatherOptions) {
   )
     return jsonError("Localização inválida.", 400);
   try {
-    const key = JSON.stringify(options);
-    const cached = cache.get(key);
-    const result =
-      cached && cached.expires > Date.now()
-        ? cached.result
-        : await portalRequest<DayWeatherResult>("weather", "", options);
-    if (result.status === "available" && result !== cached?.result) {
-      if (cache.size >= 256) cache.delete(cache.keys().next().value!);
-      cache.set(key, { expires: Date.now() + 30 * 60 * 1000, result });
-    }
+    const result = await readDayWeather(options);
     return Response.json(result, {
       headers:
         result.status === "available"

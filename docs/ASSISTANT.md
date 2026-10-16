@@ -1,6 +1,6 @@
 # Assistente BLU com Amazon Bedrock
 
-## Primeira entrega
+## Fluxo de propostas
 
 O painel do roteiro pede propostas ao Amazon Bedrock através de Converse.
 O modelo executa na AWS; não existe modelo local nem fallback silencioso para
@@ -77,6 +77,67 @@ continuam a necessitar de validação.
 Abrir o resumo não chama o modelo nem guarda uma versão. É uma comparação da
 proposta atual com a sua origem, não uma comparação genérica entre versões do
 histórico nem uma nova verificação de disponibilidade de fornecedores.
+
+## Fases 0–6: área operacional
+
+O painel `/assistant`, acessível por **BLU · Operações**, reúne revisão da entrega,
+conclusão da viagem e feedback por cartão, qualidade do catálogo, casos históricos
+e métricas. Exige `BLU_OPERATIONS_TOKEN` com pelo menos 32 caracteres e
+`BLU_OPERATOR_ID` no servidor. A API recusa leitura e escrita sem autenticação;
+o operador não é aceite do corpo do pedido. A configuração é por processo, não
+SSO individual. Ver [preparação e critérios de validação](ASSISTANT_VALIDATION.md).
+
+O contrato suporta também mover entre dias, otimizar a sequência geográfica
+estimada, regenerar apenas um dia, editar campos permitidos do briefing e preparar
+confirmações pendentes. A otimização recusa coordenadas em falta e atividades
+protegidas; a nova ordem passa pelas regras de horário existentes. Não anuncia
+um ótimo rodoviário nem recalcula automaticamente percursos externos. Mover
+preserva a identidade e os dados do item e volta a validar o dia de destino.
+
+`ranking` ordena IDs elegíveis para revisão. O servidor resolve razões das regras,
+revisão do catálogo e posição na base determinística. Escolher um candidato cria
+uma proposta de adição, sujeita a capacidade, orçamento e aceitação. O contexto
+inclui diagnósticos por código, qualidade agregada e casos aprovados, sem copiar
+comentários, contactos ou notas de clientes. A área operacional apresenta contexto
+de catálogo e entrega; o painel permite indicar briefing, confirmações ou roteiro.
+
+O feedback é ligado a uma única versão realizada por viagem e exige resposta a
+todos os cartões. Só atividades realizadas têm notas numéricas; as restantes
+usam cancelada, substituída ou não aplicável. O feedback entregue é imutável.
+Snapshots novos conservam `catalogRevision`; em snapshots antigos esta revisão
+pode ser desconhecida, nunca inferida a partir do catálogo atual.
+
+O painel agrega avaliações, cancelamentos, substituições e janelas de 30/90/180
+dias. Sinaliza problemas, campos em falta, possíveis duplicados e revisões antigas.
+Rever ou inativar exige token, motivo, confirmação explícita e revisão atual.
+Não desativa automaticamente registos nem apaga avaliações ou versões.
+
+Casos reutilizáveis exigem aprovação humana, feedback completo com média mínima
+4 e sem incidentes. O índice guarda perfil permitido e IDs/revisões, usa pontuação
+estruturada e termos textuais e exclui versões no Lixo. Não usa embeddings nem
+aprendizagem automática. Decisões anteriores são reduzidas a tipos de ação e IDs,
+sem copiar preços, evidências, contactos ou motivos livres para o modelo.
+
+A revisão da entrega sinaliza horários, reservas, orçamento, custos desconhecidos,
+encerramentos, rotas estimadas e fonte CJK quando aplicável. Também há comparação
+entre versões e rascunhos editáveis para cliente ou fornecedores, com a tradução
+existente. Não envia emails, não confirma reservas e não altera bytes de PDFs
+arquivados. O roteiro apresenta uma verificação derivada do snapshot no painel
+de versões; a revisão completa usa também o catálogo atual.
+
+A consulta meteorológica é explícita e informa que datas, localidades e
+coordenadas disponíveis são enviadas à Open-Meteo. A área consulta até os primeiros
+três dias; outros dias continuam disponíveis no painel meteorológico existente.
+O planeador só lê resultados já consultados e ainda em cache. Histórico não é
+previsão; ausência de dados não significa bom tempo. Voos exigem API escolhida.
+
+Métricas incluem propostas guardadas, decisões, motivos de rejeição, tokens,
+latência e versões editadas fora das decisões do agente. Não contam tentativas
+que falharam antes de guardar uma proposta, nem provam que uma edição manual
+foi causada pelo agente. Custo monetário só é estimado com tarifas aprovadas em
+`BLU_BEDROCK_RATES_JSON`, por modelo (`input`/`output`, USD por milhão de tokens).
+Sem tarifas, o custo é desconhecido. Prompts, rankings e modelos não se alteram
+sozinhos. O workflow de validação é exclusivamente manual e sem chamadas Bedrock.
 
 ## Execução na instância AWS
 
@@ -158,7 +219,7 @@ rejeição, expiração, concorrência e rollback da auditoria com versões temp
 O teste de navegador do assistente usa propostas simuladas e confirma que não
 há alterações antes da aprovação.
 
-`tests/agent_cases.json` conserva 11 cenários sintéticos: refinamento, remoção,
+`tests/agent_cases.json` conserva 18 cenários sintéticos: refinamento, remoção,
 proteções, ambiguidade, opções sem escrita, ausência de candidatos, dia inexistente,
 injeção no catálogo e na conversa, operação não suportada e pergunta informativa.
 O avaliador exige contrato válido, ações exatas e alternativas com dia, alvo e
@@ -183,14 +244,14 @@ de qualquer chamada. A saída identifica a categoria de cada cenário.
 Sem `--live`, o script recusa chamadas. A avaliação
 publica apenas resultado, modelo, tokens e latência, sem respostas brutas.
 
-Os 11 cenários e os testes do avaliador foram verificados offline. Esta ampliação
+Os 18 cenários e os testes do avaliador foram verificados offline. Esta ampliação
 não foi executada no Bedrock: a evidência real anterior continua limitada ao
 cenário de refinamento. Uma resposta sem ações cumpre o critério de não escrita,
 mas o avaliador não comprova a qualidade textual do esclarecimento, todos os
 ataques de injeção nem todas as regras do domínio. A validação determinística
 continua obrigatória antes de qualquer escrita.
 
-A implementação é o primeiro incremento das Fases 0 e 1. Ainda faltam mover
-entre dias, otimização de percursos pelo agente, edição assistida de briefing e
-confirmações, identidade do operador e avaliação ampla de grounding/injeção.
-Feedback, casos históricos, proatividade e restantes Fases 2–6 continuam no plano.
+Há agora incrementos funcionais das seis fases para validação conjunta. Esta
+entrega não comprova exposição pública multiutilizador, qualidade semântica ampla
+do modelo, deployment Lambda, integração de voos ou contratação de fornecedores.
+Consultar a matriz de validação e distinguir resultados com mocks de testes AWS.

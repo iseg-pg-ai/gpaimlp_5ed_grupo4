@@ -13,6 +13,7 @@ import { ItineraryWorkspace } from "@/components/ItineraryWorkspace";
 import { AIAssistantPanel } from "@/components/AIAssistantPanel";
 import { applyConfirmation } from "@/lib/activity-confirmation";
 import { ShareProposalModal } from "@/components/ShareProposalModal";
+import { proposalDiagnostics } from "@/lib/proposal-diagnostics";
 
 export default function WorkspacePage() {
   const { locale } = useLocale();
@@ -155,6 +156,26 @@ export default function WorkspacePage() {
                             ? `v${String(active.version).padStart(3, "0")}`
                             : "Ainda sem versão no servidor"}
                         </summary>
+                        <details className="my-2 rounded border p-2">
+                          <summary>Verificação da entrega</summary>
+                          <ul>
+                            {proposalDiagnostics(active).map((alert, index) => (
+                              <li key={index}>
+                                {alert.severity === "blocker"
+                                  ? "Rever antes da entrega"
+                                  : "Pendência"}
+                                : {alert.message}
+                              </li>
+                            ))}
+                          </ul>
+                          <p>
+                            Rever também conteúdo, idioma e apresentação do PDF. Custos
+                            desconhecidos não são gratuitos.
+                          </p>
+                          <a className="underline" href={portalUrl("/assistant")}>
+                            Abrir revisão operacional completa
+                          </a>
+                        </details>
                         <button
                           type="button"
                           className="underline my-2"

@@ -172,7 +172,7 @@ test("changed proposal enters immutable version history", () => {
   }
 });
 
-test("assistant optimizes day route sequence on request", () => {
+test("assistant refuses to invent route optimization without coordinates", () => {
   const { c, snapshot } = setup();
   const added1 = editWithAssistant(snapshot, 'adicionar "Other" ao dia 1', c);
   const withTwo = { ...snapshot, itinerary: added1.itinerary };
@@ -181,8 +181,8 @@ test("assistant optimizes day route sequence on request", () => {
   assert.equal(withThree.itinerary[0].items.length, 3);
 
   const optimized = editWithAssistant(withThree, "otimizar rota do dia 1", c);
-  assert.equal(optimized.changed, true);
-  assert.match(optimized.reply, /Rota do dia 1 otimizada/);
+  assert.equal(optimized.changed, false);
+  assert.match(optimized.reply, /Faltam coordenadas/);
   assert.equal(optimized.itinerary[0].items.length, 3);
 });
 

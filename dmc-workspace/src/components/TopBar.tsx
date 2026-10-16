@@ -29,7 +29,7 @@ const labels: Record<Locale, string[]> = {
   de: ["Workspace", "Katalog", "Verlauf", "Referenzen", "Papierkorb", "Menü", "Hauptnavigation"],
   zh: ["工作区", "目录", "历史记录", "参考资料", "回收站", "菜单", "主导航"],
 };
-const routes = ["/", "/catalog", "/exports", "/references", "/trash"];
+const routes = ["/", "/catalog", "/exports", "/references", "/trash", "/assistant"];
 
 export function TopBar({ locale, children }: { locale: Locale; children: ReactNode }) {
   const pathname = usePathname();
@@ -47,7 +47,7 @@ export function TopBar({ locale, children }: { locale: Locale; children: ReactNo
           onClick={() => menu.current?.removeAttribute("open")}
           className={`flex min-h-11 items-center rounded-lg px-3 py-2 text-sm break-words transition-colors ${selected ? "bg-[#143F4B] text-white" : "text-[#143F4B] hover:bg-[#E3DCD0]"}`}
         >
-          {text[index]}
+          {href === "/assistant" ? "BLU · Operações" : text[index]}
         </Link>
       );
     });

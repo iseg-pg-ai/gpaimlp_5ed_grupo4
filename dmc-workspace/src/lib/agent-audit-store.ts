@@ -4,6 +4,7 @@ import {
   simulatePlan,
   validatePlan,
   resolveAlternatives,
+  resolveRanking,
   type AgentPlan,
 } from "./assistant-actions.ts";
 import type { Snapshot } from "./itinerary-pdf";
@@ -130,7 +131,113 @@ export class AgentAuditStore {
       modelId: "human-selection",
     };
   }
-  decide(id: string, tripId: string, decision: "accept" | "reject", catalog: Catalog) {
+  selectRanked(id: string, tripId: string, dayNumber: number, catalogId: string, catalog: Catalog) {
+    const run = this.store.db
+      .prepare("SELECT * FROM agent_runs WHERE id=? AND tripId=?")
+      .get(id, tripId) as unknown as Run | undefined;
+    if (
+      !run ||
+      !["proposed", "answered"].includes(run.status) ||
+      Date.now() - Date.parse(run.createdAt) > 1800000
+    )
+      throw new VersionConflict("A recomendação expirou. Peça uma nova proposta.");
+    const before = this.base(tripId, run.baseVersion);
+    const ranked = resolveRanking(before, JSON.parse(run.plan), catalog);
+    const candidate = ranked
+      .find((group) => group.dayNumber === dayNumber)
+      ?.options.find((option) => option.id === catalogId);
+    if (!candidate) throw new VersionConflict("Escolha uma recomendação apresentada.");
+    const plan: AgentPlan = {
+      summary: `Adicionar ${candidate.title} ao dia ${dayNumber}.`,
+      actions: [{ type: "add_catalog_item", dayNumber, catalogId }],
+      warnings: [],
+      requiresConfirmation: true,
+    };
+    const after = simulatePlan(before, plan, catalog);
+    const runId = this.propose(tripId, run.baseVersion, `Selecionar ${catalogId}`, plan, after, {
+      provider: "catalog",
+      modelId: "human-selection",
+      parentRunId: id,
+    });
+    return {
+      runId,
+      tripId,
+      baseVersion: run.baseVersion,
+      plan,
+      before: before.itinerary,
+      after: after.itinerary,
+      impact: proposalImpact(before, after),
+      provider: "catalog",
+      modelId: "human-selection",
+    };
+  }
+  metrics() {
+    const rows = this.store.db
+      .prepare(
+        "SELECT status,metadata,createdAt,completedAt,executedVersion,tripId FROM agent_runs ORDER BY createdAt DESC",
+      )
+      .all();
+    let rates: Record<string, { input: number; output: number }> = {};
+    try {
+      const configured = JSON.parse(process.env.BLU_BEDROCK_RATES_JSON ?? "{}");
+      if (configured && typeof configured === "object" && !Array.isArray(configured))
+        rates = configured;
+    } catch {
+      /* Sem custos inventados. */
+    }
+    const models = [
+      ...new Set(rows.map((row) => String(JSON.parse(String(row.metadata)).modelId ?? "unknown"))),
+    ];
+    return {
+      total: rows.length,
+      accepted: rows.filter((row) => row.status === "accepted").length,
+      rejected: rows.filter((row) => row.status === "rejected").length,
+      expired: rows.filter(
+        (row) =>
+          row.status === "proposed" && Date.now() - Date.parse(String(row.createdAt)) > 1800000,
+      ).length,
+      models: models.map((modelId) => {
+        const entries = rows
+          .map((row) => JSON.parse(String(row.metadata)))
+          .filter((meta) => meta.modelId === modelId);
+        const inputTokens = entries.reduce((n, m) => n + (Number(m.inputTokens) || 0), 0),
+          outputTokens = entries.reduce((n, m) => n + (Number(m.outputTokens) || 0), 0);
+        const rate = rates[modelId];
+        const costUsd =
+          rate && [rate.input, rate.output].every((n) => Number.isFinite(n) && n >= 0)
+            ? (inputTokens * rate.input + outputTokens * rate.output) / 1e6
+            : null;
+        return {
+          modelId,
+          runs: entries.length,
+          inputTokens,
+          outputTokens,
+          averageLatencyMs:
+            entries.reduce((n, m) => n + (Number(m.latencyMs) || 0), 0) / entries.length,
+          costUsd,
+        };
+      }),
+      decisions: rows.slice(0, 50).map((row) => ({
+        status: row.status,
+        createdAt: row.createdAt,
+        executedVersion: row.executedVersion,
+        reason: JSON.parse(String(row.metadata)).rejectionReason ?? null,
+      })),
+      corrections:
+        this.store.db
+          .prepare(
+            "SELECT COUNT(*) AS n FROM versions v WHERE v.reason='edited' AND v.trashedAt IS NULL AND NOT EXISTS(SELECT 1 FROM agent_runs a WHERE a.tripId=v.tripId AND a.executedVersion=v.version AND a.status='accepted')",
+          )
+          .get()?.n ?? 0,
+    };
+  }
+  decide(
+    id: string,
+    tripId: string,
+    decision: "accept" | "reject",
+    catalog: Catalog,
+    rejectionReason = "",
+  ) {
     const run = this.store.db
       .prepare("SELECT * FROM agent_runs WHERE id=? AND tripId=?")
       .get(id, tripId) as unknown as Run | undefined;
@@ -140,11 +247,18 @@ export class AgentAuditStore {
         "Esta proposta já foi decidida. Reabra o histórico antes de continuar.",
       );
     if (decision === "reject") {
+      if (typeof rejectionReason !== "string" || rejectionReason.length > 1000)
+        throw new Error("Motivo de rejeição inválido.");
+      const metadata = this.store.db.prepare("SELECT metadata FROM agent_runs WHERE id=?").get(id)!;
       this.store.db
         .prepare(
-          "UPDATE agent_runs SET status='rejected',completedAt=? WHERE id=? AND status='proposed'",
+          "UPDATE agent_runs SET status='rejected',completedAt=?,metadata=? WHERE id=? AND status='proposed'",
         )
-        .run(new Date().toISOString(), id);
+        .run(
+          new Date().toISOString(),
+          JSON.stringify({ ...JSON.parse(String(metadata.metadata)), rejectionReason }),
+          id,
+        );
       return null;
     }
     if (Date.now() - Date.parse(run.createdAt) > 30 * 60 * 1000)

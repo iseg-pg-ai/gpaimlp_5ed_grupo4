@@ -1,5 +1,32 @@
 # Plano de evolução do BLU AI System
 
+## Conclusão funcional das seis fases — 2026-10-16
+
+Pedido: implementar todas as fases antes da ronda de testes e correções.
+Não marcar uma fase como validada apenas por concluir a implementação.
+Preservar dados reais; os testes finais usam armazenamento temporário e mocks.
+
+- [x] Fase 0: contratos completos, contexto minimizado e registo de operação.
+- [x] Fase 1: mover entre dias, otimização validada, briefing e confirmações assistidos.
+- [x] Fase 2: ranking explicável de candidatos e diagnóstico da proposta.
+- [x] Fase 3: conclusão da viagem, questionário completo e alertas do catálogo.
+- [x] Fase 4: recuperação de casos revistos, sem dados pessoais nem embeddings.
+- [x] Fase 5: alertas, regeneração parcial e preparação de comunicações.
+- [x] Fase 6: métricas, rejeições, custos configuráveis e qualidade da entrega.
+- [x] Atualizar o plano específico e preparar os cenários de validação das seis fases.
+- [x] Só após a implementação: executar testes, corrigir falhas e verificar o portal.
+
+Voos dependem de uma API escolhida; não inventar disponibilidade ou reservas.
+Deployment, envio de comunicações e chamadas pagas não decorrem desta preparação.
+
+Implementação funcional das seis fases preparada. Validação técnica concluída:
+116 testes do portal aprovados, um ignorado; 23 Python; build, catálogo/ETL,
+ciclos das APIs com dados temporários e chat/operações em 390/1600 px aprovados.
+Portal HTTP 200; operação sem token 401 e autenticada 200. Configuração privada
+da sessão em `/tmp/blu-operations.env`, fora do Git e sem impressão do segredo.
+Critérios e dependências externas em docs/ASSISTANT_VALIDATION.md. CI apenas
+manual; 18 cenários reais por executar no Bedrock com autorização de custos.
+
 ## Impacto das propostas do agente — 2026-10-16
 
 - [x] Calcular diferenças de atividades, horários, ordem e capacidade no servidor.

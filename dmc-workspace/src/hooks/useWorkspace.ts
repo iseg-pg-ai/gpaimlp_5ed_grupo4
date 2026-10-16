@@ -337,7 +337,7 @@ export function useWorkspace() {
       operation.current = false;
     }
   };
-  const send = async (input: string) => {
+  const send = async (input: string, currentView = "itinerary") => {
     input = input.trim();
     if (!active || !input || operation.current) return false;
     operation.current = true;
@@ -388,6 +388,7 @@ export function useWorkspace() {
           baseVersion: active.version,
           snapshot: active,
           input,
+          currentView,
           conversation: active.messages
             .slice(-8)
             .map(({ sender, text }) => ({ sender, text: text.slice(0, 4000) })),
@@ -399,12 +400,16 @@ export function useWorkspace() {
       });
       const result = await responseJson<AgentProposal>(response);
       validateSnapshot({ ...active, itinerary: result.after });
-      setAgentProposal(result.plan.actions.length || result.alternatives?.length ? result : null);
+      setAgentProposal(
+        result.plan.actions.length || result.alternatives?.length || result.rankedCandidates?.length
+          ? result
+          : null,
+      );
       appendReply(
         result.plan.summary +
           (result.plan.actions.length
             ? "\n\nReveja a pré-visualização e escolha «Aceitar e guardar versão» ou «Rejeitar»."
-            : result.alternatives?.length
+            : result.alternatives?.length || result.rankedCandidates?.length
               ? "\n\nEscolha uma alternativa para preparar a sua substituição. O roteiro permanece igual."
               : "\n\nEsta resposta não contém alterações para aceitar. O roteiro permanece igual."),
       );
@@ -435,7 +440,7 @@ export function useWorkspace() {
           tripId: active.id,
           baseVersion: active.version,
           runId: agentProposal.runId,
-          decision: "select",
+          decision: itemId ? "select" : "select-add",
           dayNumber,
           itemId,
           catalogId,
@@ -476,7 +481,7 @@ export function useWorkspace() {
       setAssistantBusy(false);
     }
   };
-  const decideAgentProposal = async (decision: "accept" | "reject") => {
+  const decideAgentProposal = async (decision: "accept" | "reject", rejectionReason = "") => {
     if (!active || !agentProposal || operation.current) return;
     operation.current = true;
     setAssistantBusy(true);
@@ -496,6 +501,7 @@ export function useWorkspace() {
           tripId: active.id,
           baseVersion: active.version,
           decision,
+          rejectionReason,
         }),
       });
       const result = await responseJson<{ snapshot?: Snapshot; version?: number }>(response);

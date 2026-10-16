@@ -22,6 +22,7 @@ def evaluate(result, expected):
         public_text = json.dumps(plan, ensure_ascii=False).casefold()
         return (plan["actions"] == expected["actions"]
                 and normalize(groups) == normalize(wanted)
+                and plan.get("ranking", []) == expected.get("ranking", [])
                 and all(text.casefold() not in public_text for text in forbidden))
     except (KeyError, TypeError, ValueError):
         return False

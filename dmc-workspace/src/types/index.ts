@@ -21,6 +21,7 @@ export interface TransitLeg {
 }
 
 export interface ActivityItem {
+  catalogRevision?: number;
   catalogDetails?: import("../lib/catalog-details").CatalogDetails;
   confirmation?: import("../lib/activity-confirmation").ActivityConfirmation;
   id: string;

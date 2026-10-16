@@ -4,6 +4,7 @@ import {
   simulatePlan,
   validatePlan,
   resolveAlternatives,
+  resolveRanking,
   type AgentPlan,
 } from "@/lib/assistant-actions";
 import { AgentAuditStore } from "@/lib/agent-audit-store";
@@ -19,6 +20,10 @@ import { validateSnapshot } from "@/lib/snapshot-validation";
 import { agentFailure } from "@/lib/agent-errors";
 import { recentConversation } from "@/lib/assistant-conversation";
 import { proposalImpact } from "@/lib/assistant-impact";
+import { FeedbackStore } from "@/lib/feedback-store";
+import { HistoricalCases } from "@/lib/historical-cases";
+import { proposalDiagnostics } from "@/lib/proposal-diagnostics";
+import { cachedPlanningWeather } from "@/lib/weather-provider";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
@@ -44,11 +49,12 @@ export async function POST(request: Request) {
       throw new Error();
     if (
       body.runId &&
-      (typeof body.runId !== "string" || !["accept", "reject", "select"].includes(body.decision))
+      (typeof body.runId !== "string" ||
+        !["accept", "reject", "select", "select-add"].includes(body.decision))
     )
       throw new Error();
     if (
-      body.decision === "select" &&
+      ["select", "select-add"].includes(body.decision) &&
       (!Number.isSafeInteger(body.dayNumber) ||
         body.dayNumber < 1 ||
         typeof body.itemId !== "string" ||
@@ -59,6 +65,11 @@ export async function POST(request: Request) {
       throw new Error();
     if (!body.runId) validateSnapshot(body.snapshot);
     recentConversation(body.conversation);
+    if (
+      body.currentView !== undefined &&
+      !["itinerary", "brief", "catalog", "confirmations", "export"].includes(body.currentView)
+    )
+      throw new Error();
     if (
       body.pendingRunId !== undefined &&
       (typeof body.pendingRunId !== "string" || body.pendingRunId.length > 80)
@@ -87,8 +98,19 @@ export async function POST(request: Request) {
           ),
           { headers: noStoreHeaders },
         );
+      if (body.decision === "select-add")
+        return Response.json(
+          audit.selectRanked(body.runId, body.tripId, body.dayNumber, body.catalogId, catalog),
+          { headers: noStoreHeaders },
+        );
       return Response.json(
-        audit.decide(body.runId, body.tripId, body.decision, catalog) ?? { rejected: true },
+        audit.decide(
+          body.runId,
+          body.tripId,
+          body.decision,
+          catalog,
+          body.rejectionReason ?? "",
+        ) ?? { rejected: true },
         { headers: noStoreHeaders },
       );
     }
@@ -105,9 +127,27 @@ export async function POST(request: Request) {
         "Há alterações locais por guardar. Guarde ou reabra a versão antes de pedir uma proposta.",
       );
     const catalog = await loadPublishedCatalog();
+    const feedback = new FeedbackStore(store);
+    const weather = cachedPlanningWeather(snapshot);
+    const preparedContext = plannerContext(snapshot, catalog);
+    const knownIds = new Set([
+      ...preparedContext.candidates.map((item) => item.id),
+      ...snapshot.itinerary.flatMap((day) => day.items.map((item) => item.id)),
+    ]);
     const context = {
-      ...plannerContext(snapshot, catalog),
+      ...preparedContext,
       conversation: recentConversation(body.conversation),
+      currentView: body.currentView ?? "itinerary",
+      weather,
+      diagnostics: proposalDiagnostics(snapshot, catalog, weather)
+        .map(({ code, dayNumber, itemId }) => ({ code, dayNumber, itemId }))
+        .slice(0, 50),
+      historicalCases: new HistoricalCases(feedback).search(snapshot),
+      catalogQuality: feedback
+        .quality()
+        .filter((item) => knownIds.has(item.catalogId))
+        .slice(0, 150)
+        .map(({ catalogId, average, ratings, alert }) => ({ catalogId, average, ratings, alert })),
       pendingPlan: body.pendingRunId
         ? audit.pendingPlan(body.tripId, body.baseVersion, body.pendingRunId)
         : undefined,
@@ -123,8 +163,13 @@ export async function POST(request: Request) {
     validatePlan(result.plan);
     const preview = simulatePlan(snapshot, result.plan, catalog);
     const alternatives = resolveAlternatives(snapshot, result.plan, catalog);
+    const rankedCandidates = resolveRanking(snapshot, result.plan, catalog);
     const { plan, ...metadata } = result;
-    const runId = audit.propose(body.tripId, body.baseVersion, body.input, plan, preview, metadata);
+    const runId = audit.propose(body.tripId, body.baseVersion, body.input, plan, preview, {
+      ...metadata,
+      operator: process.env.BLU_OPERATOR_ID ?? null,
+      currentView: body.currentView ?? "itinerary",
+    });
     return Response.json(
       {
         runId,
@@ -132,6 +177,7 @@ export async function POST(request: Request) {
         baseVersion: body.baseVersion,
         plan,
         alternatives,
+        rankedCandidates,
         before: snapshot.itinerary,
         after: preview.itinerary,
         impact: proposalImpact(snapshot, preview),

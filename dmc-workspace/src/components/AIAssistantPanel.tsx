@@ -34,17 +34,22 @@ import { Badge } from "@/components/ui/badge";
 
 interface AIAssistantPanelProps {
   proposal?: AgentProposal | null;
-  onDecideProposal?: (decision: "accept" | "reject") => void;
+  onDecideProposal?: (decision: "accept" | "reject", reason?: string) => void;
   onSelectAlternative?: (dayNumber: number, itemId: string, catalogId: string) => void;
   onDismissProposal?: () => void;
   messages: ChatMessage[];
-  onSendMessage: (text: string) => void;
+  onSendMessage: (text: string, context?: string) => void;
   isProcessing: boolean;
   onResetItinerary: () => void;
   onCollapse?: () => void;
 }
 
-const suggestionChips = ["Ajuda", "Recomenda alternativas para chuva", "Otimizar rota do dia 1"];
+const suggestionChips = [
+  "Ajuda",
+  "Ordena os candidatos elegíveis para o dia 1",
+  "Regenera apenas o dia 1 preservando as reservas confirmadas",
+  "Otimizar rota do dia 1",
+];
 
 export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   messages,
@@ -60,6 +65,8 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   const collapseLabel = useTranslated("Recolher assistente", "pt");
   const promptPlaceholder = useTranslated("Ask me to adapt anything…");
   const [inputText, setInputText] = useState("");
+  const [context, setContext] = useState("itinerary");
+  const [rejectionReason, setRejectionReason] = useState("");
   const conversationContainerRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -72,13 +79,13 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
 
   const handleSubmit = () => {
     if (!inputText.trim() || isProcessing) return;
-    onSendMessage(inputText.trim());
+    onSendMessage(inputText.trim(), context);
     setInputText("");
   };
 
   const handleChipClick = (chipText: string) => {
     if (isProcessing) return;
-    onSendMessage(chipText);
+    onSendMessage(chipText, context);
   };
 
   const handleCopyMessage = (id: string, text: string) => {
@@ -341,15 +348,53 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   ))}
                 </div>
               ))}
+              {proposal.rankedCandidates?.map((group) => (
+                <div key={group.dayNumber} className="mt-3 border-t pt-2">
+                  <h5>Candidatos ordenados · Dia {group.dayNumber}</h5>
+                  {group.options.map((option) => (
+                    <div className="mt-2 rounded border p-2" key={option.id}>
+                      <p>
+                        {option.title} · {option.time}
+                      </p>
+                      <p>{option.price ?? "Preço por confirmar"}</p>
+                      <p>Revisão do catálogo: {option.catalogRevision ?? "desconhecida"}</p>
+                      <p>Posição na base determinística: {option.baselinePosition}</p>
+                      <ul>
+                        {option.reasons.map((reason, index) => (
+                          <li key={index}>{reason}</li>
+                        ))}
+                      </ul>
+                      <Button
+                        disabled={isProcessing}
+                        onClick={() => onSelectAlternative?.(group.dayNumber, "", option.id)}
+                      >
+                        Pré-visualizar adição
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ))}
               {proposal.plan.actions.length > 0 ? (
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <label className="w-full">
+                    Motivo de rejeição (opcional)
+                    <input
+                      className="w-full rounded border p-2"
+                      maxLength={1000}
+                      value={rejectionReason}
+                      onChange={(event) => setRejectionReason(event.target.value)}
+                    />
+                  </label>
                   <Button disabled={isProcessing} onClick={() => onDecideProposal?.("accept")}>
                     <T text="Aceitar e guardar versão" source="pt" />
                   </Button>
                   <Button
                     variant="ghost"
                     disabled={isProcessing}
-                    onClick={() => onDecideProposal?.("reject")}
+                    onClick={() => {
+                      onDecideProposal?.("reject", rejectionReason);
+                      setRejectionReason("");
+                    }}
                   >
                     <T text="Rejeitar" source="pt" />
                   </Button>
@@ -389,6 +434,20 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
 
       {/* 3. AI Elements PromptInput with Suggestion Tools */}
       <div className="p-3 border-t border-[#D5D1C7] bg-white">
+        <label className="mb-2 block text-xs">
+          Contexto do pedido
+          <select
+            className="ml-2 rounded border p-1"
+            value={context}
+            onChange={(event) => setContext(event.target.value)}
+          >
+            <option value="itinerary">Roteiro</option>
+            <option value="brief">Briefing</option>
+            <option value="confirmations">Confirmações</option>
+            <option value="catalog">Catálogo e recomendações</option>
+            <option value="export">Revisão da entrega</option>
+          </select>
+        </label>
         <PromptInput
           onSubmit={(e) => {
             e.preventDefault();

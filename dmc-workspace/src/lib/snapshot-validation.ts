@@ -41,6 +41,11 @@ export function validateSnapshot(value: unknown): asserts value is Snapshot {
     )
       throw new Error("Dia inválido.");
     for (const item of day.items) {
+      if (
+        item.catalogRevision !== undefined &&
+        (!Number.isSafeInteger(item.catalogRevision) || item.catalogRevision < 1)
+      )
+        throw new Error("Revisão de catálogo inválida.");
       if (!item || !string(item.id) || !string(item.time) || !string(item.title))
         throw new Error("Atividade inválida.");
       for (const key of [

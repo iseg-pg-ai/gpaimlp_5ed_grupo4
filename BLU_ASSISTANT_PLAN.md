@@ -27,9 +27,9 @@ flowchart LR
     H --> V[Versão e auditoria atómicas]
 ```
 
-Implementados nos primeiros incrementos das Fases 0 e 1:
+Base implementada e alargada nesta iteração:
 
-- Contrato partilhado Python/TypeScript e oito tipos de ações.
+- Contrato partilhado Python/TypeScript e treze tipos de ações.
 - Validação integral, pré-visualização e aceitação/rejeição explícitas.
 - Proteções, expiração, concorrência e auditoria na base de versões existente.
 - Contexto recente limitado à viagem e proposta pendente validada no servidor.
@@ -41,16 +41,22 @@ Implementados nos primeiros incrementos das Fases 0 e 1:
 - Classificação segura de erros de permissões, formato, timeout e ligação.
 - Template Lambda privado preparado, ainda sem deployment.
 
-As Fases 0 e 1 permanecem parciais. Mover entre dias, otimizar percursos pelo
-agente, editar briefing/confirmações, identificar o operador e avaliar amplamente
-o modelo continuam pendentes. As Fases 2–6 não estão concluídas.
+As Fases 0–6 têm agora incrementos funcionais para validação conjunta: mover
+entre dias, otimização geográfica com validação de horários, alterações limitadas
+ao briefing, preparação de confirmações pendentes, ranking de candidatos,
+regeneração parcial, feedback, qualidade, casos revistos, rascunhos e métricas.
+A área `/assistant` exige token e identidade configurados no servidor. Isto não
+substitui SSO multiutilizador nem comprova qualidade semântica ampla do modelo.
+A matriz de aceitação está em [validação das seis fases](docs/ASSISTANT_VALIDATION.md).
+Voos dependem de API escolhida; Lambda não foi publicado. Agendamento de CI,
+chamadas pagas e envio de comunicações não são ativados por esta implementação.
 
 ### Evidência e limites
 
-- Última validação do portal: 107 testes aprovados, um ignorado; build aprovado.
+- Última validação do portal: 116 testes aprovados, um ignorado; build aprovado.
 - Interface em 390/1600 px validada com fornecedor simulado e dados temporários.
-- Última validação Python do agente: 15 testes aprovados sem chamadas externas.
-- Avaliador com 11 cenários sintéticos e comparação estrita de ações, dias, alvos
+- Última validação Python do agente e meteorologia: 23 testes aprovados sem chamadas externas.
+- Avaliador com 18 cenários sintéticos e comparação estrita de ações, dias, alvos
   e alternativas; recusa contrato inválido, ações adicionais e opções duplicadas.
 - Casos incluem ambiguidade, proteções, ausência de candidatos e injeção em dados.
   A nova bateria ainda não foi executada no Bedrock.
@@ -111,8 +117,10 @@ A lógica determinística existente suporta comandos explícitos para:
 Também já protege atividades bloqueadas ou confirmadas e impede alterações incompatíveis com orçamento, horários, exclusões e regras.
 
 O novo fluxo Bedrock permite adicionar, substituir, remover, reagendar,
-reorganizar, ajustar capacidade, reservar manhã/tarde livre e marcar dia livre.
-A otimização geográfica do editor existente ainda não é uma ação do planeador.
+reorganizar, mover entre dias, otimizar a sequência geográfica estimada,
+ajustar capacidade, reservar manhã/tarde livre, marcar dia livre e regenerar
+apenas um dia. Pode preparar campos de confirmação sem confirmar uma reserva
+e editar um subconjunto explícito do briefing, sujeito à elegibilidade atual.
 
 Os caminhos seguintes são relativos a `dmc-workspace/`:
 
@@ -168,10 +176,12 @@ Já existe:
 
 ### Edição e contexto ainda parciais
 
-O novo endpoint `/api/assistant/plan` já interpreta pedidos e valida ações antes
-de propor qualquer escrita. Ainda faltam mover entre dias, otimizar percursos
-através do agente, editar o briefing e apoiar confirmações. Não há assistência
-contextual completa em todas as páginas.
+O endpoint `/api/assistant/plan` interpreta pedidos e valida ações antes
+de propor escrita. O painel permite escolher o contexto; a área operacional
+acrescenta o contexto da revisão. O briefing tem campos permitidos explícitos;
+datas e dados do cliente não são editados pelo agente. Confirmações preparadas
+continuam pendentes. Atividades protegidas ou confirmadas não são movidas,
+reorganizadas nem editadas pelo agente.
 
 As propostas podem combinar até oito ações. Uma falha invalida o conjunto;
 a capacidade diária e as atividades protegidas continuam a ser verificadas.
@@ -194,7 +204,8 @@ mensagem e 6000 no total. Não há memória entre viagens.
 A tabela `agent_runs`, na mesma `history.sqlite` das versões, guarda plano,
 hash do pedido, decisão, versão de origem/executada e métricas. O texto original
 do pedido não é guardado nesta tabela. Proposta e decisão não substituem uma
-identidade autenticada do operador, ainda por implementar.
+identidade autenticada individual: a API operacional usa token e identidade do
+servidor; SSO e papéis por trabalhador permanecem por definir.
 
 ### Operação AWS e segurança
 
@@ -208,8 +219,10 @@ para reduzir dados pessoais; o texto escrito no chat continua a ser enviado ao
 Bedrock. Fontes e respostas externas são dados não fiáveis, nunca instruções.
 Blocos de raciocínio interno e detalhes privados do SDK não são apresentados.
 
-Continuam pendentes autenticação dos trabalhadores, permissões, consentimento,
-finalidade e retenção operacional. O portal não está validado para exposição
+A área operacional está fechada por defeito e autentica leitura/escrita com
+Bearer token; a identidade vem de `BLU_OPERATOR_ID`, não do corpo do pedido.
+Decisões exigem confirmação explícita e são auditadas. Autenticação individual,
+papéis, consentimento e políticas de retenção para produção continuam pendentes. O portal não está validado para exposição
 pública multiutilizador. As proteções atuais não equivalem a resistência geral
 comprovada contra injeção de instruções.
 
@@ -228,9 +241,12 @@ que o esclarecimento textual seja adequado.
 
 ### Feedback pós-viagem
 
-Não existe atualmente um modelo de feedback individual por atividade.
+Implementado em `feedback-store.ts` e na área `/assistant`, na mesma base de
+versões. A viagem aponta para uma única versão efetivamente realizada; o
+questionário exige resposta a todos os cartões e o feedback entregue é imutável.
+A revisão do catálogo fica desconhecida nos snapshots antigos que não a registam.
 
-Será necessário guardar:
+O registo inclui:
 
 - Viagem e versão efetivamente realizadas.
 - Identificador estável do item do catálogo.
@@ -251,7 +267,7 @@ O questionário deve exigir uma resposta para cada card, mas permitir “Não ap
 
 ### Qualidade do catálogo
 
-É necessário criar agregados por item:
+Implementados agregados por item e janelas de 30/90/180 dias. O painel apresenta:
 
 - Número de utilizações.
 - Número de avaliações.
@@ -275,9 +291,14 @@ A inativação deve impedir novas recomendações e preservar todo o histórico.
 
 ### Knowledge Base histórica
 
-Existem itinerários e PDFs históricos, mas não existe uma camada operacional que os transforme em casos reutilizáveis.
+A recuperação estruturada está implementada em `historical-cases.ts`. Exige
+feedback completo, média mínima 4, ausência de incidentes e aprovação humana.
+Indexa apenas um perfil permitido e IDs/revisões dos itens realizados. Exclui
+versões no Lixo; o restauro volta a torná-las pesquisáveis. Não copia nomes,
+contactos, comentários ou PDFs para o contexto do modelo.
 
-A primeira versão não precisa de uma base vetorial. Pode usar:
+A pesquisa atual usa pontuação estruturada e termos textuais, sem base vetorial.
+Os campos de perfil e sinais considerados incluem:
 
 - Campos estruturados do briefing.
 - Destino.
@@ -362,8 +383,9 @@ Disponíveis: `add_catalog_item`, `replace_item`, `remove_item`,
 `set_free_day`. `alternatives` é um campo separado para opções de substituição,
 não uma ação que as aplique.
 
-Por implementar: `move_item`, `optimize_route`, `update_brief` e
-`update_pending_confirmation`. Os nomes são propostas, não contratos ativos.
+Também disponíveis: `move_item`, `optimize_route`, `update_brief`,
+`update_pending_confirmation` e `regenerate_day`. `ranking` ordena candidatos
+para revisão, sem os adicionar. A escolha gera outra proposta validada.
 
 Todas as ações atuais exigem confirmação humana. Atividades bloqueadas ou
 confirmadas são recusadas; a aceitação de uma proposta não contorna essa proteção.
@@ -585,13 +607,14 @@ Prioridade: crítica.
 - [x] Remover dados pessoais e instruções dos logs.
 - [ ] Impedir que conteúdo do catálogo seja tratado como instrução.
 - [x] Não expor raciocínio interno do modelo.
-- [ ] Criar conjunto de testes e personas.
+- [x] Criar conjunto de testes e personas sintéticas.
 - [ ] Medir grounding, validade, latência e custo.
 
 Estado parcial: separação entre dados e instruções implementada no prompt e
-validação, mas resistência ampla a injeção ainda não comprovada. Existem 11 casos
-sintéticos e testes automatizados; personas e avaliação real ampla estão pendentes.
-Latência e tokens são medidos; custo monetário não é calculado.
+validação, mas resistência ampla a injeção ainda não comprovada. Existem 18 casos
+sintéticos, incluindo personas de família e mobilidade; avaliação real ampla
+continua pendente. Latência e tokens são medidos; a estimativa monetária depende
+de tarifas explicitamente configuradas.
 
 Esta fase é dependência de todas as restantes.
 
@@ -606,20 +629,16 @@ Prioridade: crítica.
 - [x] Permitir aceitar ou rejeitar.
 - [x] Executar usando a lógica existente.
 - [ ] Permitir comandos compostos, como aliviar um dia, preservar reservas confirmadas e reduzir o custo numa única operação.
-- [ ] Adaptar a assistência à página aberta: briefing, catálogo, itinerário, confirmações ou exportação.
-- [ ] Apoiar o preenchimento das confirmações, referências, preços e evidências ainda em falta.
+- [x] Disponibilizar contexto de briefing, catálogo, itinerário, confirmações e entrega.
+- [x] Preparar campos de confirmação com dados fornecidos, sem inventar evidência.
 - [x] Disponibilizar um modo de simulação que calcule o impacto sem guardar imediatamente.
 - [x] Criar uma versão após aceitação.
-- [ ] Resumir as alterações entre versões, incluindo atividades, horários, preços e orçamento.
-- [ ] Registar pedido, ação, validação e decisão.
+- [x] Comparar snapshots com atividades, horários e custos conhecidos por moeda.
+- [x] Registar hash do pedido, plano validado e decisão.
 
-Estado parcial: até oito ações compostas são simuladas atomicamente; interpretação
-ampla de pedidos compostos e redução de custos ainda exigem avaliação. Auditoria
-de plano, hash do pedido e decisão implementada; identidade do operador e registo
-detalhado de cada validação continuam pendentes. Há resumo do impacto
-na proposta, com diferenças de atividades/horários e subtotais por moeda,
-reutilizando o orçamento existente. Comparação arbitrária entre versões do
-histórico e diagnóstico completo de desvios do orçamento continuam pendentes.
+Implementados também mover entre dias e regeneração parcial. Pedidos compostos
+continuam limitados a oito ações e exigem avaliação semântica no modelo real.
+Identidade operacional é de uma conta configurada por processo, sem SSO individual.
 
 Resultado pretendido: executar linguagem natural sem contornar regras.
 
@@ -627,70 +646,70 @@ Resultado pretendido: executar linguagem natural sem contornar regras.
 
 Prioridade: alta.
 
-- Manter a geração determinística como base.
-- Pedir ao agente para ordenar candidatos elegíveis.
-- Recuperar casos históricos semelhantes.
-- Mostrar razões do ranking.
-- Explicar que respostas do briefing e regras de curadoria sustentam cada recomendação.
-- Diagnosticar conflitos de horário, deslocações inviáveis, excesso de atividades, orçamento ultrapassado e informação em falta.
-- Propor alternativas elegíveis quando uma atividade estiver fechada, exceder o orçamento ou contrariar restrições.
-- Comparar a proposta do agente com a proposta base.
-- Nunca permitir que o modelo introduza um item inexistente ou inativo.
-- Guardar a origem de cada recomendação.
+- [x] Manter a geração determinística como base.
+- [x] Pedir ao agente para ordenar candidatos elegíveis.
+- [x] Recuperar casos históricos semelhantes.
+- [x] Mostrar razões do ranking.
+- [x] Explicar que respostas do briefing e regras de curadoria sustentam cada recomendação.
+- [x] Diagnosticar conflitos de horário, deslocações inviáveis, excesso de atividades, orçamento ultrapassado e informação em falta.
+- [x] Propor alternativas elegíveis quando uma atividade estiver fechada, exceder o orçamento ou contrariar restrições.
+- [x] Comparar a proposta do agente com a proposta base.
+- [x] Nunca permitir que o modelo introduza um item inexistente ou inativo.
+- [x] Guardar a origem de cada recomendação.
 
 ### Fase 3 — Feedback pós-viagem
 
 Prioridade: alta.
 
-- Criar estado “Viagem concluída — feedback pendente”.
-- Apresentar questionário card a card.
-- Tornar obrigatória uma resposta ou “Não aplicável”.
-- Guardar avaliações ligadas à versão e revisão do catálogo.
-- Criar página de histórico de avaliações.
-- Calcular tendências e alertas.
-- Detetar registos incompletos, duplicados, desatualizados ou com avaliações negativas.
-- Propor correções do catálogo para aprovação humana.
-- Permitir ao trabalhador colocar o item em revisão ou inativá-lo.
-- Preservar todas as avaliações após inativação.
+- [x] Criar estado “Viagem concluída — feedback pendente”.
+- [x] Apresentar questionário card a card.
+- [x] Tornar obrigatória uma resposta ou “Não aplicável”.
+- [x] Guardar avaliações ligadas à versão e revisão do catálogo.
+- [x] Criar página de histórico de avaliações.
+- [x] Calcular tendências e alertas.
+- [x] Sinalizar campos em falta, possíveis duplicados, revisão antiga e feedback negativo.
+- [x] Encaminhar alertas para revisão do catálogo existente, sem reescrever conteúdo automaticamente.
+- [x] Permitir revisão/inativação com motivo, autenticação e controlo de revisão.
+- [x] Preservar todas as avaliações após inativação.
 
 ### Fase 4 — Knowledge Base histórica
 
 Prioridade: média.
 
-- Indexar snapshots finais.
-- Indexar alterações e decisões do trabalhador.
-- Associar feedback.
-- Criar pesquisa por casos semelhantes.
-- Reutilizar estruturas de propostas bem avaliadas sem copiar dados pessoais dos clientes.
-- Usar filtros estruturados e pesquisa textual.
-- Avaliar ganhos antes de adicionar embeddings.
-- Excluir casos sem qualidade mínima ou sem resultado conhecido.
+- [x] Indexar snapshots finais.
+- [x] Indexar alterações e decisões do trabalhador.
+- [x] Associar feedback.
+- [x] Criar pesquisa por casos semelhantes.
+- [x] Reutilizar estruturas de propostas bem avaliadas sem copiar dados pessoais dos clientes.
+- [x] Usar filtros estruturados e pesquisa textual.
+- [x] Usar pesquisa estruturada/textual como base; embeddings não introduzidos.
+- [x] Excluir casos sem qualidade mínima ou sem resultado conhecido.
 
 ### Fase 5 — Integrações e proatividade
 
 Prioridade: média.
 
-- Unificar meteorologia e rotas como adaptadores do portal.
-- Acrescentar cache, timeout e provenance.
-- Criar alertas de chuva, encerramento e conflito.
-- Apresentar indicadores proativos, incluindo reservas sem confirmação, desvio do orçamento e atividades exteriores afetadas pela meteorologia.
-- Permitir regeneração parcial de um dia.
-- Calcular deslocações e reorganizar o dia perante alterações meteorológicas, atrasos ou indisponibilidades.
-- Integrar voos quando existir uma API escolhida.
-- Preparar fornecedores, mapas ou reservas sem confirmar automaticamente.
-- Preparar o email de partilha e um resumo da proposta no idioma do cliente, sempre sujeitos a revisão.
+- [x] Unificar meteorologia e rotas como adaptadores do portal.
+- [x] Acrescentar cache, timeout e provenance.
+- [x] Criar alertas de chuva, encerramento e conflito.
+- [x] Apresentar indicadores proativos, incluindo reservas sem confirmação, desvio do orçamento e atividades exteriores afetadas pela meteorologia.
+- [x] Permitir regeneração parcial de um dia.
+- [x] Propor reorganização/regeneração sob pedido, preservando confirmações; percursos alterados exigem nova validação.
+- [ ] Integrar voos quando existir uma API escolhida.
+- [x] Preparar fornecedores, mapas ou reservas sem confirmar automaticamente.
+- [x] Preparar o email de partilha e um resumo da proposta no idioma do cliente, sempre sujeitos a revisão.
 
 ### Fase 6 — Operação e melhoria contínua
 
-- Dashboard de desempenho do Blu.
-- Taxa de aceitação das sugestões.
-- Motivos de rejeição.
-- Frequência de correções manuais.
-- Executar um controlo de qualidade antes da exportação, cobrindo conteúdo, idiomas, preços, reservas e campos pendentes.
-- Custos e latência.
-- Testes periódicos contra regressão e prompt injection.
-- Comparação controlada de modelos.
-- Aprovação humana antes de alterar prompts ou rankings.
+- [x] Dashboard de desempenho do Blu.
+- [x] Taxa de aceitação das sugestões.
+- [x] Motivos de rejeição.
+- [x] Indicador de versões editadas fora das decisões do agente, sem inferir causalidade.
+- [x] Executar um controlo de qualidade antes da exportação, cobrindo conteúdo, idiomas, preços, reservas e campos pendentes.
+- [x] Tokens e latência; estimativa monetária apenas com tarifas configuradas.
+- [ ] Testes periódicos contra regressão e prompt injection.
+- [ ] Comparação controlada de modelos.
+- [ ] Aprovação humana antes de alterar prompts ou rankings.
 
 ---
 

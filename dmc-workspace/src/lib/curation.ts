@@ -384,6 +384,9 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         : source;
       return {
         id,
+        ...(Number.isSafeInteger(row._catalog_revision)
+          ? { catalogRevision: Number(row._catalog_revision) }
+          : {}),
         time:
           slot.kind === "scheduled"
             ? `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`

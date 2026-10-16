@@ -50,6 +50,8 @@ class PlannerTest(unittest.TestCase):
                 expected = case["expected"]
                 plan = {**proposal(), "actions": copy.deepcopy(expected["actions"]),
                         "alternatives": copy.deepcopy(expected["alternatives"])}
+                if "ranking" in expected:
+                    plan["ranking"] = copy.deepcopy(expected["ranking"])
                 self.assertTrue(evaluate({"plan": plan}, expected))
                 plan["actions"].append({"type": "remove_item", "dayNumber": 1,
                                         "itemId": "atracoes:inventado"})

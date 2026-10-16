@@ -19,6 +19,20 @@ export type AgentImpact = {
 // Derivado dos snapshots validados, nunca do resumo ou de preços do modelo.
 export function proposalImpact(before: Snapshot, after: Snapshot): AgentImpact {
   const changes: string[] = [];
+  for (const field of [
+    "budget",
+    "pace",
+    "morningPreference",
+    "physicalEffort",
+    "interests",
+    "exclusions",
+    "mobilityRestrictions",
+    "dietaryRestrictions",
+  ] as const)
+    if (canonicalSnapshot(before.brief[field]) !== canonicalSnapshot(after.brief[field]))
+      changes.push(
+        `Briefing · ${field}: ${JSON.stringify(before.brief[field])} → ${JSON.stringify(after.brief[field])}.`,
+      );
   for (const day of after.itinerary) {
     const previous = before.itinerary.find((d) => d.dayNumber === day.dayNumber);
     if (!previous) continue;
@@ -34,6 +48,19 @@ export function proposalImpact(before: Snapshot, after: Snapshot): AgentImpact {
       }
       if (old.time !== item.time)
         changes.push(`${prefix}: ${item.title}, horário ${old.time} → ${item.time}.`);
+      for (const field of [
+        "time",
+        "location",
+        "price",
+        "supplier",
+        "reference",
+        "contact",
+        "notes",
+      ] as const)
+        if ((old.confirmation?.[field] ?? "") !== (item.confirmation?.[field] ?? ""))
+          changes.push(
+            `${prefix}: confirmação pendente de ${item.title} · ${field}: ${old.confirmation?.[field] || "Por preencher"} → ${item.confirmation?.[field] || "Por preencher"}.`,
+          );
       const price = (value: typeof item) => ({
         note: value.priceNote,
         catalog: value.catalogDetails?.pricing,
