@@ -399,3 +399,22 @@ execução direta incluir todas as classes do catálogo.
 Evidência: `npm run check` com 95 testes aprovados e um ignorado; 44 testes
 Python aprovados; build e integração catálogo/ETL aprovados em dados temporários.
 Não foram repetidos os cenários de navegador nesta limpeza.
+
+## Observatório de dados — 2026-10-16
+
+O dashboard Streamlit passa a organizar a consulta em cinco áreas de decisão:
+panorama, exploração da oferta, preços, histórico e qualidade. Mantém leitura
+SQLite em modo `ro` e não introduz persistência ou dependências adicionais.
+A consulta volta a ler a entrega em cada execução, evitando caches desatualizadas.
+
+Preços são filtrados por categoria, unidade e natureza comercial antes de calcular
+a mediana; continuam referências, sem inferir margens ou cotações. A presença de
+atividades em roteiros mede menções em roteiros distintos, não vendas ou procura.
+O anterior score de campos não nulos deixa de ser apresentado como prontidão.
+
+A vista geográfica usa coordenadas dentro dos intervalos válidos e contornos
+locais Natural Earth da Europa e norte de África, sem fornecedor de mosaicos ou
+geocodificação externa; a validade geográfica exige revisão.
+Localizações das experiências preservam o texto da fonte e não são fundidas com
+cidades por aproximação. O dashboard não apresenta contactos ou textos integrais
+de propostas históricas. Acesso local mantém o binding localhost autorizado.

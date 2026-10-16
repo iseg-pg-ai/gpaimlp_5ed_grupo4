@@ -1,116 +1,269 @@
-"""Interactive Streamlit dashboard for the local BLU ETL warehouse."""
-
+"""Observatório BLU: exploração só de leitura da entrega publicada pelo ETL."""
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
-
-# Resolve paths from the repository root so the app also works when launched elsewhere.
 ROOT = Path(__file__).resolve().parents[1]
 WAREHOUSE = ROOT / "warehouse"
 DATABASE = WAREHOUSE / "blu_etl.sqlite"
+COLORS = ["#66e5cf", "#d8b776", "#799dff"]
 
 
-@st.cache_data(show_spinner=False)
 def query(sql: str) -> pd.DataFrame:
-    """Run a read-only dashboard query against the generated SQLite warehouse."""
+    """Ler a entrega publicada, sem cache que sobreviva a uma nova publicação."""
     with sqlite3.connect(f"file:{DATABASE.as_posix()}?mode=ro", uri=True) as connection:
         return pd.read_sql_query(sql, connection)
 
 
-@st.cache_data(show_spinner=False)
 def load_json(name: str) -> dict:
-    """Load one small ETL report artifact for cards and explanatory content."""
     return json.loads((WAREHOUSE / name).read_text(encoding="utf-8"))
 
 
-def section_header(title: str, description: str) -> None:
-    """Render a consistently styled dashboard section heading."""
-    st.header(title)
-    st.caption(description)
+def catalog_data() -> pd.DataFrame:
+    return query("""
+        SELECT id AS Identificador, 'Atração' AS Tipo, nome_da_atracao AS Nome,
+        cidade AS Localização, categoria AS Categoria, descricao_curada AS Descrição,
+        latitude, longitude, horario AS Horário, preco_da_atracao AS Preço,
+        site_fonte AS Fonte FROM atracoes
+        UNION ALL
+        SELECT id_blu, 'Restaurante', estabelecimento, cidade, tipo_gastronomia_base,
+        observacoes_da_base, latitude, longitude, horario_base_reconfirmar,
+        preco_nao_cotacao, fonte_indicada_na_base FROM restaurantes
+        UNION ALL
+        SELECT nome_da_experiencia, 'Experiência', nome_da_experiencia, localizacao,
+        categoria, descricao, NULL, NULL, horario, preco, site_fonte FROM experiencias
+    """)
 
 
-def overview(kpis: dict, validation: dict) -> None:
-    """Show the headline operational and data-quality metrics."""
-    section_header("Warehouse overview", "Metrics are calculated after ETL validation.")
-    catalog, proposals = kpis["catalog"], kpis["proposals"]
-    cards = st.columns(6)
-    cards[0].metric("Attractions", catalog["attractions"])
-    cards[1].metric("Restaurants", catalog["restaurants"])
-    cards[2].metric("Experiences", catalog["experiences"])
-    cards[3].metric("Cities", catalog["distinct_cities"])
-    cards[4].metric("Proposal PDFs", proposals["documents"])
-    cards[5].metric("Validation issues", validation["issue_count"])
+def style() -> None:
+    st.markdown((Path(__file__).with_name("style.css")).read_text(), unsafe_allow_html=True)
 
-    city_data = pd.DataFrame(kpis["catalog"]["records_by_city"].items(), columns=["City", "Records"])
-    st.plotly_chart(px.bar(city_data, x="City", y="Records", title="Catalog records by city"), use_container_width=True)
+
+def heading(number: str, title: str, description: str) -> None:
+    st.caption(f"OBSERVATÓRIO BLU / {number}")
+    st.title(title)
+    st.write(description)
+
+
+def chart(fig, *, map_controls: bool = False) -> None:
+    fig.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)",
+                      plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#b5c6d2", family="sans-serif"),
+                      margin=dict(l=0, r=0 if map_controls else 12, t=30, b=0), legend_title_text="", legend=dict(font=dict(color="#b5c6d2")),
+                      colorway=COLORS)
+    fig.update_xaxes(gridcolor="#1d303d", zeroline=False)
+    fig.update_yaxes(gridcolor="#1d303d", zeroline=False)
+    config = {"displayModeBar": False}
+    if map_controls:
+        config = {"displayModeBar": True, "scrollZoom": True,
+                  "modeBarButtons": [["zoomIn2d", "zoomOut2d", "resetScale2d"]],
+                  "displaylogo": False}
+    st.plotly_chart(fig, width="stretch", config=config)
+
+
+def metrics(items: list[tuple]) -> None:
+    for col, (label, value, note) in zip(st.columns(len(items)), items):
+        with col:
+            st.metric(label, value)
+            st.caption(note)
+
+
+def located(frame: pd.DataFrame) -> pd.DataFrame:
+    frame = frame.copy()
+    for field in ("latitude", "longitude"):
+        frame[field] = pd.to_numeric(frame[field], errors="coerce")
+    return frame[frame.latitude.between(-90, 90) & frame.longitude.between(-180, 180)]
+
+
+def map_chart(frame: pd.DataFrame) -> None:
+    points = located(frame)
+    if points.empty:
+        st.info("Não existem coordenadas válidas nesta seleção.")
+        return
+    # Projeção Mercator em eixos cartesianos para preencher cartões de qualquer proporção.
+    def mercator(latitude: float) -> float:
+        latitude = max(-85, min(85, latitude))
+        return math.degrees(math.log(math.tan(math.pi / 4 + math.radians(latitude) / 2)))
+
+    points = points.assign(norte=points.latitude.map(mercator))
+    fig = px.scatter(points, x="longitude", y="norte", color="Tipo",
+                     hover_name="Nome", hover_data={"Localização": True, "norte": False, "longitude": False},
+                     color_discrete_sequence=COLORS, height=420)
+    fig.update_traces(marker=dict(size=9, opacity=.8, line=dict(width=.7, color="#08151e")))
+    geography = json.loads(Path(__file__).with_name("region.geojson").read_text())
+    for country in geography["features"]:
+        for polygon in country["geometry"]["coordinates"]:
+            ring = polygon[0]
+            fig.add_trace(go.Scatter(
+                x=[position[0] for position in ring], y=[mercator(position[1]) for position in ring],
+                mode="lines", fill="toself", fillcolor="#142c36",
+                line=dict(color="#567c87", width=1), hoverinfo="skip", showlegend=False,
+            ))
+    # Desenhar primeiro o território e depois os pontos, mantendo as legendas da oferta.
+    point_traces = len(points.Tipo.unique())
+    fig.data = fig.data[point_traces:] + fig.data[:point_traces]
+    # A escala é igual nos dois eixos; o intervalo adapta-se à largura sem bandas vazias.
+    fig.update_xaxes(visible=False, range=[-17, 7], constrain="range")
+    fig.update_yaxes(visible=False, range=[mercator(40) - 8, mercator(40) + 8],
+                     scaleanchor="x", scaleratio=1, constrain="range")
+    fig.update_layout(margin=dict(l=0, r=0, t=30, b=0), dragmode="pan",
+                      legend=dict(orientation="h", y=1.05, x=0))
+    chart(fig, map_controls=True)
+    st.caption(f"{len(points)} de {len(frame)} registos com coordenadas válidas. Base cartográfica: Natural Earth (domínio público), Europa e norte de África. Use +/− ou a roda do rato para aproximar; arraste para deslocar. Experiências sem coordenadas ficam na lista.")
+
+
+def overview(frame: pd.DataFrame, validation: dict) -> None:
+    heading("01 — PANORAMA", "Um território de possibilidades.",
+            "A oferta BLU, as suas referências e o conhecimento que ainda podemos aprofundar.")
+    counts = frame.Tipo.value_counts()
+    metrics([(kind.upper(), int(counts.get(kind, 0)), "registos no catálogo") for kind in ("Atração", "Restaurante", "Experiência")]
+            + [("ACERVO", len(query("SELECT document_id FROM proposal_documents")), "documentos PDF históricos")])
+    left, right = st.columns([1.8, 1], gap="large")
+    with left:
+        st.subheader("A geografia da curadoria")
+        map_chart(frame)
+    with right:
+        st.subheader("Onde a oferta se concentra")
+        cities = frame[frame.Tipo != "Experiência"].groupby(["Localização", "Tipo"]).size().reset_index(name="Registos")
+        top = cities.groupby("Localização").Registos.sum().nlargest(8).index
+        chart(px.bar(cities[cities.Localização.isin(top)], x="Registos", y="Localização", color="Tipo",
+                     orientation="h", color_discrete_sequence=COLORS, height=390))
+        st.caption("Top 8 das localizações registadas em atrações e restaurantes. As experiências usam descrições de localização distintas e são exploradas separadamente.")
+    st.divider()
+    st.subheader("O próximo passo começa nos dados")
+    metrics([("INTEGRIDADE", validation["issue_count"], "ocorrências nos controlos do ETL"),
+             ("PREÇOS A REVER", len(query("SELECT id FROM precos WHERE preco_publico_vs_custo = 'Referência anterior — validar'")), "referências anteriores assinaladas"),
+             ("CONFLITOS DE FONTES", len(query("SELECT record_id FROM structured_merge_conflicts")), "divergências conservadas para revisão")])
+    st.caption("Integridade técnica e campos preenchidos não equivalem a disponibilidade, aprovação ou informação comercial confirmada.")
+
+
+def explore(frame: pd.DataFrame) -> None:
+    heading("02 — EXPLORAR", "Encontre a próxima descoberta.", "Cruze lugares, sabores e experiências. Abra um registo para conhecer o seu contexto.")
+    a, b, c = st.columns(3)
+    kinds = a.multiselect("Tipo de oferta", sorted(frame.Tipo.unique()))
+    subset = frame[frame.Tipo.isin(kinds)] if kinds else frame
+    places = b.multiselect("Localização registada", sorted(subset.Localização.dropna().unique()))
+    if places:
+        subset = subset[subset.Localização.isin(places)]
+    categories = c.multiselect("Categoria", sorted(subset.Categoria.dropna().unique()))
+    if categories:
+        subset = subset[subset.Categoria.isin(categories)]
+    search = st.text_input("Pesquisar nome ou descrição", placeholder="Ex.: azulejo, vinho, Sintra…")
+    if search:
+        subset = subset[subset[["Nome", "Descrição"]].fillna("").apply(lambda col: col.str.contains(search, case=False, regex=False)).any(axis=1)]
+    st.caption(f"{len(subset)} de {len(frame)} registos · localizações e categorias preservam as designações das fontes")
+    left, right = st.columns([1.5, 1])
+    with left:
+        map_chart(subset)
+    with right:
+        st.dataframe(subset[["Nome", "Tipo", "Localização", "Categoria"]], hide_index=True, width="stretch", height=390)
+    if subset.empty:
+        st.info("Nenhum resultado. Experimente retirar um filtro.")
+        return
+    selected = st.selectbox("Abrir ficha", subset.index, format_func=lambda i: f"{subset.at[i, 'Nome']} · {subset.at[i, 'Tipo']}")
+    row = subset.loc[selected]
+    with st.container(border=True):
+        st.subheader(str(row.Nome))
+        for field in ("Tipo", "Localização", "Categoria", "Descrição", "Horário", "Preço", "Fonte"):
+            st.text(f"{field}: {row[field] if pd.notna(row[field]) else 'Por confirmar'}")
+        st.caption("Referência de catálogo. Confirmar condições antes de apresentar ao cliente.")
+
+
+def pricing() -> None:
+    heading("03 — REFERÊNCIAS", "Cada preço tem um contexto.", "Compare apenas referências com a mesma categoria, unidade e natureza comercial declarada.")
+    frame = query("SELECT categoria AS Categoria, nome_modalidade AS Modalidade, local AS Local, unidade AS Unidade, preco_referencia_eur AS 'Referência EUR', preco_publico_vs_custo AS Natureza, estado AS Estado, fonte AS Fonte, data_de_verificacao AS Verificação FROM precos")
+    metrics([("REFERÊNCIAS", len(frame), "registos de preço; não ofertas únicas"),
+             ("COM VALOR", int(frame['Referência EUR'].notna().sum()), "valores de referência em EUR"),
+             ("SEM VALOR", int(frame['Referência EUR'].isna().sum()), "desconhecido não significa zero")])
+    a, b, c = st.columns(3)
+    category = a.selectbox("Categoria", sorted(frame.Categoria.dropna().unique()))
+    subset = frame[frame.Categoria == category]
+    unit = b.selectbox("Unidade declarada", sorted(subset.Unidade.dropna().unique()))
+    subset = subset[subset.Unidade == unit]
+    nature = c.selectbox("Natureza comercial", sorted(subset.Natureza.dropna().unique()))
+    subset = subset[subset.Natureza == nature]
+    values = subset.dropna(subset=["Referência EUR"])
+    if not values.empty:
+        st.metric("Mediana da seleção · EUR", f"{values['Referência EUR'].median():.2f}")
+        chart(px.box(values, y="Referência EUR", points="all", hover_name="Modalidade", color_discrete_sequence=COLORS))
+    else:
+        st.info("Esta seleção não tem valores numéricos de referência.")
+    st.dataframe(subset, hide_index=True, width="stretch")
+    st.caption("A mesma unidade pode ter condições diferentes. Valores públicos, custos e referências por validar não constituem uma cotação nem permitem calcular margens.")
+
+
+def history() -> None:
+    heading("04 — MEMÓRIA", "Conhecimento que merece continuar.", "Explore a presença de atividades nos roteiros estruturados, sem a confundir com vendas ou satisfação.")
+    counts = query("SELECT COUNT(*) AS total, SUM(data_explicita IS NOT NULL AND TRIM(data_explicita) != '') AS dated FROM structured_roteiros").iloc[0]
+    metrics([("ROTEIROS", int(counts.total), "registos estruturados"),
+             ("PDF HISTÓRICOS", len(query("SELECT document_id FROM proposal_documents")), "documentos; contagem distinta dos roteiros"),
+             ("COM DATA EXPLÍCITA", int(counts.dated or 0), "cobertura insuficiente para evolução temporal")])
+    cities = query("SELECT cidade_da_base AS Localização, nome_etapa AS Atividade, id_roteiro FROM structured_atividades")
+    place = st.selectbox("Localização no histórico", ["Todas"] + sorted(cities.Localização.dropna().unique()))
+    if place != "Todas":
+        cities = cities[cities.Localização == place]
+    ranked = cities.groupby("Atividade").id_roteiro.nunique().nlargest(12).sort_values().reset_index(name="Roteiros")
+    chart(px.bar(ranked, x="Roteiros", y="Atividade", orientation="h", color_discrete_sequence=COLORS, height=480))
+    st.caption("Número de roteiros distintos onde a atividade é mencionada. A ausência de uma menção não demonstra ausência de procura.")
+    st.dataframe(ranked.sort_values("Roteiros", ascending=False), hide_index=True, width="stretch")
 
 
 def quality(validation: dict) -> None:
-    """Show table-level completeness and optional-field gaps from validation."""
-    section_header("Data validation", "Validation checks entity keys, coordinates, and PDF-page relationships.")
-    st.success("Validation passed with no integrity issues." if validation["status"] == "passed" else "Validation completed with warnings.")
-    rows = []
-    for table, details in validation["tables"].items():
-        rows.append({"Table": table, "Records": details["record_count"], "Completeness %": details["completeness_pct"], "Missing key values": details["missing_primary_keys"], "Duplicate key values": details["duplicate_primary_key_values"]})
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-
-    gaps = [{"Table": table, "Field": field, "Missing values": count} for table, details in validation["tables"].items() for field, count in details["missing_values_by_column"].items()]
+    heading("05 — CONFIANÇA", "Saber o que ainda não sabemos.", "A qualidade começa por distinguir integridade, preenchimento e confirmação da informação.")
+    if validation["status"] == "passed":
+        st.success("A entrega passou os controlos de integridade declarados pelo ETL.")
+    else:
+        st.warning("A entrega tem ocorrências de validação a consultar.")
+    st.info("O indicador anterior de prontidão media apenas campos não nulos. Não é uma certificação de disponibilidade, acessibilidade ou preço confirmado.")
+    gaps = [{"Tabela": table, "Campo": field, "Em falta": count, "Registos": details["record_count"]}
+            for table, details in validation["tables"].items()
+            for field, count in details["missing_values_by_column"].items() if count]
     if gaps:
-        st.plotly_chart(px.bar(pd.DataFrame(gaps), x="Field", y="Missing values", color="Table", title="Optional-field completeness gaps"), use_container_width=True)
-
-
-def catalog(kpis: dict) -> None:
-    """Explore experience mix and operational readiness of catalog records."""
-    section_header("Catalog and readiness", "Readiness scores identify which records are most prepared for itinerary curation.")
-    categories = pd.DataFrame(kpis["catalog"]["experiences_by_category"].items(), columns=["Experience category", "Records"])
-    st.plotly_chart(px.bar(categories, x="Experience category", y="Records", title="Experiences by category"), use_container_width=True)
-    # Quote the ETL's `table` field because TABLE is reserved SQL syntax in SQLite.
-    readiness = query('SELECT "table" AS source_table, readiness_level, COUNT(*) AS records, ROUND(AVG(readiness_score), 2) AS average_score FROM model_catalog_readiness GROUP BY "table", readiness_level ORDER BY "table", readiness_level')
-    st.dataframe(readiness, use_container_width=True, hide_index=True)
-
-
-def pricing(kpis: dict) -> None:
-    """Display price-reference distribution by business category."""
-    section_header("Pricing", "Reference prices are descriptive inputs, not customer quotations.")
-    rows = [{"Category": category, **stats} for category, stats in kpis["pricing"]["by_category"].items()]
-    frame = pd.DataFrame(rows)
-    st.dataframe(frame, use_container_width=True, hide_index=True)
-    st.plotly_chart(px.bar(frame, x="Category", y="mean_eur", error_y=None, title="Mean reference price (EUR)"), use_container_width=True)
-
-
-def proposals(kpis: dict) -> None:
-    """Show extracted proposal volume and the transparent complexity score."""
-    section_header("Proposal corpus", "Complexity is normalized from page count, text volume, and price mentions.")
-    details = kpis["proposals"]
-    st.write(f"{details['documents']} documents / {details['pages']} pages / {details['total_text_characters']:,} extracted characters")
-    complexity = query("SELECT file_name, complexity_score, complexity_level, page_count, text_characters, price_mentions FROM model_proposal_complexity ORDER BY complexity_score DESC")
-    st.plotly_chart(px.scatter(complexity, x="page_count", y="text_characters", color="complexity_level", hover_name="file_name", size="price_mentions", title="Proposal complexity"), use_container_width=True)
-    st.dataframe(complexity, use_container_width=True, hide_index=True)
-
-
-def data_model_report() -> None:
-    """Render the companion report that documents warehouse modeling decisions."""
-    section_header("Data model report", "Entity grain, identifiers, lineage, and relationships in the analytical warehouse.")
-    st.markdown((ROOT / "reports" / "data_model_report.md").read_text(encoding="utf-8"))
+        frame = pd.DataFrame(gaps)
+        frame["Em falta %"] = (100 * frame['Em falta'] / frame.Registos).round(1)
+        st.subheader("Lacunas declaradas na entrega")
+        st.dataframe(frame.sort_values("Em falta", ascending=False), hide_index=True, width="stretch")
+        st.caption("As tabelas estruturadas e o catálogo são camadas distintas; não somar estas lacunas como entidades únicas. Texto como «por confirmar» também exige revisão, mesmo estando preenchido.")
+    st.subheader("Fila de revisão de preços")
+    pending = query("SELECT nome_modalidade AS Modalidade, local AS Local, preco_publico_vs_custo AS Motivo, fonte AS Fonte FROM precos WHERE preco_publico_vs_custo = 'Referência anterior — validar'")
+    st.dataframe(pending, hide_index=True, width="stretch")
+    st.subheader("Divergências entre fontes")
+    conflicts = query('SELECT "table" AS Tabela, record_id AS Registo, field AS Campo FROM structured_merge_conflicts')
+    st.dataframe(conflicts, hide_index=True, width="stretch")
+    st.caption("Valores das fontes preservados no warehouse. Este dashboard não edita nem resolve divergências.")
+    with st.expander("Controlos técnicos por tabela"):
+        st.dataframe(pd.DataFrame([{"Tabela": name, "Registos": row["record_count"], "Preenchimento %": row["completeness_pct"], "Chaves em falta": row["missing_primary_keys"], "Chaves duplicadas": row["duplicate_primary_key_values"]} for name, row in validation["tables"].items()]), hide_index=True, width="stretch")
+    with st.expander("Modelo de dados e metodologia"):
+        st.markdown((ROOT / "reports" / "data_model_report.md").read_text(encoding="utf-8"))
 
 
 def main() -> None:
-    """Configure the page and route each navigation selection to its view."""
-    st.set_page_config(page_title="BLU Data Warehouse", page_icon="🧭", layout="wide")
-    st.title("BLU Data Warehouse Dashboard")
+    st.set_page_config(page_title="BLU · Observatório", page_icon="◈", layout="wide")
+    style()
     if not DATABASE.exists():
-        st.error("Warehouse not found. Run `python -m etl.pipeline` first.")
+        st.error("Entrega warehouse ausente. Consulte as instruções de instalação antes de executar o ETL.")
         st.stop()
-    kpis, validation = load_json("kpis.json"), load_json("validation_report.json")
-    page = st.sidebar.radio("Dashboard", ["Overview", "Data validation", "Catalog", "Pricing", "Proposals", "Data model report"])
-    {"Overview": lambda: overview(kpis, validation), "Data validation": lambda: quality(validation), "Catalog": lambda: catalog(kpis), "Pricing": lambda: pricing(kpis), "Proposals": lambda: proposals(kpis), "Data model report": data_model_report}[page]()
+    with st.sidebar:
+        st.markdown('<div class="brand">BLU<span>INTELLIGENCE ATLAS</span></div>', unsafe_allow_html=True)
+        st.caption("CURADORIA · TERRITÓRIO · CONHECIMENTO")
+        page = st.radio("Navegação", ["Panorama", "Explorar oferta", "Preços", "Histórico", "Qualidade"], label_visibility="collapsed")
+        st.divider()
+        st.caption("FONTE / ENTREGA ETL")
+        st.write("Conhecimento para decidir melhor.")
+        st.caption("Consulta só de leitura. Sem chamadas a fornecedores de IA.")
+    frame = catalog_data()
+    validation = load_json("validation_report.json")
+    {"Panorama": lambda: overview(frame, validation), "Explorar oferta": lambda: explore(frame),
+     "Preços": pricing, "Histórico": history, "Qualidade": lambda: quality(validation)}[page]()
+    st.divider()
+    st.caption("BLU / OBSERVATÓRIO DE DADOS     ·     Referências para curadoria, sujeitas a confirmação humana.")
 
 
 if __name__ == "__main__":
