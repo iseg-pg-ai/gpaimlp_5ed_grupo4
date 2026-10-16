@@ -1,5 +1,30 @@
 # Decisões e questões abertas
 
+## 2026-10-16 — Separar adição de substituição após validação funcional
+
+O utilizador demonstrou um pedido para adicionar repetidamente interpretado como
+substituição, além de um ranking recusado por formato. Os testes anteriores não
+cobriam esta confusão semântica. A interface também agrupava ranking e alternativas
+sob a mensagem de substituição, reforçando a interpretação errada.
+
+Pedidos genéricos de adição reconhecidos passam a apresentar opções calculadas
+pelo catálogo, cada uma simulada pelas regras existentes. Capacidade cheia ou
+horários inviáveis são explicados sem propor uma troca. Escolher prepara uma
+adição e só aceitar cria versão. A intenção explícita é guardada na auditoria e
+verificada antes da proposta, na escolha e na aceitação. Pedidos compostos não
+são reduzidos a adições isoladas.
+
+O contrato enviado ao Bedrock é reduzido para ranking ou adição: ranking não
+permite ações nem alternativas de substituição; adição não admite replace_item.
+A saída é validada também contra esse contrato específico. Não foi reproduzida
+a resposta bruta inválida do modelo real; não atribuir uma causa específica ao
+erro de formato sem essa evidência.
+
+Evidência: 118 testes do portal aprovados, um ignorado; 16 testes do agente;
+build; navegador em 390/1600 px. Cenários incluem a grafia «adiconar», contagem
+crescente sem remover itens, recusa de troca e explicação de capacidade. Mocks e
+armazenamento temporário; sem chamadas pagas e sem alterar viagens reais.
+
 ## 2026-10-16 — Incrementos funcionais das Fases 0–6 para validação conjunta
 
 Por pedido explícito, a implementação das seis fases precedeu a ronda técnica.

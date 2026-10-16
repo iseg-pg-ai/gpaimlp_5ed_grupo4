@@ -10,6 +10,7 @@ import {
 import type { Snapshot } from "./itinerary-pdf";
 import type { Catalog } from "./curation.ts";
 import { proposalImpact } from "./assistant-impact.ts";
+import { assertPlanIntent, type RequestIntent, IntentConflict } from "./assistant-intent.ts";
 
 type Run = {
   id: string;
@@ -98,6 +99,16 @@ export class AgentAuditStore {
     )
       throw new VersionConflict("As opções já não estão disponíveis. Peça novas alternativas.");
     const before = this.base(tripId, run.baseVersion);
+    const sourceMetadata = this.store.db
+      .prepare("SELECT metadata FROM agent_runs WHERE id=?")
+      .get(id)!;
+    const sourceIntent = JSON.parse(String(sourceMetadata.metadata)).requestIntent as
+      | RequestIntent
+      | undefined;
+    if (sourceIntent?.kind === "add" || sourceIntent?.kind === "rank")
+      throw new IntentConflict(
+        "Este pedido não autoriza uma substituição. Escolha uma opção de adição.",
+      );
     const groups = resolveAlternatives(before, JSON.parse(run.plan), catalog);
     const group = groups.find((g) => g.dayNumber === dayNumber && g.itemId === itemId);
     const option = group?.options.find((candidate) => candidate.catalogId === catalogId);
@@ -158,6 +169,7 @@ export class AgentAuditStore {
       provider: "catalog",
       modelId: "human-selection",
       parentRunId: id,
+      requestIntent: { kind: "add", dayNumber, generic: false },
     });
     return {
       runId,
@@ -265,6 +277,9 @@ export class AgentAuditStore {
       throw new VersionConflict("A proposta expirou. Peça uma nova pré-visualização.");
     const before = this.base(tripId, run.baseVersion);
     const plan = JSON.parse(run.plan);
+    const metadata = this.store.db.prepare("SELECT metadata FROM agent_runs WHERE id=?").get(id)!;
+    const intent = JSON.parse(String(metadata.metadata)).requestIntent as RequestIntent | undefined;
+    if (intent) assertPlanIntent(plan, intent);
     const after = simulatePlan(before, plan, catalog);
     if (snapshotFingerprint(after) !== run.previewHash)
       throw new VersionConflict(

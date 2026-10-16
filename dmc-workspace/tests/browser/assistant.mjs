@@ -70,6 +70,40 @@ try {
     await page.route("**/api/assistant/plan", (route) => {
       planRequests++;
       const body = route.request().postDataJSON();
+      if (body.input === "adiciona uma atividade no dia 2")
+        return route.fulfill({
+          json: {
+            runId: "add-options",
+            tripId: "assistant-browser",
+            baseVersion: 3,
+            provider: "catalog",
+            modelId: "validated-addition-options",
+            before: selected.itinerary,
+            after: selected.itinerary,
+            plan: {
+              summary: "Escolha uma atividade para acrescentar ao dia 2.",
+              actions: [],
+              warnings: [],
+              requiresConfirmation: true,
+            },
+            rankedCandidates: [
+              {
+                dayNumber: 2,
+                options: [
+                  {
+                    id: "atracoes:new",
+                    dayNumber: 2,
+                    title: "Nova atividade",
+                    time: "15:00",
+                    reasons: [],
+                    catalogRevision: 1,
+                    baselinePosition: 1,
+                  },
+                ],
+              },
+            ],
+          },
+        });
       if (
         body.input === "Mostra alternativas para a primeira atividade" ||
         body.input === "A segunda, por favor"
@@ -376,6 +410,27 @@ try {
       () => JSON.parse(localStorage.getItem("blu-trips-v1"))[0].version === 3,
     );
     assert.deepEqual((await readTrip()).itinerary, selected.itinerary);
+    await input.fill("adiciona uma atividade no dia 2");
+    await input.press("Enter");
+    await page.getByRole("button", { name: "Pré-visualizar adição", exact: true }).waitFor();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Pré-visualizar esta substituição", exact: true })
+        .count(),
+      0,
+    );
+    assert.match(
+      await page.getByTestId("agent-preview").innerText(),
+      /Escolher atividade para adicionar/,
+    );
+    await page
+      .locator("#curation-assistant")
+      .getByText(
+        "Escolha um candidato para pré-visualizar a adição. Nenhuma atividade existente será substituída.",
+        { exact: false },
+      )
+      .waitFor();
+    assert.equal((await readTrip()).version, 3);
     assert.equal(versionWrites, 0, "As mensagens e decisões não devem criar versões duplicadas");
     assert.deepEqual(errors, []);
     console.log(`Proposta → rejeitar → propor → aceitar: ${width}px OK`);

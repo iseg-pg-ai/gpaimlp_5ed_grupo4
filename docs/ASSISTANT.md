@@ -19,6 +19,22 @@ explica que não há ações pendentes. Respostas informativas são identificada
 como não contendo alterações para aplicar. Erros de formato, permissões,
 timeout e ligação são apresentados separadamente de indisponibilidade geral.
 
+## Pedidos de adição e ranking
+
+Pedidos genéricos como «adiciona uma atividade no dia 2» e a correção explícita
+«não quero substituir quero adiconar mais uma atividade ao dia 2» apresentam
+opções de adição validadas pelo portal, sem inferência. Cada opção é simulada
+com as regras existentes antes de ser apresentada. Capacidade cheia ou ausência
+de horários viáveis são explicadas sem sugerir uma substituição implícita.
+Escolher uma opção prepara `add_catalog_item`; só aceitar cria a versão.
+
+A intenção explícita é verificada no servidor: uma adição isolada não pode
+produzir remoção, substituição ou alterações noutro dia. Pedidos de ranking são
+apenas de leitura e usam um contrato Bedrock reduzido, com ações/substituições
+proibidas. A interface distingue «Pré-visualizar adição» de substituição.
+Esta barreira cobre intenções explícitas reconhecidas; não comprova interpretação
+correta de todas as formulações nem substitui a validação humana.
+
 ## Conversa e alternativas de substituição
 
 O assistente recebe até oito mensagens recentes da viagem, limitadas a 1000

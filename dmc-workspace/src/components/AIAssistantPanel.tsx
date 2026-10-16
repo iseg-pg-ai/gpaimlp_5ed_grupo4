@@ -225,7 +225,9 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   text={
                     proposal.plan.actions.length
                       ? "Rever alterações antes de aceitar"
-                      : "Escolher alternativa de substituição"
+                      : proposal.rankedCandidates?.length
+                        ? "Escolher atividade para adicionar"
+                        : "Escolher alternativa de substituição"
                   }
                   source="pt"
                 />

@@ -1,5 +1,18 @@
 # Plano de evolução do BLU AI System
 
+## Distinguir adição, substituição e ranking — 2026-10-16
+
+- [x] Reproduzir o pedido de adição e a correção explícita com a grafia reportada.
+- [x] Apresentar apenas opções de adição viáveis para pedidos genéricos.
+- [x] Recusar ações que contrariem a intenção explícita antes de propor/aceitar.
+- [x] Reduzir o contrato Bedrock ao pedido de ranking ou adição.
+- [x] Corrigir mensagens, validar regressões e atualizar o portal.
+
+Concluído: 118 testes do portal aprovados, um ignorado; 16 testes do agente
+aprovados; build e navegador em 390/1600 px aprovados. As frases reportadas
+foram reproduzidas com catálogo e versões temporários. Sem chamadas pagas ao
+modelo; o contrato específico de ranking foi verificado com fornecedor simulado.
+
 ## Conclusão funcional das seis fases — 2026-10-16
 
 Pedido: implementar todas as fases antes da ronda de testes e correções.

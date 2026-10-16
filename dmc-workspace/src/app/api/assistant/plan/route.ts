@@ -24,6 +24,12 @@ import { FeedbackStore } from "@/lib/feedback-store";
 import { HistoricalCases } from "@/lib/historical-cases";
 import { proposalDiagnostics } from "@/lib/proposal-diagnostics";
 import { cachedPlanningWeather } from "@/lib/weather-provider";
+import {
+  requestIntent,
+  assertPlanIntent,
+  additionChoices,
+  IntentConflict,
+} from "@/lib/assistant-intent";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
@@ -136,6 +142,7 @@ export async function POST(request: Request) {
     ]);
     const context = {
       ...preparedContext,
+      requestIntent: requestIntent(body.input),
       conversation: recentConversation(body.conversation),
       currentView: body.currentView ?? "itinerary",
       weather,
@@ -152,21 +159,38 @@ export async function POST(request: Request) {
         ? audit.pendingPlan(body.tripId, body.baseVersion, body.pendingRunId)
         : undefined,
     };
-    const result = await portalRequest<{
+    type PlannerResult = {
       plan: AgentPlan;
       provider: string;
       modelId: string;
       latencyMs: number;
       inputTokens: number;
       outputTokens: number;
-    }>("agent-plan", "", { instruction: body.input, context });
+    };
+    const intent = context.requestIntent;
+    const result: PlannerResult =
+      intent.kind === "add" && intent.generic
+        ? {
+            plan: additionChoices(snapshot, catalog, intent.dayNumber),
+            provider: "catalog",
+            modelId: "validated-addition-options",
+            latencyMs: 0,
+            inputTokens: 0,
+            outputTokens: 0,
+          }
+        : await portalRequest<PlannerResult>("agent-plan", "", {
+            instruction: body.input,
+            context,
+          });
     validatePlan(result.plan);
+    assertPlanIntent(result.plan, intent);
     const preview = simulatePlan(snapshot, result.plan, catalog);
     const alternatives = resolveAlternatives(snapshot, result.plan, catalog);
     const rankedCandidates = resolveRanking(snapshot, result.plan, catalog);
     const { plan, ...metadata } = result;
     const runId = audit.propose(body.tripId, body.baseVersion, body.input, plan, preview, {
       ...metadata,
+      requestIntent: intent,
       operator: process.env.BLU_OPERATOR_ID ?? null,
       currentView: body.currentView ?? "itinerary",
     });
@@ -187,6 +211,7 @@ export async function POST(request: Request) {
       { headers: noStoreHeaders },
     );
   } catch (error) {
+    if (error instanceof IntentConflict) return jsonError(error.message, 422, noStoreHeaders);
     if (error instanceof VersionConflict) return jsonError(error.message, 409, noStoreHeaders);
     if (error instanceof PortalPythonError) {
       const failure = agentFailure(error.code);

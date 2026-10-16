@@ -1,6 +1,7 @@
 """Planeamento AWS: o modelo propõe ações e nunca escreve dados operacionais."""
 
 import json
+import copy
 import os
 from pathlib import Path
 import re
@@ -21,6 +22,10 @@ As regras determinísticas do portal são a autoridade para elegibilidade, horá
 mobilidade, alimentação, orçamento e confirmações. Não inventes evidência.
 Pedidos ambíguos, incompatíveis ou fora das ações suportadas: actions vazio e pede
 esclarecimento no summary. Não transformes uma pergunta numa alteração.
+ADICIONAR e SUBSTITUIR são intenções diferentes. Um pedido para acrescentar uma
+atividade nunca autoriza remover ou substituir uma existente. Se faltar a escolha,
+usa ranking para opções de ADIÇÃO, ou pede esclarecimento sem alternatives.
+Não reutilizes uma proposta anterior de substituição quando o pedido atual a nega.
 Quando forem pedidas opções de substituição, usa alternatives: cada grupo contém
 dayNumber, itemId do cartão original e até três catalogIds dos candidates desse dia.
 As alternatives são apenas sugestões; nunca acrescentar replace_item sem o cliente
@@ -121,6 +126,30 @@ def validate_plan(plan):
     return plan
 
 
+def tool_schema(context):
+    """Reduzir o contrato à operação pedida, sem relaxar a validação partilhada."""
+    schema = copy.deepcopy({key: SCHEMA[key] for key in ("type", "properties", "required", "additionalProperties")})
+    intent = context.get("requestIntent", {})
+    if intent.get("kind") not in ("add", "rank"):
+        return schema
+    props = schema["properties"]
+    props["alternatives"]["maxItems"] = 0
+    props["ranking"]["maxItems"] = 1
+    props["ranking"]["items"]["properties"]["dayNumber"]["enum"] = [intent["dayNumber"]]
+    if intent["kind"] == "rank":
+        props["actions"]["maxItems"] = 0
+        if any(candidate.get("dayNumber") == intent["dayNumber"] for candidate in context.get("candidates", [])):
+            props["ranking"]["minItems"] = 1
+        schema["required"].append("ranking")
+    else:
+        fields = props["actions"]["items"]
+        fields["properties"] = {key: value for key, value in fields["properties"].items() if key in ("type", "dayNumber", "catalogId")}
+        fields["properties"]["type"]["enum"] = ["add_catalog_item"]
+        fields["properties"]["dayNumber"]["enum"] = [intent["dayNumber"]]
+        fields["required"] = ["type", "dayNumber", "catalogId"]
+    return schema
+
+
 def plan_actions(payload, client=None):
     """Uma chamada limitada ao Bedrock, sem ferramentas de escrita ou catálogo próprio."""
     if not isinstance(payload, dict) or set(payload) != {"instruction", "context"}:
@@ -144,7 +173,7 @@ def plan_actions(payload, client=None):
         inferenceConfig={"temperature": 0, "maxTokens": 1800},
         toolConfig={"tools": [{"toolSpec": {"name": "propose_actions",
                     "description": "Propor ações para revisão humana; não executa alterações.",
-                    "inputSchema": {"json": {key: SCHEMA[key] for key in ("type", "properties", "required")}}}}],
+                    "inputSchema": {"json": tool_schema(payload["context"])}}}],
                     "toolChoice": {"tool": {"name": "propose_actions"}}},
     )
     blocks = response.get("output", {}).get("message", {}).get("content", [])
@@ -153,6 +182,7 @@ def plan_actions(payload, client=None):
         raise AgentResponseError("O modelo não devolveu uma proposta estruturada completa.")
     try:
         plan = validate_plan(calls[0]["input"])
+        validate_value(plan, tool_schema(payload["context"]))
     except (ValueError, KeyError, TypeError) as error:
         raise AgentResponseError("Resposta fora do contrato.") from error
     usage = response.get("usage", {})

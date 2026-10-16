@@ -16,6 +16,18 @@ def proposal():
 
 
 class PlannerTest(unittest.TestCase):
+    def test_tool_contract_separates_ranking_and_addition_without_mutating_schema(self):
+        from blu_ai.planner import tool_schema, SCHEMA
+        before = copy.deepcopy(SCHEMA)
+        ranking = tool_schema({"requestIntent": {"kind": "rank", "dayNumber": 1}})
+        self.assertEqual(ranking["properties"]["actions"]["maxItems"], 0)
+        self.assertEqual(ranking["properties"]["alternatives"]["maxItems"], 0)
+        self.assertIn("ranking", ranking["required"])
+        add = tool_schema({"requestIntent": {"kind": "add", "dayNumber": 2}})
+        fields = add["properties"]["actions"]["items"]
+        self.assertEqual(fields["properties"]["type"]["enum"], ["add_catalog_item"])
+        self.assertEqual(fields["properties"]["dayNumber"]["enum"], [2])
+        self.assertEqual(SCHEMA, before)
     def test_synthetic_evaluation_rejects_wrong_days_duplicates_and_invalid_contract(self):
         from scripts.evaluate_agent import evaluate
         expected = {"actions": proposal()["actions"], "alternatives": [

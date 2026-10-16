@@ -51,9 +51,16 @@ A matriz de aceitação está em [validação das seis fases](docs/ASSISTANT_VAL
 Voos dependem de API escolhida; Lambda não foi publicado. Agendamento de CI,
 chamadas pagas e envio de comunicações não são ativados por esta implementação.
 
+Correção após validação funcional: pedidos genéricos de adição agora mostram
+apenas opções de adição viáveis. A intenção explícita bloqueia substituições;
+ranking tem contrato Bedrock apenas de leitura. A interface distingue os botões
+e as mensagens dos dois fluxos. As duas frases reportadas pelo utilizador foram
+reproduzidas com dados temporários; não se presume sucesso semântico do modelo
+real a partir dos testes com mocks.
+
 ### Evidência e limites
 
-- Última validação do portal: 116 testes aprovados, um ignorado; build aprovado.
+- Última validação do portal: 118 testes aprovados, um ignorado; build aprovado.
 - Interface em 390/1600 px validada com fornecedor simulado e dados temporários.
 - Última validação Python do agente e meteorologia: 23 testes aprovados sem chamadas externas.
 - Avaliador com 18 cenários sintéticos e comparação estrita de ações, dias, alvos

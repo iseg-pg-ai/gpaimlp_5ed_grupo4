@@ -13,6 +13,7 @@ import { authorizeOperations } from "../src/lib/operations-auth.ts";
 import { prepareCommunication } from "../src/lib/assistant-communication.ts";
 import { initialConfirmation } from "../src/lib/activity-confirmation.ts";
 import { AgentAuditStore } from "../src/lib/agent-audit-store.ts";
+import { requestIntent, additionChoices, assertPlanIntent } from "../src/lib/assistant-intent.ts";
 
 function setup() {
   const fixture = JSON.parse(readFileSync(new URL("./browser/fixture.json", import.meta.url)));
@@ -82,6 +83,76 @@ const plan = (actions) => ({
   actions,
   warnings: [],
   requiresConfirmation: true,
+});
+test("adição genérica e correção explícita nunca se transformam em substituição", () => {
+  const { snapshot, catalog } = setup();
+  for (const input of [
+    "adiciona uma atividade no dia 2",
+    "não quero substituir quero adiconar mais uma atividade ao dia 2",
+  ]) {
+    const intent = requestIntent(input);
+    assert.deepEqual(intent, { kind: "add", dayNumber: 2, generic: true });
+    const options = additionChoices(snapshot, catalog, 2);
+    assertPlanIntent(options, intent);
+    assert.deepEqual(options.actions, []);
+    assert.equal(options.alternatives, undefined);
+    assert.ok(options.ranking[0].catalogIds.length);
+    const root = mkdtempSync(path.join(tmpdir(), "blu-addition-"));
+    const store = new VersionStore(root);
+    try {
+      store.save("trip", snapshot, "generated", null);
+      const audit = new AgentAuditStore(store);
+      const id = audit.propose("trip", 1, input, options, snapshot, { requestIntent: intent });
+      assert.throws(
+        () =>
+          audit.selectAlternative(
+            id,
+            "trip",
+            2,
+            "atracoes:A",
+            options.ranking[0].catalogIds[0],
+            catalog,
+          ),
+        /não autoriza uma substituição/,
+      );
+      const selected = audit.selectRanked(id, "trip", 2, options.ranking[0].catalogIds[0], catalog);
+      assert.equal(selected.plan.actions[0].type, "add_catalog_item");
+      assert.equal(store.list("trip").length, 1);
+      const accepted = audit.decide(selected.runId, "trip", "accept", catalog);
+      assert.deepEqual(accepted.snapshot.itinerary[0], snapshot.itinerary[0]);
+      assert.equal(accepted.snapshot.itinerary[1].items.length, 1);
+    } finally {
+      store.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});
+test("capacidade cheia é explicada sem oferecer substituições e a política recusa ações incompatíveis", () => {
+  const { snapshot, catalog } = setup();
+  snapshot.itinerary[0].dailyCapacity = 1;
+  const result = additionChoices(snapshot, catalog, 1);
+  assert.match(result.summary, /capacidade/);
+  assert.deepEqual(result.actions, []);
+  assert.equal(result.ranking, undefined);
+  assert.throws(
+    () =>
+      assertPlanIntent(
+        plan([
+          { type: "replace_item", dayNumber: 1, itemId: "atracoes:A", catalogId: "atracoes:B" },
+        ]),
+        requestIntent("adiciona uma atividade no dia 1"),
+      ),
+    /pedido é para adicionar/,
+  );
+  assert.throws(
+    () =>
+      assertPlanIntent(
+        plan([{ type: "add_catalog_item", dayNumber: 1, catalogId: "atracoes:B" }]),
+        requestIntent("Ordena os candidatos elegíveis para o dia 1"),
+      ),
+    /apenas para ordenar/,
+  );
+  assert.equal(requestIntent("Remove uma atividade e adiciona outra ao dia 1").kind, "other");
 });
 test("mover entre dias preserva dados, invalida confirmações pendentes e recusa destinos incompatíveis atomicamente", () => {
   const { snapshot, catalog } = setup();

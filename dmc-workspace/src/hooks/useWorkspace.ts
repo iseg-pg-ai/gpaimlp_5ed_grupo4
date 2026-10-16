@@ -366,9 +366,11 @@ export function useWorkspace() {
         appendReply(
           pending && agentProposal.plan.actions.length
             ? "Existe uma pré-visualização pendente. Para aplicar as alterações, clique em «Aceitar e guardar versão». Escrever «ok» não altera o roteiro."
-            : pending && agentProposal.alternatives?.length
-              ? "Escolha uma das alternativas apresentadas para preparar a substituição. Ainda não há uma alteração para aceitar."
-              : "Não existe uma proposta de alteração pendente para confirmar. A resposta anterior não criou ações para aplicar. Indique a alteração concreta que pretende, por exemplo: remover a primeira atividade do dia 1.",
+            : pending && agentProposal.rankedCandidates?.length
+              ? "Escolha um candidato e clique em «Pré-visualizar adição». Ainda não há alterações para aceitar."
+              : pending && agentProposal.alternatives?.length
+                ? "Escolha uma das alternativas apresentadas para preparar a substituição. Ainda não há uma alteração para aceitar."
+                : "Não existe uma proposta de alteração pendente para confirmar. A resposta anterior não criou ações para aplicar. Indique a alteração concreta que pretende, por exemplo: remover a primeira atividade do dia 1.",
         );
         return true;
       }
@@ -409,9 +411,11 @@ export function useWorkspace() {
         result.plan.summary +
           (result.plan.actions.length
             ? "\n\nReveja a pré-visualização e escolha «Aceitar e guardar versão» ou «Rejeitar»."
-            : result.alternatives?.length || result.rankedCandidates?.length
-              ? "\n\nEscolha uma alternativa para preparar a sua substituição. O roteiro permanece igual."
-              : "\n\nEsta resposta não contém alterações para aceitar. O roteiro permanece igual."),
+            : result.rankedCandidates?.length
+              ? "\n\nEscolha um candidato para pré-visualizar a adição. Nenhuma atividade existente será substituída."
+              : result.alternatives?.length
+                ? "\n\nEscolha uma alternativa para preparar a sua substituição. O roteiro permanece igual."
+                : "\n\nEsta resposta não contém alterações para aceitar. O roteiro permanece igual."),
       );
       return true;
     } catch (error) {
