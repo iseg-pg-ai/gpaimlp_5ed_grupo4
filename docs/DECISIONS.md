@@ -412,8 +412,9 @@ a mediana; continuam referências, sem inferir margens ou cotações. A presenç
 atividades em roteiros mede menções em roteiros distintos, não vendas ou procura.
 O anterior score de campos não nulos deixa de ser apresentado como prontidão.
 
-A vista geográfica usa coordenadas dentro dos intervalos válidos, sem fornecedor
-de mosaicos ou geocodificação externa; a validade geográfica exige revisão.
+A vista geográfica usa coordenadas dentro dos intervalos válidos e contornos
+locais Natural Earth da Europa e norte de África, sem fornecedor de mosaicos ou
+geocodificação externa; a validade geográfica exige revisão.
 Localizações das experiências preservam o texto da fonte e não são fundidas com
 cidades por aproximação. O dashboard não apresenta contactos ou textos integrais
 de propostas históricas. Acesso local mantém o binding localhost autorizado.

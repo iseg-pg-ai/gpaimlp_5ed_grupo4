@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,14 +53,19 @@ def heading(number: str, title: str, description: str) -> None:
     st.write(description)
 
 
-def chart(fig) -> None:
+def chart(fig, *, map_controls: bool = False) -> None:
     fig.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)",
                       plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#b5c6d2", family="sans-serif"),
-                      margin=dict(l=0, r=12, t=30, b=0), legend_title_text="", legend=dict(font=dict(color="#b5c6d2")),
+                      margin=dict(l=0, r=0 if map_controls else 12, t=30, b=0), legend_title_text="", legend=dict(font=dict(color="#b5c6d2")),
                       colorway=COLORS)
     fig.update_xaxes(gridcolor="#1d303d", zeroline=False)
     fig.update_yaxes(gridcolor="#1d303d", zeroline=False)
-    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+    config = {"displayModeBar": False}
+    if map_controls:
+        config = {"displayModeBar": True, "scrollZoom": True,
+                  "modeBarButtons": [["zoomIn2d", "zoomOut2d", "resetScale2d"]],
+                  "displaylogo": False}
+    st.plotly_chart(fig, width="stretch", config=config)
 
 
 def metrics(items: list[tuple]) -> None:
@@ -80,15 +87,36 @@ def map_chart(frame: pd.DataFrame) -> None:
     if points.empty:
         st.info("Não existem coordenadas válidas nesta seleção.")
         return
-    # Projeção local sem fornecedor de mosaicos nem pedidos a serviços de mapas.
-    fig = px.scatter_geo(points, lat="latitude", lon="longitude", color="Tipo",
-                         hover_name="Nome", hover_data={"Localização": True, "latitude": False, "longitude": False},
-                         color_discrete_sequence=COLORS, projection="mercator", height=490)
+    # Projeção Mercator em eixos cartesianos para preencher cartões de qualquer proporção.
+    def mercator(latitude: float) -> float:
+        latitude = max(-85, min(85, latitude))
+        return math.degrees(math.log(math.tan(math.pi / 4 + math.radians(latitude) / 2)))
+
+    points = points.assign(norte=points.latitude.map(mercator))
+    fig = px.scatter(points, x="longitude", y="norte", color="Tipo",
+                     hover_name="Nome", hover_data={"Localização": True, "norte": False, "longitude": False},
+                     color_discrete_sequence=COLORS, height=420)
     fig.update_traces(marker=dict(size=9, opacity=.8, line=dict(width=.7, color="#08151e")))
-    fig.update_geos(fitbounds="locations", visible=False, bgcolor="rgba(0,0,0,0)")
-    # Sem contornos geográficos: evita dependência externa dos ficheiros topojson.
-    chart(fig)
-    st.caption(f"{len(points)} de {len(frame)} registos com coordenadas válidas. Vista geográfica sem mapa-base; experiências sem coordenadas ficam na lista.")
+    geography = json.loads(Path(__file__).with_name("region.geojson").read_text())
+    for country in geography["features"]:
+        for polygon in country["geometry"]["coordinates"]:
+            ring = polygon[0]
+            fig.add_trace(go.Scatter(
+                x=[position[0] for position in ring], y=[mercator(position[1]) for position in ring],
+                mode="lines", fill="toself", fillcolor="#142c36",
+                line=dict(color="#567c87", width=1), hoverinfo="skip", showlegend=False,
+            ))
+    # Desenhar primeiro o território e depois os pontos, mantendo as legendas da oferta.
+    point_traces = len(points.Tipo.unique())
+    fig.data = fig.data[point_traces:] + fig.data[:point_traces]
+    # A escala é igual nos dois eixos; o intervalo adapta-se à largura sem bandas vazias.
+    fig.update_xaxes(visible=False, range=[-17, 7], constrain="range")
+    fig.update_yaxes(visible=False, range=[mercator(40) - 8, mercator(40) + 8],
+                     scaleanchor="x", scaleratio=1, constrain="range")
+    fig.update_layout(margin=dict(l=0, r=0, t=30, b=0), dragmode="pan",
+                      legend=dict(orientation="h", y=1.05, x=0))
+    chart(fig, map_controls=True)
+    st.caption(f"{len(points)} de {len(frame)} registos com coordenadas válidas. Base cartográfica: Natural Earth (domínio público), Europa e norte de África. Use +/− ou a roda do rato para aproximar; arraste para deslocar. Experiências sem coordenadas ficam na lista.")
 
 
 def overview(frame: pd.DataFrame, validation: dict) -> None:
@@ -97,7 +125,7 @@ def overview(frame: pd.DataFrame, validation: dict) -> None:
     counts = frame.Tipo.value_counts()
     metrics([(kind.upper(), int(counts.get(kind, 0)), "registos no catálogo") for kind in ("Atração", "Restaurante", "Experiência")]
             + [("ACERVO", len(query("SELECT document_id FROM proposal_documents")), "documentos PDF históricos")])
-    left, right = st.columns([1.25, 1], gap="large")
+    left, right = st.columns([1.8, 1], gap="large")
     with left:
         st.subheader("A geografia da curadoria")
         map_chart(frame)
@@ -131,7 +159,7 @@ def explore(frame: pd.DataFrame) -> None:
     if search:
         subset = subset[subset[["Nome", "Descrição"]].fillna("").apply(lambda col: col.str.contains(search, case=False, regex=False)).any(axis=1)]
     st.caption(f"{len(subset)} de {len(frame)} registos · localizações e categorias preservam as designações das fontes")
-    left, right = st.columns([1.1, 1])
+    left, right = st.columns([1.5, 1])
     with left:
         map_chart(subset)
     with right:

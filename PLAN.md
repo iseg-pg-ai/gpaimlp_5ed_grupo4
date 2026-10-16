@@ -192,5 +192,5 @@ planos anteriores permanece no Git.
 - [ ] Definir confirmação comercial e validade temporal por campo na fonte.
 
 Dashboard só de leitura; sem alteração das fontes, catálogo operacional ou warehouse.
-Mapa sem mosaicos externos; coordenadas válidas em intervalo não certificam a
+Mapa com contornos locais Natural Earth da Europa e norte de África, sem mosaicos externos; coordenadas válidas em intervalo não certificam a
 localização. Experiências sem coordenadas continuam pesquisáveis na lista.
