@@ -7,6 +7,84 @@ operacionais estão em [docs/ASSISTANT.md](docs/ASSISTANT.md), as tarefas de cad
 incremento em [PLAN.md](PLAN.md) e a evidência datada em
 [docs/DECISIONS.md](docs/DECISIONS.md). Código e testes prevalecem sobre o plano.
 
+## Registo de passagem para outro desenvolvimento — 2026-10-16
+
+**Estado: base funcional das Fases 0–6 implementada, com validação técnica local.
+O agente ainda não está homologado nem concluído para produção.**
+
+As caixas `[x]` deste documento indicam implementação existente. Não significam
+que a funcionalidade foi aprovada com o modelo real, fornecedores reais ou em
+operação multiutilizador. As caixas `[ ]` identificam trabalho ainda por fechar.
+O desenvolvimento pode mudar de foco preservando os pendentes abaixo.
+
+### Resumo por fase
+
+| Fase | O que está implementado | O que falta fechar |
+| --- | --- | --- |
+| 0 — Contratos e segurança | Schema partilhado, IAM, minimização do contexto, falhas explícitas, testes e personas sintéticas | Grounding e injeção no modelo real; avaliação ampla e limites de custo |
+| 1 — Editor transacional | Treze ações, simulação, aceitação/rejeição, proteções, concorrência, versões e auditoria | Validar linguagem natural, refinamentos e pedidos compostos no Nova Pro; melhorar esclarecimentos e respostas inválidas |
+| 2 — Matching assistido | Ranking de IDs elegíveis, alternativas, razões das regras, comparação com a base e diagnósticos | Confirmar qualidade semântica do ranking e recomendações em viagens representativas |
+| 3 — Feedback e qualidade | Conclusão da viagem, questionário integral, feedback imutável, agregados e decisões humanas do catálogo | Validar o percurso operacional e a utilidade dos alertas com feedback real revisto |
+| 4 — Casos históricos | Aprovação de casos, perfil reduzido, IDs/revisões e pesquisa estruturada/textual | Avaliar relevância e ganhos com casos reais aprovados; não introduzir embeddings sem evidência |
+| 5 — Proatividade | Alertas, cache de consultas meteorológicas explícitas, regeneração parcial e rascunhos sem envio | Validar rotas, meteorologia, fornecedores, tradução e PDFs; escolher API se houver integração de voos |
+| 6 — Operação | Métricas, motivos de rejeição, custos configuráveis, revisão da entrega e workflow manual | Validar tarifas e monitorização; autorizar eventual agendamento; comparar modelos antes de aprovar alterações |
+
+### Pendentes prioritários para retomar
+
+1. **Executar a bateria real no Bedrock**, após autorização de custos, começando
+   por ranking, adição, substituição, correções durante a conversa e pedidos
+   compostos. Existem 18 cenários preparados; não foram todos executados no
+   Nova Pro. Os cenários de adição genérica reconhecidos usam regras do portal,
+   sem inferência, e também devem ser verificados no percurso completo.
+2. **Corrigir as falhas semânticas encontradas e melhorar a recuperação**:
+   esclarecer ambiguidades, preservar a intenção atual e explicar propostas
+   inválidas. A barreira atual de intenção cobre formulações explícitas
+   reconhecidas, não toda a linguagem natural.
+3. **Validar as seis fases num percurso completo**: briefing → roteiro → proposta
+   → aceitação → versão → entrega → conclusão → feedback → aprovação e recuperação
+   de caso histórico. Incluir rejeição, expiração, concorrência e atividades
+   protegidas, usando dados de teste e mantendo os originais intactos.
+4. **Validar integrações e apresentação**: previsão versus histórico, deslocações
+   reais versus estimadas, disponibilidade de fornecedores, tradução e PDFs nos
+   idiomas suportados. Mandarim exige fonte CJK. Rascunhos continuam sujeitos a
+   revisão e não enviam mensagens nem confirmam reservas.
+5. **Preparar operação em produção**: autenticação individual/SSO, papéis e
+   permissões, consentimento, finalidade, retenção, monitorização, recuperação e
+   limites de consumo. O token operacional atual identifica uma conta por
+   processo e não substitui autenticação individual do portal.
+
+### Dependências e decisões ainda abertas
+
+- **Lambda:** template privado preparado, sem publicação. A execução atual já
+  chama o Bedrock na AWS; migrar a orquestração para Lambda é uma decisão de
+  deployment, não condição para os testes na instância atual.
+- **Voos:** só integrar depois de escolher API, contrato, acesso e custos.
+- **Custos:** a estimativa monetária existe, mas exige tarifas aprovadas em
+  `BLU_BEDROCK_RATES_JSON`; sem configuração o custo é desconhecido.
+- **Periodicidade:** workflow manual preparado. O agendamento semanal não foi
+  ativado; requer autorização aplicável para consumo externo recorrente.
+- **Modelos e prompts:** não fazer autoajuste com feedback. Comparar resultados
+  e aprovar alterações antes de as aplicar. Nova Pro continua predefinido.
+
+### Evidência disponível e limitação conhecida
+
+- Portal: 118 testes aprovados, um ignorado; build aprovado.
+- Última correção: 16 testes do agente aprovados e navegador em 390/1600 px.
+- Ronda anterior: 23 testes Python do agente/meteorologia e integração catálogo/ETL
+  aprovados; ciclos das APIs e área operacional com armazenamento temporário.
+- Estes resultados usam mocks para o modelo. Há evidência real anterior limitada
+  a um cenário Nova Pro, insuficiente para afirmar fiabilidade geral.
+- O utilizador encontrou adição interpretada como substituição e ranking recusado
+  por formato. Foram corrigidos a separação de intenções, as opções de adição, a
+  mensagem da interface e o contrato específico do ranking. A saída bruta inválida
+  do modelo real não foi reproduzida; o ranking atualizado continua por confirmar
+  no Bedrock. Não tratar os testes locais como prova de resolução semântica geral.
+
+A referência para retomar é a [matriz de validação](docs/ASSISTANT_VALIDATION.md),
+com contratos e operação em [docs/ASSISTANT.md](docs/ASSISTANT.md). Ao regressar,
+confirmar o estado do código e começar pelos pendentes prioritários, sem voltar a
+implementar os módulos existentes nem marcar as seis fases como homologadas.
+
 ## Estado atual
 
 O Blu já propõe alterações estruturadas em linguagem natural através de Amazon
@@ -62,14 +140,14 @@ real a partir dos testes com mocks.
 
 - Última validação do portal: 118 testes aprovados, um ignorado; build aprovado.
 - Interface em 390/1600 px validada com fornecedor simulado e dados temporários.
-- Última validação Python do agente e meteorologia: 23 testes aprovados sem chamadas externas.
+- Última correção: 16 testes do agente aprovados; ronda anterior de agente/meteorologia: 23 testes aprovados, sem chamadas externas.
 - Avaliador com 18 cenários sintéticos e comparação estrita de ações, dias, alvos
   e alternativas; recusa contrato inválido, ações adicionais e opções duplicadas.
 - Casos incluem ambiguidade, proteções, ausência de candidatos e injeção em dados.
   A nova bateria ainda não foi executada no Bedrock.
 - Nova Pro passou um cenário real de refinamento e alternativas; Nova Lite falhou
   duas tentativas anteriores. Esta amostra não comprova qualidade geral.
-- Tokens e latência são registados; cálculo monetário de custos continua pendente.
+- Tokens e latência são registados; estimativa monetária implementada, dependente de tarifas configuradas e ainda por validar na conta AWS.
 
 Consultar os casos sem chamadas AWS:
 
