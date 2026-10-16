@@ -179,3 +179,18 @@ As integrações anteriores, os resultados e os limites estão em
 [decisões](docs/DECISIONS.md), [testes](docs/TESTING.md) e
 [segurança das dependências](docs/DEPENDABOT_PYTHON.md). O histórico completo dos
 planos anteriores permanece no Git.
+
+## Observatório de dados BLU — 2026-10-16
+
+- [x] Organizar o dashboard em Panorama, Explorar oferta, Preços, Histórico e Qualidade.
+- [x] Aplicar identidade visual escura, tipografia editorial e gráficos legíveis.
+- [x] Acrescentar pesquisa, filtros, fichas e distribuição geográfica do catálogo.
+- [x] Comparar preços por categoria, unidade e natureza comercial declaradas.
+- [x] Distinguir integridade, preenchimento e confirmação; expor lacunas e revisão.
+- [x] Validar execução das cinco páginas e navegação local no navegador.
+- [ ] Harmonizar localizações e unidades através dos contratos do ETL.
+- [ ] Definir confirmação comercial e validade temporal por campo na fonte.
+
+Dashboard só de leitura; sem alteração das fontes, catálogo operacional ou warehouse.
+Mapa sem mosaicos externos; coordenadas válidas em intervalo não certificam a
+localização. Experiências sem coordenadas continuam pesquisáveis na lista.

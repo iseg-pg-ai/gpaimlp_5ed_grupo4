@@ -1,0 +1,30 @@
+<style>
+:root {color-scheme: dark;}
+.stApp {background: radial-gradient(ellipse at 80% 0%, #12313a 0%, transparent 42%), #080f18; color: #e5edf2;}
+[data-testid="stHeader"] {background: transparent;}
+[data-testid="stSidebar"] {background: #0b1620; border-right: 1px solid #263a45;}
+[data-testid="stSidebar"] > div:first-child {padding-top: 3rem;}
+.block-container {max-width: 1600px; padding-top: 3.5rem; padding-bottom: 2rem;}
+h1 {font-family: Georgia, 'Times New Roman', serif !important; font-weight: 400 !important; font-size: clamp(2.4rem, 4vw, 4.6rem) !important; letter-spacing: -.045em; line-height: 1.06 !important; max-width: 1000px; padding-bottom: 1.3rem !important;}
+h2, h3 {font-weight: 500 !important; letter-spacing: -.025em;}
+[data-testid="stCaptionContainer"] {color: #9caebc;}
+[data-testid="stMetric"] {border-top: 1px solid #46616b; padding: 1.2rem 0 .15rem;}
+[data-testid="stMetricLabel"] {color: #a7bcbd; letter-spacing: .13em; font-size: .72rem;}
+[data-testid="stMetricValue"] {font-family: Georgia, serif; color: #76e4cf; font-size: 3.25rem;}
+.brand {font-family: Georgia, serif; font-size: 4.2rem; color: #e6f2ed; line-height: 1; letter-spacing: -.07em; margin-bottom: 2rem;}
+.brand span {display: block; font-family: sans-serif; font-size: .6rem; color: #d8b776; letter-spacing: .28em; margin-top: 1rem;}
+[data-testid="stRadio"] label {padding: .65rem .3rem;}
+[data-baseweb="select"] > div, [data-baseweb="input"] {background-color: #12232e !important; color: #e5edf2 !important; border-color: #35515d !important;}
+[data-testid="stTextInput"] input {color: #e5edf2;}
+[data-testid="stExpander"] {background: #101e29;}
+hr {border-color: #29404b !important; margin: 2rem 0 !important;}
+@media (max-width: 700px) {.block-container {padding: 2rem 1rem;} [data-testid="stMetricValue"] {font-size: 2.3rem;}}
+@media (prefers-reduced-motion: no-preference) {.block-container {animation: reveal .5s ease-out;} @keyframes reveal {from {opacity: .3; transform: translateY(6px);} to {opacity: 1; transform: translateY(0);}}}
+
+.stApp h1, .stApp [data-testid="stMetricValue"], .stApp .brand {font-family: Georgia, 'Times New Roman', serif !important;}
+.stApp [data-testid="stMarkdownContainer"] p, .stApp label, .stApp [data-testid="stWidgetLabel"] {color: #d5e2e9 !important;}
+.stApp [data-testid="stCaptionContainer"] p {color: #a8bdca !important;}
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {color: #b9ced8 !important;}
+[data-testid="stRadio"] [role="radiogroup"] label {border-bottom: 1px solid #203541;}
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {background: #193139; border-left: 2px solid #66e5cf;}
+</style>
