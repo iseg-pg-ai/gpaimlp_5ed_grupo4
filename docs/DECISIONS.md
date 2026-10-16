@@ -418,3 +418,18 @@ geocodificação externa; a validade geográfica exige revisão.
 Localizações das experiências preservam o texto da fonte e não são fundidas com
 cidades por aproximação. O dashboard não apresenta contactos ou textos integrais
 de propostas históricas. Acesso local mantém o binding localhost autorizado.
+
+### Exploração do observatório — 2026-10-16
+
+Os eventos do mapa transportam chaves de entidade, não índices de pontos ou de
+linhas, para abrir a ficha correta após filtros ou agrupamento. O agrupamento é
+manual, por tipo e grelha de 0,1 graus, com todos os membros disponíveis na ficha.
+Os filtros de camadas afetam apenas a vista geográfica. Comparações preservam
+preços e durações como texto contextual da fonte, sem pontuação de preferência.
+
+A presença histórica usa a relação explícita `id_atracao_base` e conta roteiros
+distintos; restaurantes e experiências sem esse contrato não são associados por
+nomes semelhantes. Destinos mantêm correspondência literal das localizações.
+A fila de revisão sinaliza desconhecidos e expressões de confirmação; prioridade
+comercial para preço/condições e operacional para os restantes campos analisados.
+O modo apresentação é apenas uma disposição local, com navegação e saída visíveis.

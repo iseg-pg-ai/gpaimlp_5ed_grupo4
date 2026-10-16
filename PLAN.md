@@ -1,5 +1,170 @@
 # Plano de evolução do BLU AI System
 
+Registos do assistente acrescentados em 2026-10-16 a partir do plano fornecido
+pelo utilizador. As dez secções seguintes conservam o estado e a evidência
+reportados no contexto de `pc/assistant-agent-for-blu-curator`; a sua inclusão
+documental não integra esse código em `feat/data-modelling-basis` nem revalida
+os resultados. Referências a serviços em execução, configuração em `/tmp/` e
+documentos específicos do assistente pertencem à sessão e ao branch de origem;
+não demonstram disponibilidade neste checkout. As tarefas gerais pendentes e
+o trabalho do dashboard são preservados.
+
+## Distinguir adição, substituição e ranking — 2026-10-16
+
+- [x] Reproduzir o pedido de adição e a correção explícita com a grafia reportada.
+- [x] Apresentar apenas opções de adição viáveis para pedidos genéricos.
+- [x] Recusar ações que contrariem a intenção explícita antes de propor/aceitar.
+- [x] Reduzir o contrato Bedrock ao pedido de ranking ou adição.
+- [x] Corrigir mensagens, validar regressões e atualizar o portal.
+
+Concluído: 118 testes do portal aprovados, um ignorado; 16 testes do agente
+aprovados; build e navegador em 390/1600 px aprovados. As frases reportadas
+foram reproduzidas com catálogo e versões temporários. Sem chamadas pagas ao
+modelo; o contrato específico de ranking foi verificado com fornecedor simulado.
+
+## Conclusão funcional das seis fases — 2026-10-16
+
+Pedido: implementar todas as fases antes da ronda de testes e correções.
+Não marcar uma fase como validada apenas por concluir a implementação.
+Preservar dados reais; os testes finais usam armazenamento temporário e mocks.
+
+- [x] Fase 0: contratos completos, contexto minimizado e registo de operação.
+- [x] Fase 1: mover entre dias, otimização validada, briefing e confirmações assistidos.
+- [x] Fase 2: ranking explicável de candidatos e diagnóstico da proposta.
+- [x] Fase 3: conclusão da viagem, questionário completo e alertas do catálogo.
+- [x] Fase 4: recuperação de casos revistos, sem dados pessoais nem embeddings.
+- [x] Fase 5: alertas, regeneração parcial e preparação de comunicações.
+- [x] Fase 6: métricas, rejeições, custos configuráveis e qualidade da entrega.
+- [x] Atualizar o plano específico e preparar os cenários de validação das seis fases.
+- [x] Só após a implementação: executar testes, corrigir falhas e verificar o portal.
+
+Voos dependem de uma API escolhida; não inventar disponibilidade ou reservas.
+Deployment, envio de comunicações e chamadas pagas não decorrem desta preparação.
+
+Implementação funcional das seis fases preparada. Validação técnica concluída:
+116 testes do portal aprovados, um ignorado; 23 Python; build, catálogo/ETL,
+ciclos das APIs com dados temporários e chat/operações em 390/1600 px aprovados.
+Portal HTTP 200; operação sem token 401 e autenticada 200. Configuração privada
+da sessão em `/tmp/blu-operations.env`, fora do Git e sem impressão do segredo.
+Critérios e dependências externas em docs/ASSISTANT_VALIDATION.md. CI apenas
+manual; 18 cenários reais por executar no Bedrock com autorização de custos.
+
+## Impacto das propostas do agente — 2026-10-16
+
+- [x] Calcular diferenças de atividades, horários, ordem e capacidade no servidor.
+- [x] Reutilizar o orçamento existente, separando moedas e valores pendentes.
+- [x] Apresentar o resumo nas propostas e na seleção de alternativas.
+- [x] Validar domínio, interface, build e atualizar o plano específico.
+
+Concluído: 107 testes do portal aprovados, um ignorado; build aprovado.
+Resumo validado em 390/1600 px com fornecedor simulado e exports temporários.
+Abrir os detalhes não cria versões nem chamadas adicionais ao modelo. Sem
+chamadas AWS nesta entrega; portal reiniciado com a configuração Nova Pro.
+
+## Avaliação de grounding e injeção — 2026-10-16
+
+- [x] Alargar os casos sintéticos a ambiguidade, proteções e dados maliciosos.
+- [x] Exigir contrato completo e correspondência exata de ações e alternativas.
+- [x] Permitir inspeção offline e seleção de casos antes de chamadas pagas.
+- [x] Testar falsos positivos da avaliação e documentar os limites.
+
+Concluído: 11 casos sintéticos e 15 testes do agente aprovados sem chamadas
+externas. Corrigido falso positivo para alternativas no dia errado. A nova
+bateria ainda não foi executada no Bedrock; não inferir sucesso do modelo.
+
+## Conversa contextual e alternativas — 2026-10-15
+
+- [x] Transmitir contexto recente limitado à viagem e proposta corrente validada.
+- [x] Acrescentar alternativas estruturadas ao contrato partilhado.
+- [x] Validar substituições com o catálogo e a lógica determinística existentes.
+- [x] Preparar a alternativa escolhida sem inferência adicional nem escrita imediata.
+- [x] Validar contexto, opções, proteções, concorrência, UI e documentação.
+
+Concluído em 2026-10-16: 104 testes do portal aprovados, um ignorado; 13 testes
+do agente aprovados; build e UI em 390/1600 px aprovados. UI e persistência usam
+mocks e diretórios temporários. Nova Pro passou um cenário real explícito de
+refinamento e duas alternativas; os dois testes anteriores com Nova Lite falharam
+semanticamente. Conservar o caso e não apresentar esta amostra como avaliação
+ampla. Nova Pro passa a predefinido configurável. Fontes e warehouse preservados.
+
+Preservar confirmação humana, catálogo e warehouse. Modelo continua no Bedrock;
+testes com fornecedores simulados e armazenamento temporário por defeito.
+
+## Respostas sem ações e confirmação no chat — 2026-10-15
+
+A auditoria revelou uma proposta com ação válida. A pré-visualização estava
+antes das mensagens, fora da zona visível após o scroll automático. Corrigir a
+ordem no DOM e verificar o botão no viewport, sem o scroll automático do teste.
+
+- [x] Explicitar quando uma resposta textual não contém ações para aplicar.
+- [x] Tratar «ok» sem nova inferência e preservar a proposta pendente.
+- [x] Separar formato inválido, permissões, ligação, timeout e indisponibilidade.
+- [x] Colocar a pré-visualização após as mensagens, junto da resposta mais recente.
+- [x] Validar os novos caminhos e reiniciar o portal com Bedrock real.
+
+Check aprovado (100 testes, um ignorado), 11 testes do agente aprovados e build
+aprovado. Navegador em 390/1600 px: botão de aceitação no viewport, «ok» não chama
+o fornecedor nem apaga a proposta e uma resposta sem ações fica identificada.
+Interface validada com mocks em exports temporários, sem alterar viagens reais.
+
+## Origem do portal em execução — 2026-10-15
+
+- [x] Identificar a recusa: domínio configurado no arranque diferente do navegador.
+- [x] Reiniciar com a origem confirmada pelo utilizador e verificar a barreira de origem.
+
+Portal HTTP 200; pedido vazio com a origem confirmada chega à validação (400),
+enquanto uma origem externa continua recusada (403). Sem chamadas ao modelo nesta
+verificação. Não foi alterada nenhuma viagem.
+
+Manter a comparação exata de origem; não confiar em qualquer domínio recebido
+no pedido para contornar uma configuração errada.
+
+## Correção do envio no chat — 2026-10-15
+
+- [x] Guardar imediatamente a mensagem enviada, mesmo quando o pedido falha.
+- [x] Apresentar o erro no próprio chat, preservando roteiro e versões.
+- [x] Validar falhas, sucesso e persistência no navegador e reiniciar o portal.
+
+Check aprovado (99 testes e um ignorado), build aprovado e navegador em
+390/1600 px: mensagem visível durante o pedido, erro no chat sem alterar versões,
+envios sem duplicação e aceitação/rejeição preservadas. Pedido de remover a primeira
+atividade reproduzido pela API e Bedrock reais com dados sintéticos: HTTP 200.
+Esta reprodução não identifica o erro específico da sessão do utilizador; agora
+o erro fica visível no chat em vez de a mensagem desaparecer.
+
+## Agente AWS — primeira entrega de 2026-10-15
+
+- [x] Confirmar IAM Role e perfil Nova Lite em eu-west-1 sem credenciais fixas.
+- [x] Implementar contrato partilhado e propostas estruturadas via Bedrock Converse.
+- [x] Reutilizar validação determinística e candidatos aprovados do portal.
+- [x] Implementar pré-visualização, aceitação, rejeição e versão com auditoria atómica.
+- [x] Reduzir contexto pessoal, remover logs do pedido e bloquear raciocínio interno.
+- [x] Restringir o serviço HTTP legado com token e sem CORS público.
+- [x] Preparar entrada Lambda privada e template SAM, sem deployment automático.
+- [x] Concluir testes unitários, build, navegador e documentação desta entrega.
+
+Âmbito inicial: adicionar, substituir, remover, reagendar, reorganizar, capacidade,
+períodos livres e dias livres. Operações compostas são validadas integralmente.
+Mover entre dias, otimizar percursos pelo agente, editar briefing/confirmações,
+feedback, ranking histórico e restantes Fases 2–6 ficam por implementar.
+Uma chamada Bedrock com dados sintéticos passou; não usar dados reais nos testes.
+Validação: 99 testes Node aprovados, um ignorado; 50 Python aprovados; build,
+API com fornecedor simulado e UI em 390/1600 px aprovados. Exports e catálogo
+de integração isolados em diretórios temporários. Lambda não publicado.
+
+## Base do assistente — integração de 2026-10-15
+
+- [x] Atualizar referências e selecionar `pc/assistant-agent-for-blu-curator`.
+- [x] Integrar `refactor/html-python`, preservando também a sua entrega completa
+  de `warehouse/`, conforme correção explícita do utilizador.
+- [x] Rever o serviço existente e `BLU_ASSISTANT_PLAN.md`.
+- [x] Validar a base integrada antes de implementar as Fases 0 e 1.
+- [x] Propor ações estruturadas, pré-visualizar e confirmar antes de aplicar.
+
+O plano específico tem avaliações anteriores à migração; confirmar as premissas
+no código. Reutilizar o catálogo Python e as validações do portal. Modelos usam
+mocks nesta preparação, sem chamadas pagas.
+
 ## Limpeza após migrações — 2026-10-15
 
 - [x] Remover adaptadores e operações sem consumidores de produção.
@@ -194,3 +359,20 @@ planos anteriores permanece no Git.
 Dashboard só de leitura; sem alteração das fontes, catálogo operacional ou warehouse.
 Mapa com contornos locais Natural Earth da Europa e norte de África, sem mosaicos externos; coordenadas válidas em intervalo não certificam a
 localização. Experiências sem coordenadas continuam pesquisáveis na lista.
+
+### Ferramentas de exploração — 2026-10-16
+
+- [x] Ligar seleção de pontos às fichas, preservando identificadores por tipo.
+- [x] Comparar duas a quatro opções com duração, condições, acessibilidade e fonte.
+- [x] Acrescentar painel por destino com correspondência literal das localizações.
+- [x] Acrescentar camadas, nomes de lugares e agrupamento aproximado com membros.
+- [x] Acrescentar fila de revisão com prioridades explícitas e acesso às fichas.
+- [x] Mostrar presença histórica apenas através da relação explícita de atrações.
+- [x] Acrescentar modo apresentação com navegação e saída acessíveis.
+- [x] Alinhar mapas, tabelas e gráficos adjacentes em 420 px e uniformizar as divisórias da navegação.
+- [ ] Acrescentar fotografias quando existirem imagens com autorização e créditos.
+
+Validação desta etapa: 51 testes Python aprovados, incluindo sete contratos do
+dashboard. AppTest nas seis áreas, comparação, filtros e camadas vazias; navegador
+local com cliques em pontos/grupos, comparação, destino Lisboa, apresentação e
+vista móvel sem transbordo horizontal. Sem chamadas a IA ou alteração dos dados.
