@@ -664,3 +664,21 @@ configuração efetiva dos serviços.
 
 Grelha, seis botões e contador `/ 06` verificados em 320/768/1440/2560 px,
 na técnica e na curadoria. Estrutura e `git diff --check` aprovados.
+
+## Limpeza local do diretório — 2026-10-19
+
+- [x] Inspecionar ficheiros, referências e serviços em execução.
+- [x] Limpar caches de instalação dispensáveis e bytecode local.
+- [x] Confirmar serviços, estrutura e preservação dos ficheiros do projeto.
+
+Âmbito: caches npm/pip, entradas uv sem referência e `__pycache__` do
+projeto. Preservar ambientes, dependências instaladas, builds em utilização,
+navegadores de teste, configurações SageMaker, dados e histórico Git.
+O relatório de dados e `presentation/dist` têm referências e uso confirmado.
+
+Resultado: removidos cerca de 1,1 GB de caches npm/pip e entradas uv sem
+referência (128,1 MiB no uv), além de dois diretórios de bytecode. Mantidas
+as restantes entradas uv para reinstalação e funcionamento sem rede.
+Portal `/catalog`, apresentação e saúde Streamlit respondem HTTP 200.
+Estrutura (356 ficheiros) e `git diff --check` aprovados; só este plano
+foi alterado entre os ficheiros versionados. Nenhum teste foi removido.
