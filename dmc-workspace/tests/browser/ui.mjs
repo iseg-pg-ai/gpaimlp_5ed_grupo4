@@ -5,7 +5,7 @@ async function navigation(browser) {
   const portal = process.env.PORTAL_URL ?? "http://127.0.0.1:3001";
   const prefix = new URL(portal).pathname.replace(/\/$/, "");
 
-  for (const width of [320, 768, 1024, 1440, 1920, 2560])
+  for (const width of [320, 768, 1024, 1440, 2560])
     for (const locale of ["pt", "en", "es", "fr", "de", "zh"]) {
       const context = await browser.newContext({ viewport: { width, height: 800 } });
       const page = await context.newPage();
@@ -96,7 +96,7 @@ async function responsive(browser) {
       title: "LongTitle".repeat(35),
     }));
   }
-  for (const width of process.env.STRESS ? [360] : [320, 360, 640, 768, 1440])
+  for (const width of process.env.STRESS ? [360] : [320, 640, 768, 1440])
     for (const language of process.env.STRESS ? ["de"] : ["pt", "en", "es", "fr", "de", "zh"]) {
       const context = await browser.newContext({
         viewport: { width, height: width === 640 ? 320 : 700 },
@@ -163,12 +163,10 @@ async function responsive(browser) {
         if (box.width >= width || box.x !== 0) throw Error("drawer bounds");
         await page.keyboard.press("Escape");
         await page.locator("#trip-navigation").waitFor({ state: "hidden" });
-        if (await page.locator("#trip-navigation").isVisible()) throw Error("Escape");
         await trigger.click();
         await page.locator("#trip-navigation").waitFor({ state: "visible" });
         await page.mouse.click(width - 4, 100);
         await page.locator("#trip-navigation").waitFor({ state: "hidden" });
-        if (await page.locator("#trip-navigation").isVisible()) throw Error("backdrop");
         await trigger.click();
         await page.locator("#trip-navigation").waitFor({ state: "visible" });
         await page.keyboard.press("Tab");
@@ -185,8 +183,6 @@ async function responsive(browser) {
         .filter({ hasText: snapshot.brief.customerName })
         .click();
       await page.locator("#trip-navigation").waitFor({ state: "hidden" });
-      if (await page.locator("#trip-navigation").isVisible())
-        throw Error("selection must close drawer");
       if (process.env.STRESS) {
         await page.evaluate(() => {
           document.querySelector("main").scrollTop = 100000;
@@ -202,7 +198,6 @@ async function responsive(browser) {
         throw Error("Modal outside viewport");
       await page.keyboard.press("Escape");
       await page.locator(".transit-dialog").waitFor({ state: "hidden" });
-      if (await page.locator(".transit-dialog").isVisible()) throw Error("Modal Escape");
       if (
         !(await page
           .locator(".group.relative.z-10")
@@ -222,7 +217,6 @@ async function responsive(browser) {
           throw Error("Assistant popup outside viewport");
         await page.keyboard.press("Escape");
         await page.locator("#curation-assistant").waitFor({ state: "hidden" });
-        if (await page.locator("#curation-assistant").isVisible()) throw Error("Assistant Escape");
         await launcher.click();
         await page.locator("#curation-assistant").waitFor({ state: "visible" });
       } else {

@@ -525,3 +525,22 @@ de texto principal, formulário e seletor medido em pelo menos 4,5:1 no modo
 escuro após as transições. Observatório aprovado em 320/1440 px. Inspeção
 visual do briefing e catálogo em tema escuro aprovada. Tradução e geração
 simuladas nos cenários aplicáveis; dashboard, dados e templates PDF intactos.
+
+## Revisão de testes e artefactos — 2026-10-18
+
+- [x] Rever testes unitários, de integração e navegador face ao código atual.
+- [x] Retirar 12 combinações visuais redundantes e asserções imediatas que
+  repetiam a espera de elementos ocultos. Preservar os fluxos funcionais.
+- [x] Validar a matriz reduzida, check e traduções com modelos instalados.
+- [x] Limpar caches regeneráveis e capturas de testes antigas.
+
+Removidos 529,9 MiB: downloads Argos já instalados, cache de compilação
+Next.js e capturas Canva regeneráveis. Os seis pares de modelos instalados
+foram confirmados pelos metadados. Corrigida também uma expressão sem efeito
+no teste de tema que era assinalada pelo lint.
+
+Validação: check aprovado (97 testes e um ignorado), 54 combinações de
+interface/navegação aprovadas, temas em quatro larguras aprovados e cinco
+testes do worker de tradução aprovados com modelos simulados. Estrutura de
+344 ficheiros, Markdown e `git diff --check` aprovados. Portal e dashboard
+respondem HTTP 200. Código funcional, dados, exports e modelos preservados.

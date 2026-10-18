@@ -553,3 +553,15 @@ em `blu-portal-theme` no navegador e é aplicada antes da hidratação, com
 sincronização entre separadores. Armazenamento bloqueado não impede a troca
 na sessão. A impressão mantém a paleta clara; os templates PDF e o dashboard
 analítico original não dependem desta preferência.
+
+## Limpeza de cobertura repetida — 2026-10-18
+
+A revisão não identificou baterias inteiras de funcionalidades removidas.
+Manter os testes do dashboard original, adaptadores, modelos opcionais e
+contratos de dados: verificam fronteiras distintas das do portal.
+Retirar os seis casos responsivos de 360 px, já cobertos pelos 320 px mais
+restritivos no mesmo formato, e os seis de navegação a 1920 px, cobertos por
+1440 e 2560 px no mesmo formato desktop. Manter os seis idiomas, a mudança
+de navegação aos 1024 px, tablet, texto ampliado, teclado, mapas e temas.
+Eliminar asserções de invisibilidade imediatamente após esperas pelo mesmo
+estado. A bateria `test:ui` passa de 66 para 54 combinações.

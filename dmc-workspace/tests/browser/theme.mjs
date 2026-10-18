@@ -7,7 +7,6 @@ const browser = await launchBrowser();
 async function checkContrast(locator) {
   const ratio = await locator.evaluate(async (node) => {
     // Medir depois da transição de cores dos controlos.
-    getComputedStyle(node).color;
     await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {})));
     const rgb = (value) => value.match(/[\d.]+/g).map(Number);
     const luminance = (channels) =>
