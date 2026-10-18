@@ -289,6 +289,11 @@ npm run build
 
 ### SageMaker Studio Code Editor
 
+A base pública local está em `config/studio.json`. Sem override,
+`scripts/start_aws_portal.sh` usa essa origem; `PORTAL_PUBLIC_ORIGIN` explícito
+continua a ter prioridade. Listar as ligações dos dashboards com
+`python -B scripts/studio_urls.py` na raiz.
+
 O proxy do Code Editor acrescenta um prefixo ao endereço. Usar o script
 específico, a partir da raiz, com a origem HTTPS da instância do utilizador:
 

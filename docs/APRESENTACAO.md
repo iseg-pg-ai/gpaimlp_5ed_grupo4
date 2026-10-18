@@ -6,10 +6,10 @@ Público de referência: avaliação académica e responsáveis da operação.
 A apresentação passa a ter **três partes: explicar como o sistema foi construído,
 mostrar como as peças criam valor e demonstrar o portal real**.
 
-Estado atual: a [apresentação independente](../presentation/README.md) tem oito
-cenas interativas com exemplos fictícios. A abertura técnica descrita neste
-ficheiro é o plano de desenvolvimento deste branch; ainda não está implementada
-na interface. O portal e o dashboard analítico continuam separados.
+Estado atual: a [apresentação independente](../presentation/README.md) inclui
+cinco cenas técnicas e as oito cenas narrativas anteriores. Há navegação entre
+as partes e animações explicativas controláveis. O acesso ao portal abre um
+novo separador; o portal e o dashboard analítico continuam separados.
 
 ## 1. Estrutura e mensagem central
 
@@ -249,8 +249,13 @@ atribuir percentagens sem medições.
 | T4. O papel da IA | 1 min | Regras, agente, ferramentas, tradução e revisão | Comparar os mecanismos para o mesmo tipo de necessidade |
 | T5. Evidência e limites | 1 min | Testes relevantes, serviços opcionais e evolução | Selecionar uma falha e explicar o contrato protegido |
 
-**Total: 7 minutos.** As interações são propostas para a abertura técnica,
+**Total: 7 minutos.** As cinco cenas estão implementadas na abertura técnica,
 sem chamadas a modelos, publicação de dados ou execução implícita de testes.
+As ligações da arquitetura têm movimento direcional; um registo percorre as
+etapas; o apresentador pode ilustrar uma falha de publicação e observar a
+entrega anterior preservada. Os realces de mecanismos e contratos explicam
+as mudanças. O botão Pausar animações e a preferência de movimento reduzido
+desativam os efeitos sem ocultar conteúdo ou impedir a interação.
 
 Frase de passagem para a parte II:
 
@@ -345,7 +350,7 @@ pergunta, uma prova visual e uma conclusão curta.
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-A navegação de três partes é uma proposta para este branch. A terceira parte
+A navegação de três partes está implementada neste branch. A terceira parte
 abre o portal, sem o incorporar num iframe nem alterar os seus serviços.
 
 Dar acesso direto às partes para perguntas e para uma apresentação mais curta.
@@ -368,8 +373,8 @@ uma decisão importante. Referências detalhadas ficam disponíveis no guião.
 
 ## 7. Preparação e próximos passos
 
-- Desenvolver as cinco cenas técnicas e a navegação das três partes na aplicação
-  independente, mantendo os serviços do portal inalterados.
+- Ensaiar as cinco cenas técnicas e a navegação das três partes já implementadas
+  na aplicação independente, mantendo os serviços do portal inalterados.
 - Ensaiar o percurso e a duração com alguém que não conhece o sistema.
 - Confirmar versões, fontes e evidência antes de mostrar números ou resultados.
 - Preparar a sessão SageMaker, o caso fictício e uma versão de apoio para o portal.

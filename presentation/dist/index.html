@@ -9,12 +9,14 @@
       content="Uma experiência de curadoria BLU: do pedido ao território e à proposta. Protótipo com dados fictícios."
     />
     <base href="./" />
-    <title>BLU — Uma viagem começa numa decisão</title>
+    <title>BLU — Fundamentos, experiência e portal</title>
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23091b23'/%3E%3Ctext x='16' y='47' font-family='Georgia' font-size='50' fill='%23dfbb7c'%3Eb%3C/text%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="technical.css" />
+    <script src="technical.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -48,6 +50,14 @@
             >
               <path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5" />
             </svg></button
+          ><button
+            type="button"
+            id="motion-toggle"
+            aria-label="Pausar animações"
+            aria-pressed="false"
+            title="Pausar animações"
+          >
+            Ⅱ</button
           ><a id="portal-link" target="_blank" rel="noopener"
             >Abrir sistema <span aria-hidden="true">↗</span></a
           >
@@ -59,6 +69,7 @@
         role="status"
         hidden
       ></p>
+      <nav class="show-parts" aria-label="Partes da apresentação"></nav>
       <nav class="show-chapters" aria-label="Capítulos da apresentação"></nav>
       <section class="show-stage" aria-labelledby="show-title">
         <div class="show-scene-heading">

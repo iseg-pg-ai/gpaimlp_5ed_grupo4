@@ -14,7 +14,10 @@ if ! node -e 'const [major,minor]=process.versions.node.split(".").map(Number); 
     exit 1
 fi
 
-: "${PORTAL_PUBLIC_ORIGIN:?Set PORTAL_PUBLIC_ORIGIN to the HTTPS origin of SageMaker Studio}"
+# A origem indicada explicitamente continua a ter prioridade.
+if [ -z "${PORTAL_PUBLIC_ORIGIN:-}" ]; then
+    PORTAL_PUBLIC_ORIGIN="$(python3 -B scripts/studio_urls.py --origin)"
+fi
 export PORTAL_PUBLIC_ORIGIN
 export PORT="${PORT:-3001}"
 export PORTAL_ASSET_PREFIX="${PORTAL_ASSET_PREFIX:-/codeeditor/default/ports/$PORT}"

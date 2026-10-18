@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 from io import BytesIO
 import re
+import json
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -52,7 +53,11 @@ def main():
             pass
 
     with ThreadingHTTPServer((args.host, args.port), Handler) as server:
-        print(f"Apresentação: http://{args.host}:{args.port}{prefix}/", flush=True)
+        config = DIST.parent.parent / "config/studio.json"
+        if config.exists():
+            base = json.loads(config.read_text())["base_url"].rstrip("/")
+            print(f"Apresentação: {base}/ports/{args.port}/", flush=True)
+        print(f"Endereço local: http://{args.host}:{args.port}/", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

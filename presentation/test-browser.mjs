@@ -41,6 +41,77 @@ try {
       );
     };
     await check();
+    await page.locator('[data-tech-requirement="1"]').click();
+    await page
+      .getByRole("heading", { name: "Uma escolha com origem." })
+      .waitFor();
+    await page.getByRole("button", { name: "Revelar a arquitetura" }).click();
+    await page.locator('[data-tech-node="3"]').click();
+    await page
+      .locator("#tech-node-detail")
+      .getByRole("heading", { name: "Portal e domínio" })
+      .waitFor();
+    assert.equal(await page.locator(".tech-wires path").count(), 5);
+    assert.equal(
+      await page.evaluate(
+        () =>
+          getComputedStyle(document.querySelector(".tech-connection.is-active"))
+            .animationName,
+      ),
+      "none",
+    );
+    await page.getByRole("button", { name: "Pausar animações" }).click();
+    assert.equal(
+      await page.locator("#experience").getAttribute("data-motion"),
+      "off",
+    );
+    await page.getByRole("button", { name: "Ativar animações" }).click();
+    await check();
+    await page.getByRole("button", { name: "Seguir um dado" }).click();
+    for (let step = 0; step < 3; step++)
+      await page.getByRole("button", { name: "Avançar o dado" }).click();
+    await page
+      .getByRole("button", { name: "Simular falha na publicação" })
+      .click();
+    await page
+      .getByRole("heading", { name: "A entrega anterior mantém-se." })
+      .waitFor();
+    assert.equal(
+      await page.locator(".tech-preserved strong").innerText(),
+      "Ativa no exemplo",
+    );
+    assert.equal(
+      await page.locator(".tech-rejected strong").innerText(),
+      "Não publicada",
+    );
+    await page.getByRole("button", { name: "Repor fluxo normal" }).click();
+    await page.getByRole("button", { name: "Avançar o dado" }).click();
+    assert.equal(
+      await page.getByRole("button", { name: "Avançar o dado" }).isDisabled(),
+      true,
+    );
+    await check();
+    await page
+      .getByRole("button", { name: "Distinguir o papel da IA" })
+      .click();
+    await page.locator('[data-tech-mechanism="1"]').click();
+    await page
+      .getByRole("heading", { name: "Um modelo com ferramentas." })
+      .waitFor();
+    await check();
+    await page.getByRole("button", { name: "Examinar a evidência" }).click();
+    await page.locator('[data-tech-proof="1"]').click();
+    await page
+      .getByRole("heading", {
+        name: "Uma revisão antiga não sobrescreve a nova.",
+      })
+      .waitFor();
+    await check();
+    await page.getByRole("button", { name: "Entrar na experiência" }).click();
+    assert.equal(
+      await page.locator("#experience").getAttribute("data-part"),
+      "experience",
+    );
     await page.getByRole("button", { name: "Sabores & encontros" }).click();
     assert.equal(
       await page
@@ -187,6 +258,11 @@ try {
       });
     await page.getByRole("button", { name: "Recomeçar" }).click();
     assert.equal(
+      await page.locator("#experience").getAttribute("data-part"),
+      "technical",
+    );
+    await page.locator('[data-part="experience"]').click();
+    assert.equal(
       await page
         .getByRole("button", { name: "Cultura & património" })
         .getAttribute("aria-pressed"),
@@ -213,13 +289,68 @@ try {
     await context.close();
     console.log(
       width,
-      "percurso, escolha, mapa, roteiro, teclado, restauro e isolamento OK",
+      "três partes, animações, falhas, percurso, teclado e isolamento OK",
     );
   }
   const page = await browser.newPage({
     viewport: { width: 1440, height: 1100 },
   });
   await page.goto(origin);
+  for (const [chapter, file] of [
+    ["01 Requisitos", "requirements"],
+    ["02 Arquitetura e tecnologias", "architecture"],
+    ["03 Dados e processos", "process"],
+    ["04 O papel da IA", "ai"],
+    ["05 Validação e limites", "validation"],
+  ]) {
+    await page.getByRole("button", { name: chapter }).click();
+    await page.waitForTimeout(800);
+    await page.screenshot({
+      path: `/tmp/blu-technical-${file}.png`,
+      fullPage: true,
+    });
+  }
+  await page
+    .getByRole("button", { name: "02 Arquitetura e tecnologias" })
+    .click();
+  assert.equal(
+    await page.evaluate(
+      () =>
+        getComputedStyle(document.querySelector(".tech-connection.is-active"))
+          .animationName,
+    ),
+    "tech-flow",
+  );
+  await page.getByRole("button", { name: "Pausar animações" }).click();
+  assert.equal(
+    await page.evaluate(
+      () =>
+        getComputedStyle(document.querySelector(".tech-connection.is-active"))
+          .animationName,
+    ),
+    "none",
+  );
+  await page.getByRole("button", { name: "Ativar animações" }).click();
+  await page.getByRole("button", { name: "03 Dados e processos" }).click();
+  const before = await page.locator(".tech-record").boundingBox();
+  await page.getByRole("button", { name: "Avançar o dado" }).click();
+  await page.waitForFunction(() =>
+    document
+      .querySelector(".tech-record")
+      .getAnimations()
+      .some((animation) => animation.playState === "running"),
+  );
+  await page
+    .locator(".tech-record")
+    .evaluate((node) =>
+      Promise.all(node.getAnimations().map((animation) => animation.finished)),
+    );
+  const after = await page.locator(".tech-record").boundingBox();
+  assert.ok(
+    after.x > before.x + 20,
+    "O registo deve mover-se até à etapa seguinte",
+  );
+  await page.locator('[data-part="experience"]').click();
   await page.waitForTimeout(800);
   await page.screenshot({ path: "/tmp/blu-presentation-request.png" });
   await page.getByRole("button", { name: "Explorar o território" }).click();
@@ -250,7 +381,7 @@ try {
     new URL("/", origin).href,
   ]) {
     await page.goto(address);
-    await page.getByRole("button", { name: "Explorar o território" }).waitFor();
+    await page.getByRole("button", { name: "Revelar a arquitetura" }).waitFor();
     assert.equal(
       await page
         .locator("#scene")

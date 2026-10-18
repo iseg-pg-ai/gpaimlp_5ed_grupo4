@@ -601,8 +601,39 @@ e `git diff --check` aprovados; serviços e ficheiros do portal intactos.
   repetição dos capítulos técnicos na transição.
 - [x] Validar Markdown, ligações e integridade documental.
 
-A implementação visual do ato técnico continua pendente neste branch.
+Na revisão documental inicial, a implementação visual ficou pendente;
+ver a conclusão do ato técnico abaixo.
 
 Revisão concluída em 2026-10-19: ligações locais, Markdown, estrutura do
 projeto e `git diff --check` aprovados. Quatro esquemas Mermaid incluídos.
 Alteração apenas documental; a abertura técnica ainda está proposta no guião.
+
+## Ato técnico com animações explicativas — 2026-10-19
+
+- [x] Preparar cinco cenas técnicas com requisitos, arquitetura/tecnologias,
+  percurso dos dados, mecanismos de IA e contratos de validação.
+- [x] Integrar a navegação em três partes e animações controláveis.
+- [x] Validar interações, movimento reduzido, responsividade e isolamento.
+
+Validação em 2026-10-19: cinco cenas técnicas e oito narrativas aprovadas em
+320/768/1440/2560 px, com teclado, navegação entre partes, falha ilustrativa
+de publicação e preservação das escolhas. Ligações animadas, pausa manual e
+movimento reduzido verificados; movimento efetivo do registo entre etapas
+confirmado no navegador. Sem chamadas a APIs/fornecedores, escrita em
+localStorage ou erros JS. Inspeção visual da abertura técnica concluída.
+JS, Markdown, estrutura e `git diff --check` aprovados. Apenas a apresentação
+independente foi iniciada; código e dados do portal/Streamlit intactos.
+
+## Base pública dos dashboards — 2026-10-19
+
+- [x] Guardar o endereço Studio fornecido em `config/studio.json`.
+- [x] Gerar os três URLs com `scripts/studio_urls.py`; usar a origem no
+  arranque AWS por defeito, preservando override explícito.
+- [x] Anunciar o endereço público correto no servidor da apresentação.
+- [x] Verificar ligações, comandos e serviços após aplicar a configuração.
+
+Validação: seis testes de infraestrutura/origens aprovados, sintaxe dos dois
+arranques shell aprovada e URLs gerados iguais à base indicada. Os três
+serviços foram reiniciados com a configuração correta e respondem HTTP 200
+localmente. Markdown, estrutura e `git diff --check` aprovados. Sem build,
+alteração de dados ou renovação automática da sessão AWS.

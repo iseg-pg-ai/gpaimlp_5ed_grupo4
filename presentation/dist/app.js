@@ -52,7 +52,7 @@ const stops = [
       "Um momento para observar a cidade. Acesso, esforço e percurso exigem confirmação antes de uma proposta real.",
   },
 ];
-const chapters = [
+const experienceChapters = [
   "O pedido",
   "O território",
   "A proposta",
@@ -210,7 +210,7 @@ function layerDetail() {
 function finalScene() {
   return `<div class="show-finale"><div class="show-final-symbol" aria-hidden="true">${icon("compass")}</div><span class="show-eyebrow">DA DEMONSTRAÇÃO À EXPLORAÇÃO</span><h2>O próximo passo<br><em>é descobrir por si.</em></h2><p>Conhecer a oferta. Consultar as fontes.<br>Transformar informação numa proposta que se pode rever.</p><div class="show-final-summary"><span>02 dias em Lisboa</span><span>${choices[state.preference].label}</span><span>${state.free ? "Uma tarde livre reservada" : "Um roteiro ainda por rever"}</span></div><a id="observatory-final" class="show-primary" href="${observatoryUrl}" target="_blank" rel="noopener noreferrer">Explorar o Observatório real <span aria-hidden="true">↗</span></a><p class="show-final-note">Abre o portal real num novo separador. O acesso depende da sua sessão SageMaker.</p><div class="show-final-principles"><span>${icon("compass")} Conhecimento com origem</span><span>${icon("shield")} Revisão humana</span><span>${icon("route")} Entregas identificáveis</span></div></div>`;
 }
-const scenes = [
+const experienceScenes = [
   {
     heading: "Dois dias em Lisboa.<br><em>Uma viagem à sua medida.</em>",
     eyebrow: "CADA VIAGEM COMEÇA COM ALGUÉM",
@@ -284,31 +284,58 @@ const scenes = [
     render: finalScene,
   },
 ];
+const technicalCount = window.BluTechnical.scenes.length;
+const scenes = [
+  ...window.BluTechnical.scenes,
+  ...experienceScenes.map((scene, index) => ({
+    ...scene,
+    label: experienceChapters[index],
+  })),
+];
 function render(focus = true) {
   const scene = scenes[state.scene];
+  const technical = state.scene < technicalCount;
+  const offset = technical ? 0 : technicalCount;
+  const group = technical
+    ? window.BluTechnical.scenes
+    : scenes.slice(technicalCount);
+  const localIndex = state.scene - offset;
+  $("#experience").dataset.part = technical ? "technical" : "experience";
   $("#show-title").innerHTML = scene.heading;
   $("#eyebrow").textContent = "BLU INTELLIGENCE / " + scene.eyebrow;
   $("#intro").textContent = scene.intro;
-  $(".show-chapters").innerHTML = chapters
+  $(".show-parts").innerHTML =
+    `<button type="button" data-part="technical" ${technical ? 'aria-current="step"' : ""}><span>I</span><strong>Fundamentos técnicos</strong><small>Como foi construído</small></button><button type="button" data-part="experience" ${!technical ? 'aria-current="step"' : ""}><span>II</span><strong>Experiência de curadoria</strong><small>O significado na prática</small></button><a href="${observatoryUrl}" target="_blank" rel="noopener noreferrer"><span>III</span><strong>Portal real ↗</strong><small>Aplicação em novo separador</small></a>`;
+  $(".show-chapters").classList.toggle("show-technical-chapters", technical);
+  $(".show-chapters").innerHTML = group
     .map(
-      (label, index) =>
-        `<button type="button" data-scene="${index}" ${state.scene === index ? 'aria-current="step"' : ""}><span>0${index + 1}</span>${label}<i aria-hidden="true"></i></button>`,
+      (item, index) =>
+        `<button type="button" data-scene="${index + offset}" ${localIndex === index ? 'aria-current="step"' : ""}><span>0${index + 1}</span>${item.label}<i aria-hidden="true"></i></button>`,
     )
     .join("");
-  $("#scene").className = `show-scene show-scene-${state.scene}`;
+  $("#scene").className =
+    `show-scene ${technical ? scene.className : `show-scene-${localIndex}`}`;
   $("#scene").innerHTML = scene.render();
-  $("#counter").textContent = `0${state.scene + 1} / 0${scenes.length}`;
+  $("#counter").textContent =
+    `${technical ? "I" : "II"} · 0${localIndex + 1} / 0${group.length}`;
   $("#conclusion").textContent = scene.note;
   $("#previous").disabled = state.scene === 0;
   $("#next").innerHTML =
     scene.next +
     `<span aria-hidden="true">${state.scene === scenes.length - 1 ? "↺" : "→"}</span>`;
-  document.title = `BLU — ${chapters[state.scene]}`;
+  $(".show-demo").innerHTML =
+    `<span></span>${technical ? "FUNDAMENTOS / FLUXOS ILUSTRADOS" : "DEMONSTRAÇÃO · CASO FICTÍCIO"}`;
+  $(".show-bottom-note").textContent = technical
+    ? "CONTEÚDO BASEADO NO PROJETO · sem executar ETL, testes, modelos ou alterações a dados"
+    : "PROTÓTIPO INDEPENDENTE · sem geração por IA, reservas ou alterações a dados reais";
+  document.title = `BLU — ${scene.label}`;
+  window.BluTechnical.mount();
   if (focus) {
     $("#show-title").focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 }
+
 function go(scene) {
   state.scene = Math.max(0, Math.min(scenes.length - 1, scene));
   render();
@@ -325,6 +352,7 @@ $("#next").addEventListener("click", () => {
       version: 2,
       layer: 0,
     });
+    window.BluTechnical.reset();
     render();
   } else go(state.scene + 1);
 });
@@ -334,7 +362,12 @@ $(".show-chapters").addEventListener("click", (event) => {
   const button = event.target.closest("[data-scene]");
   if (button) go(Number(button.dataset.scene));
 });
+$(".show-parts").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-part]");
+  if (button) go(button.dataset.part === "technical" ? 0 : technicalCount);
+});
 $("#scene").addEventListener("click", (event) => {
+  if (window.BluTechnical.handleClick(event)) return;
   const pipeline = event.target.closest("[data-pipeline]");
   if (pipeline) {
     state.pipeline = Number(pipeline.dataset.pipeline);
@@ -434,5 +467,14 @@ $("#fullscreen").addEventListener("click", async () => {
       "O navegador não permitiu ecrã inteiro. A apresentação continua nesta janela.";
     $("#fullscreen-note").hidden = false;
   }
+});
+$("#motion-toggle").addEventListener("click", () => {
+  const paused = $("#experience").dataset.motion !== "off";
+  $("#experience").dataset.motion = paused ? "off" : "on";
+  const label = paused ? "Ativar animações" : "Pausar animações";
+  $("#motion-toggle").setAttribute("aria-label", label);
+  $("#motion-toggle").setAttribute("title", label);
+  $("#motion-toggle").setAttribute("aria-pressed", String(paused));
+  $("#motion-toggle").textContent = paused ? "▷" : "Ⅱ";
 });
 render(false);
