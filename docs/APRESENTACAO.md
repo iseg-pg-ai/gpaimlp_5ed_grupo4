@@ -2,8 +2,9 @@
 
 Proposta de narrativa e guião para uma apresentação interativa.
 Preparado em 18 de outubro de 2026, no branch `apresentacao-interativa`.
-O formato descrito neste documento é uma proposta; a apresentação navegável
-ainda não está implementada.
+O guião completo descreve a proposta de apresentação. Um primeiro protótipo
+independente de três cenas está implementado em [presentation/](../presentation/README.md),
+com exemplos fictícios, sem integração com o portal em execução.
 
 ## 1. A ideia central
 
@@ -325,9 +326,10 @@ um resultado simulado sem o dizer.
 
 ## 8. Próximo passo para construir a apresentação
 
-Criar primeiro um protótipo de três capítulos: **o pedido, o território e a
-proposta**. Validar o ritmo e a legibilidade com alguém que não conhece o sistema.
-Depois, acrescentar entrega, arquitetura e aprofundamentos.
+O protótipo de três capítulos — **o pedido, o território e a proposta** — já
+está implementado como aplicação estática independente. O próximo passo é
+validar o ritmo e a legibilidade com alguém que não conhece o sistema. Depois,
+acrescentar entrega, arquitetura e aprofundamentos.
 
 O protótipo deve ligar uma necessidade do cliente a uma escolha observável no
 roteiro. Esse encadeamento será o fio condutor de toda a apresentação.

@@ -565,3 +565,12 @@ restritivos no mesmo formato, e os seis de navegação a 1920 px, cobertos por
 de navegação aos 1024 px, tablet, texto ampliado, teclado, mapas e temas.
 Eliminar asserções de invisibilidade imediatamente após esperas pelo mesmo
 estado. A bateria `test:ui` passa de 66 para 54 combinações.
+
+## Apresentação isolada do portal AWS — 2026-10-18
+
+Por pedido do utilizador, o protótipo de apresentação é uma aplicação estática
+independente em `presentation/dist/`, servida por Python padrão na porta 3003.
+Não integra rotas Next.js, APIs, dados operacionais nem o armazenamento do
+portal. As três cenas usam exemplos fictícios e um mapa esquemático. O estado
+é apenas em memória. Os serviços existentes nas portas 3001 e 8501 não são
+reiniciados nem recompilados para executar esta apresentação.

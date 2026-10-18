@@ -556,3 +556,21 @@ respondem HTTP 200. Código funcional, dados, exports e modelos preservados.
 Validação: ligações locais do novo guião, Markdown, verificação da estrutura
 e `git diff --check` aprovados. Alteração apenas documental; sem execução de
 serviços externos, alteração de dados ou implementação da apresentação.
+
+## Dashboard de apresentação independente — 2026-10-18
+
+- [x] Criar uma aplicação estática em `presentation/dist`, com três cenas
+  fictícias, mapa esquemático e adaptação do roteiro em memória.
+- [x] Servir na porta 3003 com Python padrão, sem dependências do portal.
+- [x] Retirar os ficheiros parciais do protótipo Next.js antes de os integrar.
+- [x] Validar interação, teclado, responsividade e isolamento dos serviços.
+
+Validação: percurso completo em 320/768/1440/2560 px aprovado, incluindo
+escolha refletida no roteiro, pontos do mapa com alvos de 48 px, alteração
+reversível, navegação por teclado e fallback de ecrã inteiro. Sem chamadas
+externas/API, sem escrita no localStorage e sem erros JavaScript. Caminhos
+diretos e com prefixo Studio, com/sem barra final, aprovados localmente.
+Inspeção visual das três cenas e do mapa móvel concluída. JS/Python, Markdown,
+estrutura e `git diff --check` aprovados. Portal e Streamlit mantêm os mesmos
+processos e HTTP 200; não houve build, restart ou alterações aos seus ficheiros.
+O acesso autenticado pelo proxy AWS real não foi validado pelo navegador local.
