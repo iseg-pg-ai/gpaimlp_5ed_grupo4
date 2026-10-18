@@ -583,3 +583,31 @@ o roteiro, a pré-visualização ilustrativa e o resumo final. O CTA do último
 capítulo usa o endereço exato fornecido pelo utilizador, centralizado em
 `observatoryUrl`, sem inferir o domínio da apresentação. Abre um separador
 separado; os testes verificam o destino sem contactar o portal real.
+
+## Ato técnico e animações controláveis — 2026-10-19
+
+Adicionar cinco cenas técnicas como módulo estático da apresentação da porta
+3003, antes das oito cenas narrativas. A navegação distingue fundamentos,
+experiência e portal real; a terceira parte abre o endereço fornecido pelo
+utilizador num novo separador. As animações explicam ligações, passagem entre
+etapas e realce de contratos, sem executar serviços ou operações reais.
+Movimento reduzido e o controlo manual desativam efeitos, preservando texto,
+estado e navegação. O portal e os dados operacionais permanecem separados.
+
+## Endereço público Studio indicado pelo utilizador — 2026-10-19
+
+A base pública fica em `config/studio.json`, em vez de ser inferida do ID
+interno do domínio da instância. `scripts/studio_urls.py` gera as ligações
+para as portas; o arranque AWS usa a origem configurada quando não existe
+`PORTAL_PUBLIC_ORIGIN` explícito. A apresentação e o arranque Streamlit
+anunciam a base indicada, mantendo os endereços locais para execução.
+A configuração não cria domínios nem renova a autenticação do SageMaker.
+
+## Separação editorial e aprofundamento técnico — 2026-10-19
+
+Retirar as cenas de dados e arquitetura da parte narrativa, porque já pertencem
+aos fundamentos. A apresentação fica com seis cenas técnicas e seis narrativas.
+Separar arquitetura de tecnologias e conservar detalhes de implementação num
+inventário editorial próprio. Versões declaradas e defaults do código não
+representam configuração efetiva ou métricas medidas. Registar no guião as
+lacunas a preencher com a equipa e manter a distinção entre simulação e sistema.

@@ -590,3 +590,95 @@ exatamente ao URL indicado e abre um novo separador com `noopener`. Sem
 visitar o destino real, chamadas a APIs, escrita no navegador ou erros JS.
 Inspeção visual das novas cenas concluída. Sintaxe JS, documentação, Markdown
 e `git diff --check` aprovados; serviços e ficheiros do portal intactos.
+
+## Guião técnico em três partes — 2026-10-18
+
+- [x] Reorganizar `docs/APRESENTACAO.md` em fundamentos técnicos, experiência
+  interativa e demonstração do portal real.
+- [x] Detalhar requisitos, arquitetura, tecnologias, dados/processos, IA e
+  validação, com referências de código e cinco cenas técnicas propostas.
+- [x] Distinguir o guião proposto da interface já implementada e evitar
+  repetição dos capítulos técnicos na transição.
+- [x] Validar Markdown, ligações e integridade documental.
+
+Na revisão documental inicial, a implementação visual ficou pendente;
+ver a conclusão do ato técnico abaixo.
+
+Revisão concluída em 2026-10-19: ligações locais, Markdown, estrutura do
+projeto e `git diff --check` aprovados. Quatro esquemas Mermaid incluídos.
+Alteração apenas documental; a abertura técnica ainda está proposta no guião.
+
+## Ato técnico com animações explicativas — 2026-10-19
+
+- [x] Preparar cinco cenas técnicas com requisitos, arquitetura/tecnologias,
+  percurso dos dados, mecanismos de IA e contratos de validação.
+- [x] Integrar a navegação em três partes e animações controláveis.
+- [x] Validar interações, movimento reduzido, responsividade e isolamento.
+
+Validação em 2026-10-19: cinco cenas técnicas e oito narrativas aprovadas em
+320/768/1440/2560 px, com teclado, navegação entre partes, falha ilustrativa
+de publicação e preservação das escolhas. Ligações animadas, pausa manual e
+movimento reduzido verificados; movimento efetivo do registo entre etapas
+confirmado no navegador. Sem chamadas a APIs/fornecedores, escrita em
+localStorage ou erros JS. Inspeção visual da abertura técnica concluída.
+JS, Markdown, estrutura e `git diff --check` aprovados. Apenas a apresentação
+independente foi iniciada; código e dados do portal/Streamlit intactos.
+
+## Base pública dos dashboards — 2026-10-19
+
+- [x] Guardar o endereço Studio fornecido em `config/studio.json`.
+- [x] Gerar os três URLs com `scripts/studio_urls.py`; usar a origem no
+  arranque AWS por defeito, preservando override explícito.
+- [x] Anunciar o endereço público correto no servidor da apresentação.
+- [x] Verificar ligações, comandos e serviços após aplicar a configuração.
+
+Validação: seis testes de infraestrutura/origens aprovados, sintaxe dos dois
+arranques shell aprovada e URLs gerados iguais à base indicada. Os três
+serviços foram reiniciados com a configuração correta e respondem HTTP 200
+localmente. Markdown, estrutura e `git diff --check` aprovados. Sem build,
+alteração de dados ou renovação automática da sessão AWS.
+
+## Auditoria editorial e detalhe técnico — 2026-10-19
+
+- [x] Identificar repetição de dados, arquitetura, limites e mensagens de revisão.
+- [x] Remover cenas e explicações duplicadas da parte narrativa.
+- [x] Acrescentar detalhe de implementação, dependências, integrações e automação.
+- [x] Registar lacunas que exigem informação futura da equipa, sem as inventar.
+- [x] Validar o percurso revisto, acessibilidade, animações e documentação.
+
+Validação: seis cenas técnicas e seis narrativas aprovadas em
+320/768/1440/2560 px, incluindo as sete áreas de tecnologias e os seus
+aprofundamentos. Navegação, teclado, escolhas, movimento reduzido, pausa e
+movimento efetivo do registo verificados no navegador. Sem chamadas externas,
+escrita em localStorage ou erros JS. Inspeção visual das tecnologias, entrega
+e fecho concluída. Sintaxe JS, Markdown, estrutura e `git diff --check`
+aprovados. Portal, dashboard original e dados sem alterações. Valores dos
+manifests e predefinições de código não são apresentados como medições ou
+configuração efetiva dos serviços.
+
+## Grelha dos seis capítulos — 2026-10-19
+
+- [x] Corrigir a grelha narrativa que ainda reservava oito colunas.
+- [x] Distribuir seis capítulos por seis, três ou duas colunas conforme o ecrã.
+- [x] Validar no navegador a grelha, contagem e percurso nas quatro larguras.
+
+Grelha, seis botões e contador `/ 06` verificados em 320/768/1440/2560 px,
+na técnica e na curadoria. Estrutura e `git diff --check` aprovados.
+
+## Limpeza local do diretório — 2026-10-19
+
+- [x] Inspecionar ficheiros, referências e serviços em execução.
+- [x] Limpar caches de instalação dispensáveis e bytecode local.
+- [x] Confirmar serviços, estrutura e preservação dos ficheiros do projeto.
+
+Âmbito: caches npm/pip, entradas uv sem referência e `__pycache__` do
+projeto. Preservar ambientes, dependências instaladas, builds em utilização,
+navegadores de teste, configurações SageMaker, dados e histórico Git.
+O relatório de dados e `presentation/dist` têm referências e uso confirmado.
+
+Resultado: removidos cerca de 1,1 GB de caches npm/pip e entradas uv sem
+referência (128,1 MiB no uv), além de dois diretórios de bytecode. Mantidas
+as restantes entradas uv para reinstalação e funcionamento sem rede.
+Portal `/catalog`, apresentação e saúde Streamlit respondem HTTP 200.
+Estrutura (356 ficheiros) e `git diff --check` aprovados; só este plano
+foi alterado entre os ficheiros versionados. Nenhum teste foi removido.

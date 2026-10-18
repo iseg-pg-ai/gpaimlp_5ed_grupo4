@@ -1,349 +1,455 @@
-# BLU AI System — da informação à proposta de viagem
+# BLU AI System — fundamentos, experiência e portal
 
-Proposta de narrativa e guião para uma apresentação interativa.
-Preparado em 18 de outubro de 2026, no branch `apresentacao-interativa`.
-O guião completo descreve a proposta de apresentação. Um protótipo
-independente de oito cenas está implementado em [presentation/](../presentation/README.md),
-com exemplos fictícios, sem integração com o portal em execução.
-
-## 1. A ideia central
-
-**Mostrar como o conhecimento da BLU se transforma numa proposta personalizada,
-com fontes consultáveis, regras explícitas e revisão do curador.**
-
-A apresentação deve acompanhar uma viagem do princípio ao fim. O público
-conhece primeiro o pedido do cliente e descobre cada componente quando ele
-resolve uma necessidade concreta. A arquitetura aparece depois da demonstração,
-quando já existe contexto para a compreender.
-
-Frase de abertura sugerida:
-
-> Um cliente pede uma viagem à medida. Como usamos o conhecimento da BLU para
-> construir uma proposta que possamos explicar, rever e entregar?
-
-Frase de fecho sugerida:
-
-> O resultado é uma proposta personalizada cujo conteúdo podemos consultar,
-> cuja evolução podemos acompanhar e cujas pendências continuam visíveis.
-
+Guião revisto em 19 de outubro de 2026, no branch `apresentacao-tecnica`.
 Público de referência: avaliação académica e responsáveis da operação.
-Duração principal: **12 minutos**, com aprofundamentos disponíveis para perguntas.
 
-## 2. Como faria o formato
+A apresentação passa a ter **três partes: explicar como o sistema foi construído,
+mostrar como as peças criam valor e demonstrar o portal real**.
 
-Criaria uma **mesa de curadoria digital**, com o estilo do portal: azul-petróleo,
-tipografia editorial, apontamentos dourados e escolha entre tema claro e escuro.
-Uma aplicação no navegador, com capítulos ligados por uma linha de progresso.
+Estado atual: a [apresentação independente](../presentation/README.md) inclui
+seis cenas técnicas e seis cenas narrativas. Há navegação entre
+as partes e animações explicativas controláveis. O acesso ao portal abre um
+novo separador; o portal e o dashboard analítico continuam separados.
 
-Cada capítulo teria uma pergunta, uma demonstração visual e uma conclusão curta.
-O apresentador controlaria o avanço; mapas e diagramas só ganhariam movimento
-quando ajudassem a explicar uma transformação.
+## 1. Estrutura e mensagem central
 
-```text
-┌────────────────────────────────────────────────────────────────────┐
-│ blu.   O pedido → Os dados → O território → A proposta → A entrega │
-├────────────────────────────────────────────────────────────────────┤
-│                                                                    │
-│  Uma pergunta                       Uma prova visual               │
-│  O que precisa este cliente?        Briefing / mapa / roteiro       │
-│                                                                    │
-│  Uma frase-chave                    Um detalhe que se pode abrir   │
-│                                     Fonte, regra ou versão         │
-│                                                                    │
-├────────────────────────────────────────────────────────────────────┤
-│  Capítulo 1 de 8        [Anterior] [Seguinte]    [Explorar sistema]  │
-└────────────────────────────────────────────────────────────────────┘
-```
-
-Haveria dois percursos sobre o mesmo conteúdo:
-
-- **Guiado:** sequência preparada para os 12 minutos, com estados de demonstração.
-- **Exploratório:** acesso direto à arquitetura, qualidade, IA e versões nas
-  perguntas finais.
-
-Os estados preparados usariam dados fictícios e seriam identificados como
-**simulação**. Uma demonstração ao vivo seria identificada como **sistema local**.
-Capturas ou gravações de apoio teriam data. Estes estados visuais são uma proposta
-para a futura apresentação e não descrevem controlos já existentes.
-
-As animações seriam discretas, com alternativa sem movimento. Haveria navegação
-por teclado, texto legível à distância e diagramas compreensíveis mesmo sem
-animação. Uma versão HTML autónoma com capturas permitiria apresentar sem
-internet; o funcionamento completo do portal exige os seus serviços e dados.
-
-## 3. O percurso de 12 minutos
-
-| Capítulo | Tempo | Pergunta que orienta a cena | O que mostrar | Mensagem a deixar |
-| --- | --- | --- | --- | --- |
-| 1. O pedido | 1 min | O que torna esta viagem particular? | Um cartão com o cliente fictício e três necessidades | A personalização começa com informação estruturada |
-| 2. O território | 1 min 30 s | Que oferta conhecemos e com que confiança? | Observatório, mapa, filtros e evidência | Análise e contexto apoiam a escolha |
-| 3. A proposta | 3 min | Como passamos do pedido ao itinerário? | Briefing, geração, dias, regras e pendências | A proposta respeita critérios e continua editável |
-| 4. O conhecimento | 1 min 30 s | Como tornam os dados utilizáveis? | Fontes → validação → catálogo publicado | A qualidade da proposta começa na qualidade das fontes |
-| 5. A colaboração | 1 min 30 s | Como ajuda o assistente? | Uma alteração explícita e uma atividade protegida | A assistência trabalha dentro de contratos e limites |
-| 6. A entrega | 1 min 30 s | O que foi guardado e o que é entregue? | Versões, PDF e opção TXT/Canva | A entrega corresponde a uma versão identificável |
-| 7. O sistema | 1 min | Como se ligam as peças? | Esquema de arquitetura com os fluxos destacados | Cada componente tem uma responsabilidade definida |
-| 8. O próximo passo | 1 min | O que está demonstrado e o que falta? | Estado atual, avaliação e evolução | A maturidade é apresentada com evidência |
-
-**Total: 12 minutos.** Nas perguntas, aprofundar os capítulos sem repetir o percurso.
-
-## 4. O caso que liga a história
-
-Usar um exemplo fictício e consistente ao longo da apresentação:
-
-| Campo | Exemplo de demonstração |
-| --- | --- |
-| Identificação | Grupo Demonstração BLU |
-| Destino e duração | Lisboa, dois dias |
-| Participantes | Dois adultos |
-| Interesses | Cultura, património e gastronomia |
-| Ritmo | Descontraído, com início tardio |
-| Orçamento | 600 EUR, como referência do briefing |
-| Necessidade a verificar | Reduzir distâncias a pé |
-| Exclusão | Evitar atividades de barco |
-
-A necessidade de reduzir caminhadas deve levar a uma verificação explícita de
-compatibilidade. Se não existir informação suficiente, mostrar a pendência ou a
-ausência de oferta elegível. Escolher as datas depois de confirmar a oferta
-publicada para a demonstração. O orçamento do briefing não prova que todos os
-custos são conhecidos ou que o total será cumprido.
-
-Preparar uma versão guardada de apoio para este exemplo, num ambiente de
-demonstração isolado. Não usar propostas ou contactos de clientes reais.
-
-## 5. O que é importante contar em cada capítulo
-
-### Capítulo 1 — Um pedido com critérios
-
-Apresentar o cliente em cerca de três frases, dando destaque ao destino, ao
-ritmo e às necessidades que podem alterar as escolhas.
-
-Mostrar como preferências, restrições e exclusões têm efeitos diferentes.
-Um interesse pode ajudar a ordenar a oferta; uma restrição exige compatibilidade
-sustentada; uma exclusão impede uma escolha.
-
-Pergunta para envolver o público: **«Que informação ainda precisamos de confirmar
-antes de propor esta experiência?»**
-
-### Capítulo 2 — Explorar o território
-
-No Catálogo, abrir o Observatório interativo e seguir um percurso curto:
-mapa → destino → oferta → ficha → informação de qualidade.
-
-As seis áreas disponíveis são Panorama, Explorar oferta, Destinos, Preços,
-Histórico e Qualidade. Mostrar apenas duas ou três durante a narrativa; deixar
-as restantes para exploração.
-
-Pontos de valor:
-
-- Conhecer a distribuição da oferta por destino e tipo.
-- Abrir um ponto do mapa e chegar a um registo identificável.
-- Comparar ofertas mantendo unidades, moedas e condições explícitas.
-- Distinguir informação conhecida, pendente, histórica ou expirada.
-
-Usar indicadores da entrega consultada no dia e registar a data da captura.
-O número de registos mede cobertura do catálogo, não reservas ou desempenho
-comercial. O Observatório nativo lê a entrega publicada; a aplicação analítica
-Streamlit original continua separada.
-
-### Capítulo 3 — Construir uma proposta que se pode rever
-
-Preencher apenas o essencial do briefing e avançar para a proposta. Mostrar um
-dia em detalhe: atividades, horários propostos, deslocações, custos conhecidos
-e verificações ainda necessárias.
+**O sistema transforma conhecimento disperso numa proposta personalizada,
+consultável, revista pelo curador e associada a uma versão identificável.**
 
 ```mermaid
 flowchart LR
-    B[Briefing] --> E[Oferta aprovada e publicada]
-    E --> R[Regras de elegibilidade e curadoria]
-    R --> I[Proposta por dias]
-    I --> H[Revisão pelo curador]
-    H --> V[Versão guardada]
-    H -->|Ajustes| R
+    A["I · Fundamentos técnicos"] --> B["II · Experiência de curadoria"]
+    B --> C["III · Portal real"]
+    A --- A1["Requisitos, arquitetura, tecnologias, processos e validação"]
+    B --- B1["Caso fictício e decisões interativas"]
+    C --- C1["Observatório e fluxo operacional demonstrados ao vivo"]
 ```
 
-Escolher **um exemplo de decisão explicável**: uma oferta incluída por adequação
-aos interesses, uma opção excluída ou uma lacuna por falta de informação.
-Apresentar o que efetivamente acontecer no caso preparado.
+A parte I responde a **«Como e porquê foi construído desta forma?»**.
+A parte II responde a **«O que significa isso para uma viagem concreta?»**.
+A parte III responde a **«Como funciona na aplicação real?»**.
 
-Mostrar uma pendência como parte do trabalho operacional. A proposta não confirma
-automaticamente preço, disponibilidade ou condições do fornecedor. Horários e
-percursos precisam de revisão. Totais conhecidos e pendências devem aparecer
-separados, conservando as moedas.
+Proposta de duração, a ajustar ao tempo atribuído:
 
-### Capítulo 4 — Dos ficheiros ao conhecimento utilizável
-
-Mostrar uma fonte de cada tipo, sem percorrer pastas ou folhas extensas:
-Excel, suplemento estruturado e PDF histórico. Explicar que o ETL organiza e
-valida a entrega, preservando origem e relações.
-
-```mermaid
-flowchart LR
-    A[Excel e suplementos] --> C[Ingestão e validação]
-    B[PDFs históricos] --> C
-    O[Catálogo operacional aprovado] --> C
-    C --> D{Entrega válida?}
-    D -->|Sim| W[Warehouse publicado]
-    D -->|Não| R[Manter entrega anterior e reportar falhas]
-    W --> P[Portal e análise]
-```
-
-Três aspetos a tornar visíveis:
-
-- A origem de um dado pode ser consultada.
-- Informação histórica conserva o seu contexto temporal.
-- Editar o catálogo e publicar uma entrega são etapas distintas.
-
-**Exemplo visual:** acompanhar um registo desde a fonte até à ficha consultada.
-Se houver uma divergência real no exemplo preparado, mostrar como é assinalada,
-sem inventar um conflito apenas para preencher a cena.
-
-### Capítulo 5 — O papel da IA e da revisão humana
-
-Distinguir claramente os mecanismos presentes:
-
-| Mecanismo | Papel no sistema | O que demonstrar |
+| Parte | Percurso principal | Versão curta |
 | --- | --- | --- |
-| Regras e lógica determinística | Elegibilidade, curadoria, validação e comandos suportados | O efeito de uma regra e de um comando explícito |
-| Agente de linguagem opcional | Interação através de modelo e ferramentas de catálogo, meteorologia e restrições | Uma resposta fundamentada, se o serviço estiver disponível e autorizado |
-| Curador humano | Rever escolhas, resolver pendências e preparar a entrega | Uma decisão de aceitação, alteração ou confirmação |
+| I. Fundamentos técnicos | 8 minutos | 4 minutos |
+| II. Experiência interativa | 5 minutos | 3 minutos |
+| III. Portal real | 7 minutos | 5 minutos |
+| Total, sem perguntas | 20 minutos | 12 minutos |
 
-O código do agente usa LangChain/LangGraph e pode usar modelos via AWS Bedrock.
-O portal também funciona sem esse serviço. Não apresentar um comando
-determinístico como prova de que um modelo de linguagem foi executado.
-A disponibilidade do serviço e a autorização de eventuais custos devem ser
-confirmadas antes de preparar uma demonstração com chamadas reais.
+O tempo é uma proposta de guião, não um requisito já acordado. Os
+aprofundamentos devem ficar acessíveis para perguntas, sem interromper o fio.
 
-Demonstração sugerida: pedir **«adicionar tarde livre ao dia 1»** numa proposta
-preparada e observar a alteração. Depois, mostrar uma atividade protegida e
-explicar o limite aplicável. Se for demonstrado um pedido incompatível, confirmar
-antes qual a mensagem e o comportamento reais do fluxo.
+## 2. Parte I — os pontos técnicos a abordar
 
-Mensagem oral: **«A assistência apoia decisões sobre um catálogo conhecido;
-a validação e o curador continuam presentes.»**
+### 2.1. Problema, utilizadores e âmbito
 
-### Capítulo 6 — Da edição à entrega
+Começar pela necessidade operacional e só depois apresentar a solução:
+conhecimento em Excel, suplementos e PDFs; necessidade de o organizar,
+consultar, rever e usar na preparação de propostas personalizadas.
 
-Mostrar a ligação entre o que foi revisto, a versão guardada e o documento
-exportado. Evitar gastar tempo a abrir sucessivos formatos.
+Identificar o **curador** como utilizador principal do portal. Distinguir o
+trabalho de quem mantém e aprova o catálogo da análise e da preparação da
+proposta, sem sugerir que já existe gestão de papéis na aplicação.
 
-```mermaid
-flowchart LR
-    A[Rascunho no navegador] --> B[Revisão e gravação]
-    B --> V[Versão e snapshot persistidos]
-    V --> D[PDF DMC e ZIP]
-    V --> T[TXT para composição no Canva]
-    T --> C[Composição e aprovação humana no Canva]
-    C --> P[PDF Canva independente]
-```
+Explicar o âmbito: o sistema prepara e entrega propostas; disponibilidade,
+condições e reservas exigem processos próprios. Autenticação e colaboração
+multiutilizador continuam a ser evolução a desenvolver.
 
-Abrir um PDF DMC e mostrar a organização do roteiro. Explicar que as versões
-preservam o conteúdo e os PDFs históricos. Uma edição posterior não reescreve
-uma entrega já guardada.
+**Visual sugerido:** fontes dispersas convergem num fluxo de curadoria.
+**Mensagem oral:** «Definimos o que o sistema deve apoiar e onde continua a ser
+necessária uma decisão humana.»
 
-O TXT/Canva parte da versão guardada e exclui contactos e notas internas.
-A composição Canva e o seu PDF são uma entrega independente; não atualizam
-automaticamente o PDF DMC. A tradução de conteúdos exportados usa modelos locais
-quando estão preparados. A interface tem seis idiomas.
+### 2.2. Requisitos funcionais e requisitos de qualidade
 
-### Capítulo 7 — A arquitetura em um minuto
+Mostrar requisitos ligados a comportamentos observáveis, com critérios de
+aceitação que possam ser demonstrados.
 
-Apresentar primeiro os fluxos e só depois os nomes das tecnologias.
+| Tipo | Requisito a apresentar | Como o tornar verificável |
+| --- | --- | --- |
+| Funcional | Consultar e manter o catálogo | Abrir um registo, consultar origem e histórico de revisão |
+| Funcional | Criar propostas adequadas ao briefing | Relacionar uma preferência ou exclusão com uma escolha no roteiro |
+| Funcional | Respeitar restrições e atividades protegidas | Mostrar uma alteração válida e um pedido que não pode ser aplicado |
+| Funcional | Guardar, reabrir e exportar versões | Relacionar o conteúdo revisto com a versão e o documento selecionados |
+| Qualidade | Preservar rastreabilidade e contexto temporal | Distinguir fonte, evidência, data e informação histórica |
+| Qualidade | Preservar integridade e concorrência | Demonstrar num cenário de teste a rejeição de uma revisão desatualizada |
+| Qualidade | Tratar informação desconhecida explicitamente | Mostrar preço pendente sem o converter em zero, ou compatibilidade por confirmar |
+| Qualidade | Manter legibilidade e interação responsiva | Verificar tamanhos de ecrã, teclado, foco e idiomas |
+| Evolução | Autenticação, papéis e colaboração multiutilizador | Apresentar como trabalho futuro, com critérios ainda a definir |
+
+Evitar requisitos vagos como «ser inteligente», «ser rápido» ou «ser seguro».
+Se forem discutidos desempenho ou segurança, indicar métricas e controlos
+concretos, o âmbito avaliado e o que falta medir ou implementar.
+
+### 2.3. Arquitetura e fronteiras de responsabilidade
+
+Mostrar primeiro os fluxos, depois identificar as tecnologias. Explicar a
+separação entre fontes, catálogo operacional, entrega publicada e propostas.
 
 ```mermaid
 flowchart TB
-    S[Fontes locais] --> ETL[ETL Python]
-    CAT[Catálogo operacional SQLite] --> ETL
-    ETL --> W[Warehouse publicado]
-    W --> OBS[Observatório nativo e dashboard Streamlit]
-    W --> PORTAL[Portal Next.js e serviços locais]
-    PORTAL -->|Edição e revisão| CAT
-    CUR[Curador] <--> PORTAL
-    PORTAL <--> AG[Agente Python opcional]
-    AG --> LLM[Modelo de linguagem e ferramentas]
-    PORTAL --> V[Versões e PDFs persistidos]
-    PORTAL <--> LOCAL[Rascunhos e preferências no navegador]
+    F[Fontes Excel, suplementos e PDFs] --> E[ETL Python]
+    C[Catálogo operacional SQLite] -->|Revisões aprovadas| E
+    E --> W[Warehouse publicado]
+    W --> P[Portal Next.js e domínio TypeScript]
+    W --> O[Observatório nativo e Streamlit]
+    P -->|Edição validada| C
+    P <--> PY[Operações locais Python via JSON]
+    P <--> R[Rascunhos no navegador]
+    P --> V[Versões, snapshots e PDFs persistidos]
+    P <-.-> AG[Serviço de agente opcional]
+    AG --> M[Modelo de linguagem e ferramentas]
 ```
 
-O portal usa lógica de domínio em TypeScript e operações locais em Python.
-O catálogo operacional, o warehouse, os rascunhos e as versões têm funções
-próprias. O diagrama é uma visão funcional resumida, não um desenho de deployment
-cloud ou uma descrição exaustiva das chamadas entre módulos.
+O diagrama é funcional: não representa todos os pedidos nem um deployment
+completo. As operações locais Python e o serviço HTTP do agente têm fronteiras
+distintas. O adaptador local usa processos sem shell e mensagens JSON; não exige
+um segundo servidor para essas operações.
 
-### Capítulo 8 — Evidência e evolução
+Quatro distinções essenciais:
 
-Separar três tipos de afirmação:
+- **Catálogo operacional:** edição, revisões e aprovações.
+- **Warehouse:** entrega publicada e validada, consumida pela análise e portal.
+- **Rascunhos:** estado de trabalho no navegador.
+- **Versões:** snapshots e documentos históricos persistidos no servidor.
 
-| Estado | Exemplos que podemos apresentar |
+Uma alteração no catálogo não reescreve uma proposta já guardada. O portal não
+edita diretamente o warehouse. Estas fronteiras explicam boa parte do desenho.
+
+### 2.4. Tecnologias e justificação das escolhas
+
+Apresentar cada tecnologia através da responsabilidade que tem no código.
+A justificação abaixo é uma forma de explicar o desenho atual; não substitui
+um levantamento de alternativas ou um benchmark, que não foi realizado aqui.
+
+| Camada | Tecnologias declaradas no projeto | Papel e justificação a desenvolver |
+| --- | --- | --- |
+| Portal | Next.js, React, TypeScript, Tailwind CSS | Interface interativa, rotas de servidor e contratos do domínio |
+| Ingestão e transformação | Python, pandas, openpyxl, pypdf | Leitura de folhas e documentos, transformação e validação das fontes |
+| Dados | SQLite, JSONL e ficheiros versionados | Persistência local e entregas consultáveis; explicitar os limites para evolução colaborativa |
+| Análise | Streamlit e Plotly; Observatório nativo em React/SVG | Exploração da entrega publicada com interfaces distintas |
+| Agente opcional | FastAPI, LangChain/LangGraph, boto3 e AWS Bedrock | Serviço de assistência, modelo de linguagem e ferramentas de domínio |
+| Tradução opcional | Argos Translate e CTranslate2 | Tradução local de conteúdos exportados, com proteção de números |
+| Entregas | PDFKit e composição TXT/Canva | Produção de documentos e orientação de uma composição visual independente |
+| Verificação | unittest, node:test e Playwright | Testes de regras, persistência, integração e interface |
+| Apresentação independente | HTML, CSS, JavaScript e servidor Python padrão | Narrativa demonstrativa na porta 3003, sem dependências de execução do portal |
+
+Confirmar versões nos manifests antes da sessão: Python 3.12/3.13 e Node
+22.13 a 24.x são os intervalos definidos neste checkout. Os manifests e os
+lockfiles prevalecem sobre este resumo.
+
+Distinguir também **onde corre** de **como foi construído**: o ambiente atual
+usa SageMaker Studio Code Editor para execução e acesso. Isto não significa
+que foi treinado um modelo próprio no SageMaker, nem que existe autenticação
+interna do portal. O acesso do Studio e os papéis da aplicação são temas distintos.
+
+### 2.5. Dados, modelos e processos de ponta a ponta
+
+Seguir um registo ao longo do processo, em vez de mostrar uma lista de scripts.
+
+```mermaid
+flowchart LR
+    F[Fonte preservada] --> I[Ingestão e identificação]
+    I --> N[Normalização e validação]
+    C[Edição e aprovação no catálogo] --> N
+    N --> T[Preparar entrega temporária]
+    T --> Q{Validação da entrega}
+    Q -->|Sucesso| W[Publicação do warehouse]
+    Q -->|Falha| A[Conservar ou repor entrega anterior]
+    W --> P[Oferta elegível para curadoria]
+    P --> R[Revisão da proposta]
+    R --> V[Versão guardada e exportação]
+```
+
+Abordar estes aspetos com um exemplo por tema:
+
+- **Identidade e relações:** IDs e chaves explícitas ligam registos e histórico;
+  uma semelhança de nomes não prova uma correspondência.
+- **Qualidade:** campos em falta, conflitos e evidência têm tratamento explícito.
+- **Normalização:** destinos e unidades são harmonizados sem apagar as condições
+  e o valor original. Informação desconhecida continua desconhecida.
+- **Validade temporal:** um preço histórico ou expirado não passa a preço atual.
+- **Publicação:** o ETL valida antes da troca e tem recuperação da entrega anterior.
+- **Revisões:** aprovar, publicar e guardar uma proposta são operações distintas.
+- **Custos:** separar valores conhecidos, pendências e totais por moeda.
+
+Uma evolução para S3 ou persistência cloud deve aparecer como evolução,
+sem representar um adaptador ainda não implementado como operacional.
+
+### 2.6. Papel da IA, ferramentas e controlo humano
+
+Esta é uma distinção técnica central, sobretudo perante uma avaliação de IA.
+
+| Mecanismo | O que faz | O que não se deve inferir |
+| --- | --- | --- |
+| Regras e comandos determinísticos | Elegibilidade, critérios de curadoria e alterações suportadas | Uma resposta no chat não prova que um LLM foi chamado |
+| Agente de linguagem opcional | Usa modelo e ferramentas de pesquisa do catálogo, meteorologia e restrições | A existência do código não comprova disponibilidade ou execução do fornecedor |
+| Modelos locais de tradução | Traduzem conteúdos exportados quando preparados | Tradução não confirma os factos ou condições comerciais |
+| Revisão humana | Resolve pendências, revê a proposta e prepara a entrega | Uma proposta gerada não equivale a uma reserva confirmada |
+
+```mermaid
+flowchart LR
+    U[Pedido do curador] --> D{Mecanismo aplicável}
+    D --> R[Comando e regras determinísticas]
+    D -.-> A[Agente opcional com modelo e ferramentas]
+    R --> C[Verificar efeitos e limites do fluxo]
+    A --> H[Rever resposta e evidência]
+    C --> H
+    H --> V[Aplicar e guardar através do fluxo validado]
+```
+
+O esquema mostra a separação de responsabilidades a explicar; não afirma que
+qualquer resposta livre do agente seja convertida automaticamente numa ação.
+Mostrar a chamada e o comportamento concretos do fluxo escolhido.
+
+Explicar a consulta ao catálogo conhecido e as ferramentas realmente presentes.
+Não apresentar fine-tuning, pesquisa vetorial, RAG com embeddings ou treino
+próprio como funcionalidades implementadas sem evidência no código.
+
+A demonstração atual tem respostas preparadas e assinaladas como simulação.
+Para uma chamada real, confirmar serviço, modelo configurado e autorização de
+custos antes da sessão. Conteúdos de PDFs, clientes e respostas externas são
+dados; não devem ser tratados como instruções do sistema.
+
+### 2.7. Validação, evidência e limitações
+
+Mostrar **o que os testes protegem**, com exemplos concretos:
+
+| Fronteira | Comportamento a verificar | Referência no repositório |
+| --- | --- | --- |
+| Publicação ETL | Falha de construção conserva a entrega; falha na troca repõe a anterior | [test_local_source.py](../tests/test_local_source.py) |
+| Catálogo e publicação | Revisões e estado publicado condicionam a oferta elegível | [catalog.test.mjs](../dmc-workspace/tests/catalog.test.mjs) |
+| Versões | Escritas desatualizadas são rejeitadas; snapshots e bytes históricos são preservados | [versions.test.mjs](../dmc-workspace/tests/versions.test.mjs) |
+| Informação desconhecida | Ausências e zero não são confundidos na análise | [test_portal_observatory.py](../tests/test_portal_observatory.py) |
+| Interface | Navegação, foco, dimensões e texto ampliado | [ui.mjs](../dmc-workspace/tests/browser/ui.mjs) |
+| Tradução | Números protegidos, falhas e modelos ausentes | [test_worker.py](../translations/test_worker.py) |
+
+Distinguir resultados de testes unitários, integração com dados temporários,
+interface com APIs simuladas e serviços externos reais. Uma bateria aprovada
+não prova, por si só, adequação comercial ou prontidão para produção.
+
+Se forem usados números, apresentar data, ambiente e âmbito da execução. Os
+registos locais anteriores estão no [plano](../PLAN.md) e em
+[testes e histórico](TESTING.md); esta revisão documental não executou de novo
+a bateria completa do sistema.
+
+Fechar com os limites atuais: autenticação e papéis, sincronização
+multiutilizador, persistência cloud e revisão do acesso externo. Ganhos de
+rapidez, consistência e qualidade devem ser avaliados com curadores; não
+atribuir percentagens sem medições.
+
+### 2.8. Seis cenas técnicas, com aprofundamento opcional
+
+| Cena | Tempo sugerido | Conteúdo principal | Interação |
+| --- | --- | --- | --- |
+| T1. Requisitos | 1 min | Necessidade e comportamento verificável | Selecionar personalização, rastreabilidade, integridade ou continuidade |
+| T2. Arquitetura | 1 min 30 s | Camadas e fronteiras | Explorar um componente e as suas ligações |
+| T3. Tecnologias | 2 min | Dependências e implementação | Escolher uma área e abrir os detalhes relevantes |
+| T4. Dados e processos | 1 min 30 s | Da fonte à versão | Avançar o registo e ilustrar a falha de publicação |
+| T5. Papel da IA | 1 min | Mecanismos distintos | Comparar regras, agente e tradução |
+| T6. Validação e limites | 1 min | Contratos e evidência | Explorar números na tradução, conflitos e interface |
+
+**Total proposto: 8 minutos.** As seis cenas estão implementadas, sem chamadas
+a modelos, publicação de dados ou execução implícita de testes. Os efeitos
+visuais podem ser desativados pelo botão ou pela preferência de movimento reduzido.
+
+No capítulo Tecnologias, não percorrer todos os detalhes durante o guião
+principal. Escolher duas áreas que melhor respondam à audiência e reservar
+as restantes para perguntas. O inventário está em
+[technology-content.js](../presentation/dist/technology-content.js), separado da
+lógica de navegação para facilitar a complementação posterior.
+
+### 2.9. Detalhes de implementação agora disponíveis
+
+| Área | Detalhe acrescentado | Evidência e limite |
+| --- | --- | --- |
+| Portal e integração | Versões declaradas, renderização e divisão cliente/servidor, JSON por stdin/stdout, execução sem shell, timeout de 15 s e buffer de 16 MiB | `package.json` e `python-portal.ts`; não é um teste de latência |
+| Ingestão e dados | Papel de pandas/openpyxl/pypdf, chaves, conflitos, entidades, manifest, SHA-256 e publicação temporária | Código ETL e contratos; não inventariar volumes sem uma entrega datada |
+| Persistência e entregas | SQLite operacional, warehouse, localStorage, snapshots, `baseVersion`, `snapshotHash`, `chainHash`, `parentVersion`, PDF/ZIP/TXT | Código de versões e catálogo; não equivale a colaboração cloud completa |
+| Agente e ferramentas | FastAPI/Uvicorn, LangGraph/LangChain, boto3/Bedrock, ferramentas e configuração do modelo | Modelo/região efetivos por confirmar; temperatura 0,2 e 4096 tokens são defaults do código |
+| Análise e tradução | Streamlit/Plotly, Observatório React/SVG em leitura, worker JSON-lines e modelos Argos/CTranslate2 | Grupos opcionais; não presumir disponibilidade por existir uma dependência |
+| Serviços externos | Open-Meteo e OSRM, timeout/aborto, previsão/histórico, cache e falhas explícitas | Comportamentos do código; sem chamadas reais nesta apresentação |
+| Ambiente e automação | `uv.lock`, `package-lock.json`, testes, CI de dados/documentação e acesso SageMaker | Não há workflow CI do portal neste checkout; sem certificação de produção |
+
+As versões exibidas são as declaradas nos manifests, e não uma listagem de
+bibliotecas atualmente instaladas ou serviços em execução. Os limites do código
+não são apresentados como resultados de desempenho. A justificação histórica das
+escolhas e a comparação de alternativas precisam da informação da equipa.
+
+Frase de passagem para a parte II:
+
+> Já vimos os contratos e as peças. Vamos agora acompanhar uma viagem e perceber
+> como essas decisões de engenharia aparecem na experiência do curador.
+
+## 3. Parte II — transição entre engenharia e experiência
+
+Reutilizar a apresentação interativa existente. O público acompanha um caso
+fictício e vê os efeitos das escolhas, sem precisar de voltar a ouvir a descrição
+de cada tecnologia.
+
+Percurso guiado sugerido, usando os capítulos já disponíveis:
+
+| Cena existente | Papel na transição |
 | --- | --- |
-| Implementado | Catálogo editável, publicação ETL, Observatório, briefing, proposta, edição, versões e exportação |
-| Dependente do ambiente | Agente de linguagem, modelos de tradução, fontes CJK e fornecedores de rotas/meteorologia |
-| Evolução a preparar | Autenticação e papéis, sincronização multiutilizador, persistência cloud e revisão da partilha externa |
+| O pedido | Dar rosto aos requisitos através de dois adultos e dois dias em Lisboa |
+| O território | Explorar possibilidades e contexto num mapa esquemático |
+| A proposta | Relacionar o interesse escolhido com o roteiro e ajustar uma tarde livre |
+| A colaboração | Mostrar uma alteração permitida e o limite de uma atividade protegida |
+| A entrega | Comparar exemplos de versões e ligar revisão à entrega |
+| O próximo passo | Encerrar a simulação e abrir o Observatório real |
 
-Os testes cobrem regras, contratos, persistência e interface. Nos últimos registos
-locais de 18 de outubro de 2026 constam 97 testes Node aprovados, um ignorado e
-54 combinações de interface/navegação aprovadas. Os cenários de interface usam
-simulações em APIs aplicáveis. Estes números são evidência técnica localizada;
-não são uma avaliação de qualidade comercial ou uma certificação de produção.
-Consultar o [registo de testes](TESTING.md) e o [plano](../PLAN.md) antes de os citar.
+As cenas **Os dados** e **Por dentro** foram retiradas da parte II: os seus
+conteúdos pertencem à arquitetura e aos processos da parte I. A entrega mostra
+as escolhas do grupo e a comparação do exemplo, em vez de repetir tecnologias
+e formatos. O acesso ao portal fica no encerramento e no controlo global.
 
-Apresentar os ganhos de rapidez, consistência e facilidade de revisão como
-**hipóteses a medir**. Uma avaliação útil compararia a mesma tarefa com e sem o
-sistema: tempo até à primeira proposta revista, erros de compatibilidade,
-pendências detetadas e avaliação dos curadores. Definir a amostra e os critérios
-antes de recolher resultados.
+Caso comum: Grupo Demonstração BLU, dois adultos, dois dias em Lisboa, ritmo
+tranquilo, cultura ou gastronomia e exclusão de atividades de barco. O exemplo
+deve manter-se consistente nas três partes. Necessidades de mobilidade exigem
+verificação explícita; se faltar informação, mostrar a pendência.
 
-## 6. O que deve ficar claro nas perguntas
+O mapa, as ofertas, as respostas e a pré-visualização de versões nesta
+apresentação são ilustrativos. Não são leituras em direto do catálogo, geração
+por IA, versões persistidas ou PDFs exportados.
 
-| Pergunta provável | Base para responder |
+Frase de passagem para a parte III:
+
+> Esta experiência mostrou o percurso com um exemplo preparado. Vamos agora
+> abrir a aplicação e consultar a informação real que suporta o trabalho.
+
+## 4. Parte III — demonstração do portal real
+
+O ecrã final mantém o botão **Explorar o Observatório real**, que abre um
+novo separador com o endereço indicado pelo utilizador:
+
+[Explorar o Observatório real](https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/catalog)
+
+O acesso depende da sessão SageMaker do visitante. O endereço não é um link
+público para clientes externos. Renovar o acesso antes da apresentação e manter
+a apresentação aberta para poder regressar ao guião.
+
+Demonstração sugerida, com um caso previamente preparado:
+
+1. **Observatório:** filtrar um destino, abrir a ficha e mostrar contexto,
+   qualidade ou uma pendência. Os indicadores pertencem à entrega consultada;
+   registar a data se forem usados em capturas.
+2. **Workspace:** relacionar os campos do briefing com uma proposta de demonstração
+   e explicar uma escolha, exclusão ou informação por confirmar.
+3. **Revisão:** mostrar uma edição suportada ou uma atividade protegida,
+   distinguindo comandos determinísticos de eventuais chamadas ao agente.
+4. **Entrega:** abrir uma versão de demonstração e o seu PDF, mostrando a ligação
+   entre snapshot e documento. Explicar TXT/Canva como composição independente.
+
+O Observatório nativo tem Panorama, Explorar oferta, Destinos, Preços, Histórico
+e Qualidade; escolher apenas as vistas relevantes para a história. A aplicação
+Streamlit original continua separada. A interface do portal tem seis idiomas;
+a tradução de conteúdos exportados depende dos modelos locais preparados.
+
+Usar dados fictícios e armazenamento de demonstração para os fluxos com escrita.
+Preparar o cenário antes da sessão para não alterar catálogo, aprovações ou
+propostas de clientes durante uma demonstração improvisada. O sistema produz
+propostas, não efetua reservas nem confirma automaticamente condições comerciais.
+
+## 5. Linguagem visual e navegação
+
+Manter a identidade da mesa de curadoria: azul-petróleo, tipografia editorial,
+apontamentos dourados e transições com significado. Cada cena deve ter uma
+pergunta, uma prova visual e uma conclusão curta.
+
+```text
+┌────────────────────────────────────────────────────────────────────┐
+│ blu.      I · Fundamentos     II · Experiência     III · Portal ↗   │
+├────────────────────────────────────────────────────────────────────┤
+│ Capítulos da parte selecionada                                     │
+│                                                                    │
+│ Uma pergunta                  Um diagrama ou interação              │
+│ Uma mensagem principal        Responsabilidade / estado / evidência │
+│                                                                    │
+├────────────────────────────────────────────────────────────────────┤
+│ Parte I · 2/5              [Anterior] [Seguinte / Entrar na parte II]│
+└────────────────────────────────────────────────────────────────────┘
+```
+
+A navegação de três partes está implementada neste branch. A terceira parte
+abre o portal, sem o incorporar num iframe nem alterar os seus serviços.
+
+Dar acesso direto às partes para perguntas e para uma apresentação mais curta.
+O avanço é manual; manter teclado, foco visível e alternativa sem movimento.
+Evitar código extenso no ecrã: usar um excerto curto apenas quando fundamenta
+uma decisão importante. Referências detalhadas ficam disponíveis no guião.
+
+## 6. Perguntas a preparar
+
+| Pergunta | Ponto de resposta |
 | --- | --- |
-| Onde está a IA? | No agente opcional e nas suas ferramentas; distinguir os fluxos determinísticos |
-| De onde vem cada sugestão? | Catálogo publicado, origem consultável e critérios aplicados |
-| Como evitam informação inventada? | Oferta conhecida, validações, evidência e manutenção explícita de desconhecidos; a revisão humana continua necessária |
-| O sistema faz reservas? | Produz propostas; não efetua reservas |
-| Os preços são atuais? | Dependem da evidência e validade de cada registo; histórico não prova tarifa atual |
-| Duas pessoas podem trabalhar como numa aplicação colaborativa? | A sincronização multiutilizador e os papéis ainda precisam de desenvolvimento |
-| O cliente pode abrir um link fora do Studio? | O acesso externo exige validação e configuração próprias; uma ligação no Studio não demonstra acesso público |
-| Foi treinado um modelo novo? | Este fluxo integra modelos e ferramentas existentes; não apresentar treino próprio sem evidência |
-| Que resultado foi medido? | Distinguir testes técnicos, demonstração local e avaliação com curadores |
+| Porque separam catálogo e warehouse? | Revisão operacional e entrega publicada têm responsabilidades e ciclos próprios |
+| Porque usam Python e TypeScript? | Explicar os papéis que têm no código e a fronteira JSON, sem alegar um benchmark inexistente |
+| O que acontece se a publicação falhar? | Preparação temporária, validação e conservação ou recuperação da entrega anterior |
+| Onde está a IA? | Distinguir agente opcional, comandos determinísticos e tradução local |
+| Como avaliam respostas ou propostas? | Testes de contratos e uma avaliação com curadores a definir; distinguir qualidade técnica de comercial |
+| Como evitam factos inventados? | Catálogo conhecido, fontes, validações, pendências e revisão humana; não prometer ausência total de erros |
+| Como resolvem alterações concorrentes? | Revisões e conflitos; isso não equivale a sincronização colaborativa completa |
+| O que falta para produção? | Identidade, papéis, persistência e operação cloud, acesso externo e avaliação no contexto de uso |
 
-## 7. Preparação da demonstração
+## 7. Preparação e próximos passos
 
-Antes da sessão:
+- Ensaiar as seis cenas técnicas e a navegação das três partes já implementadas
+  na aplicação independente, mantendo os serviços do portal inalterados.
+- Ensaiar o percurso e a duração com alguém que não conhece o sistema.
+- Confirmar versões, fontes e evidência antes de mostrar números ou resultados.
+- Preparar a sessão SageMaker, o caso fictício e uma versão de apoio para o portal.
+- Identificar claramente simulações, capturas datadas e demonstrações reais.
+- Confirmar serviços opcionais e autorização antes de qualquer chamada com custos.
+- Preparar capturas ou gravação de apoio, sem apresentar uma gravação como execução
+  ao vivo se uma dependência falhar.
 
-- Preparar um briefing fictício e uma proposta de apoio em armazenamento isolado.
-- Confirmar a entrega publicada e a oferta elegível para o exemplo escolhido.
-- Ensaiar o pedido ao assistente e as restrições com o estado preparado.
-- Confirmar os serviços necessários; usar gravação identificada se um depender
-  de rede ou autorização que não estará disponível.
-- Preparar um PDF de exemplo e uma captura datada dos indicadores.
-- Testar teclado, tamanho do texto, tema e projeção no ecrã da sala.
-- Remover dados pessoais, notificações e segredos das superfícies apresentadas.
-- Ensaiar o percurso de 12 minutos e o regresso ao guião depois de uma pergunta.
+## 8. Auditoria de redundâncias
 
-Se uma dependência falhar durante a apresentação, explicar o estado e continuar
-com a versão guardada ou a gravação identificada. Não substituir uma falha por
-um resultado simulado sem o dizer.
+| Repetição encontrada | Alteração | Informação preservada ou acrescentada |
+| --- | --- | --- |
+| Dados/ETL explicados nas duas partes | Retirar a cena Os dados da experiência e o código/estilos exclusivos | Processo técnico mantém publicação, recuperação, origem e contexto temporal |
+| Arquitetura repetida depois da demonstração | Retirar Por dentro da experiência | Arquitetura fica na abertura e ganha um capítulo próprio de tecnologias |
+| Lista de tecnologias misturada com papéis dos componentes | Separar arquitetura de inventário técnico | Dependências, fronteiras, versões declaradas e exemplos de implementação |
+| Falha de publicação ilustrada em processos e repetida em validação | Manter a simulação no processo; usar números na tradução em validação | Cobertura nova do worker e distinção entre fidelidade numérica e fluência |
+| Revisão humana, mecanismo do agente e formatos repetidos em vários painéis | Reduzir os textos de apoio da experiência | A colaboração demonstra o efeito; a entrega reflete as escolhas; os mecanismos ficam na técnica |
+| Várias mensagens de fecho e acesso ao portal durante a proposta | Simplificar o encerramento e retirar o CTA intermédio | Manter o CTA final exato e o acesso global ao sistema |
 
-## 8. Próximo passo para construir a apresentação
+A repetição necessária para orientar o público mantém-se: requisitos e
+verificações usam o mesmo contrato com papéis diferentes; os avisos de simulação
+continuam visíveis para não confundir uma ilustração com dados ou serviços reais.
 
-O protótipo independente inclui oito capítulos: pedido, território, proposta,
-dados, colaboração, entrega, arquitetura e próximo passo. O próximo passo é
-validar o ritmo e a legibilidade com alguém que não conhece o sistema, e rever
-a narrativa com base nesse ensaio. O encerramento permite abrir o
-[Observatório real](https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/catalog)
-num novo separador. O acesso real requer a sessão SageMaker do visitante.
+## 9. Informação a complementar mais tarde
 
-O protótipo deve ligar uma necessidade do cliente a uma escolha observável no
-roteiro. Esse encadeamento será o fio condutor de toda a apresentação.
+Esta revisão não exige que a equipa responda já. A matriz identifica o que
+falta e onde integrar essa informação quando estiver disponível.
 
-## Fontes internas para aprofundamento
+| Informação por confirmar | O que sabemos pelo código | Complemento a fornecer | Onde integrar |
+| --- | --- | --- | --- |
+| Requisitos acordados com utilizadores | Existem campos, regras e fluxos implementados | Prioridades, critérios de aceitação e validação com curadores | Requisitos |
+| Escolhas de arquitetura e tecnologias | Dependências e responsabilidades são verificáveis | Alternativas consideradas, razões e compromissos da equipa | Tecnologias e notas do apresentador |
+| Modelo e região usados | Configuração por ambiente e caminho Bedrock | Modelo efetivo, parâmetros da sessão, permissões e motivo da seleção | Agente e ferramentas |
+| Caracterização do dataset | Fontes, entidades e contratos estão identificados | Volumes com data, cobertura, origem/licença e limites da amostra | Ingestão e dados |
+| Avaliação da qualidade | Existem testes de contratos e interface | Casos avaliados, rubrica, respostas revistas e parecer de curadores | Validação |
+| Desempenho e custos | Há timeouts, limites e mecanismos de falha | Latência, número de chamadas, tokens/custos e condições de medição | Validação e dependências |
+| Processo de desenvolvimento | Git, lockfiles e workflows existentes | Etapas, divisão do trabalho e decisões tomadas pela equipa | Ambiente/automação |
+| Operação futura | Execução local/Studio e armazenamento local atuais | Backups, retenção, identidade, acessos e plano de deployment aprovados | Limites e evolução |
+
+Não preencher estas lacunas com benchmarks, ganhos percentuais, decisões de
+negócio ou funcionalidades presumidas. Quando houver informação nova, associar
+data, fonte e distinção entre proposta, implementação e resultado observado.
+
+## Fontes internas
 
 - [Arquitetura e contratos](ARCHITECTURE.md)
-- [Funcionalidades e execução do portal](PORTAL.md)
-- [Pipeline e publicação dos dados](DATA_PIPELINE.md)
-- [Testes e limites das validações](TESTING.md)
-- [Decisões e evolução](DECISIONS.md)
-- [Comandos, contexto académico e limites](../README.md)
-- [Leitura do Observatório](../portal/observatory.py)
-- [Comandos determinísticos do assistente](../dmc-workspace/src/lib/assistant-editing.ts)
-- [Agente de linguagem e ferramentas](../src/blu_ai/agents/curator_agent.py)
+- [Portal e fluxos de entrega](PORTAL.md)
+- [Pipeline e publicação](DATA_PIPELINE.md)
+- [Testes e histórico](TESTING.md)
+- [Decisões](DECISIONS.md)
+- [Plano e registos de validação](../PLAN.md)
+- [Dependências Python](../pyproject.toml)
+- [Dependências e comandos do portal](../dmc-workspace/package.json)
+- [Adaptador local Python](../dmc-workspace/src/lib/python-portal.ts)
+- [Catálogo operacional](../etl/portal_catalog.py)
+- [Comandos determinísticos](../dmc-workspace/src/lib/assistant-editing.ts)
+- [Agente e ferramentas](../src/blu_ai/agents/curator_agent.py)
