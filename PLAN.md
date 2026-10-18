@@ -498,3 +498,14 @@ cenários de interface/navegação em seis idiomas. Largura fluida e alinhamento
 verificados em 320/768/1024/1440/1920/2560 px, sem transbordo horizontal.
 Observatório aprovado em 320/1440 px; tradução e geração simuladas nos
 cenários aplicáveis. Dashboard original e dados preservados.
+
+## Limpeza local de artefactos — 2026-10-18
+
+- [x] Inventariar os ficheiros ignorados e confirmar os serviços ativos.
+- [x] Remover caches Next.js de desenvolvimento/compilação, cache TypeScript
+  e bytecode Python do projeto; preservar build de produção e dependências.
+- [x] Confirmar o portal e a integridade dos ficheiros versionados.
+
+Removidos 426 MiB de artefactos regeneráveis. Portal e dashboard original
+respondem HTTP 200 após a limpeza. Verificação da estrutura (340 ficheiros)
+e `git diff --check` aprovados. Código, dados, exports e ambientes preservados.
