@@ -544,3 +544,15 @@ interface/navegação aprovadas, temas em quatro larguras aprovados e cinco
 testes do worker de tradução aprovados com modelos simulados. Estrutura de
 344 ficheiros, Markdown e `git diff --check` aprovados. Portal e dashboard
 respondem HTTP 200. Código funcional, dados, exports e modelos preservados.
+
+## Guião de apresentação interativa — 2026-10-18
+
+- [x] Rever arquitetura, portal, dados e implementação do assistente.
+- [x] Criar `docs/APRESENTACAO.md` com narrativa de 12 minutos, caso fictício,
+  proposta navegável e esquemas Mermaid dos fluxos.
+- [x] Distinguir capacidades implementadas, dependências e evolução proposta.
+- [x] Verificar ligações, Markdown e integridade da documentação.
+
+Validação: ligações locais do novo guião, Markdown, verificação da estrutura
+e `git diff --check` aprovados. Alteração apenas documental; sem execução de
+serviços externos, alteração de dados ou implementação da apresentação.
