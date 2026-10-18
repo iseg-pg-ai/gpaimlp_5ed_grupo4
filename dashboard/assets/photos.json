@@ -1,0 +1,28 @@
+[
+  {
+    "destination": "Lisboa",
+    "file": "lisboa.jpg",
+    "caption": "Vista de Lisboa — fotografia de enquadramento do destino",
+    "author": "CrisLuiz",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:A_Lisbon_view.jpg",
+    "download_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/68/A_Lisbon_view.jpg/1280px-A_Lisbon_view.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "downloaded_on": "2026-10-16",
+    "sha256": "b8165cef1fdc970e01d1f9ed0b2ec205a9abc7277fc7e1e9d968893e990f0eb9",
+    "changes": "Miniatura fornecida pelo Wikimedia Commons; sem outras alterações."
+  },
+  {
+    "destination": "Porto",
+    "file": "porto.jpg",
+    "caption": "Vista de Porto — fotografia de enquadramento do destino",
+    "author": "Dimitry Anikin from Vienna",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Night_cityscape_of_Porto,_Portugal._(52552329452).jpg",
+    "download_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/Night_cityscape_of_Porto%2C_Portugal._%2852552329452%29.jpg/1280px-Night_cityscape_of_Porto%2C_Portugal._%2852552329452%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "downloaded_on": "2026-10-16",
+    "sha256": "a813601d95be86ae12a92b9d495637941ea2cf0bb44a3f41271c44b9233e7d6f",
+    "changes": "Miniatura fornecida pelo Wikimedia Commons; sem outras alterações."
+  }
+]

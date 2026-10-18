@@ -418,3 +418,57 @@ geocodificação externa; a validade geográfica exige revisão.
 Localizações das experiências preservam o texto da fonte e não são fundidas com
 cidades por aproximação. O dashboard não apresenta contactos ou textos integrais
 de propostas históricas. Acesso local mantém o binding localhost autorizado.
+
+### Exploração do observatório — 2026-10-16
+
+Os eventos do mapa transportam chaves de entidade, não índices de pontos ou de
+linhas, para abrir a ficha correta após filtros ou agrupamento. O agrupamento é
+manual, por tipo e grelha de 0,1 graus, com todos os membros disponíveis na ficha.
+Os filtros de camadas afetam apenas a vista geográfica. Comparações preservam
+preços e durações como texto contextual da fonte, sem pontuação de preferência.
+
+A presença histórica usa a relação explícita `id_atracao_base` e conta roteiros
+distintos; restaurantes e experiências sem esse contrato não são associados por
+nomes semelhantes. Destinos mantêm correspondência literal das localizações.
+A fila de revisão sinaliza desconhecidos e expressões de confirmação; prioridade
+comercial para preço/condições e operacional para os restantes campos analisados.
+O modo apresentação é apenas uma disposição local, com navegação e saída visíveis.
+
+## Contratos finais do Observatório — 2026-10-16
+
+Normalização conservadora em `etl/observatory.py`, com vocabulário e aliases
+versionados em `config/observatory.json`. O ETL publica três modelos analíticos;
+a definição inclui a versão e o hash das regras. O dashboard reutiliza o mesmo
+módulo em memória para entregas antigas, sem escrever no warehouse ou consultar
+rascunhos do catálogo. Descrições originais e condições das unidades são mantidas.
+
+Confirmação por campo exige estado explícito, fonte, data e valor correspondente.
+Datas gerais de pesquisa e aprovação do catálogo não confirmam preços. Janela
+completa e data atual são necessárias para evidência vigente; o dashboard reavalia
+expiração sem prolongar prazos. Metadados inválidos impedem a publicação do ETL.
+Os dados reais sem evidência permanecem pendentes; nenhum valor foi confirmado
+por inferência. Contrato de origem e limites no [guia do Observatório](OBSERVATORY.md).
+
+Fotografias CC0 de Lisboa e Porto guardadas localmente com atribuição, origem e
+hashes em `dashboard/assets/photos.json`. São enquadramento de destinos, sem
+associação inferida a atividades. Não há downloads automáticos no dashboard.
+
+Evidência: 66 testes Python aprovados, incluindo entrega ETL temporária,
+normalização, evidências inválidas, expiração e fotografias; integração catálogo/ETL
+aprovada. Navegador local e AppTest nas seis áreas aprovados. `git diff` confirma
+que fontes e warehouse reais não foram alterados.
+
+## Enriquecimento de dados reais — 2026-10-16
+
+O preenchimento usa exclusivamente novas revisões no catálogo operacional e
+publicação pelo ETL. Os Excel/PDF foram preservados. O contrato `sourceData`,
+já existente, passa a persistir evidência por campo e referências públicas
+exatas a lacunas da tabela de preços. O ETL mantém valores conhecidos e regista
+preenchimentos em `verified_enrichment_changes`.
+
+O lote adiciona 45 valores em 13 registos e três valores numéricos na referência
+do Jardim Botânico de Lisboa. A validação ocorreu primeiro numa cópia. Históricos
+aprovados preservados; só a revisão corrente é incrementada. Prazos explícitos
+aplicados exclusivamente aos preços abrangidos pela fonte. Não se atribuíram
+datas a propostas históricas, tarifas de aquisição ou compatibilidades inferidas.
+Fontes e limites no [relatório de enriquecimento](DATA_ENRICHMENT.md).

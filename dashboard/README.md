@@ -12,3 +12,34 @@ disponível, permite deslocação e inclui controlos de zoom e reposição da vi
 
 A vista usa projeção Mercator em eixos com escala geográfica proporcional,
 altura de 420 px e largura adaptável ao cartão, evitando bandas laterais.
+
+## Exploração e apresentação
+
+- Um clique no mapa abre a ficha correspondente. Ative o agrupamento aproximado
+  por grelha de 0,1 graus para reduzir sobreposições e escolher membros do grupo.
+  Não é um agrupamento por distância exata, nem se desfaz automaticamente com zoom.
+- As camadas do mapa não alteram os filtros ou a comparação do catálogo.
+- Compare duas a quatro opções da seleção atual, preservando unidades e condições
+  nas descrições da fonte; não é calculado um vencedor ou preço agregado.
+- O painel Destinos usa a harmonização do ETL, preservando a localização original
+  e o âmbito regional. Não geocodifica ou atribui locais ambíguos por aproximação.
+- As fichas de atrações consultam `id_atracao_base` para contar roteiros distintos.
+  Ausência de relação não significa ausência de procura. Restaurantes e experiências
+  não recebem correspondências inferidas por nome.
+- A revisão prioritária sinaliza campos vazios e expressões de confirmação. Preço e
+  condições têm prioridade comercial; os restantes campos têm prioridade operacional.
+  Esta regra não certifica a atualidade nem deteta todos os problemas possíveis.
+- O modo apresentação oculta a barra lateral e mantém navegação e saída no topo.
+  Não publica dados nem substitui o modo de ecrã inteiro do navegador.
+
+Validação dos contratos: `PYTHONPATH=src .venv/bin/python -B -m unittest tests.test_dashboard -v`.
+Os testes são ignorados se o grupo opcional `dashboard` não estiver instalado.
+
+## Conclusão dos contratos
+
+Destinos e unidades seguem o contrato partilhado do ETL. As fichas e a área de
+qualidade mostram confirmação e validade por campo, reavaliadas à data atual.
+O painel Destinos apresenta fotografias locais de Lisboa e Porto com licença
+CC0 e créditos; os restantes destinos não recebem imagens por aproximação.
+
+Ver [contratos, metadados na origem e créditos](../docs/OBSERVATORY.md).

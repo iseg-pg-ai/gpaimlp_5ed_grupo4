@@ -25,6 +25,14 @@ hr {border-color: #29404b !important; margin: 2rem 0 !important;}
 .stApp [data-testid="stMarkdownContainer"] p, .stApp label, .stApp [data-testid="stWidgetLabel"] {color: #d5e2e9 !important;}
 .stApp [data-testid="stCaptionContainer"] p {color: #a8bdca !important;}
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {color: #b9ced8 !important;}
-[data-testid="stRadio"] [role="radiogroup"] label {border-bottom: 1px solid #203541;}
+[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] {width: 100%; align-items: stretch;}
+[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label {width: 100%; box-sizing: border-box; margin: 0; border-bottom: 1px solid #203541; border-left: 2px solid transparent;}
 [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {background: #193139; border-left: 2px solid #66e5cf;}
+
+.stApp [data-testid="stExpander"] summary {background: #12232e !important; color: #d5e2e9 !important;}
+.stApp [data-testid="stTextInput"] input {background: #12232e !important; color: #d5e2e9 !important;}
+.stApp [data-testid="stTextInput"] input::placeholder {color: #a8bdca !important;}
+.stApp [data-testid="stMultiSelect"] [data-baseweb="select"] span {color: #d5e2e9 !important;}
+.st-key-destination_photo img {height: 260px; object-fit: cover; width: 100%; border-radius: 8px;}
+.stApp [data-testid="stLinkButton"] a {background: #12232e; border-color: #35515d; color: #d5e2e9 !important;}
 </style>

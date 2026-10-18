@@ -55,7 +55,7 @@ Principais artefactos:
 | `data_quality_issues.jsonl` | Problemas de qualidade detetados. |
 | `kpis.json` | Indicadores do catálogo, preços e propostas. |
 | `analytical_models.json` | Definições dos modelos analíticos. |
-| `model_*.jsonl` | Scores explicáveis de prontidão e complexidade. |
+| `model_*.jsonl` | Scores explicáveis, destinos/unidades harmonizados e evidência por campo. |
 
 O `warehouse/` é uma entrega gerada. Não deve ser editado manualmente.
 
@@ -149,7 +149,9 @@ Abrir [http://localhost:8501](http://localhost:8501). Para escolher outra porta:
 powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1 -Port 8502
 ```
 
-O dashboard lê os artefactos gerados e não edita as fontes.
+O dashboard lê os artefactos gerados e não edita as fontes. Os contratos de
+normalização, confirmação por campo, validade e fotografias estão no
+[guia do Observatório](OBSERVATORY.md).
 
 ### Integração contínua
 
