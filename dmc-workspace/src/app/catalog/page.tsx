@@ -8,7 +8,7 @@ export default function CatalogPage() {
   const [view, setView] = useState("observatory");
   const [editorOpened, setEditorOpened] = useState(false);
   return (
-    <main className="catalog-native-page mx-auto w-full max-w-[1600px] p-4 sm:p-8">
+    <main className="catalog-native-page portal-page">
       <div className="mb-6">
         <p className="obs-eyebrow">BLU COSTA / CONHECIMENTO & CURADORIA</p>
         <h1 className="font-serif-blu text-3xl mt-2">

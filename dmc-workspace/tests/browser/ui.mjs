@@ -5,7 +5,7 @@ async function navigation(browser) {
   const portal = process.env.PORTAL_URL ?? "http://127.0.0.1:3001";
   const prefix = new URL(portal).pathname.replace(/\/$/, "");
 
-  for (const width of [320, 1440])
+  for (const width of [320, 1440, 1920])
     for (const locale of ["pt", "en", "es", "fr", "de", "zh"]) {
       const context = await browser.newContext({ viewport: { width, height: 800 } });
       const page = await context.newPage();
@@ -48,6 +48,20 @@ async function navigation(browser) {
           ).parentElement.lastElementChild.scrollTop = 1000;
         });
         assert.equal(Math.round((await bar.boundingBox()).y), 0);
+        const frame = page.locator("main.portal-page, .responsive-workspace.portal-frame").first();
+        await frame.waitFor();
+        const frameBox = await frame.boundingBox();
+        const headerBox = await bar.locator(".portal-frame").boundingBox();
+        assert.ok(Math.abs(frameBox.x - headerBox.x) < 1, "Margens laterais diferentes");
+        assert.ok(Math.abs(frameBox.width - headerBox.width) < 1, "Larguras de página diferentes");
+        if (route !== "/") {
+          const pagePadding = await frame.evaluate((node) => getComputedStyle(node).paddingLeft);
+          const headerPadding = await bar
+            .locator(".portal-frame")
+            .evaluate((node) => getComputedStyle(node).paddingLeft);
+          assert.equal(pagePadding, headerPadding, "Espaçamento horizontal diferente");
+        }
+
         assert.equal(
           await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
           false,

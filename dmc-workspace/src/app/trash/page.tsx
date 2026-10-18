@@ -160,7 +160,7 @@ export default function TrashPage() {
   );
 
   return (
-    <main className="mx-auto max-w-5xl p-4 text-[#143F4B] sm:p-8">
+    <main className="portal-page text-[#143F4B]">
       <Link href="/" className="underline">
         <T text="Voltar ao workspace" source="pt" />
       </Link>

@@ -470,3 +470,19 @@ inferior a 2 px entre painéis adjacentes em ecrã largo. Inspeção visual em
 contagens de grupos com vários destinos sem atribuição ao primeiro destino.
 Tradução e falha de recuperação simuladas; dados analíticos locais só de leitura.
 Dashboard original, dados e configuração de arranque preservados.
+
+## Largura comum das páginas — 2026-10-18
+
+- [x] Centralizar a largura exterior em 1440 px e as margens em 16/32 px.
+- [x] Aplicar o contentor a Catálogo, Histórico, Referências, Lixo e partilhas.
+- [x] Alinhar cabeçalho e workspace; retirar o limite independente do briefing.
+- [x] Validar dimensões em ecrãs móveis, desktop e largos, check e build.
+
+Manter a composição funcional do workspace e a coluna de leitura das partilhas.
+
+Validação: `npm run check` com 97 testes aprovados e um ignorado; build aprovado.
+Navegador: 48 cenários de interface/navegação em seis idiomas, com comparação
+das páginas em 320/1440/1920 px e sem transbordo horizontal. Em 1920 px,
+os cinco contentores medidos têm 1440 px e começam em x=240. Tradução e
+geração de itinerários simuladas nos cenários aplicáveis. Inspeção visual do
+catálogo e briefing em ecrã largo aprovada.

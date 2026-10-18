@@ -58,9 +58,9 @@ export function TopBar({ locale, children }: { locale: Locale; children: ReactNo
   return (
     <header
       data-testid="top-bar"
-      className="studio-topbar relative z-50 shrink-0 border-b border-[#D5D1C7] bg-[#F4F0E7] px-3 py-2 lg:px-5"
+      className="studio-topbar relative z-50 shrink-0 border-b border-[#D5D1C7] bg-[#F4F0E7] py-2"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="portal-frame portal-header-content flex flex-wrap items-center justify-between gap-2">
         <Link
           href="/"
           aria-label="BLU Costa Travel · Workspace"

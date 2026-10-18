@@ -523,3 +523,16 @@ Validação: check (97 testes, um ignorado) e build aprovados. Navegador em
 painéis adjacentes com diferença inferior a 2 px em desktop. Inspeção visual
 em 390/1440 px; alturas móveis adaptáveis. Grupos com destinos diferentes
 apresentam a contagem de destinos, sem adotar o nome do primeiro membro.
+
+## Largura comum do portal — 2026-10-18
+
+- Centralizar a largura exterior máxima em `--portal-page-width: 1440px` e as
+  margens em `--portal-page-gutter`, com 16 px em móvel e 32 px a partir de 640 px.
+- Aplicar o mesmo contentor ao cabeçalho, workspace e páginas de catálogo,
+  histórico, referências, lixo e partilhas, incluindo o erro das referências.
+- Retirar o limite independente de 900 px do briefing, que ocupa agora a área
+  disponível dentro do workspace. Preservar a composição de navegação/assistente
+  e a coluna de leitura do documento partilhado.
+- Comparar larguras, posições e espaçamento no navegador em 320/1440/1920 px.
+
+Resultados de validação registados no `PLAN.md`.

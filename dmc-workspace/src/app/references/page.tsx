@@ -27,7 +27,7 @@ export default async function ReferencesPage({
     data = await portalRequest("references", warehouseRoot(), {});
   } catch {
     return (
-      <main className="p-8">
+      <main className="portal-page">
         <Link href="/">
           <T text="Voltar ao workspace" source="pt" />
         </Link>
@@ -42,7 +42,7 @@ export default async function ReferencesPage({
   }
   const { routes, priceCount, conflicts } = data;
   return (
-    <main className="min-h-screen bg-[#F4F0E7] p-8 text-[#143F4B]">
+    <main className="portal-page min-h-full bg-[#F4F0E7] text-[#143F4B]">
       <Link href="/" className="underline">
         <T text="Voltar ao workspace" source="pt" />
       </Link>

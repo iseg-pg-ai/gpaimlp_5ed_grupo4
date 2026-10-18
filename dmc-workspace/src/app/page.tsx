@@ -61,7 +61,7 @@ export default function WorkspacePage() {
     adjustDayCapacity,
   } = useWorkspace();
   return (
-    <div className="responsive-workspace relative flex flex-col lg:flex-row h-full bg-[#F4F0E7]">
+    <div className="responsive-workspace portal-frame relative flex flex-col lg:flex-row h-full bg-[#F4F0E7]">
       <button
         type="button"
         className="lg:hidden shrink-0 min-h-11 px-4 py-2 border-b text-left text-sm bg-[#EBE5DA]"

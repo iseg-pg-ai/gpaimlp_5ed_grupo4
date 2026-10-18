@@ -22,7 +22,7 @@ export default async function ExportHistory({
   const versions = store.list();
   store.close();
   return (
-    <main className="min-h-screen bg-[#F4F0E7] p-8 text-[#143F4B]">
+    <main className="portal-page min-h-full bg-[#F4F0E7] text-[#143F4B]">
       <Link href="/" className="underline">
         <T text="Voltar ao workspace" source="pt" />
       </Link>

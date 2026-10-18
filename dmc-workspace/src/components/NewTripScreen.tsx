@@ -89,8 +89,8 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
   };
 
   return (
-    <div className="brief-screen flex-1 min-w-0 bg-[#F4F0E7] py-5 px-3 sm:py-8 sm:px-6 lg:px-12">
-      <div className="max-w-3xl mx-auto pb-20">
+    <div className="brief-screen flex-1 min-w-0 bg-[#F4F0E7] portal-workspace-content">
+      <div className="w-full pb-20">
         {/* BLU Costa Editorial Header */}
         <div className="brief-intro pb-6 border-b border-[#D5D1C7]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

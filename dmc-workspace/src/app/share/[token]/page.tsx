@@ -20,7 +20,7 @@ export default async function SharedProposalPage({
     store.close();
   }
   return (
-    <main className="min-h-full bg-[#F4F0E7] px-4 py-10 text-[#143F4B]">
+    <main className="portal-page min-h-full bg-[#F4F0E7] text-[#143F4B]">
       <article className="mx-auto max-w-2xl rounded-2xl border border-[#D5D1C7] bg-white p-6 shadow-sm sm:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#896225]">
           BLU Costa Travel

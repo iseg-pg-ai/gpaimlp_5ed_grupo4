@@ -171,7 +171,7 @@ body:has(.transit-dialog[open]) .responsive-workspace > main { overflow: hidden;
 .studio-sidebar > div:first-child > div:first-child button { min-height: 44px; border-radius: .7rem; box-shadow: 0 4px 12px #143f4b12; }
 .studio-sidebar > div:last-child { background: #e4eae4; border-color: #d2dcd4; padding: 1.2rem 1rem; line-height: 1.7; }
 .brief-screen { background: radial-gradient(ellipse at 95% 0, #e6eeea 0, transparent 45%), #f5f3ee; }
-.brief-screen > div { max-width: 900px; }
+.brief-screen > div { width: 100%; }
 .brief-intro { position: relative; isolation: isolate; overflow: hidden; padding: 2rem; border: 1px solid #dce4de; border-radius: 1rem; background: linear-gradient(115deg, #fffefa, #f1f5ee); box-shadow: 0 10px 36px #143f4b06; }
 .brief-intro::after { content: ""; position: absolute; z-index: -1; width: 270px; height: 270px; right: -125px; top: -135px; border: 1px solid #c8b38750; border-radius: 50%; box-shadow: 0 0 0 28px #c8b3870a, 0 0 0 58px #c8b38708; pointer-events: none; }
 .brief-intro > div { align-items: flex-start; }
@@ -324,3 +324,10 @@ body:has(.transit-dialog[open]) .responsive-workspace > main { overflow: hidden;
   .obs-aligned-panel .obs-map-controls { min-height: 90px; }
   .obs-aligned-panel .obs-record-list { height: auto; max-height: 550px; }
 }
+
+/* Uma única largura exterior e margens coerentes em todas as páginas. */
+:root { --portal-page-width: 1440px; --portal-page-gutter: 1rem; }
+.portal-frame, .portal-page { width: 100%; max-width: var(--portal-page-width); min-width: 0; margin-inline: auto; }
+.portal-page, .portal-workspace-content { padding: var(--portal-page-gutter); }
+.portal-header-content { padding-inline: var(--portal-page-gutter); }
+@media (min-width: 640px) { :root { --portal-page-gutter: 2rem; } }
