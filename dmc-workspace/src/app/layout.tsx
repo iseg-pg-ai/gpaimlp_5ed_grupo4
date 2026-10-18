@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* Extensões como Grammarly acrescentam atributos ao body antes da hidratação. */}
       <body
         suppressHydrationWarning
-        className="h-full min-h-screen bg-[#F4F0E7] text-[#143F4B] antialiased selection:bg-[#D8A65C]/30 selection:text-[#143F4B]"
+        className="blu-studio h-full min-h-screen bg-[#F4F0E7] text-[#143F4B] antialiased selection:bg-[#D8A65C]/30 selection:text-[#143F4B]"
       >
         <LocaleProvider>{children}</LocaleProvider>
       </body>

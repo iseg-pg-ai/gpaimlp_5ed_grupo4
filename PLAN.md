@@ -417,3 +417,47 @@ catálogo/ETL e seis áreas em AppTest aprovadas. Navegador real confirmou
 morada, tarifa, evidência e apresentação móvel. ETL publicado com zero erros;
 13 revisões correntes correspondem à entrega e os snapshots anteriores foram
 comparados sem alterações. Os Excel/PDF e as propostas históricas ficaram intactos.
+
+## Refinamento visual do portal — 2026-10-18
+
+- [x] Confirmar `portal-observatorio` e preservar a lógica dos fluxos.
+- [x] Reforçar a identidade, navegação, hierarquia e legibilidade dos formulários.
+- [x] Validar check, build e cenários de navegador em seis idiomas.
+
+Direção editorial clara, com navegação azul profunda e acentos dourados.
+Sem alterações de dados, fornecedores ou publicação.
+
+Validação: check aprovado (95 testes e um ignorado), build de produção aprovado
+e 42 cenários de interface nos seis idiomas aprovados, com tradução e dados de
+itinerário simulados. Inspeção visual em 390/1440 px sem transbordo; cabeçalho,
+campos, etapas e ações revistos. Três traduções portuguesas afinadas após essa
+bateria, com nova compilação e verificação de apresentação. Documentação e
+`git diff --check` aprovados. Portal local na porta 3001, sem publicação.
+
+## Observatório nativo no catálogo — 2026-10-18
+
+- [x] Criar contrato de leitura do warehouse reutilizando as regras ETL.
+- [x] Implementar seis vistas interativas com o estilo claro do portal.
+- [x] Preservar o editor e manter o dashboard original sem alterações.
+- [x] Validar contratos, interface, catálogo/ETL, check e build.
+
+Sem iframe, dependência do Streamlit ou nova persistência.
+
+Validação: check aprovado (97 testes, um ignorado), build aprovado, 83 testes
+Python aprovados e integração catálogo/ETL em armazenamento temporário aprovada.
+Doze cenários do editor nos seis idiomas aprovados com dados e tradução
+simulados. Dashboard nativo verificado com a entrega real em 320/1440 px: seis
+áreas, filtros, atualização sem perder destino, comparação, ficha, seleção
+por teclado, zoom e agrupamento. Falha analítica e recuperação simuladas, com
+formulário preservado sem guardar. Inspeção visual da apresentação final.
+
+`git diff` confirmou ausência de alterações em `dashboard/`, fontes, warehouse,
+arranque Streamlit e configuração do proxy. Leitura real: 252 ofertas, 257
+referências e 2021 campos de evidência. Sem chamadas a IA ou publicação.
+
+## Legibilidade do mapa e alinhamento dos painéis — 2026-10-18
+
+- [x] Dimensionar pontos e áreas de clique em píxeis, independentemente do zoom.
+- [x] Agrupar visualmente pontos próximos e melhorar etiquetas e informação de foco.
+- [x] Uniformizar as alturas dos painéis adjacentes e compactar espaços verticais.
+- [ ] Validar interação, dimensões em navegador, check e build.

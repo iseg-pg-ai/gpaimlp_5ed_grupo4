@@ -61,6 +61,7 @@ try {
         return r.fulfill({ json: { ok: true } });
       });
       await page.goto(`${process.env.PORTAL_URL ?? "http://127.0.0.1:3001"}/catalog`);
+      await page.getByTestId("catalog-editor-view").click();
       await page.getByTestId("catalog-record").first().waitFor();
       await page.waitForFunction((l) => document.documentElement.lang.startsWith(l), locale);
       const filters = page.locator("#catalog-panel > div").first().locator("select");

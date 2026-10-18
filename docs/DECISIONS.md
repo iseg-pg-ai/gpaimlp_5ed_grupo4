@@ -472,3 +472,50 @@ aprovados preservados; só a revisão corrente é incrementada. Prazos explícit
 aplicados exclusivamente aos preços abrangidos pela fonte. Não se atribuíram
 datas a propostas históricas, tarifas de aquisição ou compatibilidades inferidas.
 Fontes e limites no [relatório de enriquecimento](DATA_ENRICHMENT.md).
+
+## Refinamento visual editorial do portal — 2026-10-18
+
+- No branch `portal-observatorio`, manter superfícies claras e reforçar a
+  identidade BLU com navegação azul profunda, acentos dourados e tipografia
+  editorial.
+- Melhorar a hierarquia do briefing, numerar etapas e aumentar a legibilidade
+  dos campos partilhados; preservar os fluxos e a navegação móvel existentes.
+- Afinar três traduções portuguesas do cabeçalho, mantendo as chaves existentes.
+- Animação de entrada respeita movimento reduzido; foco visível nos controlos.
+
+Check aprovado (95 testes e um ignorado), build de produção aprovado e 42
+cenários de interface em seis idiomas aprovados com dados e tradução simulados.
+Inspeção visual em 390/1440 px. Resultados detalhados no `PLAN.md`.
+
+## Observatório nativo independente — 2026-10-18
+
+- Criar a versão do portal em componentes React/HTML/SVG, sem iframe ou alterações
+  à aplicação Streamlit, aos seus estilos, recursos e comandos de arranque.
+- Reutilizar a ponte `portal.data`, os contratos de `etl.observatory` e os modelos
+  publicados para destinos e unidades. A evidência é reavaliada à data da consulta.
+- Ler as tabelas numa transação SQLite em `mode=ro`, com uma lista fixa de tabelas,
+  e devolver apenas os campos necessários à análise. Sem persistência adicional.
+- Reutilizar os contornos Natural Earth locais, com créditos, sem mosaicos externos.
+- Preservar zeros, ausências, condições originais e relações explícitas do histórico.
+  Não agregar referências de categorias, unidades, condições, naturezas ou moedas
+  diferentes. Não inferir disponibilidade ou cotação a partir da análise.
+- Manter o editor operacional montado após a primeira abertura para não perder
+  o formulário ao alternar entre análise e gestão.
+
+Validação: check (97 testes, um ignorado), build, 83 testes Python e integração
+catálogo/ETL aprovados. Seis áreas e interações reais em 320/1440 px; doze
+cenários do editor com dados e tradução simulados. Recuperação de falha e
+preservação de formulário verificadas sem guardar. `git diff` confirmou o
+dashboard original e os dados reais intactos. Sem publicação ou chamadas a IA.
+
+## Legibilidade do mapa e grelha de painéis — 2026-10-18
+
+- Dimensionar marcadores, etiquetas e contornos em píxeis de ecrã através da
+  escala efetiva do SVG, mantendo áreas de clique de 44 px durante o zoom.
+- Agrupar pontos visualmente próximos por predefinição; o zoom separa ofertas.
+  As etiquetas evitam sobreposição e o foco mostra o nome completo.
+- Usar uma altura de conteúdo comum nos painéis adjacentes em ecrãs largos,
+  com lista rolável e barras distribuídas; em móvel as alturas adaptam-se ao conteúdo.
+- Alterar apenas a versão nativa no portal; dashboard original e dados preservados.
+
+Validação registada no `PLAN.md`.

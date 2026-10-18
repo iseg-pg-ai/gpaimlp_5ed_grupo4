@@ -24,7 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isNewTripActive,
 }) => {
   return (
-    <aside className="w-full lg:w-64 shrink-0 border-r border-[#D5D1C7] bg-[#EBE5DA] flex flex-col justify-between h-full select-none">
+    <aside className="studio-sidebar w-full lg:w-64 shrink-0 border-r border-[#D5D1C7] bg-[#EBE5DA] flex flex-col justify-between h-full select-none">
       {/* Top Header / BLU Costa Branding */}
       <div>
         {/* Action Button: New Trip via Shadcn Button */}

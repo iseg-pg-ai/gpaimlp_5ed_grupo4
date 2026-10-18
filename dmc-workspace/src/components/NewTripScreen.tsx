@@ -89,16 +89,16 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 min-w-0 bg-[#F4F0E7] py-5 px-3 sm:py-8 sm:px-6 lg:px-12">
+    <div className="brief-screen flex-1 min-w-0 bg-[#F4F0E7] py-5 px-3 sm:py-8 sm:px-6 lg:px-12">
       <div className="max-w-3xl mx-auto pb-20">
         {/* BLU Costa Editorial Header */}
-        <div className="pb-6 border-b border-[#D5D1C7]">
+        <div className="brief-intro pb-6 border-b border-[#D5D1C7]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.2em] text-[#143F4B] mb-1">
                 <T text="BLU Costa Travel Curation · Intake" source="en" />{" "}
               </p>
-              <h1 className="font-serif-blu text-3xl font-normal text-[#143F4B] tracking-tight">
+              <h1 className="brief-title font-serif-blu text-3xl font-normal text-[#143F4B] tracking-tight">
                 <T text="Plan a Considered Journey" source="en" />{" "}
               </h1>
               <p className="text-sm text-[#4A636B] mt-1.5 italic font-serif-blu">
@@ -121,7 +121,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
           </div>
         </div>
 
-        <nav aria-label="Etapas do briefing" className="mt-6 flex flex-wrap gap-2">
+        <nav aria-label="Etapas do briefing" className="brief-steps mt-6 flex flex-wrap gap-2">
           {steps.map((label, index) => (
             <button
               type="button"
