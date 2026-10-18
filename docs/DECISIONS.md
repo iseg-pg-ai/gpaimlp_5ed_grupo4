@@ -536,3 +536,10 @@ apresentam a contagem de destinos, sem adotar o nome do primeiro membro.
 - Comparar larguras, posições e espaçamento no navegador em 320/1440/1920 px.
 
 Resultados de validação registados no `PLAN.md`.
+
+## Largura fluida do portal — 2026-10-18
+
+A pedido do utilizador, substituir o limite de 1440 px por contentores a 100%
+do espaço disponível. As margens comuns usam `clamp(1rem, 2.25vw, 4rem)`;
+a composição interna mantém as grelhas responsivas e a coluna de leitura
+das partilhas. Esta decisão substitui o teto da entrada anterior.

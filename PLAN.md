@@ -486,3 +486,15 @@ das páginas em 320/1440/1920 px e sem transbordo horizontal. Em 1920 px,
 os cinco contentores medidos têm 1440 px e começam em x=240. Tradução e
 geração de itinerários simuladas nos cenários aplicáveis. Inspeção visual do
 catálogo e briefing em ecrã largo aprovada.
+
+## Contentores responsivos — 2026-10-18
+
+- [x] Substituir o teto de 1440 px por largura fluida comum a todas as páginas.
+- [x] Tornar as margens proporcionais ao ecrã, entre 16 e 64 px.
+- [x] Verificar navegação entre 320 e 2560 px, check e build.
+
+Validação: check aprovado (97 testes e um ignorado), build aprovado e 66
+cenários de interface/navegação em seis idiomas. Largura fluida e alinhamento
+verificados em 320/768/1024/1440/1920/2560 px, sem transbordo horizontal.
+Observatório aprovado em 320/1440 px; tradução e geração simuladas nos
+cenários aplicáveis. Dashboard original e dados preservados.

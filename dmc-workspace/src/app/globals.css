@@ -325,9 +325,8 @@ body:has(.transit-dialog[open]) .responsive-workspace > main { overflow: hidden;
   .obs-aligned-panel .obs-record-list { height: auto; max-height: 550px; }
 }
 
-/* Uma única largura exterior e margens coerentes em todas as páginas. */
-:root { --portal-page-width: 1440px; --portal-page-gutter: 1rem; }
-.portal-frame, .portal-page { width: 100%; max-width: var(--portal-page-width); min-width: 0; margin-inline: auto; }
+/* Contentores fluidos comuns: acompanham o ecrã com margens proporcionais. */
+:root { --portal-page-gutter: clamp(1rem, 2.25vw, 4rem); }
+.portal-frame, .portal-page { width: 100%; max-width: 100%; min-width: 0; margin-inline: auto; }
 .portal-page, .portal-workspace-content { padding: var(--portal-page-gutter); }
 .portal-header-content { padding-inline: var(--portal-page-gutter); }
-@media (min-width: 640px) { :root { --portal-page-gutter: 2rem; } }

@@ -5,7 +5,7 @@ async function navigation(browser) {
   const portal = process.env.PORTAL_URL ?? "http://127.0.0.1:3001";
   const prefix = new URL(portal).pathname.replace(/\/$/, "");
 
-  for (const width of [320, 1440, 1920])
+  for (const width of [320, 768, 1024, 1440, 1920, 2560])
     for (const locale of ["pt", "en", "es", "fr", "de", "zh"]) {
       const context = await browser.newContext({ viewport: { width, height: 800 } });
       const page = await context.newPage();
@@ -52,6 +52,7 @@ async function navigation(browser) {
         await frame.waitFor();
         const frameBox = await frame.boundingBox();
         const headerBox = await bar.locator(".portal-frame").boundingBox();
+        assert.ok(Math.abs(frameBox.width - width) < 1, "A página não acompanha o ecrã");
         assert.ok(Math.abs(frameBox.x - headerBox.x) < 1, "Margens laterais diferentes");
         assert.ok(Math.abs(frameBox.width - headerBox.width) < 1, "Larguras de página diferentes");
         if (route !== "/") {
