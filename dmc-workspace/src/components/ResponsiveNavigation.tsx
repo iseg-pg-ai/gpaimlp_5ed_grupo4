@@ -52,7 +52,7 @@ export function ResponsiveNavigation({
             type="button"
             autoFocus
             onClick={onClose}
-            className="min-h-11 px-3 rounded border bg-white"
+            className="min-h-11 px-3 rounded border bg-[var(--portal-white)]"
           >
             <T text="Done" /> <span aria-hidden="true">×</span>
           </button>

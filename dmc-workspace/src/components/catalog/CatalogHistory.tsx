@@ -21,7 +21,7 @@ export function CatalogHistory({ history, onClose, historyRef }: Props) {
     <section
       ref={historyRef}
       data-testid="catalog-history"
-      className="my-6 rounded-2xl border bg-white p-4 sm:p-6"
+      className="my-6 rounded-2xl border bg-[var(--portal-white)] p-4 sm:p-6"
     >
       <div className="flex flex-wrap justify-between gap-3">
         <h2 className="text-xl">

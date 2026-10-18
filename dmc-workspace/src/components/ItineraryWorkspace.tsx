@@ -97,7 +97,7 @@ function DayCardHeader({
   const hasActions = onAddPoiToDay || onAddFreePeriodToDay || onOptimizeDayRoute;
 
   return (
-    <div className="pb-4 mb-5 border-b border-[#F0ECE4]">
+    <div className="pb-4 mb-5 border-b border-[var(--portal-line-f0ece4)]">
       {/* Single horizontal row */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {/* ── LEFT: contextual info ───────────────────────────── */}
@@ -105,10 +105,10 @@ function DayCardHeader({
           <Badge variant="teal" className="font-semibold text-sm shrink-0">
             <T text="Day" source="en" /> {day.dayNumber}
           </Badge>
-          <span className="text-sm text-[#4A636B]">{day.date}</span>
-          <span className="text-[#C9C6BD] select-none">·</span>
-          <span className="inline-flex items-center gap-1 text-sm text-[#4A636B]">
-            <MapPin className="w-3 h-3 text-[#A8A49C] shrink-0" />
+          <span className="text-sm text-[var(--portal-text-4a636b)]">{day.date}</span>
+          <span className="text-[var(--portal-text-c9c6bd)] select-none">·</span>
+          <span className="inline-flex items-center gap-1 text-sm text-[var(--portal-text-4a636b)]">
+            <MapPin className="w-3 h-3 text-[var(--portal-text-a8a49c)] shrink-0" />
             <span>{day.location}</span>
           </span>
           <DayWeatherBadge date={day.date} location={day.location} items={day.items} />
@@ -122,7 +122,7 @@ function DayCardHeader({
               variant="gold"
               className="gap-1 py-0.5 px-2 font-medium animate-in fade-in shrink-0"
             >
-              <Sparkles className="w-3 h-3 text-[#D8A65C]" />
+              <Sparkles className="w-3 h-3 text-[var(--portal-text-d8a65c)]" />
               <span>
                 <T text="Updated" source="en" />
               </span>
@@ -137,8 +137,8 @@ function DayCardHeader({
             <div
               className={`flex items-center rounded-lg border px-1.5 py-0.5 text-xs shadow-2xs ${
                 isCustom
-                  ? "border-[#FED7AA] bg-[#FFF7ED] text-[#9A3412]"
-                  : "border-[#D5D1C7] bg-white text-[#143F4B]"
+                  ? "border-[var(--portal-line-fed7aa)] bg-[var(--portal-bg-fff7ed)] text-[var(--portal-text-9a3412)]"
+                  : "border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] text-[var(--portal-text-143f4b)]"
               }`}
               title={
                 isCustom
@@ -146,7 +146,9 @@ function DayCardHeader({
                   : `Ritmo: ${paceConfig.label} — ${paceConfig.maxLabel} atividades/dia`
               }
             >
-              {isCustom && <Sparkles className="w-3 h-3 text-[#EA580C] mr-1 shrink-0" />}
+              {isCustom && (
+                <Sparkles className="w-3 h-3 text-[var(--portal-text-ea580c)] mr-1 shrink-0" />
+              )}
               <button
                 type="button"
                 disabled={saving || effectiveCapacity <= 1}
@@ -175,7 +177,7 @@ function DayCardHeader({
                   type="button"
                   disabled={saving}
                   onClick={() => onAdjustDayCapacity(day.dayNumber, paceConfig.defaultCapacity)}
-                  className="ml-1 text-[#C2410C] hover:text-[#7C2D12] text-[10px] underline cursor-pointer leading-none"
+                  className="ml-1 text-[var(--portal-text-c2410c)] hover:text-[var(--portal-text-7c2d12)] text-[10px] underline cursor-pointer leading-none"
                   title={`Repor ritmo base (${paceConfig.defaultCapacity}/dia)`}
                 >
                   repor
@@ -191,8 +193,8 @@ function DayCardHeader({
               <T text="Completo" source="pt" />
             </span>
           ) : availableSlots > 0 ? (
-            <span className="inline-flex items-center gap-1 text-[11px] text-[#2D5B67] bg-[#E7EEF0] px-2 py-1 rounded-md font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2D5B67] animate-pulse shrink-0" />
+            <span className="inline-flex items-center gap-1 text-[11px] text-[var(--portal-text-2d5b67)] bg-[var(--portal-bg-e7eef0)] px-2 py-1 rounded-md font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--portal-bg-2d5b67)] animate-pulse shrink-0" />
               {availableSlots} {availableSlots === 1 ? "vaga" : "vagas"}
             </span>
           ) : null}
@@ -203,7 +205,7 @@ function DayCardHeader({
               <button
                 type="button"
                 onClick={() => setMenuOpen((o) => !o)}
-                className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#D5D1C7] bg-white text-[#4A636B] hover:bg-[#FAF8F3] hover:border-[#2D5B67] hover:text-[#143F4B] transition-colors"
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] text-[var(--portal-text-4a636b)] hover:bg-[var(--portal-bg-faf8f3)] hover:border-[var(--portal-line-2d5b67)] hover:text-[var(--portal-text-143f4b)] transition-colors"
                 title="Mais ações para este dia"
                 aria-label="Ações do dia"
                 aria-expanded={menuOpen}
@@ -212,9 +214,9 @@ function DayCardHeader({
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-full mt-1.5 z-30 min-w-[220px] rounded-xl border border-[#E6E1D5] bg-white shadow-lg py-1.5 animate-in fade-in slide-in-from-top-1">
+                <div className="absolute right-0 top-full mt-1.5 z-30 min-w-[220px] rounded-xl border border-[var(--portal-line-e6e1d5)] bg-[var(--portal-white)] shadow-lg py-1.5 animate-in fade-in slide-in-from-top-1">
                   {/* Pace info */}
-                  <div className="px-3 py-1.5 flex items-center gap-1.5 text-[11px] text-[#6A8288] border-b border-[#F0ECE4] mb-1">
+                  <div className="px-3 py-1.5 flex items-center gap-1.5 text-[11px] text-[var(--portal-text-6a8288)] border-b border-[var(--portal-line-f0ece4)] mb-1">
                     <Clock className="w-3 h-3 shrink-0" />
                     <span>
                       <T text={`Ritmo: ${paceConfig.label}`} source="pt" />
@@ -229,9 +231,9 @@ function DayCardHeader({
                         onAddPoiToDay();
                         setMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#143F4B] hover:bg-[#F5F3EE] transition-colors disabled:opacity-40"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-f5f3ee)] transition-colors disabled:opacity-40"
                     >
-                      <Plus className="w-3.5 h-3.5 text-[#2D5B67] shrink-0" />
+                      <Plus className="w-3.5 h-3.5 text-[var(--portal-text-2d5b67)] shrink-0" />
                       <T text="Adicionar Atividade" source="pt" />
                     </button>
                   )}
@@ -244,9 +246,9 @@ function DayCardHeader({
                         onAddFreePeriodToDay();
                         setMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#765218] hover:bg-amber-50 transition-colors disabled:opacity-40"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--portal-text-765218)] hover:bg-amber-50 transition-colors disabled:opacity-40"
                     >
-                      <Sun className="w-3.5 h-3.5 text-[#D8A65C] shrink-0" />
+                      <Sun className="w-3.5 h-3.5 text-[var(--portal-text-d8a65c)] shrink-0" />
                       <T text="Adicionar Tempo Livre" source="pt" />
                     </button>
                   )}
@@ -259,9 +261,9 @@ function DayCardHeader({
                         onOptimizeDayRoute();
                         setMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#143F4B] hover:bg-[#F5F3EE] transition-colors disabled:opacity-40"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-f5f3ee)] transition-colors disabled:opacity-40"
                     >
-                      <Route className="w-3.5 h-3.5 text-[#D8A65C] shrink-0" />
+                      <Route className="w-3.5 h-3.5 text-[var(--portal-text-d8a65c)] shrink-0" />
                       <T text="Otimizar Rota" source="pt" />
                     </button>
                   )}
@@ -273,7 +275,7 @@ function DayCardHeader({
       </div>
 
       {/* Day title — second row */}
-      <h2 className="mt-1.5 font-serif-blu text-lg font-bold text-[#143F4B] tracking-tight">
+      <h2 className="mt-1.5 font-serif-blu text-lg font-bold text-[var(--portal-text-143f4b)] tracking-tight">
         <T text={day.title} source="pt" />
       </h2>
     </div>
@@ -371,21 +373,25 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
       : itinerary.filter((d) => d.dayNumber === selectedDayFilter);
 
   return (
-    <div className="flex-1 min-w-0 w-full bg-[#F4F0E7] pb-24">
-      <header className="px-4 sm:px-6 py-7 border-b border-[#DDD8CE]">
+    <div className="flex-1 min-w-0 w-full bg-[var(--portal-bg-f4f0e7)] pb-24">
+      <header className="px-4 sm:px-6 py-7 border-b border-[var(--portal-line-ddd8ce)]">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <ProposalStatus state="draft" />
             {exported && <ProposalStatus state="exported" />}
             {version && (
-              <span className="text-sm text-[#4A636B]">v{String(version).padStart(3, "0")}</span>
+              <span className="text-sm text-[var(--portal-text-4a636b)]">
+                v{String(version).padStart(3, "0")}
+              </span>
             )}
           </div>
-          <p className="text-base font-medium text-[#4A636B] break-words">{brief.customerName}</p>
-          <h1 className="mt-2 font-serif-blu text-3xl sm:text-4xl leading-tight text-[#143F4B] break-words">
+          <p className="text-base font-medium text-[var(--portal-text-4a636b)] break-words">
+            {brief.customerName}
+          </p>
+          <h1 className="mt-2 font-serif-blu text-3xl sm:text-4xl leading-tight text-[var(--portal-text-143f4b)] break-words">
             {brief.destination}
           </h1>
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm sm:text-base text-[#143F4B]">
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm sm:text-base text-[var(--portal-text-143f4b)]">
             <p className="flex flex-wrap items-center gap-2">
               <Calendar aria-hidden="true" className="size-4 shrink-0" />
               {formatDate(brief.startDate)} — {formatDate(brief.endDate)}
@@ -427,7 +433,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               </Button>
             )}
           </div>
-          <p className="mt-4 text-sm leading-6 text-[#4A636B]">
+          <p className="mt-4 text-sm leading-6 text-[var(--portal-text-4a636b)]">
             <T
               text="Proposta preliminar. Exportar não confirma reservas, disponibilidade ou preços."
               source="pt"
@@ -435,20 +441,20 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
           </p>
           <details
             data-testid="proposal-preferences"
-            className="mt-5 rounded-xl border border-[#DDD8CE] bg-[#FFFEFA] px-4 py-3 text-sm"
+            className="mt-5 rounded-xl border border-[var(--portal-line-ddd8ce)] bg-[var(--portal-bg-fffefa)] px-4 py-3 text-sm"
           >
-            <summary className="cursor-pointer font-medium text-[#143F4B]">
+            <summary className="cursor-pointer font-medium text-[var(--portal-text-143f4b)]">
               <T text="Preferências e restrições da viagem" source="pt" />
             </summary>
-            <dl className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-[#4A636B] leading-6">
+            <dl className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-[var(--portal-text-4a636b)] leading-6">
               <div>
-                <dt className="font-semibold text-[#143F4B]">
+                <dt className="font-semibold text-[var(--portal-text-143f4b)]">
                   <T text="Nível da proposta" source="pt" />
                 </dt>
                 <dd>{brief.proposalTier}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-[#143F4B]">
+                <dt className="font-semibold text-[var(--portal-text-143f4b)]">
                   <T text="Esforço:" source="pt" />
                 </dt>
                 <dd>
@@ -456,7 +462,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 </dd>
               </div>
               <div>
-                <dt className="font-semibold text-[#143F4B]">
+                <dt className="font-semibold text-[var(--portal-text-143f4b)]">
                   <T text="Orçamento indicado" source="pt" />
                 </dt>
                 <dd>
@@ -464,7 +470,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 </dd>
               </div>
               <div>
-                <dt className="font-semibold text-[#143F4B]">
+                <dt className="font-semibold text-[var(--portal-text-143f4b)]">
                   <T text="Ritmo e horários" source="pt" />
                 </dt>
                 <dd>
@@ -472,7 +478,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 </dd>
               </div>
               <div>
-                <dt className="font-semibold text-[#143F4B]">
+                <dt className="font-semibold text-[var(--portal-text-143f4b)]">
                   <T text="Mobilidade" source="pt" />
                 </dt>
                 <dd>
@@ -488,7 +494,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 </dd>
               </div>
               <div>
-                <dt className="font-semibold text-[#143F4B]">
+                <dt className="font-semibold text-[var(--portal-text-143f4b)]">
                   <T text="Restrições alimentares" source="pt" />
                 </dt>
                 <dd>
@@ -505,7 +511,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               </div>
               {brief.exclusions.length > 0 && (
                 <div>
-                  <dt className="font-semibold text-[#143F4B]">
+                  <dt className="font-semibold text-[var(--portal-text-143f4b)]">
                     <T text="Exclusões" source="pt" />
                   </dt>
                   <dd>
@@ -519,7 +525,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               )}
               {brief.specialOccasion && (
                 <div>
-                  <dt className="font-semibold text-[#143F4B]">
+                  <dt className="font-semibold text-[var(--portal-text-143f4b)]">
                     <T text="Ocasião especial" source="pt" />
                   </dt>
                   <dd>{brief.specialOccasion}</dd>
@@ -530,9 +536,9 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
           {proposalTools && (
             <details
               data-testid="proposal-tools"
-              className="mt-3 rounded-xl border border-[#DDD8CE] bg-[#FFFEFA] text-sm"
+              className="mt-3 rounded-xl border border-[var(--portal-line-ddd8ce)] bg-[var(--portal-bg-fffefa)] text-sm"
             >
-              <summary className="cursor-pointer px-4 py-3 font-medium text-[#143F4B]">
+              <summary className="cursor-pointer px-4 py-3 font-medium text-[var(--portal-text-143f4b)]">
                 <T text="Exportação, versões e confirmações" source="pt" />
               </summary>
               {proposalTools}
@@ -543,7 +549,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
       <nav
         aria-label={dayNavigationLabel}
         data-testid="day-navigation"
-        className="sticky top-0 z-20 border-b border-[#D5D1C7] bg-[#F4F0E7]/95 backdrop-blur-sm px-4 sm:px-6 py-3"
+        className="sticky top-0 z-20 border-b border-[var(--portal-line-d5d1c7)] bg-[var(--portal-bg-f4f0e7)]/95 backdrop-blur-sm px-4 sm:px-6 py-3"
       >
         <div className="max-w-4xl mx-auto flex gap-2 overflow-x-auto pb-1">
           <Button
@@ -591,8 +597,8 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               }}
               className={`scroll-mt-24 rounded-2xl border p-4 sm:p-6 transition-all duration-300 relative ${
                 isDayModified
-                  ? "bg-[#FFFDF9] border-[#D8A65C] shadow-sm ring-1 ring-[#D8A65C]/30"
-                  : "bg-white border-[#D5D1C7] shadow-2xs"
+                  ? "bg-[var(--portal-bg-fffdf9)] border-[var(--portal-line-d8a65c)] shadow-sm ring-1 ring-[var(--portal-line-d8a65c)]/30"
+                  : "bg-[var(--portal-white)] border-[var(--portal-line-d5d1c7)] shadow-2xs"
               }`}
             >
               {/* Day Header */}
@@ -621,7 +627,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               />
 
               {day.summary && (
-                <p className="text-sm leading-7 text-[#4A636B] mb-4">
+                <p className="text-sm leading-7 text-[var(--portal-text-4a636b)] mb-4">
                   &quot;
                   <T text={day.summary} source="pt" />
                   &quot;
@@ -629,10 +635,10 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               )}
 
               {day.routeSummary && (
-                <div className="mb-5 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#E6E1D5] bg-[#FAF8F3] px-3.5 py-2.5 text-xs text-[#2D5B67]">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[var(--portal-line-e6e1d5)] bg-[var(--portal-bg-faf8f3)] px-3.5 py-2.5 text-xs text-[var(--portal-text-2d5b67)]">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-[#143F4B] flex items-center gap-1.5">
-                      <Route className="w-3.5 h-3.5 text-[#D8A65C]" />
+                    <span className="font-semibold text-[var(--portal-text-143f4b)] flex items-center gap-1.5">
+                      <Route className="w-3.5 h-3.5 text-[var(--portal-text-d8a65c)]" />
                       <T text="Resumo da Rota:" source="pt" />
                     </span>
                     <span>
@@ -642,7 +648,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                     </span>
                     {day.routeSummary.walkingDistance &&
                       day.routeSummary.walkingDistance !== "0 m" && (
-                        <span className="text-[#698288]">
+                        <span className="text-[var(--portal-text-698288)]">
                           · 🚶 {day.routeSummary.walkingDistance} a pé
                         </span>
                       )}
@@ -706,9 +712,9 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                     type="button"
                     onClick={() => setAddPoiDay(day.dayNumber)}
                     disabled={saving}
-                    className="group flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#D5D1C7] bg-[#FAF8F3]/50 p-4 text-xs font-medium text-[#2D5B67] hover:border-[#2D5B67] hover:bg-[#FAF8F3] transition-all cursor-pointer"
+                    className="group flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--portal-line-d5d1c7)] bg-[var(--portal-bg-faf8f3)]/50 p-4 text-xs font-medium text-[var(--portal-text-2d5b67)] hover:border-[var(--portal-line-2d5b67)] hover:bg-[var(--portal-bg-faf8f3)] transition-all cursor-pointer"
                   >
-                    <Plus className="w-4 h-4 text-[#2D5B67] transition-transform group-hover:scale-110" />
+                    <Plus className="w-4 h-4 text-[var(--portal-text-2d5b67)] transition-transform group-hover:scale-110" />
                     <span>
                       <T
                         text={`Vaga disponível (${poiCount + 1}/${effectiveCapacity}) de acordo com o ritmo — clique para adicionar atividade`}

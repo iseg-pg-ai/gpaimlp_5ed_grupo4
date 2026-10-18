@@ -158,6 +158,9 @@ def main() -> None:
                     raise ValueError("Operação de catálogo desconhecida.")
         elif operation == "query":
             result = query_dataset(root, params)
+        elif operation == "observatory":
+            from portal.observatory import observatory_snapshot
+            result = observatory_snapshot(root)
         elif operation == "weather":
             from portal.weather import fetch_day_weather
             result = fetch_day_weather(params)

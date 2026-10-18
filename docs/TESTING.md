@@ -14,6 +14,10 @@ browser instalado.
 `npm run test:ui` executa responsividade e navegação na mesma bateria, mantendo
 contextos isolados por cenário. `npm run test:responsive` e `npm run test:navigation`
 continuam disponíveis para executar apenas um desses grupos.
+A matriz corrente tem 54 combinações: responsividade em 320/640/768/1440 px
+e navegação em 320/768/1024/1440/2560 px, nos seis idiomas. Os casos de
+360 e 1920 px foram retirados por repetirem formatos já cobertos; o modo
+`STRESS=1` mantém o cenário próprio de conteúdo longo em 360 px.
 Configuração AWS, URLs públicas e compatibilidade do plugin ESLint estão em
 `dmc-workspace/tests/infrastructure.test.mjs` e continuam incluídas em `npm test`.
 Os testes de navegador partilham o arranque do Chromium, uma leitura nova da

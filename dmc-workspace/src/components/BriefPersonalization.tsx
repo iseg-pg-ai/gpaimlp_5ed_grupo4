@@ -7,7 +7,8 @@ import {
   type Personalization,
 } from "@/lib/brief-personalization";
 import { selectStyle } from "./ui/form-controls";
-const control = "mt-1 w-full min-w-0 rounded-lg border border-[#9DB3B8] bg-white p-3 text-base";
+const control =
+  "mt-1 w-full min-w-0 rounded-lg border border-[var(--portal-line-9db3b8)] bg-[var(--portal-white)] p-3 text-base";
 export function BriefPersonalization({
   value,
   onChange,
@@ -19,7 +20,7 @@ export function BriefPersonalization({
   const update = (patch: Partial<Personalization>) => onChange({ ...p, ...patch });
   return (
     <section
-      className="space-y-5 rounded-xl border bg-white p-5"
+      className="space-y-5 rounded-xl border bg-[var(--portal-white)] p-5"
       data-testid="brief-personalization"
     >
       <h2 className="text-lg font-semibold">

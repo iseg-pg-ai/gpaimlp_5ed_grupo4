@@ -90,11 +90,11 @@ export function LanguagePicker({
   const selected = languages.find((l) => l.code === value)!;
   return (
     <details className="relative inline-block">
-      <summary className="cursor-pointer flex items-center gap-2 rounded border bg-white p-2 text-sm">
+      <summary className="cursor-pointer flex items-center gap-2 rounded border bg-[var(--portal-white)] p-2 text-sm">
         <Flag code={selected.flag} />
         {selected.name} ▾
       </summary>
-      <div className="absolute right-0 z-[100] bg-white border rounded shadow-lg min-w-48 p-1">
+      <div className="absolute right-0 z-[100] bg-[var(--portal-white)] border rounded shadow-lg min-w-48 p-1">
         {languages.map((l) => (
           <button
             type="button"

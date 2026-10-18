@@ -417,3 +417,130 @@ catálogo/ETL e seis áreas em AppTest aprovadas. Navegador real confirmou
 morada, tarifa, evidência e apresentação móvel. ETL publicado com zero erros;
 13 revisões correntes correspondem à entrega e os snapshots anteriores foram
 comparados sem alterações. Os Excel/PDF e as propostas históricas ficaram intactos.
+
+## Refinamento visual do portal — 2026-10-18
+
+- [x] Confirmar `portal-observatorio` e preservar a lógica dos fluxos.
+- [x] Reforçar a identidade, navegação, hierarquia e legibilidade dos formulários.
+- [x] Validar check, build e cenários de navegador em seis idiomas.
+
+Direção editorial clara, com navegação azul profunda e acentos dourados.
+Sem alterações de dados, fornecedores ou publicação.
+
+Validação: check aprovado (95 testes e um ignorado), build de produção aprovado
+e 42 cenários de interface nos seis idiomas aprovados, com tradução e dados de
+itinerário simulados. Inspeção visual em 390/1440 px sem transbordo; cabeçalho,
+campos, etapas e ações revistos. Três traduções portuguesas afinadas após essa
+bateria, com nova compilação e verificação de apresentação. Documentação e
+`git diff --check` aprovados. Portal local na porta 3001, sem publicação.
+
+## Observatório nativo no catálogo — 2026-10-18
+
+- [x] Criar contrato de leitura do warehouse reutilizando as regras ETL.
+- [x] Implementar seis vistas interativas com o estilo claro do portal.
+- [x] Preservar o editor e manter o dashboard original sem alterações.
+- [x] Validar contratos, interface, catálogo/ETL, check e build.
+
+Sem iframe, dependência do Streamlit ou nova persistência.
+
+Validação: check aprovado (97 testes, um ignorado), build aprovado, 83 testes
+Python aprovados e integração catálogo/ETL em armazenamento temporário aprovada.
+Doze cenários do editor nos seis idiomas aprovados com dados e tradução
+simulados. Dashboard nativo verificado com a entrega real em 320/1440 px: seis
+áreas, filtros, atualização sem perder destino, comparação, ficha, seleção
+por teclado, zoom e agrupamento. Falha analítica e recuperação simuladas, com
+formulário preservado sem guardar. Inspeção visual da apresentação final.
+
+`git diff` confirmou ausência de alterações em `dashboard/`, fontes, warehouse,
+arranque Streamlit e configuração do proxy. Leitura real: 252 ofertas, 257
+referências e 2021 campos de evidência. Sem chamadas a IA ou publicação.
+
+## Legibilidade do mapa e alinhamento dos painéis — 2026-10-18
+
+- [x] Dimensionar pontos e áreas de clique em píxeis, independentemente do zoom.
+- [x] Agrupar visualmente pontos próximos e melhorar etiquetas e informação de foco.
+- [x] Uniformizar as alturas dos painéis adjacentes e compactar espaços verticais.
+- [x] Validar interação, dimensões em navegador, check e build.
+
+Validação: check aprovado (97 testes, um ignorado), build aprovado e cenários
+do Observatório em 320/1440 px aprovados. As verificações medem alvos de 44 px
+antes e depois do zoom, ausência de etiquetas sobre os marcadores e diferença
+inferior a 2 px entre painéis adjacentes em ecrã largo. Inspeção visual em
+390/1440 px: painéis de 631 px em desktop, alturas adaptáveis em móvel e
+contagens de grupos com vários destinos sem atribuição ao primeiro destino.
+Tradução e falha de recuperação simuladas; dados analíticos locais só de leitura.
+Dashboard original, dados e configuração de arranque preservados.
+
+## Largura comum das páginas — 2026-10-18
+
+- [x] Centralizar a largura exterior em 1440 px e as margens em 16/32 px.
+- [x] Aplicar o contentor a Catálogo, Histórico, Referências, Lixo e partilhas.
+- [x] Alinhar cabeçalho e workspace; retirar o limite independente do briefing.
+- [x] Validar dimensões em ecrãs móveis, desktop e largos, check e build.
+
+Manter a composição funcional do workspace e a coluna de leitura das partilhas.
+
+Validação: `npm run check` com 97 testes aprovados e um ignorado; build aprovado.
+Navegador: 48 cenários de interface/navegação em seis idiomas, com comparação
+das páginas em 320/1440/1920 px e sem transbordo horizontal. Em 1920 px,
+os cinco contentores medidos têm 1440 px e começam em x=240. Tradução e
+geração de itinerários simuladas nos cenários aplicáveis. Inspeção visual do
+catálogo e briefing em ecrã largo aprovada.
+
+## Contentores responsivos — 2026-10-18
+
+- [x] Substituir o teto de 1440 px por largura fluida comum a todas as páginas.
+- [x] Tornar as margens proporcionais ao ecrã, entre 16 e 64 px.
+- [x] Verificar navegação entre 320 e 2560 px, check e build.
+
+Validação: check aprovado (97 testes e um ignorado), build aprovado e 66
+cenários de interface/navegação em seis idiomas. Largura fluida e alinhamento
+verificados em 320/768/1024/1440/1920/2560 px, sem transbordo horizontal.
+Observatório aprovado em 320/1440 px; tradução e geração simuladas nos
+cenários aplicáveis. Dashboard original e dados preservados.
+
+## Limpeza local de artefactos — 2026-10-18
+
+- [x] Inventariar os ficheiros ignorados e confirmar os serviços ativos.
+- [x] Remover caches Next.js de desenvolvimento/compilação, cache TypeScript
+  e bytecode Python do projeto; preservar build de produção e dependências.
+- [x] Confirmar o portal e a integridade dos ficheiros versionados.
+
+Removidos 426 MiB de artefactos regeneráveis. Portal e dashboard original
+respondem HTTP 200 após a limpeza. Verificação da estrutura (340 ficheiros)
+e `git diff --check` aprovados. Código, dados, exports e ambientes preservados.
+
+## Tema claro e escuro — 2026-10-18
+
+- [x] Manter o tema claro original como padrão e centralizar a paleta do portal.
+- [x] Adicionar seletor acessível no cabeçalho, com preferência no navegador.
+- [x] Aplicar a preferência antes da primeira pintura e sincronizar separadores.
+- [x] Validar contraste, persistência, navegação responsiva, check e build.
+
+Validação: check aprovado (97 testes e um ignorado), build aprovado, lint e
+formatação finais aprovados. Navegador: 66 cenários responsivos/navegação em
+seis idiomas; tema em 320/768/1440/2560 px com persistência, sincronização,
+teclado, impressão clara e armazenamento da preferência bloqueado. Contraste
+de texto principal, formulário e seletor medido em pelo menos 4,5:1 no modo
+escuro após as transições. Observatório aprovado em 320/1440 px. Inspeção
+visual do briefing e catálogo em tema escuro aprovada. Tradução e geração
+simuladas nos cenários aplicáveis; dashboard, dados e templates PDF intactos.
+
+## Revisão de testes e artefactos — 2026-10-18
+
+- [x] Rever testes unitários, de integração e navegador face ao código atual.
+- [x] Retirar 12 combinações visuais redundantes e asserções imediatas que
+  repetiam a espera de elementos ocultos. Preservar os fluxos funcionais.
+- [x] Validar a matriz reduzida, check e traduções com modelos instalados.
+- [x] Limpar caches regeneráveis e capturas de testes antigas.
+
+Removidos 529,9 MiB: downloads Argos já instalados, cache de compilação
+Next.js e capturas Canva regeneráveis. Os seis pares de modelos instalados
+foram confirmados pelos metadados. Corrigida também uma expressão sem efeito
+no teste de tema que era assinalada pelo lint.
+
+Validação: check aprovado (97 testes e um ignorado), 54 combinações de
+interface/navegação aprovadas, temas em quatro larguras aprovados e cinco
+testes do worker de tradução aprovados com modelos simulados. Estrutura de
+344 ficheiros, Markdown e `git diff --check` aprovados. Portal e dashboard
+respondem HTTP 200. Código funcional, dados, exports e modelos preservados.
