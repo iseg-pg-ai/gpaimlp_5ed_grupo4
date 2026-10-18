@@ -39,6 +39,15 @@ try {
         await page.locator('.show-chapters [aria-current="step"]').count(),
         1,
       );
+      assert.equal(await page.locator(".show-chapters button").count(), 6);
+      assert.match(await page.locator("#counter").innerText(), /\/ 06$/);
+      assert.equal(
+        await page.locator(".show-chapters").evaluate((nav) =>
+          getComputedStyle(nav).gridTemplateColumns.split(" ").length,
+        ),
+        width <= 540 ? 2 : width <= 1100 ? 3 : 6,
+        "A navegação deve preencher a grelha de seis capítulos",
+      );
     };
     await check();
     await page.locator('[data-tech-requirement="1"]').click();
@@ -67,6 +76,23 @@ try {
     );
     await page.getByRole("button", { name: "Ativar animações" }).click();
     await check();
+    await page.getByRole("button", { name: "Explorar as tecnologias" }).click();
+    assert.equal(await page.locator("[data-tech-stack]").count(), 7);
+    await page.locator(".tech-deep-dive summary").click();
+    await page
+      .getByText("Timeout de 15 s e buffer máximo de 16 MiB.", { exact: false })
+      .waitFor();
+    await check();
+    for (const index of [1, 2, 3, 4, 5, 6]) {
+      await page.locator(`[data-tech-stack="${index}"]`).click();
+      await page.locator(".tech-deep-dive summary").click();
+      await check();
+    }
+    await page
+      .getByText("Não existe um workflow CI do portal neste checkout.", {
+        exact: false,
+      })
+      .waitFor();
     await page.getByRole("button", { name: "Seguir um dado" }).click();
     for (let step = 0; step < 3; step++)
       await page.getByRole("button", { name: "Avançar o dado" }).click();
@@ -170,15 +196,7 @@ try {
     await page
       .getByRole("heading", { name: "Uma experiência por escolher" })
       .waitFor();
-    await page.getByRole("button", { name: "Seguir a origem" }).click();
-    await page
-      .getByRole("button", { name: "03 ENTREGA / WAREHOUSE Publicação" })
-      .click();
-    await page
-      .getByRole("heading", { name: "Uma entrega coerente para consultar." })
-      .waitFor();
-    await check();
-    await page.getByRole("button", { name: "Conhecer a colaboração" }).click();
+    await page.getByRole("button", { name: "Continuar a revisão" }).click();
     await page
       .getByRole("button", { name: "Remover uma atividade protegida" })
       .click();
@@ -189,7 +207,7 @@ try {
     await page
       .getByRole("heading", { name: "Uma experiência por escolher" })
       .waitFor();
-    await page.getByRole("button", { name: "05 A colaboração" }).click();
+    await page.getByRole("button", { name: "04 A colaboração" }).click();
     await page
       .getByRole("button", { name: "Reservar uma tarde livre" })
       .click();
@@ -225,17 +243,9 @@ try {
       .waitFor();
     await check();
     await page
-      .getByRole("button", { name: "Ver o sistema por dentro" })
+      .getByRole("button", { name: "Abrir o próximo capítulo" })
       .click();
-    await page
-      .getByRole("button", { name: "ASSISTÊNCIA Agente opcional" })
-      .click();
-    await page
-      .locator("#layer-detail")
-      .getByRole("heading", { name: "Agente opcional" })
-      .waitFor();
     await check();
-    await page.getByRole("button", { name: "Dar o próximo passo" }).click();
     const finalLink = page.getByRole("link", {
       name: "Explorar o Observatório real",
     });
@@ -289,7 +299,7 @@ try {
     await context.close();
     console.log(
       width,
-      "três partes, animações, falhas, percurso, teclado e isolamento OK",
+      "seis cenas técnicas, seis narrativas, aprofundamentos, animações e isolamento OK",
     );
   }
   const page = await browser.newPage({
@@ -298,10 +308,11 @@ try {
   await page.goto(origin);
   for (const [chapter, file] of [
     ["01 Requisitos", "requirements"],
-    ["02 Arquitetura e tecnologias", "architecture"],
-    ["03 Dados e processos", "process"],
-    ["04 O papel da IA", "ai"],
-    ["05 Validação e limites", "validation"],
+    ["02 Arquitetura", "architecture"],
+    ["03 Tecnologias", "technologies"],
+    ["04 Dados e processos", "process"],
+    ["05 O papel da IA", "ai"],
+    ["06 Validação e limites", "validation"],
   ]) {
     await page.getByRole("button", { name: chapter }).click();
     await page.waitForTimeout(800);
@@ -310,9 +321,7 @@ try {
       fullPage: true,
     });
   }
-  await page
-    .getByRole("button", { name: "02 Arquitetura e tecnologias" })
-    .click();
+  await page.getByRole("button", { name: "02 Arquitetura" }).click();
   assert.equal(
     await page.evaluate(
       () =>
@@ -331,7 +340,7 @@ try {
     "none",
   );
   await page.getByRole("button", { name: "Ativar animações" }).click();
-  await page.getByRole("button", { name: "03 Dados e processos" }).click();
+  await page.getByRole("button", { name: "04 Dados e processos" }).click();
   const before = await page.locator(".tech-record").boundingBox();
   await page.getByRole("button", { name: "Avançar o dado" }).click();
   await page.waitForFunction(() =>
@@ -363,11 +372,9 @@ try {
     fullPage: true,
   });
   for (const [chapter, file] of [
-    ["04 Os dados", "data"],
-    ["05 A colaboração", "collaboration"],
-    ["06 A entrega", "delivery"],
-    ["07 Por dentro", "architecture"],
-    ["08 O próximo passo", "final"],
+    ["04 A colaboração", "collaboration"],
+    ["05 A entrega", "delivery"],
+    ["06 O próximo passo", "final"],
   ]) {
     await page.getByRole("button", { name: chapter }).click();
     await page.waitForTimeout(800);

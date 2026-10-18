@@ -637,3 +637,30 @@ arranques shell aprovada e URLs gerados iguais à base indicada. Os três
 serviços foram reiniciados com a configuração correta e respondem HTTP 200
 localmente. Markdown, estrutura e `git diff --check` aprovados. Sem build,
 alteração de dados ou renovação automática da sessão AWS.
+
+## Auditoria editorial e detalhe técnico — 2026-10-19
+
+- [x] Identificar repetição de dados, arquitetura, limites e mensagens de revisão.
+- [x] Remover cenas e explicações duplicadas da parte narrativa.
+- [x] Acrescentar detalhe de implementação, dependências, integrações e automação.
+- [x] Registar lacunas que exigem informação futura da equipa, sem as inventar.
+- [x] Validar o percurso revisto, acessibilidade, animações e documentação.
+
+Validação: seis cenas técnicas e seis narrativas aprovadas em
+320/768/1440/2560 px, incluindo as sete áreas de tecnologias e os seus
+aprofundamentos. Navegação, teclado, escolhas, movimento reduzido, pausa e
+movimento efetivo do registo verificados no navegador. Sem chamadas externas,
+escrita em localStorage ou erros JS. Inspeção visual das tecnologias, entrega
+e fecho concluída. Sintaxe JS, Markdown, estrutura e `git diff --check`
+aprovados. Portal, dashboard original e dados sem alterações. Valores dos
+manifests e predefinições de código não são apresentados como medições ou
+configuração efetiva dos serviços.
+
+## Grelha dos seis capítulos — 2026-10-19
+
+- [x] Corrigir a grelha narrativa que ainda reservava oito colunas.
+- [x] Distribuir seis capítulos por seis, três ou duas colunas conforme o ecrã.
+- [x] Validar no navegador a grelha, contagem e percurso nas quatro larguras.
+
+Grelha, seis botões e contador `/ 06` verificados em 320/768/1440/2560 px,
+na técnica e na curadoria. Estrutura e `git diff --check` aprovados.

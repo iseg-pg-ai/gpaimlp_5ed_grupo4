@@ -602,3 +602,12 @@ para as portas; o arranque AWS usa a origem configurada quando não existe
 `PORTAL_PUBLIC_ORIGIN` explícito. A apresentação e o arranque Streamlit
 anunciam a base indicada, mantendo os endereços locais para execução.
 A configuração não cria domínios nem renova a autenticação do SageMaker.
+
+## Separação editorial e aprofundamento técnico — 2026-10-19
+
+Retirar as cenas de dados e arquitetura da parte narrativa, porque já pertencem
+aos fundamentos. A apresentação fica com seis cenas técnicas e seis narrativas.
+Separar arquitetura de tecnologias e conservar detalhes de implementação num
+inventário editorial próprio. Versões declaradas e defaults do código não
+representam configuração efetiva ou métricas medidas. Registar no guião as
+lacunas a preencher com a equipa e manter a distinção entre simulação e sistema.

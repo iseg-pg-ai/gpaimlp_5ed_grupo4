@@ -4,10 +4,8 @@ const state = {
   preference: "culture",
   selected: 0,
   free: false,
-  pipeline: 0,
   response: null,
   version: 2,
-  layer: 0,
 };
 const choices = {
   culture: {
@@ -56,12 +54,11 @@ const experienceChapters = [
   "O pedido",
   "O território",
   "A proposta",
-  "Os dados",
   "A colaboração",
   "A entrega",
-  "Por dentro",
   "O próximo passo",
 ];
+
 const icons = {
   compass:
     '<circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 5.5L8 16l2.5-5.5Z"/>',
@@ -103,11 +100,11 @@ function mapScene() {
 function placeDetail() {
   const stop = stops[state.selected],
     choice = choices[state.preference];
-  return `<div class="show-panel-title">${icon("pin")}<span>POSSIBILIDADE 0${state.selected + 1}</span></div><span class="show-detail-number" aria-hidden="true">0${state.selected + 1}</span><p class="show-eyebrow">${stop.area}</p><h2>${state.selected === 0 ? choice.title : stop.label}</h2><p>${stop.description}</p><dl class="show-evidence"><div><dt>Interesse escolhido</dt><dd>${icon(choice.icon)} ${choice.label}</dd></div><div><dt>Origem destes dados</dt><dd>Exemplo preparado para a apresentação</dd></div><div><dt>Preço e disponibilidade</dt><dd class="show-pending">Por confirmar</dd></div></dl><p class="show-context">${icon("compass")} No sistema, cada registo mantém a sua origem consultável. Estas ofertas são fictícias.</p>`;
+  return `<div class="show-panel-title">${icon("pin")}<span>POSSIBILIDADE 0${state.selected + 1}</span></div><span class="show-detail-number" aria-hidden="true">0${state.selected + 1}</span><p class="show-eyebrow">${stop.area}</p><h2>${state.selected === 0 ? choice.title : stop.label}</h2><p>${stop.description}</p><dl class="show-evidence"><div><dt>Interesse escolhido</dt><dd>${icon(choice.icon)} ${choice.label}</dd></div><div><dt>Origem destes dados</dt><dd>Exemplo preparado para a apresentação</dd></div><div><dt>Preço e disponibilidade</dt><dd class="show-pending">Por confirmar</dd></div></dl>`;
 }
 function itineraryScene() {
   const choice = choices[state.preference];
-  return `<div class="show-itinerary"><div class="show-panel-title">${icon("route")}<span>O PERCURSO DO GRUPO</span><span class="show-tag">SIMULAÇÃO</span></div><div class="show-day"><div class="show-day-heading"><span>01</span><h2>Descobrir Lisboa</h2><small>Dia 1 / sem pressa</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>${choice.detail}</h3><p>${choice.label} · escolha alinhada com o briefing</p></div>${icon(choice.icon)}</li><li><span class="show-time">ALMOÇO</span><div><h3>À mesa, com tempo</h3><p>Uma pausa faz parte da experiência</p></div></li><li><span class="show-time">TARDE</span><div><h3>Outro ponto de vista</h3><p>Acesso e deslocação por validar</p></div></li></ol></div><div class="show-day"><div class="show-day-heading"><span>02</span><h2>Ao ritmo de quem viaja</h2><small>Dia 2 / adaptável</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>Continuar a explorar</h3><p>Margem para uma descoberta local</p></div></li><li id="free-slot" class="${state.free ? "show-free-time" : ""}">${freeSlot()}</li></ol></div></div><div class="show-decision"><span class="show-eyebrow">UMA VIAGEM NÃO É ESTÁTICA</span><h2>E se o cliente<br>mudar de ideias?</h2><p>«Preferia ter a segunda tarde livre.»</p><button type="button" id="free-toggle" class="show-primary" aria-pressed="${state.free}">${state.free ? "✓ Repor a experiência" : icon("spark") + "Reservar a tarde livre"}</button><p class="show-change-status" role="status">${changeStatus()}</p><div class="show-trust">${icon("shield")}<h3>O curador continua presente.</h3><p>Esta interação altera apenas a demonstração. No portal, a proposta é revista e guardada numa versão antes da entrega.</p></div><a href="${observatoryUrl}" target="_blank" rel="noopener" class="show-system-link">Explorar o Observatório real <span aria-hidden="true">↗</span></a></div>`;
+  return `<div class="show-itinerary"><div class="show-panel-title">${icon("route")}<span>O PERCURSO DO GRUPO</span><span class="show-tag">SIMULAÇÃO</span></div><div class="show-day"><div class="show-day-heading"><span>01</span><h2>Descobrir Lisboa</h2><small>Dia 1 / sem pressa</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>${choice.detail}</h3><p>${choice.label} · escolha alinhada com o briefing</p></div>${icon(choice.icon)}</li><li><span class="show-time">ALMOÇO</span><div><h3>À mesa, com tempo</h3><p>Uma pausa faz parte da experiência</p></div></li><li><span class="show-time">TARDE</span><div><h3>Outro ponto de vista</h3><p>Acesso e deslocação por validar</p></div></li></ol></div><div class="show-day"><div class="show-day-heading"><span>02</span><h2>Ao ritmo de quem viaja</h2><small>Dia 2 / adaptável</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>Continuar a explorar</h3><p>Margem para uma descoberta local</p></div></li><li id="free-slot" class="${state.free ? "show-free-time" : ""}">${freeSlot()}</li></ol></div></div><div class="show-decision"><span class="show-eyebrow">UMA VIAGEM NÃO É ESTÁTICA</span><h2>E se o cliente<br>mudar de ideias?</h2><p>«Preferia ter a segunda tarde livre.»</p><button type="button" id="free-toggle" class="show-primary" aria-pressed="${state.free}">${state.free ? "✓ Repor a experiência" : icon("spark") + "Reservar a tarde livre"}</button><p class="show-change-status" role="status">${changeStatus()}</p></div>`;
 }
 function freeSlot() {
   return `<span class="show-time">TARDE</span><div><h3>${state.free ? "Uma tarde só sua" : "Uma experiência por escolher"}</h3><p>${state.free ? "Tempo livre reservado · a proposta acompanha o pedido" : "O curador ainda tem uma decisão a rever"}</p></div>${state.free ? icon("moon") : ""}`;
@@ -118,47 +115,8 @@ function changeStatus() {
     : "Experimente alterar o plano. Pode voltar atrás.";
 }
 
-const pipelineSteps = [
-  {
-    name: "Fontes",
-    kind: "EXCEL / PDF",
-    title: "Conhecimento com uma origem.",
-    text: "O sistema parte de fontes locais, suplementos e documentos históricos. Um dado mantém o seu contexto e a referência de origem.",
-    detail:
-      "Um preço num PDF histórico continua a ser histórico. Não se transforma numa tarifa atual.",
-  },
-  {
-    name: "Validação",
-    kind: "REGRAS / EVIDÊNCIA",
-    title: "O que sabemos. E o que falta saber.",
-    text: "A ingestão verifica estrutura, relações e conflitos. A qualidade e a validade temporal da informação ficam explícitas.",
-    detail: "Desconhecido não significa disponível, compatível ou gratuito.",
-  },
-  {
-    name: "Publicação",
-    kind: "ENTREGA / WAREHOUSE",
-    title: "Uma entrega coerente para consultar.",
-    text: "O ETL prepara uma nova entrega e valida-a antes de substituir a anterior. Uma falha na publicação permite repor a entrega anterior.",
-    detail:
-      "Editar, aprovar e publicar são passos distintos. A proposta usa a oferta elegível publicada.",
-  },
-  {
-    name: "Curadoria",
-    kind: "PORTAL / ANÁLISE",
-    title: "Dados que apoiam uma decisão.",
-    text: "O Observatório permite explorar a oferta; o portal cruza o pedido com o catálogo e as regras para preparar uma proposta revista pelo curador.",
-    detail: "Uma alteração ao catálogo não reescreve uma proposta já guardada.",
-  },
-];
-function dataScene() {
-  return `<div class="show-data-flow" role="group" aria-label="Etapas do fluxo de dados">${pipelineSteps.map((step, index) => `<button type="button" data-pipeline="${index}" aria-pressed="${state.pipeline === index}"><span class="show-flow-index">0${index + 1}</span><span><small>${step.kind}</small><strong>${step.name}</strong></span><span aria-hidden="true">→</span></button>`).join("")}<p class="show-context">${icon("shield")} Explore uma etapa. Este diagrama explica o fluxo; não executa uma publicação.</p></div><div id="data-detail" class="show-data-detail" aria-live="polite" aria-atomic="true">${dataDetail()}</div>`;
-}
-function dataDetail() {
-  const step = pipelineSteps[state.pipeline];
-  return `<span class="show-eyebrow">ETAPA 0${state.pipeline + 1} / ${step.kind}</span><h2>${step.title}</h2><p>${step.text}</p><div class="show-principle">${icon("shield")}<p>${step.detail}</p></div><span class="show-detail-number" aria-hidden="true">0${state.pipeline + 1}</span>`;
-}
 function collaborationScene() {
-  return `<div class="show-conversation"><div class="show-panel-title">${icon("spark")}<span>UMA CONVERSA COM LIMITES</span><span class="show-tag">SIMULAÇÃO PREPARADA</span></div><div class="show-message show-message-human"><small>O CURADOR</small><p>Vamos ajustar o plano, mantendo o que já foi revisto.</p></div><div id="assistant-response" aria-live="polite" aria-atomic="true">${assistantResponse()}</div><p class="show-context">As respostas desta cena estão preparadas. Não existe uma chamada a um modelo de linguagem.</p></div><div class="show-assistant-actions"><span class="show-eyebrow">EXPERIMENTE OS DOIS PEDIDOS</span><h2>Ajudar também é<br>saber onde parar.</h2><button type="button" data-assist="free">${icon("moon")}<span><strong>Reservar uma tarde livre</strong><small>Ajustar a segunda tarde do roteiro</small></span><span aria-hidden="true">→</span></button><button type="button" data-assist="protected">${icon("shield")}<span><strong>Remover uma atividade protegida</strong><small>Testar o limite de uma alteração</small></span><span aria-hidden="true">→</span></button><div class="show-trust"><h3>Regras, modelo e curador têm papéis próprios.</h3><p>O portal suporta comandos determinísticos e um agente de linguagem opcional. A validação continua necessária; o curador revê a proposta.</p></div></div>`;
+  return `<div class="show-conversation"><div class="show-panel-title">${icon("spark")}<span>UMA CONVERSA COM LIMITES</span><span class="show-tag">SIMULAÇÃO PREPARADA</span></div><div class="show-message show-message-human"><small>O CURADOR</small><p>Vamos ajustar o plano, mantendo o que já foi revisto.</p></div><div id="assistant-response" aria-live="polite" aria-atomic="true">${assistantResponse()}</div><p class="show-context">As respostas desta cena estão preparadas. Não existe uma chamada a um modelo de linguagem.</p></div><div class="show-assistant-actions"><span class="show-eyebrow">EXPERIMENTE OS DOIS PEDIDOS</span><h2>Ajudar também é<br>saber onde parar.</h2><button type="button" data-assist="free">${icon("moon")}<span><strong>Reservar uma tarde livre</strong><small>Ajustar a segunda tarde do roteiro</small></span><span aria-hidden="true">→</span></button><button type="button" data-assist="protected">${icon("shield")}<span><strong>Remover uma atividade protegida</strong><small>Testar o limite de uma alteração</small></span><span aria-hidden="true">→</span></button></div>`;
 }
 function assistantResponse() {
   if (state.response === "protected")
@@ -168,47 +126,14 @@ function assistantResponse() {
   return `<div class="show-message show-message-assistant"><small>A ASSISTÊNCIA</small><h3>Qual é a próxima decisão?</h3><p>Escolha um pedido ao lado para observar uma alteração permitida ou um limite de proteção.</p></div>`;
 }
 function deliveryScene() {
-  return `<div class="show-document-wrap"><div class="show-version-switch" role="group" aria-label="Exemplos de versões"><button type="button" data-version="1" aria-pressed="${state.version === 1}">01 / Exemplo inicial</button><button type="button" data-version="2" aria-pressed="${state.version === 2}">02 / As suas escolhas</button></div><div id="document-preview" class="show-document" aria-live="polite" aria-atomic="true">${documentPreview()}</div><p class="show-context">Pré-visualização ilustrativa. Não é um PDF exportado nem uma versão guardada no portal.</p></div><div class="show-delivery-detail"><span class="show-eyebrow">O QUE FOI REVISTO É O QUE É ENTREGUE</span><h2>Uma proposta.<br>Uma versão identificável.</h2><ol class="show-delivery-steps"><li><span>01</span><div><h3>Rever</h3><p>Escolhas, custos conhecidos e pendências.</p></div></li><li><span>02</span><div><h3>Guardar</h3><p>Snapshot, relações entre versões e histórico.</p></div></li><li><span>03</span><div><h3>Entregar</h3><p>PDF DMC, ZIP ou TXT da versão guardada.</p></div></li></ol><div class="show-trust"><h3>O Canva é uma composição independente.</h3><p>O TXT exclui contactos e notas internas. A composição Canva é revista pelo curador e não substitui automaticamente o PDF DMC histórico.</p></div></div>`;
+  return `<div class="show-document-wrap"><div class="show-version-switch" role="group" aria-label="Exemplos de versões"><button type="button" data-version="1" aria-pressed="${state.version === 1}">01 / Exemplo inicial</button><button type="button" data-version="2" aria-pressed="${state.version === 2}">02 / As suas escolhas</button></div><div id="document-preview" class="show-document" aria-live="polite" aria-atomic="true">${documentPreview()}</div><p class="show-context">Pré-visualização ilustrativa. Não é um PDF exportado nem uma versão guardada no portal.</p></div><div class="show-delivery-detail"><span class="show-eyebrow">AS ESCOLHAS TORNAM-SE VISÍVEIS</span><h2>A sua viagem,<br>nas suas escolhas.</h2><dl class="show-choice-summary"><div><dt>O interesse</dt><dd>${choices[state.preference].label}</dd></div><div><dt>O ritmo</dt><dd>Dois dias, sem pressa</dd></div><div><dt>A segunda tarde</dt><dd>${state.free ? "Tempo livre reservado" : "Uma experiência por escolher"}</dd></div></dl><p class="show-context">Compare o ponto de partida com as escolhas que fez. No portal real, o curador revê e guarda a proposta antes da entrega.</p></div>`;
 }
 function documentPreview() {
   const current = state.version === 2;
   return `<div class="show-document-brand">blu<span>.</span><small>TRAVEL CURATION / EXEMPLO</small></div><span class="show-eyebrow">PORTUGAL / DOIS DIAS</span><h2>Lisboa,<br>ao seu ritmo.</h2><p class="show-document-intro">${current ? choices[state.preference].label : choices.culture.label} · dois adultos · sem pressa</p><div class="show-document-days"><div><span>01</span><h3>Descobrir Lisboa</h3><p>${current ? choices[state.preference].detail : choices.culture.detail}<br>À mesa, com tempo<br>Outro ponto de vista</p></div><div><span>02</span><h3>Continuar a explorar</h3><p>${current && state.free ? "Uma tarde só sua · tempo livre reservado" : "Uma experiência por escolher"}</p></div></div><div class="show-document-pending">PREÇO E DISPONIBILIDADE POR CONFIRMAR</div><small class="show-document-footer">GRUPO DEMONSTRAÇÃO BLU / EXEMPLO 0${state.version}</small>`;
 }
-const layers = [
-  {
-    name: "Fontes e catálogo",
-    role: "CONHECIMENTO",
-    icon: "compass",
-    text: "Fontes preservadas, revisões e aprovações no catálogo operacional. O ETL publica a entrega consultada pelo portal e pela análise.",
-  },
-  {
-    name: "Portal e Observatório",
-    role: "OPERAÇÃO E ANÁLISE",
-    icon: "pin",
-    text: "O portal combina briefing, regras, edição e revisão. O Observatório nativo lê a entrega publicada. A aplicação Streamlit original continua separada.",
-  },
-  {
-    name: "Agente opcional",
-    role: "ASSISTÊNCIA",
-    icon: "spark",
-    text: "O serviço Python pode usar um modelo de linguagem e ferramentas de catálogo, meteorologia e restrições. O portal também funciona sem esse serviço.",
-  },
-  {
-    name: "Versões e entregas",
-    role: "CONTINUIDADE",
-    icon: "shield",
-    text: "Rascunhos pertencem ao navegador. Versões e PDFs históricos são persistidos com snapshots e hashes; uma edição posterior não reescreve os bytes já guardados.",
-  },
-];
-function architectureScene() {
-  return `<div class="show-system-map" role="group" aria-label="Componentes do sistema"><div class="show-system-core">blu<span>.</span><small>UMA BASE DE CONHECIMENTO<br>VÁRIOS MOMENTOS DE DECISÃO</small></div><div class="show-layer-grid">${layers.map((layer, index) => `<button type="button" data-layer="${index}" aria-pressed="${state.layer === index}">${icon(layer.icon)}<small>${layer.role}</small><strong>${layer.name}</strong><span aria-hidden="true">↗</span></button>`).join("")}</div></div><div class="show-architecture-detail"><div id="layer-detail" aria-live="polite" aria-atomic="true">${layerDetail()}</div><div class="show-trust"><h3>O que ainda precisa de evoluir</h3><p>Autenticação e papéis, sincronização multiutilizador, persistência cloud e validação da partilha externa.</p></div><p class="show-context">Visão funcional resumida. Esta apresentação não demonstra um deployment de produção nem uma avaliação comercial.</p></div>`;
-}
-function layerDetail() {
-  const layer = layers[state.layer];
-  return `<span class="show-eyebrow">${layer.role}</span><h2>${layer.name}</h2><p>${layer.text}</p>`;
-}
 function finalScene() {
-  return `<div class="show-finale"><div class="show-final-symbol" aria-hidden="true">${icon("compass")}</div><span class="show-eyebrow">DA DEMONSTRAÇÃO À EXPLORAÇÃO</span><h2>O próximo passo<br><em>é descobrir por si.</em></h2><p>Conhecer a oferta. Consultar as fontes.<br>Transformar informação numa proposta que se pode rever.</p><div class="show-final-summary"><span>02 dias em Lisboa</span><span>${choices[state.preference].label}</span><span>${state.free ? "Uma tarde livre reservada" : "Um roteiro ainda por rever"}</span></div><a id="observatory-final" class="show-primary" href="${observatoryUrl}" target="_blank" rel="noopener noreferrer">Explorar o Observatório real <span aria-hidden="true">↗</span></a><p class="show-final-note">Abre o portal real num novo separador. O acesso depende da sua sessão SageMaker.</p><div class="show-final-principles"><span>${icon("compass")} Conhecimento com origem</span><span>${icon("shield")} Revisão humana</span><span>${icon("route")} Entregas identificáveis</span></div></div>`;
+  return `<div class="show-finale"><div class="show-final-symbol" aria-hidden="true">${icon("compass")}</div><div class="show-final-summary"><span>02 dias em Lisboa</span><span>${choices[state.preference].label}</span><span>${state.free ? "Uma tarde livre reservada" : "Um roteiro ainda por rever"}</span></div><a id="observatory-final" class="show-primary" href="${observatoryUrl}" target="_blank" rel="noopener noreferrer">Explorar o Observatório real <span aria-hidden="true">↗</span></a><p class="show-final-note">Abre o portal real num novo separador. O acesso depende da sua sessão SageMaker.</p><div class="show-final-principles"><span>${icon("compass")} Conhecimento com origem</span><span>${icon("shield")} Revisão humana</span><span>${icon("route")} Entregas identificáveis</span></div></div>`;
 }
 const experienceScenes = [
   {
@@ -235,17 +160,8 @@ const experienceScenes = [
     intro:
       "O pedido e o interesse escolhido encontram-se num roteiro. Agora, veja o que muda quando o cliente muda de ideias.",
     note: "Uma proposta para rever, adaptar e entregar.",
-    next: "Seguir a origem",
+    next: "Continuar a revisão",
     render: itineraryScene,
-  },
-  {
-    heading: "Antes da proposta,<br><em>há conhecimento a organizar.</em>",
-    eyebrow: "DO FICHEIRO À DECISÃO",
-    intro:
-      "O que acabou de ver depende de uma cadeia de informação. Explore os passos que ligam uma fonte à proposta.",
-    note: "Uma fonte histórica conserva o seu contexto.",
-    next: "Conhecer a colaboração",
-    render: dataScene,
   },
   {
     heading: "Inteligência para ajudar.<br><em>Critério para decidir.</em>",
@@ -262,17 +178,8 @@ const experienceScenes = [
     intro:
       "Compare o exemplo inicial com as escolhas que fez. No sistema, uma entrega corresponde a uma versão guardada.",
     note: "Rever, guardar e entregar são passos distintos.",
-    next: "Ver o sistema por dentro",
+    next: "Abrir o próximo capítulo",
     render: deliveryScene,
-  },
-  {
-    heading: "Cada peça tem um papel.<br><em>O conjunto conta a história.</em>",
-    eyebrow: "ARQUITETURA COM CONTEXTO",
-    intro:
-      "Explore as responsabilidades por trás da experiência. Uma visão do que existe e das fronteiras que ainda precisam de evoluir.",
-    note: "Capacidades, dependências e evolução explícitas.",
-    next: "Dar o próximo passo",
-    render: architectureScene,
   },
   {
     heading: "Da informação à decisão.<br><em>Da decisão à viagem.</em>",
@@ -290,6 +197,9 @@ const scenes = [
   ...experienceScenes.map((scene, index) => ({
     ...scene,
     label: experienceChapters[index],
+    id: ["request", "map", "itinerary", "collaboration", "delivery", "final"][
+      index
+    ],
   })),
 ];
 function render(focus = true) {
@@ -314,7 +224,7 @@ function render(focus = true) {
     )
     .join("");
   $("#scene").className =
-    `show-scene ${technical ? scene.className : `show-scene-${localIndex}`}`;
+    `show-scene ${technical ? scene.className : `show-scene-${scene.id}`}`;
   $("#scene").innerHTML = scene.render();
   $("#counter").textContent =
     `${technical ? "I" : "II"} · 0${localIndex + 1} / 0${group.length}`;
@@ -347,10 +257,8 @@ $("#next").addEventListener("click", () => {
       preference: "culture",
       selected: 0,
       free: false,
-      pipeline: 0,
       response: null,
       version: 2,
-      layer: 0,
     });
     window.BluTechnical.reset();
     render();
@@ -368,19 +276,6 @@ $(".show-parts").addEventListener("click", (event) => {
 });
 $("#scene").addEventListener("click", (event) => {
   if (window.BluTechnical.handleClick(event)) return;
-  const pipeline = event.target.closest("[data-pipeline]");
-  if (pipeline) {
-    state.pipeline = Number(pipeline.dataset.pipeline);
-    document
-      .querySelectorAll("[data-pipeline]")
-      .forEach((button) =>
-        button.setAttribute(
-          "aria-pressed",
-          String(Number(button.dataset.pipeline) === state.pipeline),
-        ),
-      );
-    $("#data-detail").innerHTML = dataDetail();
-  }
   const assist = event.target.closest("[data-assist]");
   if (assist) {
     state.response = assist.dataset.assist;
@@ -400,20 +295,6 @@ $("#scene").addEventListener("click", (event) => {
       );
     $("#document-preview").innerHTML = documentPreview();
   }
-  const layer = event.target.closest("[data-layer]");
-  if (layer) {
-    state.layer = Number(layer.dataset.layer);
-    document
-      .querySelectorAll("[data-layer]")
-      .forEach((button) =>
-        button.setAttribute(
-          "aria-pressed",
-          String(Number(button.dataset.layer) === state.layer),
-        ),
-      );
-    $("#layer-detail").innerHTML = layerDetail();
-  }
-
   const preference = event.target.closest("[data-preference]");
   if (preference) {
     state.preference = preference.dataset.preference;

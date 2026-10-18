@@ -2,15 +2,15 @@
 
 Dashboard independente organizado em três partes:
 
-1. **Fundamentos técnicos:** cinco cenas sobre requisitos, arquitetura/tecnologias,
+1. **Fundamentos técnicos:** seis cenas sobre requisitos, arquitetura, tecnologias,
    dados/processos, mecanismos de IA e validação/limites.
-2. **Experiência de curadoria:** as oito cenas narrativas, com escolhas que
+2. **Experiência de curadoria:** seis cenas narrativas, com escolhas que
    acompanham o mapa esquemático, o roteiro e a pré-visualização ilustrativa.
 3. **Portal real:** abertura do Observatório indicado pelo utilizador num novo
    separador, dependente da sessão SageMaker.
 
 A abertura começa na parte técnica. Os controlos no topo permitem saltar para
-qualquer parte; o avanço sequencial passa da quinta cena técnica para o pedido.
+qualquer parte; o avanço sequencial passa da sexta cena técnica para o pedido.
 O portal real não é incorporado nem alterado pela apresentação.
 
 ## Executar
@@ -45,7 +45,8 @@ O endereço está centralizado em `observatoryUrl`, no ficheiro `dist/app.js`.
 - Partes no topo: aceder aos fundamentos, à experiência ou ao portal real.
 - Capítulos: acesso direto às cenas da parte selecionada.
 - Pausar/Ativar animações: desligar ou ligar o movimento sem perder o estado.
-- Requisitos e camadas: explorar contratos, responsabilidades e tecnologias.
+- Requisitos e camadas: explorar contratos e responsabilidades.
+- Tecnologias: escolher uma de sete áreas e abrir implementação e limites.
 - Avançar o dado: mover o registo fictício ao longo das etapas.
 - Simular falha na publicação: observar a preservação da entrega anterior.
 - Mecanismos e contratos: distinguir regras, modelos e evidência de validação.
@@ -92,8 +93,21 @@ node presentation/test-browser.mjs
 ```
 
 `PRESENTATION_URL` permite indicar outro endereço. A verificação cobre quatro
-larguras, as cinco cenas técnicas e os oito capítulos narrativos, teclado,
+larguras, as seis cenas técnicas e os seis capítulos narrativos, teclado,
 persistência entre cenas, reposição, animações ligadas/desligadas, movimento
 reduzido, simulação de falha de publicação,
 erro de ecrã inteiro, URL final exato e ausência de chamadas externas/API.
 O teste verifica o destino sem visitar o portal real. As capturas de inspeção ficam em `/tmp/`.
+
+## Conteúdo técnico e complementos
+
+`dist/technology-content.js` contém o inventário editorial: dependências,
+versões declaradas, responsabilidade, exemplo, implementação e referências.
+A apresentação distingue esses dados da configuração efetiva e dos resultados
+de desempenho. Modelo/região usados, decisões da equipa e medições ficam
+identificados como informação a complementar, sem valores inventados.
+
+A experiência tem pedido, território, proposta, colaboração, entrega e
+encerramento. Os capítulos repetidos de dados e arquitetura foram retirados,
+com o código e estilos específicos. A auditoria e as lacunas estão registadas
+no [guião](../docs/APRESENTACAO.md).

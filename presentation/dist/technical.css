@@ -585,3 +585,115 @@
     transition: none !important;
   }
 }
+/* Inventário técnico com aprofundamento progressivo, separado da arquitetura. */
+.show-technical-chapters {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.tech-stack-scene {
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  align-items: start;
+}
+.tech-stack-list [role="group"] {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+.tech-stack-list button {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  min-height: 62px;
+  padding: 0.9rem 1rem;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: #15313a55;
+}
+.tech-stack-list button[aria-pressed="true"] {
+  border-color: #dcb77a88;
+  background: #dcb77a0b;
+}
+.tech-stack-list button > span {
+  color: var(--gold);
+  font:
+    0.65rem ui-monospace,
+    monospace;
+}
+.tech-stack-list button > strong {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.tech-stack-list button > i {
+  margin-left: auto;
+  color: #bccbb9;
+  font-style: normal;
+}
+.tech-stack-example {
+  margin-top: 1.3rem;
+  padding: 1rem;
+  border-left: 2px solid #bfa475;
+  background: #bfa47509;
+}
+.tech-stack-example > span {
+  font:
+    0.5rem/1.8 ui-monospace,
+    monospace;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+}
+.tech-stack-example p {
+  color: #c1d0c6;
+  font-size: 0.75rem;
+  line-height: 1.9;
+  margin-bottom: 0;
+}
+.tech-deep-dive {
+  margin-top: 1.3rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #15313a55;
+}
+.tech-deep-dive summary {
+  min-height: 48px;
+  padding: 1rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #ddc397;
+}
+.tech-deep-dive dl {
+  margin: 0;
+  padding-inline: 1rem;
+}
+.tech-deep-dive dl > div {
+  border-top: 1px solid var(--line);
+  padding-block: 1rem;
+}
+.tech-deep-dive dt {
+  font-size: 0.72rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #d7dfd2;
+}
+.tech-deep-dive dd {
+  margin: 0;
+  color: #aec3bd;
+  font-size: 0.72rem;
+  line-height: 1.9;
+}
+@media (max-width: 1000px) {
+  .tech-stack-scene {
+    grid-template-columns: 1fr;
+  }
+  .show-technical-chapters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 540px) {
+  .show-technical-chapters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tech-stack-list button {
+    min-height: 58px;
+  }
+}

@@ -3,6 +3,7 @@ window.BluTechnical = (() => {
   const initial = {
     requirement: 0,
     node: 0,
+    stack: 0,
     phase: 0,
     failed: false,
     mechanism: 0,
@@ -49,14 +50,14 @@ window.BluTechnical = (() => {
         "dmc-workspace/src/lib/version-store.ts · dmc-workspace/tests/versions.test.mjs",
     },
     {
-      label: "Limites e âmbito",
-      code: "ÂMBITO / 04",
-      title: "Saber o que ainda falta.",
-      task: "Podemos confirmar uma reserva ou colaborar em tempo real?",
-      rule: "O sistema produz propostas. Reservas, autenticação interna e sincronização colaborativa não estão demonstradas como funcionalidades completas.",
+      label: "Continuidade",
+      code: "RQ / 04",
+      title: "Uma falha precisa de uma resposta explícita.",
+      task: "O fornecedor de meteorologia não responde.",
+      rule: "Distinguir indisponibilidade de informação confirmada e manter as pendências visíveis.",
       effect:
-        "Distinguir o que está implementado das dependências e da evolução futura.",
-      source: "docs/ARCHITECTURE.md · docs/PORTAL.md",
+        "O curador vê o que precisa de verificar; a aplicação não inventa temperaturas para preencher a falha.",
+      source: "portal/weather.py · tests/test_weather.py",
     },
   ];
   function requirementDetail() {
@@ -69,28 +70,24 @@ window.BluTechnical = (() => {
   const nodes = [
     {
       title: "Fontes e catálogo",
-      tech: "Excel · PDF · SQLite",
       text: "As fontes são preservadas. O catálogo operacional guarda edição, revisões e aprovações; não é o warehouse.",
       boundary: "data/ → catálogo operacional",
       source: "etl/sources.py · etl/portal_catalog.py",
     },
     {
       title: "Ingestão e ETL",
-      tech: "Python · pandas · openpyxl · pypdf",
       text: "Ler, harmonizar, validar e preparar uma entrega. A troca só acontece após a validação; a falha tem recuperação.",
       boundary: "Fontes → entrega temporária → publicação",
       source: "etl/pipeline.py · tests/test_local_source.py",
     },
     {
       title: "Entrega publicada",
-      tech: "SQLite · JSONL",
       text: "O warehouse é uma entrega gerada, consultada pelo portal, pelo Observatório nativo e pela aplicação Streamlit.",
       boundary: "Leitura da entrega; sem edição manual",
       source: "warehouse/ · portal/observatory.py",
     },
     {
       title: "Portal e domínio",
-      tech: "Next.js · React · TypeScript · Python",
       text: "Interface, APIs e regras de domínio. Operações Python locais usam JSON e processos sem shell; não exigem o serviço do agente.",
       boundary: "Navegador ↔ servidor Node ↔ operações locais Python",
       source:
@@ -98,14 +95,12 @@ window.BluTechnical = (() => {
     },
     {
       title: "Agente opcional",
-      tech: "FastAPI · LangGraph · LangChain · Bedrock",
       text: "O serviço de assistência pode consultar ferramentas e um modelo. A existência do código não comprova que um fornecedor esteja disponível.",
       boundary: "Serviço separado; o portal funciona sem ele",
       source: "src/blu_ai/agents/curator_agent.py",
     },
     {
       title: "Versões e entregas",
-      tech: "Snapshots · PDFKit · TXT/Canva",
       text: "O servidor preserva versões e documentos. Os rascunhos continuam no navegador. A tradução local usa Argos Translate/CTranslate2 quando preparada.",
       boundary: "Rascunho → revisão → versão → exportação",
       source: "dmc-workspace/src/lib/version-store.ts · translations/worker.py",
@@ -113,10 +108,30 @@ window.BluTechnical = (() => {
   ];
   function nodeDetail() {
     const node = nodes[state.node];
-    return `<span class="show-eyebrow">CAMADA 0${state.node + 1} / RESPONSABILIDADE</span><h2>${node.title}</h2><p class="tech-stack-label">${node.tech}</p><p>${node.text}</p><div class="tech-boundary">${mark}<span>${node.boundary}</span></div>${source(node.source)}`;
+    return `<span class="show-eyebrow">CAMADA 0${state.node + 1} / RESPONSABILIDADE</span><h2>${node.title}</h2><p>${node.text}</p><div class="tech-boundary">${mark}<span>${node.boundary}</span></div>${source(node.source)}`;
   }
   function architectureScene() {
-    return `<div class="tech-architecture"><svg class="tech-wires" aria-hidden="true"></svg><div class="tech-node-grid" role="group" aria-label="Camadas e tecnologias">${nodes.map((node, i) => `<button type="button" data-tech-node="${i}" aria-pressed="${state.node === i}" class="${i === 4 ? "tech-optional" : ""}"><span>0${i + 1}</span><strong>${node.title}</strong><small>${node.tech}</small></button>`).join("")}</div><p class="show-context">Ligações de responsabilidade ilustradas. Não representam tráfego de rede ou serviços em execução.</p></div><div id="tech-node-detail" class="tech-detail" aria-live="polite" aria-atomic="true">${nodeDetail()}</div>`;
+    return `<div class="tech-architecture"><svg class="tech-wires" aria-hidden="true"></svg><div class="tech-node-grid" role="group" aria-label="Camadas e tecnologias">${nodes.map((node, i) => `<button type="button" data-tech-node="${i}" aria-pressed="${state.node === i}" class="${i === 4 ? "tech-optional" : ""}"><span>0${i + 1}</span><strong>${node.title}</strong></button>`).join("")}</div><p class="show-context">Ligações de responsabilidade ilustradas. Não representam tráfego de rede ou serviços em execução.</p></div><div id="tech-node-detail" class="tech-detail" aria-live="polite" aria-atomic="true">${nodeDetail()}</div>`;
+  }
+  const escapeText = (value) =>
+    String(value).replace(
+      /[&<>"']/g,
+      (char) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[char],
+    );
+  const technologies = window.BluTechnologyContent;
+  function stackDetail() {
+    const item = technologies[state.stack];
+    return `<span class="show-eyebrow">${escapeText(item.category)}</span><h2>${escapeText(item.title)}</h2><p class="tech-stack-label">${escapeText(item.technologies)}</p><p>${escapeText(item.role)}</p><div class="tech-stack-example"><span>EXEMPLO CONCRETO</span><p>${escapeText(item.example)}</p></div><details class="tech-deep-dive"><summary>Explorar implementação e limites</summary><dl>${item.details.map(([key, value]) => `<div><dt>${escapeText(key)}</dt><dd>${escapeText(value)}</dd></div>`).join("")}</dl></details>${source(escapeText(item.source))}`;
+  }
+  function technologiesScene() {
+    return `<div class="tech-stack-list"><span class="show-eyebrow">DEPENDÊNCIAS DECLARADAS NO PROJETO</span><div role="group" aria-label="Áreas de implementação">${technologies.map((item, index) => `<button type="button" data-tech-stack="${index}" aria-controls="tech-stack-detail" aria-pressed="${state.stack === index}"><span>0${index + 1}</span><strong>${escapeText(item.label)}</strong><i aria-hidden="true">→</i></button>`).join("")}</div><p class="show-context">Versões e limites lidos dos manifests e do código. Não é um inventário de serviços em execução nem uma comparação medida entre alternativas.</p></div><div id="tech-stack-detail" class="tech-detail" aria-live="polite" aria-atomic="true">${stackDetail()}</div>`;
   }
   const phases = [
     {
@@ -190,14 +205,14 @@ window.BluTechnical = (() => {
   }
   const proofs = [
     {
-      label: "Publicação interrompida",
-      kind: "ETL / INTEGRAÇÃO",
-      title: "A entrega válida não desaparece.",
-      failure: "Falha na construção ou na troca da entrega.",
-      contract: "Conservar ou repor a entrega anterior.",
-      tests: "tests/test_local_source.py",
+      label: "Números na tradução",
+      kind: "TRADUÇÃO / MODELOS LOCAIS",
+      title: "Uma tradução não pode alterar os números.",
+      failure: "O modelo altera uma hora ou um valor monetário.",
+      contract: "Preservar os valores numéricos ou reportar falha.",
+      tests: "translations/test_worker.py",
       limit:
-        "Cenários com falhas simuladas e diretórios temporários; não executam a publicação real durante esta apresentação.",
+        "O worker é testado com modelo simulado; preservar números não demonstra fluência ou adequação linguística.",
     },
     {
       label: "Escrita desatualizada",
@@ -242,16 +257,27 @@ window.BluTechnical = (() => {
       render: requirementsScene,
     },
     {
-      label: "Arquitetura e tecnologias",
+      label: "Arquitetura",
       className: "tech-architecture-scene",
       heading:
         "Peças com responsabilidades.<br><em>Ligações com significado.</em>",
       eyebrow: "DO DESENHO À IMPLEMENTAÇÃO",
       intro:
-        "Selecione uma camada para revelar o seu papel, as tecnologias e a fronteira que protege.",
+        "Selecione uma camada para revelar responsabilidades e fronteiras. As tecnologias são exploradas no capítulo seguinte.",
       note: "SageMaker é o ambiente de execução; não demonstra treino de um modelo próprio.",
-      next: "Seguir um dado",
+      next: "Explorar as tecnologias",
       render: architectureScene,
+    },
+    {
+      label: "Tecnologias",
+      className: "tech-stack-scene",
+      heading: "O que foi utilizado.<br><em>E como as peças comunicam.</em>",
+      eyebrow: "DEPENDÊNCIAS, IMPLEMENTAÇÃO E AMBIENTE",
+      intro:
+        "Explore as áreas técnicas e abra os detalhes de implementação. O que está por confirmar fica explícito, para complementar com a informação da equipa.",
+      note: "Declarações do projeto e detalhes verificáveis; sem presumir resultados ou decisões históricas.",
+      next: "Seguir um dado",
+      render: technologiesScene,
     },
     {
       label: "Dados e processos",
@@ -361,7 +387,7 @@ window.BluTechnical = (() => {
   }
   function handleClick(event) {
     const button = event.target.closest(
-      "[data-tech-requirement], [data-tech-node], [data-tech-phase], [data-tech-mechanism], [data-tech-proof], #tech-advance, #tech-failure",
+      "[data-tech-requirement], [data-tech-node], [data-tech-stack], [data-tech-phase], [data-tech-mechanism], [data-tech-proof], #tech-advance, #tech-failure",
     );
     if (!button) return false;
     const data = button.dataset;
@@ -375,6 +401,11 @@ window.BluTechnical = (() => {
       selected("node", "techNode", state.node);
       refresh("#tech-node-detail", nodeDetail());
       drawWires();
+    }
+    if (data.techStack !== undefined) {
+      state.stack = Number(data.techStack);
+      selected("stack", "techStack", state.stack);
+      refresh("#tech-stack-detail", stackDetail());
     }
     if (data.techPhase !== undefined) {
       state.phase = Number(data.techPhase);
