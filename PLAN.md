@@ -574,3 +574,19 @@ Inspeção visual das três cenas e do mapa móvel concluída. JS/Python, Markdo
 estrutura e `git diff --check` aprovados. Portal e Streamlit mantêm os mesmos
 processos e HTTP 200; não houve build, restart ou alterações aos seus ficheiros.
 O acesso autenticado pelo proxy AWS real não foi validado pelo navegador local.
+
+## Continuação da apresentação — 2026-10-18
+
+- [x] Alargar o percurso de três para oito capítulos com dados, colaboração,
+  entrega, arquitetura e encerramento.
+- [x] Ligar as escolhas ao roteiro, à pré-visualização e ao resumo final.
+- [x] Configurar o CTA final com o domínio do Observatório enviado pelo utilizador.
+- [x] Validar o percurso completo, responsividade e isolamento do portal AWS.
+
+Validação: oito capítulos aprovados em 320/768/1440/2560 px, incluindo
+fluxo de dados, pedido bloqueado sem alteração, ajuste permitido, comparação
+de exemplos de versões, arquitetura e resumo final. O CTA final corresponde
+exatamente ao URL indicado e abre um novo separador com `noopener`. Sem
+visitar o destino real, chamadas a APIs, escrita no navegador ou erros JS.
+Inspeção visual das novas cenas concluída. Sintaxe JS, documentação, Markdown
+e `git diff --check` aprovados; serviços e ficheiros do portal intactos.

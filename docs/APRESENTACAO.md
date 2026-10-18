@@ -2,8 +2,8 @@
 
 Proposta de narrativa e guião para uma apresentação interativa.
 Preparado em 18 de outubro de 2026, no branch `apresentacao-interativa`.
-O guião completo descreve a proposta de apresentação. Um primeiro protótipo
-independente de três cenas está implementado em [presentation/](../presentation/README.md),
+O guião completo descreve a proposta de apresentação. Um protótipo
+independente de oito cenas está implementado em [presentation/](../presentation/README.md),
 com exemplos fictícios, sem integração com o portal em execução.
 
 ## 1. A ideia central
@@ -76,9 +76,9 @@ internet; o funcionamento completo do portal exige os seus serviços e dados.
 | Capítulo | Tempo | Pergunta que orienta a cena | O que mostrar | Mensagem a deixar |
 | --- | --- | --- | --- | --- |
 | 1. O pedido | 1 min | O que torna esta viagem particular? | Um cartão com o cliente fictício e três necessidades | A personalização começa com informação estruturada |
-| 2. O conhecimento | 1 min 30 s | Como tornam os dados utilizáveis? | Fontes → validação → catálogo publicado | A qualidade da proposta começa na qualidade das fontes |
-| 3. O território | 1 min 30 s | Que oferta conhecemos e com que confiança? | Observatório, mapa, filtros e evidência | Análise e contexto apoiam a escolha |
-| 4. A proposta | 3 min | Como passamos do pedido ao itinerário? | Briefing, geração, dias, regras e pendências | A proposta respeita critérios e continua editável |
+| 2. O território | 1 min 30 s | Que oferta conhecemos e com que confiança? | Observatório, mapa, filtros e evidência | Análise e contexto apoiam a escolha |
+| 3. A proposta | 3 min | Como passamos do pedido ao itinerário? | Briefing, geração, dias, regras e pendências | A proposta respeita critérios e continua editável |
+| 4. O conhecimento | 1 min 30 s | Como tornam os dados utilizáveis? | Fontes → validação → catálogo publicado | A qualidade da proposta começa na qualidade das fontes |
 | 5. A colaboração | 1 min 30 s | Como ajuda o assistente? | Uma alteração explícita e uma atividade protegida | A assistência trabalha dentro de contratos e limites |
 | 6. A entrega | 1 min 30 s | O que foi guardado e o que é entregue? | Versões, PDF e opção TXT/Canva | A entrega corresponde a uma versão identificável |
 | 7. O sistema | 1 min | Como se ligam as peças? | Esquema de arquitetura com os fluxos destacados | Cada componente tem uma responsabilidade definida |
@@ -124,7 +124,53 @@ sustentada; uma exclusão impede uma escolha.
 Pergunta para envolver o público: **«Que informação ainda precisamos de confirmar
 antes de propor esta experiência?»**
 
-### Capítulo 2 — Dos ficheiros ao conhecimento utilizável
+### Capítulo 2 — Explorar o território
+
+No Catálogo, abrir o Observatório interativo e seguir um percurso curto:
+mapa → destino → oferta → ficha → informação de qualidade.
+
+As seis áreas disponíveis são Panorama, Explorar oferta, Destinos, Preços,
+Histórico e Qualidade. Mostrar apenas duas ou três durante a narrativa; deixar
+as restantes para exploração.
+
+Pontos de valor:
+
+- Conhecer a distribuição da oferta por destino e tipo.
+- Abrir um ponto do mapa e chegar a um registo identificável.
+- Comparar ofertas mantendo unidades, moedas e condições explícitas.
+- Distinguir informação conhecida, pendente, histórica ou expirada.
+
+Usar indicadores da entrega consultada no dia e registar a data da captura.
+O número de registos mede cobertura do catálogo, não reservas ou desempenho
+comercial. O Observatório nativo lê a entrega publicada; a aplicação analítica
+Streamlit original continua separada.
+
+### Capítulo 3 — Construir uma proposta que se pode rever
+
+Preencher apenas o essencial do briefing e avançar para a proposta. Mostrar um
+dia em detalhe: atividades, horários propostos, deslocações, custos conhecidos
+e verificações ainda necessárias.
+
+```mermaid
+flowchart LR
+    B[Briefing] --> E[Oferta aprovada e publicada]
+    E --> R[Regras de elegibilidade e curadoria]
+    R --> I[Proposta por dias]
+    I --> H[Revisão pelo curador]
+    H --> V[Versão guardada]
+    H -->|Ajustes| R
+```
+
+Escolher **um exemplo de decisão explicável**: uma oferta incluída por adequação
+aos interesses, uma opção excluída ou uma lacuna por falta de informação.
+Apresentar o que efetivamente acontecer no caso preparado.
+
+Mostrar uma pendência como parte do trabalho operacional. A proposta não confirma
+automaticamente preço, disponibilidade ou condições do fornecedor. Horários e
+percursos precisam de revisão. Totais conhecidos e pendências devem aparecer
+separados, conservando as moedas.
+
+### Capítulo 4 — Dos ficheiros ao conhecimento utilizável
 
 Mostrar uma fonte de cada tipo, sem percorrer pastas ou folhas extensas:
 Excel, suplemento estruturado e PDF histórico. Explicar que o ETL organiza e
@@ -150,52 +196,6 @@ Três aspetos a tornar visíveis:
 **Exemplo visual:** acompanhar um registo desde a fonte até à ficha consultada.
 Se houver uma divergência real no exemplo preparado, mostrar como é assinalada,
 sem inventar um conflito apenas para preencher a cena.
-
-### Capítulo 3 — Explorar o território
-
-No Catálogo, abrir o Observatório interativo e seguir um percurso curto:
-mapa → destino → oferta → ficha → informação de qualidade.
-
-As seis áreas disponíveis são Panorama, Explorar oferta, Destinos, Preços,
-Histórico e Qualidade. Mostrar apenas duas ou três durante a narrativa; deixar
-as restantes para exploração.
-
-Pontos de valor:
-
-- Conhecer a distribuição da oferta por destino e tipo.
-- Abrir um ponto do mapa e chegar a um registo identificável.
-- Comparar ofertas mantendo unidades, moedas e condições explícitas.
-- Distinguir informação conhecida, pendente, histórica ou expirada.
-
-Usar indicadores da entrega consultada no dia e registar a data da captura.
-O número de registos mede cobertura do catálogo, não reservas ou desempenho
-comercial. O Observatório nativo lê a entrega publicada; a aplicação analítica
-Streamlit original continua separada.
-
-### Capítulo 4 — Construir uma proposta que se pode rever
-
-Preencher apenas o essencial do briefing e avançar para a proposta. Mostrar um
-dia em detalhe: atividades, horários propostos, deslocações, custos conhecidos
-e verificações ainda necessárias.
-
-```mermaid
-flowchart LR
-    B[Briefing] --> E[Oferta aprovada e publicada]
-    E --> R[Regras de elegibilidade e curadoria]
-    R --> I[Proposta por dias]
-    I --> H[Revisão pelo curador]
-    H --> V[Versão guardada]
-    H -->|Ajustes| R
-```
-
-Escolher **um exemplo de decisão explicável**: uma oferta incluída por adequação
-aos interesses, uma opção excluída ou uma lacuna por falta de informação.
-Apresentar o que efetivamente acontecer no caso preparado.
-
-Mostrar uma pendência como parte do trabalho operacional. A proposta não confirma
-automaticamente preço, disponibilidade ou condições do fornecedor. Horários e
-percursos precisam de revisão. Totais conhecidos e pendências devem aparecer
-separados, conservando as moedas.
 
 ### Capítulo 5 — O papel da IA e da revisão humana
 
@@ -326,10 +326,12 @@ um resultado simulado sem o dizer.
 
 ## 8. Próximo passo para construir a apresentação
 
-O protótipo de três capítulos — **o pedido, o território e a proposta** — já
-está implementado como aplicação estática independente. O próximo passo é
-validar o ritmo e a legibilidade com alguém que não conhece o sistema. Depois,
-acrescentar entrega, arquitetura e aprofundamentos.
+O protótipo independente inclui oito capítulos: pedido, território, proposta,
+dados, colaboração, entrega, arquitetura e próximo passo. O próximo passo é
+validar o ritmo e a legibilidade com alguém que não conhece o sistema, e rever
+a narrativa com base nesse ensaio. O encerramento permite abrir o
+[Observatório real](https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/catalog)
+num novo separador. O acesso real requer a sessão SageMaker do visitante.
 
 O protótipo deve ligar uma necessidade do cliente a uma escolha observável no
 roteiro. Esse encadeamento será o fio condutor de toda a apresentação.

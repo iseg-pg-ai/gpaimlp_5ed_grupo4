@@ -574,3 +574,12 @@ Não integra rotas Next.js, APIs, dados operacionais nem o armazenamento do
 portal. As três cenas usam exemplos fictícios e um mapa esquemático. O estado
 é apenas em memória. Os serviços existentes nas portas 3001 e 8501 não são
 reiniciados nem recompilados para executar esta apresentação.
+
+## Oito capítulos e destino explícito do Observatório — 2026-10-18
+
+A apresentação independente passa a oito capítulos e mantém os exemplos
+preparados separados de dados operacionais. As escolhas em memória acompanham
+o roteiro, a pré-visualização ilustrativa e o resumo final. O CTA do último
+capítulo usa o endereço exato fornecido pelo utilizador, centralizado em
+`observatoryUrl`, sem inferir o domínio da apresentação. Abre um separador
+separado; os testes verificam o destino sem contactar o portal real.

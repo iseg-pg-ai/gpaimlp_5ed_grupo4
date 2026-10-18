@@ -99,6 +99,92 @@ try {
     await page
       .getByRole("heading", { name: "Uma experiência por escolher" })
       .waitFor();
+    await page.getByRole("button", { name: "Seguir a origem" }).click();
+    await page
+      .getByRole("button", { name: "03 ENTREGA / WAREHOUSE Publicação" })
+      .click();
+    await page
+      .getByRole("heading", { name: "Uma entrega coerente para consultar." })
+      .waitFor();
+    await check();
+    await page.getByRole("button", { name: "Conhecer a colaboração" }).click();
+    await page
+      .getByRole("button", { name: "Remover uma atividade protegida" })
+      .click();
+    await page
+      .getByRole("heading", { name: "A atividade protegida mantém-se." })
+      .waitFor();
+    await page.getByRole("button", { name: "03 A proposta" }).click();
+    await page
+      .getByRole("heading", { name: "Uma experiência por escolher" })
+      .waitFor();
+    await page.getByRole("button", { name: "05 A colaboração" }).click();
+    await page
+      .getByRole("button", { name: "Reservar uma tarde livre" })
+      .click();
+    await page
+      .getByRole("heading", { name: "Uma tarde livre no dia 2." })
+      .waitFor();
+    await check();
+    await page.getByRole("button", { name: "Preparar a entrega" }).click();
+    await page
+      .locator("#document-preview")
+      .getByText("Uma tarde só sua · tempo livre reservado")
+      .waitFor();
+    await page
+      .locator("#document-preview")
+      .getByText("Experiência gastronómica", { exact: false })
+      .waitFor();
+    await page.getByRole("button", { name: "01 / Exemplo inicial" }).click();
+    await page
+      .locator("#document-preview")
+      .getByText("Visita cultural", { exact: false })
+      .waitFor();
+    assert.equal(
+      await page
+        .locator("#document-preview")
+        .getByText("Uma tarde só sua · tempo livre reservado")
+        .count(),
+      0,
+    );
+    await page.getByRole("button", { name: "02 / As suas escolhas" }).click();
+    await page
+      .locator("#document-preview")
+      .getByText("Uma tarde só sua · tempo livre reservado")
+      .waitFor();
+    await check();
+    await page
+      .getByRole("button", { name: "Ver o sistema por dentro" })
+      .click();
+    await page
+      .getByRole("button", { name: "ASSISTÊNCIA Agente opcional" })
+      .click();
+    await page
+      .locator("#layer-detail")
+      .getByRole("heading", { name: "Agente opcional" })
+      .waitFor();
+    await check();
+    await page.getByRole("button", { name: "Dar o próximo passo" }).click();
+    const finalLink = page.getByRole("link", {
+      name: "Explorar o Observatório real",
+    });
+    assert.equal(
+      await finalLink.getAttribute("href"),
+      "https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/catalog",
+    );
+    assert.equal(await finalLink.getAttribute("target"), "_blank");
+    assert.ok((await finalLink.getAttribute("rel")).includes("noopener"));
+    await page
+      .getByText("Uma tarde livre reservada", { exact: true })
+      .waitFor();
+    await page.keyboard.press("ArrowRight");
+    await finalLink.waitFor();
+    await check();
+    if (width === 320)
+      await page.screenshot({
+        path: "/tmp/blu-presentation-final-mobile.png",
+        fullPage: true,
+      });
     await page.getByRole("button", { name: "Recomeçar" }).click();
     assert.equal(
       await page
@@ -145,6 +231,20 @@ try {
     path: "/tmp/blu-presentation-plan.png",
     fullPage: true,
   });
+  for (const [chapter, file] of [
+    ["04 Os dados", "data"],
+    ["05 A colaboração", "collaboration"],
+    ["06 A entrega", "delivery"],
+    ["07 Por dentro", "architecture"],
+    ["08 O próximo passo", "final"],
+  ]) {
+    await page.getByRole("button", { name: chapter }).click();
+    await page.waitForTimeout(800);
+    await page.screenshot({
+      path: `/tmp/blu-presentation-${file}.png`,
+      fullPage: true,
+    });
+  }
   for (const address of [
     origin.replace(/\/$/, ""),
     new URL("/", origin).href,
