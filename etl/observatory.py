@@ -10,9 +10,9 @@ from pathlib import Path
 
 CONFIG = Path(__file__).resolve().parents[1] / 'config' / 'observatory.json'
 CATALOG = {
-    'atracoes': ('id', 'cidade', 'nome_da_atracao', {'Duração': 'tempo_medio_de_visita', 'Horário': 'horario', 'Preço': 'preco_da_atracao', 'Condições': 'necessidade_de_reserva', 'Acessibilidade': 'acessibilidade_nivel_de_confirmacao'}),
-    'restaurantes': ('id_blu', 'cidade', 'estabelecimento', {'Duração': 'duracao_blu_estimativa', 'Horário': 'horario_base_reconfirmar', 'Preço': 'preco_nao_cotacao', 'Condições': 'reservas_condicoes_base', 'Acessibilidade': 'acessibilidade_nivel_de_confirmacao'}),
-    'experiencias': ('nome_da_experiencia', 'localizacao', 'nome_da_experiencia', {'Duração': 'duracao', 'Horário': 'horario', 'Preço': 'preco', 'Condições': 'modalidade', 'Acessibilidade': 'acessibilidade_nivel_de_confirmacao'}),
+    'atracoes': ('id', 'cidade', 'nome_da_atracao', {'Morada': 'morada', 'Contactos': 'contactos', 'Duração': 'tempo_medio_de_visita', 'Horário': 'horario', 'Preço': 'preco_da_atracao', 'Condições': 'necessidade_de_reserva', 'Acessibilidade': 'acessibilidade_nivel_de_confirmacao'}),
+    'restaurantes': ('id_blu', 'cidade', 'estabelecimento', {'Morada': 'morada', 'Contactos': 'contactos', 'Duração': 'duracao_blu_estimativa', 'Horário': 'horario_base_reconfirmar', 'Preço': 'preco_nao_cotacao', 'Condições': 'reservas_condicoes_base', 'Acessibilidade': 'acessibilidade_nivel_de_confirmacao'}),
+    'experiencias': ('nome_da_experiencia', 'localizacao', 'nome_da_experiencia', {'Morada': 'morada', 'Contactos': 'contactos', 'Duração': 'duracao', 'Horário': 'horario', 'Preço': 'preco', 'Condições': 'modalidade', 'Acessibilidade': 'acessibilidade_nivel_de_confirmacao'}),
 }
 TYPES = {'atracoes': 'Atração', 'restaurantes': 'Restaurante', 'experiencias': 'Experiência'}
 
@@ -95,7 +95,8 @@ def evidence(row: dict, field: str, today: date) -> dict:
     known = value is not None and bool(str(value).strip()) and token(value) not in ('por confirmar', 'a confirmar', 'desconhecido', 'nao informado', 'n/a', 'n/d', 'nan')
     if isinstance(value, float) and not math.isfinite(value):
         known = False
-    matches = bound is not None and known and str(bound) == str(value)
+    same = bound == value if type(bound) in (int, float) and type(value) in (int, float) else str(bound) == str(value)
+    matches = bound is not None and known and same
     complete = bool(source and checked and matches)
     state = declared if declared != 'confirmado' or complete else 'pendente'
     temporal = temporal_state(start, end, today)

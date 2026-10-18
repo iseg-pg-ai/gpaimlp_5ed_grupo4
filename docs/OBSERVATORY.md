@@ -61,15 +61,18 @@ Exemplo para o preço numérico `preco_referencia_eur` na folha de preços:
 | `preco_referencia_eur_valor_confirmado` | `25` |
 
 Não inserir este exemplo nos dados reais. A confirmação exige fonte, data e
-correspondência exata com o valor. Nos preços numéricos, usar a mesma
-representação numérica; zero explícito pode ser confirmado, mas uma ausência
-nunca é convertida em zero.
+correspondência exata com o valor. Nos preços numéricos, valores equivalentes como `5` e `5.0`
+conservam a confirmação entre Excel e SQLite; zero explícito pode ser confirmado,
+mas uma ausência nunca é convertida em zero.
 
 As confirmações incompletas ficam pendentes, conservando o estado declarado.
 Uma janela temporal requer ambos os limites; sem eles o prazo é desconhecido.
 Datas inválidas, cronologia invertida ou verificação futura impedem a publicação.
 Uma data de pesquisa, o preenchimento do campo, a aprovação de um registo no
 portal ou `_pricing.status` não substituem este conjunto de evidências.
+
+Morada (`morada`) e contactos públicos (`contactos`) são avaliados em todas as
+entidades, além dos campos abaixo.
 
 Campos avaliados:
 
@@ -125,3 +128,20 @@ PYTHONPATH=src .venv/bin/python -B -m unittest tests.test_observatory tests.test
 Os testes completos incluem a construção de uma entrega temporária e os modelos
 publicados. Fotografias e testes de interface requerem o grupo `dashboard`; os
 contratos ETL não dependem de Streamlit nem de serviços AWS.
+
+## Enriquecimento por revisão do catálogo
+
+O `sourceData.fieldEvidence` do contrato existente do catálogo conserva os
+metadados por nome de campo. A gravação normal mantém essa evidência; o ETL
+exporta os sufixos reconhecidos e revalida datas e correspondência com o valor.
+`etl.enrichment.apply_verified` preenche apenas lacunas de registos aprovados,
+exige prova para cada valor e cria novas revisões numa transação. Não altera
+preços estruturados existentes, identidades, estados ou perfis de compatibilidade.
+
+`sourceData.priceReferences` permite completar preços numéricos de uma atração
+com ID e nome exatos, valores, condições e evidência explícita. Só revisões
+aprovadas podem fornecer esses dados ao ETL; referências ou valores já
+preenchidos não são substituídos. A origem permanece no catálogo operacional,
+sem reescrever o Excel ou introduzir persistência adicional.
+
+Ver [o preenchimento verificado e as limitações](DATA_ENRICHMENT.md).

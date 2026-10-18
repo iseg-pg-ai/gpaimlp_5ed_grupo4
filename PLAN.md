@@ -396,3 +396,24 @@ em armazenamento temporário, seis áreas verificadas em AppTest e navegador
 local com seleção, grupos, comparação, destino Lisboa, fotografia, apresentação
 e vista móvel sem transbordo. Markdown e ligações locais sem erros. Fontes e
 warehouse reais inalterados; sem chamadas pagas ou publicação cloud.
+
+## Preenchimento verificado do warehouse — 2026-10-16
+
+- [x] Inventariar lacunas e procurar valores em fontes oficiais.
+- [x] Distinguir modalidades e tarifas públicas de valores comerciais BLU.
+- [x] Preparar e validar o lote em cópia isolada antes de alterar o catálogo.
+- [x] Preencher 45 valores em 13 registos e três preços numéricos por referência exata.
+- [x] Criar novas revisões com evidência e preservar todas as revisões anteriores.
+- [x] Publicar pelo ETL, sem alterar os Excel/PDF originais.
+- [x] Registar fontes, dados não inferidos e limitações no relatório de enriquecimento.
+
+Ver [dados acrescentados e fontes oficiais](docs/DATA_ENRICHMENT.md). A confirmação
+de valores públicos não implica reserva, disponibilidade ou tarifa negociada.
+Identificações ambíguas, descontos e preços sem fonte continuam pendentes.
+
+Validação: bateria Python com 76 testes aprovados; 34 contratos revalidados
+após os reforços de preservação de zeros e preços divergentes. Integração
+catálogo/ETL e seis áreas em AppTest aprovadas. Navegador real confirmou
+morada, tarifa, evidência e apresentação móvel. ETL publicado com zero erros;
+13 revisões correntes correspondem à entrega e os snapshots anteriores foram
+comparados sem alterações. Os Excel/PDF e as propostas históricas ficaram intactos.

@@ -62,6 +62,11 @@ class ObservatoryTest(unittest.TestCase):
             row.update(preco=value, preco_valor_confirmado=value)
             self.assertEqual(evidence(row, 'preco', TODAY)['confirmation'], 'pendente')
 
+    def test_excel_and_sqlite_numeric_representation_preserves_confirmation(self):
+        row = self.confirmed()
+        row.update(preco=5.0, preco_valor_confirmado=5)
+        self.assertTrue(evidence(row, 'preco', TODAY)['commercially_usable'])
+
     def test_known_zero_can_be_explicitly_confirmed(self):
         row = self.confirmed()
         row.update(preco=0, preco_valor_confirmado=0)
@@ -99,7 +104,7 @@ class ObservatoryTest(unittest.TestCase):
         self.assertEqual(catalog['entity_key'], 'Atração:A1')
         self.assertEqual(catalog['catalog_id'], 'cat-a1')
         self.assertEqual(catalog['raw_location'], 'Lisboa — Chiado')
-        self.assertEqual(len(result['model_field_evidence']), 6)
+        self.assertEqual(len(result['model_field_evidence']), 8)
         self.assertTrue(all(r['confirmation'] == 'pendente' for r in result['model_field_evidence']))
 
 

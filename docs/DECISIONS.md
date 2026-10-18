@@ -457,3 +457,18 @@ Evidência: 66 testes Python aprovados, incluindo entrega ETL temporária,
 normalização, evidências inválidas, expiração e fotografias; integração catálogo/ETL
 aprovada. Navegador local e AppTest nas seis áreas aprovados. `git diff` confirma
 que fontes e warehouse reais não foram alterados.
+
+## Enriquecimento de dados reais — 2026-10-16
+
+O preenchimento usa exclusivamente novas revisões no catálogo operacional e
+publicação pelo ETL. Os Excel/PDF foram preservados. O contrato `sourceData`,
+já existente, passa a persistir evidência por campo e referências públicas
+exatas a lacunas da tabela de preços. O ETL mantém valores conhecidos e regista
+preenchimentos em `verified_enrichment_changes`.
+
+O lote adiciona 45 valores em 13 registos e três valores numéricos na referência
+do Jardim Botânico de Lisboa. A validação ocorreu primeiro numa cópia. Históricos
+aprovados preservados; só a revisão corrente é incrementada. Prazos explícitos
+aplicados exclusivamente aos preços abrangidos pela fonte. Não se atribuíram
+datas a propostas históricas, tarifas de aquisição ou compatibilidades inferidas.
+Fontes e limites no [relatório de enriquecimento](DATA_ENRICHMENT.md).

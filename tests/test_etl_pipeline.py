@@ -34,4 +34,4 @@ class FullLocalEtlTest(unittest.TestCase):
             catalog_count = sum(manifest['tables'][name] for name in ('atracoes', 'restaurantes', 'experiencias'))
             self.assertEqual(connection.execute('SELECT COUNT(*) FROM model_observatory_catalog').fetchone()[0], catalog_count)
             self.assertEqual(connection.execute('SELECT COUNT(*) FROM model_observatory_prices').fetchone()[0], manifest['tables']['precos'])
-            self.assertEqual(connection.execute('SELECT COUNT(*) FROM model_field_evidence').fetchone()[0], catalog_count * 5 + manifest['tables']['precos'])
+            self.assertEqual(connection.execute('SELECT COUNT(*) FROM model_field_evidence').fetchone()[0], catalog_count * 7 + manifest['tables']['precos'])

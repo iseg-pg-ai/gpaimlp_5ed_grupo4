@@ -55,20 +55,22 @@ def load_json(name: str) -> dict:
 
 
 def catalog_data() -> pd.DataFrame:
-    frame = query("""
+    columns = query('PRAGMA table_info(experiencias)').name.tolist()
+    coordinates = ", ".join(field if field in columns else "NULL" for field in ("latitude", "longitude"))
+    frame = query(f"""
         SELECT id AS Identificador, 'Atração' AS Tipo, nome_da_atracao AS Nome,
         cidade AS Localização, categoria AS Categoria, descricao_curada AS Descrição,
         latitude, longitude, horario AS Horário, preco_da_atracao AS Preço,
-        site_fonte AS Fonte, tempo_medio_de_visita AS Duração,
+        site_fonte AS Fonte, morada AS Morada, contactos AS Contactos, tempo_medio_de_visita AS Duração,
         necessidade_de_reserva AS Condições, acessibilidade_nivel_de_confirmacao AS Acessibilidade FROM atracoes
         UNION ALL
         SELECT id_blu, 'Restaurante', estabelecimento, cidade, tipo_gastronomia_base,
         observacoes_da_base, latitude, longitude, horario_base_reconfirmar,
-        preco_nao_cotacao, fonte_indicada_na_base, duracao_blu_estimativa,
+        preco_nao_cotacao, fonte_indicada_na_base, morada, contactos, duracao_blu_estimativa,
         reservas_condicoes_base, acessibilidade_nivel_de_confirmacao FROM restaurantes
         UNION ALL
         SELECT nome_da_experiencia, 'Experiência', nome_da_experiencia, localizacao,
-        categoria, descricao, NULL, NULL, horario, preco, site_fonte, duracao,
+        categoria, descricao, {coordinates}, horario, preco, site_fonte, morada, contactos, duracao,
         modalidade, acessibilidade_nivel_de_confirmacao FROM experiencias
     """)
     frame["Chave"] = frame.Tipo + ":" + frame.Identificador.astype(str)
@@ -174,8 +176,8 @@ def located(frame: pd.DataFrame) -> pd.DataFrame:
 
 def map_options(*, key: str) -> tuple[list[str], bool, bool]:
     with st.expander("Camadas e apresentação do mapa"):
-        layers = st.multiselect("Camadas do mapa", ["Atração", "Restaurante"],
-                                default=["Atração", "Restaurante"], key=f"{key}_layers")
+        layers = st.multiselect("Camadas do mapa", ["Atração", "Restaurante", "Experiência"],
+                                default=["Atração", "Restaurante", "Experiência"], key=f"{key}_layers")
         labels = st.checkbox("Mostrar nomes dos lugares", value=True, key=f"{key}_labels")
         clustered = st.checkbox("Agrupar por proximidade (~10 km)", key=f"{key}_cluster")
     return layers, labels, clustered
@@ -278,7 +280,7 @@ def historical_mentions(row: pd.Series) -> pd.DataFrame:
 def record_detail(row: pd.Series) -> None:
     with st.container(border=True):
         st.subheader(str(row.Nome))
-        for field in ("Tipo", "Destino", "Âmbito geográfico", "Localização", "Categoria", "Descrição", "Duração", "Horário", "Preço", "Condições", "Acessibilidade", "Fonte"):
+        for field in ("Tipo", "Destino", "Âmbito geográfico", "Localização", "Categoria", "Morada", "Contactos", "Descrição", "Duração", "Horário", "Preço", "Condições", "Acessibilidade", "Fonte"):
             st.text(f"{field}: {display_value(row[field])}")
         source = display_value(row.Fonte).strip()
         try:
@@ -328,7 +330,7 @@ def comparison(frame: pd.DataFrame) -> None:
     if len(chosen) < 2:
         st.caption("Selecione pelo menos duas opções da seleção atual.")
         return
-    fields = ["Tipo", "Destino", "Localização", "Categoria", "Duração", "Horário", "Preço", "Condições", "Acessibilidade", "Fonte"]
+    fields = ["Tipo", "Destino", "Localização", "Categoria", "Morada", "Contactos", "Duração", "Horário", "Preço", "Condições", "Acessibilidade", "Fonte"]
     table = indexed.loc[chosen, fields].map(display_value).T
     table.columns = [f"{indexed.at[value, 'Nome']} · {indexed.at[value, 'Tipo']}" for value in chosen]
     st.dataframe(table, width="stretch")
@@ -452,12 +454,18 @@ def explore(frame: pd.DataFrame) -> None:
 
 def pricing() -> None:
     heading("04 — REFERÊNCIAS", "Cada preço tem um contexto.", "Compare apenas referências com a mesma categoria, unidade e natureza comercial declarada.")
-    frame = query("SELECT id AS Identificador, categoria AS Categoria, nome_modalidade AS Modalidade, local AS Local, unidade AS Unidade, preco_referencia_eur AS 'Referência EUR', preco_publico_vs_custo AS Natureza, estado AS Estado, fonte AS Fonte, data_de_verificacao AS Verificação FROM precos")
+    price_columns = query('PRAGMA table_info(precos)').name.tolist()
+    conditions = "condicoes_verificadas" if "condicoes_verificadas" in price_columns else "NULL"
+    frame = query(f"SELECT id AS Identificador, categoria AS Categoria, nome_modalidade AS Modalidade, local AS Local, unidade AS Unidade, preco_referencia_eur AS 'Referência EUR', adulto_eur AS 'Adulto EUR', senior_eur AS 'Sénior EUR', crianca_eur AS 'Criança EUR', {conditions} AS 'Condições verificadas', preco_publico_vs_custo AS Natureza, estado AS 'Estado de origem', fonte AS Fonte, data_de_verificacao AS Verificação FROM precos")
     metrics([("REFERÊNCIAS", len(frame), "registos de preço; não ofertas únicas"),
              ("COM VALOR", int(frame['Referência EUR'].notna().sum()), "valores de referência em EUR"),
              ("SEM VALOR", int(frame['Referência EUR'].isna().sum()), "desconhecido não significa zero")])
     units = model_data("model_observatory_prices").rename(columns={"record_id": "Identificador", "normalized_unit": "Unidade normalizada", "unit_rule": "Regra de unidade", "destination": "Destino"})
     frame = frame.merge(units[["Identificador", "Unidade normalizada", "Regra de unidade", "Destino"]], on="Identificador", how="left", validate="one_to_one")
+    proofs = model_data("model_field_evidence")
+    proofs = proofs[proofs.source_table == "precos"][["record_id", "confirmation", "evidence_source", "verified_on"]]
+    proofs = proofs.rename(columns={"record_id": "Identificador", "confirmation": "Confirmação de preço", "evidence_source": "Fonte da confirmação", "verified_on": "Confirmação verificada em"})
+    frame = frame.merge(proofs, on="Identificador", how="left", validate="one_to_one")
     a, b, c = st.columns(3)
     category = a.selectbox("Categoria", sorted(frame.Categoria.dropna().unique()))
     subset = frame[frame.Categoria == category]
