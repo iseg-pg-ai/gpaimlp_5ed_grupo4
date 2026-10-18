@@ -590,3 +590,19 @@ exatamente ao URL indicado e abre um novo separador com `noopener`. Sem
 visitar o destino real, chamadas a APIs, escrita no navegador ou erros JS.
 Inspeção visual das novas cenas concluída. Sintaxe JS, documentação, Markdown
 e `git diff --check` aprovados; serviços e ficheiros do portal intactos.
+
+## Guião técnico em três partes — 2026-10-18
+
+- [x] Reorganizar `docs/APRESENTACAO.md` em fundamentos técnicos, experiência
+  interativa e demonstração do portal real.
+- [x] Detalhar requisitos, arquitetura, tecnologias, dados/processos, IA e
+  validação, com referências de código e cinco cenas técnicas propostas.
+- [x] Distinguir o guião proposto da interface já implementada e evitar
+  repetição dos capítulos técnicos na transição.
+- [x] Validar Markdown, ligações e integridade documental.
+
+A implementação visual do ato técnico continua pendente neste branch.
+
+Revisão concluída em 2026-10-19: ligações locais, Markdown, estrutura do
+projeto e `git diff --check` aprovados. Quatro esquemas Mermaid incluídos.
+Alteração apenas documental; a abertura técnica ainda está proposta no guião.
