@@ -460,4 +460,13 @@ referências e 2021 campos de evidência. Sem chamadas a IA ou publicação.
 - [x] Dimensionar pontos e áreas de clique em píxeis, independentemente do zoom.
 - [x] Agrupar visualmente pontos próximos e melhorar etiquetas e informação de foco.
 - [x] Uniformizar as alturas dos painéis adjacentes e compactar espaços verticais.
-- [ ] Validar interação, dimensões em navegador, check e build.
+- [x] Validar interação, dimensões em navegador, check e build.
+
+Validação: check aprovado (97 testes, um ignorado), build aprovado e cenários
+do Observatório em 320/1440 px aprovados. As verificações medem alvos de 44 px
+antes e depois do zoom, ausência de etiquetas sobre os marcadores e diferença
+inferior a 2 px entre painéis adjacentes em ecrã largo. Inspeção visual em
+390/1440 px: painéis de 631 px em desktop, alturas adaptáveis em móvel e
+contagens de grupos com vários destinos sem atribuição ao primeiro destino.
+Tradução e falha de recuperação simuladas; dados analíticos locais só de leitura.
+Dashboard original, dados e configuração de arranque preservados.

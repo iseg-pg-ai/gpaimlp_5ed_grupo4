@@ -518,4 +518,8 @@ dashboard original e os dados reais intactos. Sem publicação ou chamadas a IA.
   com lista rolável e barras distribuídas; em móvel as alturas adaptam-se ao conteúdo.
 - Alterar apenas a versão nativa no portal; dashboard original e dados preservados.
 
-Validação registada no `PLAN.md`.
+Validação: check (97 testes, um ignorado) e build aprovados. Navegador em
+320/1440 px confirmou alvos de 44 px com zoom, etiquetas sem sobreposição e
+painéis adjacentes com diferença inferior a 2 px em desktop. Inspeção visual
+em 390/1440 px; alturas móveis adaptáveis. Grupos com destinos diferentes
+apresentam a contagem de destinos, sem adotar o nome do primeiro membro.

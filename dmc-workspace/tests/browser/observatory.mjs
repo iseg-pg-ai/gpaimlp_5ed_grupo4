@@ -23,6 +23,27 @@ try {
     const dashboard = page.getByTestId("native-observatory");
     await page.getByRole("heading", { name: titles[0], exact: true }).waitFor();
     assert.equal(await page.locator("iframe").count(), 0);
+    await page.locator(".obs-map-label").first().waitFor();
+    const overlaps = await page.locator(".obs-map-canvas > svg").evaluate((svg) => {
+      const markers = [...svg.querySelectorAll(".obs-map-dot")].map((node) =>
+        node.getBoundingClientRect(),
+      );
+      return [...svg.querySelectorAll(".obs-map-label")].some((node) => {
+        const label = node.getBoundingClientRect();
+        return markers.some((marker) => {
+          const x = marker.x + marker.width / 2,
+            y = marker.y + marker.height / 2;
+          return (
+            Math.hypot(
+              x - Math.max(label.left, Math.min(x, label.right)),
+              y - Math.max(label.top, Math.min(y, label.bottom)),
+            ) <
+            marker.width / 2
+          );
+        });
+      });
+    });
+    assert.equal(overlaps, false, "As etiquetas não podem tapar os marcadores");
     for (let i = 0; i < areas.length; i++) {
       await dashboard.getByRole("button", { name: new RegExp(`^0${i + 1} ${areas[i]}$`) }).click();
       await page.getByRole("heading", { name: titles[i], exact: true }).waitFor();
@@ -80,7 +101,7 @@ try {
     await point.press("Enter");
     await page.getByRole("region", { name: "Ficha da oferta", exact: true }).waitFor();
     await page.getByRole("button", { name: "Fechar ficha", exact: true }).click();
-    await page.getByLabel("Agrupar pontos próximos", { exact: true }).check();
+    await page.getByLabel("Agrupar próximos", { exact: true }).check();
     await page.getByRole("button", { name: "Repor mapa", exact: true }).click();
     await page.getByRole("button", { name: "01 Panorama", exact: true }).click();
     await page.screenshot({ path: `/tmp/blu-native-observatory-${width}.png` });

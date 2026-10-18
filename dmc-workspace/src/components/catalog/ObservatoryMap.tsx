@@ -16,6 +16,21 @@ function project(lon: number, lat: number) {
   ];
 }
 type Point = { key: string; members: ObservatoryRecord[]; x: number; y: number };
+function destinations(members: ObservatoryRecord[]) {
+  return [
+    ...new Set(
+      members
+        .map((record) => record.destination ?? record.location)
+        .filter((value): value is string => !!value),
+    ),
+  ];
+}
+function groupLabel(members: ObservatoryRecord[]) {
+  const places = destinations(members);
+  return places.length === 1
+    ? `${places[0]} · ${members.length} ofertas`
+    : `${members.length} ofertas · ${places.length ? `${places.length} destinos` : "destino por confirmar"}`;
+}
 export function ObservatoryMap({
   records,
   outlines,
@@ -89,11 +104,8 @@ export function ObservatoryMap({
   const occupied: { left: number; top: number; width: number; height: number }[] = [];
   const annotations = labels
     ? points.flatMap((point) => {
-        const destination = display(point.members[0].destination ?? point.members[0].location);
         const raw =
-          point.members.length > 1
-            ? `${destination} · ${point.members.length} ofertas`
-            : display(point.members[0].name);
+          point.members.length > 1 ? groupLabel(point.members) : display(point.members[0].name);
         const text = raw.length > 30 ? raw.slice(0, 29) + "…" : raw;
         const sx = (point.x - camera.x) * scale + offsetX,
           sy = (point.y - camera.y) * scale + offsetY;
@@ -112,6 +124,19 @@ export function ObservatoryMap({
             p.top >= 8 &&
             p.left + width <= size.width - 55 &&
             p.top + height <= size.height - 28 &&
+            !points.some((marker) => {
+              if (marker.key === point.key) return false;
+              const mx = (marker.x - camera.x) * scale + offsetX,
+                my = (marker.y - camera.y) * scale + offsetY;
+              const radius = marker.members.length > 1 ? 18 : 12;
+              return (
+                Math.hypot(
+                  mx - Math.max(p.left, Math.min(mx, p.left + width)),
+                  my - Math.max(p.top, Math.min(my, p.top + height)),
+                ) <
+                radius + 3
+              );
+            }) &&
             !occupied.some(
               (o) =>
                 p.left < o.left + o.width + 8 &&
@@ -166,11 +191,11 @@ export function ObservatoryMap({
                 setActive(null);
               }}
             />{" "}
-            Agrupar pontos próximos
+            Agrupar próximos
           </label>
           <label>
             <input type="checkbox" checked={labels} onChange={(e) => setLabels(e.target.checked)} />{" "}
-            Nomes dos lugares
+            Mostrar nomes
           </label>
         </div>
       </div>
@@ -211,11 +236,9 @@ export function ObservatoryMap({
             const { members, x, y, key } = point;
             const name =
               members.length > 1
-                ? `${members.length} ofertas próximas · ${display(members[0].destination ?? members[0].location)}`
+                ? groupLabel(members)
                 : `${display(members[0].name)} · ${members[0].kind}`;
-            const color = members.every((r) => r.kind === members[0].kind)
-              ? colors[members[0].kind]
-              : "#143f4b";
+            const color = members.length > 1 ? "#143f4b" : colors[members[0].kind];
             return (
               <g
                 key={key}
@@ -278,6 +301,7 @@ export function ObservatoryMap({
           {annotations.map((label) => (
             <text
               key={label.key}
+              className="obs-map-label"
               x={label.x}
               y={label.y}
               fontSize={12 * pixel}
@@ -313,7 +337,7 @@ export function ObservatoryMap({
             </strong>
             <span>
               {[...new Set(activePoint.members.map((r) => r.kind))].join(" · ")} /{" "}
-              {display(activePoint.members[0].destination ?? activePoint.members[0].location)}
+              {destinations(activePoint.members).join(" / ") || "Destino por confirmar"}
             </span>
             <small>
               {activePoint.members.length > 1
