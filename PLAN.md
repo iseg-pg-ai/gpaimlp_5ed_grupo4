@@ -544,3 +544,49 @@ interface/navegação aprovadas, temas em quatro larguras aprovados e cinco
 testes do worker de tradução aprovados com modelos simulados. Estrutura de
 344 ficheiros, Markdown e `git diff --check` aprovados. Portal e dashboard
 respondem HTTP 200. Código funcional, dados, exports e modelos preservados.
+
+## Guião de apresentação interativa — 2026-10-18
+
+- [x] Rever arquitetura, portal, dados e implementação do assistente.
+- [x] Criar `docs/APRESENTACAO.md` com narrativa de 12 minutos, caso fictício,
+  proposta navegável e esquemas Mermaid dos fluxos.
+- [x] Distinguir capacidades implementadas, dependências e evolução proposta.
+- [x] Verificar ligações, Markdown e integridade da documentação.
+
+Validação: ligações locais do novo guião, Markdown, verificação da estrutura
+e `git diff --check` aprovados. Alteração apenas documental; sem execução de
+serviços externos, alteração de dados ou implementação da apresentação.
+
+## Dashboard de apresentação independente — 2026-10-18
+
+- [x] Criar uma aplicação estática em `presentation/dist`, com três cenas
+  fictícias, mapa esquemático e adaptação do roteiro em memória.
+- [x] Servir na porta 3003 com Python padrão, sem dependências do portal.
+- [x] Retirar os ficheiros parciais do protótipo Next.js antes de os integrar.
+- [x] Validar interação, teclado, responsividade e isolamento dos serviços.
+
+Validação: percurso completo em 320/768/1440/2560 px aprovado, incluindo
+escolha refletida no roteiro, pontos do mapa com alvos de 48 px, alteração
+reversível, navegação por teclado e fallback de ecrã inteiro. Sem chamadas
+externas/API, sem escrita no localStorage e sem erros JavaScript. Caminhos
+diretos e com prefixo Studio, com/sem barra final, aprovados localmente.
+Inspeção visual das três cenas e do mapa móvel concluída. JS/Python, Markdown,
+estrutura e `git diff --check` aprovados. Portal e Streamlit mantêm os mesmos
+processos e HTTP 200; não houve build, restart ou alterações aos seus ficheiros.
+O acesso autenticado pelo proxy AWS real não foi validado pelo navegador local.
+
+## Continuação da apresentação — 2026-10-18
+
+- [x] Alargar o percurso de três para oito capítulos com dados, colaboração,
+  entrega, arquitetura e encerramento.
+- [x] Ligar as escolhas ao roteiro, à pré-visualização e ao resumo final.
+- [x] Configurar o CTA final com o domínio do Observatório enviado pelo utilizador.
+- [x] Validar o percurso completo, responsividade e isolamento do portal AWS.
+
+Validação: oito capítulos aprovados em 320/768/1440/2560 px, incluindo
+fluxo de dados, pedido bloqueado sem alteração, ajuste permitido, comparação
+de exemplos de versões, arquitetura e resumo final. O CTA final corresponde
+exatamente ao URL indicado e abre um novo separador com `noopener`. Sem
+visitar o destino real, chamadas a APIs, escrita no navegador ou erros JS.
+Inspeção visual das novas cenas concluída. Sintaxe JS, documentação, Markdown
+e `git diff --check` aprovados; serviços e ficheiros do portal intactos.
