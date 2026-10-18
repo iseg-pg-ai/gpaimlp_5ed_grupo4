@@ -26,6 +26,16 @@ python translations/setup_models.py
 Os modelos são executados localmente. Não é necessário iniciar um serviço Python
 separado nem fornecer credenciais externas.
 
+## Aparência
+
+O botão com lua/sol no cabeçalho alterna entre os temas claro e escuro.
+O tema claro é o padrão; a preferência fica guardada neste navegador e
+sincroniza entre separadores. A impressão e os PDFs mantêm a apresentação
+clara. O tema do portal não altera o dashboard Streamlit original.
+
+Validar a alternância, persistência, contraste e adaptação ao ecrã com
+`npm run test:theme` em `dmc-workspace/`, com o portal em execução.
+
 ## Fluxo funcional
 
 1. Criar uma viagem e completar as etapas Cliente, Viagem, Preferências,

@@ -89,19 +89,19 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
   };
 
   return (
-    <div className="brief-screen flex-1 min-w-0 bg-[#F4F0E7] portal-workspace-content">
+    <div className="brief-screen flex-1 min-w-0 bg-[var(--portal-bg-f4f0e7)] portal-workspace-content">
       <div className="w-full pb-20">
         {/* BLU Costa Editorial Header */}
-        <div className="brief-intro pb-6 border-b border-[#D5D1C7]">
+        <div className="brief-intro pb-6 border-b border-[var(--portal-line-d5d1c7)]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-[#143F4B] mb-1">
+              <p className="text-xs font-semibold tracking-[0.2em] text-[var(--portal-text-143f4b)] mb-1">
                 <T text="BLU Costa Travel Curation · Intake" source="en" />{" "}
               </p>
-              <h1 className="brief-title font-serif-blu text-3xl font-normal text-[#143F4B] tracking-tight">
+              <h1 className="brief-title font-serif-blu text-3xl font-normal text-[var(--portal-text-143f4b)] tracking-tight">
                 <T text="Plan a Considered Journey" source="en" />{" "}
               </h1>
-              <p className="text-sm text-[#4A636B] mt-1.5 italic font-serif-blu">
+              <p className="text-sm text-[var(--portal-text-4a636b)] mt-1.5 italic font-serif-blu">
                 <T text="“Travel is not accumulation. It is interpretation.”" source="en" />{" "}
               </p>
             </div>
@@ -111,7 +111,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
               variant="outline"
               size="sm"
               onClick={handlePreFillDemo}
-              className="border-[#D8A65C]/60 bg-[#FBF4E8] text-[#9E6E24] hover:bg-[#F5ECD8] shrink-0"
+              className="border-[var(--portal-line-d8a65c)]/60 bg-[var(--portal-bg-fbf4e8)] text-[var(--portal-text-9e6e24)] hover:bg-[var(--portal-bg-f5ecd8)] shrink-0"
             >
               <RotateCcw className="w-3.5 h-3.5 mr-1" />
               <span>
@@ -127,7 +127,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
               type="button"
               key={label}
               aria-current={step === index ? "step" : undefined}
-              className={`rounded-lg border px-3 py-2 ${step === index ? "bg-[#143F4B] text-white" : "bg-white"}`}
+              className={`rounded-lg border px-3 py-2 ${step === index ? "bg-[var(--portal-bg-143f4b)] text-white" : "bg-[var(--portal-white)]"}`}
               onClick={() => go(index)}
             >
               <T text={label} source="pt" />
@@ -143,10 +143,10 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
           >
             {/* 2. CUSTOMER DETAILS */}
             <Card>
-              <CardHeader className="pb-3 border-b border-[#F0ECE4]">
+              <CardHeader className="pb-3 border-b border-[var(--portal-line-f0ece4)]">
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-[#2D5B67]" />
-                  <CardTitle className="text-sm font-serif-blu text-[#143F4B]">
+                  <Users className="w-4 h-4 text-[var(--portal-text-2d5b67)]" />
+                  <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
                     <T text="Customer Details & Occasion" source="en" />{" "}
                   </CardTitle>
                 </div>
@@ -157,7 +157,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div className="sm:col-span-2">
                     <label
                       htmlFor="brief-customerName"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Customer / Group Name" source="en" />{" "}
                     </label>
@@ -174,7 +174,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div>
                     <label
                       htmlFor="brief-customerEmail"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Email do cliente" source="pt" />
                     </label>
@@ -193,7 +193,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div>
                     <label
                       htmlFor="brief-specialOccasion"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Special Occasion (R04)" source="en" />{" "}
                     </label>
@@ -209,7 +209,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div>
                     <label
                       htmlFor="brief-adults"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Adults" source="en" />{" "}
                     </label>
@@ -228,7 +228,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div>
                     <label
                       htmlFor="brief-children"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Children" source="en" />{" "}
                     </label>
@@ -250,7 +250,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div>
                     <label
                       htmlFor="brief-childrenAges"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Children Ages (if any)" source="en" />{" "}
                     </label>
@@ -274,10 +274,10 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
           >
             {/* 3. TRIP ROUTING & LOGISTICS (Placed directly below Customer Details) */}
             <Card>
-              <CardHeader className="pb-3 border-b border-[#F0ECE4]">
+              <CardHeader className="pb-3 border-b border-[var(--portal-line-f0ece4)]">
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-[#2D5B67]" />
-                  <CardTitle className="text-sm font-serif-blu text-[#143F4B]">
+                  <MapPin className="w-4 h-4 text-[var(--portal-text-2d5b67)]" />
+                  <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
                     <T text="Trip Routing & Regional Scale" source="en" />{" "}
                   </CardTitle>
                 </div>
@@ -288,7 +288,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div className="sm:col-span-2">
                     <label
                       htmlFor="brief-destination"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Destination Region" source="en" />{" "}
                     </label>
@@ -305,7 +305,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div>
                     <label
                       htmlFor="brief-startDate"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Start Date" source="en" />{" "}
                     </label>
@@ -322,7 +322,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div>
                     <label
                       htmlFor="brief-endDate"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="End Date" source="en" />{" "}
                     </label>
@@ -339,7 +339,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div>
                     <label
                       htmlFor="brief-arrivalLocation"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Arrival Airport / Point" source="en" />{" "}
                     </label>
@@ -355,7 +355,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div>
                     <label
                       htmlFor="brief-departureLocation"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Departure Airport / Point" source="en" />{" "}
                     </label>
@@ -378,12 +378,12 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
             data-brief-step="2"
           >
             {/* 1. PROPOSAL CURATION TIER (R33-R44) */}
-            <Card className="border-[#2D5B67]/30 bg-white">
-              <CardHeader className="pb-3 border-b border-[#F0ECE4]">
+            <Card className="border-[var(--portal-line-2d5b67)]/30 bg-[var(--portal-white)]">
+              <CardHeader className="pb-3 border-b border-[var(--portal-line-f0ece4)]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Crown className="w-4 h-4 text-[#D8A65C]" />
-                    <CardTitle className="text-sm font-serif-blu text-[#143F4B]">
+                    <Crown className="w-4 h-4 text-[var(--portal-text-d8a65c)]" />
+                    <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
                       <T text="Proposal Curation Tier (Rules R33–R44)" source="en" />{" "}
                     </CardTitle>
                   </div>
@@ -403,19 +403,21 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         onClick={() => setBrief({ ...brief, proposalTier: tier })}
                         className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                           isSelected
-                            ? "bg-[#E7EEF0] border-[#2D5B67] ring-1 ring-[#2D5B67]/30 shadow-2xs"
-                            : "bg-[#FAF8F3] border-[#D5D1C7] hover:bg-white"
+                            ? "bg-[var(--portal-bg-e7eef0)] border-[var(--portal-line-2d5b67)] ring-1 ring-[var(--portal-line-2d5b67)]/30 shadow-2xs"
+                            : "bg-[var(--portal-bg-faf8f3)] border-[var(--portal-line-d5d1c7)] hover:bg-[var(--portal-white)]"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span
-                            className={`text-sm font-bold ${isSelected ? "text-[#143F4B]" : "text-[#2D5B67]"}`}
+                            className={`text-sm font-bold ${isSelected ? "text-[var(--portal-text-143f4b)]" : "text-[var(--portal-text-2d5b67)]"}`}
                           >
                             {tier}
                           </span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-[#2D5B67]" />}
+                          {isSelected && (
+                            <Check className="w-3.5 h-3.5 text-[var(--portal-text-2d5b67)]" />
+                          )}
                         </div>
-                        <p className="text-xs text-[#4A636B] leading-relaxed">
+                        <p className="text-xs text-[var(--portal-text-4a636b)] leading-relaxed">
                           <T text={desc} source="en" />
                         </p>
                       </button>
@@ -427,10 +429,10 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
             {/* 4. BUDGET & CORE PREFERENCES (Placed directly below Trip Routing) */}
             <Card>
-              <CardHeader className="pb-3 border-b border-[#F0ECE4]">
+              <CardHeader className="pb-3 border-b border-[var(--portal-line-f0ece4)]">
                 <div className="flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-[#D8A65C]" />
-                  <CardTitle className="text-sm font-serif-blu text-[#143F4B]">
+                  <Coins className="w-4 h-4 text-[var(--portal-text-d8a65c)]" />
+                  <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
                     <T text="Budget & Curatorial Focus" source="en" />{" "}
                   </CardTitle>
                 </div>
@@ -441,7 +443,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div className="sm:col-span-2">
                     <label
                       htmlFor="brief-budget"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Approximate Total Budget" source="en" />{" "}
                     </label>
@@ -457,14 +459,14 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                           budget: parseInt(e.target.value) || 0,
                         })
                       }
-                      className="font-mono text-[#143F4B]"
+                      className="font-mono text-[var(--portal-text-143f4b)]"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="brief-currency"
-                      className="block text-sm font-medium text-[#143F4B] mb-1"
+                      className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
                       <T text="Currency" source="en" />{" "}
                     </label>
@@ -473,7 +475,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                       name="currency"
                       value={brief.currency}
                       onChange={(e) => setBrief({ ...brief, currency: e.target.value })}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-[#D5D1C7] bg-[#FAF8F3] text-[#143F4B] focus:outline-hidden focus:border-[#2D5B67] focus:ring-1 focus:ring-[#2D5B67] transition-all cursor-pointer"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-bg-faf8f3)] text-[var(--portal-text-143f4b)] focus:outline-hidden focus:border-[var(--portal-line-2d5b67)] focus:ring-1 focus:ring-[var(--portal-line-2d5b67)] transition-all cursor-pointer"
                     >
                       <option value="EUR">EUR (€)</option>
                       <option value="USD">USD ($)</option>
@@ -484,7 +486,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
                 {/* Interests multi-select pills */}
                 <fieldset>
-                  <legend className="block text-sm font-medium text-[#143F4B] mb-2">
+                  <legend className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-2">
                     <T text="Themes & Narrative Elements" source="en" />{" "}
                   </legend>
                   <div className="flex flex-wrap gap-2">
@@ -497,8 +499,8 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                           onClick={() => toggleArrayItem("interests", interest)}
                           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                             isSelected
-                              ? "bg-[#143F4B] text-[#F4F0E7] shadow-xs"
-                              : "bg-[#FAF8F3] text-[#2D5B67] border border-[#D5D1C7] hover:border-[#2D5B67]"
+                              ? "bg-[var(--portal-bg-143f4b)] text-[#F4F0E7] shadow-xs"
+                              : "bg-[var(--portal-bg-faf8f3)] text-[var(--portal-text-2d5b67)] border border-[var(--portal-line-d5d1c7)] hover:border-[var(--portal-line-2d5b67)]"
                           }`}
                         >
                           {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
@@ -513,7 +515,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
                 {/* Travel Pace */}
                 <fieldset>
-                  <legend className="block text-sm font-medium text-[#143F4B] mb-2">
+                  <legend className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-2">
                     <T text="Travel Pace (Thoughtfully Paced)" source="en" />{" "}
                   </legend>
                   <div className="grid grid-cols-3 gap-3">
@@ -526,8 +528,8 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                           onClick={() => setBrief({ ...brief, pace })}
                           className={`py-2 px-3 rounded-lg text-sm font-medium text-center transition-all cursor-pointer border ${
                             isSelected
-                              ? "bg-[#E7EEF0] border-[#2D5B67] text-[#143F4B] shadow-2xs font-semibold"
-                              : "bg-[#FAF8F3] border-[#D5D1C7] text-[#4A636B] hover:bg-white"
+                              ? "bg-[var(--portal-bg-e7eef0)] border-[var(--portal-line-2d5b67)] text-[var(--portal-text-143f4b)] shadow-2xs font-semibold"
+                              : "bg-[var(--portal-bg-faf8f3)] border-[var(--portal-line-d5d1c7)] text-[var(--portal-text-4a636b)] hover:bg-[var(--portal-white)]"
                           }`}
                         >
                           <T text={pace} source="en" />
@@ -539,7 +541,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
                 {/* Accommodation */}
                 <fieldset>
-                  <legend className="block text-sm font-medium text-[#143F4B] mb-2">
+                  <legend className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-2">
                     <T text="Preferred Accommodation Standard" source="en" />{" "}
                   </legend>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -552,8 +554,8 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                           onClick={() => setBrief({ ...brief, accommodation: acc })}
                           className={`py-2 px-2.5 rounded-lg text-sm font-medium text-center transition-all cursor-pointer border ${
                             isSelected
-                              ? "bg-[#E7EEF0] border-[#2D5B67] text-[#143F4B] shadow-2xs font-semibold"
-                              : "bg-[#FAF8F3] border-[#D5D1C7] text-[#4A636B] hover:bg-white"
+                              ? "bg-[var(--portal-bg-e7eef0)] border-[var(--portal-line-2d5b67)] text-[var(--portal-text-143f4b)] shadow-2xs font-semibold"
+                              : "bg-[var(--portal-bg-faf8f3)] border-[var(--portal-line-d5d1c7)] text-[var(--portal-text-4a636b)] hover:bg-[var(--portal-white)]"
                           }`}
                         >
                           <T text={acc} source="en" />
@@ -579,19 +581,19 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
             {/* 5. RESTRICTIONS & OPERATIONAL CONSTRAINTS (Placed directly below Budget) */}
             <div className="space-y-6">
               <div className="flex items-center gap-2 pt-2">
-                <ShieldAlert className="w-4 h-4 text-[#2D5B67]" />
-                <h2 className="font-serif-blu font-normal text-sm tracking-tight text-[#143F4B]">
+                <ShieldAlert className="w-4 h-4 text-[var(--portal-text-2d5b67)]" />
+                <h2 className="font-serif-blu font-normal text-sm tracking-tight text-[var(--portal-text-143f4b)]">
                   <T text="Restrictions & Curation Constraints (Rules R01–R51)" source="en" />{" "}
                 </h2>
               </div>
 
               {/* 5A: PHYSICAL EFFORT & MOBILITY RESTRICTIONS (R15, R16, R17) */}
               <Card>
-                <CardHeader className="pb-3 border-b border-[#F0ECE4]">
+                <CardHeader className="pb-3 border-b border-[var(--portal-line-f0ece4)]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Accessibility className="w-4 h-4 text-[#2D5B67]" />
-                      <CardTitle className="text-sm font-serif-blu text-[#143F4B]">
+                      <Accessibility className="w-4 h-4 text-[var(--portal-text-2d5b67)]" />
+                      <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
                         <T
                           text="Physical Effort & Mobility Constraints (Rule R15–R17)"
                           source="en"
@@ -606,7 +608,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
                 <CardContent className="pt-5 space-y-4">
                   <fieldset>
-                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
+                    <legend className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-2">
                       <T text="Physical Effort Tolerance (Esforço Físico)" source="en" />{" "}
                     </legend>
                     <div className="grid grid-cols-3 gap-3">
@@ -619,8 +621,8 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                             onClick={() => setBrief({ ...brief, physicalEffort: lvl })}
                             className={`py-2 px-3 rounded-lg text-sm font-medium text-center transition-all cursor-pointer border ${
                               isSelected
-                                ? "bg-[#E7EEF0] border-[#2D5B67] text-[#143F4B] shadow-2xs font-semibold"
-                                : "bg-[#FAF8F3] border-[#D5D1C7] text-[#4A636B] hover:bg-white"
+                                ? "bg-[var(--portal-bg-e7eef0)] border-[var(--portal-line-2d5b67)] text-[var(--portal-text-143f4b)] shadow-2xs font-semibold"
+                                : "bg-[var(--portal-bg-faf8f3)] border-[var(--portal-line-d5d1c7)] text-[var(--portal-text-4a636b)] hover:bg-[var(--portal-white)]"
                             }`}
                           >
                             <T text={lvl} />
@@ -628,7 +630,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                         );
                       })}
                     </div>
-                    <p className="text-xs text-[#4A636B] mt-1.5">
+                    <p className="text-xs text-[var(--portal-text-4a636b)] mt-1.5">
                       <T
                         text="Baixo: Flat walking, level access, chauffeured transfers directly to viewpoints (eliminates steep stair ascents in Lisbon/Sintra)."
                         source="en"
@@ -637,7 +639,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </fieldset>
 
                   <fieldset>
-                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
+                    <legend className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-2">
                       <T text="Specific Mobility Needs & Terrain Adjustments" source="en" />{" "}
                     </legend>
                     <div className="flex flex-wrap gap-2">
@@ -650,8 +652,8 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                             onClick={() => toggleArrayItem("mobilityRestrictions", opt)}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                               isSelected
-                                ? "bg-[#143F4B] text-[#F4F0E7] shadow-xs"
-                                : "bg-[#FAF8F3] text-[#2D5B67] border border-[#D5D1C7] hover:border-[#2D5B67]"
+                                ? "bg-[var(--portal-bg-143f4b)] text-[#F4F0E7] shadow-xs"
+                                : "bg-[var(--portal-bg-faf8f3)] text-[var(--portal-text-2d5b67)] border border-[var(--portal-line-d5d1c7)] hover:border-[var(--portal-line-2d5b67)]"
                             }`}
                           >
                             {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
@@ -668,11 +670,11 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
               {/* 5B: DIETARY & CULINARY RESTRICTIONS (R02, R04) */}
               <Card>
-                <CardHeader className="pb-3 border-b border-[#F0ECE4]">
+                <CardHeader className="pb-3 border-b border-[var(--portal-line-f0ece4)]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <UtensilsCrossed className="w-4 h-4 text-[#D8A65C]" />
-                      <CardTitle className="text-sm font-serif-blu text-[#143F4B]">
+                      <UtensilsCrossed className="w-4 h-4 text-[var(--portal-text-d8a65c)]" />
+                      <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
                         <T
                           text="Dietary Allergies & Dining Requirements (Rule R02, R04)"
                           source="en"
@@ -687,7 +689,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
                 <CardContent className="pt-5 space-y-4">
                   <fieldset>
-                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
+                    <legend className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-2">
                       <T
                         text="Dietary Restrictions & Allergens (Cross-checks Restaurant Database)"
                         source="en"
@@ -704,7 +706,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                               isSelected
                                 ? "bg-emerald-800 text-white shadow-xs"
-                                : "bg-[#FAF8F3] text-[#2D5B67] border border-[#D5D1C7] hover:border-[#2D5B67]"
+                                : "bg-[var(--portal-bg-faf8f3)] text-[var(--portal-text-2d5b67)] border border-[var(--portal-line-d5d1c7)] hover:border-[var(--portal-line-2d5b67)]"
                             }`}
                           >
                             {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
@@ -718,7 +720,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </fieldset>
 
                   <fieldset>
-                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
+                    <legend className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-2">
                       <T text="Dining Pace & Table Duration" source="en" />{" "}
                     </legend>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -731,8 +733,8 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                             onClick={() => setBrief({ ...brief, diningPace: dp })}
                             className={`py-2 px-3 rounded-lg text-sm font-medium text-center transition-all cursor-pointer border ${
                               isSelected
-                                ? "bg-[#E7EEF0] border-[#2D5B67] text-[#143F4B] shadow-2xs font-semibold"
-                                : "bg-[#FAF8F3] border-[#D5D1C7] text-[#4A636B] hover:bg-white"
+                                ? "bg-[var(--portal-bg-e7eef0)] border-[var(--portal-line-2d5b67)] text-[var(--portal-text-143f4b)] shadow-2xs font-semibold"
+                                : "bg-[var(--portal-bg-faf8f3)] border-[var(--portal-line-d5d1c7)] text-[var(--portal-text-4a636b)] hover:bg-[var(--portal-white)]"
                             }`}
                           >
                             <T text={dp} source="en" />
@@ -746,10 +748,10 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
               {/* 5C: DAILY RHYTHM & EXPLICIT EXCLUSIONS (R03, R05) */}
               <Card>
-                <CardHeader className="pb-3 border-b border-[#F0ECE4]">
+                <CardHeader className="pb-3 border-b border-[var(--portal-line-f0ece4)]">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#2D5B67]" />
-                    <CardTitle className="text-sm font-serif-blu text-[#143F4B]">
+                    <Clock className="w-4 h-4 text-[var(--portal-text-2d5b67)]" />
+                    <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
                       <T
                         text="Daily Rhythm & Explicit Exclusions (Rule R03, R05)"
                         source="en"
@@ -760,7 +762,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
                 <CardContent className="pt-5 space-y-4">
                   <fieldset>
-                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
+                    <legend className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-2">
                       <T
                         text="Morning Start Preference (Horários e Hábitos Pessoais)"
                         source="en"
@@ -776,8 +778,8 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                             onClick={() => setBrief({ ...brief, morningPreference: mp })}
                             className={`py-2 px-3 rounded-lg text-sm font-medium text-center transition-all cursor-pointer border ${
                               isSelected
-                                ? "bg-[#E7EEF0] border-[#2D5B67] text-[#143F4B] shadow-2xs font-semibold"
-                                : "bg-[#FAF8F3] border-[#D5D1C7] text-[#4A636B] hover:bg-white"
+                                ? "bg-[var(--portal-bg-e7eef0)] border-[var(--portal-line-2d5b67)] text-[var(--portal-text-143f4b)] shadow-2xs font-semibold"
+                                : "bg-[var(--portal-bg-faf8f3)] border-[var(--portal-line-d5d1c7)] text-[var(--portal-text-4a636b)] hover:bg-[var(--portal-white)]"
                             }`}
                           >
                             <T text={mp} source="en" />
@@ -788,7 +790,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   </fieldset>
 
                   <fieldset>
-                    <legend className="block text-sm font-medium text-[#143F4B] mb-2">
+                    <legend className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-2">
                       <T
                         text="Atividades Expressamente Indesejadas (Do Not Propose)"
                         source="pt"
@@ -805,7 +807,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                               isSelected
                                 ? "bg-red-800 text-white shadow-xs"
-                                : "bg-[#FAF8F3] text-[#2D5B67] border border-[#D5D1C7] hover:border-[#2D5B67]"
+                                : "bg-[var(--portal-bg-faf8f3)] text-[var(--portal-text-2d5b67)] border border-[var(--portal-line-d5d1c7)] hover:border-[var(--portal-line-2d5b67)]"
                             }`}
                           >
                             {isSelected ? <Ban className="w-3 h-3 stroke-[2.5]" /> : null}
@@ -823,12 +825,12 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
 
             {/* 6. ADDITIONAL CONTEXT & AGENT NOTES */}
             <Card>
-              <CardHeader className="pb-3 border-b border-[#F0ECE4]">
+              <CardHeader className="pb-3 border-b border-[var(--portal-line-f0ece4)]">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#2D5B67]" />
+                  <FileText className="w-4 h-4 text-[var(--portal-text-2d5b67)]" />
                   <CardTitle
                     id="brief-notes-label"
-                    className="text-sm font-serif-blu text-[#143F4B]"
+                    className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]"
                   >
                     <T text="Curator Perspective & Personal Nuances" source="en" />{" "}
                   </CardTitle>
@@ -852,7 +854,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
           {step === 4 && (
             <section
               data-testid="brief-review"
-              className="rounded-xl border bg-white p-5 space-y-4"
+              className="rounded-xl border bg-[var(--portal-white)] p-5 space-y-4"
             >
               <h2 className="text-xl">
                 <T text="Rever antes de gerar" source="pt" />
@@ -918,7 +920,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
             </p>
           )}
           {/* 7. PRIMARY CTA */}
-          <div className="pt-4 flex items-center justify-end gap-3 flex-wrap sticky bottom-4 z-20 bg-[#F4F0E7]/95 backdrop-blur-xs p-3 rounded-2xl border border-[#D5D1C7] shadow-md">
+          <div className="pt-4 flex items-center justify-end gap-3 flex-wrap sticky bottom-4 z-20 bg-[var(--portal-bg-f4f0e7)]/95 backdrop-blur-xs p-3 rounded-2xl border border-[var(--portal-line-d5d1c7)] shadow-md">
             {onCancel && (
               <Button type="button" variant="ghost" onClick={onCancel}>
                 <T text="Cancel" source="en" />{" "}
@@ -934,9 +936,9 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
               type="submit"
               size="lg"
               variant="default"
-              className="gap-2 shadow-sm font-semibold bg-[#2D5B67] hover:bg-[#1E4651] text-[#F4F0E7]"
+              className="gap-2 shadow-sm font-semibold bg-[var(--portal-bg-2d5b67)] hover:bg-[var(--portal-bg-1e4651)] text-[#F4F0E7]"
             >
-              <Sparkles className="w-4 h-4 text-[#D8A65C]" />
+              <Sparkles className="w-4 h-4 text-[var(--portal-text-d8a65c)]" />
               <span>
                 {step === 4 ? (
                   <>

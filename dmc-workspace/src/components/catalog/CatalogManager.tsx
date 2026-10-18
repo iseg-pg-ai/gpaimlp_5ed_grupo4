@@ -42,7 +42,7 @@ export function CatalogManager() {
     publish,
   } = useCatalog();
   return (
-    <section aria-label="Gestão do catálogo" className="text-[#143F4B]">
+    <section aria-label="Gestão do catálogo" className="text-[var(--portal-text-143f4b)]">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="font-serif-blu text-2xl">
@@ -88,7 +88,7 @@ export function CatalogManager() {
               setLocation("");
               setHistory(null);
             }}
-            className={`${button} ${category === c ? "bg-[#143F4B] text-white hover:bg-[#205562]" : "bg-white"}`}
+            className={`${button} ${category === c ? "bg-[var(--portal-bg-143f4b)] text-white hover:bg-[var(--portal-bg-205562)]" : "bg-[var(--portal-white)]"}`}
           >
             <T text={categoryLabels[c]} source="pt" />
           </button>
@@ -177,7 +177,7 @@ export function CatalogManager() {
           )}
         </p>
         {!loading && !filtered.length && (
-          <p className="rounded-xl border bg-white p-6">
+          <p className="rounded-xl border bg-[var(--portal-white)] p-6">
             <T text="Sem registos para estes filtros." source="pt" />
           </p>
         )}
@@ -186,7 +186,7 @@ export function CatalogManager() {
             <article
               key={r.id}
               data-testid="catalog-record"
-              className="min-w-0 rounded-2xl border border-[#D5D1C7] bg-white p-5"
+              className="min-w-0 rounded-2xl border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] p-5"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <h2 className="break-words text-lg font-semibold">{r.fields.name}</h2>
@@ -213,7 +213,7 @@ export function CatalogManager() {
                   source="pt"
                 />
               </p>
-              <p className="mt-2 break-all text-xs text-[#4A636B]">
+              <p className="mt-2 break-all text-xs text-[var(--portal-text-4a636b)]">
                 {r.id} · v{r.revision}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">

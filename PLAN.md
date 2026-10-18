@@ -509,3 +509,19 @@ cenários aplicáveis. Dashboard original e dados preservados.
 Removidos 426 MiB de artefactos regeneráveis. Portal e dashboard original
 respondem HTTP 200 após a limpeza. Verificação da estrutura (340 ficheiros)
 e `git diff --check` aprovados. Código, dados, exports e ambientes preservados.
+
+## Tema claro e escuro — 2026-10-18
+
+- [x] Manter o tema claro original como padrão e centralizar a paleta do portal.
+- [x] Adicionar seletor acessível no cabeçalho, com preferência no navegador.
+- [x] Aplicar a preferência antes da primeira pintura e sincronizar separadores.
+- [x] Validar contraste, persistência, navegação responsiva, check e build.
+
+Validação: check aprovado (97 testes e um ignorado), build aprovado, lint e
+formatação finais aprovados. Navegador: 66 cenários responsivos/navegação em
+seis idiomas; tema em 320/768/1440/2560 px com persistência, sincronização,
+teclado, impressão clara e armazenamento da preferência bloqueado. Contraste
+de texto principal, formulário e seletor medido em pelo menos 4,5:1 no modo
+escuro após as transições. Observatório aprovado em 320/1440 px. Inspeção
+visual do briefing e catálogo em tema escuro aprovada. Tradução e geração
+simuladas nos cenários aplicáveis; dashboard, dados e templates PDF intactos.

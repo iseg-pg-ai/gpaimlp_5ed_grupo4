@@ -42,7 +42,7 @@ export default async function ReferencesPage({
   }
   const { routes, priceCount, conflicts } = data;
   return (
-    <main className="portal-page min-h-full bg-[#F4F0E7] text-[#143F4B]">
+    <main className="portal-page min-h-full bg-[var(--portal-bg-f4f0e7)] text-[var(--portal-text-143f4b)]">
       <Link href="/" className="underline">
         <T text="Voltar ao workspace" source="pt" />
       </Link>
@@ -78,7 +78,10 @@ export default async function ReferencesPage({
         ))}
       </details>
       {routes.map((route) => (
-        <details key={value(route, "id_roteiro")} className="bg-white p-4 rounded mb-3">
+        <details
+          key={value(route, "id_roteiro")}
+          className="bg-[var(--portal-white)] p-4 rounded mb-3"
+        >
           <summary className="cursor-pointer font-semibold">
             {value(route, "id_roteiro")} — {value(route, "titulo_anonimizado")}
           </summary>

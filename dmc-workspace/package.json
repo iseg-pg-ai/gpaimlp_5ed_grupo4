@@ -30,7 +30,8 @@
     "check": "npm run lint && npm run typecheck && npm run format:check && npm test",
     "start:aws": "node scripts/start-aws.mjs",
     "test:aws": "node tests/browser/sagemaker-proxy.mjs",
-    "test:ui": "node tests/browser/ui.mjs"
+    "test:ui": "node tests/browser/ui.mjs",
+    "test:theme": "node tests/browser/theme.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

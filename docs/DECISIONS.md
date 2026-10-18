@@ -543,3 +543,13 @@ A pedido do utilizador, substituir o limite de 1440 px por contentores a 100%
 do espaço disponível. As margens comuns usam `clamp(1rem, 2.25vw, 4rem)`;
 a composição interna mantém as grelhas responsivas e a coluna de leitura
 das partilhas. Esta decisão substitui o teto da entrada anterior.
+
+## Temas do portal — 2026-10-18
+
+O tema claro continua a ser o padrão, independentemente do tema do sistema.
+A opção escura usa uma paleta partilhada de superfícies, texto e bordas com
+`light-dark()`, mantendo as cores originais no modo claro. A preferência fica
+em `blu-portal-theme` no navegador e é aplicada antes da hidratação, com
+sincronização entre separadores. Armazenamento bloqueado não impede a troca
+na sessão. A impressão mantém a paleta clara; os templates PDF e o dashboard
+analítico original não dependem desta preferência.

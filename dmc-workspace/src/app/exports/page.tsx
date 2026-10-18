@@ -22,7 +22,7 @@ export default async function ExportHistory({
   const versions = store.list();
   store.close();
   return (
-    <main className="portal-page min-h-full bg-[#F4F0E7] text-[#143F4B]">
+    <main className="portal-page min-h-full bg-[var(--portal-bg-f4f0e7)] text-[var(--portal-text-143f4b)]">
       <Link href="/" className="underline">
         <T text="Voltar ao workspace" source="pt" />
       </Link>
@@ -48,7 +48,7 @@ export default async function ExportHistory({
       {versions.map((v) => (
         <article
           key={`${v.tripId}-${v.version}`}
-          className="mb-3 flex flex-col gap-4 rounded bg-white p-4 break-words sm:flex-row sm:items-stretch"
+          className="mb-3 flex flex-col gap-4 rounded bg-[var(--portal-white)] p-4 break-words sm:flex-row sm:items-stretch"
         >
           <div className="min-w-0 flex-1">
             <p className="font-semibold">{v.filename}</p>
@@ -97,7 +97,7 @@ export default async function ExportHistory({
                 <select
                   name="locale"
                   defaultValue="en"
-                  className="rounded border border-[#D5D1C7] bg-white px-2 py-1"
+                  className="rounded border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] px-2 py-1"
                 >
                   {languages.map((language) => (
                     <option key={language.code} value={language.code}>
@@ -131,7 +131,7 @@ export default async function ExportHistory({
               <T text="Consultar conteúdo guardado" source="pt" />
             </a>
           </div>
-          <div className="flex shrink-0 items-center sm:border-l sm:border-[#E6E1D5] sm:pl-4">
+          <div className="flex shrink-0 items-center sm:border-l sm:border-[var(--portal-line-e6e1d5)] sm:pl-4">
             <form
               method="post"
               action={portalUrl("/api/versions/trash")}
@@ -142,7 +142,7 @@ export default async function ExportHistory({
               <input type="hidden" name="action" value="trash" />
               <button
                 type="submit"
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#D5D1C7] px-3 py-2 text-sm text-[#70443E] hover:bg-[#F7E9E6]"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[var(--portal-line-d5d1c7)] px-3 py-2 text-sm text-[var(--portal-text-70443e)] hover:bg-[var(--portal-bg-f7e9e6)]"
               >
                 <Trash2 className="size-4" />
                 <T text="Enviar para o Lixo" source="pt" />

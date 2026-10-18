@@ -9,7 +9,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          "flex h-9 w-full rounded-lg border border-[#DFD9CE] bg-[#FFFEF9] px-3 py-1.5 text-sm text-[#1A1917] placeholder:text-[#8F8B82] shadow-2xs transition-colors file:border-0 file:bg-transparent file:text-xs file:font-medium focus-visible:outline-hidden focus-visible:border-[#2D5B67] focus-visible:ring-1 focus-visible:ring-[#2D5B67] disabled:cursor-not-allowed disabled:opacity-50",
+          "flex h-9 w-full rounded-lg border border-[var(--portal-line-dfd9ce)] bg-[var(--portal-bg-fffef9)] px-3 py-1.5 text-sm text-[var(--portal-text-1a1917)] placeholder:text-[var(--portal-text-8f8b82)] shadow-2xs transition-colors file:border-0 file:bg-transparent file:text-xs file:font-medium focus-visible:outline-hidden focus-visible:border-[var(--portal-line-2d5b67)] focus-visible:ring-1 focus-visible:ring-[var(--portal-line-2d5b67)] disabled:cursor-not-allowed disabled:opacity-50",
           className,
         )}
         ref={ref}
@@ -29,7 +29,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <textarea
         className={cn(
-          "flex min-h-[80px] w-full rounded-xl border border-[#DFD9CE] bg-[#FFFEF9] px-3 py-2 text-sm text-[#1A1917] placeholder:text-[#8F8B82] shadow-2xs transition-colors focus-visible:outline-hidden focus-visible:border-[#2D5B67] focus-visible:ring-1 focus-visible:ring-[#2D5B67] disabled:cursor-not-allowed disabled:opacity-50",
+          "flex min-h-[80px] w-full rounded-xl border border-[var(--portal-line-dfd9ce)] bg-[var(--portal-bg-fffef9)] px-3 py-2 text-sm text-[var(--portal-text-1a1917)] placeholder:text-[var(--portal-text-8f8b82)] shadow-2xs transition-colors focus-visible:outline-hidden focus-visible:border-[var(--portal-line-2d5b67)] focus-visible:ring-1 focus-visible:ring-[var(--portal-line-2d5b67)] disabled:cursor-not-allowed disabled:opacity-50",
           className,
         )}
         ref={ref}

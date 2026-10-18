@@ -7,13 +7,16 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-transparent bg-[#2D5B67] text-white",
-        teal: "border-[#2D5B67]/30 bg-[#E7EEF0] text-[#2D5B67]",
-        gold: "border-[#D8A65C]/40 bg-[#FBF4E8] text-[#9E6E24]",
-        ink: "border-transparent bg-[#143F4B] text-[#F4F0E7]",
-        secondary: "border-[#D5D1C7] bg-[#EBE5DA] text-[#143F4B]",
-        accent: "border-[#D8A65C]/40 bg-[#FBF4E8] text-[#9E6E24]",
-        outline: "border-[#D5D1C7] bg-white text-[#143F4B]",
+        default: "border-transparent bg-[var(--portal-bg-2d5b67)] text-white",
+        teal: "border-[var(--portal-line-2d5b67)]/30 bg-[var(--portal-bg-e7eef0)] text-[var(--portal-text-2d5b67)]",
+        gold: "border-[var(--portal-line-d8a65c)]/40 bg-[var(--portal-bg-fbf4e8)] text-[var(--portal-text-9e6e24)]",
+        ink: "border-transparent bg-[var(--portal-bg-143f4b)] text-[#F4F0E7]",
+        secondary:
+          "border-[var(--portal-line-d5d1c7)] bg-[var(--portal-bg-ebe5da)] text-[var(--portal-text-143f4b)]",
+        accent:
+          "border-[var(--portal-line-d8a65c)]/40 bg-[var(--portal-bg-fbf4e8)] text-[var(--portal-text-9e6e24)]",
+        outline:
+          "border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] text-[var(--portal-text-143f4b)]",
         success: "border-emerald-200 bg-emerald-50 text-emerald-800",
       },
     },

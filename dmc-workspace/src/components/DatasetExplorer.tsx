@@ -9,7 +9,10 @@ export async function DatasetExplorer({ params }: { params: Record<string, strin
     data = await portalRequest("explore", warehouseRoot(), params);
   } catch (error) {
     return (
-      <section className="my-6 rounded-xl border bg-white p-4" data-testid="dataset-explorer">
+      <section
+        className="my-6 rounded-xl border bg-[var(--portal-white)] p-4"
+        data-testid="dataset-explorer"
+      >
         <p role="alert">
           <T
             text={error instanceof Error ? error.message : "Dataset indisponível. Execute o ETL."}
@@ -25,7 +28,10 @@ export async function DatasetExplorer({ params }: { params: Record<string, strin
       `/references?${new URLSearchParams({ ...(data.table ? { table: data.table } : {}), q: query, page: String(page) })}`,
     );
   return (
-    <section className="my-6 rounded-xl border bg-white p-4" data-testid="dataset-explorer">
+    <section
+      className="my-6 rounded-xl border bg-[var(--portal-white)] p-4"
+      data-testid="dataset-explorer"
+    >
       <h2 className="text-xl">
         <T text="Todas as folhas do dataset" source="pt" />
       </h2>
