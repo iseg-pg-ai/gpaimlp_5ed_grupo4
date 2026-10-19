@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from monitoring.collector import Collector
 from monitoring.security import Security
-from monitoring.signals import operational_details
+from monitoring.signals import operational_details, query_logs
 from monitoring.users_view import render_users
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -139,6 +139,20 @@ def make_server(port, security, collector, public_url, insecure_local=False):
                 except ValueError:
                     return self.reply(400, '{"error":"invalid_signal"}', "application/json")
                 return self.reply(200, json.dumps(details), "application/json")
+            if path == "/api/logs":
+                query = parse_qs(urlsplit(self.path).query)
+                try:
+                    logs = query_logs(
+                        collector.runtime,
+                        query.get("module", ["portal"])[0],
+                        query.get("severity", [""])[0],
+                        query.get("search", [""])[0],
+                        query.get("order", ["desc"])[0],
+                        int(query.get("limit", ["200"])[0]),
+                    )
+                except (ValueError, TypeError):
+                    return self.reply(400, '{"error":"invalid_log_query"}', "application/json")
+                return self.reply(200, json.dumps(logs), "application/json")
             return self.reply(404, "Não encontrado.")
 
         def do_POST(self):

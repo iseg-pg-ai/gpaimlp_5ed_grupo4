@@ -16,8 +16,12 @@ export const onRequestError: Instrumentation.onRequestError = async (error, _req
   await recordOperationalEvent({
     component: "portal",
     operation: context.routePath,
+    module: context.routeType,
+    user: "server",
     outcome: "failed",
     level: "error",
     errorCode: digest,
+    message: error instanceof Error ? error.message : "Erro não tratado no servidor",
+    stack: error instanceof Error ? error.stack : undefined,
   });
 };

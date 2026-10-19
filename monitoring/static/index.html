@@ -227,6 +227,60 @@
             </div>
           </section>
         </div>
+        <aside class="panel portal-logs" data-log-table data-module="portal">
+          <div class="logs-heading">
+            <div>
+              <p class="eyebrow">ATIVIDADE EM TEMPO REAL</p>
+              <h2>Logs do Portal</h2>
+            </div>
+            <span class="live-dot" aria-hidden="true"></span>
+          </div>
+          <div class="logs-toolbar">
+            <label>
+              <span>Pesquisar</span>
+              <input data-log-search type="search" maxlength="80" placeholder="Ação, módulo ou estado" />
+            </label>
+            <label>
+              <span>Severidade</span>
+              <select data-log-severity>
+                <option value="">Todas</option>
+                <option>INFO</option><option>WARNING</option><option>ERROR</option><option>CRITICAL</option>
+              </select>
+            </label>
+            <label>
+              <span>Módulo</span>
+              <select data-log-module>
+                <option value="">Todos do portal</option>
+              </select>
+            </label>
+            <button type="button" class="subtle" data-log-order data-order="desc">Mais recentes ↓</button>
+          </div>
+          <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
+          <div class="log-table-wrap" data-log-results aria-live="polite"></div>
+        </aside>
+        <section class="panel secondary-logs" data-log-table data-module="ai">
+          <div class="logs-heading">
+            <div>
+              <p class="eyebrow">OUTROS MÓDULOS</p>
+              <h2>Registos técnicos</h2>
+            </div>
+            <span class="badge">Últimos 7 dias</span>
+          </div>
+          <div class="logs-toolbar compact">
+            <label><span>Módulo</span><select data-log-module>
+              <option value="ai">Assistência IA</option>
+              <option value="backup">Backups</option>
+              <option value="alerts">Incidentes</option>
+            </select></label>
+            <label><span>Severidade</span><select data-log-severity>
+              <option value="">Todas</option><option>INFO</option><option>WARNING</option><option>ERROR</option><option>CRITICAL</option>
+            </select></label>
+            <label><span>Pesquisar</span><input data-log-search type="search" maxlength="80" placeholder="Pesquisar registos" /></label>
+            <button type="button" class="subtle" data-log-order data-order="desc">Mais recentes ↓</button>
+          </div>
+          <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
+          <div class="log-table-wrap compact" data-log-results aria-live="polite"></div>
+        </section>
         <dialog
           id="operations-dialog"
           class="operations-dialog"
@@ -269,6 +323,15 @@
             Campos técnicos reduzidos; sem prompts, respostas, dados de clientes
             ou segredos.
           </p>
+        </dialog>
+        <dialog id="log-detail-dialog" class="operations-dialog" aria-labelledby="log-detail-title">
+          <div class="dialog-heading">
+            <div><p class="eyebrow">EVENTO PERSISTENTE</p><h2 id="log-detail-title">Detalhes do evento</h2></div>
+            <button type="button" class="dialog-close" data-log-detail-close aria-label="Fechar">×</button>
+          </div>
+          <dl id="log-detail-fields" class="log-detail-fields"></dl>
+          <div id="log-detail-stack" class="log-stack" hidden><h3>Stack trace</h3><pre></pre></div>
+          <p class="footnote">Dados técnicos reduzidos; segredos e conteúdo de clientes não são recolhidos.</p>
         </dialog>
       </main>
       <footer>

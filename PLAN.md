@@ -883,3 +883,21 @@ cenários de navegador do monitoring e apresentação em 320–2560 px aprovados
 - [x] Iniciar agente, portal, apresentação, monitoring e Observatório e verificar
   as portas 8000, 3001, 3003, 3004 e 8501.
 - [x] Declarar encaminhamento automático das cinco portas no workspace.
+
+## Observabilidade centralizada no Monitoring — 2026-10-19
+
+- [x] Ampliar a telemetria persistente do portal com utilizador de sessão, ação,
+  módulo, estado, severidade, detalhes e diagnóstico reduzido.
+- [x] Capturar visualizações, navegação, interações, pedidos API e erros não tratados
+  no browser e no servidor, sem valores de formulários, corpos, prompts ou respostas.
+- [x] Criar consulta autenticada com pesquisa, severidade, ordem cronológica e limite,
+  preservando rotação e compatibilidade com eventos anteriores.
+- [x] Adicionar a tabela lateral do Portal e tabelas reutilizadas para IA, backups e
+  incidentes, com atualização automática e detalhe de mensagens/stack traces.
+- [x] Validar filtros, acesso autenticado, privacidade e interface responsiva em
+  320/768/1440/2560 px.
+
+O portal não possui autenticação própria: o campo de utilizador identifica apenas a
+sessão efémera do separador ou execução no servidor, sem atribuir ações a uma pessoa.
+As notificações externas, o backup externo cifrado e a sonda externa permanecem nas
+pendências de produção acima.

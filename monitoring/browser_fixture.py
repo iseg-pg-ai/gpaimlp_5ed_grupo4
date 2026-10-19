@@ -20,9 +20,12 @@ def main():
         runtime = Path(directory)
         portal_events = [
             {"at": now, "component": "portal", "operation": "fixture-check",
-             "outcome": "success", "duration_ms": 12},
+             "outcome": "success", "duration_ms": 12, "level": "info",
+             "user": "sessao:fixture", "module": "catalog", "details": "GET /api/catalog"},
             {"at": now, "component": "portal", "operation": "fixture-failure",
-             "outcome": "failed", "error_code": "FixtureError"},
+             "outcome": "failed", "error_code": "FixtureError", "level": "error",
+             "user": "server", "module": "api:catalog", "details": "POST /api/catalog",
+             "message": "Falha controlada", "stack": "Error: fixture\n at catalog"},
         ]
         (runtime / "portal-events.jsonl").write_text(
             "\n".join(json.dumps(event) for event in portal_events) + "\n")

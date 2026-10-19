@@ -83,15 +83,36 @@ try {
         .first()
         .evaluate((bar) => bar.getBoundingClientRect().height > 20),
     );
+    const portalLogs = page.locator(".portal-logs");
+    await portalLogs.getByText("fixture-failure", { exact: true }).waitFor();
+    assert.equal(await portalLogs.locator("tbody tr").count(), 2);
+    await portalLogs.getByLabel("Severidade").selectOption("ERROR");
+    await portalLogs.locator("tbody tr").nth(1).waitFor({ state: "detached" });
+    assert.equal(await portalLogs.locator("tbody tr").count(), 1);
+    await portalLogs.getByRole("button", { name: "fixture-failure" }).click();
+    await page.getByRole("heading", { name: "Detalhes do evento" }).waitFor();
+    await page.getByText("Error: fixture", { exact: false }).waitFor();
+    await page.getByRole("button", { name: "Fechar" }).click();
+    await portalLogs.getByLabel("Severidade").selectOption("");
+    await portalLogs.getByLabel("Módulo").selectOption("catalog");
+    assert.equal(await portalLogs.locator("tbody tr").count(), 1);
+    await portalLogs.getByLabel("Módulo").selectOption("");
+    await portalLogs.getByLabel("Pesquisar").fill("fixture-check");
+    await portalLogs.locator("tbody tr").nth(1).waitFor({ state: "detached" });
+    assert.equal(await portalLogs.locator("tbody tr").count(), 1);
+    await portalLogs.getByLabel("Pesquisar").fill("");
+    await page.locator(".secondary-logs").getByText("Registos técnicos").waitFor();
+    await checkWidth();
     await page.locator("#portal-signal").click();
-    await page.getByRole("heading", { name: "Registos do portal" }).waitFor();
-    await page.getByText("fixture-check", { exact: true }).waitFor();
-    assert.equal(await page.locator(".log-entry").count(), 2);
+    const operationsDialog = page.locator("#operations-dialog");
+    await operationsDialog.getByRole("heading", { name: "Registos do portal" }).waitFor();
+    await operationsDialog.getByText("fixture-check", { exact: true }).waitFor();
+    assert.equal(await operationsDialog.locator(".log-entry").count(), 2);
     await page.getByRole("button", { name: /Apenas erros/ }).click();
-    await page.getByText("fixture-failure", { exact: true }).waitFor();
-    assert.equal(await page.locator(".log-entry").count(), 1);
+    await operationsDialog.getByText("fixture-failure", { exact: true }).waitFor();
+    assert.equal(await operationsDialog.locator(".log-entry").count(), 1);
     assert.equal(
-      await page.getByText("fixture-check", { exact: true }).count(),
+      await operationsDialog.getByText("fixture-check", { exact: true }).count(),
       0,
     );
     await checkWidth();

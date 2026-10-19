@@ -81,12 +81,33 @@ de exclusão. Foram retirados do índice, mantendo cópias locais. Isso não apa
 histórico Git: alterar a palavra-passe inicial se ainda estiver em uso. A alteração
 da palavra-passe de `admin` elimina também o ficheiro inicial local, quando possível.
 
+## Logs centralizados
+
+O painel principal apresenta os logs do Portal numa coluna lateral em ecrãs largos
+e numa secção própria em ecrãs menores. A tabela usa os eventos persistentes de
+`monitoring/runtime/portal-events.jsonl`, com rotação, e permite pesquisar, filtrar
+por severidade e módulo, ordenar e abrir mensagens e stack traces reduzidas. IA,
+backups e incidentes reutilizam a mesma tabela no final da página. A API de consulta
+exige uma sessão válida do Monitoring e nunca disponibiliza os ficheiros diretamente.
+
+O Next.js regista visualizações, navegações, interações com botões/ligações, chamadas
+às APIs e erros não tratados no browser e no servidor. Operações já instrumentadas,
+como a assistência IA, continuam a escrever no mesmo runtime. Eventos repetidos pela
+mesma interação são suprimidos durante 750 ms e as escritas no processo Node são
+serializadas. A atualização das tabelas ocorre a cada 15 segundos.
+
+O portal ainda não tem identidade própria. A coluna **Utilizador** distingue `server`,
+`system` ou um identificador aleatório limitado à sessão do separador, sem o associar
+a uma pessoa. Não são recolhidos valores de formulários, corpos HTTP, labels visíveis,
+prompts ou respostas. Mensagens e stacks passam por limites e redação de segredos,
+emails, URLs, valores entre aspas e números longos antes da persistência.
+
 ## Sinais operacionais e alertas
 
-O portal e o agente escrevem eventos JSON-lines limitados a componente, operação,
-resultado, duração, código técnico e contadores de tokens reportados. Não são
-guardados prompts, respostas, corpos HTTP, nomes de clientes ou exceções completas.
-O painel apresenta apenas agregados das últimas 24 horas.
+O portal e o agente escrevem eventos JSON-lines com campos técnicos limitados. Não
+são guardados prompts, respostas, corpos HTTP, nomes de clientes ou valores de
+formulários. Os cartões apresentam agregados das últimas 24 horas; as tabelas usam
+uma janela máxima de sete dias dentro dos ficheiros rotativos disponíveis.
 
 O coletor transforma falhas em incidentes locais, deduplica estados repetidos e
 regista uma recuperação quando a condição desaparece. A fila está em

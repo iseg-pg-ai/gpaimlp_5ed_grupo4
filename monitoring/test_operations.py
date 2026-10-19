@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -10,7 +10,7 @@ from monitoring.alerts import AlertStore
 from monitoring.backup import BackupScheduler, create_backup, verify_backup
 from monitoring.cleanup import CleanupManager
 from monitoring.recovery import ensure_recovery
-from monitoring.signals import operational_details, operational_signals
+from monitoring.signals import operational_details, operational_signals, query_logs
 from blu_ai.telemetry import invoke_with_telemetry, usage_from_messages
 
 
@@ -199,6 +199,31 @@ class OperationsTest(unittest.TestCase):
             result = operational_signals(runtime, now)
             self.assertEqual(result["portal"]["events_24h"], 2)
             self.assertEqual(result["portal"]["errors_24h"], 1)
+
+    def test_log_query_normalizes_filters_and_orders_persistent_events(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory)
+            now = datetime.now(timezone.utc)
+            rows = [
+                {"at": (now - timedelta(minutes=1)).isoformat(), "user": "sessao:a1",
+                 "operation": "navigation", "module": "catalog", "outcome": "success",
+                 "level": "info", "details": "push"},
+                {"at": now.isoformat(), "user": "server", "operation": "catalog_update",
+                 "module": "api:catalog", "outcome": "failed", "level": "error",
+                 "details": "POST /api/catalog", "message": "Falha controlada",
+                 "stack": "Error: Falha controlada"},
+            ]
+            (runtime / "portal-events.jsonl").write_text(
+                "\n".join(map(json.dumps, rows)) + "\n")
+            result = query_logs(runtime, "portal", "ERROR", "catalog", "desc", 20)
+            self.assertEqual(result["total"], 1)
+            self.assertEqual(result["entries"][0]["severity"], "ERROR")
+            self.assertEqual(result["entries"][0]["user"], "server")
+            self.assertIn("stack", result["entries"][0])
+            ascending = query_logs(runtime, "portal", order="asc")
+            self.assertEqual(ascending["entries"][0]["action"], "navigation")
+            with self.assertRaises(ValueError):
+                query_logs(runtime, "unknown")
 
 
 if __name__ == "__main__":

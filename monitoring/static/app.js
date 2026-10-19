@@ -367,6 +367,108 @@ function render(data) {
   text("chart-start", history.length ? date(history[0].at) : "—");
   text("chart-end", history.length ? date(history.at(-1).at) : "—");
 }
+const logTables = [];
+const logDetailNames = {
+  timestamp: "Data e hora", user: "Utilizador", action: "Ação", module: "Módulo",
+  status: "Estado", severity: "Severidade", details: "Detalhes", message: "Mensagem",
+  http_status: "HTTP", duration_ms: "Duração",
+};
+function showLogDetail(entry) {
+  const fields = Object.entries(entry)
+    .filter(([key, value]) => key !== "stack" && value !== null && value !== undefined)
+    .map(([key, value]) => {
+      const item = node("div", "");
+      item.append(node("dt", "", logDetailNames[key] ?? key), node("dd", "", key === "timestamp" ? date(value) : key === "duration_ms" ? `${value} ms` : value));
+      return item;
+    });
+  $("log-detail-fields").replaceChildren(...fields);
+  const stack = $("log-detail-stack");
+  stack.hidden = !entry.stack;
+  stack.querySelector("pre").textContent = entry.stack ?? "";
+  $("log-detail-dialog").showModal();
+}
+function renderLogTable(table) {
+  const moduleFilter = table.portal ? table.module.value : "";
+  const entries = moduleFilter
+    ? table.entries.filter((entry) => entry.module === moduleFilter)
+    : table.entries;
+  table.summary.textContent = `${entries.length.toLocaleString("pt-PT")} de ${table.total.toLocaleString("pt-PT")} eventos · atualização automática`;
+  if (!entries.length) {
+    table.results.replaceChildren(node("p", "log-empty", "Não existem eventos para estes filtros."));
+    return;
+  }
+  const head = document.createElement("thead");
+  const heading = document.createElement("tr");
+  ["Data", "Severidade", "Utilizador", "Ação", "Módulo", "Estado", "Detalhes"].forEach((label) => heading.append(node("th", "", label)));
+  head.append(heading);
+  const body = document.createElement("tbody");
+  entries.forEach((entry) => {
+    const row = document.createElement("tr");
+    row.dataset.severity = entry.severity;
+    const action = node("button", "log-action", entry.action);
+    action.type = "button";
+    action.addEventListener("click", () => showLogDetail(entry));
+    const actionCell = document.createElement("td");
+    actionCell.append(action);
+    [date(entry.timestamp), null, entry.user, null, entry.module, entry.status, entry.details].forEach((value, index) => {
+      if (index === 1) {
+        const cell = document.createElement("td");
+        cell.append(node("span", `severity ${entry.severity}`, entry.severity));
+        row.append(cell);
+      } else if (index === 3) row.append(actionCell);
+      else row.append(node("td", "", value));
+    });
+    body.append(row);
+  });
+  const element = node("table", "log-table");
+  element.append(head, body);
+  table.results.replaceChildren(element);
+}
+async function refreshLogTable(table) {
+  if (table.busy) return;
+  table.busy = true;
+  const source = table.portal ? "portal" : table.module.value;
+  const query = new URLSearchParams({ module: source, severity: table.severity.value, search: table.search.value.trim(), order: table.order.dataset.order, limit: "200" });
+  try {
+    const response = await fetch(`api/logs?${query}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
+    if (response.status === 401) { location.href = "login"; return; }
+    if (!response.ok) throw new Error("logs");
+    const payload = await response.json();
+    table.entries = payload.entries;
+    table.total = payload.total;
+    if (table.portal) {
+      const selected = table.module.value;
+      const modules = [...new Set(table.entries.map((entry) => entry.module))].sort();
+      table.module.replaceChildren(new Option("Todos do portal", ""), ...modules.map((value) => new Option(value, value)));
+      if (modules.includes(selected)) table.module.value = selected;
+    }
+    renderLogTable(table);
+  } catch {
+    table.results.replaceChildren(node("p", "log-failure", "Não foi possível carregar os registos persistentes."));
+  } finally {
+    table.busy = false;
+  }
+}
+document.querySelectorAll("[data-log-table]").forEach((panel) => {
+  const table = {
+    panel, portal: panel.classList.contains("portal-logs"), entries: [], total: 0, busy: false,
+    module: panel.querySelector("[data-log-module]"), severity: panel.querySelector("[data-log-severity]"),
+    search: panel.querySelector("[data-log-search]"), order: panel.querySelector("[data-log-order]"),
+    results: panel.querySelector("[data-log-results]"), summary: panel.querySelector("[data-log-summary]"),
+  };
+  let timer;
+  table.search.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => refreshLogTable(table), 300); });
+  table.severity.addEventListener("change", () => refreshLogTable(table));
+  table.module.addEventListener("change", () => table.portal ? renderLogTable(table) : refreshLogTable(table));
+  table.order.addEventListener("click", () => {
+    const desc = table.order.dataset.order === "desc";
+    table.order.dataset.order = desc ? "asc" : "desc";
+    table.order.textContent = desc ? "Mais antigos ↑" : "Mais recentes ↓";
+    refreshLogTable(table);
+  });
+  logTables.push(table);
+  refreshLogTable(table);
+});
 let busy = false;
 async function refresh() {
   if (busy) return;
@@ -409,5 +511,10 @@ $("logs-errors").addEventListener("click", () => renderOperationEntries(true));
 $("operations-dialog").addEventListener("click", (event) => {
   if (event.target === $("operations-dialog")) $("operations-dialog").close();
 });
+document.querySelector("[data-log-detail-close]").addEventListener("click", () => $("log-detail-dialog").close());
+$("log-detail-dialog").addEventListener("click", (event) => {
+  if (event.target === $("log-detail-dialog")) $("log-detail-dialog").close();
+});
 refresh();
 setInterval(refresh, 15000);
+setInterval(() => logTables.forEach(refreshLogTable), 15000);

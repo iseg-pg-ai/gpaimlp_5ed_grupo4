@@ -306,11 +306,16 @@ class HTTPTests(unittest.TestCase):
 
     def test_operational_details_require_login_and_reject_unknown_signal(self):
         self.assertEqual(self.request("/api/operations?kind=portal")[0], 401)
+        self.assertEqual(self.request("/api/logs?module=portal")[0], 401)
         cookie = self.login()
         status, _, body = self.request("/api/operations?kind=portal", cookie=cookie)
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(body)["kind"], "portal")
         self.assertEqual(self.request("/api/operations?kind=unknown", cookie=cookie)[0], 400)
+        status, _, body = self.request("/api/logs?module=portal&order=desc", cookie=cookie)
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)["module"], "portal")
+        self.assertEqual(self.request("/api/logs?module=unknown", cookie=cookie)[0], 400)
 
     def test_origin_cookie_csrf_and_logout(self):
         self.assertEqual(self.request("/login", "POST", f"username=operator&password={PASSWORD}", origin="https://evil.test")[0], 403)

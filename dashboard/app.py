@@ -546,7 +546,7 @@ def quality(validation: dict) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="BLU · Observatório", page_icon="◈", layout="wide")
+    st.set_page_config(page_title="BLU analitycs · Observatório", page_icon="◈", layout="wide")
     style()
     if not DATABASE.exists():
         st.error("Entrega warehouse ausente. Consulte as instruções de instalação antes de executar o ETL.")

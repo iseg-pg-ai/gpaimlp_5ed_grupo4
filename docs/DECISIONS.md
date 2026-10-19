@@ -683,3 +683,19 @@ backups quando a ocupação do disco atingir 85%, com intervalo mínimo de 24 ho
 Mantém pelo menos cinco backups completos e só remove excedentes com sete dias.
 Catálogo, fontes, warehouse, exports, credenciais, ambientes e dependências ficam
 fora do âmbito. A execução manual exige perfil administrador, origem válida e CSRF.
+
+## 2026-10-19 — Logs operacionais centralizados
+
+Reutilizar `monitoring/runtime/portal-events.jsonl` como fonte persistente dos logs do
+portal, mantendo rotação e compatibilidade com os sinais operacionais existentes. A
+instrumentação cliente regista navegação, interações e pedidos API; a instrumentação
+do servidor regista erros não tratados e os fluxos explícitos continuam a registar
+operações de domínio. Escritas no processo Node são serializadas e eventos idênticos
+da mesma interação são limitados no browser.
+
+O portal não dispõe de identidade própria. A tabela apresenta um identificador
+aleatório da sessão do separador, `server` ou `system`, sem atribuir a ação a uma
+pessoa. Valores de formulários, corpos HTTP, labels, prompts e respostas não são
+capturados. Mensagens e stacks são limitadas e redigidas antes da persistência. A
+consulta permanece protegida pelo login do Monitoring e os ficheiros não são servidos
+diretamente.

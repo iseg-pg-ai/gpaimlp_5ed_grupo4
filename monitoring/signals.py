@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 MAX_BYTES = 2_000_000
+SEVERITIES = {"INFO", "WARNING", "ERROR", "CRITICAL"}
 
 
 def _events(path: Path, since: datetime) -> list[dict]:
@@ -105,3 +106,62 @@ def operational_details(runtime: Path, kind: str) -> dict:
          "fields": {key: row[key] for key in ("key", "event") if key in row}}
         for row in reversed(rows)
     ]}
+
+
+def query_logs(runtime: Path, module: str = "portal", severity: str = "",
+               search: str = "", order: str = "desc", limit: int = 200) -> dict:
+    """Normaliza fontes persistentes para uma tabela técnica, sem conteúdo livre."""
+    if module not in {"portal", "ai", "backup", "alerts"}:
+        raise ValueError("Módulo desconhecido.")
+    severity = severity.upper()
+    if severity and severity not in SEVERITIES:
+        raise ValueError("Severidade desconhecida.")
+    if order not in {"asc", "desc"} or not 1 <= limit <= 500 or len(search) > 80:
+        raise ValueError("Consulta inválida.")
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    rows = []
+    if module in {"portal", "ai"}:
+        source = "portal-events.jsonl" if module == "portal" else "ai-usage.jsonl"
+        for item in _event_family(runtime, source, since):
+            outcome = str(item.get("outcome", "unknown"))
+            raw_level = str(item.get("level", "info" if outcome == "success" else "error")).upper()
+            level = raw_level if raw_level in SEVERITIES else "ERROR"
+            rows.append({
+                "timestamp": item.get("at"),
+                "user": item.get("user", "system"),
+                "action": item.get("operation", "unknown"),
+                "module": item.get("module", item.get("component", module)),
+                "status": outcome,
+                "severity": level,
+                "details": item.get("details") or item.get("error_code") or "—",
+                "message": item.get("message"),
+                "stack": item.get("stack"),
+                "http_status": item.get("http_status"),
+                "duration_ms": item.get("duration_ms"),
+            })
+    elif module == "backup":
+        for entry in operational_details(runtime, "backup")["entries"]:
+            fields = entry["fields"]
+            rows.append({"timestamp": entry.get("at"), "user": "system",
+                         "action": fields.get("operation", "backup"), "module": "backup",
+                         "status": fields.get("outcome", "unknown"),
+                         "severity": "ERROR" if entry["is_error"] else "INFO",
+                         "details": fields.get("backup_id", "—")})
+    else:
+        for entry in operational_details(runtime, "alerts")["entries"]:
+            fields = entry["fields"]
+            rows.append({"timestamp": entry.get("at"), "user": "system",
+                         "action": fields.get("event", "incident"), "module": "alerts",
+                         "status": fields.get("event", "unknown"),
+                         "severity": "ERROR" if entry["is_error"] else "INFO",
+                         "details": fields.get("key", "—")})
+    needle = search.casefold().strip()
+    if severity:
+        rows = [row for row in rows if row["severity"] == severity]
+    if needle:
+        rows = [row for row in rows if needle in " ".join(
+            str(row.get(key, "")) for key in ("user", "action", "module", "status", "details", "message")
+        ).casefold()]
+    rows.sort(key=lambda row: row.get("timestamp") or "", reverse=order == "desc")
+    return {"module": module, "entries": rows[:limit], "total": len(rows),
+            "generated_at": datetime.now(timezone.utc).isoformat()}
