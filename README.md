@@ -83,7 +83,9 @@ uma conta ativa com perfil `admin` pode iniciar a recuperação; a palavra-passe
 aparece no terminal nem é aceite por argumento, variável de ambiente ou entrada não
 interativa.
 
-O comando valida Python e Node, sincroniza dependências bloqueadas, preserva dados
+Depois da autenticação, a tarefa 0 termina os cinco serviços e confirma que as portas
+3001, 3003, 3004, 8000 e 8501 ficaram inacessíveis. Só então o comando valida Python
+e Node, sincroniza dependências bloqueadas, preserva dados
 válidos ou recupera conjuntos ausentes a partir do último backup verificado, executa
 as baterias de testes, constrói o portal, inicia os cinco serviços e confirma as
 portas 3001, 3003, 3004, 8000 e 8501. O terminal mostra uma barra por tarefa e guarda

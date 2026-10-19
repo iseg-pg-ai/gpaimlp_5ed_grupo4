@@ -240,6 +240,11 @@ de um terminal interativo e confirma que pertencem a uma conta ativa com perfil
 credenciais locais, é necessário recuperar primeiro uma conta com
 `python -B -m monitoring.setup`.
 
+A tarefa 0 cria uma janela de manutenção explícita: termina portal, apresentação,
+monitoring, agente e Observatório, liberta as cinco portas e confirma que nenhuma
+aceita ligações. As restantes tarefas só avançam depois dessa confirmação; os serviços
+voltam a arrancar em conjunto após testes e build.
+
 O launcher é instalado por `scripts/install_just_blu_it.sh`. Num deployment, essa
 instalação deve fazer parte da criação da máquina ou imagem. O encaminhamento local
 das portas está declarado no workspace, mas autenticação SageMaker, DNS, TLS e regras

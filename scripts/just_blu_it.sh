@@ -109,6 +109,32 @@ stop_known_services() {
     pkill -TERM -f 'uvicorn blu_ai.api.server:app.*8000' >> "$LOG" 2>&1 || true
 }
 
+port_is_open() {
+    # A abertura TCP basta para detetar qualquer processo, mesmo sem uma rota HTTP válida.
+    (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null
+}
+
+stop_all_services() {
+    local attempt port open
+    stop_known_services
+    for port in 3001 3003 3004 8000 8501; do stop_port "$port"; done
+
+    # Aguardar até 15 segundos para garantir indisponibilidade antes da recuperação.
+    for attempt in {1..30}; do
+        open=0
+        for port in 3001 3003 3004 8000 8501; do
+            if port_is_open "$port"; then open=1; fi
+        done
+        if [ "$open" -eq 0 ]; then
+            rm -f "$SERVICES"/*.pid
+            return 0
+        fi
+        sleep 0.5
+    done
+    printf 'Persistem serviços ativos nas portas BLU após a paragem.\n' >> "$LOG"
+    return 1
+}
+
 start_service() {
     # Os PID e logs permitem diagnóstico e uma paragem controlada na execução seguinte.
     local name="$1"
@@ -118,16 +144,21 @@ start_service() {
 }
 
 start_all_services() {
-    # Evitar duas instâncias a escrever no mesmo catálogo ou a disputar a mesma porta.
-    stop_known_services
-    for port in 3001 3003 3004 8000 8501; do stop_port "$port"; done
-    sleep 2
     start_service agent bash scripts/start_ai_agent.sh
     start_service observatory bash scripts/start_dashboard.sh
     start_service presentation .venv/bin/python -B presentation/serve.py --port 3003
     start_service monitoring env PYTHONPATH=src BLU_MONITOR_AGENT_ENABLED=1 \
         .venv/bin/python -B -m monitoring.server
     start_service portal bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
+}
+
+verify_environment() {
+    command -v uv >/dev/null
+    command -v node >/dev/null
+    command -v npm >/dev/null
+    command -v curl >/dev/null
+    python3 -c 'import sys; assert (3,12) <= sys.version_info[:2] < (3,14)'
+    node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a<22||a>24||(a===22&&b<13)?1:0)'
 }
 
 confirm_services() {
@@ -154,23 +185,17 @@ mkdir -p "$RUNTIME" "$SERVICES"
 : > "$LOG"
 trap fail ERR
 
-run_task "1. Verificar ambiente" bash -c '
-    command -v uv >/dev/null
-    command -v node >/dev/null
-    command -v npm >/dev/null
-    command -v curl >/dev/null
-    python3 -c "import sys; assert (3,12) <= sys.version_info[:2] < (3,14)"
-    node -e '\''const [a,b]=process.versions.node.split(".").map(Number);process.exit(a<22||a>24||(a===22&&b<13)?1:0)'\''
-'
-
 # Modo rápido usado para validar o orquestrador sem instalar nem iniciar serviços.
 if [ "${BLU_IT_VALIDATE_ONLY:-0}" = "1" ]; then
+    run_task "1. Verificar ambiente" verify_environment
     run_task "2. Inspecionar recuperação" env PYTHONPATH=src .venv/bin/python -B -m monitoring.recovery inspect
     run_task "3. Validar estrutura" python3 scripts/check_project.py
     run_task "4. Validar orquestrador" bash -n scripts/just_blu_it.sh
     exit 0
 fi
 
+run_task "0. Parar todo o sistema" stop_all_services
+run_task "1. Verificar ambiente" verify_environment
 run_task "2. Preparar Python" uv sync --locked --all-groups
 run_task "3. Preparar portal" npm --prefix dmc-workspace ci
 

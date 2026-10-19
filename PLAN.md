@@ -870,6 +870,8 @@ cenários de navegador do monitoring e apresentação em 320–2560 px aprovados
 - [x] Criar launcher local e `Justfile` com o comando literal `just blu it`.
 - [x] Exigir autenticação interativa de uma conta ativa `admin` antes de executar
   qualquer preparação, teste, restauro ou reinício.
+- [x] Executar uma tarefa 0 após a autenticação para parar os cinco serviços e
+  confirmar a indisponibilidade das respetivas portas antes da recuperação.
 - [x] Mostrar progresso independente de 0 a 100% por tarefa, falha localizada e
   log técnico privado; manter detalhes fora do terminal quando não existem erros.
 - [x] Sincronizar dependências Python/Node, executar testes e construir o portal.
