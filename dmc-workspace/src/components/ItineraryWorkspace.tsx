@@ -414,7 +414,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               style={{ minHeight: 44 }}
             >
               <FileText aria-hidden="true" className="size-4" />
-              <T text="Exportar TXT para Canva" source="pt" />
+              <T text="Exportar TXT" source="pt" />
             </Button>
             <Button variant="outline" onClick={onEditBrief} className="min-h-11 text-sm">
               <SlidersHorizontal aria-hidden="true" className="size-4" />

@@ -3,7 +3,7 @@
 Plugin privado com workflow de roteiro visual e dependência da ligação Canva.
 Recebe o TXT de uma versão guardada no DMC, sem acesso automático ao portal.
 
-Versão do pacote-fonte: 0.3.0. Compatível com `blu-roteiro-canva/1.1.0` e `1.0.0`.
+Versão do pacote-fonte: 0.4.0. Compatível com `blu-roteiro-canva/1.1.0` e `1.0.0`.
 
 ## Processo no DMC atualizado
 
@@ -33,7 +33,7 @@ O ficheiro contém o nome do cliente; não é anónimo.
 
 O prompt genérico de curadoria continua em `config/prompts/curadoria-blu.txt`.
 Para o PDF visual, usar o TXT específico descarregado pelo botão
-**Exportar TXT para Canva** na proposta ou no histórico do DMC.
+**Exportar TXT** na proposta ou no histórico do DMC.
 O TXT inclui os dados do roteiro, idioma, versão, orçamento e pendências.
 O modelo é https://canva.link/5u8zxudd1vkcbth; trabalhar sempre numa cópia.
 O pacote exportado é uma fotografia: alterações às instruções exigem reconstruir
