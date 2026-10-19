@@ -76,7 +76,14 @@ Depois, a partir de qualquer diretório dentro do repositório:
 
 ```bash
 just blu it
+just blu up
 ```
+
+`just blu it` executa a recuperação integral. `just blu up` mantém os serviços já
+ativos, inicia apenas os que estejam parados, confirma os cinco endpoints e abre as
+quatro interfaces no navegador associado ao Code Editor. Este modo rápido não instala
+dependências, não executa testes, não reconstrói o portal e não pede autenticação
+administrativa; pressupõe um ambiente já preparado e credenciais de Monitoring.
 
 O comando pede interativamente o utilizador e a palavra-passe do monitoring. Apenas
 uma conta ativa com perfil `admin` pode iniciar a recuperação; a palavra-passe não
@@ -89,7 +96,9 @@ e Node, sincroniza dependências bloqueadas, preserva dados
 válidos ou recupera conjuntos ausentes a partir do último backup verificado, executa
 as baterias de testes, constrói o portal, inicia os cinco serviços e confirma as
 portas 3001, 3003, 3004, 8000 e 8501. O terminal mostra uma barra por tarefa e guarda
-detalhes em `monitoring/runtime/recovery/just-blu-it.log`.
+detalhes em `monitoring/runtime/recovery/just-blu-it.log`. A tarefa final abre também
+as quatro interfaces no navegador; o endpoint técnico do agente na porta 8000 é
+validado, mas não abre um separador.
 
 Em Code Editor, `.vscode/settings.json` pede o encaminhamento automático destas
 portas. O comando não consegue renovar uma sessão SageMaker expirada: a autenticação

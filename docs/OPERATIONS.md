@@ -243,7 +243,14 @@ credenciais locais, é necessário recuperar primeiro uma conta com
 A tarefa 0 cria uma janela de manutenção explícita: termina portal, apresentação,
 monitoring, agente e Observatório, liberta as cinco portas e confirma que nenhuma
 aceita ligações. As restantes tarefas só avançam depois dessa confirmação; os serviços
-voltam a arrancar em conjunto após testes e build.
+voltam a arrancar em conjunto após testes e build. A tarefa final abre as quatro
+interfaces através do helper de navegador da sessão Code Editor. O agente na porta
+8000 continua a ser validado, mas não abre um separador.
+
+`just blu up` é o arranque rápido para um ambiente já preparado. Conserva processos
+ativos, inicia apenas serviços sem porta aberta, confirma os cinco endpoints e abre as
+quatro interfaces. Não substitui a recuperação: não instala dependências, não executa testes,
+não restaura dados e não reconstrói o portal.
 
 As bibliotecas Linux necessárias aos testes Chromium são verificadas na preparação do
 portal e extraídas, sem privilégios, para `monitoring/runtime/browser-libs`. Esta cache

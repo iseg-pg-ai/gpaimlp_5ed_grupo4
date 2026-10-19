@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "${1:-}" != "blu" ] || [ "${2:-}" != "it" ] || [ "$#" -ne 2 ]; then
-    echo "Utilização: just blu it" >&2
+if [ "${1:-}" != "blu" ] || [ "$#" -ne 2 ] \
+        || { [ "$2" != "it" ] && [ "$2" != "up" ]; }; then
+    echo "Utilização: just blu it | just blu up" >&2
     exit 2
 fi
 
@@ -14,5 +15,8 @@ done
 if [ ! -f "$SEARCH_ROOT/Justfile" ] || [ ! -x "$SEARCH_ROOT/scripts/just_blu_it.sh" ]; then
     echo "Executar dentro do repositório BLU." >&2
     exit 2
+fi
+if [ "$2" = "up" ]; then
+    export BLU_MODE=up
 fi
 exec bash "$SEARCH_ROOT/scripts/just_blu_it.sh"

@@ -883,6 +883,9 @@ cenários de navegador do monitoring e apresentação em 320–2560 px aprovados
 - [x] Iniciar agente, portal, apresentação, monitoring e Observatório e verificar
   as portas 8000, 3001, 3003, 3004 e 8501.
 - [x] Declarar encaminhamento automático das cinco portas no workspace.
+- [x] Acrescentar `just blu up` para iniciar apenas serviços parados, confirmar os
+  cinco endpoints e abrir as quatro interfaces; abrir os mesmos endereços no fim de
+  `just blu it`.
 
 ## Observabilidade centralizada no Monitoring — 2026-10-19
 

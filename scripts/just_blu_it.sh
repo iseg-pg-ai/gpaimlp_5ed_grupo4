@@ -152,6 +152,26 @@ start_all_services() {
     start_service portal bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
 }
 
+start_missing_service() {
+    local name="$1" port="$2"
+    shift 2
+    if port_is_open "$port"; then
+        printf '  • %s já está ativo na porta %s.\n' "$name" "$port"
+        return
+    fi
+    start_service "$name" "$@"
+    printf '  ✓ %s iniciado na porta %s.\n' "$name" "$port"
+}
+
+start_missing_services() {
+    start_missing_service agent 8000 bash scripts/start_ai_agent.sh
+    start_missing_service observatory 8501 bash scripts/start_dashboard.sh
+    start_missing_service presentation 3003 .venv/bin/python -B presentation/serve.py --port 3003
+    start_missing_service monitoring 3004 env PYTHONPATH=src BLU_MONITOR_AGENT_ENABLED=1 \
+        .venv/bin/python -B -m monitoring.server
+    start_missing_service portal 3001 bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
+}
+
 verify_environment() {
     command -v uv >/dev/null
     command -v node >/dev/null
@@ -176,7 +196,32 @@ confirm_services() {
     done
 }
 
+confirm_service_endpoints() {
+    wait_http "Portal" "http://127.0.0.1:3001/catalog"
+    wait_http "Apresentação" "http://127.0.0.1:3003/"
+    wait_http "Monitoring" "http://127.0.0.1:3004/health"
+    wait_http "Agente IA" "http://127.0.0.1:8000/api/health"
+    wait_http "Observatório" "http://127.0.0.1:8501/_stcore/health"
+}
+
 cd "$ROOT"
+if [ "${BLU_MODE:-it}" = "up" ]; then
+    printf '\njust blu up\nInicialização dos dashboards BLU\n\n'
+    mkdir -p "$RUNTIME" "$SERVICES"
+    if [ ! -f monitoring/runtime/credentials.json ]; then
+        printf 'Falta configurar o acesso ao Monitoring: python -B -m monitoring.setup\n' >&2
+        exit 1
+    fi
+    verify_environment
+    PORTAL_PUBLIC_ORIGIN="$(python3 -B scripts/studio_urls.py --origin)"
+    export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="/codeeditor/default/ports/3001"
+    start_missing_services
+    confirm_service_endpoints
+    python3 -B scripts/open_dashboards.py
+    printf '\nTodos os dashboards estão disponíveis.\n'
+    exit 0
+fi
+
 printf '\njust blu it\nRecuperação ponta a ponta do sistema BLU\n'
 python3 -B -m monitoring.admin_auth
 
@@ -232,4 +277,4 @@ run_task "11. Testes finais dos dashboards" bash -c '
 '
 
 python3 -B scripts/studio_urls.py >> "$LOG"
-run_task "12. Sistema BLU recuperado" true
+run_task "12. Sistema BLU recuperado" python3 -B scripts/open_dashboards.py
