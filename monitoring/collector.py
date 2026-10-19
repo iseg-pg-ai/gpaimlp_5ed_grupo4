@@ -16,6 +16,7 @@ from urllib.error import HTTPError
 from urllib.request import build_opener, HTTPRedirectHandler, ProxyHandler, Request
 
 from monitoring.alerts import AlertStore
+from monitoring.backup import BackupScheduler
 from monitoring.cleanup import CleanupManager
 from monitoring.signals import operational_signals
 
@@ -96,15 +97,26 @@ class Collector:
             value = cleanup.get(field, 1)
             if not isinstance(value, int) or value < 1:
                 raise ValueError("Política de limpeza inválida.")
+        backup = config.get("backup", {})
+        if backup.get("enabled") and (not isinstance(backup.get("interval_hours"), int)
+                                      or backup["interval_hours"] < 1):
+            raise ValueError("Cadência de backup inválida.")
+        thresholds = config.get("alert_thresholds", {})
+        for field in ("service_consecutive_failures", "portal_errors_24h", "ai_failures_24h"):
+            value = thresholds.get(field, 1)
+            if not isinstance(value, int) or value < 1:
+                raise ValueError("Limiar de alerta inválido.")
         self.lock = threading.Lock()
         self.stop = threading.Event()
         self.samples, self.events = deque(maxlen=240), deque(maxlen=100)
         self.latest = None
         self.previous = {}
+        self.failure_streaks = {}
         runtime.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.runtime = runtime
         self.alerts = AlertStore(runtime)
         self.cleanup = CleanupManager(root, runtime, config)
+        self.backups = BackupScheduler(root, runtime, config)
         self.logger = logging.Logger("blu-monitor-probes")
         handler = RotatingFileHandler(runtime / "probes.jsonl", maxBytes=1_000_000, backupCount=3)
         os.chmod(runtime / "probes.jsonl", 0o600)
@@ -125,15 +137,23 @@ class Collector:
                   "disk_used_pct": round(100 * disk.used / disk.total, 1),
                   "load_1m": round(os.getloadavg()[0], 2) if hasattr(os, "getloadavg") else None}
         system["cleanup"] = self.cleanup.maybe_run(system["disk_used_pct"])
+        system["backup_schedule"] = self.backups.maybe_run()
         snapshot = {"checked_at": now, "interval_seconds": self.interval, "services": services,
                     "warehouse": warehouse, "system": system}
         snapshot["operations"] = operational_signals(self.runtime)
-        conditions = {f"service:{item['name']}": item["state"] == "down" for item in services
-                      if item["state"] != "disabled"}
+        service_limit = self.config.get("alert_thresholds", {}).get("service_consecutive_failures", 2)
+        conditions = {}
+        for item in services:
+            if item["state"] == "disabled":
+                continue
+            key = f"service:{item['name']}"
+            self.failure_streaks[key] = self.failure_streaks.get(key, 0) + 1 if item["state"] == "down" else 0
+            conditions[key] = self.failure_streaks[key] >= service_limit
+        thresholds = self.config.get("alert_thresholds", {})
         conditions.update({"warehouse": warehouse["state"] in {"down", "degraded"},
                            "disk": system["disk_used_pct"] >= 90,
-                           "portal-errors": snapshot["operations"]["portal"]["errors_24h"] > 0,
-                           "ai-failures": snapshot["operations"]["ai"]["failures_24h"] > 0,
+                           "portal-errors": snapshot["operations"]["portal"]["errors_24h"] >= thresholds.get("portal_errors_24h", 5),
+                           "ai-failures": snapshot["operations"]["ai"]["failures_24h"] >= thresholds.get("ai_failures_24h", 3),
                            "backup": snapshot["operations"]["backup"]["state"] == "down"})
         snapshot["alerts"] = self.alerts.reconcile(conditions)
         entities = [(x["name"], x["state"]) for x in services] + [("Warehouse", warehouse["state"])]

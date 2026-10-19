@@ -1,4 +1,4 @@
-import { appendFile, mkdir, stat } from "node:fs/promises";
+import { appendFile, mkdir, rename, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 
 type Level = "info" | "warning" | "error";
@@ -14,11 +14,21 @@ type OperationalEvent = {
 };
 
 const MAX_BYTES = 2_000_000;
+const ROTATED_FILES = 3;
 const telemetryRoot = () =>
   process.env.BLU_TELEMETRY_DIR ?? path.resolve(process.cwd(), "../monitoring/runtime");
 
 function clean(value: string, maximum = 80) {
   return value.replace(/[^A-Za-z0-9_.:/-]/g, "_").slice(0, maximum);
+}
+
+async function rotate(file: string) {
+  for (let index = ROTATED_FILES; index >= 1; index -= 1) {
+    const source = index === 1 ? file : `${file}.${index - 1}`;
+    const destination = `${file}.${index}`;
+    await unlink(destination).catch(() => undefined);
+    await rename(source, destination).catch(() => undefined);
+  }
 }
 
 export async function recordOperationalEvent(event: OperationalEvent) {
@@ -28,7 +38,7 @@ export async function recordOperationalEvent(event: OperationalEvent) {
     await mkdir(directory, { recursive: true, mode: 0o700 });
     const file = path.join(directory, "portal-events.jsonl");
     const current = await stat(file).catch(() => null);
-    if (current && current.size >= MAX_BYTES) return;
+    if (current && current.size >= MAX_BYTES) await rotate(file);
     const record = {
       at: new Date().toISOString(),
       component: clean(event.component),

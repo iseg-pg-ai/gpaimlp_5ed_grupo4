@@ -4,15 +4,30 @@ from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from monitoring.alerts import AlertStore
-from monitoring.backup import create_backup, verify_backup
+from monitoring.backup import BackupScheduler, create_backup, verify_backup
 from monitoring.cleanup import CleanupManager
 from monitoring.signals import operational_signals
 from blu_ai.telemetry import invoke_with_telemetry, usage_from_messages
 
 
 class OperationsTest(unittest.TestCase):
+    def test_backup_scheduler_runs_once_per_interval_and_records_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            runtime = root / "monitoring/runtime"
+            (root / "warehouse").mkdir(parents=True)
+            (root / "warehouse/item.json").write_text("{}")
+            scheduler = BackupScheduler(root, runtime, {"backup": {
+                "enabled": True, "interval_hours": 24}})
+            first = scheduler.maybe_run()
+            second = scheduler.maybe_run()
+            self.assertEqual(first["outcome"], "passed")
+            self.assertEqual(second["backup_id"], first["backup_id"])
+            self.assertEqual(len(list((runtime / "backups").iterdir())), 1)
+
     def test_cleanup_removes_only_regenerable_content_and_retains_recent_backups(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -82,6 +97,24 @@ class OperationsTest(unittest.TestCase):
             self.assertNotIn("cliente privado", content)
             self.assertNotIn("secret", content)
 
+    def test_ai_telemetry_rotates_instead_of_stopping(self):
+        with tempfile.TemporaryDirectory() as directory:
+            import os
+            previous = os.environ.get("BLU_TELEMETRY_DIR")
+            os.environ["BLU_TELEMETRY_DIR"] = directory
+            try:
+                with patch("blu_ai.telemetry.MAX_BYTES", 1):
+                    from blu_ai.telemetry import record_ai_usage
+                    record_ai_usage("first", "success", 1)
+                    record_ai_usage("second", "success", 1)
+            finally:
+                if previous is None:
+                    os.environ.pop("BLU_TELEMETRY_DIR", None)
+                else:
+                    os.environ["BLU_TELEMETRY_DIR"] = previous
+            self.assertTrue((Path(directory) / "ai-usage.jsonl.1").exists())
+            self.assertIn("second", (Path(directory) / "ai-usage.jsonl").read_text())
+
     def test_backup_is_copied_hashed_and_restored_in_isolation(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "root"
@@ -114,6 +147,18 @@ class OperationsTest(unittest.TestCase):
             self.assertEqual(result["queued"], 1)
             events = [json.loads(line) for line in (runtime / "notifications.jsonl").read_text().splitlines()]
             self.assertEqual([item["event"] for item in events], ["opened", "recovered"])
+
+    def test_signals_include_rotated_event_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory)
+            now = datetime.now(timezone.utc)
+            (runtime / "portal-events.jsonl.1").write_text(json.dumps({
+                "at": now.isoformat(), "outcome": "failed"}) + "\n")
+            (runtime / "portal-events.jsonl").write_text(json.dumps({
+                "at": now.isoformat(), "outcome": "success"}) + "\n")
+            result = operational_signals(runtime, now)
+            self.assertEqual(result["portal"]["events_24h"], 2)
+            self.assertEqual(result["portal"]["errors_24h"], 1)
 
 
 if __name__ == "__main__":

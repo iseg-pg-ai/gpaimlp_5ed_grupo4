@@ -753,9 +753,9 @@ navegação autenticada pelo proxy ainda não foram confirmados pelo utilizador.
 
 ## Pendências de monitoring
 
-Registado a pedido do utilizador em 2026-10-19. **Esta etapa ainda não está
-feita.** A primeira versão guarda apenas logs das sondas e apresenta incidentes
-no painel. O funcionamento desse painel não significa monitoring completo.
+Registado a pedido do utilizador em 2026-10-19. A recolha interna, backups locais e
+consumo de IA foram implementados. A operação externa continua incompleta enquanto
+não existirem destinos, responsáveis e infraestrutura fora desta máquina.
 
 - [x] Recolher erros internos do portal e falhas de operações/subprocessos,
   com logs estruturados, correlação de pedidos e exclusão de dados pessoais
@@ -850,3 +850,14 @@ JavaScript de monitoring e testes e configurações que o verificador assinalou.
 warehouse e os restantes dados publicados não foram alterados. Validação: 83 testes
 Python, 97 testes do portal com um opcional omitido, lint e tipos do portal, e
 cenários de navegador do monitoring e apresentação em 320–2560 px aprovados.
+
+## Preparação do monitoring para deployment — 2026-10-19
+
+- [x] Rodar telemetria do portal e da IA sem interromper a recolha ao atingir 2 MB.
+- [x] Criar e verificar backups locais automaticamente a cada 24 horas.
+- [x] Definir limiares preliminares: duas falhas consecutivas de serviço, cinco
+  erros do portal, três falhas de IA e warehouse com idade máxima de sete dias.
+- [x] Expor `/health` sem dados operacionais para uma futura sonda externa.
+- [x] Criar runbooks para serviços, portal, warehouse, backups, disco, IA e monitoring.
+- [ ] Configurar destino externo cifrado para backups no ambiente escolhido.
+- [ ] Instalar uma sonda fora da máquina e ligar notificações a responsáveis reais.

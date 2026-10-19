@@ -23,11 +23,18 @@ def _events(path: Path, since: datetime) -> list[dict]:
         return []
 
 
+def _event_family(runtime: Path, name: str, since: datetime) -> list[dict]:
+    rows = []
+    for suffix in (".3", ".2", ".1", ""):
+        rows.extend(_events(runtime / f"{name}{suffix}", since))
+    return sorted(rows, key=lambda row: row["at"])
+
+
 def operational_signals(runtime: Path, now: datetime | None = None) -> dict:
     now = now or datetime.now(timezone.utc)
     since = now - timedelta(hours=24)
-    portal = _events(runtime / "portal-events.jsonl", since)
-    ai = _events(runtime / "ai-usage.jsonl", since)
+    portal = _event_family(runtime, "portal-events.jsonl", since)
+    ai = _event_family(runtime, "ai-usage.jsonl", since)
     backup = {"state": "unknown", "last_backup_at": None, "last_restore_at": None,
               "artifacts": None}
     try:
@@ -37,6 +44,13 @@ def operational_signals(runtime: Path, now: datetime | None = None) -> dict:
                       last_restore_at=evidence["checked_at"], artifacts=evidence["artifact_count"])
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
         pass
+    try:
+        scheduled = json.loads((runtime / "backup-schedule.json").read_text())
+        backup["last_attempt_at"] = scheduled["at"]
+        if scheduled["outcome"] != "passed":
+            backup["state"] = "down"
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+        backup["last_attempt_at"] = None
     token_rows = [row for row in ai if isinstance(row.get("total_tokens"), int)]
     return {
         "portal": {"state": "degraded" if any(row.get("outcome") != "success" for row in portal) else "up",

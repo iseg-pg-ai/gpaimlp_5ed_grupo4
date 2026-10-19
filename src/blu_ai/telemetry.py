@@ -10,6 +10,7 @@ import time
 from typing import Any
 
 MAX_BYTES = 2_000_000
+ROTATED_FILES = 3
 
 
 def _clean(value: object, maximum: int = 80) -> str:
@@ -19,6 +20,15 @@ def _clean(value: object, maximum: int = 80) -> str:
 def _runtime() -> Path:
     configured = os.environ.get("BLU_TELEMETRY_DIR")
     return Path(configured) if configured else Path(__file__).resolve().parents[2] / "monitoring/runtime"
+
+
+def _rotate(path: Path) -> None:
+    for index in range(ROTATED_FILES, 0, -1):
+        source = path if index == 1 else Path(f"{path}.{index - 1}")
+        destination = Path(f"{path}.{index}")
+        destination.unlink(missing_ok=True)
+        if source.exists():
+            os.replace(source, destination)
 
 
 def usage_from_messages(messages: list[Any]) -> dict[str, int | None]:
@@ -51,7 +61,7 @@ def record_ai_usage(operation: str, outcome: str, duration_ms: float,
         directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         path = directory / "ai-usage.jsonl"
         if path.exists() and path.stat().st_size >= MAX_BYTES:
-            return
+            _rotate(path)
         record = {"at": datetime.now(timezone.utc).isoformat(), "component": "ai-agent",
                   "operation": _clean(operation), "outcome": _clean(outcome),
                   "duration_ms": max(0, round(duration_ms)),

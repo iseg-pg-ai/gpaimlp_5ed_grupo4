@@ -249,9 +249,11 @@ A recolha verifica serviços locais por HTTP, agregados da validação/publicaç
 do warehouse e ocupação do disco, sem escrever nos dados operacionais nem
 chamar modelos. Mantém histórico limitado e logs de sondas com rotação.
 
-Esta implementação não corresponde ainda à instrumentação de pedidos, erros
-de escrita, tracing distribuído, backup monitorizado ou alertas externos.
-O limiar de idade do warehouse fica por definir e o agente é opcional.
+Esta implementação inclui eventos reduzidos do portal e do agente, backups locais
+verificados, retenção, limpeza de disco e incidentes deduplicados. O warehouse usa
+um limiar preliminar de sete dias e o agente continua opcional. Permanecem por
+resolver tracing distribuído, destino externo dos backups, sonda fora da máquina e
+notificações externas.
 O monitor está na mesma máquina dos serviços: falhas da máquina requerem uma
 sonda externa futura. O servidor interno não representa uma decisão de
 hosting de produção.
@@ -272,5 +274,5 @@ outras contas e deve ser feita com o serviço parado. Ver o
 Credenciais e logs anteriormente versionados são retirados do índice, com
 ficheiros locais preservados e verificação estrutural contra nova inclusão.
 O histórico não foi reescrito; a palavra-passe inicial deve ser alterada se
-ainda estiver em uso. Esta gestão não implementa as quatro pendências de
-monitoring registadas no plano.
+ainda estiver em uso. Os procedimentos de resposta estão no
+[runbook de monitoring](MONITORING_RUNBOOK.md).

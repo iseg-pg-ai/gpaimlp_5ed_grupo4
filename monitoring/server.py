@@ -102,6 +102,8 @@ def make_server(port, security, collector, public_url, insecure_local=False):
 
         def do_GET(self):
             path = self.route_path()
+            if path == "/health":
+                return self.reply(200, '{"status":"ok"}', "application/json")
             session = security.session(self.token())
             if path == "/login":
                 if session:

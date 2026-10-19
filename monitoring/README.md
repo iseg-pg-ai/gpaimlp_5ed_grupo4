@@ -114,6 +114,11 @@ exigem reinício do monitoring.
 
 ## Backups e ensaio de restauro
 
+Com `backup.enabled`, o coletor cria e verifica uma cópia local a cada 24 horas.
+O resultado da tentativa fica em `monitoring/runtime/backup-schedule.json`. O ciclo
+começa no arranque se não existir uma tentativa recente e não substitui um destino
+externo cifrado, que depende da arquitetura de deployment.
+
 Para criar uma cópia local do catálogo SQLite, warehouse e itinerários e validar
 imediatamente hashes, integridade SQLite e restauro num diretório temporário:
 
@@ -146,9 +151,10 @@ tem de ser definida antes de produção.
 - Consumo de IA com chamadas, falhas, latência e tokens quando reportados.
 - Incidentes deduplicados e recuperações numa fila local; sem envio externo.
 
-`monitoring/config.json` define intervalo (10–300 segundos), agente, limpeza e idade
-máxima aceitável do warehouse em horas. `warehouse_max_age_hours: null` mostra cadência
-por definir, sem inventar um SLA de atualização. Reiniciar para aplicar alterações.
+`monitoring/config.json` define intervalo (10–300 segundos), agente, backups, limpeza,
+limiares de alerta e idade máxima aceitável do warehouse. O valor preliminar de 168
+horas deve ser revisto quando existir uma cadência operacional acordada. Reiniciar
+para aplicar alterações.
 A ocupação de disco a partir de 90% conta como incidente local preliminar, a rever
 com a equipa. As contagens das tabelas incluem entidades de vários tipos; não
 representam um total de clientes ou de experiências únicas.

@@ -276,6 +276,7 @@ class HTTPTests(unittest.TestCase):
         return headers["Set-Cookie"]
 
     def test_gate_assets_api_and_files(self):
+        self.assertEqual(self.request("/health")[0], 200)
         self.assertEqual(self.request("/")[0], 303)
         self.assertEqual(self.request("/api/status")[0], 401)
         self.assertEqual(self.request("/app.js")[0], 303)

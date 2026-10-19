@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import os
@@ -10,8 +10,53 @@ from pathlib import Path
 import shutil
 import sqlite3
 import tempfile
+import threading
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class BackupScheduler:
+    """Agenda cópias locais; o destino externo é responsabilidade do deployment."""
+
+    def __init__(self, root: Path, runtime: Path, config: dict):
+        self.root, self.runtime = root, runtime
+        self.config = config.get("backup", {})
+        self.status_path = runtime / "backup-schedule.json"
+        self.lock = threading.Lock()
+
+    def _last_attempt(self) -> datetime | None:
+        try:
+            value = json.loads(self.status_path.read_text())["at"]
+            parsed = datetime.fromisoformat(value)
+            return parsed if parsed.tzinfo else None
+        except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+            return None
+
+    def maybe_run(self) -> dict:
+        if not self.config.get("enabled", False):
+            return {"enabled": False, "outcome": "disabled"}
+        interval = max(1, int(self.config.get("interval_hours", 24)))
+        last = self._last_attempt()
+        if last and datetime.now(timezone.utc) - last < timedelta(hours=interval):
+            return json.loads(self.status_path.read_text())
+        return self.run()
+
+    def run(self) -> dict:
+        with self.lock:
+            status = {"at": datetime.now(timezone.utc).isoformat(), "outcome": "failed"}
+            try:
+                target = create_backup(self.root, self.runtime)
+                evidence = verify_backup(target, self.runtime)
+                status.update(outcome="passed", backup_id=evidence["backup_id"],
+                              artifact_count=evidence["artifact_count"])
+            except (OSError, ValueError, KeyError, TypeError, sqlite3.Error):
+                pass
+            self.runtime.mkdir(parents=True, exist_ok=True, mode=0o700)
+            temporary = self.status_path.with_suffix(".tmp")
+            temporary.write_text(json.dumps(status, separators=(",", ":")))
+            os.chmod(temporary, 0o600)
+            os.replace(temporary, self.status_path)
+            return status
 
 
 def _hash(path: Path) -> str:
