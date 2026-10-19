@@ -83,6 +83,19 @@ try {
         .first()
         .evaluate((bar) => bar.getBoundingClientRect().height > 20),
     );
+    await page.locator("#portal-signal").click();
+    await page.getByRole("heading", { name: "Registos do portal" }).waitFor();
+    await page.getByText("fixture-check", { exact: true }).waitFor();
+    assert.equal(await page.locator(".log-entry").count(), 2);
+    await page.getByRole("button", { name: /Apenas erros/ }).click();
+    await page.getByText("fixture-failure", { exact: true }).waitFor();
+    assert.equal(await page.locator(".log-entry").count(), 1);
+    assert.equal(
+      await page.getByText("fixture-check", { exact: true }).count(),
+      0,
+    );
+    await checkWidth();
+    await page.getByRole("button", { name: "Fechar" }).click();
     await checkWidth();
     if (width === 320) {
       const payload = await (

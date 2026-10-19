@@ -10,11 +10,25 @@ from monitoring.alerts import AlertStore
 from monitoring.backup import BackupScheduler, create_backup, verify_backup
 from monitoring.cleanup import CleanupManager
 from monitoring.recovery import ensure_recovery
-from monitoring.signals import operational_signals
+from monitoring.signals import operational_details, operational_signals
 from blu_ai.telemetry import invoke_with_telemetry, usage_from_messages
 
 
 class OperationsTest(unittest.TestCase):
+    def test_operational_details_expose_only_allowed_technical_fields(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory)
+            event = {"at": datetime.now(timezone.utc).isoformat(), "component": "portal",
+                     "operation": "save", "outcome": "failed", "error_code": "Timeout",
+                     "message": "conteúdo privado", "prompt": "não expor"}
+            (runtime / "portal-events.jsonl").write_text(json.dumps(event) + "\n")
+            result = operational_details(runtime, "portal")
+            encoded = json.dumps(result)
+            self.assertTrue(result["entries"][0]["is_error"])
+            self.assertIn("Timeout", encoded)
+            self.assertNotIn("conteúdo privado", encoded)
+            self.assertNotIn("não expor", encoded)
+
     def test_recovery_preserves_valid_data_and_restores_missing_sets(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

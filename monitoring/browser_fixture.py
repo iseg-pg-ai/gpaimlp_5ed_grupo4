@@ -17,7 +17,19 @@ def main():
             sock.bind(("127.0.0.1", 0))
             port = sock.getsockname()[1]
         now = datetime.now(timezone.utc).isoformat()
+        runtime = Path(directory)
+        portal_events = [
+            {"at": now, "component": "portal", "operation": "fixture-check",
+             "outcome": "success", "duration_ms": 12},
+            {"at": now, "component": "portal", "operation": "fixture-failure",
+             "outcome": "failed", "error_code": "FixtureError"},
+        ]
+        (runtime / "portal-events.jsonl").write_text(
+            "\n".join(json.dumps(event) for event in portal_events) + "\n")
         class Fixture:
+            def __init__(self):
+                self.runtime = runtime
+
             def snapshot(self):
                 services = [{"name": name, "state": state, "http_status": 200 if state == "up" else None,
                              "latency_ms": 12 if state != "disabled" else None}

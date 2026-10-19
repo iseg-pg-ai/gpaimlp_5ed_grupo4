@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from monitoring.collector import Collector
 from monitoring.security import Security
+from monitoring.signals import operational_details
 from monitoring.users_view import render_users
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -131,6 +132,13 @@ def make_server(port, security, collector, public_url, insecure_local=False):
                     return self.reply(403, "Sessão sem permissões de administração.")
             if path == "/api/status":
                 return self.reply(200, json.dumps(collector.snapshot()), "application/json")
+            if path == "/api/operations":
+                kind = parse_qs(urlsplit(self.path).query).get("kind", [""])[0]
+                try:
+                    details = operational_details(collector.runtime, kind)
+                except ValueError:
+                    return self.reply(400, '{"error":"invalid_signal"}', "application/json")
+                return self.reply(200, json.dumps(details), "application/json")
             return self.reply(404, "Não encontrado.")
 
         def do_POST(self):

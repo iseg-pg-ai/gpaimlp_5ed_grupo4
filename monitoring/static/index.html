@@ -159,7 +159,12 @@
               <span id="ops-health" class="badge">A recolher</span>
             </div>
             <div class="ops-grid">
-              <article id="portal-signal" class="signal-card">
+              <button
+                type="button"
+                id="portal-signal"
+                class="signal-card"
+                data-signal="portal"
+              >
                 <div class="signal-top">
                   <span class="signal-icon" aria-hidden="true">P</span
                   ><span id="portal-signal-state" class="signal-state">—</span>
@@ -169,8 +174,13 @@
                 <p id="portal-ops-note">
                   Eventos processados e erros detetados
                 </p>
-              </article>
-              <article id="ai-signal" class="signal-card">
+              </button>
+              <button
+                type="button"
+                id="ai-signal"
+                class="signal-card"
+                data-signal="ai"
+              >
                 <div class="signal-top">
                   <span class="signal-icon" aria-hidden="true">AI</span
                   ><span id="ai-signal-state" class="signal-state">—</span>
@@ -178,8 +188,13 @@
                 <strong id="ai-ops">—</strong>
                 <h3>Assistência IA</h3>
                 <p id="ai-tokens">A aguardar métricas</p>
-              </article>
-              <article id="backup-signal" class="signal-card">
+              </button>
+              <button
+                type="button"
+                id="backup-signal"
+                class="signal-card"
+                data-signal="backup"
+              >
                 <div class="signal-top">
                   <span class="signal-icon" aria-hidden="true">B</span
                   ><span id="backup-signal-state" class="signal-state">—</span>
@@ -187,8 +202,13 @@
                 <strong id="backup-artifacts">—</strong>
                 <h3>Backup verificado</h3>
                 <p id="backup-restore">A aguardar ensaio</p>
-              </article>
-              <article id="alert-signal" class="signal-card">
+              </button>
+              <button
+                type="button"
+                id="alert-signal"
+                class="signal-card"
+                data-signal="alerts"
+              >
                 <div class="signal-top">
                   <span class="signal-icon" aria-hidden="true">!</span
                   ><span id="alert-signal-state" class="signal-state">—</span>
@@ -196,7 +216,7 @@
                 <strong id="alert-state">—</strong>
                 <h3>Incidentes ativos</h3>
                 <p>Fila local · envio externo desativado</p>
-              </article>
+              </button>
             </div>
             <div class="ops-footer">
               <p>
@@ -207,6 +227,49 @@
             </div>
           </section>
         </div>
+        <dialog
+          id="operations-dialog"
+          class="operations-dialog"
+          aria-labelledby="operations-title"
+        >
+          <div class="dialog-heading">
+            <div>
+              <p class="eyebrow">DIAGNÓSTICO OPERACIONAL</p>
+              <h2 id="operations-title">Detalhe técnico</h2>
+            </div>
+            <button
+              type="button"
+              id="operations-close"
+              class="dialog-close"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+          </div>
+          <p id="operations-description" class="dialog-description"></p>
+          <div class="log-filters" role="group" aria-label="Filtrar registos">
+            <button
+              type="button"
+              id="logs-all"
+              class="active"
+              aria-pressed="true"
+            >
+              Todos <span id="logs-all-count">0</span>
+            </button>
+            <button type="button" id="logs-errors" aria-pressed="false">
+              Apenas erros <span id="logs-error-count">0</span>
+            </button>
+          </div>
+          <div
+            id="operations-logs"
+            class="operations-logs"
+            aria-live="polite"
+          ></div>
+          <p class="footnote">
+            Campos técnicos reduzidos; sem prompts, respostas, dados de clientes
+            ou segredos.
+          </p>
+        </dialog>
       </main>
       <footer>
         <span>BLU / OPERATIONAL INTELLIGENCE</span

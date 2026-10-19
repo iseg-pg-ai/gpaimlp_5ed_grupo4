@@ -863,6 +863,10 @@ a.subtle {
   gap: 10px;
 }
 .signal-card {
+  width: 100%;
+  color: inherit;
+  text-align: left;
+  font: inherit;
   position: relative;
   min-width: 0;
   padding: 16px;
@@ -870,6 +874,17 @@ a.subtle {
   border-radius: 7px;
   background: linear-gradient(145deg, #17313980, #0a1d22);
   overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+.signal-card:hover {
+  border-color: #d9ba8570;
+  transform: translateY(-2px);
+}
+.signal-card:focus-visible {
+  outline-offset: 3px;
 }
 .signal-card::after {
   content: "";
@@ -960,6 +975,129 @@ a.subtle {
   text-align: right;
   white-space: nowrap;
 }
+.operations-dialog {
+  width: min(760px, calc(100% - 32px));
+  max-height: min(760px, calc(100dvh - 48px));
+  padding: 0;
+  border: 1px solid #a6c7bc40;
+  border-radius: 12px;
+  background: #0d2227;
+  color: var(--ink);
+  box-shadow: 0 28px 90px #000b;
+}
+.operations-dialog::backdrop {
+  background: #02090ccd;
+  backdrop-filter: blur(5px);
+}
+.dialog-heading {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 25px 25px 18px;
+  background: #0d2227f2;
+  border-bottom: 1px solid var(--line);
+}
+.dialog-heading .eyebrow {
+  margin-bottom: 8px;
+}
+.dialog-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  font-size: 1.35rem;
+}
+.dialog-description {
+  padding: 18px 25px 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+.log-filters {
+  display: flex;
+  gap: 7px;
+  padding: 16px 25px 0;
+}
+.log-filters button {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+.log-filters button.active {
+  border-color: #d9ba8570;
+  background: #d9ba8512;
+  color: var(--ink);
+}
+.log-filters span {
+  display: inline-block;
+  min-width: 1.35rem;
+  margin-left: 5px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #ffffff0d;
+  font: 0.58rem/1.5 monospace;
+  text-align: center;
+}
+.operations-logs {
+  display: grid;
+  gap: 10px;
+  padding: 18px 25px;
+}
+.log-entry {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #10282e;
+}
+.log-entry.error {
+  border-color: #f0a69e50;
+  background: linear-gradient(145deg, #3a252655, #10282e);
+}
+.log-entry time {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--gold);
+  font: 0.6rem/1.5 monospace;
+}
+.log-entry dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+  margin: 0;
+}
+.log-entry dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+  font-size: 0.66rem;
+}
+.log-entry dt {
+  color: var(--muted);
+}
+.log-entry dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+  text-align: right;
+}
+.operations-dialog > .footnote {
+  padding: 0 25px 24px;
+}
 @media (max-width: 1050px) and (min-width: 761px) {
   .ops-grid {
     grid-template-columns: 1fr;
@@ -975,6 +1113,19 @@ a.subtle {
   .ops-footer p:last-child {
     text-align: left;
     white-space: normal;
+  }
+  .dialog-heading,
+  .log-filters,
+  .operations-logs {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+  .dialog-description {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+  .log-entry dl {
+    grid-template-columns: 1fr;
   }
 }
 .summary .cleanup-note {

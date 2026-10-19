@@ -250,6 +250,7 @@ class HTTPTests(unittest.TestCase):
                 self.cleanup_runs += 1
                 return {"outcome": "passed"}
         self.collector = FakeCollector()
+        self.collector.runtime = Path(self.temp.name)
         self.server = make_server(0, self.auth, self.collector, "https://example.test/codeeditor/default/ports/3004")
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.addCleanup(self.server.server_close)
@@ -289,6 +290,14 @@ class HTTPTests(unittest.TestCase):
         self.assertIn("protected", body)
         self.assertEqual(headers["Cache-Control"], "no-store")
         self.assertIn("frame-ancestors 'none'", headers["Content-Security-Policy"])
+
+    def test_operational_details_require_login_and_reject_unknown_signal(self):
+        self.assertEqual(self.request("/api/operations?kind=portal")[0], 401)
+        cookie = self.login()
+        status, _, body = self.request("/api/operations?kind=portal", cookie=cookie)
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)["kind"], "portal")
+        self.assertEqual(self.request("/api/operations?kind=unknown", cookie=cookie)[0], 400)
 
     def test_origin_cookie_csrf_and_logout(self):
         self.assertEqual(self.request("/login", "POST", f"username=operator&password={PASSWORD}", origin="https://evil.test")[0], 403)

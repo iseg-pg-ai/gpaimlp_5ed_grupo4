@@ -785,6 +785,9 @@ e evidência de validação; a existência de um plano ou de um painel não bast
 - [x] Deduplicar incidentes e recuperações numa fila local; manter integrações
   externas desativadas até serem definidos canal e destinatários.
 - [x] Integrar os novos sinais no painel privado e validar falhas controladas.
+- [x] Permitir abrir cada sinal operacional num modal autenticado com os últimos
+  registos técnicos e seleção `Todos`/`Apenas erros`, sem conteúdo de clientes,
+  prompts ou segredos.
 
 Implementado com eventos JSON-lines limitados a 2 MB, agregação das últimas 24
 horas, cópia SQLite consistente, manifestos SHA-256, restauro isolado e fila local

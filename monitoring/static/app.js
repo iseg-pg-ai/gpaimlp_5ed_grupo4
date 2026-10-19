@@ -23,6 +23,127 @@ function node(tag, className, value) {
   if (value !== undefined) element.textContent = value;
   return element;
 }
+const operationNames = {
+  portal: ["Registos do portal", "Pedidos e operações das últimas 24 horas."],
+  ai: [
+    "Registos da assistência IA",
+    "Chamadas, latência e contadores reportados nas últimas 24 horas.",
+  ],
+  backup: [
+    "Cópias e restauros",
+    "Última cópia automática e último ensaio de restauro.",
+  ],
+  alerts: [
+    "Histórico de incidentes",
+    "Aberturas e recuperações registadas na fila local.",
+  ],
+};
+const fieldNames = {
+  component: "Componente",
+  operation: "Operação",
+  outcome: "Resultado",
+  level: "Nível",
+  duration_ms: "Duração",
+  error_code: "Código de erro",
+  http_status: "HTTP",
+  input_tokens: "Tokens de entrada",
+  output_tokens: "Tokens de saída",
+  total_tokens: "Tokens totais",
+  backup_id: "Cópia",
+  backup_created_at: "Data da cópia",
+  artifact_count: "Artefactos",
+  key: "Incidente",
+  event: "Alteração",
+};
+function formatField(key, value) {
+  if (key === "duration_ms") return `${value} ms`;
+  if (key === "backup_created_at") return date(value);
+  return String(value);
+}
+let operationEntries = [];
+function renderOperationEntries(errorsOnly = false) {
+  const visible = errorsOnly
+    ? operationEntries.filter((entry) => entry.is_error)
+    : operationEntries;
+  $("logs-all").classList.toggle("active", !errorsOnly);
+  $("logs-errors").classList.toggle("active", errorsOnly);
+  $("logs-all").setAttribute("aria-pressed", String(!errorsOnly));
+  $("logs-errors").setAttribute("aria-pressed", String(errorsOnly));
+  text("logs-all-count", operationEntries.length);
+  text(
+    "logs-error-count",
+    operationEntries.filter((entry) => entry.is_error).length,
+  );
+  const entries = visible.map((entry) => {
+    const row = node("article", `log-entry${entry.is_error ? " error" : ""}`);
+    row.append(node("time", "", date(entry.at)));
+    const details = node("dl", "");
+    Object.entries(entry.fields).forEach(([key, value]) => {
+      const item = node("div", "");
+      item.append(
+        node("dt", "", fieldNames[key] ?? key),
+        node("dd", "", formatField(key, value)),
+      );
+      details.append(item);
+    });
+    row.append(details);
+    return row;
+  });
+  $("operations-logs").replaceChildren(
+    ...(entries.length
+      ? entries
+      : [
+          node(
+            "p",
+            "muted",
+            errorsOnly
+              ? "Não existem erros neste período."
+              : "Ainda não existem registos para este sinal.",
+          ),
+        ]),
+  );
+}
+async function openOperations(kind) {
+  const dialog = $("operations-dialog");
+  const [title, description] = operationNames[kind];
+  text("operations-title", title);
+  text("operations-description", description);
+  operationEntries = [];
+  text("logs-all-count", "0");
+  text("logs-error-count", "0");
+  $("logs-all").classList.add("active");
+  $("logs-errors").classList.remove("active");
+  $("logs-all").setAttribute("aria-pressed", "true");
+  $("logs-errors").setAttribute("aria-pressed", "false");
+  $("operations-logs").replaceChildren(
+    node("p", "muted", "A carregar registos…"),
+  );
+  dialog.showModal();
+  try {
+    const response = await fetch(
+      `api/operations?kind=${encodeURIComponent(kind)}`,
+      {
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000),
+      },
+    );
+    if (response.status === 401) {
+      location.href = "login";
+      return;
+    }
+    if (!response.ok) throw new Error("operations");
+    operationEntries = (await response.json()).entries;
+    renderOperationEntries();
+  } catch {
+    $("operations-logs").replaceChildren(
+      node(
+        "p",
+        "connection-error",
+        "Não foi possível carregar os registos técnicos.",
+      ),
+    );
+  }
+}
 function render(data) {
   const s = data.snapshot;
   if (!s) {
@@ -277,5 +398,16 @@ async function refresh() {
   }
 }
 $("refresh").addEventListener("click", refresh);
+document.querySelectorAll("[data-signal]").forEach((card) => {
+  card.addEventListener("click", () => openOperations(card.dataset.signal));
+});
+$("operations-close").addEventListener("click", () =>
+  $("operations-dialog").close(),
+);
+$("logs-all").addEventListener("click", () => renderOperationEntries());
+$("logs-errors").addEventListener("click", () => renderOperationEntries(true));
+$("operations-dialog").addEventListener("click", (event) => {
+  if (event.target === $("operations-dialog")) $("operations-dialog").close();
+});
 refresh();
 setInterval(refresh, 15000);

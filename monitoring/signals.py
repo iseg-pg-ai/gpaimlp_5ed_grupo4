@@ -63,3 +63,45 @@ def operational_signals(runtime: Path, now: datetime | None = None) -> dict:
                "calls_with_tokens": len(token_rows)},
         "backup": backup,
     }
+
+
+def operational_details(runtime: Path, kind: str) -> dict:
+    """Devolve diagnóstico recente usando apenas campos técnicos permitidos."""
+    if kind not in {"portal", "ai", "backup", "alerts"}:
+        raise ValueError("Sinal operacional desconhecido.")
+    if kind in {"portal", "ai"}:
+        name = "portal-events.jsonl" if kind == "portal" else "ai-usage.jsonl"
+        rows = _event_family(runtime, name, datetime.now(timezone.utc) - timedelta(hours=24))[-100:]
+        allowed = ("component", "operation", "outcome", "level", "duration_ms",
+                   "error_code", "http_status", "input_tokens", "output_tokens",
+                   "total_tokens")
+        return {"kind": kind, "entries": [
+            {"at": row.get("at"),
+             "is_error": row.get("outcome") not in {None, "success"},
+             "fields": {key: row[key] for key in allowed if key in row}}
+            for row in reversed(rows)
+        ]}
+    if kind == "backup":
+        entries = []
+        for name, label, allowed in (
+            ("backup-schedule.json", "Execução automática",
+             ("at", "outcome", "backup_id", "artifact_count")),
+            ("restore-evidence.json", "Ensaio de restauro",
+             ("checked_at", "outcome", "backup_id", "backup_created_at", "artifact_count")),
+        ):
+            try:
+                row = json.loads((runtime / name).read_text())
+                at = row.get("at") or row.get("checked_at")
+                entries.append({"at": at, "is_error": row.get("outcome") != "passed",
+                                "fields": {"operation": label, **{
+                    key: row[key] for key in allowed if key in row and key not in {"at", "checked_at"}
+                }}})
+            except (OSError, ValueError, TypeError, json.JSONDecodeError):
+                continue
+        return {"kind": kind, "entries": entries}
+    rows = _events(runtime / "notifications.jsonl", datetime.min.replace(tzinfo=timezone.utc))[-100:]
+    return {"kind": kind, "entries": [
+        {"at": row.get("at"), "is_error": row.get("event") == "opened",
+         "fields": {key: row[key] for key in ("key", "event") if key in row}}
+        for row in reversed(rows)
+    ]}
