@@ -1,21 +1,21 @@
 # Plano de evolução do BLU AI System
 
-Registos do assistente acrescentados em 2026-10-16 a partir do plano fornecido
-pelo utilizador. As dez secções seguintes conservam o estado e a evidência
-reportados no contexto de `pc/assistant-agent-for-blu-curator`; a sua inclusão
-documental não integra esse código em `feat/data-modelling-basis` nem revalida
-os resultados. Referências a serviços em execução, configuração em `/tmp/` e
-documentos específicos do assistente pertencem à sessão e ao branch de origem;
-não demonstram disponibilidade neste checkout. As tarefas gerais pendentes e
-o trabalho do dashboard são preservados.
+Plano consolidado a partir do registo até 19-10-2026. Foram removidos os blocos de tarefas 
+concluídas, resultados repetitivos de testes, pormenores transitórios de sessões, correções 
+pontuais e histórico de implementação. Mantêm-se apenas pendências e informação técnica 
+que condiciona decisões futuras. O estado deve ser confirmado no branch de trabalho antes 
+de executar alterações.
+
+## Estado atual e decisões a preservar
+- Portal e dados: portal de curadoria com catálogo, itinerários, versões e entregas; warehouse e ETL existentes. Preservar f ontes Excel/PDF originais, revisões e snapshots históricos. Evitar alterações a dados reais durante testes: usar armazenamento temporário e mocks.
+- Assistente BLU: operações estruturadas sobre itinerários, pré-visualização e confirmação humana antes de aplicar; catálogo e validações determinísticas continuam a ser a fonte de verdade. A implementação das fases 0–6 foi reportada como concluída no branch pc/assistant-agent-for-blu-curator, não sendo isso prova de integração noutros branches ou de validação completa em produção.
+- IA: Amazon Bedrock; Nova Pro ficou como modelo predefinido configurável após testes limitados. Testes com mocks não demonstram qualidade do modelo real. Não executar chamadas pagas sem autorização.
+- Observatório: dashboard de leitura e observatório nativo no catálogo, sem alterar fontes operacionais. Destinos, unidades, evidência e validade comercial devem conservar valores originais e distinguir informação confirmada de desconhecida.
+- Monitoring: serviço separado, autenticado, com gestão de utilizadores, sondas, logs estruturados do portal/IA, histórico de incidentes, backups locais verificáveis, limpeza controlada e tabelas de observabilidade. O portal não tem autenticação própria: identificadores de sessão nos logs não identificam pessoas.
+- Operação local: SageMaker Studio com portal (3001), apresentação (3003), monitoring (3004), Observatório (8501) e agente opcional (8000). Existem comandos just blu it (recuperação autenticada) e just blu up (arranque). Isto não equivale a deployment de produção.
+- Segurança: não registar prompts, respostas, dados pessoais, segredos nem conteúdo dos formulários na telemetria. Credenciais locais ficam fora do Git; houve exposição histórica de credenciais versionadas, pelo que importa rodar qualquer palavra-passe ainda em uso.
 
 ## Distinguir adição, substituição e ranking — 2026-10-16
-
-- [x] Reproduzir o pedido de adição e a correção explícita com a grafia reportada.
-- [x] Apresentar apenas opções de adição viáveis para pedidos genéricos.
-- [x] Recusar ações que contrariem a intenção explícita antes de propor/aceitar.
-- [x] Reduzir o contrato Bedrock ao pedido de ranking ou adição.
-- [x] Corrigir mensagens, validar regressões e atualizar o portal.
 
 Concluído: 118 testes do portal aprovados, um ignorado; 16 testes do agente
 aprovados; build e navegador em 390/1600 px aprovados. As frases reportadas
@@ -27,16 +27,6 @@ modelo; o contrato específico de ranking foi verificado com fornecedor simulado
 Pedido: implementar todas as fases antes da ronda de testes e correções.
 Não marcar uma fase como validada apenas por concluir a implementação.
 Preservar dados reais; os testes finais usam armazenamento temporário e mocks.
-
-- [x] Fase 0: contratos completos, contexto minimizado e registo de operação.
-- [x] Fase 1: mover entre dias, otimização validada, briefing e confirmações assistidos.
-- [x] Fase 2: ranking explicável de candidatos e diagnóstico da proposta.
-- [x] Fase 3: conclusão da viagem, questionário completo e alertas do catálogo.
-- [x] Fase 4: recuperação de casos revistos, sem dados pessoais nem embeddings.
-- [x] Fase 5: alertas, regeneração parcial e preparação de comunicações.
-- [x] Fase 6: métricas, rejeições, custos configuráveis e qualidade da entrega.
-- [x] Atualizar o plano específico e preparar os cenários de validação das seis fases.
-- [x] Só após a implementação: executar testes, corrigir falhas e verificar o portal.
 
 Voos dependem de uma API escolhida; não inventar disponibilidade ou reservas.
 Deployment, envio de comunicações e chamadas pagas não decorrem desta preparação.
@@ -51,11 +41,6 @@ manual; 18 cenários reais por executar no Bedrock com autorização de custos.
 
 ## Impacto das propostas do agente — 2026-10-16
 
-- [x] Calcular diferenças de atividades, horários, ordem e capacidade no servidor.
-- [x] Reutilizar o orçamento existente, separando moedas e valores pendentes.
-- [x] Apresentar o resumo nas propostas e na seleção de alternativas.
-- [x] Validar domínio, interface, build e atualizar o plano específico.
-
 Concluído: 107 testes do portal aprovados, um ignorado; build aprovado.
 Resumo validado em 390/1600 px com fornecedor simulado e exports temporários.
 Abrir os detalhes não cria versões nem chamadas adicionais ao modelo. Sem
@@ -63,22 +48,11 @@ chamadas AWS nesta entrega; portal reiniciado com a configuração Nova Pro.
 
 ## Avaliação de grounding e injeção — 2026-10-16
 
-- [x] Alargar os casos sintéticos a ambiguidade, proteções e dados maliciosos.
-- [x] Exigir contrato completo e correspondência exata de ações e alternativas.
-- [x] Permitir inspeção offline e seleção de casos antes de chamadas pagas.
-- [x] Testar falsos positivos da avaliação e documentar os limites.
-
 Concluído: 11 casos sintéticos e 15 testes do agente aprovados sem chamadas
 externas. Corrigido falso positivo para alternativas no dia errado. A nova
 bateria ainda não foi executada no Bedrock; não inferir sucesso do modelo.
 
 ## Conversa contextual e alternativas — 2026-10-15
-
-- [x] Transmitir contexto recente limitado à viagem e proposta corrente validada.
-- [x] Acrescentar alternativas estruturadas ao contrato partilhado.
-- [x] Validar substituições com o catálogo e a lógica determinística existentes.
-- [x] Preparar a alternativa escolhida sem inferência adicional nem escrita imediata.
-- [x] Validar contexto, opções, proteções, concorrência, UI e documentação.
 
 Concluído em 2026-10-16: 104 testes do portal aprovados, um ignorado; 13 testes
 do agente aprovados; build e UI em 390/1600 px aprovados. UI e persistência usam
@@ -96,12 +70,6 @@ A auditoria revelou uma proposta com ação válida. A pré-visualização estav
 antes das mensagens, fora da zona visível após o scroll automático. Corrigir a
 ordem no DOM e verificar o botão no viewport, sem o scroll automático do teste.
 
-- [x] Explicitar quando uma resposta textual não contém ações para aplicar.
-- [x] Tratar «ok» sem nova inferência e preservar a proposta pendente.
-- [x] Separar formato inválido, permissões, ligação, timeout e indisponibilidade.
-- [x] Colocar a pré-visualização após as mensagens, junto da resposta mais recente.
-- [x] Validar os novos caminhos e reiniciar o portal com Bedrock real.
-
 Check aprovado (100 testes, um ignorado), 11 testes do agente aprovados e build
 aprovado. Navegador em 390/1600 px: botão de aceitação no viewport, «ok» não chama
 o fornecedor nem apaga a proposta e uma resposta sem ações fica identificada.
@@ -109,8 +77,6 @@ Interface validada com mocks em exports temporários, sem alterar viagens reais.
 
 ## Origem do portal em execução — 2026-10-15
 
-- [x] Identificar a recusa: domínio configurado no arranque diferente do navegador.
-- [x] Reiniciar com a origem confirmada pelo utilizador e verificar a barreira de origem.
 
 Portal HTTP 200; pedido vazio com a origem confirmada chega à validação (400),
 enquanto uma origem externa continua recusada (403). Sem chamadas ao modelo nesta
@@ -121,10 +87,6 @@ no pedido para contornar uma configuração errada.
 
 ## Correção do envio no chat — 2026-10-15
 
-- [x] Guardar imediatamente a mensagem enviada, mesmo quando o pedido falha.
-- [x] Apresentar o erro no próprio chat, preservando roteiro e versões.
-- [x] Validar falhas, sucesso e persistência no navegador e reiniciar o portal.
-
 Check aprovado (99 testes e um ignorado), build aprovado e navegador em
 390/1600 px: mensagem visível durante o pedido, erro no chat sem alterar versões,
 envios sem duplicação e aceitação/rejeição preservadas. Pedido de remover a primeira
@@ -133,15 +95,6 @@ Esta reprodução não identifica o erro específico da sessão do utilizador; a
 o erro fica visível no chat em vez de a mensagem desaparecer.
 
 ## Agente AWS — primeira entrega de 2026-10-15
-
-- [x] Confirmar IAM Role e perfil Nova Lite em eu-west-1 sem credenciais fixas.
-- [x] Implementar contrato partilhado e propostas estruturadas via Bedrock Converse.
-- [x] Reutilizar validação determinística e candidatos aprovados do portal.
-- [x] Implementar pré-visualização, aceitação, rejeição e versão com auditoria atómica.
-- [x] Reduzir contexto pessoal, remover logs do pedido e bloquear raciocínio interno.
-- [x] Restringir o serviço HTTP legado com token e sem CORS público.
-- [x] Preparar entrada Lambda privada e template SAM, sem deployment automático.
-- [x] Concluir testes unitários, build, navegador e documentação desta entrega.
 
 Âmbito inicial: adicionar, substituir, remover, reagendar, reorganizar, capacidade,
 períodos livres e dias livres. Operações compostas são validadas integralmente.
@@ -154,22 +107,11 @@ de integração isolados em diretórios temporários. Lambda não publicado.
 
 ## Base do assistente — integração de 2026-10-15
 
-- [x] Atualizar referências e selecionar `pc/assistant-agent-for-blu-curator`.
-- [x] Integrar `refactor/html-python`, preservando também a sua entrega completa
-  de `warehouse/`, conforme correção explícita do utilizador.
-- [x] Rever o serviço existente e `BLU_ASSISTANT_PLAN.md`.
-- [x] Validar a base integrada antes de implementar as Fases 0 e 1.
-- [x] Propor ações estruturadas, pré-visualizar e confirmar antes de aplicar.
-
 O plano específico tem avaliações anteriores à migração; confirmar as premissas
 no código. Reutilizar o catálogo Python e as validações do portal. Modelos usam
 mocks nesta preparação, sem chamadas pagas.
 
 ## Limpeza após migrações — 2026-10-15
-
-- [x] Remover adaptadores e operações sem consumidores de produção.
-- [x] Consolidar testes úteis e retirar cobertura duplicada entre Node e Python.
-- [x] Validar portal, Python e integração ETL; atualizar referências.
 
 Removido `dataset.test.mjs`; testes úteis integrados em infraestrutura e matching.
 Retirados comandos `enrich`/`catalog-id` e adaptadores sem consumidores de produção.
@@ -179,13 +121,6 @@ catálogo/ETL aprovados. Fontes e dados operacionais preservados.
 ## Migração incremental HTML/Python — 2026-10-15
 
 Base: `chore/project-cleanup` em `da8de67`; branch `refactor/html-python`.
-
-- [x] Centralizar leitura, pesquisa e enriquecimento das fontes em Python.
-- [x] Substituir estado e fetch do explorador por formulário HTML no servidor.
-- [x] Mover a preparação das referências históricas para Python.
-- [x] Migrar a composição TXT/Canva para Python mantendo regras de domínio partilhadas.
-- [x] Validar APIs, erros, escaping, navegação sem JavaScript e idiomas.
-- [x] Atualizar arquitetura e comandos, com commits separados por etapa.
 
 Resultados: 101 testes do portal aprovados e um ignorado; 27 testes Python
 aprovados; build aprovado. Consulta HTML em 360/1440 px, com e sem JavaScript;
@@ -200,26 +135,11 @@ eliminar operações existentes ou exigir uma segunda implementação em JavaScr
 
 ## Continuação HTML/Python — meteorologia
 
-- [x] Migrar coordenadas, códigos WMO, previsão e fallback histórico para Python.
-- [x] Manter o navegador como consumidor da API do portal, com cache e falhas explícitas.
-- [x] Substituir a abertura/fecho do painel por popover HTML nativo.
-- [x] Migrar os downloads do histórico para formulário HTML sem estado React.
-- [x] Reutilizar a meteorologia Python na ferramenta do agente.
-- [x] Validar fornecedor simulado, indisponibilidade, histórico, cache e navegação.
-- [x] Atualizar arquitetura e evidência com commits separados.
-
 96 testes Node aprovados e um ignorado; 37 Python aprovados; build aprovado.
 Popover em 320/1440 px; downloads TXT e ZIP PDF em duas larguras, com e sem JS.
 Meteorologia simulada e exports isolados num diretório temporário.
 
 ## Continuação HTML/Python — catálogo e histórico
-
-- [x] Migrar a persistência do catálogo para SQLite Python, preservando o esquema.
-- [x] Adaptar APIs e testes para operações assíncronas e validar conflitos.
-- [x] Centralizar publicação e leitura do catálogo elegível em Python.
-- [x] Converter a ação de Lixo no histórico para formulário HTML.
-- [x] Validar bases temporárias, ETL, APIs e navegação sem JavaScript.
-- [x] Atualizar documentação e CI com commits separados.
 
 96 testes Node aprovados e um ignorado; 44 Python aprovados; build e integração
 catálogo/ETL aprovados. 267 identificadores equivalentes. APIs reais com edição,
@@ -230,11 +150,6 @@ com e sem JavaScript em duas larguras.
 
 Base: dev em `a4b7626`; branch `chore/project-cleanup`.
 Âmbito: limpeza e consolidação, com commits separados por etapa.
-
-- [x] Inventariar os 345 ficheiros versionados e analisar os imports do portal.
-- [x] Remover artefactos locais, placeholders e experiências sem consumidores.
-- [x] Consolidar documentação, prompt duplicado e módulo de tradução.
-- [x] Atualizar exclusões, verificar referências e concluir a validação.
 
 Validação: 99 testes do portal aprovados, um ignorado; build aprovado;
 20 testes Python e cinco de tradução aprovados; Markdown e ligações locais
@@ -248,11 +163,6 @@ desta entrega.
 
 ## Revisão integral do diretório — 2026-10-15
 
-- [x] Inventariar recursivamente o diretório, sem seguir a montagem EFS.
-- [x] Remover ficheiros órfãos, experiências não integradas e artefactos locais.
-- [x] Retirar dependências experimentais e tornar os grupos ativos opcionais explícitos.
-- [x] Regenerar dependências e validar instalação, Python, tradução, portal e CI.
-
 Lockfile de 221 para 148 entradas; a instalação mínima usa nove pacotes e passa
 18 testes do ETL. Ambiente completo: 21 testes Python, cinco de tradução e 99 do
 portal aprovados, um ignorado; auditoria dos 147 pacotes sem avisos conhecidos.
@@ -263,20 +173,10 @@ permanece disponível na instância.
 
 ## Fusão dos módulos auxiliares — 2026-10-15
 
-- [x] Reunir caminhos e leitura de respostas em `http-client.ts`.
-- [x] Reunir respostas e URLs públicas das APIs em `server-http.ts`.
-- [x] Reunir input, textarea e estilo de select em `ui/form-controls.tsx`.
-- [x] Validar imports, lint, tipos, testes, build e documentação.
-
 Sete ficheiros passam a três, mantendo a separação cliente/servidor e os mesmos
 exports públicos. Registar esta etapa num commit separado.
 
 ## Consolidação dos testes — 2026-10-15
-
-- [x] Reunir navegação e responsividade em browser/ui.mjs, mantendo todos os cenários.
-- [x] Reunir configuração, URLs públicas e compatibilidade em infrastructure.test.mjs.
-- [x] Partilhar arranque do browser, leitura de fixtures e mock de tradução.
-- [x] Comparar verificações, executar testes e atualizar os comandos e documentação.
 
 As asserções e condições de falha originais foram comparadas automaticamente.
 99 testes unitários aprovados e um ignorado; build aprovado; 42 cenários de
@@ -285,17 +185,9 @@ aprovados numa instância de produção com armazenamento temporário.
 
 ## Consola de desenvolvimento no SageMaker
 
-- [x] Corrigir URLs da fonte e stack frames do overlay para respeitarem o prefixo.
-- [x] Limitar a supressão de atributos de extensões à hidratação do body.
-- [x] Validar check, build e navegador com prefixo e atributos Grammarly simulados.
-
 100 testes aprovados e um ignorado; fonte e stack frames HTTP 200.
 
 ## Identificação e rótulos dos formulários
-
-- [x] Associar os rótulos do briefing e identificar os campos sem id/name.
-- [x] Usar fieldset/legend nos grupos de escolhas e nome acessível na pesquisa.
-- [x] Verificar campos, rótulos e IDs no teste de navegador do briefing.
 
 Check aprovado (100 testes e um ignorado), build aprovado e briefing validado
 em 360 e 1440 px, incluindo edição, revisão e payload.
@@ -347,30 +239,11 @@ planos anteriores permanece no Git.
 
 ## Observatório de dados BLU — 2026-10-16
 
-- [x] Organizar o dashboard em Panorama, Explorar oferta, Preços, Histórico e Qualidade.
-- [x] Aplicar identidade visual escura, tipografia editorial e gráficos legíveis.
-- [x] Acrescentar pesquisa, filtros, fichas e distribuição geográfica do catálogo.
-- [x] Comparar preços por categoria, unidade e natureza comercial declaradas.
-- [x] Distinguir integridade, preenchimento e confirmação; expor lacunas e revisão.
-- [x] Validar execução das cinco páginas e navegação local no navegador.
-- [x] Harmonizar localizações e unidades através dos contratos do ETL.
-- [x] Definir confirmação comercial e validade temporal por campo na fonte.
-
 Dashboard só de leitura; sem alteração das fontes, catálogo operacional ou warehouse.
 Mapa com contornos locais Natural Earth da Europa e norte de África, sem mosaicos externos; coordenadas válidas em intervalo não certificam a
 localização. Experiências sem coordenadas continuam pesquisáveis na lista.
 
 ### Ferramentas de exploração — 2026-10-16
-
-- [x] Ligar seleção de pontos às fichas, preservando identificadores por tipo.
-- [x] Comparar duas a quatro opções com duração, condições, acessibilidade e fonte.
-- [x] Acrescentar painel por destino harmonizado, preservando as localizações originais.
-- [x] Acrescentar camadas, nomes de lugares e agrupamento aproximado com membros.
-- [x] Acrescentar fila de revisão com prioridades explícitas e acesso às fichas.
-- [x] Mostrar presença histórica apenas através da relação explícita de atrações.
-- [x] Acrescentar modo apresentação com navegação e saída acessíveis.
-- [x] Alinhar mapas, tabelas e gráficos adjacentes em 420 px e uniformizar as divisórias da navegação.
-- [x] Acrescentar fotografias quando existirem imagens com autorização e créditos (Lisboa e Porto, CC0).
 
 Validação desta etapa: 51 testes Python aprovados, incluindo sete contratos do
 dashboard. AppTest nas seis áreas, comparação, filtros e camadas vazias; navegador
@@ -398,15 +271,6 @@ e vista móvel sem transbordo. Markdown e ligações locais sem erros. Fontes e
 warehouse reais inalterados; sem chamadas pagas ou publicação cloud.
 
 ## Preenchimento verificado do warehouse — 2026-10-16
-
-- [x] Inventariar lacunas e procurar valores em fontes oficiais.
-- [x] Distinguir modalidades e tarifas públicas de valores comerciais BLU.
-- [x] Preparar e validar o lote em cópia isolada antes de alterar o catálogo.
-- [x] Preencher 45 valores em 13 registos e três preços numéricos por referência exata.
-- [x] Criar novas revisões com evidência e preservar todas as revisões anteriores.
-- [x] Publicar pelo ETL, sem alterar os Excel/PDF originais.
-- [x] Registar fontes, dados não inferidos e limitações no relatório de enriquecimento.
-
 Ver [dados acrescentados e fontes oficiais](docs/DATA_ENRICHMENT.md). A confirmação
 de valores públicos não implica reserva, disponibilidade ou tarifa negociada.
 Identificações ambíguas, descontos e preços sem fonte continuam pendentes.
@@ -420,10 +284,6 @@ comparados sem alterações. Os Excel/PDF e as propostas históricas ficaram int
 
 ## Refinamento visual do portal — 2026-10-18
 
-- [x] Confirmar `portal-observatorio` e preservar a lógica dos fluxos.
-- [x] Reforçar a identidade, navegação, hierarquia e legibilidade dos formulários.
-- [x] Validar check, build e cenários de navegador em seis idiomas.
-
 Direção editorial clara, com navegação azul profunda e acentos dourados.
 Sem alterações de dados, fornecedores ou publicação.
 
@@ -435,11 +295,6 @@ bateria, com nova compilação e verificação de apresentação. Documentação
 `git diff --check` aprovados. Portal local na porta 3001, sem publicação.
 
 ## Observatório nativo no catálogo — 2026-10-18
-
-- [x] Criar contrato de leitura do warehouse reutilizando as regras ETL.
-- [x] Implementar seis vistas interativas com o estilo claro do portal.
-- [x] Preservar o editor e manter o dashboard original sem alterações.
-- [x] Validar contratos, interface, catálogo/ETL, check e build.
 
 Sem iframe, dependência do Streamlit ou nova persistência.
 
@@ -457,11 +312,6 @@ referências e 2021 campos de evidência. Sem chamadas a IA ou publicação.
 
 ## Legibilidade do mapa e alinhamento dos painéis — 2026-10-18
 
-- [x] Dimensionar pontos e áreas de clique em píxeis, independentemente do zoom.
-- [x] Agrupar visualmente pontos próximos e melhorar etiquetas e informação de foco.
-- [x] Uniformizar as alturas dos painéis adjacentes e compactar espaços verticais.
-- [x] Validar interação, dimensões em navegador, check e build.
-
 Validação: check aprovado (97 testes, um ignorado), build aprovado e cenários
 do Observatório em 320/1440 px aprovados. As verificações medem alvos de 44 px
 antes e depois do zoom, ausência de etiquetas sobre os marcadores e diferença
@@ -472,11 +322,6 @@ Tradução e falha de recuperação simuladas; dados analíticos locais só de l
 Dashboard original, dados e configuração de arranque preservados.
 
 ## Largura comum das páginas — 2026-10-18
-
-- [x] Centralizar a largura exterior em 1440 px e as margens em 16/32 px.
-- [x] Aplicar o contentor a Catálogo, Histórico, Referências, Lixo e partilhas.
-- [x] Alinhar cabeçalho e workspace; retirar o limite independente do briefing.
-- [x] Validar dimensões em ecrãs móveis, desktop e largos, check e build.
 
 Manter a composição funcional do workspace e a coluna de leitura das partilhas.
 
@@ -489,10 +334,6 @@ catálogo e briefing em ecrã largo aprovada.
 
 ## Contentores responsivos — 2026-10-18
 
-- [x] Substituir o teto de 1440 px por largura fluida comum a todas as páginas.
-- [x] Tornar as margens proporcionais ao ecrã, entre 16 e 64 px.
-- [x] Verificar navegação entre 320 e 2560 px, check e build.
-
 Validação: check aprovado (97 testes e um ignorado), build aprovado e 66
 cenários de interface/navegação em seis idiomas. Largura fluida e alinhamento
 verificados em 320/768/1024/1440/1920/2560 px, sem transbordo horizontal.
@@ -501,21 +342,11 @@ cenários aplicáveis. Dashboard original e dados preservados.
 
 ## Limpeza local de artefactos — 2026-10-18
 
-- [x] Inventariar os ficheiros ignorados e confirmar os serviços ativos.
-- [x] Remover caches Next.js de desenvolvimento/compilação, cache TypeScript
-  e bytecode Python do projeto; preservar build de produção e dependências.
-- [x] Confirmar o portal e a integridade dos ficheiros versionados.
-
 Removidos 426 MiB de artefactos regeneráveis. Portal e dashboard original
 respondem HTTP 200 após a limpeza. Verificação da estrutura (340 ficheiros)
 e `git diff --check` aprovados. Código, dados, exports e ambientes preservados.
 
 ## Tema claro e escuro — 2026-10-18
-
-- [x] Manter o tema claro original como padrão e centralizar a paleta do portal.
-- [x] Adicionar seletor acessível no cabeçalho, com preferência no navegador.
-- [x] Aplicar a preferência antes da primeira pintura e sincronizar separadores.
-- [x] Validar contraste, persistência, navegação responsiva, check e build.
 
 Validação: check aprovado (97 testes e um ignorado), build aprovado, lint e
 formatação finais aprovados. Navegador: 66 cenários responsivos/navegação em
@@ -527,12 +358,6 @@ visual do briefing e catálogo em tema escuro aprovada. Tradução e geração
 simuladas nos cenários aplicáveis; dashboard, dados e templates PDF intactos.
 
 ## Revisão de testes e artefactos — 2026-10-18
-
-- [x] Rever testes unitários, de integração e navegador face ao código atual.
-- [x] Retirar 12 combinações visuais redundantes e asserções imediatas que
-  repetiam a espera de elementos ocultos. Preservar os fluxos funcionais.
-- [x] Validar a matriz reduzida, check e traduções com modelos instalados.
-- [x] Limpar caches regeneráveis e capturas de testes antigas.
 
 Removidos 529,9 MiB: downloads Argos já instalados, cache de compilação
 Next.js e capturas Canva regeneráveis. Os seis pares de modelos instalados
@@ -547,23 +372,11 @@ respondem HTTP 200. Código funcional, dados, exports e modelos preservados.
 
 ## Guião de apresentação interativa — 2026-10-18
 
-- [x] Rever arquitetura, portal, dados e implementação do assistente.
-- [x] Criar `docs/APRESENTACAO.md` com narrativa de 12 minutos, caso fictício,
-  proposta navegável e esquemas Mermaid dos fluxos.
-- [x] Distinguir capacidades implementadas, dependências e evolução proposta.
-- [x] Verificar ligações, Markdown e integridade da documentação.
-
 Validação: ligações locais do novo guião, Markdown, verificação da estrutura
 e `git diff --check` aprovados. Alteração apenas documental; sem execução de
 serviços externos, alteração de dados ou implementação da apresentação.
 
 ## Dashboard de apresentação independente — 2026-10-18
-
-- [x] Criar uma aplicação estática em `presentation/dist`, com três cenas
-  fictícias, mapa esquemático e adaptação do roteiro em memória.
-- [x] Servir na porta 3003 com Python padrão, sem dependências do portal.
-- [x] Retirar os ficheiros parciais do protótipo Next.js antes de os integrar.
-- [x] Validar interação, teclado, responsividade e isolamento dos serviços.
 
 Validação: percurso completo em 320/768/1440/2560 px aprovado, incluindo
 escolha refletida no roteiro, pontos do mapa com alvos de 48 px, alteração
@@ -577,12 +390,6 @@ O acesso autenticado pelo proxy AWS real não foi validado pelo navegador local.
 
 ## Continuação da apresentação — 2026-10-18
 
-- [x] Alargar o percurso de três para oito capítulos com dados, colaboração,
-  entrega, arquitetura e encerramento.
-- [x] Ligar as escolhas ao roteiro, à pré-visualização e ao resumo final.
-- [x] Configurar o CTA final com o domínio do Observatório enviado pelo utilizador.
-- [x] Validar o percurso completo, responsividade e isolamento do portal AWS.
-
 Validação: oito capítulos aprovados em 320/768/1440/2560 px, incluindo
 fluxo de dados, pedido bloqueado sem alteração, ajuste permitido, comparação
 de exemplos de versões, arquitetura e resumo final. O CTA final corresponde
@@ -593,14 +400,6 @@ e `git diff --check` aprovados; serviços e ficheiros do portal intactos.
 
 ## Guião técnico em três partes — 2026-10-18
 
-- [x] Reorganizar `docs/APRESENTACAO.md` em fundamentos técnicos, experiência
-  interativa e demonstração do portal real.
-- [x] Detalhar requisitos, arquitetura, tecnologias, dados/processos, IA e
-  validação, com referências de código e cinco cenas técnicas propostas.
-- [x] Distinguir o guião proposto da interface já implementada e evitar
-  repetição dos capítulos técnicos na transição.
-- [x] Validar Markdown, ligações e integridade documental.
-
 Na revisão documental inicial, a implementação visual ficou pendente;
 ver a conclusão do ato técnico abaixo.
 
@@ -609,11 +408,6 @@ projeto e `git diff --check` aprovados. Quatro esquemas Mermaid incluídos.
 Alteração apenas documental; a abertura técnica ainda está proposta no guião.
 
 ## Ato técnico com animações explicativas — 2026-10-19
-
-- [x] Preparar cinco cenas técnicas com requisitos, arquitetura/tecnologias,
-  percurso dos dados, mecanismos de IA e contratos de validação.
-- [x] Integrar a navegação em três partes e animações controláveis.
-- [x] Validar interações, movimento reduzido, responsividade e isolamento.
 
 Validação em 2026-10-19: cinco cenas técnicas e oito narrativas aprovadas em
 320/768/1440/2560 px, com teclado, navegação entre partes, falha ilustrativa
@@ -626,11 +420,6 @@ independente foi iniciada; código e dados do portal/Streamlit intactos.
 
 ## Base pública dos dashboards — 2026-10-19
 
-- [x] Guardar o endereço Studio fornecido em `config/studio.json`.
-- [x] Gerar os três URLs com `scripts/studio_urls.py`; usar a origem no
-  arranque AWS por defeito, preservando override explícito.
-- [x] Anunciar o endereço público correto no servidor da apresentação.
-- [x] Verificar ligações, comandos e serviços após aplicar a configuração.
 
 Validação: seis testes de infraestrutura/origens aprovados, sintaxe dos dois
 arranques shell aprovada e URLs gerados iguais à base indicada. Os três
@@ -640,21 +429,11 @@ alteração de dados ou renovação automática da sessão AWS.
 
 ## Onboarding reproduzível — 2026-10-19
 
-- [x] Remover a URL individual do Studio dos ficheiros partilhados e fornecer um
-  exemplo sem identificadores reais.
-- [x] Criar um assistente local para validar pré-requisitos, configurar a URL,
-  instalar o launcher e gerar o primeiro acesso de Monitoring quando necessário.
-- [x] Documentar acessos AWS, dados locais, portas, primeiro arranque e verificação.
 - [ ] Validar o percurso completo num segundo espaço SageMaker com uma identidade
   IAM distinta e confirmar o acesso Bedrock real.
 
 ## Auditoria editorial e detalhe técnico — 2026-10-19
 
-- [x] Identificar repetição de dados, arquitetura, limites e mensagens de revisão.
-- [x] Remover cenas e explicações duplicadas da parte narrativa.
-- [x] Acrescentar detalhe de implementação, dependências, integrações e automação.
-- [x] Registar lacunas que exigem informação futura da equipa, sem as inventar.
-- [x] Validar o percurso revisto, acessibilidade, animações e documentação.
 
 Validação: seis cenas técnicas e seis narrativas aprovadas em
 320/768/1440/2560 px, incluindo as sete áreas de tecnologias e os seus
@@ -668,18 +447,12 @@ configuração efetiva dos serviços.
 
 ## Grelha dos seis capítulos — 2026-10-19
 
-- [x] Corrigir a grelha narrativa que ainda reservava oito colunas.
-- [x] Distribuir seis capítulos por seis, três ou duas colunas conforme o ecrã.
-- [x] Validar no navegador a grelha, contagem e percurso nas quatro larguras.
 
 Grelha, seis botões e contador `/ 06` verificados em 320/768/1440/2560 px,
 na técnica e na curadoria. Estrutura e `git diff --check` aprovados.
 
 ## Limpeza local do diretório — 2026-10-19
 
-- [x] Inspecionar ficheiros, referências e serviços em execução.
-- [x] Limpar caches de instalação dispensáveis e bytecode local.
-- [x] Confirmar serviços, estrutura e preservação dos ficheiros do projeto.
 
 Âmbito: caches npm/pip, entradas uv sem referência e `__pycache__` do
 projeto. Preservar ambientes, dependências instaladas, builds em utilização,
@@ -698,8 +471,6 @@ foi alterado entre os ficheiros versionados. Nenhum teste foi removido.
 Branch `feat/monitoring-deployment`, criado a partir de `dev` em `aa385fd`,
 com diretório limpo. Proposta em [monitoring e deployment](docs/OPERATIONS.md).
 
-- [x] Inventariar execução, persistência, CI e verificações de saúde existentes.
-- [x] Registar proposta inicial e decisões pendentes, sem alterar serviços.
 - [ ] Definir ambiente-alvo, utilizadores, disponibilidade e orçamento.
 - [ ] Corrigir e validar empacotamento Node/Python num ambiente isolado.
 - [ ] Definir persistência, backups consistentes e ensaio de restauro.
@@ -714,9 +485,6 @@ chamadas a modelos. A implementação depende das decisões do desenho inicial.
 O utilizador escolheu desenhar a arquitetura e comparar alternativas antes de
 implementar.
 
-- [x] Desenhar fronteiras lógicas e fluxo de deployment.
-- [x] Comparar Studio, VM dedicada e serviços geridos, com impacto na persistência.
-- [x] Comparar opções de monitoring e consultar documentação oficial.
 - [ ] Recolher requisitos de operação e fechar uma decisão fundamentada.
 
 A VM é uma hipótese preliminar, não uma plataforma já escolhida. Sem criação
@@ -724,11 +492,6 @@ de infraestrutura, alteração de serviços, custos ou publicação.
 
 ### Painel independente com login — 2026-10-19
 
-- [x] Criar serviço de monitoring separado na porta 3004, sem alterar aplicações.
-- [x] Proteger interface e API com login, sessões, expiração e limitação de tentativas.
-- [x] Recolher disponibilidade, latência, estado do warehouse e disco em modo leitura.
-- [x] Mostrar estados, incidentes e histórico limitado, sem dados pessoais.
-- [x] Validar autenticação, isolamento, falhas e interface responsiva.
 
 Credenciais e registos operacionais ficam locais e fora do Git. Nesta primeira
 versão, os logs são das sondas; não existe ainda instrumentação de todos os
@@ -745,13 +508,6 @@ fornecedores externos.
 
 ### Acesso pelo proxy do monitoring — 2026-10-19
 
-- [x] Confirmar serviço e login locais disponíveis.
-- [x] Identificar HTTP 400 em `/ports/3004/` no proxy Code Editor: porta não
-  incluída na lista de encaminhamento, antes de contactar o servidor.
-- [x] Corrigir redirects para URLs canónicos completos, evitando duplicação
-  do prefixo pelo proxy, e acrescentar instrução de encaminhamento ao arranque.
-- [x] Encaminhar a porta 3004 no separador Ports do Code Editor e confirmar
-  acesso através da sessão AWS do utilizador.
 
 Evidência: proxy local na porta 8888 responde 200 para 3001/3003 e 400 para
 3004; código instalado do proxy verifica a sua lista de portas permitidas.
@@ -767,15 +523,6 @@ Registado a pedido do utilizador em 2026-10-19. A recolha interna, backups locai
 consumo de IA foram implementados. A operação externa continua incompleta enquanto
 não existirem destinos, responsáveis e infraestrutura fora desta máquina.
 
-- [x] Recolher erros internos do portal e falhas de operações/subprocessos,
-  com logs estruturados, correlação de pedidos e exclusão de dados pessoais
-  e segredos. Validar com falhas controladas.
-- [x] Monitorizar backups: resultado e data da última cópia, falhas e evidência
-  do último restauro ensaiado. A ausência de evidência deve aparecer como
-  desconhecida, sem indicar que os dados estão protegidos.
-- [x] Recolher consumo de IA: chamadas, falhas, latência e tokens quando
-  disponíveis; distinguir valores medidos de estimativas de custo. Validar
-  primeiro com mocks, sem chamadas pagas implícitas.
 - [ ] Configurar notificações externas de incidentes: canal, destinatários,
   limiares, deduplicação e recuperação. Validar o fluxo; envios reais exigem
   autorização aplicável do utilizador.
@@ -787,32 +534,12 @@ ou de um painel não basta.
 
 ### Implementação da segunda etapa — 2026-10-19
 
-- [x] Registar erros internos do Next.js, subprocessos Python e dependências,
-  com eventos estruturados, rotação e dados reduzidos.
-- [x] Criar backups verificáveis do catálogo, warehouse e entregas e registar
-  ensaios de restauro isolados.
-- [x] Registar chamadas de IA, resultados, latência e tokens reportados, sem
-  guardar prompts, respostas ou dados de clientes.
-- [x] Deduplicar incidentes e recuperações numa fila local; manter integrações
-  externas desativadas até serem definidos canal e destinatários.
-- [x] Integrar os novos sinais no painel privado e validar falhas controladas.
-- [x] Permitir abrir cada sinal operacional num modal autenticado com os últimos
-  registos técnicos e seleção `Todos`/`Apenas erros`, sem conteúdo de clientes,
-  prompts ou segredos.
-
 Implementado com eventos JSON-lines limitados a 2 MB, agregação das últimas 24
 horas, cópia SQLite consistente, manifestos SHA-256, restauro isolado e fila local
 de abertura/recuperação. O envio externo continua pendente: falta definir canal,
 destinatários, credenciais e limiares antes de o ativar.
 
 ## Gestão de utilizadores do monitoring — 2026-10-19
-
-- [x] Migrar a conta existente sem alterar a palavra-passe, suportando várias contas.
-- [x] Acrescentar administração de contas com criação, palavra-passe, perfil,
-  ativação/desativação e remoção, protegida por sessão, autorização e CSRF.
-- [x] Preservar pelo menos um administrador ativo e invalidar sessões alteradas.
-- [x] Retirar credenciais/logs já versionados do índice, mantendo os ficheiros locais.
-- [x] Validar permissões, persistência, migração, concorrência e UI responsiva.
 
 Esta tarefa de utilizadores não cobriu os sinais operacionais. A implementação
 posterior resolveu erros internos, backups e consumo de IA; o envio externo de
@@ -833,31 +560,12 @@ estrutural acrescentada contra nova inclusão. O histórico não foi reescrito.
 
 ## Portas do Code Editor — 2026-10-19
 
-- [x] Confirmar os serviços em execução e retirar portas descontinuadas da
-  configuração do workspace.
-- [x] Identificar no painel Ports o portal 3001, apresentação 3003, monitoring
-  3004 e Observatório 8501, com encaminhamento automático silencioso.
-- [x] Acrescentar o monitoring ao utilitário que apresenta os URLs Studio.
-
 A porta 8000 permanece fora da lista principal porque o agente é opcional e não
 está em execução. Pode ser encaminhada quando `BLU_START_AGENT=1` for usado.
 
 ## Limpeza automática pelo monitoring — 2026-10-19
 
-- [x] Definir uma lista fechada de caches regeneráveis, sem abranger dados,
-  entregas, credenciais, dependências ou ambientes de execução.
-- [x] Aplicar retenção aos backups do monitoring, preservando os cinco mais
-  recentes e uma idade mínima de sete dias para os excedentes.
-- [x] Executar automaticamente a partir de 85% de ocupação, com intervalo mínimo
-  de 24 horas, e disponibilizar execução manual apenas a administradores com CSRF.
-- [x] Mostrar no painel a política e o resultado da última limpeza.
-- [x] Validar limites, retenção, proteção de dados e autorização com fixtures.
-
 ## Normalização de indentação — 2026-10-19
-
-- [x] Formatar todos os HTML versionados e preservar placeholders e comportamento.
-- [x] Verificar indentação e sintaxe nos restantes ficheiros de código e configuração.
-- [x] Executar as validações funcionais das áreas cujos ficheiros forem alterados.
 
 Foram formatados os cinco HTML versionados, CSS de portal, monitoring e dashboard,
 JavaScript de monitoring e testes e configurações que o verificador assinalou. O
@@ -866,51 +574,12 @@ Python, 97 testes do portal com um opcional omitido, lint e tipos do portal, e
 cenários de navegador do monitoring e apresentação em 320–2560 px aprovados.
 
 ## Preparação do monitoring para deployment — 2026-10-19
-
-- [x] Rodar telemetria do portal e da IA sem interromper a recolha ao atingir 2 MB.
-- [x] Criar e verificar backups locais automaticamente a cada 24 horas.
-- [x] Definir limiares preliminares: duas falhas consecutivas de serviço, cinco
-  erros do portal, três falhas de IA e warehouse com idade máxima de sete dias.
-- [x] Expor `/health` sem dados operacionais para uma futura sonda externa.
-- [x] Criar runbooks para serviços, portal, warehouse, backups, disco, IA e monitoring.
 - [ ] Configurar destino externo cifrado para backups no ambiente escolhido.
 - [ ] Instalar uma sonda fora da máquina e ligar notificações a responsáveis reais.
 
-## Recuperação única `just blu it` — 2026-10-19
-
-- [x] Criar launcher local e `Justfile` com o comando literal `just blu it`.
-- [x] Exigir autenticação interativa de uma conta ativa `admin` antes de executar
-  qualquer preparação, teste, restauro ou reinício.
-- [x] Executar uma tarefa 0 após a autenticação para parar os cinco serviços e
-  confirmar a indisponibilidade das respetivas portas antes da recuperação.
-- [x] Tornar persistentes e autorrecuperáveis as bibliotecas dos testes Chromium,
-  removendo a dependência da cache efémera `/tmp`.
-- [x] Mostrar progresso independente de 0 a 100% por tarefa, falha localizada e
-  log técnico privado; manter detalhes fora do terminal quando não existem erros.
-- [x] Sincronizar dependências Python/Node, executar testes e construir o portal.
-- [x] Preservar dados válidos e restaurar apenas catálogo, warehouse ou itinerários
-  ausentes/inválidos a partir do último backup verificado.
-- [x] Iniciar agente, portal, apresentação, monitoring e Observatório e verificar
-  as portas 8000, 3001, 3003, 3004 e 8501.
-- [x] Declarar encaminhamento automático das cinco portas no workspace.
-- [x] Acrescentar `just blu up` para iniciar apenas serviços parados, confirmar os
-  cinco endpoints e abrir as quatro interfaces; abrir os mesmos endereços no fim de
-  `just blu it`.
-- [x] Uniformizar a consola dos dois comandos com identidade BLU, estados, latência,
-  progresso por tarefa, duração total e saída simples quando ANSI não está disponível.
 
 ## Observabilidade centralizada no Monitoring — 2026-10-19
 
-- [x] Ampliar a telemetria persistente do portal com utilizador de sessão, ação,
-  módulo, estado, severidade, detalhes e diagnóstico reduzido.
-- [x] Capturar visualizações, navegação, interações, pedidos API e erros não tratados
-  no browser e no servidor, sem valores de formulários, corpos, prompts ou respostas.
-- [x] Criar consulta autenticada com pesquisa, severidade, ordem cronológica e limite,
-  preservando rotação e compatibilidade com eventos anteriores.
-- [x] Adicionar a tabela lateral do Portal e tabelas reutilizadas para IA, backups e
-  incidentes, com atualização automática e detalhe de mensagens/stack traces.
-- [x] Validar filtros, acesso autenticado, privacidade e interface responsiva em
-  320/768/1440/2560 px.
 
 O portal não possui autenticação própria: o campo de utilizador identifica apenas a
 sessão efémera do separador ou execução no servidor, sem atribuir ações a uma pessoa.
