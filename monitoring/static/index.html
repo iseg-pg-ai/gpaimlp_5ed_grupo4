@@ -235,51 +235,51 @@
             </div>
             <span class="live-dot" aria-hidden="true"></span>
           </div>
-          <div class="logs-toolbar">
-            <label>
-              <span>Pesquisar</span>
-              <input data-log-search type="search" maxlength="80" placeholder="Ação, módulo ou estado" />
-            </label>
-            <label>
-              <span>Severidade</span>
-              <select data-log-severity>
-                <option value="">Todas</option>
-                <option>INFO</option><option>WARNING</option><option>ERROR</option><option>CRITICAL</option>
-              </select>
-            </label>
-            <label>
-              <span>Módulo</span>
-              <select data-log-module>
-                <option value="">Todos do portal</option>
-              </select>
-            </label>
-            <button type="button" class="subtle" data-log-order data-order="desc">Mais recentes ↓</button>
+          <div class="logs-toolbar portal-log-controls">
+            <div class="log-mode-filter" role="group" aria-label="Filtrar erros do Portal">
+              <button type="button" class="active" data-log-mode="" aria-pressed="true">
+                Todos <strong data-log-count="all">0</strong>
+              </button>
+              <button type="button" data-log-mode="ERRORS" aria-pressed="false">
+                Apenas erros <strong data-log-count="errors">0</strong>
+              </button>
+              <input data-log-severity type="hidden" value="" />
+            </div>
           </div>
           <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
           <div class="log-table-wrap" data-log-results aria-live="polite"></div>
         </aside>
-        <section class="panel secondary-logs" data-log-table data-module="ai">
-          <div class="logs-heading">
-            <div>
-              <p class="eyebrow">OUTROS MÓDULOS</p>
-              <h2>Registos técnicos</h2>
+        <section class="service-log-grid" aria-label="Logs dos restantes dashboards">
+          <article class="panel service-log-card" data-log-table data-module="observatory">
+            <div class="logs-heading"><div><p class="eyebrow">DASHBOARD / 01</p><h2>Observatório analítico</h2></div><span class="live-dot" aria-hidden="true"></span></div>
+            <div class="log-mode-filter" role="group" aria-label="Filtrar erros do Observatório">
+              <button type="button" class="active" data-log-mode="" aria-pressed="true">Todos <strong data-log-count="all">0</strong></button>
+              <button type="button" data-log-mode="ERRORS" aria-pressed="false">Apenas erros <strong data-log-count="errors">0</strong></button>
+              <input data-log-severity type="hidden" value="" />
             </div>
-            <span class="badge">Últimos 7 dias</span>
-          </div>
-          <div class="logs-toolbar compact">
-            <label><span>Módulo</span><select data-log-module>
-              <option value="ai">Assistência IA</option>
-              <option value="backup">Backups</option>
-              <option value="alerts">Incidentes</option>
-            </select></label>
-            <label><span>Severidade</span><select data-log-severity>
-              <option value="">Todas</option><option>INFO</option><option>WARNING</option><option>ERROR</option><option>CRITICAL</option>
-            </select></label>
-            <label><span>Pesquisar</span><input data-log-search type="search" maxlength="80" placeholder="Pesquisar registos" /></label>
-            <button type="button" class="subtle" data-log-order data-order="desc">Mais recentes ↓</button>
-          </div>
-          <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
-          <div class="log-table-wrap compact" data-log-results aria-live="polite"></div>
+            <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
+            <div class="log-table-wrap compact" data-log-results aria-live="polite"></div>
+          </article>
+          <article class="panel service-log-card" data-log-table data-module="presentation">
+            <div class="logs-heading"><div><p class="eyebrow">DASHBOARD / 02</p><h2>Apresentação</h2></div><span class="live-dot" aria-hidden="true"></span></div>
+            <div class="log-mode-filter" role="group" aria-label="Filtrar erros da Apresentação">
+              <button type="button" class="active" data-log-mode="" aria-pressed="true">Todos <strong data-log-count="all">0</strong></button>
+              <button type="button" data-log-mode="ERRORS" aria-pressed="false">Apenas erros <strong data-log-count="errors">0</strong></button>
+              <input data-log-severity type="hidden" value="" />
+            </div>
+            <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
+            <div class="log-table-wrap compact" data-log-results aria-live="polite"></div>
+          </article>
+          <article class="panel service-log-card" data-log-table data-module="ai">
+            <div class="logs-heading"><div><p class="eyebrow">DASHBOARD / 03</p><h2>Agente IA</h2></div><span class="live-dot" aria-hidden="true"></span></div>
+            <div class="log-mode-filter" role="group" aria-label="Filtrar erros do Agente IA">
+              <button type="button" class="active" data-log-mode="" aria-pressed="true">Todos <strong data-log-count="all">0</strong></button>
+              <button type="button" data-log-mode="ERRORS" aria-pressed="false">Apenas erros <strong data-log-count="errors">0</strong></button>
+              <input data-log-severity type="hidden" value="" />
+            </div>
+            <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
+            <div class="log-table-wrap compact" data-log-results aria-live="polite"></div>
+          </article>
         </section>
         <dialog
           id="operations-dialog"
@@ -329,6 +329,7 @@
             <div><p class="eyebrow">EVENTO PERSISTENTE</p><h2 id="log-detail-title">Detalhes do evento</h2></div>
             <button type="button" class="dialog-close" data-log-detail-close aria-label="Fechar">×</button>
           </div>
+          <div id="log-detail-summary" class="log-detail-summary"></div>
           <dl id="log-detail-fields" class="log-detail-fields"></dl>
           <div id="log-detail-stack" class="log-stack" hidden><h3>Stack trace</h3><pre></pre></div>
           <p class="footnote">Dados técnicos reduzidos; segredos e conteúdo de clientes não são recolhidos.</p>

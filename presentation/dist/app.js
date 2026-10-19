@@ -238,7 +238,6 @@ function render(focus = true) {
   $(".show-bottom-note").textContent = technical
     ? "CONTEÚDO BASEADO NO PROJETO · sem executar ETL, testes, modelos ou alterações a dados"
     : "PROTÓTIPO INDEPENDENTE · sem geração por IA, reservas ou alterações a dados reais";
-  document.title = "BLU · Presentation";
   window.BluTechnical.mount();
   if (focus) {
     $("#show-title").focus({ preventScroll: true });

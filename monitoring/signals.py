@@ -111,10 +111,10 @@ def operational_details(runtime: Path, kind: str) -> dict:
 def query_logs(runtime: Path, module: str = "portal", severity: str = "",
                search: str = "", order: str = "desc", limit: int = 200) -> dict:
     """Normaliza fontes persistentes para uma tabela técnica, sem conteúdo livre."""
-    if module not in {"portal", "ai", "backup", "alerts"}:
+    if module not in {"portal", "observatory", "presentation", "ai", "backup", "alerts"}:
         raise ValueError("Módulo desconhecido.")
     severity = severity.upper()
-    if severity and severity not in SEVERITIES:
+    if severity and severity not in {*SEVERITIES, "ERRORS"}:
         raise ValueError("Severidade desconhecida.")
     if order not in {"asc", "desc"} or not 1 <= limit <= 500 or len(search) > 80:
         raise ValueError("Consulta inválida.")
@@ -131,6 +131,7 @@ def query_logs(runtime: Path, module: str = "portal", severity: str = "",
                 "user": item.get("user", "system"),
                 "action": item.get("operation", "unknown"),
                 "module": item.get("module", item.get("component", module)),
+                "component": item.get("component"),
                 "status": outcome,
                 "severity": level,
                 "details": item.get("details") or item.get("error_code") or "—",
@@ -138,8 +139,27 @@ def query_logs(runtime: Path, module: str = "portal", severity: str = "",
                 "stack": item.get("stack"),
                 "http_status": item.get("http_status"),
                 "duration_ms": item.get("duration_ms"),
+                "error_code": item.get("error_code"),
             })
-    elif module == "backup":
+    if module in {"observatory", "presentation", "ai"}:
+        service_names = {"observatory": "Observatório analítico",
+                         "presentation": "Apresentação", "ai": "Agente IA"}
+        for cycle in _event_family(runtime, "probes.jsonl", since):
+            service = next((item for item in cycle.get("services", [])
+                            if item.get("name") == service_names[module]), None)
+            if not service:
+                continue
+            state = str(service.get("state", "unknown"))
+            latency = service.get("latency_ms")
+            rows.append({"timestamp": cycle.get("at"), "user": "system",
+                         "action": "health_check", "module": module,
+                         "component": "monitoring", "status": state,
+                         "severity": "INFO" if state == "up" else "ERROR",
+                         "details": "Serviço disponível" if state == "up" else "Sonda sem resposta",
+                         "message": None, "stack": None,
+                         "http_status": service.get("http_status"),
+                         "duration_ms": latency, "error_code": None})
+    if module == "backup":
         for entry in operational_details(runtime, "backup")["entries"]:
             fields = entry["fields"]
             rows.append({"timestamp": entry.get("at"), "user": "system",
@@ -147,7 +167,7 @@ def query_logs(runtime: Path, module: str = "portal", severity: str = "",
                          "status": fields.get("outcome", "unknown"),
                          "severity": "ERROR" if entry["is_error"] else "INFO",
                          "details": fields.get("backup_id", "—")})
-    else:
+    elif module == "alerts":
         for entry in operational_details(runtime, "alerts")["entries"]:
             fields = entry["fields"]
             rows.append({"timestamp": entry.get("at"), "user": "system",
@@ -156,12 +176,16 @@ def query_logs(runtime: Path, module: str = "portal", severity: str = "",
                          "severity": "ERROR" if entry["is_error"] else "INFO",
                          "details": fields.get("key", "—")})
     needle = search.casefold().strip()
-    if severity:
-        rows = [row for row in rows if row["severity"] == severity]
     if needle:
         rows = [row for row in rows if needle in " ".join(
             str(row.get(key, "")) for key in ("user", "action", "module", "status", "details", "message")
         ).casefold()]
+    counts = {"all": len(rows),
+              "errors": sum(row["severity"] in {"ERROR", "CRITICAL"} for row in rows)}
+    if severity == "ERRORS":
+        rows = [row for row in rows if row["severity"] in {"ERROR", "CRITICAL"}]
+    elif severity:
+        rows = [row for row in rows if row["severity"] == severity]
     rows.sort(key=lambda row: row.get("timestamp") or "", reverse=order == "desc")
-    return {"module": module, "entries": rows[:limit], "total": len(rows),
+    return {"module": module, "entries": rows[:limit], "total": len(rows), "counts": counts,
             "generated_at": datetime.now(timezone.utc).isoformat()}

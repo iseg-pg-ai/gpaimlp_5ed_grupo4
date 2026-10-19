@@ -371,9 +371,17 @@ const logTables = [];
 const logDetailNames = {
   timestamp: "Data e hora", user: "Utilizador", action: "Ação", module: "Módulo",
   status: "Estado", severity: "Severidade", details: "Detalhes", message: "Mensagem",
-  http_status: "HTTP", duration_ms: "Duração",
+  http_status: "Código HTTP", duration_ms: "Duração", error_code: "Código do erro",
+  component: "Componente",
 };
 function showLogDetail(entry) {
+  $("log-detail-title").textContent = entry.action || "Detalhes do evento";
+  const summary = $("log-detail-summary");
+  summary.replaceChildren(
+    node("span", `severity ${entry.severity}`, entry.severity),
+    node("strong", "", entry.status),
+    node("time", "", date(entry.timestamp)),
+  );
   const fields = Object.entries(entry)
     .filter(([key, value]) => key !== "stack" && value !== null && value !== undefined)
     .map(([key, value]) => {
@@ -388,28 +396,43 @@ function showLogDetail(entry) {
   $("log-detail-dialog").showModal();
 }
 function renderLogTable(table) {
-  const moduleFilter = table.portal ? table.module.value : "";
-  const entries = moduleFilter
-    ? table.entries.filter((entry) => entry.module === moduleFilter)
-    : table.entries;
+  const entries = table.entries;
   table.summary.textContent = `${entries.length.toLocaleString("pt-PT")} de ${table.total.toLocaleString("pt-PT")} eventos · atualização automática`;
   if (!entries.length) {
     table.results.replaceChildren(node("p", "log-empty", "Não existem eventos para estes filtros."));
     return;
   }
+  const compact = !table.portal;
   const head = document.createElement("thead");
   const heading = document.createElement("tr");
-  ["Data", "Severidade", "Utilizador", "Ação", "Módulo", "Estado", "Detalhes"].forEach((label) => heading.append(node("th", "", label)));
+  (compact ? ["Data", "Estado", "Duração"] : ["Data", "Severidade", "Utilizador", "Ação", "Módulo", "Estado", "Detalhes"])
+    .forEach((label) => heading.append(node("th", "", label)));
   head.append(heading);
   const body = document.createElement("tbody");
   entries.forEach((entry) => {
     const row = document.createElement("tr");
     row.dataset.severity = entry.severity;
-    const action = node("button", "log-action", entry.action);
-    action.type = "button";
-    action.addEventListener("click", () => showLogDetail(entry));
+    row.tabIndex = 0;
+    row.setAttribute("role", "button");
+    row.setAttribute("aria-label", `Consultar ${entry.action}, ${entry.severity}, ${date(entry.timestamp)}`);
+    row.addEventListener("click", () => showLogDetail(entry));
+    row.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        showLogDetail(entry);
+      }
+    });
+    const action = node("span", "log-action", entry.action);
     const actionCell = document.createElement("td");
     actionCell.append(action);
+    if (compact) {
+      const state = document.createElement("td");
+      state.append(node("span", `severity ${entry.severity}`, entry.status));
+      row.append(node("td", "", date(entry.timestamp)), state,
+        node("td", "", entry.duration_ms == null ? "—" : `${entry.duration_ms} ms`));
+      body.append(row);
+      return;
+    }
     [date(entry.timestamp), null, entry.user, null, entry.module, entry.status, entry.details].forEach((value, index) => {
       if (index === 1) {
         const cell = document.createElement("td");
@@ -427,8 +450,8 @@ function renderLogTable(table) {
 async function refreshLogTable(table) {
   if (table.busy) return;
   table.busy = true;
-  const source = table.portal ? "portal" : table.module.value;
-  const query = new URLSearchParams({ module: source, severity: table.severity.value, search: table.search.value.trim(), order: table.order.dataset.order, limit: "200" });
+  const source = table.panel.dataset.module;
+  const query = new URLSearchParams({ module: source, severity: table.severity.value, search: table.search?.value.trim() ?? "", order: table.order?.dataset.order ?? "desc", limit: "200" });
   try {
     const response = await fetch(`api/logs?${query}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
     if (response.status === 401) { location.href = "login"; return; }
@@ -436,11 +459,10 @@ async function refreshLogTable(table) {
     const payload = await response.json();
     table.entries = payload.entries;
     table.total = payload.total;
-    if (table.portal) {
-      const selected = table.module.value;
-      const modules = [...new Set(table.entries.map((entry) => entry.module))].sort();
-      table.module.replaceChildren(new Option("Todos do portal", ""), ...modules.map((value) => new Option(value, value)));
-      if (modules.includes(selected)) table.module.value = selected;
+    if (table.panel.querySelector("[data-log-count]")) {
+      table.panel.querySelectorAll("[data-log-count]").forEach((count) => {
+        count.textContent = (payload.counts?.[count.dataset.logCount] ?? 0).toLocaleString("pt-PT");
+      });
     }
     renderLogTable(table);
   } catch {
@@ -457,10 +479,19 @@ document.querySelectorAll("[data-log-table]").forEach((panel) => {
     results: panel.querySelector("[data-log-results]"), summary: panel.querySelector("[data-log-summary]"),
   };
   let timer;
-  table.search.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => refreshLogTable(table), 300); });
+  table.search?.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => refreshLogTable(table), 300); });
   table.severity.addEventListener("change", () => refreshLogTable(table));
-  table.module.addEventListener("change", () => table.portal ? renderLogTable(table) : refreshLogTable(table));
-  table.order.addEventListener("click", () => {
+  table.panel.querySelectorAll("[data-log-mode]").forEach((button) => button.addEventListener("click", () => {
+    table.severity.value = button.dataset.logMode;
+    table.panel.querySelectorAll("[data-log-mode]").forEach((option) => {
+      const active = option === button;
+      option.classList.toggle("active", active);
+      option.setAttribute("aria-pressed", String(active));
+    });
+    refreshLogTable(table);
+  }));
+  table.module?.addEventListener("change", () => refreshLogTable(table));
+  table.order?.addEventListener("click", () => {
     const desc = table.order.dataset.order === "desc";
     table.order.dataset.order = desc ? "asc" : "desc";
     table.order.textContent = desc ? "Mais antigos ↑" : "Mais recentes ↓";

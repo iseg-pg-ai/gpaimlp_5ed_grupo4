@@ -212,14 +212,37 @@ class OperationsTest(unittest.TestCase):
                  "module": "api:catalog", "outcome": "failed", "level": "error",
                  "details": "POST /api/catalog", "message": "Falha controlada",
                  "stack": "Error: Falha controlada"},
+                {"at": now.isoformat(), "user": "server", "operation": "uncaught_error",
+                 "module": "portal", "outcome": "failed", "level": "critical",
+                 "details": "window.error"},
             ]
             (runtime / "portal-events.jsonl").write_text(
                 "\n".join(map(json.dumps, rows)) + "\n")
+            (runtime / "probes.jsonl").write_text(json.dumps({
+                "at": now.isoformat(), "services": [
+                    {"name": "Observatório analítico", "state": "up",
+                     "latency_ms": 12, "http_status": 200},
+                    {"name": "Apresentação", "state": "down",
+                     "latency_ms": None, "http_status": 503},
+                    {"name": "Agente IA", "state": "up",
+                     "latency_ms": 8, "http_status": 200},
+                ]}) + "\n")
             result = query_logs(runtime, "portal", "ERROR", "catalog", "desc", 20)
             self.assertEqual(result["total"], 1)
             self.assertEqual(result["entries"][0]["severity"], "ERROR")
             self.assertEqual(result["entries"][0]["user"], "server")
             self.assertIn("stack", result["entries"][0])
+            errors = query_logs(runtime, "portal", "ERRORS")
+            self.assertEqual(errors["total"], 2)
+            self.assertEqual(errors["counts"], {"all": 3, "errors": 2})
+            self.assertEqual({entry["severity"] for entry in errors["entries"]},
+                             {"ERROR", "CRITICAL"})
+            observatory = query_logs(runtime, "observatory")
+            self.assertEqual(observatory["entries"][0]["duration_ms"], 12)
+            presentation = query_logs(runtime, "presentation", "ERRORS")
+            self.assertEqual(presentation["total"], 1)
+            self.assertEqual(presentation["entries"][0]["http_status"], 503)
+            self.assertEqual(query_logs(runtime, "ai")["entries"][0]["status"], "up")
             ascending = query_logs(runtime, "portal", order="asc")
             self.assertEqual(ascending["entries"][0]["action"], "navigation")
             with self.assertRaises(ValueError):
