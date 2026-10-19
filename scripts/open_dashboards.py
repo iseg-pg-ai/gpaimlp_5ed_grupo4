@@ -27,6 +27,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--print-only", action="store_true",
                         help="Mostrar os endereços sem abrir separadores.")
+    parser.add_argument("--quiet", action="store_true",
+                        help="Abrir sem escrever confirmação no terminal.")
     args = parser.parse_args()
     targets = urls()
     if args.print_only:
@@ -65,7 +67,8 @@ def main() -> int:
                 print(f"{name}: {url}")
             print("Abertura automática indisponível; use os endereços acima.")
             return 0
-    print("Dashboards abertos no navegador associado à sessão.")
+    if not args.quiet:
+        print("Dashboards abertos no navegador associado à sessão.")
     return 0
 
 

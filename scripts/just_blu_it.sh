@@ -6,6 +6,45 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNTIME="$ROOT/monitoring/runtime/recovery"
 LOG="$RUNTIME/just-blu-it.log"
 SERVICES="$ROOT/monitoring/runtime/services"
+COMMAND_STARTED_AT="$(date +%s)"
+
+# Identidade visual do terminal; NO_COLOR e saídas redirecionadas mantêm texto simples.
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+    GOLD=$'\033[38;5;180m' CYAN=$'\033[38;5;81m' GREEN=$'\033[38;5;114m'
+    RED=$'\033[38;5;210m' MUTED=$'\033[2m' BOLD=$'\033[1m' RESET=$'\033[0m'
+else
+    GOLD='' CYAN='' GREEN='' RED='' MUTED='' BOLD='' RESET=''
+fi
+
+box_row() {
+    local left="$1" right="${2:-}" inner=62 gap
+    gap=$((inner - 4 - ${#left} - ${#right}))
+    [ "$gap" -lt 1 ] && gap=1
+    printf '│  %s%*s%s  │\n' "$left" "$gap" '' "$right"
+}
+
+ui_header() {
+    local protocol="$1" mode="$2"
+    printf '\n%s╭──────────────────────────────────────────────────────────────╮%s\n' "$GOLD" "$RESET"
+    printf '%s' "$GOLD"
+    box_row "BLU SYSTEMS · $protocol" "$mode"
+    printf '%s' "$RESET"
+    printf '%s╰──────────────────────────────────────────────────────────────╯%s\n\n' "$GOLD" "$RESET"
+}
+
+elapsed_time() {
+    local seconds=$(( $(date +%s) - COMMAND_STARTED_AT ))
+    printf '%02dm %02ds' $((seconds / 60)) $((seconds % 60))
+}
+
+ui_footer() {
+    local title="$1" detail="$2"
+    printf '\n%s╭──────────────────────────────────────────────────────────────╮%s\n' "$GREEN" "$RESET"
+    printf '%s' "$GREEN"
+    box_row "◈  $title"
+    box_row "$detail · $(elapsed_time)"
+    printf '%s╰──────────────────────────────────────────────────────────────╯%s\n' "$GREEN" "$RESET"
+}
 
 # Preferir as versões Node suportadas pelo portal quando o NVM estiver disponível.
 if ! node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a<22||a>24||(a===22&&b<13)?1:0)' 2>/dev/null \
@@ -47,8 +86,8 @@ complete_task() {
     printf '\n'
 }
 fail() {
-    printf '\n  ✗ Falhou: %s\n' "$CURRENT_TASK" >&2
-    printf '  Últimas mensagens:\n' >&2
+    printf '\n  %s✗ PROTOCOLO INTERROMPIDO%s · %s\n' "$RED" "$RESET" "$CURRENT_TASK" >&2
+    printf '  %sÚltimas mensagens do diagnóstico:%s\n' "$MUTED" "$RESET" >&2
     tail -40 "$LOG" >&2 || true
     printf '\nO sistema anterior foi preservado sempre que estava válido.\n' >&2
 }
@@ -156,11 +195,9 @@ start_missing_service() {
     local name="$1" port="$2"
     shift 2
     if port_is_open "$port"; then
-        printf '  • %s já está ativo na porta %s.\n' "$name" "$port"
         return
     fi
     start_service "$name" "$@"
-    printf '  ✓ %s iniciado na porta %s.\n' "$name" "$port"
 }
 
 start_missing_services() {
@@ -204,9 +241,31 @@ confirm_service_endpoints() {
     wait_http "Observatório" "http://127.0.0.1:8501/_stcore/health"
 }
 
+service_line() {
+    local number="$1" label="$2" port="$3" url="$4" measurement code seconds latency padding
+    wait_http "$label" "$url"
+    measurement="$(curl --silent --output /dev/null --max-time 3 --write-out '%{http_code} %{time_total}' "$url")"
+    read -r code seconds <<< "$measurement"
+    latency="$(awk -v value="$seconds" 'BEGIN { printf "%d", value * 1000 }')"
+    padding=$((20 - ${#label}))
+    [ "$padding" -lt 1 ] && padding=1
+    printf '  %02d  %s%*s %s● ONLINE%s    %-5s %6s ms\n' \
+        "$number" "$label" "$padding" '' "$GREEN" "$RESET" "$port" "$latency"
+}
+
+quick_start_status() {
+    printf '  %s◈  INITIALIZING OPERATIONAL NETWORK%s\n\n' "$CYAN" "$RESET"
+    service_line 1 "AGENTE IA" 8000 "http://127.0.0.1:8000/api/health"
+    service_line 2 "OBSERVATÓRIO" 8501 "http://127.0.0.1:8501/_stcore/health"
+    service_line 3 "APRESENTAÇÃO" 3003 "http://127.0.0.1:3003/"
+    service_line 4 "MONITORING" 3004 "http://127.0.0.1:3004/health"
+    service_line 5 "CURATION STUDIO" 3001 "http://127.0.0.1:3001/catalog"
+    printf '\n  NETWORK READINESS      %s━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s  100%%\n' "$GREEN" "$RESET"
+}
+
 cd "$ROOT"
 if [ "${BLU_MODE:-it}" = "up" ]; then
-    printf '\njust blu up\nInicialização dos dashboards BLU\n\n'
+    ui_header "QUICK START" "NODE AWS"
     mkdir -p "$RUNTIME" "$SERVICES"
     if [ ! -f monitoring/runtime/credentials.json ]; then
         printf 'Falta configurar o acesso ao Monitoring: python -B -m monitoring.setup\n' >&2
@@ -216,14 +275,19 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
     PORTAL_PUBLIC_ORIGIN="$(python3 -B scripts/studio_urls.py --origin)"
     export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="/codeeditor/default/ports/3001"
     start_missing_services
-    confirm_service_endpoints
-    python3 -B scripts/open_dashboards.py
-    printf '\nTodos os dashboards estão disponíveis.\n'
+    quick_start_status
+    python3 -B scripts/open_dashboards.py --quiet
+    printf '\n  %s✓%s  5 serviços operacionais\n' "$GREEN" "$RESET"
+    printf '  %s✓%s  5 endpoints validados\n' "$GREEN" "$RESET"
+    printf '  %s✓%s  4 interfaces abertas\n' "$GREEN" "$RESET"
+    ui_footer "SYSTEM READY" "just blu up · completed"
     exit 0
 fi
 
-printf '\njust blu it\nRecuperação ponta a ponta do sistema BLU\n'
+ui_header "RECOVERY PROTOCOL" "ADMIN MODE"
+printf '  %s◈  AUTHORIZATION REQUIRED%s\n\n' "$CYAN" "$RESET"
 python3 -B -m monitoring.admin_auth
+printf '\n  %s✓%s  Autenticação administrativa confirmada\n\n' "$GREEN" "$RESET"
 
 # Só criar logs ou alterar processos depois de confirmar um administrador ativo.
 mkdir -p "$RUNTIME" "$SERVICES"
@@ -277,4 +341,5 @@ run_task "11. Testes finais dos dashboards" bash -c '
 '
 
 python3 -B scripts/studio_urls.py >> "$LOG"
-run_task "12. Sistema BLU recuperado" python3 -B scripts/open_dashboards.py
+run_task "12. Sistema BLU recuperado" python3 -B scripts/open_dashboards.py --quiet
+ui_footer "BLU SYSTEM RESTORED" "12 tarefas · 5 serviços · 4 interfaces"

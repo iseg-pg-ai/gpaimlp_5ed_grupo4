@@ -886,6 +886,8 @@ cenários de navegador do monitoring e apresentação em 320–2560 px aprovados
 - [x] Acrescentar `just blu up` para iniciar apenas serviços parados, confirmar os
   cinco endpoints e abrir as quatro interfaces; abrir os mesmos endereços no fim de
   `just blu it`.
+- [x] Uniformizar a consola dos dois comandos com identidade BLU, estados, latência,
+  progresso por tarefa, duração total e saída simples quando ANSI não está disponível.
 
 ## Observabilidade centralizada no Monitoring — 2026-10-19
 
