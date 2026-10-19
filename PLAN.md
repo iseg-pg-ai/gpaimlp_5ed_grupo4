@@ -750,3 +750,26 @@ Não foi alterada a lista através de interfaces internas não documentadas.
 Confirmação do utilizador em 2026-10-19: a página passou a abrir depois do
 encaminhamento. Esta confirmação cobre o acesso à página; o login real e a
 navegação autenticada pelo proxy ainda não foram confirmados pelo utilizador.
+
+## Pendências de monitoring
+
+Registado a pedido do utilizador em 2026-10-19. **Esta etapa ainda não está
+feita.** A primeira versão guarda apenas logs das sondas e apresenta incidentes
+no painel. O funcionamento desse painel não significa monitoring completo.
+
+- [ ] Recolher erros internos do portal e falhas de operações/subprocessos,
+  com logs estruturados, correlação de pedidos e exclusão de dados pessoais
+  e segredos. Validar com falhas controladas.
+- [ ] Monitorizar backups: resultado e data da última cópia, falhas e evidência
+  do último restauro ensaiado. A ausência de evidência deve aparecer como
+  desconhecida, sem indicar que os dados estão protegidos.
+- [ ] Recolher consumo de IA: chamadas, falhas, latência e tokens quando
+  disponíveis; distinguir valores medidos de estimativas de custo. Validar
+  primeiro com mocks, sem chamadas pagas implícitas.
+- [ ] Configurar notificações externas de incidentes: canal, destinatários,
+  limiares, deduplicação e recuperação. Validar o fluxo; envios reais exigem
+  autorização aplicável do utilizador.
+
+Ao retomar monitoring ou preparar deployment/produção, recordar estas quatro
+lacunas e consultar esta lista. Manter cada item aberto até existir implementação
+e evidência de validação; a existência de um plano ou de um painel não basta.
