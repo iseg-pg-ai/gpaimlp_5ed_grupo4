@@ -126,25 +126,22 @@ def main() -> int:
     blockers += ([] if node_ok else ["Node >=22.13 e <25"])
     blockers += missing
 
-    if not args.check_only:
-        write_studio_config(studio_url)
-        ensure_launcher()
-        created_access = ensure_monitoring_access()
-    else:
-        created_access = False
-
     print("\nBLU · verificação do ambiente")
     for name, value in versions.items():
         print(f"  {'✓' if value else '✗'} {name}: {value or 'ausente'}")
     print(f"  ✓ Studio: {studio_url}")
     print(f"  {'✓' if (ROOT / 'data').is_dir() else '!'} Fontes locais: data/")
     print(f"  {'✓' if (ROOT / 'warehouse/blu_etl.sqlite').is_file() else '!'} Warehouse publicado")
-    if created_access:
-        print("  ✓ Acesso inicial do Monitoring criado em monitoring/runtime/initial-password.txt")
     if blockers:
         print("\nBloqueios: " + ", ".join(blockers), file=sys.stderr)
         return 1
+
     if not args.check_only:
+        write_studio_config(studio_url)
+        ensure_launcher()
+        created_access = ensure_monitoring_access()
+        if created_access:
+            print("  ✓ Acesso inicial do Monitoring criado em monitoring/runtime/initial-password.txt")
         print("\nPreparação local concluída. Próximo passo: just blu it")
     return 0
 
