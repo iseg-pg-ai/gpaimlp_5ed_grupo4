@@ -23,6 +23,7 @@ __pycache__/
 .env.*
 .env.local
 !.env.example
+/config/studio.local.json
 .venv
 
 # Sagemaker

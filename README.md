@@ -62,30 +62,57 @@ Stanza 1.12.2 para corrigir GHSA-v5jw-96jm-7h2c. Sem essa opção, o resolver do
 `pip` rejeita o requisito antigo do Argos. Reavaliar o override quando o Argos
 publicar uma versão com Stanza corrigido.
 
-## Arranque rápido
+## Arranque do sistema
 
-### Recuperar e iniciar todo o sistema
+### Primeira configuração
 
-No Linux/SageMaker, instalar uma vez o launcher local:
+Cada instalação nova precisa de configurar a sua URL do SageMaker, launcher e acesso
+inicial ao Monitoring. Seguir o [guia de onboarding](docs/ONBOARDING.md) ou executar:
 
 ```bash
-bash scripts/install_just_blu_it.sh
+python3 scripts/setup_workspace.py \
+  --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
 ```
 
-Depois, a partir de qualquer diretório dentro do repositório:
+A URL e as credenciais de cada ambiente ficam locais e não são partilhadas pelo Git.
+
+### Administrador inicial e gestão de utilizadores
+
+Quando `scripts/setup_workspace.py` prepara uma instalação sem contas, cria o
+utilizador administrativo inicial `admin`. A palavra-passe gerada fica apenas em
+`monitoring/runtime/initial-password.txt` e deve ser substituída depois do primeiro
+login. A gestão de contas está disponível em
+[http://localhost:3004/users](http://localhost:3004/users). No SageMaker, obter o
+link correto para o espaço atual com:
 
 ```bash
-just blu it
+python3 scripts/studio_urls.py --port 3004 --path /users
+```
+
+Consultar também o guia de [gestão de utilizadores](monitoring/README.md#gerir-utilizadores-na-página).
+
+### Arranque diário rápido
+
+Depois da primeira preparação, o comando habitual é:
+
+```bash
 just blu up
 ```
 
-`just blu it` executa a recuperação integral. `just blu up` mantém os serviços já
-ativos, inicia apenas os que estejam parados, confirma os cinco endpoints e abre as
-quatro interfaces no navegador associado ao Code Editor. Este modo rápido não instala
-dependências, não executa testes, não reconstrói o portal e não pede autenticação
-administrativa; pressupõe um ambiente já preparado e credenciais de Monitoring.
+Mantém os serviços ativos, inicia apenas os que estejam parados, confirma os cinco
+endpoints e abre as quatro interfaces no navegador. Não instala dependências, não
+executa testes, não reconstrói o Portal e não pede autenticação administrativa.
 
-O comando pede interativamente o utilizador e a palavra-passe do monitoring. Apenas
+### Recuperação integral
+
+Usar este percurso na primeira construção completa ou quando for necessário validar,
+reconstruir ou reerguer todo o sistema:
+
+```bash
+just blu it
+```
+
+O comando pede interativamente um utilizador e palavra-passe do Monitoring. Apenas
 uma conta ativa com perfil `admin` pode iniciar a recuperação; a palavra-passe não
 aparece no terminal nem é aceite por argumento, variável de ambiente ou entrada não
 interativa.
@@ -103,6 +130,8 @@ validado, mas não abre um separador.
 Em Code Editor, `.vscode/settings.json` pede o encaminhamento automático destas
 portas. O comando não consegue renovar uma sessão SageMaker expirada: a autenticação
 externa continua a ser aberta pela consola AWS.
+
+## Operações manuais
 
 ### Atualizar o warehouse
 
@@ -190,6 +219,7 @@ O agregador `npm run check` executa também `format:check`; consulte o
 - [ETL e contrato dos dados](docs/DATA_PIPELINE.md)
 - [Testes e histórico de validação](docs/TESTING.md)
 - [Decisões do projeto](docs/DECISIONS.md)
+- [Preparar um novo ambiente](docs/ONBOARDING.md)
 - [Modelo analítico do warehouse](reports/data_model_report.md)
 
 ## Limites atuais

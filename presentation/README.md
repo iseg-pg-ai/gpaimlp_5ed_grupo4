@@ -23,7 +23,7 @@ python -B presentation/serve.py --port 3003
 
 Abrir [a apresentação local](http://127.0.0.1:3003/) ou
 [a apresentação no Studio](https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3003/).
-A base pública dos dashboards está em `config/studio.json`. Para listar as
+A base pública dos dashboards está em `config/studio.local.json`. Para listar as
 ligações a partir da raiz: `python -B scripts/studio_urls.py`.
 No SageMaker Code Editor, abrir a porta 3003 com o caminho
 `/codeeditor/default/ports/3003/` no domínio da instância. O servidor aceita o

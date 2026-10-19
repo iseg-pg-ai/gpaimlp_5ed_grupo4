@@ -6,11 +6,16 @@ import json
 from pathlib import Path
 from urllib.parse import urlsplit
 
-CONFIG = Path(__file__).resolve().parents[1] / "config/studio.json"
+CONFIG = Path(__file__).resolve().parents[1] / "config/studio.local.json"
 
 
 def studio_base() -> str:
-    value = json.loads(CONFIG.read_text())["base_url"].rstrip("/")
+    try:
+        value = json.loads(CONFIG.read_text())["base_url"].rstrip("/")
+    except FileNotFoundError as error:
+        raise ValueError(
+            "Configuração Studio ausente. Executar: python3 scripts/setup_workspace.py"
+        ) from error
     parsed = urlsplit(value)
     if (parsed.scheme != "https" or not parsed.hostname or parsed.username
             or parsed.password or parsed.query or parsed.fragment

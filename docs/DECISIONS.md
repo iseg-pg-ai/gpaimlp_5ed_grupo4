@@ -699,3 +699,12 @@ pessoa. Valores de formulários, corpos HTTP, labels, prompts e respostas não s
 capturados. Mensagens e stacks são limitadas e redigidas antes da persistência. A
 consulta permanece protegida pelo login do Monitoring e os ficheiros não são servidos
 diretamente.
+
+## 2026-10-19 — Configuração individual do SageMaker Studio
+
+A 2026-10-19, a configuração pública do Studio passou de
+`config/studio.json` para `config/studio.local.json`, ignorado pelo Git. A decisão
+anterior de centralizar a base mantém-se; a localização passou a ser individual
+para impedir que o identificador de um espaço seja aplicado aos ambientes dos
+restantes colegas. `config/studio.example.json` documenta o contrato e
+`scripts/setup_workspace.py` valida e escreve o valor local.

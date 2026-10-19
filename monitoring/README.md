@@ -31,7 +31,7 @@ credenciais derivadas, acesso inicial temporário, logs técnicos, fila local de
 alertas, métricas de IA e cópias de segurança. O serviço
 recusa arrancar sem credenciais. Não disponibiliza esses ficheiros por HTTP.
 
-O endereço é gerado a partir de `config/studio.json`, acrescentando `/ports/3004/`.
+O endereço é gerado a partir de `config/studio.local.json`, acrescentando `/ports/3004/`.
 O servidor escuta apenas em `127.0.0.1`, atrás do HTTPS e da sessão SageMaker.
 No Code Editor, abrir **Ports/Portas** (ou **View → Open View → Ports**) e
 selecionar **Forward a Port/Encaminhar porta**, indicando `3004`. O proxy devolve

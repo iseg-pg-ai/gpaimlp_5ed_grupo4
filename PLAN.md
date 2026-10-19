@@ -638,6 +638,16 @@ serviços foram reiniciados com a configuração correta e respondem HTTP 200
 localmente. Markdown, estrutura e `git diff --check` aprovados. Sem build,
 alteração de dados ou renovação automática da sessão AWS.
 
+## Onboarding reproduzível — 2026-10-19
+
+- [x] Remover a URL individual do Studio dos ficheiros partilhados e fornecer um
+  exemplo sem identificadores reais.
+- [x] Criar um assistente local para validar pré-requisitos, configurar a URL,
+  instalar o launcher e gerar o primeiro acesso de Monitoring quando necessário.
+- [x] Documentar acessos AWS, dados locais, portas, primeiro arranque e verificação.
+- [ ] Validar o percurso completo num segundo espaço SageMaker com uma identidade
+  IAM distinta e confirmar o acesso Bedrock real.
+
 ## Auditoria editorial e detalhe técnico — 2026-10-19
 
 - [x] Identificar repetição de dados, arquitetura, limites e mensagens de revisão.

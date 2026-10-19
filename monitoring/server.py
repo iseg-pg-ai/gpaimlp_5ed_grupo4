@@ -12,6 +12,8 @@ from pathlib import Path
 import threading
 from urllib.parse import parse_qs, urlsplit
 
+from scripts.studio_urls import studio_base
+
 from monitoring.collector import Collector
 from monitoring.security import Security
 from monitoring.signals import operational_details, query_logs
@@ -249,7 +251,7 @@ def main():
     # A recuperação ativa a sonda sem alterar a configuração persistente do ambiente.
     if os.environ.get("BLU_MONITOR_AGENT_ENABLED") == "1":
         config["agent_enabled"] = True
-    base = json.loads((ROOT / "config/studio.json").read_text())["base_url"].rstrip("/")
+    base = studio_base()
     public_url = f"{base}/ports/{args.port}"
     collector = Collector(ROOT, runtime, config)
     security = Security(credentials)
