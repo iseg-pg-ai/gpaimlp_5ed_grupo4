@@ -42,14 +42,30 @@ function render(data) {
   text("freshness", { not_configured: "Cadência por definir", fresh: "Dentro da cadência", stale: "Fora da cadência", unknown: "Por verificar" }[s.warehouse.freshness]);
   text("warehouse-badge", labels[s.warehouse.state]);
   $("warehouse-badge").className = `badge ${s.warehouse.state}`;
-  text("host-load", `Carga média do anfitrião (1 min): ${s.system.load_1m ?? "indisponível"}. Não é percentagem de CPU.`);
+  text("host-load", `Carga do anfitrião · média 1 min: ${s.system.load_1m ?? "indisponível"}`);
   const ops = s.operations;
   if (ops) {
-    text("portal-ops", `${ops.portal.events_24h} / ${ops.portal.errors_24h}`);
-    text("ai-ops", `${ops.ai.calls_24h} / ${ops.ai.failures_24h}`);
-    text("ai-tokens", ops.ai.calls_with_tokens ? `${ops.ai.tokens_reported.toLocaleString("pt-PT")} · ${ops.ai.calls_with_tokens} chamada(s)` : "Não reportados");
-    text("backup-restore", date(ops.backup.last_restore_at));
-    text("alert-state", `${s.alerts.active} ativos · envio externo desativado`);
+    const setSignal = (id, state, label) => {
+      $(id).className = `signal-card ${state}`;
+      text(`${id}-state`, label);
+    };
+    const portalState = ops.portal.errors_24h ? "degraded" : "up";
+    const aiState = ops.ai.failures_24h ? "degraded" : "up";
+    const alertState = s.alerts.active ? "degraded" : "up";
+    setSignal("portal-signal", portalState, portalState === "up" ? "Estável" : "Atenção");
+    setSignal("ai-signal", aiState, ops.ai.calls_24h ? (aiState === "up" ? "Estável" : "Atenção") : "Sem atividade");
+    setSignal("backup-signal", ops.backup.state, ops.backup.state === "up" ? "Verificado" : "Por verificar");
+    setSignal("alert-signal", alertState, alertState === "up" ? "Sem incidentes" : "Requer atenção");
+    text("portal-ops", ops.portal.errors_24h.toLocaleString("pt-PT"));
+    text("portal-ops-note", `${ops.portal.events_24h.toLocaleString("pt-PT")} eventos · ${ops.portal.errors_24h} com erro`);
+    text("ai-ops", ops.ai.calls_24h.toLocaleString("pt-PT"));
+    text("ai-tokens", ops.ai.calls_with_tokens ? `${ops.ai.tokens_reported.toLocaleString("pt-PT")} tokens reportados` : `${ops.ai.failures_24h} falhas · tokens ainda sem dados`);
+    text("backup-artifacts", ops.backup.artifacts === null ? "—" : ops.backup.artifacts.toLocaleString("pt-PT"));
+    text("backup-restore", ops.backup.last_restore_at ? `Restauro ensaiado · ${date(ops.backup.last_restore_at)}` : "Ainda sem ensaio de restauro");
+    text("alert-state", s.alerts.active.toLocaleString("pt-PT"));
+    const health = s.alerts.active ? "degraded" : "up";
+    text("ops-health", s.alerts.active ? `${s.alerts.active} por analisar` : "Operação estável");
+    $("ops-health").className = `badge ${health}`;
   }
   $("events").replaceChildren(...data.events.map((event) => {
     const row = node("div", "event");
