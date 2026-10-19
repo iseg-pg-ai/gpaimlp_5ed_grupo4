@@ -43,6 +43,7 @@ def main():
         for name, port in [("Portal BLU", 3001),
                            ("Apresentação interativa", 3003),
                            ("Monitoring privado", 3004),
+                           ("Agente IA", 8000),
                            ("Dashboard analítico", 8501)]:
             print(f"{name}: {dashboard_url(port)}")
 

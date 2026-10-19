@@ -9,11 +9,37 @@ from unittest.mock import patch
 from monitoring.alerts import AlertStore
 from monitoring.backup import BackupScheduler, create_backup, verify_backup
 from monitoring.cleanup import CleanupManager
+from monitoring.recovery import ensure_recovery
 from monitoring.signals import operational_signals
 from blu_ai.telemetry import invoke_with_telemetry, usage_from_messages
 
 
 class OperationsTest(unittest.TestCase):
+    def test_recovery_preserves_valid_data_and_restores_missing_sets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            runtime = root / "monitoring/runtime"
+            (root / "data/portal").mkdir(parents=True)
+            with sqlite3.connect(root / "data/portal/catalog.sqlite") as connection:
+                connection.execute("create table catalog_records (id integer primary key)")
+                connection.execute("create table catalog_history (id integer primary key)")
+            (root / "warehouse").mkdir()
+            (root / "warehouse/manifest.json").write_text(json.dumps({
+                "ran_at_utc": datetime.now(timezone.utc).isoformat()}))
+            (root / "warehouse/validation_report.json").write_text('{"status":"passed"}')
+            (root / "exports/itineraries").mkdir(parents=True)
+            (root / "exports/itineraries/item.pdf").write_bytes(b"pdf")
+            create_backup(root, runtime)
+            preserved = ensure_recovery(root, runtime)
+            self.assertEqual(preserved["outcome"], "preserved")
+            (root / "data/portal/catalog.sqlite").unlink()
+            (root / "exports/itineraries/item.pdf").unlink()
+            (root / "exports/itineraries").rmdir()
+            restored = ensure_recovery(root, runtime)
+            self.assertEqual(restored["outcome"], "restored")
+            self.assertEqual(set(restored["restored"]), {"catalog", "itineraries"})
+            self.assertTrue((root / "exports/itineraries/item.pdf").is_file())
+
     def test_backup_scheduler_runs_once_per_interval_and_records_failure(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

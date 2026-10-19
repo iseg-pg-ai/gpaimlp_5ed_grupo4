@@ -227,6 +227,18 @@ de esquema. No desenho B com SQLite, evitar duas versões do portal a escrever
 simultaneamente durante a troca; uma breve manutenção poderá ser necessária.
 Não prometer deployment sem interrupção antes de validar esse contrato.
 
+### Recuperação operacional única
+
+O comando `just blu it` materializa o fluxo local de reconstrução: dependências,
+validação ou restauro seletivo, testes, build, arranque e sondas finais. Dados válidos
+são preservados; apenas conjuntos ausentes ou inválidos são recuperados do último
+backup verificado. Logs e PID ficam no runtime privado do monitoring.
+
+O launcher é instalado por `scripts/install_just_blu_it.sh`. Num deployment, essa
+instalação deve fazer parte da criação da máquina ou imagem. O encaminhamento local
+das portas está declarado no workspace, mas autenticação SageMaker, DNS, TLS e regras
+de rede pertencem à plataforma e não podem ser restaurados pelo processo local.
+
 ## Critérios para fechar a escolha
 
 Antes de dimensionar ou estimar custos, recolher utilizadores simultâneos,

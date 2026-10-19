@@ -64,6 +64,30 @@ publicar uma versão com Stanza corrigido.
 
 ## Arranque rápido
 
+### Recuperar e iniciar todo o sistema
+
+No Linux/SageMaker, instalar uma vez o launcher local:
+
+```bash
+bash scripts/install_just_blu_it.sh
+```
+
+Depois, a partir de qualquer diretório dentro do repositório:
+
+```bash
+just blu it
+```
+
+O comando valida Python e Node, sincroniza dependências bloqueadas, preserva dados
+válidos ou recupera conjuntos ausentes a partir do último backup verificado, executa
+as baterias de testes, constrói o portal, inicia os cinco serviços e confirma as
+portas 3001, 3003, 3004, 8000 e 8501. O terminal mostra uma barra por tarefa e guarda
+detalhes em `monitoring/runtime/recovery/just-blu-it.log`.
+
+Em Code Editor, `.vscode/settings.json` pede o encaminhamento automático destas
+portas. O comando não consegue renovar uma sessão SageMaker expirada: a autenticação
+externa continua a ser aberta pela consola AWS.
+
 ### Atualizar o warehouse
 
 ```powershell

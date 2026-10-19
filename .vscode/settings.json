@@ -15,6 +15,10 @@
       "label": "BLU Operations Monitoring",
       "onAutoForward": "silent"
     },
+    "8000": {
+      "label": "BLU AI Agent",
+      "onAutoForward": "silent"
+    },
     "8501": {
       "label": "Observatório analítico",
       "onAutoForward": "silent"

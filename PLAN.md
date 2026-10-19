@@ -861,3 +861,15 @@ cenários de navegador do monitoring e apresentação em 320–2560 px aprovados
 - [x] Criar runbooks para serviços, portal, warehouse, backups, disco, IA e monitoring.
 - [ ] Configurar destino externo cifrado para backups no ambiente escolhido.
 - [ ] Instalar uma sonda fora da máquina e ligar notificações a responsáveis reais.
+
+## Recuperação única `just blu it` — 2026-10-19
+
+- [x] Criar launcher local e `Justfile` com o comando literal `just blu it`.
+- [x] Mostrar tarefas, barras de progresso, falha localizada e log técnico privado.
+- [x] Sincronizar dependências Python/Node, executar testes e construir o portal.
+- [x] Preservar dados válidos e restaurar apenas catálogo, warehouse ou itinerários
+  ausentes/inválidos a partir do último backup verificado.
+- [x] Iniciar agente, portal, apresentação, monitoring e Observatório e verificar
+  as portas 8000, 3001, 3003, 3004 e 8501.
+- [x] Declarar encaminhamento automático das cinco portas no workspace.
+- [ ] Integrar o launcher na imagem ou criação da infraestrutura de deployment.

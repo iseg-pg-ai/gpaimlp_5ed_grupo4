@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "${1:-}" != "blu" ] || [ "${2:-}" != "it" ] || [ "$#" -ne 2 ]; then
+    echo "Utilização: just blu it" >&2
+    exit 2
+fi
+
+# Subir na árvore permite invocar o comando em qualquer subdiretório do projeto.
+SEARCH_ROOT="$PWD"
+while [ "$SEARCH_ROOT" != "/" ] && [ ! -f "$SEARCH_ROOT/Justfile" ]; do
+    SEARCH_ROOT="$(dirname "$SEARCH_ROOT")"
+done
+if [ ! -f "$SEARCH_ROOT/Justfile" ] || [ ! -x "$SEARCH_ROOT/scripts/just_blu_it.sh" ]; then
+    echo "Executar dentro do repositório BLU." >&2
+    exit 2
+fi
+exec bash "$SEARCH_ROOT/scripts/just_blu_it.sh"

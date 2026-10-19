@@ -224,6 +224,9 @@ def main():
     if not credentials.exists():
         parser.error("Executar primeiro: python -B -m monitoring.setup")
     config = json.loads((ROOT / "monitoring/config.json").read_text())
+    # A recuperação ativa a sonda sem alterar a configuração persistente do ambiente.
+    if os.environ.get("BLU_MONITOR_AGENT_ENABLED") == "1":
+        config["agent_enabled"] = True
     base = json.loads((ROOT / "config/studio.json").read_text())["base_url"].rstrip("/")
     public_url = f"{base}/ports/{args.port}"
     collector = Collector(ROOT, runtime, config)
