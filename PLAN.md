@@ -827,3 +827,14 @@ estrutural acrescentada contra nova inclusão. O histórico não foi reescrito.
 
 A porta 8000 permanece fora da lista principal porque o agente é opcional e não
 está em execução. Pode ser encaminhada quando `BLU_START_AGENT=1` for usado.
+
+## Limpeza automática pelo monitoring — 2026-10-19
+
+- [x] Definir uma lista fechada de caches regeneráveis, sem abranger dados,
+  entregas, credenciais, dependências ou ambientes de execução.
+- [x] Aplicar retenção aos backups do monitoring, preservando os cinco mais
+  recentes e uma idade mínima de sete dias para os excedentes.
+- [x] Executar automaticamente a partir de 85% de ocupação, com intervalo mínimo
+  de 24 horas, e disponibilizar execução manual apenas a administradores com CSRF.
+- [x] Mostrar no painel a política e o resultado da última limpeza.
+- [x] Validar limites, retenção, proteção de dados e autorização com fixtures.

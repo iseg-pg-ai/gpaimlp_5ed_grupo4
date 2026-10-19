@@ -93,6 +93,25 @@ regista uma recuperação quando a condição desaparece. A fila está em
 `monitoring/runtime/notifications.jsonl`. O envio externo permanece desativado em
 `monitoring/config.json`; ativá-lo exige escolher canal, destinatários e credenciais.
 
+## Libertação automática de espaço
+
+O monitoring executa uma limpeza conservadora quando a ocupação do disco atinge
+85%, no máximo uma vez em cada 24 horas. Administradores também podem usar
+**Libertar espaço agora** no cartão do disco. O painel mostra data, resultado e
+volume libertado pela última execução.
+
+A limpeza está limitada a caches regeneráveis do Next.js e dos testes, diretórios
+Python `__pycache__` nas áreas de código e backups completos que excedam a retenção.
+São preservados pelo menos os cinco backups mais recentes; um backup adicional só
+pode ser removido depois de sete dias. Temporários de backup incompletos podem ser
+retirados depois de 24 horas.
+
+Nunca são abrangidos o catálogo, fontes, warehouse publicado, itinerários, PDFs,
+credenciais, ambientes Python, `node_modules` ou ficheiros Git. A limpeza não tenta
+desinstalar dependências, porque isso poderia impedir o arranque dos serviços.
+Os limites podem ser ajustados no bloco `cleanup` de `monitoring/config.json` e
+exigem reinício do monitoring.
+
 ## Backups e ensaio de restauro
 
 Para criar uma cópia local do catálogo SQLite, warehouse e itinerários e validar
@@ -127,8 +146,8 @@ tem de ser definida antes de produção.
 - Consumo de IA com chamadas, falhas, latência e tokens quando reportados.
 - Incidentes deduplicados e recuperações numa fila local; sem envio externo.
 
-`monitoring/config.json` define intervalo (10–300 segundos), agente e idade máxima
-aceitável do warehouse em horas. `warehouse_max_age_hours: null` mostra cadência
+`monitoring/config.json` define intervalo (10–300 segundos), agente, limpeza e idade
+máxima aceitável do warehouse em horas. `warehouse_max_age_hours: null` mostra cadência
 por definir, sem inventar um SLA de atualização. Reiniciar para aplicar alterações.
 A ocupação de disco a partir de 90% conta como incidente local preliminar, a rever
 com a equipa. As contagens das tabelas incluem entidades de vários tipos; não

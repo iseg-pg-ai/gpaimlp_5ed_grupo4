@@ -16,6 +16,7 @@ from urllib.error import HTTPError
 from urllib.request import build_opener, HTTPRedirectHandler, ProxyHandler, Request
 
 from monitoring.alerts import AlertStore
+from monitoring.cleanup import CleanupManager
 from monitoring.signals import operational_signals
 
 
@@ -87,6 +88,14 @@ class Collector:
         age = config["warehouse_max_age_hours"]
         if age is not None and (not isinstance(age, (int, float)) or age <= 0):
             raise ValueError("Cadência do warehouse inválida.")
+        cleanup = config.get("cleanup", {})
+        threshold = cleanup.get("trigger_disk_pct", 85)
+        if cleanup.get("enabled") and (not isinstance(threshold, (int, float)) or not 50 <= threshold <= 95):
+            raise ValueError("Limiar de limpeza deve estar entre 50% e 95%.")
+        for field in ("minimum_interval_hours", "backup_retention_count", "backup_min_age_hours"):
+            value = cleanup.get(field, 1)
+            if not isinstance(value, int) or value < 1:
+                raise ValueError("Política de limpeza inválida.")
         self.lock = threading.Lock()
         self.stop = threading.Event()
         self.samples, self.events = deque(maxlen=240), deque(maxlen=100)
@@ -95,6 +104,7 @@ class Collector:
         runtime.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.runtime = runtime
         self.alerts = AlertStore(runtime)
+        self.cleanup = CleanupManager(root, runtime, config)
         self.logger = logging.Logger("blu-monitor-probes")
         handler = RotatingFileHandler(runtime / "probes.jsonl", maxBytes=1_000_000, backupCount=3)
         os.chmod(runtime / "probes.jsonl", 0o600)
@@ -114,6 +124,7 @@ class Collector:
         system = {"disk_free_gb": round(disk.free / 1024**3, 1),
                   "disk_used_pct": round(100 * disk.used / disk.total, 1),
                   "load_1m": round(os.getloadavg()[0], 2) if hasattr(os, "getloadavg") else None}
+        system["cleanup"] = self.cleanup.maybe_run(system["disk_used_pct"])
         snapshot = {"checked_at": now, "interval_seconds": self.interval, "services": services,
                     "warehouse": warehouse, "system": system}
         snapshot["operations"] = operational_signals(self.runtime)
@@ -151,3 +162,10 @@ class Collector:
     def snapshot(self):
         with self.lock:
             return {"snapshot": self.latest, "history": list(self.samples), "events": list(self.events)}
+
+    def cleanup_now(self):
+        result = self.cleanup.run("manual")
+        with self.lock:
+            if self.latest:
+                self.latest["system"]["cleanup"] = result
+        return result

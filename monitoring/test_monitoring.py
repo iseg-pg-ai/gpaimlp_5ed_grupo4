@@ -243,9 +243,14 @@ class HTTPTests(unittest.TestCase):
         save_credentials(path, "operator", PASSWORD)
         self.auth = Security(path)
         class FakeCollector:
+            cleanup_runs = 0
             def snapshot(self):
                 return {"snapshot": {"sentinel": "protected"}, "history": [], "events": []}
-        self.server = make_server(0, self.auth, FakeCollector(), "https://example.test/codeeditor/default/ports/3004")
+            def cleanup_now(self):
+                self.cleanup_runs += 1
+                return {"outcome": "passed"}
+        self.collector = FakeCollector()
+        self.server = make_server(0, self.auth, self.collector, "https://example.test/codeeditor/default/ports/3004")
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.addCleanup(self.server.server_close)
         self.addCleanup(self.server.shutdown)
@@ -325,6 +330,24 @@ class HTTPTests(unittest.TestCase):
     def test_insecure_public_origin_refused(self):
         with self.assertRaises(ValueError):
             make_server(0, self.auth, None, "http://example.test")
+
+    def test_cleanup_requires_admin_and_csrf(self):
+        admin = self.login()
+        token = admin.split(";", 1)[0].split("=", 1)[1]
+        csrf = self.auth.session(token)["csrf"]
+        self.assertEqual(self.request("/maintenance/cleanup", "POST", "csrf=wrong", admin)[0], 403)
+        self.assertEqual(self.collector.cleanup_runs, 0)
+        self.assertEqual(self.request("/maintenance/cleanup", "POST", f"csrf={csrf}", admin)[0], 303)
+        self.assertEqual(self.collector.cleanup_runs, 1)
+        fields = {"action": "create", "username": "viewer", "role": "viewer",
+                  "password": PASSWORD, "password_confirm": PASSWORD, "csrf": csrf}
+        self.request("/users/manage", "POST", urlencode(fields), admin)
+        _, headers, _ = self.request("/login", "POST", f"username=viewer&password={PASSWORD}")
+        viewer = headers["Set-Cookie"]
+        viewer_token = viewer.split(";", 1)[0].split("=", 1)[1]
+        viewer_csrf = self.auth.session(viewer_token)["csrf"]
+        self.assertEqual(self.request("/maintenance/cleanup", "POST", f"csrf={viewer_csrf}", viewer)[0], 403)
+        self.assertEqual(self.collector.cleanup_runs, 1)
 
 
 if __name__ == "__main__":

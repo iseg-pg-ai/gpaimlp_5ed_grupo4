@@ -7,11 +7,55 @@ import unittest
 
 from monitoring.alerts import AlertStore
 from monitoring.backup import create_backup, verify_backup
+from monitoring.cleanup import CleanupManager
 from monitoring.signals import operational_signals
 from blu_ai.telemetry import invoke_with_telemetry, usage_from_messages
 
 
 class OperationsTest(unittest.TestCase):
+    def test_cleanup_removes_only_regenerable_content_and_retains_recent_backups(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            runtime = root / "monitoring/runtime"
+            cache = root / "dmc-workspace/.next/cache"
+            cache.mkdir(parents=True)
+            (cache / "large.bin").write_bytes(b"x" * 128)
+            protected = root / "data/portal/catalog.sqlite"
+            protected.parent.mkdir(parents=True)
+            protected.write_bytes(b"authoritative")
+            backups = runtime / "backups"
+            for index in range(3):
+                path = backups / f"backup-{index}"
+                path.mkdir(parents=True)
+                (path / "payload").write_bytes(bytes([index]))
+                (path / "manifest.json").write_text(json.dumps({
+                    "created_at": f"2025-01-0{index + 1}T00:00:00+00:00", "state": "complete"}))
+            manager = CleanupManager(root, runtime, {"cleanup": {
+                "enabled": True, "trigger_disk_pct": 85, "backup_retention_count": 2,
+                "backup_min_age_hours": 24}})
+            result = manager.run("manual")
+            self.assertFalse(cache.exists())
+            self.assertEqual(protected.read_bytes(), b"authoritative")
+            self.assertEqual(len([path for path in backups.iterdir() if not path.name.startswith(".")]), 2)
+            self.assertGreater(result["freed_bytes"], 0)
+            self.assertEqual(result["last_trigger"], "manual")
+
+    def test_automatic_cleanup_respects_threshold_and_interval(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cache = root / "dmc-workspace/.next/cache"
+            cache.mkdir(parents=True)
+            (cache / "item").write_text("cache")
+            manager = CleanupManager(root, root / "monitoring/runtime", {"cleanup": {
+                "enabled": True, "trigger_disk_pct": 85, "minimum_interval_hours": 24}})
+            self.assertEqual(manager.maybe_run(84)["outcome"], "never")
+            self.assertTrue(cache.exists())
+            self.assertEqual(manager.maybe_run(86)["last_trigger"], "automatic")
+            cache.mkdir(parents=True)
+            (cache / "new-item").write_text("cache")
+            manager.maybe_run(90)
+            self.assertTrue(cache.exists())
+
     def test_ai_usage_uses_reported_counters_only(self):
         class Message:
             usage_metadata = {"input_tokens": 4, "output_tokens": 6, "total_tokens": 10}

@@ -23,6 +23,15 @@ function render(data) {
   text("etl-note", s.warehouse.freshness === "not_configured" ? "Cadência de atualização por definir" : `Atualidade: ${s.warehouse.freshness === "fresh" ? "dentro da cadência" : "por rever"}`);
   text("disk-free", `${s.system.disk_free_gb} GB`);
   text("disk-note", `${s.system.disk_used_pct}% do disco ocupado`);
+  const cleanup = s.system.cleanup;
+  if (cleanup) {
+    const freed = cleanup.freed_bytes >= 1048576
+      ? `${(cleanup.freed_bytes / 1048576).toLocaleString("pt-PT", { maximumFractionDigits: 1 })} MB libertados`
+      : `${cleanup.freed_bytes.toLocaleString("pt-PT")} bytes libertados`;
+    text("cleanup-note", cleanup.last_run_at
+      ? `Última limpeza: ${freed} · ${date(cleanup.last_run_at)}`
+      : `Limpeza automática aos ${cleanup.trigger_disk_pct}%`);
+  }
   const incidentCount = s.alerts?.active ?? (active.filter((service) => service.state !== "up").length + (s.warehouse.state !== "up" ? 1 : 0) + (s.system.disk_used_pct >= 90 ? 1 : 0) + (stale ? 1 : 0));
   text("incident-count", incidentCount);
   $("services").replaceChildren(...s.services.map((service) => {

@@ -7,5 +7,12 @@
     "external_enabled": false,
     "channel": null,
     "recipients": []
+  },
+  "cleanup": {
+    "enabled": true,
+    "trigger_disk_pct": 85,
+    "minimum_interval_hours": 24,
+    "backup_retention_count": 5,
+    "backup_min_age_hours": 168
   }
 }

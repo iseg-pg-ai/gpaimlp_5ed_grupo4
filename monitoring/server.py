@@ -87,8 +87,14 @@ def make_server(port, security, collector, public_url, insecure_local=False):
             content = (STATIC / name).read_text()
             content = content.replace("{{BASE}}", html.escape(prefix + "/", quote=True)).replace(
                 "{{CSRF}}", html.escape(csrf, quote=True)).replace("{{ERROR}}", html.escape(error))
-            return content.replace("{{USERNAME}}", html.escape(session["username"] if session else "")).replace(
+            content = content.replace("{{USERNAME}}", html.escape(session["username"] if session else "")).replace(
                 "{{ADMIN_LINK}}", '<a class="subtle" href="users">Gerir utilizadores</a>' if session and session["role"] == "admin" else "")
+            action = ""
+            if session and session["role"] == "admin":
+                action = ('<form class="cleanup-form" action="maintenance/cleanup" method="post">'
+                          f'<input type="hidden" name="csrf" value="{html.escape(csrf, quote=True)}">'
+                          '<button type="submit">Libertar espaço agora</button></form>')
+            return content.replace("{{CLEANUP_ACTION}}", action)
 
         def users_page(self, session, error="", notice=""):
             content = self.template("users.html", session["csrf"], error, session)
@@ -174,6 +180,21 @@ def make_server(port, security, collector, public_url, insecure_local=False):
                     return self.redirect("/login", self.cookie("", 0))
                 notice = {"create": "created", "update": "updated", "password": "password", "delete": "deleted"}[action]
                 return self.redirect("/users?notice=" + notice)
+            if path == "/maintenance/cleanup":
+                session = security.session(self.token())
+                if not session:
+                    return self.reply(401, "Sessão terminada.")
+                if session["role"] != "admin":
+                    return self.reply(403, "Apenas administradores podem executar manutenção.")
+                if not hmac.compare_digest(data.get("csrf", [""])[0].encode(), session["csrf"].encode()):
+                    return self.reply(403, "Pedido inválido.")
+                if any(len(values) != 1 for values in data.values()):
+                    return self.reply(400, "Campos duplicados.")
+                try:
+                    collector.cleanup_now()
+                except OSError:
+                    return self.reply(503, "A limpeza não ficou concluída. Consulte o estado do painel.")
+                return self.redirect("/")
             if path == "/logout":
                 session = security.session(self.token())
                 if not session:

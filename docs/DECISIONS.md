@@ -675,3 +675,11 @@ catálogo, warehouse e itinerários incluem hashes e só contam como verificados
 um restauro isolado e verificação de integridade SQLite. Incidentes são deduplicados
 numa fila local com eventos de abertura e recuperação. Integrações externas ficam
 desativadas até serem definidos canal, destinatários e gestão de credenciais.
+
+## 2026-10-19 — Limpeza automática conservadora
+
+O monitoring pode libertar caches regeneráveis e aplicar retenção aos seus próprios
+backups quando a ocupação do disco atingir 85%, com intervalo mínimo de 24 horas.
+Mantém pelo menos cinco backups completos e só remove excedentes com sete dias.
+Catálogo, fontes, warehouse, exports, credenciais, ambientes e dependências ficam
+fora do âmbito. A execução manual exige perfil administrador, origem válida e CSRF.
