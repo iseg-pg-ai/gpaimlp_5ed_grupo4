@@ -1,0 +1,5 @@
+{
+  "interval_seconds": 30,
+  "warehouse_max_age_hours": null,
+  "agent_enabled": false
+}

@@ -61,3 +61,6 @@ Taskfile.yaml
 .nvm/
 sagemaker-code-editor-server-data/
 .sagemaker_remoteAccess_do_not_delete
+
+# Credenciais, acesso inicial e logs do monitoring independente
+#/monitoring/runtime/

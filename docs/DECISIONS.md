@@ -611,3 +611,35 @@ Separar arquitetura de tecnologias e conservar detalhes de implementação num
 inventário editorial próprio. Versões declaradas e defaults do código não
 representam configuração efetiva ou métricas medidas. Registar no guião as
 lacunas a preencher com a equipa e manter a distinção entre simulação e sistema.
+
+## Monitoring independente no Studio — 2026-10-19
+
+A pedido do utilizador, a primeira implementação fica em `monitoring/`, porta
+3004, com login próprio e escuta apenas em loopback atrás do HTTPS Studio.
+Usa biblioteca padrão Python para não exigir os grupos opcionais do sistema.
+A interface e a API de estado exigem sessão; o CSS do login é público.
+
+Sondas de leitura e agregados do warehouse alimentam histórico em memória e
+logs com rotação, sem escrever nas aplicações, executar ETL ou chamar modelos.
+Não existe ainda tracing, instrumentação de todos os pedidos nem notificações
+externas. A cadência do warehouse é desconhecida até ser configurada.
+
+Credenciais derivadas, acesso inicial e logs ficam em `monitoring/runtime/`,
+excluído do Git e do contexto Docker. O servidor interno e as sessões em memória
+não constituem uma decisão de hosting de produção. Consultar os contratos e
+limites no [guia do monitoring](../monitoring/README.md).
+
+Evidência: dez testes Python de autenticação/sondas/HTTP e cenários de navegador
+em quatro larguras aprovados. Recolha local real dos serviços existentes
+confirmada; proxy HTTPS autenticado e fornecedores externos não validados.
+
+### Encaminhamento no Code Editor — 2026-10-19
+
+O proxy instalado rejeita com HTTP 400 portas ausentes da sua lista de
+encaminhamento; o login local disponível não comprova esse acesso. O arranque
+e o README passam a indicar a adição da porta no separador Ports do editor.
+
+O proxy também acrescenta o seu prefixo a cabeçalhos Location iniciados por
+`/`. Os redirects do monitoring passam a usar o URL público canónico completo
+para evitar duplicação. Dez testes Python e quatro larguras de navegador
+aprovados após a alteração; acesso AWS depende do encaminhamento no editor.

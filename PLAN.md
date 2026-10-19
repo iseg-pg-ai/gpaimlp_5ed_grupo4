@@ -682,3 +682,71 @@ as restantes entradas uv para reinstalação e funcionamento sem rede.
 Portal `/catalog`, apresentação e saúde Streamlit respondem HTTP 200.
 Estrutura (356 ficheiros) e `git diff --check` aprovados; só este plano
 foi alterado entre os ficheiros versionados. Nenhum teste foi removido.
+
+## Monitoring e deployment — 2026-10-19
+
+Branch `feat/monitoring-deployment`, criado a partir de `dev` em `aa385fd`,
+com diretório limpo. Proposta em [monitoring e deployment](docs/OPERATIONS.md).
+
+- [x] Inventariar execução, persistência, CI e verificações de saúde existentes.
+- [x] Registar proposta inicial e decisões pendentes, sem alterar serviços.
+- [ ] Definir ambiente-alvo, utilizadores, disponibilidade e orçamento.
+- [ ] Corrigir e validar empacotamento Node/Python num ambiente isolado.
+- [ ] Definir persistência, backups consistentes e ensaio de restauro.
+- [ ] Instrumentar saúde, logs, métricas e alertas com dados minimizados.
+- [ ] Preparar CI, staging, promoção e rollback da aplicação e dos dados.
+
+Nesta fase não foram criados recursos cloud, pipelines de publicação ou
+chamadas a modelos. A implementação depende das decisões do desenho inicial.
+
+### Desenho e alternativas — 2026-10-19
+
+O utilizador escolheu desenhar a arquitetura e comparar alternativas antes de
+implementar.
+
+- [x] Desenhar fronteiras lógicas e fluxo de deployment.
+- [x] Comparar Studio, VM dedicada e serviços geridos, com impacto na persistência.
+- [x] Comparar opções de monitoring e consultar documentação oficial.
+- [ ] Recolher requisitos de operação e fechar uma decisão fundamentada.
+
+A VM é uma hipótese preliminar, não uma plataforma já escolhida. Sem criação
+de infraestrutura, alteração de serviços, custos ou publicação.
+
+### Painel independente com login — 2026-10-19
+
+- [x] Criar serviço de monitoring separado na porta 3004, sem alterar aplicações.
+- [x] Proteger interface e API com login, sessões, expiração e limitação de tentativas.
+- [x] Recolher disponibilidade, latência, estado do warehouse e disco em modo leitura.
+- [x] Mostrar estados, incidentes e histórico limitado, sem dados pessoais.
+- [x] Validar autenticação, isolamento, falhas e interface responsiva.
+
+Credenciais e registos operacionais ficam locais e fora do Git. Nesta primeira
+versão, os logs são das sondas; não existe ainda instrumentação de todos os
+pedidos do portal ou recolha de traces.
+
+Validação: dez testes Python aprovados com fixtures temporárias e quatro
+cenários de navegador em 320/768/1440/2560 px. Verificados login inválido/válido,
+API sem sessão, cookies, origem, CSRF, expiração, rate limit, logout, bloqueio
+de ficheiros privados, redirects das sondas, recolha atrasada e falha de ligação.
+Inspeção visual desktop/mobile concluída. Recolha local real confirmou os três
+serviços existentes disponíveis e agente desativado; API monitoring sem login
+responde 401. Não foram testados o proxy HTTPS com a sessão do utilizador nem
+fornecedores externos.
+
+### Acesso pelo proxy do monitoring — 2026-10-19
+
+- [x] Confirmar serviço e login locais disponíveis.
+- [x] Identificar HTTP 400 em `/ports/3004/` no proxy Code Editor: porta não
+  incluída na lista de encaminhamento, antes de contactar o servidor.
+- [x] Corrigir redirects para URLs canónicos completos, evitando duplicação
+  do prefixo pelo proxy, e acrescentar instrução de encaminhamento ao arranque.
+- [x] Encaminhar a porta 3004 no separador Ports do Code Editor e confirmar
+  acesso através da sessão AWS do utilizador.
+
+Evidência: proxy local na porta 8888 responde 200 para 3001/3003 e 400 para
+3004; código instalado do proxy verifica a sua lista de portas permitidas.
+Não foi alterada a lista através de interfaces internas não documentadas.
+
+Confirmação do utilizador em 2026-10-19: a página passou a abrir depois do
+encaminhamento. Esta confirmação cobre o acesso à página; o login real e a
+navegação autenticada pelo proxy ainda não foram confirmados pelo utilizador.
