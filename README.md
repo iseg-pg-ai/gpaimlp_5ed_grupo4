@@ -78,6 +78,11 @@ Depois, a partir de qualquer diretório dentro do repositório:
 just blu it
 ```
 
+O comando pede interativamente o utilizador e a palavra-passe do monitoring. Apenas
+uma conta ativa com perfil `admin` pode iniciar a recuperação; a palavra-passe não
+aparece no terminal nem é aceite por argumento, variável de ambiente ou entrada não
+interativa.
+
 O comando valida Python e Node, sincroniza dependências bloqueadas, preserva dados
 válidos ou recupera conjuntos ausentes a partir do último backup verificado, executa
 as baterias de testes, constrói o portal, inicia os cinco serviços e confirma as

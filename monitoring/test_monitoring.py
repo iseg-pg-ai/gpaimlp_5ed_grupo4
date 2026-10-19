@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlencode
 from unittest.mock import patch
 
+from monitoring.admin_auth import authorize_admin
 from monitoring.collector import Collector, probe, warehouse_status
 from monitoring.security import Security, save_credentials
 from monitoring.server import make_server
@@ -29,6 +30,18 @@ class CredentialFixture(unittest.TestCase):
 
 
 class AuthTests(CredentialFixture):
+    def test_recovery_command_accepts_only_active_administrators(self):
+        self.assertTrue(authorize_admin(self.path, "operator", PASSWORD))
+        self.assertFalse(authorize_admin(self.path, "operator", "wrong-password"))
+        token, _ = self.auth.login("operator", PASSWORD, "local")
+        self.auth.manage(token, "create", {"username": "reader", "role": "viewer",
+                                          "password": PASSWORD,
+                                          "password_confirm": PASSWORD})
+        self.assertFalse(authorize_admin(self.path, "reader", PASSWORD))
+        self.auth.manage(token, "update", {"username": "reader", "role": "admin",
+                                          "enabled": "false"})
+        self.assertFalse(authorize_admin(self.path, "reader", PASSWORD))
+
     def test_hash_and_permissions(self):
         self.assertNotIn(PASSWORD, self.path.read_text())
         self.assertEqual(self.path.stat().st_mode & 0o777, 0o600)

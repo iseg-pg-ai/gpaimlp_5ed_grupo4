@@ -234,6 +234,12 @@ validação ou restauro seletivo, testes, build, arranque e sondas finais. Dados
 são preservados; apenas conjuntos ausentes ou inválidos são recuperados do último
 backup verificado. Logs e PID ficam no runtime privado do monitoring.
 
+Antes de qualquer alteração, o comando solicita credenciais de monitoring através
+de um terminal interativo e confirma que pertencem a uma conta ativa com perfil
+`admin`. Não aceita palavras-passe em argumentos, variáveis de ambiente ou pipes. Sem
+credenciais locais, é necessário recuperar primeiro uma conta com
+`python -B -m monitoring.setup`.
+
 O launcher é instalado por `scripts/install_just_blu_it.sh`. Num deployment, essa
 instalação deve fazer parte da criação da máquina ou imagem. O encaminhamento local
 das portas está declarado no workspace, mas autenticação SageMaker, DNS, TLS e regras

@@ -6,8 +6,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNTIME="$ROOT/monitoring/runtime/recovery"
 LOG="$RUNTIME/just-blu-it.log"
 SERVICES="$ROOT/monitoring/runtime/services"
-mkdir -p "$RUNTIME" "$SERVICES"
-: > "$LOG"
 
 # Preferir as versões Node suportadas pelo portal quando o NVM estiver disponível.
 if ! node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a<22||a>24||(a===22&&b<13)?1:0)' 2>/dev/null \
@@ -54,8 +52,6 @@ fail() {
     tail -40 "$LOG" >&2 || true
     printf '\nO sistema anterior foi preservado sempre que estava válido.\n' >&2
 }
-trap fail ERR
-
 run_task() {
     local label="$1" pid progress=0 status
     shift
@@ -151,6 +147,12 @@ confirm_services() {
 
 cd "$ROOT"
 printf '\njust blu it\nRecuperação ponta a ponta do sistema BLU\n'
+python3 -B -m monitoring.admin_auth
+
+# Só criar logs ou alterar processos depois de confirmar um administrador ativo.
+mkdir -p "$RUNTIME" "$SERVICES"
+: > "$LOG"
+trap fail ERR
 
 run_task "1. Verificar ambiente" bash -c '
     command -v uv >/dev/null
