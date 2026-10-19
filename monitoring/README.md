@@ -21,8 +21,9 @@ python -B -m monitoring.setup --generate
 
 Esse modo cria o utilizador `admin` e uma palavra-passe aleatória em
 `monitoring/runtime/initial-password.txt`, com permissões 600. Consultar o ficheiro
-no editor local; não o copiar para chats ou logs. Substituir as credenciais pelo
-modo interativo e reiniciar o servidor; esse modo elimina o ficheiro inicial.
+no editor local; não o copiar para chats ou logs. Substituir a palavra-passe na página **Gerir utilizadores** depois de entrar.
+A recuperação pelo modo interativo continua disponível e exige reinício do
+servidor; esse modo elimina o ficheiro inicial.
 Não existe palavra-passe fixa no código ou no README.
 
 A pasta `runtime/` fica fora do Git e do contexto Docker do portal. Contém apenas
@@ -38,6 +39,46 @@ Code Editor e não é removida pelo login do painel.
 
 O login do painel é adicional ao acesso Studio. Acesso HTTP direto não suporta
 os cookies Secure da configuração normal: usar o endereço HTTPS anunciado.
+
+## Gerir utilizadores na página
+
+Entrar no painel e selecionar **Gerir utilizadores**, ou abrir `/users` no
+caminho do monitoring. A conta da primeira versão é reconhecida como
+**administrador**, mantendo o mesmo nome e palavra-passe. Na primeira alteração
+administrativa guardada, o ficheiro local passa para o formato com várias contas,
+sem guardar palavras-passe em texto simples.
+
+A página permite:
+
+- Criar contas de administrador ou leitor, com nome único sem distinguir
+  maiúsculas/minúsculas, e palavra-passe de 12–128 caracteres confirmada.
+- Alterar a palavra-passe, o perfil e o estado de uma conta.
+- Desativar/reabilitar contas e remover outras contas com confirmação explícita.
+
+Administradores gerem acessos; leitores apenas consultam o painel. A autorização
+é verificada no servidor, mesmo que alguém tente enviar os formulários diretamente.
+Todas as alterações exigem origem autorizada e token CSRF da sessão.
+
+Alterar palavra-passe, perfil ou estado termina as sessões da conta afetada.
+Ao alterar a própria palavra-passe ou perfil, é necessário entrar novamente.
+Não é possível desativar/remover a conta em uso nem deixar de existir um
+administrador ativo, incluindo com pedidos concorrentes. As alterações são
+imediatas e persistem no reinício do serviço. Limite: 100 contas locais.
+
+As palavras-passe existentes não podem ser consultadas. Para dar acesso a outra
+pessoa, definir uma palavra-passe e transmiti-la por um canal privado próprio;
+o painel não envia emails nem convites. As contas são exclusivas do monitoring
+e não dão acesso ao portal ou a uma sessão SageMaker.
+
+O comando `python -B -m monitoring.setup` passa a criar/recuperar o administrador
+indicado, preservando as restantes contas. Usar com o serviço parado e reiniciar;
+não executar recuperação CLI em paralelo com alterações na página. O ficheiro
+local e as sessões em memória destinam-se a um único processo servidor.
+
+Os ficheiros runtime tinham sido incluídos num commit anterior apesar da regra
+de exclusão. Foram retirados do índice, mantendo cópias locais. Isso não apaga o
+histórico Git: alterar a palavra-passe inicial se ainda estiver em uso. A alteração
+da palavra-passe de `admin` elimina também o ficheiro inicial local, quando possível.
 
 ## Cobertura inicial
 

@@ -18,7 +18,7 @@ def main():
     if args.generate and credentials.exists():
         parser.error("Já existem credenciais. Usar o modo interativo para as substituir.")
     username = "admin" if args.generate else input("Utilizador: ").strip()
-    password = secrets.token_urlsafe(24) if args.generate else getpass.getpass("Palavra-passe (mínimo 12 caracteres): ")
+    password = secrets.token_urlsafe(24) if args.generate else getpass.getpass("Palavra-passe (12–128 caracteres): ")
     if not args.generate and password != getpass.getpass("Confirmar palavra-passe: "):
         parser.error("As palavras-passe não coincidem.")
     save_credentials(credentials, username, password)
@@ -29,7 +29,7 @@ def main():
         print(f"Acesso inicial guardado apenas em: {initial}")
     else:
         initial.unlink(missing_ok=True)
-        print("Credenciais atualizadas. Reiniciar o monitoring para invalidar todas as sessões.")
+        print("Administrador criado/recuperado; outras contas preservadas. Reiniciar o monitoring.")
 
 
 if __name__ == "__main__":

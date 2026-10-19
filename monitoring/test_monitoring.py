@@ -7,6 +7,8 @@ from pathlib import Path
 import tempfile
 import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlencode
 from unittest.mock import patch
 
 from monitoring.collector import Collector, probe, warehouse_status
@@ -16,7 +18,7 @@ from monitoring.server import make_server
 PASSWORD = "fixture-only-long-password"
 
 
-class AuthTests(unittest.TestCase):
+class CredentialFixture(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -25,6 +27,8 @@ class AuthTests(unittest.TestCase):
         self.time = 0
         self.auth = Security(self.path, clock=lambda: self.time)
 
+
+class AuthTests(CredentialFixture):
     def test_hash_and_permissions(self):
         self.assertNotIn(PASSWORD, self.path.read_text())
         self.assertEqual(self.path.stat().st_mode & 0o777, 0o600)
@@ -55,6 +59,109 @@ class AuthTests(unittest.TestCase):
         token, _ = self.auth.login("operator", PASSWORD, "local")
         self.auth.logout(token)
         self.assertIsNone(self.auth.session(token))
+
+
+class UsersTests(CredentialFixture):
+    def create(self, token, name="reader", role="viewer"):
+        self.auth.manage(token, "create", {"username": name, "role": role, "password": PASSWORD,
+                                          "password_confirm": PASSWORD})
+
+    def test_legacy_migration_and_persistence(self):
+        record = json.loads(self.path.read_text())["users"]["operator"]
+        legacy = {field: record[field] for field in ("username", "salt", "hash", "iterations")}
+        self.path.write_text(json.dumps(legacy))
+        self.auth = Security(self.path)
+        token, _ = self.auth.login("operator", PASSWORD, "local")
+        self.create(token)
+        saved = json.loads(self.path.read_text())
+        self.assertEqual(saved["version"], 2)
+        self.assertEqual(saved["users"]["operator"]["hash"], legacy["hash"])
+        restored = Security(self.path)
+        self.assertEqual(restored.login("reader", PASSWORD, "local")[1], 200)
+        listing = self.auth.list_users(token)
+        self.assertNotIn("hash", json.dumps(listing))
+        self.assertNotIn("salt", json.dumps(listing))
+
+    def test_reader_cannot_list_or_manage_users(self):
+        admin, _ = self.auth.login("operator", PASSWORD, "local")
+        self.create(admin)
+        viewer, _ = self.auth.login("reader", PASSWORD, "local")
+        with self.assertRaises(PermissionError):
+            self.auth.list_users(viewer)
+        with self.assertRaises(PermissionError):
+            self.create(viewer, "intruder", "admin")
+
+    def test_account_changes_revoke_sessions(self):
+        admin, _ = self.auth.login("operator", PASSWORD, "local")
+        self.create(admin)
+        viewer, _ = self.auth.login("reader", PASSWORD, "local")
+        new_password = "fixture-reset-password"
+        self.auth.manage(admin, "password", {"username": "reader", "password": new_password,
+                                            "password_confirm": new_password})
+        self.assertIsNone(self.auth.session(viewer))
+        self.assertEqual(self.auth.login("reader", PASSWORD, "local")[1], 401)
+        viewer, _ = self.auth.login("reader", new_password, "local")
+        self.auth.manage(admin, "update", {"username": "reader", "role": "admin", "enabled": "true"})
+        self.assertIsNone(self.auth.session(viewer))
+        viewer, _ = self.auth.login("reader", new_password, "local")
+        self.auth.manage(admin, "update", {"username": "reader", "role": "viewer", "enabled": "false"})
+        self.assertIsNone(self.auth.session(viewer))
+        self.assertEqual(self.auth.login("reader", new_password, "local")[1], 401)
+        self.auth.manage(admin, "update", {"username": "reader", "role": "viewer", "enabled": "true"})
+        viewer, _ = self.auth.login("reader", new_password, "local")
+        self.auth.manage(admin, "delete", {"username": "reader", "confirm": "delete"})
+        self.assertIsNone(self.auth.session(viewer))
+        self.assertEqual(self.auth.login("reader", new_password, "local")[1], 401)
+
+    def test_last_admin_self_protection_and_duplicates(self):
+        admin, _ = self.auth.login("operator", PASSWORD, "local")
+        for action, fields in [("update", {"username": "operator", "role": "viewer", "enabled": "true"}),
+                               ("update", {"username": "operator", "role": "admin", "enabled": "false"}),
+                               ("delete", {"username": "operator", "confirm": "delete"})]:
+            with self.assertRaises(ValueError):
+                self.auth.manage(admin, action, fields)
+        self.create(admin)
+        with self.assertRaises(ValueError):
+            self.create(admin, "READER")
+        with self.assertRaises(ValueError):
+            self.create(admin, "<script>")
+        with self.assertRaises(ValueError):
+            self.auth.manage(admin, "delete", {"username": "reader"})
+
+    def test_disk_error_does_not_publish_partial_changes(self):
+        admin, _ = self.auth.login("operator", PASSWORD, "local")
+        self.create(admin)
+        viewer, _ = self.auth.login("reader", PASSWORD, "local")
+        original = self.path.read_bytes()
+        with patch("monitoring.security.write_users", side_effect=OSError("fixture")):
+            with self.assertRaises(OSError):
+                self.auth.manage(admin, "delete", {"username": "reader", "confirm": "delete"})
+        self.assertEqual(self.path.read_bytes(), original)
+        self.assertIsNotNone(self.auth.session(viewer))
+
+    def test_two_admins_cannot_concurrently_remove_both_roles(self):
+        admin, _ = self.auth.login("operator", PASSWORD, "local")
+        self.create(admin, "second-admin", "admin")
+        second, _ = self.auth.login("second-admin", PASSWORD, "local")
+        def demote(values):
+            token, username = values
+            try:
+                self.auth.manage(token, "update", {"username": username, "role": "viewer", "enabled": "true"})
+                return True
+            except ValueError:
+                return False
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(demote, [(admin, "operator"), (second, "second-admin")]))
+        self.assertEqual(sum(results), 1)
+        self.assertEqual(sum(user["role"] == "admin" and user["enabled"] for user in self.auth.users.values()), 1)
+
+    def test_cli_recovery_preserves_other_accounts(self):
+        admin, _ = self.auth.login("operator", PASSWORD, "local")
+        self.create(admin)
+        save_credentials(self.path, "operator", "fixture-recovery-password")
+        restored = Security(self.path)
+        self.assertEqual(restored.login("reader", PASSWORD, "local")[1], 200)
+        self.assertEqual(restored.login("operator", "fixture-recovery-password", "local")[1], 200)
 
 
 class CollectorTests(unittest.TestCase):
@@ -187,6 +294,33 @@ class HTTPTests(unittest.TestCase):
         csrf = self.auth.session(token)["csrf"]
         self.assertEqual(self.request("/logout", "POST", f"csrf={csrf}", cookie)[0], 303)
         self.assertEqual(self.request("/api/status", cookie=cookie)[0], 401)
+
+    def test_management_requires_admin_and_csrf(self):
+        admin = self.login()
+        token = admin.split(";", 1)[0].split("=", 1)[1]
+        csrf = self.auth.session(token)["csrf"]
+        fields = {"action": "create", "username": "viewer", "role": "viewer",
+                  "password": PASSWORD, "password_confirm": PASSWORD}
+        self.assertEqual(self.request("/users/manage", "POST", urlencode(fields))[0], 401)
+        self.assertEqual(self.request("/users/manage", "POST", urlencode(fields), admin)[0], 403)
+        fields["csrf"] = "inválido"
+        self.assertEqual(self.request("/users/manage", "POST", urlencode(fields), admin)[0], 403)
+        fields["csrf"] = csrf
+        self.assertEqual(self.request("/users/manage", "POST", urlencode(fields), admin, origin="https://evil.test")[0], 403)
+        self.assertEqual(self.request("/users/manage", "POST", urlencode(fields), admin)[0], 303)
+        _, _, body = self.request("/users", cookie=admin)
+        self.assertIn("viewer", body)
+        self.assertNotIn(PASSWORD, body)
+        self.assertNotIn(self.auth.users["operator"]["hash"], body)
+        status, headers, _ = self.request("/login", "POST", f"username=viewer&password={PASSWORD}")
+        self.assertEqual(status, 303)
+        viewer = headers["Set-Cookie"]
+        self.assertEqual(self.request("/api/status", cookie=viewer)[0], 200)
+        self.assertEqual(self.request("/users", cookie=viewer)[0], 403)
+        viewer_token = viewer.split(";", 1)[0].split("=", 1)[1]
+        fields["csrf"] = self.auth.session(viewer_token)["csrf"]
+        self.assertEqual(self.request("/users/manage", "POST", urlencode(fields), viewer)[0], 403)
+        self.assertNotIn("Gerir utilizadores", self.request("/", cookie=viewer)[2])
 
     def test_insecure_public_origin_refused(self):
         with self.assertRaises(ValueError):

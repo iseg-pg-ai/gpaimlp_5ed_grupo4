@@ -643,3 +643,26 @@ O proxy também acrescenta o seu prefixo a cabeçalhos Location iniciados por
 `/`. Os redirects do monitoring passam a usar o URL público canónico completo
 para evitar duplicação. Dez testes Python e quatro larguras de navegador
 aprovados após a alteração; acesso AWS depende do encaminhamento no editor.
+
+## Gestão de contas no monitoring — 2026-10-19
+
+A administração de acessos fica no próprio monitoring, em `/users`. Perfis
+`admin` e `viewer` distinguem gestão de contas e consulta, com autorização
+no servidor e CSRF em todas as alterações. A conta legada conserva o hash e
+passa a administrador; o formato local com várias contas é guardado de forma
+atómica na primeira alteração. Não foi criada outra base do catálogo.
+
+Alterações de palavra-passe, perfil, estado e remoção revogam as sessões da
+conta. Não se pode remover/desativar a conta em uso nem retirar o último
+administrador ativo, incluindo em pedidos concorrentes. A recuperação CLI
+preserva outras contas e deve ser feita com o serviço parado.
+
+A exclusão de `monitoring/runtime/` estava comentada e os seus ficheiros
+tinham sido versionados. A regra foi reativada, os ficheiros foram retirados
+do índice sem eliminar as cópias locais e o verificador estrutural passa a
+rejeitar esses caminhos no Git. O histórico não foi reescrito; a credencial
+inicial deve ser alterada se ainda for usada.
+
+Evidência: 18 testes Python e cenários completos de gestão de contas em
+320/768/1440/2560 px aprovados, com inspeção visual. As quatro pendências
+de monitoring do plano continuam abertas.

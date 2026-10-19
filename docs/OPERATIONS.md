@@ -255,3 +255,22 @@ O limiar de idade do warehouse fica por definir e o agente é opcional.
 O monitor está na mesma máquina dos serviços: falhas da máquina requerem uma
 sonda externa futura. O servidor interno não representa uma decisão de
 hosting de produção.
+
+### Administração de acessos — 2026-10-19
+
+O monitoring passa a ter uma página própria de administração em `/users`,
+exclusiva de administradores. Leitores consultam apenas o painel. A conta
+legada conserva as credenciais e é reconhecida como administrador; alterações
+são persistidas atomicamente no formato local com várias contas.
+
+Criação, alteração de palavra-passe/perfil/estado e remoção exigem autorização
+no servidor e CSRF. A alteração de uma conta revoga as respetivas sessões,
+e o último administrador ativo é protegido. A recuperação CLI preserva as
+outras contas e deve ser feita com o serviço parado. Ver o
+[guia de gestão de utilizadores](../monitoring/README.md).
+
+Credenciais e logs anteriormente versionados são retirados do índice, com
+ficheiros locais preservados e verificação estrutural contra nova inclusão.
+O histórico não foi reescrito; a palavra-passe inicial deve ser alterada se
+ainda estiver em uso. Esta gestão não implementa as quatro pendências de
+monitoring registadas no plano.

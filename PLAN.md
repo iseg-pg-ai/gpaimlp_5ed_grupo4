@@ -773,3 +773,28 @@ no painel. O funcionamento desse painel não significa monitoring completo.
 Ao retomar monitoring ou preparar deployment/produção, recordar estas quatro
 lacunas e consultar esta lista. Manter cada item aberto até existir implementação
 e evidência de validação; a existência de um plano ou de um painel não basta.
+
+## Gestão de utilizadores do monitoring — 2026-10-19
+
+- [x] Migrar a conta existente sem alterar a palavra-passe, suportando várias contas.
+- [x] Acrescentar administração de contas com criação, palavra-passe, perfil,
+  ativação/desativação e remoção, protegida por sessão, autorização e CSRF.
+- [x] Preservar pelo menos um administrador ativo e invalidar sessões alteradas.
+- [x] Retirar credenciais/logs já versionados do índice, mantendo os ficheiros locais.
+- [x] Validar permissões, persistência, migração, concorrência e UI responsiva.
+
+Os erros internos do portal, backups, consumo de IA e notificações externas
+continuam nas pendências de monitoring; esta tarefa não as resolve.
+
+Validação: 18 testes Python e gestão completa de contas no navegador em
+320/768/1440/2560 px aprovados. Cobrem migração legada sem alterar o hash,
+persistência, recuperação CLI sem apagar outras contas, falha de disco sem
+aplicação parcial, autorização e CSRF, revogação de sessões e concorrência
+entre administradores. Inspeção visual desktop/mobile concluída.
+
+A regra de exclusão do runtime estava comentada e os ficheiros tinham sido
+versionados. Regra reativada, ficheiros retirados do índice e verificação
+estrutural acrescentada contra nova inclusão. O histórico não foi reescrito.
+
+- [ ] Alterar a palavra-passe inicial através da nova página caso ainda esteja
+  em uso, pois constou de um commit anterior.

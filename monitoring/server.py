@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from monitoring.collector import Collector
 from monitoring.security import Security
+from monitoring.users_view import render_users
 
 ROOT = Path(__file__).resolve().parents[1]
 STATIC = Path(__file__).resolve().parent / "static"
@@ -82,10 +83,16 @@ def make_server(port, security, collector, public_url, insecure_local=False):
             return (f"{cookie_name}={value}; Path={prefix or ''}/; Max-Age={age}; HttpOnly; SameSite=Strict"
                     + ("" if insecure_local else "; Secure"))
 
-        def template(self, name, csrf="", error=""):
+        def template(self, name, csrf="", error="", session=None):
             content = (STATIC / name).read_text()
-            return content.replace("{{BASE}}", html.escape(prefix + "/", quote=True)).replace(
+            content = content.replace("{{BASE}}", html.escape(prefix + "/", quote=True)).replace(
                 "{{CSRF}}", html.escape(csrf, quote=True)).replace("{{ERROR}}", html.escape(error))
+            return content.replace("{{USERNAME}}", html.escape(session["username"] if session else "")).replace(
+                "{{ADMIN_LINK}}", '<a class="subtle" href="users">Gerir utilizadores</a>' if session and session["role"] == "admin" else "")
+
+        def users_page(self, session, error="", notice=""):
+            content = self.template("users.html", session["csrf"], error, session)
+            return content.replace("{{ACCOUNTS}}", render_users(security.list_users(self.token()), session["username"], session["csrf"])).replace("{{NOTICE}}", html.escape(notice))
 
         def do_GET(self):
             path = self.route_path()
@@ -101,9 +108,19 @@ def make_server(port, security, collector, public_url, insecure_local=False):
                     return self.reply(401, '{"error":"authentication_required"}', "application/json")
                 return self.redirect("/login")
             if path == "/":
-                return self.reply(200, self.template("index.html", session["csrf"]))
+                return self.reply(200, self.template("index.html", session["csrf"], session=session))
             if path == "/app.js":
                 return self.reply(200, (STATIC / "app.js").read_bytes(), "text/javascript; charset=utf-8")
+            if path == "/users":
+                if session["role"] != "admin":
+                    return self.reply(403, "Apenas administradores podem gerir contas.")
+                notices = {"created": "Utilizador criado.", "updated": "Conta atualizada. As sessões dessa conta foram terminadas.",
+                           "password": "Palavra-passe alterada. As sessões dessa conta foram terminadas.", "deleted": "Conta removida."}
+                notice = parse_qs(urlsplit(self.path).query).get("notice", [""])[0]
+                try:
+                    return self.reply(200, self.users_page(session, notice=notices.get(notice, "")))
+                except PermissionError:
+                    return self.reply(403, "Sessão sem permissões de administração.")
             if path == "/api/status":
                 return self.reply(200, json.dumps(collector.snapshot()), "application/json")
             return self.reply(404, "Não encontrado.")
@@ -117,7 +134,7 @@ def make_server(port, security, collector, public_url, insecure_local=False):
                 length = int(self.headers.get("Content-Length", "0"))
                 if not 0 < length <= 4096:
                     return self.reply(413, "Pedido inválido.")
-                data = parse_qs(self.rfile.read(length).decode("utf-8"), max_num_fields=5)
+                data = parse_qs(self.rfile.read(length).decode("utf-8"), max_num_fields=8)
             except (ValueError, UnicodeError):
                 return self.reply(400, "Pedido inválido.")
             path = self.route_path()
@@ -130,11 +147,38 @@ def make_server(port, security, collector, public_url, insecure_local=False):
                                       headers={"Retry-After": "300"} if status == 429 else None)
                 security.logout(self.token())
                 return self.redirect("/", self.cookie(token))
+            if path == "/users/manage":
+                session = security.session(self.token())
+                if not session:
+                    return self.reply(401, "Sessão terminada.")
+                if session["role"] != "admin":
+                    return self.reply(403, "Apenas administradores podem gerir contas.")
+                if not hmac.compare_digest(data.get("csrf", [""])[0].encode(), session["csrf"].encode()):
+                    return self.reply(403, "Pedido inválido.")
+                if any(len(values) != 1 for values in data.values()):
+                    return self.reply(400, "Campos duplicados.")
+                fields = {key: values[0] for key, values in data.items()}
+                action = fields.get("action", "")
+                try:
+                    security.manage(self.token(), action, fields)
+                except PermissionError:
+                    return self.reply(403, "Sessão sem permissões de administração.")
+                except ValueError as error:
+                    try:
+                        return self.reply(400, self.users_page(session, error=str(error)))
+                    except PermissionError:
+                        return self.reply(403, "Sessão sem permissões de administração.")
+                except OSError:
+                    return self.reply(503, "Não foi possível guardar. Nenhuma alteração foi aplicada. Tente novamente.")
+                if not security.session(self.token()):
+                    return self.redirect("/login", self.cookie("", 0))
+                notice = {"create": "created", "update": "updated", "password": "password", "delete": "deleted"}[action]
+                return self.redirect("/users?notice=" + notice)
             if path == "/logout":
                 session = security.session(self.token())
                 if not session:
                     return self.reply(401, "Sessão terminada.")
-                if not hmac.compare_digest(data.get("csrf", [""])[0], session["csrf"]):
+                if not hmac.compare_digest(data.get("csrf", [""])[0].encode(), session["csrf"].encode()):
                     return self.reply(403, "Pedido inválido.")
                 security.logout(self.token())
                 return self.redirect("/login", self.cookie("", 0))
