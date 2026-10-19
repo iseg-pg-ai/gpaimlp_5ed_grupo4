@@ -838,3 +838,15 @@ está em execução. Pode ser encaminhada quando `BLU_START_AGENT=1` for usado.
   de 24 horas, e disponibilizar execução manual apenas a administradores com CSRF.
 - [x] Mostrar no painel a política e o resultado da última limpeza.
 - [x] Validar limites, retenção, proteção de dados e autorização com fixtures.
+
+## Normalização de indentação — 2026-10-19
+
+- [x] Formatar todos os HTML versionados e preservar placeholders e comportamento.
+- [x] Verificar indentação e sintaxe nos restantes ficheiros de código e configuração.
+- [x] Executar as validações funcionais das áreas cujos ficheiros forem alterados.
+
+Foram formatados os cinco HTML versionados, CSS de portal, monitoring e dashboard,
+JavaScript de monitoring e testes e configurações que o verificador assinalou. O
+warehouse e os restantes dados publicados não foram alterados. Validação: 83 testes
+Python, 97 testes do portal com um opcional omitido, lint e tipos do portal, e
+cenários de navegador do monitoring e apresentação em 320–2560 px aprovados.

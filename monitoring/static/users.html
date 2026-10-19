@@ -1,3 +1,119 @@
 <!doctype html>
-<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="{{BASE}}"><title>Utilizadores · BLU Operations</title><link rel="stylesheet" href="style.css"></head>
-<body><div class="shell"><header class="topbar"><a class="brand" href="./"><span class="brand-mark">b.</span><span>BLU <strong>OPERATIONS</strong></span></a><div class="top-actions"><a class="subtle" href="./">Voltar ao painel</a><form action="logout" method="post"><input type="hidden" name="csrf" value="{{CSRF}}"><button class="subtle" type="submit">Terminar sessão ↗</button></form></div></header><main><section class="intro"><div><p class="eyebrow">ADMINISTRAÇÃO / ACESSOS</p><h1>Quem pode <em>entrar.</em></h1><p class="muted">Crie contas e controle os acessos ao centro de operações.</p></div><span class="badge">Administrador · {{USERNAME}}</span></section><p class="form-error" role="alert">{{ERROR}}</p><p class="success-message" role="status">{{NOTICE}}</p><div class="accounts-layout"><section class="panel create-account"><p class="eyebrow">NOVO ACESSO</p><h2>Adicionar utilizador</h2><form action="users/manage" method="post" class="account-form"><input type="hidden" name="csrf" value="{{CSRF}}"><input type="hidden" name="action" value="create"><label for="new-username">Nome de utilizador</label><input id="new-username" name="username" autocomplete="off" pattern="[A-Za-z0-9][A-Za-z0-9._\-]{2,39}" minlength="3" maxlength="40" required><p class="footnote">3–40 caracteres, sem espaços ou acentos. O login não distingue maiúsculas de minúsculas.</p><label for="new-role">Perfil</label><select id="new-role" name="role"><option value="viewer">Leitor — consulta o painel</option><option value="admin">Administrador — também gere contas</option></select><label for="new-password">Palavra-passe inicial</label><input id="new-password" type="password" name="password" autocomplete="new-password" minlength="12" maxlength="128" required><label for="new-confirm">Confirmar palavra-passe inicial</label><input id="new-confirm" type="password" name="password_confirm" autocomplete="new-password" minlength="12" maxlength="128" required><p class="footnote">12–128 caracteres. A palavra-passe não pode ser consultada depois de guardar.</p><button type="submit" class="primary">Criar utilizador <span aria-hidden="true">+</span></button></form></section><section class="accounts-section" aria-label="Contas existentes"><div class="section-heading"><h2>Contas existentes</h2><span>Administrador ou leitor</span></div><div class="accounts-list">{{ACCOUNTS}}</div><p class="footnote accounts-note">Alterações de palavra-passe, perfil ou estado terminam as sessões da conta. Não pode desativar ou remover a conta em uso, nem deixar o painel sem um administrador ativo.</p></section></div></main><footer><span>BLU / ACESSOS PRIVADOS</span><span>Gestão independente dos utilizadores do portal</span></footer></div></body></html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <base href="{{BASE}}" />
+    <title>Utilizadores · BLU Operations</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="./"
+          ><span class="brand-mark">b.</span
+          ><span>BLU <strong>OPERATIONS</strong></span></a
+        >
+        <div class="top-actions">
+          <a class="subtle" href="./">Voltar ao painel</a>
+          <form action="logout" method="post">
+            <input type="hidden" name="csrf" value="{{CSRF}}" /><button
+              class="subtle"
+              type="submit"
+            >
+              Terminar sessão ↗
+            </button>
+          </form>
+        </div>
+      </header>
+      <main>
+        <section class="intro">
+          <div>
+            <p class="eyebrow">ADMINISTRAÇÃO / ACESSOS</p>
+            <h1>Quem pode <em>entrar.</em></h1>
+            <p class="muted">
+              Crie contas e controle os acessos ao centro de operações.
+            </p>
+          </div>
+          <span class="badge">Administrador · {{USERNAME}}</span>
+        </section>
+        <p class="form-error" role="alert">{{ERROR}}</p>
+        <p class="success-message" role="status">{{NOTICE}}</p>
+        <div class="accounts-layout">
+          <section class="panel create-account">
+            <p class="eyebrow">NOVO ACESSO</p>
+            <h2>Adicionar utilizador</h2>
+            <form action="users/manage" method="post" class="account-form">
+              <input type="hidden" name="csrf" value="{{CSRF}}" /><input
+                type="hidden"
+                name="action"
+                value="create"
+              /><label for="new-username">Nome de utilizador</label
+              ><input
+                id="new-username"
+                name="username"
+                autocomplete="off"
+                pattern="[A-Za-z0-9][A-Za-z0-9._\-]{2,39}"
+                minlength="3"
+                maxlength="40"
+                required
+              />
+              <p class="footnote">
+                3–40 caracteres, sem espaços ou acentos. O login não distingue
+                maiúsculas de minúsculas.
+              </p>
+              <label for="new-role">Perfil</label
+              ><select id="new-role" name="role">
+                <option value="viewer">Leitor — consulta o painel</option>
+                <option value="admin">
+                  Administrador — também gere contas
+                </option></select
+              ><label for="new-password">Palavra-passe inicial</label
+              ><input
+                id="new-password"
+                type="password"
+                name="password"
+                autocomplete="new-password"
+                minlength="12"
+                maxlength="128"
+                required
+              /><label for="new-confirm">Confirmar palavra-passe inicial</label
+              ><input
+                id="new-confirm"
+                type="password"
+                name="password_confirm"
+                autocomplete="new-password"
+                minlength="12"
+                maxlength="128"
+                required
+              />
+              <p class="footnote">
+                12–128 caracteres. A palavra-passe não pode ser consultada
+                depois de guardar.
+              </p>
+              <button type="submit" class="primary">
+                Criar utilizador <span aria-hidden="true">+</span>
+              </button>
+            </form>
+          </section>
+          <section class="accounts-section" aria-label="Contas existentes">
+            <div class="section-heading">
+              <h2>Contas existentes</h2>
+              <span>Administrador ou leitor</span>
+            </div>
+            <div class="accounts-list">{{ACCOUNTS}}</div>
+            <p class="footnote accounts-note">
+              Alterações de palavra-passe, perfil ou estado terminam as sessões
+              da conta. Não pode desativar ou remover a conta em uso, nem deixar
+              o painel sem um administrador ativo.
+            </p>
+          </section>
+        </div>
+      </main>
+      <footer>
+        <span>BLU / ACESSOS PRIVADOS</span
+        ><span>Gestão independente dos utilizadores do portal</span>
+      </footer>
+    </div>
+  </body>
+</html>
