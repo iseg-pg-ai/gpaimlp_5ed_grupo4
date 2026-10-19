@@ -26,8 +26,9 @@ A recuperação pelo modo interativo continua disponível e exige reinício do
 servidor; esse modo elimina o ficheiro inicial.
 Não existe palavra-passe fixa no código ou no README.
 
-A pasta `runtime/` fica fora do Git e do contexto Docker do portal. Contém apenas
-credenciais derivadas, acesso inicial temporário e logs das sondas. O serviço
+A pasta `runtime/` fica fora do Git e do contexto Docker do portal. Contém
+credenciais derivadas, acesso inicial temporário, logs técnicos, fila local de
+alertas, métricas de IA e cópias de segurança. O serviço
 recusa arrancar sem credenciais. Não disponibiliza esses ficheiros por HTTP.
 
 O endereço é gerado a partir de `config/studio.json`, acrescentando `/ports/3004/`.
@@ -80,7 +81,39 @@ de exclusão. Foram retirados do índice, mantendo cópias locais. Isso não apa
 histórico Git: alterar a palavra-passe inicial se ainda estiver em uso. A alteração
 da palavra-passe de `admin` elimina também o ficheiro inicial local, quando possível.
 
-## Cobertura inicial
+## Sinais operacionais e alertas
+
+O portal e o agente escrevem eventos JSON-lines limitados a componente, operação,
+resultado, duração, código técnico e contadores de tokens reportados. Não são
+guardados prompts, respostas, corpos HTTP, nomes de clientes ou exceções completas.
+O painel apresenta apenas agregados das últimas 24 horas.
+
+O coletor transforma falhas em incidentes locais, deduplica estados repetidos e
+regista uma recuperação quando a condição desaparece. A fila está em
+`monitoring/runtime/notifications.jsonl`. O envio externo permanece desativado em
+`monitoring/config.json`; ativá-lo exige escolher canal, destinatários e credenciais.
+
+## Backups e ensaio de restauro
+
+Para criar uma cópia local do catálogo SQLite, warehouse e itinerários e validar
+imediatamente hashes, integridade SQLite e restauro num diretório temporário:
+
+```bash
+python -B -m monitoring.backup create-and-verify
+```
+
+Também é possível repetir a verificação sem alterar as fontes:
+
+```bash
+python -B -m monitoring.backup verify monitoring/runtime/backups/IDENTIFICADOR
+```
+
+O manifesto inclui hashes SHA-256 e tamanhos. A evidência mais recente fica em
+`monitoring/runtime/restore-evidence.json` e alimenta o painel. Estas cópias são
+locais ao mesmo ambiente; uma política de retenção e armazenamento externo ainda
+tem de ser definida antes de produção.
+
+## Cobertura
 
 - Sondas a cada 30 segundos: portal `/catalog`, saúde Streamlit e apresentação.
 - Agente opcional desativado por defeito; ativar `agent_enabled` só se estiver
@@ -90,7 +123,9 @@ da palavra-passe de `admin` elimina também o ficheiro inicial local, quando pos
 - Até 240 amostras e 100 alterações de estado em memória, reiniciadas no arranque.
 - Logs JSON-lines das sondas com rotação de 1 MB e três cópias; sem corpos de
   respostas, fontes, contactos, pedidos de clientes ou exceções detalhadas.
-- Incidentes visíveis no painel; não envia notificações externas.
+- Erros internos do portal, subprocessos e dependências em eventos reduzidos.
+- Consumo de IA com chamadas, falhas, latência e tokens quando reportados.
+- Incidentes deduplicados e recuperações numa fila local; sem envio externo.
 
 `monitoring/config.json` define intervalo (10–300 segundos), agente e idade máxima
 aceitável do warehouse em horas. `warehouse_max_age_hours: null` mostra cadência
@@ -102,8 +137,8 @@ representam um total de clientes ou de experiências únicas.
 O painel identifica recolha atrasada e perda de ligação. Um HTTP 200 não prova
 prontidão funcional, acesso Bedrock ou um fluxo completo de curadoria. A validação
 publicada não mostra tentativas ETL que falharam antes de substituir a entrega.
-Ainda não há instrumentação dos pedidos do portal, falhas de escrita, backups,
-tradução, memória, tokens ou traces. Valores ausentes aparecem como desconhecidos.
+Tradução, memória e traces distribuídos continuam sem instrumentação. Tokens não
+reportados pelo fornecedor aparecem como desconhecidos e nunca são estimados.
 
 ## Autenticação e fronteira de operação
 

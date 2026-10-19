@@ -15,6 +15,9 @@ import time
 from urllib.error import HTTPError
 from urllib.request import build_opener, HTTPRedirectHandler, ProxyHandler, Request
 
+from monitoring.alerts import AlertStore
+from monitoring.signals import operational_signals
+
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):
@@ -90,6 +93,8 @@ class Collector:
         self.latest = None
         self.previous = {}
         runtime.mkdir(mode=0o700, parents=True, exist_ok=True)
+        self.runtime = runtime
+        self.alerts = AlertStore(runtime)
         self.logger = logging.Logger("blu-monitor-probes")
         handler = RotatingFileHandler(runtime / "probes.jsonl", maxBytes=1_000_000, backupCount=3)
         os.chmod(runtime / "probes.jsonl", 0o600)
@@ -111,6 +116,15 @@ class Collector:
                   "load_1m": round(os.getloadavg()[0], 2) if hasattr(os, "getloadavg") else None}
         snapshot = {"checked_at": now, "interval_seconds": self.interval, "services": services,
                     "warehouse": warehouse, "system": system}
+        snapshot["operations"] = operational_signals(self.runtime)
+        conditions = {f"service:{item['name']}": item["state"] == "down" for item in services
+                      if item["state"] != "disabled"}
+        conditions.update({"warehouse": warehouse["state"] in {"down", "degraded"},
+                           "disk": system["disk_used_pct"] >= 90,
+                           "portal-errors": snapshot["operations"]["portal"]["errors_24h"] > 0,
+                           "ai-failures": snapshot["operations"]["ai"]["failures_24h"] > 0,
+                           "backup": snapshot["operations"]["backup"]["state"] == "down"})
+        snapshot["alerts"] = self.alerts.reconcile(conditions)
         entities = [(x["name"], x["state"]) for x in services] + [("Warehouse", warehouse["state"])]
         with self.lock:
             for name, state in entities:

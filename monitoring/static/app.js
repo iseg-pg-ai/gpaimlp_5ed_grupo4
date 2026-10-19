@@ -23,7 +23,7 @@ function render(data) {
   text("etl-note", s.warehouse.freshness === "not_configured" ? "Cadência de atualização por definir" : `Atualidade: ${s.warehouse.freshness === "fresh" ? "dentro da cadência" : "por rever"}`);
   text("disk-free", `${s.system.disk_free_gb} GB`);
   text("disk-note", `${s.system.disk_used_pct}% do disco ocupado`);
-  const incidentCount = active.filter((service) => service.state !== "up").length + (s.warehouse.state !== "up" ? 1 : 0) + (s.system.disk_used_pct >= 90 ? 1 : 0) + (stale ? 1 : 0);
+  const incidentCount = s.alerts?.active ?? (active.filter((service) => service.state !== "up").length + (s.warehouse.state !== "up" ? 1 : 0) + (s.system.disk_used_pct >= 90 ? 1 : 0) + (stale ? 1 : 0));
   text("incident-count", incidentCount);
   $("services").replaceChildren(...s.services.map((service) => {
     const card = node("article", `service-card ${service.state}`);
@@ -43,6 +43,14 @@ function render(data) {
   text("warehouse-badge", labels[s.warehouse.state]);
   $("warehouse-badge").className = `badge ${s.warehouse.state}`;
   text("host-load", `Carga média do anfitrião (1 min): ${s.system.load_1m ?? "indisponível"}. Não é percentagem de CPU.`);
+  const ops = s.operations;
+  if (ops) {
+    text("portal-ops", `${ops.portal.events_24h} / ${ops.portal.errors_24h}`);
+    text("ai-ops", `${ops.ai.calls_24h} / ${ops.ai.failures_24h}`);
+    text("ai-tokens", ops.ai.calls_with_tokens ? `${ops.ai.tokens_reported.toLocaleString("pt-PT")} · ${ops.ai.calls_with_tokens} chamada(s)` : "Não reportados");
+    text("backup-restore", date(ops.backup.last_restore_at));
+    text("alert-state", `${s.alerts.active} ativos · envio externo desativado`);
+  }
   $("events").replaceChildren(...data.events.map((event) => {
     const row = node("div", "event");
     row.append(node("span", `status-dot ${event.state}`), node("strong", "", event.component), node("span", "event-state", labels[event.state]), node("time", "", date(event.at)));

@@ -666,3 +666,12 @@ inicial deve ser alterada se ainda for usada.
 Evidência: 18 testes Python e cenários completos de gestão de contas em
 320/768/1440/2560 px aprovados, com inspeção visual. As quatro pendências
 de monitoring do plano continuam abertas.
+
+## 2026-10-19 — Telemetria operacional reduzida e privada
+
+O monitoring agrega eventos locais do portal e do agente sem guardar prompts,
+respostas, corpos de pedidos, dados de clientes ou exceções completas. Backups do
+catálogo, warehouse e itinerários incluem hashes e só contam como verificados após
+um restauro isolado e verificação de integridade SQLite. Incidentes são deduplicados
+numa fila local com eventos de abertura e recuperação. Integrações externas ficam
+desativadas até serem definidos canal, destinatários e gestão de credenciais.

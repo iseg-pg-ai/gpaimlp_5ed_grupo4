@@ -757,13 +757,13 @@ Registado a pedido do utilizador em 2026-10-19. **Esta etapa ainda não está
 feita.** A primeira versão guarda apenas logs das sondas e apresenta incidentes
 no painel. O funcionamento desse painel não significa monitoring completo.
 
-- [ ] Recolher erros internos do portal e falhas de operações/subprocessos,
+- [x] Recolher erros internos do portal e falhas de operações/subprocessos,
   com logs estruturados, correlação de pedidos e exclusão de dados pessoais
   e segredos. Validar com falhas controladas.
-- [ ] Monitorizar backups: resultado e data da última cópia, falhas e evidência
+- [x] Monitorizar backups: resultado e data da última cópia, falhas e evidência
   do último restauro ensaiado. A ausência de evidência deve aparecer como
   desconhecida, sem indicar que os dados estão protegidos.
-- [ ] Recolher consumo de IA: chamadas, falhas, latência e tokens quando
+- [x] Recolher consumo de IA: chamadas, falhas, latência e tokens quando
   disponíveis; distinguir valores medidos de estimativas de custo. Validar
   primeiro com mocks, sem chamadas pagas implícitas.
 - [ ] Configurar notificações externas de incidentes: canal, destinatários,
@@ -774,6 +774,23 @@ Ao retomar monitoring ou preparar deployment/produção, recordar estas quatro
 lacunas e consultar esta lista. Manter cada item aberto até existir implementação
 e evidência de validação; a existência de um plano ou de um painel não basta.
 
+### Implementação da segunda etapa — 2026-10-19
+
+- [x] Registar erros internos do Next.js, subprocessos Python e dependências,
+  com eventos estruturados, rotação e dados reduzidos.
+- [x] Criar backups verificáveis do catálogo, warehouse e entregas e registar
+  ensaios de restauro isolados.
+- [x] Registar chamadas de IA, resultados, latência e tokens reportados, sem
+  guardar prompts, respostas ou dados de clientes.
+- [x] Deduplicar incidentes e recuperações numa fila local; manter integrações
+  externas desativadas até serem definidos canal e destinatários.
+- [x] Integrar os novos sinais no painel privado e validar falhas controladas.
+
+Implementado com eventos JSON-lines limitados a 2 MB, agregação das últimas 24
+horas, cópia SQLite consistente, manifestos SHA-256, restauro isolado e fila local
+de abertura/recuperação. O envio externo continua pendente: falta definir canal,
+destinatários, credenciais e limiares antes de o ativar.
+
 ## Gestão de utilizadores do monitoring — 2026-10-19
 
 - [x] Migrar a conta existente sem alterar a palavra-passe, suportando várias contas.
@@ -783,8 +800,9 @@ e evidência de validação; a existência de um plano ou de um painel não bast
 - [x] Retirar credenciais/logs já versionados do índice, mantendo os ficheiros locais.
 - [x] Validar permissões, persistência, migração, concorrência e UI responsiva.
 
-Os erros internos do portal, backups, consumo de IA e notificações externas
-continuam nas pendências de monitoring; esta tarefa não as resolve.
+Esta tarefa de utilizadores não cobriu os sinais operacionais. A implementação
+posterior resolveu erros internos, backups e consumo de IA; o envio externo de
+notificações continua pendente.
 
 Validação: 18 testes Python e gestão completa de contas no navegador em
 320/768/1440/2560 px aprovados. Cobrem migração legada sem alterar o hash,
@@ -798,3 +816,14 @@ estrutural acrescentada contra nova inclusão. O histórico não foi reescrito.
 
 - [ ] Alterar a palavra-passe inicial através da nova página caso ainda esteja
   em uso, pois constou de um commit anterior.
+
+## Portas do Code Editor — 2026-10-19
+
+- [x] Confirmar os serviços em execução e retirar portas descontinuadas da
+  configuração do workspace.
+- [x] Identificar no painel Ports o portal 3001, apresentação 3003, monitoring
+  3004 e Observatório 8501, com encaminhamento automático silencioso.
+- [x] Acrescentar o monitoring ao utilitário que apresenta os URLs Studio.
+
+A porta 8000 permanece fora da lista principal porque o agente é opcional e não
+está em execução. Pode ser encaminhada quando `BLU_START_AGENT=1` for usado.

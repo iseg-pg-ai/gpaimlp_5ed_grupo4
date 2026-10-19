@@ -1,5 +1,11 @@
 {
   "interval_seconds": 30,
   "warehouse_max_age_hours": null,
-  "agent_enabled": false
+  "agent_enabled": false,
+  "notifications": {
+    "mode": "local",
+    "external_enabled": false,
+    "channel": null,
+    "recipients": []
+  }
 }

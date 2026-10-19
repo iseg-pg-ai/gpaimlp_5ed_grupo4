@@ -40,8 +40,10 @@ def main():
     elif args.port is not None:
         print(dashboard_url(args.port, args.path))
     else:
-        for name, port in [("Portal BLU", 3001), ("Dashboard analítico", 8501),
-                           ("Apresentação interativa", 3003)]:
+        for name, port in [("Portal BLU", 3001),
+                           ("Apresentação interativa", 3003),
+                           ("Monitoring privado", 3004),
+                           ("Dashboard analítico", 8501)]:
             print(f"{name}: {dashboard_url(port)}")
 
 
