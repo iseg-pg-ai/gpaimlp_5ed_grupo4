@@ -32,6 +32,11 @@ def table_exists(name: str) -> bool:
     return not query("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (name,)).empty
 
 
+def column_or_null(columns: set[str], name: str) -> str:
+    """Ler um campo opcional ou preservar o contrato com um valor desconhecido."""
+    return f'"{name}"' if name in columns else f'NULL AS "{name}"'
+
+
 def model_data(name: str) -> pd.DataFrame:
     from etl.observatory import build_observatory
     allowed = {"model_observatory_catalog", "model_observatory_prices", "model_field_evidence"}
@@ -55,8 +60,11 @@ def load_json(name: str) -> dict:
 
 
 def catalog_data() -> pd.DataFrame:
-    columns = query('PRAGMA table_info(experiencias)').name.tolist()
-    coordinates = ", ".join(field if field in columns else "NULL" for field in ("latitude", "longitude"))
+    columns = set(query('PRAGMA table_info(experiencias)').name.tolist())
+    experience = {field: column_or_null(columns, field) for field in (
+        "latitude", "longitude", "horario", "morada", "contactos",
+        "acessibilidade_nivel_de_confirmacao",
+    )}
     frame = query(f"""
         SELECT id AS Identificador, 'Atração' AS Tipo, nome_da_atracao AS Nome,
         cidade AS Localização, categoria AS Categoria, descricao_curada AS Descrição,
@@ -70,8 +78,10 @@ def catalog_data() -> pd.DataFrame:
         reservas_condicoes_base, acessibilidade_nivel_de_confirmacao FROM restaurantes
         UNION ALL
         SELECT nome_da_experiencia, 'Experiência', nome_da_experiencia, localizacao,
-        categoria, descricao, {coordinates}, horario, preco, site_fonte, morada, contactos, duracao,
-        modalidade, acessibilidade_nivel_de_confirmacao FROM experiencias
+        categoria, descricao, {experience['latitude']}, {experience['longitude']},
+        {experience['horario']}, preco, site_fonte, {experience['morada']},
+        {experience['contactos']}, duracao, modalidade,
+        {experience['acessibilidade_nivel_de_confirmacao']} FROM experiencias
     """)
     frame["Chave"] = frame.Tipo + ":" + frame.Identificador.astype(str)
     normalized = model_data("model_observatory_catalog").rename(columns={"entity_key": "Chave", "destination": "Destino", "geographic_scope": "Âmbito geográfico", "location_rule": "Regra geográfica"})
