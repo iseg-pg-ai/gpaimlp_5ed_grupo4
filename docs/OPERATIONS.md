@@ -207,6 +207,9 @@ Não assumir propagação automática de contexto através de stdin/stdout.
 
 ## Fluxo de deployment a desenhar
 
+O próximo passo executável está detalhado em
+[deployment remoto a partir de PowerShell](REMOTE_DEPLOYMENT.md).
+
 ```mermaid
 flowchart LR
     PR[PR para dev] --> CI[Testes e verificações]

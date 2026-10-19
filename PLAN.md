@@ -881,3 +881,17 @@ cenários de navegador do monitoring e apresentação em 320–2560 px aprovados
   as portas 8000, 3001, 3003, 3004 e 8501.
 - [x] Declarar encaminhamento automático das cinco portas no workspace.
 - [ ] Integrar o launcher na imagem ou criação da infraestrutura de deployment.
+
+## Próxima etapa — deployment remoto por PowerShell
+
+Plano detalhado em [deployment remoto](docs/REMOTE_DEPLOYMENT.md).
+
+- [ ] Recolher decisões de conta, região, rede, domínio, capacidade e orçamento.
+- [ ] Escolher Terraform ou AWS CDK e criar a infraestrutura reproduzível.
+- [ ] Preparar EC2 gerida por Systems Manager, volume persistente e serviços `systemd`.
+- [ ] Criar endpoints HTTPS estáveis para os cinco serviços.
+- [ ] Separar launcher PowerShell e executor remoto com progresso por tarefa.
+- [ ] Implementar autorização AWS e administrativa BLU sem transportar passwords.
+- [ ] Adicionar release imutável, modo de manutenção e rollback automático.
+- [ ] Configurar backup externo cifrado, sonda externa e notificações reais.
+- [ ] Ensaiar recuperação integral e validar todos os critérios de aceitação.
