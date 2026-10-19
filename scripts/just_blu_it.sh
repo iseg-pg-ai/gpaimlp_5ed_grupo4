@@ -197,7 +197,11 @@ fi
 run_task "0. Parar todo o sistema" stop_all_services
 run_task "1. Verificar ambiente" verify_environment
 run_task "2. Preparar Python" uv sync --locked --all-groups
-run_task "3. Preparar portal" npm --prefix dmc-workspace ci
+run_task "3. Preparar portal" bash -c '
+    npm --prefix dmc-workspace ci
+    npm --prefix dmc-workspace exec playwright install chromium
+    bash scripts/prepare_browser_runtime.sh
+'
 
 # Uma recuperação nunca deve substituir utilizadores ou palavras-passe existentes.
 if [ ! -f monitoring/runtime/credentials.json ]; then
@@ -221,8 +225,8 @@ run_task "9. Iniciar serviços" start_all_services
 run_task "10. Confirmar serviços e portas" confirm_services
 
 run_task "11. Testes finais dos dashboards" bash -c '
-    export LD_LIBRARY_PATH=/tmp/blu-browser-libs/root/usr/lib/x86_64-linux-gnu:/opt/conda/lib
-    export FONTCONFIG_FILE=/tmp/blu-browser-libs/fonts.conf
+    export LD_LIBRARY_PATH="$PWD/monitoring/runtime/browser-libs/root/usr/lib/x86_64-linux-gnu:$PWD/monitoring/runtime/browser-libs/root/lib/x86_64-linux-gnu:/opt/conda/lib"
+    export FONTCONFIG_FILE="$PWD/monitoring/runtime/browser-libs/fonts.conf"
     node monitoring/test-browser.mjs
     node presentation/test-browser.mjs
 '

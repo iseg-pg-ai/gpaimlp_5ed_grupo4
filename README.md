@@ -180,7 +180,6 @@ O agregador `npm run check` executa também `format:check`; consulte o
 - [DMC Workspace](docs/PORTAL.md)
 - [ETL e contrato dos dados](docs/DATA_PIPELINE.md)
 - [Testes e histórico de validação](docs/TESTING.md)
-- [Próximo passo: deployment remoto por PowerShell](docs/REMOTE_DEPLOYMENT.md)
 - [Decisões do projeto](docs/DECISIONS.md)
 - [Modelo analítico do warehouse](reports/data_model_report.md)
 

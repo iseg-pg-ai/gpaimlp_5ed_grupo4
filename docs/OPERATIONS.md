@@ -207,9 +207,6 @@ Não assumir propagação automática de contexto através de stdin/stdout.
 
 ## Fluxo de deployment a desenhar
 
-O próximo passo executável está detalhado em
-[deployment remoto a partir de PowerShell](REMOTE_DEPLOYMENT.md).
-
 ```mermaid
 flowchart LR
     PR[PR para dev] --> CI[Testes e verificações]
@@ -247,6 +244,10 @@ A tarefa 0 cria uma janela de manutenção explícita: termina portal, apresenta
 monitoring, agente e Observatório, liberta as cinco portas e confirma que nenhuma
 aceita ligações. As restantes tarefas só avançam depois dessa confirmação; os serviços
 voltam a arrancar em conjunto após testes e build.
+
+As bibliotecas Linux necessárias aos testes Chromium são verificadas na preparação do
+portal e extraídas, sem privilégios, para `monitoring/runtime/browser-libs`. Esta cache
+privada persiste entre sessões; a recuperação não depende de ficheiros em `/tmp`.
 
 O launcher é instalado por `scripts/install_just_blu_it.sh`. Num deployment, essa
 instalação deve fazer parte da criação da máquina ou imagem. O encaminhamento local

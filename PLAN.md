@@ -770,9 +770,10 @@ não existirem destinos, responsáveis e infraestrutura fora desta máquina.
   limiares, deduplicação e recuperação. Validar o fluxo; envios reais exigem
   autorização aplicável do utilizador.
 
-Ao retomar monitoring ou preparar deployment/produção, recordar estas quatro
-lacunas e consultar esta lista. Manter cada item aberto até existir implementação
-e evidência de validação; a existência de um plano ou de um painel não basta.
+Ao retomar monitoring ou preparar deployment/produção, recordar a pendência externa
+desta lista e as duas pendências de produção registadas abaixo. Manter cada item
+aberto até existir implementação e evidência de validação; a existência de um plano
+ou de um painel não basta.
 
 ### Implementação da segunda etapa — 2026-10-19
 
@@ -872,6 +873,8 @@ cenários de navegador do monitoring e apresentação em 320–2560 px aprovados
   qualquer preparação, teste, restauro ou reinício.
 - [x] Executar uma tarefa 0 após a autenticação para parar os cinco serviços e
   confirmar a indisponibilidade das respetivas portas antes da recuperação.
+- [x] Tornar persistentes e autorrecuperáveis as bibliotecas dos testes Chromium,
+  removendo a dependência da cache efémera `/tmp`.
 - [x] Mostrar progresso independente de 0 a 100% por tarefa, falha localizada e
   log técnico privado; manter detalhes fora do terminal quando não existem erros.
 - [x] Sincronizar dependências Python/Node, executar testes e construir o portal.
@@ -880,18 +883,3 @@ cenários de navegador do monitoring e apresentação em 320–2560 px aprovados
 - [x] Iniciar agente, portal, apresentação, monitoring e Observatório e verificar
   as portas 8000, 3001, 3003, 3004 e 8501.
 - [x] Declarar encaminhamento automático das cinco portas no workspace.
-- [ ] Integrar o launcher na imagem ou criação da infraestrutura de deployment.
-
-## Próxima etapa — deployment remoto por PowerShell
-
-Plano detalhado em [deployment remoto](docs/REMOTE_DEPLOYMENT.md).
-
-- [ ] Recolher decisões de conta, região, rede, domínio, capacidade e orçamento.
-- [ ] Escolher Terraform ou AWS CDK e criar a infraestrutura reproduzível.
-- [ ] Preparar EC2 gerida por Systems Manager, volume persistente e serviços `systemd`.
-- [ ] Criar endpoints HTTPS estáveis para os cinco serviços.
-- [ ] Separar launcher PowerShell e executor remoto com progresso por tarefa.
-- [ ] Implementar autorização AWS e administrativa BLU sem transportar passwords.
-- [ ] Adicionar release imutável, modo de manutenção e rollback automático.
-- [ ] Configurar backup externo cifrado, sonda externa e notificações reais.
-- [ ] Ensaiar recuperação integral e validar todos os critérios de aceitação.
