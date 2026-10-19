@@ -380,9 +380,16 @@ h3 {
 .lower {
   margin-bottom: 40px;
 }
+.state-changes {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
 .event-list {
-  max-height: 270px;
+  flex: 1 1 0;
+  min-height: 0;
   overflow: auto;
+  scrollbar-gutter: stable;
 }
 .event {
   display: grid;
@@ -620,6 +627,10 @@ footer {
   }
   .event-state {
     font-size: 0.6rem;
+  }
+  .state-changes .event-list {
+    flex-basis: auto;
+    max-height: 420px;
   }
   footer {
     flex-direction: column;

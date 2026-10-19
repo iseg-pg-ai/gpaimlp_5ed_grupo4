@@ -17,30 +17,67 @@ if ! node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.e
 fi
 
 CURRENT_TASK="Preparação"
-bar() {
-    local percent="$1" label="$2" width=30 filled empty
+render_task() {
+    local percent="$1" label="$2" width=30 label_width=38 filled empty padding
+    local full_part empty_part
     filled=$((percent * width / 100))
     empty=$((width - filled))
-    printf '\n%-34s [' "$label"
-    printf '%*s' "$filled" '' | tr ' ' '#'
-    printf '%*s' "$empty" '' | tr ' ' '-'
-    printf '] %3d%%\n' "$percent"
+    printf -v full_part '%*s' "$filled" ''
+    printf -v empty_part '%*s' "$empty" ''
+    full_part="${full_part// /━}"
+    empty_part="${empty_part// /─}"
+    padding=$((label_width - ${#label}))
+    [ "$padding" -lt 1 ] && padding=1
+
+    # Durante a execução, atualizar a mesma linha; em pipes mostrar apenas o resultado.
+    if [ -t 1 ]; then
+        if [ "$percent" -eq 100 ]; then
+            printf '\r\033[2K%s%*s [\033[32m%s\033[0m\033[2m%s\033[0m] %3d%%' \
+                "$label" "$padding" '' "$full_part" "$empty_part" "$percent"
+        else
+            printf '\r\033[2K%s%*s [\033[36m%s\033[0m\033[2m%s\033[0m] %3d%%' \
+                "$label" "$padding" '' "$full_part" "$empty_part" "$percent"
+        fi
+    elif [ "$percent" -eq 100 ]; then
+        printf '%s%*s [%s%s] %3d%%' \
+            "$label" "$padding" '' "$full_part" "$empty_part" "$percent"
+    fi
+}
+
+complete_task() {
+    render_task 100 "$1"
+    printf '\n'
 }
 fail() {
-    printf '\nFalhou: %s\nÚltimas mensagens:\n' "$CURRENT_TASK" >&2
+    printf '\n  ✗ Falhou: %s\n' "$CURRENT_TASK" >&2
+    printf '  Últimas mensagens:\n' >&2
     tail -40 "$LOG" >&2 || true
     printf '\nO sistema anterior foi preservado sempre que estava válido.\n' >&2
 }
 trap fail ERR
 
 run_task() {
-    local percent="$1" label="$2"
-    shift 2
+    local label="$1" pid progress=0 status
+    shift
     CURRENT_TASK="$label"
-    bar "$percent" "$label"
     printf '[%s] %s\n' "$(date -u +%FT%TZ)" "$label" >> "$LOG"
-    "$@" >> "$LOG" 2>&1
-    printf '  ✓ concluída\n'
+    render_task 0 "$label"
+    "$@" >> "$LOG" 2>&1 &
+    pid=$!
+    while kill -0 "$pid" 2>/dev/null; do
+        render_task "$progress" "$label"
+        sleep 0.25
+        if [ "$progress" -lt 90 ]; then
+            progress=$((progress + 2))
+        fi
+    done
+    if wait "$pid"; then
+        complete_task "$label"
+    else
+        status=$?
+        render_task "$progress" "$label"
+        return "$status"
+    fi
 }
 
 wait_http() {
@@ -48,7 +85,6 @@ wait_http() {
     local name="$1" url="$2"
     for _ in {1..60}; do
         if curl --fail --silent --max-time 3 "$url" >/dev/null; then
-            printf '  ✓ %s responde\n' "$name"
             return 0
         fi
         sleep 1
@@ -85,10 +121,38 @@ start_service() {
     echo "$!" > "$SERVICES/$name.pid"
 }
 
+start_all_services() {
+    # Evitar duas instâncias a escrever no mesmo catálogo ou a disputar a mesma porta.
+    stop_known_services
+    for port in 3001 3003 3004 8000 8501; do stop_port "$port"; done
+    sleep 2
+    start_service agent bash scripts/start_ai_agent.sh
+    start_service observatory bash scripts/start_dashboard.sh
+    start_service presentation .venv/bin/python -B presentation/serve.py --port 3003
+    start_service monitoring env PYTHONPATH=src BLU_MONITOR_AGENT_ENABLED=1 \
+        .venv/bin/python -B -m monitoring.server
+    start_service portal bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
+}
+
+confirm_services() {
+    wait_http "Portal" "http://127.0.0.1:3001/catalog"
+    wait_http "Apresentação" "http://127.0.0.1:3003/"
+    wait_http "Monitoring" "http://127.0.0.1:3004/health"
+    wait_http "Agente IA" "http://127.0.0.1:8000/api/health"
+    wait_http "Observatório" "http://127.0.0.1:8501/_stcore/health"
+    # Uma resposta HTTP pode vir de um processo antigo; confirmar também os novos PID.
+    for pid_file in "$SERVICES"/*.pid; do
+        kill -0 "$(cat "$pid_file")" 2>/dev/null || {
+            printf 'Processo terminou: %s\n' "$pid_file" >> "$LOG"
+            return 1
+        }
+    done
+}
+
 cd "$ROOT"
 printf '\njust blu it\nRecuperação ponta a ponta do sistema BLU\n'
 
-run_task 5 "1. Verificar ambiente" bash -c '
+run_task "1. Verificar ambiente" bash -c '
     command -v uv >/dev/null
     command -v node >/dev/null
     command -v npm >/dev/null
@@ -99,71 +163,42 @@ run_task 5 "1. Verificar ambiente" bash -c '
 
 # Modo rápido usado para validar o orquestrador sem instalar nem iniciar serviços.
 if [ "${BLU_IT_VALIDATE_ONLY:-0}" = "1" ]; then
-    run_task 35 "2. Inspecionar recuperação" env PYTHONPATH=src .venv/bin/python -B -m monitoring.recovery inspect
-    run_task 70 "3. Validar estrutura" python3 scripts/check_project.py
-    run_task 100 "4. Validar orquestrador" bash -n scripts/just_blu_it.sh
-    printf '\njust blu it ✓ validação concluída\n'
+    run_task "2. Inspecionar recuperação" env PYTHONPATH=src .venv/bin/python -B -m monitoring.recovery inspect
+    run_task "3. Validar estrutura" python3 scripts/check_project.py
+    run_task "4. Validar orquestrador" bash -n scripts/just_blu_it.sh
     exit 0
 fi
 
-run_task 15 "2. Preparar Python" uv sync --locked --all-groups
-run_task 25 "3. Preparar portal" npm --prefix dmc-workspace ci
+run_task "2. Preparar Python" uv sync --locked --all-groups
+run_task "3. Preparar portal" npm --prefix dmc-workspace ci
 
 # Uma recuperação nunca deve substituir utilizadores ou palavras-passe existentes.
 if [ ! -f monitoring/runtime/credentials.json ]; then
-    run_task 30 "4. Criar acesso de monitoring" .venv/bin/python -B -m monitoring.setup --generate
+    run_task "4. Criar acesso de monitoring" .venv/bin/python -B -m monitoring.setup --generate
 else
-    bar 30 "4. Preservar acesso de monitoring"
-    printf '  ✓ credenciais existentes preservadas\n'
+    complete_task "4. Preservar acesso de monitoring"
 fi
 
-run_task 38 "5. Validar ou recuperar dados" env PYTHONPATH=src .venv/bin/python -B -m monitoring.recovery ensure
-run_task 50 "6. Testar Python e monitoring" bash -c '
+run_task "5. Validar ou recuperar dados" env PYTHONPATH=src .venv/bin/python -B -m monitoring.recovery ensure
+run_task "6. Testar Python e monitoring" bash -c '
     PYTHONPATH=src .venv/bin/python -B -m unittest discover -s tests -v
     PYTHONPATH=src .venv/bin/python -B -m unittest monitoring.test_monitoring monitoring.test_operations -v
     .venv/bin/python -B -m unittest translations.test_worker -v
 '
-run_task 65 "7. Testar e construir portal" npm --prefix dmc-workspace run check
-run_task 73 "8. Construir entrega" npm --prefix dmc-workspace run build
+run_task "7. Testar e construir portal" npm --prefix dmc-workspace run check
+run_task "8. Construir entrega" npm --prefix dmc-workspace run build
 
-CURRENT_TASK="9. Iniciar serviços"
-bar 82 "$CURRENT_TASK"
-# Evitar duas instâncias a escrever no mesmo catálogo ou a disputar a mesma porta.
-stop_known_services
-for port in 3001 3003 3004 8000 8501; do stop_port "$port"; done
-sleep 2
-start_service agent bash scripts/start_ai_agent.sh
-start_service observatory bash scripts/start_dashboard.sh
-start_service presentation .venv/bin/python -B presentation/serve.py --port 3003
-start_service monitoring env PYTHONPATH=src BLU_MONITOR_AGENT_ENABLED=1 .venv/bin/python -B -m monitoring.server
 PORTAL_PUBLIC_ORIGIN="$(python3 -B scripts/studio_urls.py --origin)"
 export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="/codeeditor/default/ports/3001"
-start_service portal bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
-printf '  ✓ processos iniciados\n'
+run_task "9. Iniciar serviços" start_all_services
+run_task "10. Confirmar serviços e portas" confirm_services
 
-CURRENT_TASK="10. Confirmar serviços e portas"
-bar 92 "$CURRENT_TASK"
-wait_http "Portal" "http://127.0.0.1:3001/catalog"
-wait_http "Apresentação" "http://127.0.0.1:3003/"
-wait_http "Monitoring" "http://127.0.0.1:3004/health"
-wait_http "Agente IA" "http://127.0.0.1:8000/api/health"
-wait_http "Observatório" "http://127.0.0.1:8501/_stcore/health"
-# Uma resposta HTTP pode vir de um processo antigo; confirmar também os novos PID.
-for pid_file in "$SERVICES"/*.pid; do
-    kill -0 "$(cat "$pid_file")" 2>/dev/null || {
-        printf 'Processo terminou: %s\n' "$pid_file" >> "$LOG"
-        exit 1
-    }
-done
-
-run_task 97 "11. Testes finais dos dashboards" bash -c '
+run_task "11. Testes finais dos dashboards" bash -c '
     export LD_LIBRARY_PATH=/tmp/blu-browser-libs/root/usr/lib/x86_64-linux-gnu:/opt/conda/lib
     export FONTCONFIG_FILE=/tmp/blu-browser-libs/fonts.conf
     node monitoring/test-browser.mjs
     node presentation/test-browser.mjs
 '
 
-bar 100 "12. Sistema BLU recuperado"
-python3 -B scripts/studio_urls.py
-printf 'Agente IA: http://127.0.0.1:8000/api/health\n'
-printf '\njust blu it ✓\nTodo o sistema está disponível. Log: %s\n' "$LOG"
+python3 -B scripts/studio_urls.py >> "$LOG"
+run_task "12. Sistema BLU recuperado" true

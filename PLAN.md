@@ -865,7 +865,8 @@ cenários de navegador do monitoring e apresentação em 320–2560 px aprovados
 ## Recuperação única `just blu it` — 2026-10-19
 
 - [x] Criar launcher local e `Justfile` com o comando literal `just blu it`.
-- [x] Mostrar tarefas, barras de progresso, falha localizada e log técnico privado.
+- [x] Mostrar progresso independente de 0 a 100% por tarefa, falha localizada e
+  log técnico privado; manter detalhes fora do terminal quando não existem erros.
 - [x] Sincronizar dependências Python/Node, executar testes e construir o portal.
 - [x] Preservar dados válidos e restaurar apenas catálogo, warehouse ou itinerários
   ausentes/inválidos a partir do último backup verificado.
