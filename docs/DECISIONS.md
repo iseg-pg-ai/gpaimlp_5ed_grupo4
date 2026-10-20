@@ -3,6 +3,16 @@
 Os registos históricos conservam as datas e a evidência original. O mapa atual
 está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
+## Inicialização segura de um checkout sem estado operacional — 2026-10-20
+
+- Um checkout sem catálogo, itinerários ou backups é tratado como instalação nova.
+- `just blu it` cria atomicamente `data/portal/catalog.sqlite` a partir do warehouse
+  versionado e importa os registos com estado **Em revisão**; cria também
+  `exports/itineraries/` vazio.
+- A presença de estado parcial ou inválido impede o bootstrap e mantém a exigência
+  de um backup verificado, evitando substituir dados operacionais por engano.
+- Evidência: `monitoring/recovery.py` e `monitoring/test_operations.py`.
+
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
 ### Consolidação dos testes

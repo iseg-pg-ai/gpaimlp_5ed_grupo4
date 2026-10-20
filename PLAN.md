@@ -18,6 +18,9 @@ Git e em [docs/DECISIONS.md](docs/DECISIONS.md).
   autenticação própria.
 - `just blu up` arranca o ambiente preparado; `just blu it` executa recuperação
   local autenticada. Nenhum dos comandos equivale a deployment de produção.
+- Num clone sem estado operacional nem backups, `just blu it` inicializa o catálogo
+  a partir do warehouse versionado e cria a estrutura vazia de itinerários. Estado
+  parcial ou inválido continua a exigir recuperação por backup.
 - Segredos, dados de clientes, prompts, respostas, exports e runtimes ficam fora
   do Git e dos logs.
 
