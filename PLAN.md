@@ -1,5 +1,14 @@
 # Plano de evolução do BLU AI System
 
+## Integração de dev — 2026-10-21
+
+- [x] Integrar `origin/dev` preservando o agente, os temas e a navegação.
+- [x] Validar Python/ETL, portal e apresentação sem chamadas externas.
+
+Validação local: 95 testes Python; 120 testes do portal aprovados, um ignorado;
+check, build, catálogo/ETL e navegador (temas, observatório, assistente e
+apresentação) aprovados. Dados temporários e fornecedores simulados.
+
 ## Distinguir adição, substituição e ranking — 2026-10-16
 
 - [x] Reproduzir o pedido de adição e a correção explícita com a grafia reportada.
@@ -335,3 +344,341 @@ As integrações anteriores, os resultados e os limites estão em
 [decisões](docs/DECISIONS.md), [testes](docs/TESTING.md) e
 [segurança das dependências](docs/DEPENDABOT_PYTHON.md). O histórico completo dos
 planos anteriores permanece no Git.
+
+## Observatório de dados BLU — 2026-10-16
+
+- [x] Organizar o dashboard em Panorama, Explorar oferta, Preços, Histórico e Qualidade.
+- [x] Aplicar identidade visual escura, tipografia editorial e gráficos legíveis.
+- [x] Acrescentar pesquisa, filtros, fichas e distribuição geográfica do catálogo.
+- [x] Comparar preços por categoria, unidade e natureza comercial declaradas.
+- [x] Distinguir integridade, preenchimento e confirmação; expor lacunas e revisão.
+- [x] Validar execução das cinco páginas e navegação local no navegador.
+- [x] Harmonizar localizações e unidades através dos contratos do ETL.
+- [x] Definir confirmação comercial e validade temporal por campo na fonte.
+
+Dashboard só de leitura; sem alteração das fontes, catálogo operacional ou warehouse.
+Mapa com contornos locais Natural Earth da Europa e norte de África, sem mosaicos externos; coordenadas válidas em intervalo não certificam a
+localização. Experiências sem coordenadas continuam pesquisáveis na lista.
+
+### Ferramentas de exploração — 2026-10-16
+
+- [x] Ligar seleção de pontos às fichas, preservando identificadores por tipo.
+- [x] Comparar duas a quatro opções com duração, condições, acessibilidade e fonte.
+- [x] Acrescentar painel por destino harmonizado, preservando as localizações originais.
+- [x] Acrescentar camadas, nomes de lugares e agrupamento aproximado com membros.
+- [x] Acrescentar fila de revisão com prioridades explícitas e acesso às fichas.
+- [x] Mostrar presença histórica apenas através da relação explícita de atrações.
+- [x] Acrescentar modo apresentação com navegação e saída acessíveis.
+- [x] Alinhar mapas, tabelas e gráficos adjacentes em 420 px e uniformizar as divisórias da navegação.
+- [x] Acrescentar fotografias quando existirem imagens com autorização e créditos (Lisboa e Porto, CC0).
+
+Validação desta etapa: 51 testes Python aprovados, incluindo sete contratos do
+dashboard. AppTest nas seis áreas, comparação, filtros e camadas vazias; navegador
+local com cliques em pontos/grupos, comparação, destino Lisboa, apresentação e
+vista móvel sem transbordo horizontal. Sem chamadas a IA ou alteração dos dados.
+
+### Conclusão do Observatório — 2026-10-16
+
+Contratos versionados para destinos, âmbito geográfico, unidades e condições;
+valores originais preservados. Modelos ETL com evidência por campo, confirmação
+vinculada ao valor e validade reavaliada à data da consulta. Metadados opcionais
+na fonte definidos no [guia do Observatório](docs/OBSERVATORY.md). Fotografias
+locais CC0 de Lisboa e Porto, com créditos, origem e SHA-256.
+
+Na entrega atual, 251 de 252 localizações têm destino harmonizado; o registo
+«Por confirmar» continua pendente. Unidades sem base de cobrança explícita e
+campos sem evidência comercial continuam desconhecidos; a implementação não
+substitui a confirmação pelos responsáveis das fontes. Compatibilidade com o
+warehouse existente através do mesmo contrato, sem reescrever dados reais.
+
+Validação final: 66 testes Python aprovados, integração catálogo/ETL aprovada
+em armazenamento temporário, seis áreas verificadas em AppTest e navegador
+local com seleção, grupos, comparação, destino Lisboa, fotografia, apresentação
+e vista móvel sem transbordo. Markdown e ligações locais sem erros. Fontes e
+warehouse reais inalterados; sem chamadas pagas ou publicação cloud.
+
+## Preenchimento verificado do warehouse — 2026-10-16
+
+- [x] Inventariar lacunas e procurar valores em fontes oficiais.
+- [x] Distinguir modalidades e tarifas públicas de valores comerciais BLU.
+- [x] Preparar e validar o lote em cópia isolada antes de alterar o catálogo.
+- [x] Preencher 45 valores em 13 registos e três preços numéricos por referência exata.
+- [x] Criar novas revisões com evidência e preservar todas as revisões anteriores.
+- [x] Publicar pelo ETL, sem alterar os Excel/PDF originais.
+- [x] Registar fontes, dados não inferidos e limitações no relatório de enriquecimento.
+
+Ver [dados acrescentados e fontes oficiais](docs/DATA_ENRICHMENT.md). A confirmação
+de valores públicos não implica reserva, disponibilidade ou tarifa negociada.
+Identificações ambíguas, descontos e preços sem fonte continuam pendentes.
+
+Validação: bateria Python com 76 testes aprovados; 34 contratos revalidados
+após os reforços de preservação de zeros e preços divergentes. Integração
+catálogo/ETL e seis áreas em AppTest aprovadas. Navegador real confirmou
+morada, tarifa, evidência e apresentação móvel. ETL publicado com zero erros;
+13 revisões correntes correspondem à entrega e os snapshots anteriores foram
+comparados sem alterações. Os Excel/PDF e as propostas históricas ficaram intactos.
+
+## Refinamento visual do portal — 2026-10-18
+
+- [x] Confirmar `portal-observatorio` e preservar a lógica dos fluxos.
+- [x] Reforçar a identidade, navegação, hierarquia e legibilidade dos formulários.
+- [x] Validar check, build e cenários de navegador em seis idiomas.
+
+Direção editorial clara, com navegação azul profunda e acentos dourados.
+Sem alterações de dados, fornecedores ou publicação.
+
+Validação: check aprovado (95 testes e um ignorado), build de produção aprovado
+e 42 cenários de interface nos seis idiomas aprovados, com tradução e dados de
+itinerário simulados. Inspeção visual em 390/1440 px sem transbordo; cabeçalho,
+campos, etapas e ações revistos. Três traduções portuguesas afinadas após essa
+bateria, com nova compilação e verificação de apresentação. Documentação e
+`git diff --check` aprovados. Portal local na porta 3001, sem publicação.
+
+## Observatório nativo no catálogo — 2026-10-18
+
+- [x] Criar contrato de leitura do warehouse reutilizando as regras ETL.
+- [x] Implementar seis vistas interativas com o estilo claro do portal.
+- [x] Preservar o editor e manter o dashboard original sem alterações.
+- [x] Validar contratos, interface, catálogo/ETL, check e build.
+
+Sem iframe, dependência do Streamlit ou nova persistência.
+
+Validação: check aprovado (97 testes, um ignorado), build aprovado, 83 testes
+Python aprovados e integração catálogo/ETL em armazenamento temporário aprovada.
+Doze cenários do editor nos seis idiomas aprovados com dados e tradução
+simulados. Dashboard nativo verificado com a entrega real em 320/1440 px: seis
+áreas, filtros, atualização sem perder destino, comparação, ficha, seleção
+por teclado, zoom e agrupamento. Falha analítica e recuperação simuladas, com
+formulário preservado sem guardar. Inspeção visual da apresentação final.
+
+`git diff` confirmou ausência de alterações em `dashboard/`, fontes, warehouse,
+arranque Streamlit e configuração do proxy. Leitura real: 252 ofertas, 257
+referências e 2021 campos de evidência. Sem chamadas a IA ou publicação.
+
+## Legibilidade do mapa e alinhamento dos painéis — 2026-10-18
+
+- [x] Dimensionar pontos e áreas de clique em píxeis, independentemente do zoom.
+- [x] Agrupar visualmente pontos próximos e melhorar etiquetas e informação de foco.
+- [x] Uniformizar as alturas dos painéis adjacentes e compactar espaços verticais.
+- [x] Validar interação, dimensões em navegador, check e build.
+
+Validação: check aprovado (97 testes, um ignorado), build aprovado e cenários
+do Observatório em 320/1440 px aprovados. As verificações medem alvos de 44 px
+antes e depois do zoom, ausência de etiquetas sobre os marcadores e diferença
+inferior a 2 px entre painéis adjacentes em ecrã largo. Inspeção visual em
+390/1440 px: painéis de 631 px em desktop, alturas adaptáveis em móvel e
+contagens de grupos com vários destinos sem atribuição ao primeiro destino.
+Tradução e falha de recuperação simuladas; dados analíticos locais só de leitura.
+Dashboard original, dados e configuração de arranque preservados.
+
+## Largura comum das páginas — 2026-10-18
+
+- [x] Centralizar a largura exterior em 1440 px e as margens em 16/32 px.
+- [x] Aplicar o contentor a Catálogo, Histórico, Referências, Lixo e partilhas.
+- [x] Alinhar cabeçalho e workspace; retirar o limite independente do briefing.
+- [x] Validar dimensões em ecrãs móveis, desktop e largos, check e build.
+
+Manter a composição funcional do workspace e a coluna de leitura das partilhas.
+
+Validação: `npm run check` com 97 testes aprovados e um ignorado; build aprovado.
+Navegador: 48 cenários de interface/navegação em seis idiomas, com comparação
+das páginas em 320/1440/1920 px e sem transbordo horizontal. Em 1920 px,
+os cinco contentores medidos têm 1440 px e começam em x=240. Tradução e
+geração de itinerários simuladas nos cenários aplicáveis. Inspeção visual do
+catálogo e briefing em ecrã largo aprovada.
+
+## Contentores responsivos — 2026-10-18
+
+- [x] Substituir o teto de 1440 px por largura fluida comum a todas as páginas.
+- [x] Tornar as margens proporcionais ao ecrã, entre 16 e 64 px.
+- [x] Verificar navegação entre 320 e 2560 px, check e build.
+
+Validação: check aprovado (97 testes e um ignorado), build aprovado e 66
+cenários de interface/navegação em seis idiomas. Largura fluida e alinhamento
+verificados em 320/768/1024/1440/1920/2560 px, sem transbordo horizontal.
+Observatório aprovado em 320/1440 px; tradução e geração simuladas nos
+cenários aplicáveis. Dashboard original e dados preservados.
+
+## Limpeza local de artefactos — 2026-10-18
+
+- [x] Inventariar os ficheiros ignorados e confirmar os serviços ativos.
+- [x] Remover caches Next.js de desenvolvimento/compilação, cache TypeScript
+  e bytecode Python do projeto; preservar build de produção e dependências.
+- [x] Confirmar o portal e a integridade dos ficheiros versionados.
+
+Removidos 426 MiB de artefactos regeneráveis. Portal e dashboard original
+respondem HTTP 200 após a limpeza. Verificação da estrutura (340 ficheiros)
+e `git diff --check` aprovados. Código, dados, exports e ambientes preservados.
+
+## Tema claro e escuro — 2026-10-18
+
+- [x] Manter o tema claro original como padrão e centralizar a paleta do portal.
+- [x] Adicionar seletor acessível no cabeçalho, com preferência no navegador.
+- [x] Aplicar a preferência antes da primeira pintura e sincronizar separadores.
+- [x] Validar contraste, persistência, navegação responsiva, check e build.
+
+Validação: check aprovado (97 testes e um ignorado), build aprovado, lint e
+formatação finais aprovados. Navegador: 66 cenários responsivos/navegação em
+seis idiomas; tema em 320/768/1440/2560 px com persistência, sincronização,
+teclado, impressão clara e armazenamento da preferência bloqueado. Contraste
+de texto principal, formulário e seletor medido em pelo menos 4,5:1 no modo
+escuro após as transições. Observatório aprovado em 320/1440 px. Inspeção
+visual do briefing e catálogo em tema escuro aprovada. Tradução e geração
+simuladas nos cenários aplicáveis; dashboard, dados e templates PDF intactos.
+
+## Revisão de testes e artefactos — 2026-10-18
+
+- [x] Rever testes unitários, de integração e navegador face ao código atual.
+- [x] Retirar 12 combinações visuais redundantes e asserções imediatas que
+  repetiam a espera de elementos ocultos. Preservar os fluxos funcionais.
+- [x] Validar a matriz reduzida, check e traduções com modelos instalados.
+- [x] Limpar caches regeneráveis e capturas de testes antigas.
+
+Removidos 529,9 MiB: downloads Argos já instalados, cache de compilação
+Next.js e capturas Canva regeneráveis. Os seis pares de modelos instalados
+foram confirmados pelos metadados. Corrigida também uma expressão sem efeito
+no teste de tema que era assinalada pelo lint.
+
+Validação: check aprovado (97 testes e um ignorado), 54 combinações de
+interface/navegação aprovadas, temas em quatro larguras aprovados e cinco
+testes do worker de tradução aprovados com modelos simulados. Estrutura de
+344 ficheiros, Markdown e `git diff --check` aprovados. Portal e dashboard
+respondem HTTP 200. Código funcional, dados, exports e modelos preservados.
+
+## Guião de apresentação interativa — 2026-10-18
+
+- [x] Rever arquitetura, portal, dados e implementação do assistente.
+- [x] Criar `docs/APRESENTACAO.md` com narrativa de 12 minutos, caso fictício,
+  proposta navegável e esquemas Mermaid dos fluxos.
+- [x] Distinguir capacidades implementadas, dependências e evolução proposta.
+- [x] Verificar ligações, Markdown e integridade da documentação.
+
+Validação: ligações locais do novo guião, Markdown, verificação da estrutura
+e `git diff --check` aprovados. Alteração apenas documental; sem execução de
+serviços externos, alteração de dados ou implementação da apresentação.
+
+## Dashboard de apresentação independente — 2026-10-18
+
+- [x] Criar uma aplicação estática em `presentation/dist`, com três cenas
+  fictícias, mapa esquemático e adaptação do roteiro em memória.
+- [x] Servir na porta 3003 com Python padrão, sem dependências do portal.
+- [x] Retirar os ficheiros parciais do protótipo Next.js antes de os integrar.
+- [x] Validar interação, teclado, responsividade e isolamento dos serviços.
+
+Validação: percurso completo em 320/768/1440/2560 px aprovado, incluindo
+escolha refletida no roteiro, pontos do mapa com alvos de 48 px, alteração
+reversível, navegação por teclado e fallback de ecrã inteiro. Sem chamadas
+externas/API, sem escrita no localStorage e sem erros JavaScript. Caminhos
+diretos e com prefixo Studio, com/sem barra final, aprovados localmente.
+Inspeção visual das três cenas e do mapa móvel concluída. JS/Python, Markdown,
+estrutura e `git diff --check` aprovados. Portal e Streamlit mantêm os mesmos
+processos e HTTP 200; não houve build, restart ou alterações aos seus ficheiros.
+O acesso autenticado pelo proxy AWS real não foi validado pelo navegador local.
+
+## Continuação da apresentação — 2026-10-18
+
+- [x] Alargar o percurso de três para oito capítulos com dados, colaboração,
+  entrega, arquitetura e encerramento.
+- [x] Ligar as escolhas ao roteiro, à pré-visualização e ao resumo final.
+- [x] Configurar o CTA final com o domínio do Observatório enviado pelo utilizador.
+- [x] Validar o percurso completo, responsividade e isolamento do portal AWS.
+
+Validação: oito capítulos aprovados em 320/768/1440/2560 px, incluindo
+fluxo de dados, pedido bloqueado sem alteração, ajuste permitido, comparação
+de exemplos de versões, arquitetura e resumo final. O CTA final corresponde
+exatamente ao URL indicado e abre um novo separador com `noopener`. Sem
+visitar o destino real, chamadas a APIs, escrita no navegador ou erros JS.
+Inspeção visual das novas cenas concluída. Sintaxe JS, documentação, Markdown
+e `git diff --check` aprovados; serviços e ficheiros do portal intactos.
+
+## Guião técnico em três partes — 2026-10-18
+
+- [x] Reorganizar `docs/APRESENTACAO.md` em fundamentos técnicos, experiência
+  interativa e demonstração do portal real.
+- [x] Detalhar requisitos, arquitetura, tecnologias, dados/processos, IA e
+  validação, com referências de código e cinco cenas técnicas propostas.
+- [x] Distinguir o guião proposto da interface já implementada e evitar
+  repetição dos capítulos técnicos na transição.
+- [x] Validar Markdown, ligações e integridade documental.
+
+Na revisão documental inicial, a implementação visual ficou pendente;
+ver a conclusão do ato técnico abaixo.
+
+Revisão concluída em 2026-10-19: ligações locais, Markdown, estrutura do
+projeto e `git diff --check` aprovados. Quatro esquemas Mermaid incluídos.
+Alteração apenas documental; a abertura técnica ainda está proposta no guião.
+
+## Ato técnico com animações explicativas — 2026-10-19
+
+- [x] Preparar cinco cenas técnicas com requisitos, arquitetura/tecnologias,
+  percurso dos dados, mecanismos de IA e contratos de validação.
+- [x] Integrar a navegação em três partes e animações controláveis.
+- [x] Validar interações, movimento reduzido, responsividade e isolamento.
+
+Validação em 2026-10-19: cinco cenas técnicas e oito narrativas aprovadas em
+320/768/1440/2560 px, com teclado, navegação entre partes, falha ilustrativa
+de publicação e preservação das escolhas. Ligações animadas, pausa manual e
+movimento reduzido verificados; movimento efetivo do registo entre etapas
+confirmado no navegador. Sem chamadas a APIs/fornecedores, escrita em
+localStorage ou erros JS. Inspeção visual da abertura técnica concluída.
+JS, Markdown, estrutura e `git diff --check` aprovados. Apenas a apresentação
+independente foi iniciada; código e dados do portal/Streamlit intactos.
+
+## Base pública dos dashboards — 2026-10-19
+
+- [x] Guardar o endereço Studio fornecido em `config/studio.json`.
+- [x] Gerar os três URLs com `scripts/studio_urls.py`; usar a origem no
+  arranque AWS por defeito, preservando override explícito.
+- [x] Anunciar o endereço público correto no servidor da apresentação.
+- [x] Verificar ligações, comandos e serviços após aplicar a configuração.
+
+Validação: seis testes de infraestrutura/origens aprovados, sintaxe dos dois
+arranques shell aprovada e URLs gerados iguais à base indicada. Os três
+serviços foram reiniciados com a configuração correta e respondem HTTP 200
+localmente. Markdown, estrutura e `git diff --check` aprovados. Sem build,
+alteração de dados ou renovação automática da sessão AWS.
+
+## Auditoria editorial e detalhe técnico — 2026-10-19
+
+- [x] Identificar repetição de dados, arquitetura, limites e mensagens de revisão.
+- [x] Remover cenas e explicações duplicadas da parte narrativa.
+- [x] Acrescentar detalhe de implementação, dependências, integrações e automação.
+- [x] Registar lacunas que exigem informação futura da equipa, sem as inventar.
+- [x] Validar o percurso revisto, acessibilidade, animações e documentação.
+
+Validação: seis cenas técnicas e seis narrativas aprovadas em
+320/768/1440/2560 px, incluindo as sete áreas de tecnologias e os seus
+aprofundamentos. Navegação, teclado, escolhas, movimento reduzido, pausa e
+movimento efetivo do registo verificados no navegador. Sem chamadas externas,
+escrita em localStorage ou erros JS. Inspeção visual das tecnologias, entrega
+e fecho concluída. Sintaxe JS, Markdown, estrutura e `git diff --check`
+aprovados. Portal, dashboard original e dados sem alterações. Valores dos
+manifests e predefinições de código não são apresentados como medições ou
+configuração efetiva dos serviços.
+
+## Grelha dos seis capítulos — 2026-10-19
+
+- [x] Corrigir a grelha narrativa que ainda reservava oito colunas.
+- [x] Distribuir seis capítulos por seis, três ou duas colunas conforme o ecrã.
+- [x] Validar no navegador a grelha, contagem e percurso nas quatro larguras.
+
+Grelha, seis botões e contador `/ 06` verificados em 320/768/1440/2560 px,
+na técnica e na curadoria. Estrutura e `git diff --check` aprovados.
+
+## Limpeza local do diretório — 2026-10-19
+
+- [x] Inspecionar ficheiros, referências e serviços em execução.
+- [x] Limpar caches de instalação dispensáveis e bytecode local.
+- [x] Confirmar serviços, estrutura e preservação dos ficheiros do projeto.
+
+Âmbito: caches npm/pip, entradas uv sem referência e `__pycache__` do
+projeto. Preservar ambientes, dependências instaladas, builds em utilização,
+navegadores de teste, configurações SageMaker, dados e histórico Git.
+O relatório de dados e `presentation/dist` têm referências e uso confirmado.
+
+Resultado: removidos cerca de 1,1 GB de caches npm/pip e entradas uv sem
+referência (128,1 MiB no uv), além de dois diretórios de bytecode. Mantidas
+as restantes entradas uv para reinstalação e funcionamento sem rede.
+Portal `/catalog`, apresentação e saúde Streamlit respondem HTTP 200.
+Estrutura (356 ficheiros) e `git diff --check` aprovados; só este plano
+foi alterado entre os ficheiros versionados. Nenhum teste foi removido.

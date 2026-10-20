@@ -102,8 +102,13 @@ def integrate_portal(data_dir: Path, tables: dict):
             else:
                 row.update(nome_da_experiencia=f['name'], localizacao=f['location'], descricao=f['description'],
                            duracao=f['duration'], preco=f['price'], fornecedor=f['provider'], modalidade=f['modality'], categoria=f['kind'])
+            if record.get('sourceData'):
+                from etl.enrichment import flatten_evidence
+                flatten_evidence(row, record['sourceData'])
             base[record['id']] = row
         tables[category] = list(base.values())
+    from etl.enrichment import integrate_price_references
+    integrate_price_references(tables, managed)
     # Record the exact revisions consumed rather than hashing a changing live SQLite file.
     return {'key': 'portal/catalog.sqlite', 'role': 'portal_catalog', 'records': len(managed),
             'snapshot_sha256': hashlib.sha256(json.dumps(managed, sort_keys=True, ensure_ascii=False).encode()).hexdigest()}
@@ -193,7 +198,7 @@ class CatalogStore:
             record = {'id': previous['id'] if previous else f'cat-{uuid4()}',
                       'category': value['category'], 'status': value['status'],
                       'revision': previous['revision'] + 1 if previous else 1, 'fields': value['fields']}
-            for key in ('operational', 'subcategory', 'pricing', 'matching'):
+            for key in ('operational', 'subcategory', 'pricing', 'matching', 'sourceData'):
                 source = value if value.get(key) is not None else previous or {}
                 if key in source:
                     record[key] = source[key]

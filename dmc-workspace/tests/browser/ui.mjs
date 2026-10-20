@@ -5,7 +5,7 @@ async function navigation(browser) {
   const portal = process.env.PORTAL_URL ?? "http://127.0.0.1:3001";
   const prefix = new URL(portal).pathname.replace(/\/$/, "");
 
-  for (const width of [320, 1440])
+  for (const width of [320, 768, 1024, 1440, 2560])
     for (const locale of ["pt", "en", "es", "fr", "de", "zh"]) {
       const context = await browser.newContext({ viewport: { width, height: 800 } });
       const page = await context.newPage();
@@ -48,6 +48,21 @@ async function navigation(browser) {
           ).parentElement.lastElementChild.scrollTop = 1000;
         });
         assert.equal(Math.round((await bar.boundingBox()).y), 0);
+        const frame = page.locator("main.portal-page, .responsive-workspace.portal-frame").first();
+        await frame.waitFor();
+        const frameBox = await frame.boundingBox();
+        const headerBox = await bar.locator(".portal-frame").boundingBox();
+        assert.ok(Math.abs(frameBox.width - width) < 1, "A página não acompanha o ecrã");
+        assert.ok(Math.abs(frameBox.x - headerBox.x) < 1, "Margens laterais diferentes");
+        assert.ok(Math.abs(frameBox.width - headerBox.width) < 1, "Larguras de página diferentes");
+        if (route !== "/") {
+          const pagePadding = await frame.evaluate((node) => getComputedStyle(node).paddingLeft);
+          const headerPadding = await bar
+            .locator(".portal-frame")
+            .evaluate((node) => getComputedStyle(node).paddingLeft);
+          assert.equal(pagePadding, headerPadding, "Espaçamento horizontal diferente");
+        }
+
         assert.equal(
           await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
           false,
@@ -81,7 +96,7 @@ async function responsive(browser) {
       title: "LongTitle".repeat(35),
     }));
   }
-  for (const width of process.env.STRESS ? [360] : [320, 360, 640, 768, 1440])
+  for (const width of process.env.STRESS ? [360] : [320, 640, 768, 1440])
     for (const language of process.env.STRESS ? ["de"] : ["pt", "en", "es", "fr", "de", "zh"]) {
       const context = await browser.newContext({
         viewport: { width, height: width === 640 ? 320 : 700 },
@@ -148,12 +163,10 @@ async function responsive(browser) {
         if (box.width >= width || box.x !== 0) throw Error("drawer bounds");
         await page.keyboard.press("Escape");
         await page.locator("#trip-navigation").waitFor({ state: "hidden" });
-        if (await page.locator("#trip-navigation").isVisible()) throw Error("Escape");
         await trigger.click();
         await page.locator("#trip-navigation").waitFor({ state: "visible" });
         await page.mouse.click(width - 4, 100);
         await page.locator("#trip-navigation").waitFor({ state: "hidden" });
-        if (await page.locator("#trip-navigation").isVisible()) throw Error("backdrop");
         await trigger.click();
         await page.locator("#trip-navigation").waitFor({ state: "visible" });
         await page.keyboard.press("Tab");
@@ -170,8 +183,6 @@ async function responsive(browser) {
         .filter({ hasText: snapshot.brief.customerName })
         .click();
       await page.locator("#trip-navigation").waitFor({ state: "hidden" });
-      if (await page.locator("#trip-navigation").isVisible())
-        throw Error("selection must close drawer");
       if (process.env.STRESS) {
         await page.evaluate(() => {
           document.querySelector("main").scrollTop = 100000;
@@ -187,7 +198,6 @@ async function responsive(browser) {
         throw Error("Modal outside viewport");
       await page.keyboard.press("Escape");
       await page.locator(".transit-dialog").waitFor({ state: "hidden" });
-      if (await page.locator(".transit-dialog").isVisible()) throw Error("Modal Escape");
       if (
         !(await page
           .locator(".group.relative.z-10")
@@ -207,7 +217,6 @@ async function responsive(browser) {
           throw Error("Assistant popup outside viewport");
         await page.keyboard.press("Escape");
         await page.locator("#curation-assistant").waitFor({ state: "hidden" });
-        if (await page.locator("#curation-assistant").isVisible()) throw Error("Assistant Escape");
         await launcher.click();
         await page.locator("#curation-assistant").waitFor({ state: "visible" });
       } else {

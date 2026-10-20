@@ -606,3 +606,237 @@ execução direta incluir todas as classes do catálogo.
 Evidência: `npm run check` com 95 testes aprovados e um ignorado; 44 testes
 Python aprovados; build e integração catálogo/ETL aprovados em dados temporários.
 Não foram repetidos os cenários de navegador nesta limpeza.
+
+## Observatório de dados — 2026-10-16
+
+O dashboard Streamlit passa a organizar a consulta em cinco áreas de decisão:
+panorama, exploração da oferta, preços, histórico e qualidade. Mantém leitura
+SQLite em modo `ro` e não introduz persistência ou dependências adicionais.
+A consulta volta a ler a entrega em cada execução, evitando caches desatualizadas.
+
+Preços são filtrados por categoria, unidade e natureza comercial antes de calcular
+a mediana; continuam referências, sem inferir margens ou cotações. A presença de
+atividades em roteiros mede menções em roteiros distintos, não vendas ou procura.
+O anterior score de campos não nulos deixa de ser apresentado como prontidão.
+
+A vista geográfica usa coordenadas dentro dos intervalos válidos e contornos
+locais Natural Earth da Europa e norte de África, sem fornecedor de mosaicos ou
+geocodificação externa; a validade geográfica exige revisão.
+Localizações das experiências preservam o texto da fonte e não são fundidas com
+cidades por aproximação. O dashboard não apresenta contactos ou textos integrais
+de propostas históricas. Acesso local mantém o binding localhost autorizado.
+
+### Exploração do observatório — 2026-10-16
+
+Os eventos do mapa transportam chaves de entidade, não índices de pontos ou de
+linhas, para abrir a ficha correta após filtros ou agrupamento. O agrupamento é
+manual, por tipo e grelha de 0,1 graus, com todos os membros disponíveis na ficha.
+Os filtros de camadas afetam apenas a vista geográfica. Comparações preservam
+preços e durações como texto contextual da fonte, sem pontuação de preferência.
+
+A presença histórica usa a relação explícita `id_atracao_base` e conta roteiros
+distintos; restaurantes e experiências sem esse contrato não são associados por
+nomes semelhantes. Destinos mantêm correspondência literal das localizações.
+A fila de revisão sinaliza desconhecidos e expressões de confirmação; prioridade
+comercial para preço/condições e operacional para os restantes campos analisados.
+O modo apresentação é apenas uma disposição local, com navegação e saída visíveis.
+
+## Contratos finais do Observatório — 2026-10-16
+
+Normalização conservadora em `etl/observatory.py`, com vocabulário e aliases
+versionados em `config/observatory.json`. O ETL publica três modelos analíticos;
+a definição inclui a versão e o hash das regras. O dashboard reutiliza o mesmo
+módulo em memória para entregas antigas, sem escrever no warehouse ou consultar
+rascunhos do catálogo. Descrições originais e condições das unidades são mantidas.
+
+Confirmação por campo exige estado explícito, fonte, data e valor correspondente.
+Datas gerais de pesquisa e aprovação do catálogo não confirmam preços. Janela
+completa e data atual são necessárias para evidência vigente; o dashboard reavalia
+expiração sem prolongar prazos. Metadados inválidos impedem a publicação do ETL.
+Os dados reais sem evidência permanecem pendentes; nenhum valor foi confirmado
+por inferência. Contrato de origem e limites no [guia do Observatório](OBSERVATORY.md).
+
+Fotografias CC0 de Lisboa e Porto guardadas localmente com atribuição, origem e
+hashes em `dashboard/assets/photos.json`. São enquadramento de destinos, sem
+associação inferida a atividades. Não há downloads automáticos no dashboard.
+
+Evidência: 66 testes Python aprovados, incluindo entrega ETL temporária,
+normalização, evidências inválidas, expiração e fotografias; integração catálogo/ETL
+aprovada. Navegador local e AppTest nas seis áreas aprovados. `git diff` confirma
+que fontes e warehouse reais não foram alterados.
+
+## Enriquecimento de dados reais — 2026-10-16
+
+O preenchimento usa exclusivamente novas revisões no catálogo operacional e
+publicação pelo ETL. Os Excel/PDF foram preservados. O contrato `sourceData`,
+já existente, passa a persistir evidência por campo e referências públicas
+exatas a lacunas da tabela de preços. O ETL mantém valores conhecidos e regista
+preenchimentos em `verified_enrichment_changes`.
+
+O lote adiciona 45 valores em 13 registos e três valores numéricos na referência
+do Jardim Botânico de Lisboa. A validação ocorreu primeiro numa cópia. Históricos
+aprovados preservados; só a revisão corrente é incrementada. Prazos explícitos
+aplicados exclusivamente aos preços abrangidos pela fonte. Não se atribuíram
+datas a propostas históricas, tarifas de aquisição ou compatibilidades inferidas.
+Fontes e limites no [relatório de enriquecimento](DATA_ENRICHMENT.md).
+
+## Refinamento visual editorial do portal — 2026-10-18
+
+- No branch `portal-observatorio`, manter superfícies claras e reforçar a
+  identidade BLU com navegação azul profunda, acentos dourados e tipografia
+  editorial.
+- Melhorar a hierarquia do briefing, numerar etapas e aumentar a legibilidade
+  dos campos partilhados; preservar os fluxos e a navegação móvel existentes.
+- Afinar três traduções portuguesas do cabeçalho, mantendo as chaves existentes.
+- Animação de entrada respeita movimento reduzido; foco visível nos controlos.
+
+Check aprovado (95 testes e um ignorado), build de produção aprovado e 42
+cenários de interface em seis idiomas aprovados com dados e tradução simulados.
+Inspeção visual em 390/1440 px. Resultados detalhados no `PLAN.md`.
+
+## Observatório nativo independente — 2026-10-18
+
+- Criar a versão do portal em componentes React/HTML/SVG, sem iframe ou alterações
+  à aplicação Streamlit, aos seus estilos, recursos e comandos de arranque.
+- Reutilizar a ponte `portal.data`, os contratos de `etl.observatory` e os modelos
+  publicados para destinos e unidades. A evidência é reavaliada à data da consulta.
+- Ler as tabelas numa transação SQLite em `mode=ro`, com uma lista fixa de tabelas,
+  e devolver apenas os campos necessários à análise. Sem persistência adicional.
+- Reutilizar os contornos Natural Earth locais, com créditos, sem mosaicos externos.
+- Preservar zeros, ausências, condições originais e relações explícitas do histórico.
+  Não agregar referências de categorias, unidades, condições, naturezas ou moedas
+  diferentes. Não inferir disponibilidade ou cotação a partir da análise.
+- Manter o editor operacional montado após a primeira abertura para não perder
+  o formulário ao alternar entre análise e gestão.
+
+Validação: check (97 testes, um ignorado), build, 83 testes Python e integração
+catálogo/ETL aprovados. Seis áreas e interações reais em 320/1440 px; doze
+cenários do editor com dados e tradução simulados. Recuperação de falha e
+preservação de formulário verificadas sem guardar. `git diff` confirmou o
+dashboard original e os dados reais intactos. Sem publicação ou chamadas a IA.
+
+## Legibilidade do mapa e grelha de painéis — 2026-10-18
+
+- Dimensionar marcadores, etiquetas e contornos em píxeis de ecrã através da
+  escala efetiva do SVG, mantendo áreas de clique de 44 px durante o zoom.
+- Agrupar pontos visualmente próximos por predefinição; o zoom separa ofertas.
+  As etiquetas evitam sobreposição e o foco mostra o nome completo.
+- Usar uma altura de conteúdo comum nos painéis adjacentes em ecrãs largos,
+  com lista rolável e barras distribuídas; em móvel as alturas adaptam-se ao conteúdo.
+- Alterar apenas a versão nativa no portal; dashboard original e dados preservados.
+
+Validação: check (97 testes, um ignorado) e build aprovados. Navegador em
+320/1440 px confirmou alvos de 44 px com zoom, etiquetas sem sobreposição e
+painéis adjacentes com diferença inferior a 2 px em desktop. Inspeção visual
+em 390/1440 px; alturas móveis adaptáveis. Grupos com destinos diferentes
+apresentam a contagem de destinos, sem adotar o nome do primeiro membro.
+
+## Largura comum do portal — 2026-10-18
+
+- Centralizar a largura exterior máxima em `--portal-page-width: 1440px` e as
+  margens em `--portal-page-gutter`, com 16 px em móvel e 32 px a partir de 640 px.
+- Aplicar o mesmo contentor ao cabeçalho, workspace e páginas de catálogo,
+  histórico, referências, lixo e partilhas, incluindo o erro das referências.
+- Retirar o limite independente de 900 px do briefing, que ocupa agora a área
+  disponível dentro do workspace. Preservar a composição de navegação/assistente
+  e a coluna de leitura do documento partilhado.
+- Comparar larguras, posições e espaçamento no navegador em 320/1440/1920 px.
+
+Resultados de validação registados no `PLAN.md`.
+
+## Largura fluida do portal — 2026-10-18
+
+A pedido do utilizador, substituir o limite de 1440 px por contentores a 100%
+do espaço disponível. As margens comuns usam `clamp(1rem, 2.25vw, 4rem)`;
+a composição interna mantém as grelhas responsivas e a coluna de leitura
+das partilhas. Esta decisão substitui o teto da entrada anterior.
+
+## Temas do portal — 2026-10-18
+
+O tema claro continua a ser o padrão, independentemente do tema do sistema.
+A opção escura usa uma paleta partilhada de superfícies, texto e bordas com
+`light-dark()`, mantendo as cores originais no modo claro. A preferência fica
+em `blu-portal-theme` no navegador e é aplicada antes da hidratação, com
+sincronização entre separadores. Armazenamento bloqueado não impede a troca
+na sessão. A impressão mantém a paleta clara; os templates PDF e o dashboard
+analítico original não dependem desta preferência.
+
+## Limpeza de cobertura repetida — 2026-10-18
+
+A revisão não identificou baterias inteiras de funcionalidades removidas.
+Manter os testes do dashboard original, adaptadores, modelos opcionais e
+contratos de dados: verificam fronteiras distintas das do portal.
+Retirar os seis casos responsivos de 360 px, já cobertos pelos 320 px mais
+restritivos no mesmo formato, e os seis de navegação a 1920 px, cobertos por
+1440 e 2560 px no mesmo formato desktop. Manter os seis idiomas, a mudança
+de navegação aos 1024 px, tablet, texto ampliado, teclado, mapas e temas.
+Eliminar asserções de invisibilidade imediatamente após esperas pelo mesmo
+estado. A bateria `test:ui` passa de 66 para 54 combinações.
+
+## Apresentação isolada do portal AWS — 2026-10-18
+
+Por pedido do utilizador, o protótipo de apresentação é uma aplicação estática
+independente em `presentation/dist/`, servida por Python padrão na porta 3003.
+Não integra rotas Next.js, APIs, dados operacionais nem o armazenamento do
+portal. As três cenas usam exemplos fictícios e um mapa esquemático. O estado
+é apenas em memória. Os serviços existentes nas portas 3001 e 8501 não são
+reiniciados nem recompilados para executar esta apresentação.
+
+## Oito capítulos e destino explícito do Observatório — 2026-10-18
+
+A apresentação independente passa a oito capítulos e mantém os exemplos
+preparados separados de dados operacionais. As escolhas em memória acompanham
+o roteiro, a pré-visualização ilustrativa e o resumo final. O CTA do último
+capítulo usa o endereço exato fornecido pelo utilizador, centralizado em
+`observatoryUrl`, sem inferir o domínio da apresentação. Abre um separador
+separado; os testes verificam o destino sem contactar o portal real.
+
+## Ato técnico e animações controláveis — 2026-10-19
+
+Adicionar cinco cenas técnicas como módulo estático da apresentação da porta
+3003, antes das oito cenas narrativas. A navegação distingue fundamentos,
+experiência e portal real; a terceira parte abre o endereço fornecido pelo
+utilizador num novo separador. As animações explicam ligações, passagem entre
+etapas e realce de contratos, sem executar serviços ou operações reais.
+Movimento reduzido e o controlo manual desativam efeitos, preservando texto,
+estado e navegação. O portal e os dados operacionais permanecem separados.
+
+## Endereço público Studio indicado pelo utilizador — 2026-10-19
+
+A base pública fica em `config/studio.json`, em vez de ser inferida do ID
+interno do domínio da instância. `scripts/studio_urls.py` gera as ligações
+para as portas; o arranque AWS usa a origem configurada quando não existe
+`PORTAL_PUBLIC_ORIGIN` explícito. A apresentação e o arranque Streamlit
+anunciam a base indicada, mantendo os endereços locais para execução.
+A configuração não cria domínios nem renova a autenticação do SageMaker.
+
+## Separação editorial e aprofundamento técnico — 2026-10-19
+
+Retirar as cenas de dados e arquitetura da parte narrativa, porque já pertencem
+aos fundamentos. A apresentação fica com seis cenas técnicas e seis narrativas.
+Separar arquitetura de tecnologias e conservar detalhes de implementação num
+inventário editorial próprio. Versões declaradas e defaults do código não
+representam configuração efetiva ou métricas medidas. Registar no guião as
+lacunas a preencher com a equipa e manter a distinção entre simulação e sistema.
+
+
+## 2026-10-21 — Integrar dev no branch do assistente
+
+Integração de `origin/dev` (`aa385fd`) em `pc/assistant-agent-for-blu-curator`,
+preservando o histórico dos dois branches. Os conflitos no painel do assistente
+e na barra superior combinam os controlos de propostas e a rota de operações
+com os temas, ícones e apresentação de dev. O plano mantém a evidência do agente
+sem a nota de ausência de código que se aplicava ao branch de modelação.
+
+A identidade local Streamlit foi preservada fora do índice; contas e runtime de
+Monitoring e configuração privada Studio continuam locais. Não se integraram
+outros branches nem se executou publicação ou chamadas reais ao Bedrock.
+
+Validação: 95 testes Python, check do portal (120 aprovados, um ignorado), build,
+catálogo/ETL e navegador para temas (320–2560 px), observatório (320/1440 px) e
+propostas do assistente (390/1600 px), com armazenamento temporário e mocks.
+Os tipos Next.js antigos foram regenerados por referenciarem uma rota de outro
+branch. Estrutura documental e whitespace verificados.
+
+A apresentação passou também os cenários de navegador em 320/768/1440/2560 px,
+animações, navegação e isolamento do servidor estático.

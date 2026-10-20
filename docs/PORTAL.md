@@ -26,6 +26,16 @@ python translations/setup_models.py
 Os modelos são executados localmente. Não é necessário iniciar um serviço Python
 separado nem fornecer credenciais externas.
 
+## Aparência
+
+O botão com lua/sol no cabeçalho alterna entre os temas claro e escuro.
+O tema claro é o padrão; a preferência fica guardada neste navegador e
+sincroniza entre separadores. A impressão e os PDFs mantêm a apresentação
+clara. O tema do portal não altera o dashboard Streamlit original.
+
+Validar a alternância, persistência, contraste e adaptação ao ecrã com
+`npm run test:theme` em `dmc-workspace/`, com o portal em execução.
+
 ## Fluxo funcional
 
 1. Criar uma viagem e completar as etapas Cliente, Viagem, Preferências,
@@ -39,6 +49,39 @@ separado nem fornecer credenciais externas.
    traduzida.
 
 ## Catálogo
+
+O **Observatório interativo** é uma versão nativa da análise, com o estilo do
+portal: Panorama, Explorar oferta, Destinos, Preços, Histórico e Qualidade.
+Usa `/api/observatory` e a ponte Python existente para ler o warehouse numa
+transação SQLite, sem nova persistência e sem depender do serviço Streamlit.
+A aplicação original em `dashboard/` e o seu arranque permanecem inalterados.
+
+O mapa permite deslocação, zoom, camadas, nomes dos lugares e agrupamento visual
+que se adapta ao zoom. Selecionar um ponto abre a ficha; os membros de um grupo
+podem ser escolhidos individualmente. Registos sem coordenadas continuam na
+lista. Os contornos reutilizam o recurso Natural Earth existente, em domínio
+público, sem pedidos a fornecedores cartográficos.
+
+A comparação aceita duas a quatro ofertas, sem calcular um vencedor ou somar
+preços. A mediana de preços exige a mesma categoria, unidade harmonizada,
+condições originais, natureza comercial e moeda. Ausências não são zeros.
+O histórico conta roteiros distintos e liga atrações apenas pelo identificador
+explícito, sem inferir correspondências por nome. Não representa vendas.
+
+A confirmação e a validade dos campos são reavaliadas através dos contratos
+partilhados do ETL à data da consulta. Os indicadores distinguem preenchimento,
+evidência e integridade; nenhum certifica disponibilidade ou compatibilidade.
+As análises representam a entrega publicada e não as edições por publicar.
+**Atualizar análise** relê a entrega após uma publicação, preservando os filtros.
+
+**Gerir catálogo** mantém o editor operacional. Alternar entre as duas vistas
+preserva a sessão de exploração e o formulário em curso enquanto a página
+permanecer aberta. Em caso de indisponibilidade analítica, é possível tentar
+novamente ou continuar no editor.
+
+Validação: `npm run test:observatory`, com o portal iniciado, verifica as seis
+áreas e as interações com o warehouse local. O teste usa tradução simulada e
+simula uma falha do endpoint para verificar a recuperação; não guarda registos.
 
 A página `/catalog` permite pesquisar, filtrar, criar, editar e inativar
 atividades, restaurantes e experiências. Os registos seguem os estados Rascunho,
@@ -250,6 +293,11 @@ npm run build
 ## Execução na AWS
 
 ### SageMaker Studio Code Editor
+
+A base pública local está em `config/studio.json`. Sem override,
+`scripts/start_aws_portal.sh` usa essa origem; `PORTAL_PUBLIC_ORIGIN` explícito
+continua a ter prioridade. Listar as ligações dos dashboards com
+`python -B scripts/studio_urls.py` na raiz.
 
 O proxy do Code Editor acrescenta um prefixo ao endereço. Usar o script
 específico, a partir da raiz, com a origem HTTPS da instância do utilizador:
