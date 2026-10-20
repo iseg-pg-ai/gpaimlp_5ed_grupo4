@@ -74,13 +74,13 @@
     }
   },
   "pricing": {
-    "priced_records": 250,
+    "priced_records": 251,
     "by_category": {
       "Atração": {
-        "count": 129,
+        "count": 130,
         "min_eur": 0.0,
         "median_eur": 2.0,
-        "mean_eur": 6.9,
+        "mean_eur": 6.89,
         "max_eur": 75.0
       },
       "Atração — suplemento": {
@@ -133,12 +133,12 @@
     "issues": 0,
     "table_completeness_pct": {
       "data_request": 95.42,
-      "atracoes": 93.39,
-      "restaurantes": 99.85,
-      "experiencias": 100.0,
+      "atracoes": 83.45,
+      "restaurantes": 99.87,
+      "experiencias": 36.32,
       "curation_principles": 100.0,
       "curation_rules": 100.0,
-      "precos": 88.2,
+      "precos": 52.57,
       "source_workbook_rows": 100.0,
       "structured_guia_dataset": 100.0,
       "structured_roteiros": 84.11,
@@ -158,7 +158,8 @@
       "structured_merge_changes": 100.0,
       "structured_merge_conflicts": 100.0,
       "proposal_documents": 100.0,
-      "proposal_pages": 100.0
+      "proposal_pages": 100.0,
+      "verified_enrichment_changes": 100.0
     }
   }
 }

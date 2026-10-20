@@ -31,6 +31,9 @@ def validate(tables: dict[str, list[dict[str, Any]]]) -> tuple[dict[str, Any], l
 
     for table_name, records in tables.items():
         key = PRIMARY_KEYS.get(table_name)
+        # Experience names are editable; portal identity remains stable across renames.
+        if table_name == "experiencias" and records and all(r.get("_catalog_id") for r in records):
+            key = "_catalog_id"
         key_fields = (key,) if isinstance(key, str) else key
         # Build the full business-field schema so omitted sparse values count as missing.
         business_columns = sorted({column for record in records for column in record if not column.startswith("_")})

@@ -1,0 +1,15 @@
+config:
+  default: true
+  MD013: false
+  MD024:
+    siblings_only: true
+  MD033: false
+  MD041: false
+globs:
+  - "**/*.md"
+ignores:
+  - ".tools/**"
+  - ".venv/**"
+  - "**/node_modules/**"
+  - "dmc-workspace/AGENTS.md"
+  - "dmc-workspace/CLAUDE.md"

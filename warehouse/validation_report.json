@@ -19,10 +19,12 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 93.39,
+      "completeness_pct": 83.45,
       "missing_values_by_column": {
-        "esforco_fisico": 73,
-        "tempo_medio_de_visita": 73
+        "contactos_confirmacao": 137,
+        "contactos_fonte_confirmacao": 137,
+        "contactos_valor_confirmado": 137,
+        "contactos_verificado_em": 137
       }
     },
     "restaurantes": {
@@ -32,7 +34,7 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 99.85,
+      "completeness_pct": 99.87,
       "missing_values_by_column": {
         "latitude": 1,
         "longitude": 1
@@ -41,12 +43,56 @@
     "experiencias": {
       "record_count": 60,
       "primary_key": [
-        "nome_da_experiencia"
+        "_catalog_id"
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 100.0,
-      "missing_values_by_column": {}
+      "completeness_pct": 36.32,
+      "missing_values_by_column": {
+        "acessibilidade_nivel_de_confirmacao_confirmacao": 59,
+        "acessibilidade_nivel_de_confirmacao_fonte_confirmacao": 59,
+        "acessibilidade_nivel_de_confirmacao_valor_confirmado": 59,
+        "acessibilidade_nivel_de_confirmacao_verificado_em": 59,
+        "contactos_confirmacao": 48,
+        "contactos_fonte_confirmacao": 48,
+        "contactos_valor_confirmado": 48,
+        "contactos_verificado_em": 48,
+        "dias_de_encerramento": 53,
+        "duracao_confirmacao": 55,
+        "duracao_fonte_confirmacao": 55,
+        "duracao_valor_confirmado": 55,
+        "duracao_verificado_em": 55,
+        "encerramento_base_reconfirmar": 53,
+        "horario_confirmacao": 54,
+        "horario_fonte_confirmacao": 54,
+        "horario_valor_confirmado": 54,
+        "horario_verificado_em": 54,
+        "latitude": 58,
+        "latitude_confirmacao": 58,
+        "latitude_fonte_confirmacao": 58,
+        "latitude_valor_confirmado": 58,
+        "latitude_verificado_em": 58,
+        "longitude": 58,
+        "longitude_confirmacao": 58,
+        "longitude_fonte_confirmacao": 58,
+        "longitude_valor_confirmado": 58,
+        "longitude_verificado_em": 58,
+        "morada_confirmacao": 54,
+        "morada_fonte_confirmacao": 54,
+        "morada_valor_confirmado": 54,
+        "morada_verificado_em": 54,
+        "necessidade_de_reserva": 53,
+        "necessidade_de_reserva_confirmacao": 54,
+        "necessidade_de_reserva_fonte_confirmacao": 54,
+        "necessidade_de_reserva_valor_confirmado": 54,
+        "necessidade_de_reserva_verificado_em": 54,
+        "preco_confirmacao": 56,
+        "preco_fonte_confirmacao": 56,
+        "preco_valido_ate": 57,
+        "preco_valor_confirmado": 56,
+        "preco_verificado_em": 56,
+        "reservas_condicoes_base": 53
+      }
     },
     "curation_principles": {
       "record_count": 6,
@@ -75,13 +121,26 @@
       ],
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
-      "completeness_pct": 88.2,
+      "completeness_pct": 52.57,
       "missing_values_by_column": {
+        "adulto_eur_confirmacao": 256,
+        "adulto_eur_fonte_confirmacao": 256,
+        "adulto_eur_valor_confirmado": 256,
+        "adulto_eur_verificado_em": 256,
+        "condicoes_verificadas": 256,
         "crianca_eur": 181,
         "notas_de_utilizacao": 92,
-        "senior_eur": 184,
-        "adulto_eur": 112,
-        "preco_referencia_eur": 7
+        "preco_referencia_eur_confirmacao": 256,
+        "preco_referencia_eur_fonte_confirmacao": 256,
+        "preco_referencia_eur_valor_confirmado": 256,
+        "preco_referencia_eur_verificado_em": 256,
+        "senior_eur": 183,
+        "senior_eur_confirmacao": 256,
+        "senior_eur_fonte_confirmacao": 256,
+        "senior_eur_valor_confirmado": 256,
+        "senior_eur_verificado_em": 256,
+        "adulto_eur": 111,
+        "preco_referencia_eur": 6
       }
     },
     "source_workbook_rows": {
@@ -275,6 +334,14 @@
         "document_id",
         "page_number"
       ],
+      "missing_primary_keys": 0,
+      "duplicate_primary_key_values": 0,
+      "completeness_pct": 100.0,
+      "missing_values_by_column": {}
+    },
+    "verified_enrichment_changes": {
+      "record_count": 3,
+      "primary_key": null,
       "missing_primary_keys": 0,
       "duplicate_primary_key_values": 0,
       "completeness_pct": 100.0,

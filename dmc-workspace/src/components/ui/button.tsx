@@ -3,28 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-xs font-medium transition-all focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-[#2D5B67] disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-xs font-medium transition-all focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-[var(--portal-line-2d5b67)] disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none",
   {
     variants: {
       variant: {
         default:
-          "bg-[#2D5B67] text-white shadow-xs hover:bg-[#1E4651]",
-        ink:
-          "bg-[#143F4B] text-white shadow-xs hover:bg-[#0A242B]",
-        gold:
-          "bg-[#D8A65C] text-[#143F4B] font-semibold shadow-xs hover:bg-[#C89547]",
-        destructive:
-          "bg-red-700 text-white shadow-xs hover:bg-red-800",
+          "bg-[var(--portal-bg-2d5b67)] text-white shadow-xs hover:bg-[var(--portal-bg-1e4651)]",
+        ink: "bg-[var(--portal-bg-143f4b)] text-white shadow-xs hover:bg-[var(--portal-bg-0a242b)]",
+        gold: "bg-[#D8A65C] text-[#143F4B] font-semibold shadow-xs hover:bg-[#C89547]",
+        destructive: "bg-red-700 text-white shadow-xs hover:bg-red-800",
         outline:
-          "border border-[#D5D1C7] bg-white text-[#143F4B] hover:bg-[#F4F0E7] hover:border-[#C9C6BD]",
+          "border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-f4f0e7)] hover:border-[var(--portal-line-c9c6bd)]",
         secondary:
-          "bg-[#E7EEF0] text-[#143F4B] hover:bg-[#D8E4E7]",
+          "bg-[var(--portal-bg-e7eef0)] text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-d8e4e7)]",
         ghost:
-          "hover:bg-[#EAE4D7] text-[#4A636B] hover:text-[#143F4B]",
-        link:
-          "text-[#2D5B67] underline-offset-4 hover:underline",
+          "hover:bg-[var(--portal-bg-eae4d7)] text-[var(--portal-text-4a636b)] hover:text-[var(--portal-text-143f4b)]",
+        link: "text-[var(--portal-text-2d5b67)] underline-offset-4 hover:underline",
         primaryDark:
-          "bg-[#143F4B] text-[#F4F0E7] shadow-xs hover:bg-[#0A242B]",
+          "bg-[var(--portal-bg-143f4b)] text-[#F4F0E7] shadow-xs hover:bg-[var(--portal-bg-0a242b)]",
       },
       size: {
         default: "h-9 px-3.5 py-2",
@@ -38,24 +34,20 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
+  },
 );
 
-export interface ButtonProps
+interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {}
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, ...props }, ref) => {
     return (
-      <button
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
+      <button className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
     );
-  }
+  },
 );
 Button.displayName = "Button";
 
-export { Button, buttonVariants };
+export { Button };

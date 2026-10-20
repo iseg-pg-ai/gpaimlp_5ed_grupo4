@@ -5,6 +5,8 @@ on:
     paths:
       - "data/**"
       - "etl/**"
+      - "portal/**"
+      - "dmc-workspace/templates/**"
       - "dashboard/**"
       - "tests/**"
       - "requirements.txt"
@@ -17,6 +19,8 @@ on:
     paths:
       - "data/**"
       - "etl/**"
+      - "portal/**"
+      - "dmc-workspace/templates/**"
       - "dashboard/**"
       - "tests/**"
       - "requirements.txt"
@@ -53,7 +57,7 @@ jobs:
           $report = Get-Content warehouse/validation_report.json -Raw | ConvertFrom-Json
           if ($report.status -ne 'passed') { throw "Validation status: $($report.status)" }
       - name: Run regression tests
-        run: python -m unittest tests.test_local_source tests.test_structured_dataset tests.test_etl_pipeline -v
+        run: python -m unittest tests.test_local_source tests.test_structured_dataset tests.test_etl_pipeline tests.test_portal_catalog tests.test_portal_data tests.test_weather -v
       - name: Publish warehouse delivery
         uses: actions/upload-artifact@v4
         with:

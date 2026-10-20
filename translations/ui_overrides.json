@@ -86,5 +86,69 @@
     "fr": "Élevé",
     "de": "Hoch",
     "zh": "高"
+  },
+  "Rascunho": {
+    "pt": "Rascunho",
+    "en": "Draft",
+    "es": "Borrador",
+    "fr": "Brouillon",
+    "de": "Entwurf",
+    "zh": "草稿"
+  },
+  "Por confirmar": {
+    "pt": "Por confirmar",
+    "en": "To be confirmed",
+    "es": "Por confirmar",
+    "fr": "À confirmer",
+    "de": "Noch zu bestätigen",
+    "zh": "待确认"
+  },
+  "Protegida": {
+    "pt": "Protegida",
+    "en": "Protected",
+    "es": "Protegida",
+    "fr": "Protégée",
+    "de": "Geschützt",
+    "zh": "已保护"
+  },
+  "Exportada": {
+    "pt": "Exportada",
+    "en": "Exported",
+    "es": "Exportada",
+    "fr": "Exportée",
+    "de": "Exportiert",
+    "zh": "已导出"
+  },
+  "Recolher assistente": {
+    "pt": "Recolher assistente",
+    "en": "Collapse assistant",
+    "es": "Contraer asistente",
+    "fr": "Réduire l’assistant",
+    "de": "Assistent einklappen",
+    "zh": "收起助手"
+  },
+  "Proteger atividade": {
+    "pt": "Proteger atividade",
+    "en": "Protect activity",
+    "es": "Proteger actividad",
+    "fr": "Protéger l’activité",
+    "de": "Aktivität schützen",
+    "zh": "保护活动"
+  },
+  "Desproteger atividade": {
+    "pt": "Desproteger atividade",
+    "en": "Unprotect activity",
+    "es": "Desproteger actividad",
+    "fr": "Déprotéger l’activité",
+    "de": "Schutz aufheben",
+    "zh": "取消活动保护"
+  },
+  "Navegação por dias": {
+    "pt": "Navegação por dias",
+    "en": "Day navigation",
+    "es": "Navegación por días",
+    "fr": "Navigation par jour",
+    "de": "Tagesnavigation",
+    "zh": "按天导航"
   }
 }
