@@ -744,3 +744,24 @@ o contexto histórico e o Git preserva versões anteriores.
 O lint Markdown ignora diretórios ocultos e extensões do ambiente SageMaker, que não
 pertencem ao repositório. A apresentação deixa de conter o identificador de um
 espaço Studio: o destino do portal deriva do URL atual, com fallback local.
+
+
+## 2026-10-20 — Preparação independente de clones de desenvolvimento
+
+O repo fornece os ficheiros necessários para inicializar uma sessão: fontes,
+warehouse publicado, lockfiles, launcher e exemplos de configuração. Acrescentado
+`.env.example` sem segredos e `--initialize-data` ao assistente para criar catálogo
+e itinerários locais através do contrato de recuperação existente. As contas são
+geradas por instalação, sem versionar credenciais ou duplicar persistência.
+
+A preparação seleciona Node e npm da mesma instalação suportada, verifica os
+artefactos mínimos e permite usar `./bin/just` quando o launcher global pertence
+a outro checkout. O guia inclui os comandos para instalar dependências antes da
+inicialização. Não existe publicação nem transferência de dados operacionais.
+
+Evidência: 16 testes de preparação/operações aprovados; ensaio com `git archive`
+num diretório e HOME temporários, sobrepondo apenas o assistente alterado e o
+exemplo de configuração. Sem catálogo, exports ou contas de origem, criou os três
+conjuntos necessários e preservou-os numa segunda execução. Reutilizaram-se Python,
+Node e dependências locais; não se validaram downloads, proxy Studio, outra
+identidade IAM ou Bedrock real. A validação num segundo espaço AWS mantém-se no plano.

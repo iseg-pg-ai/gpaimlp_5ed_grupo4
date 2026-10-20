@@ -64,6 +64,11 @@ python3 scripts/setup_workspace.py \
   --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
 ```
 
+Num clone sem dados locais, o [guia de onboarding](docs/ONBOARDING.md) inclui
+`--initialize-data` para criar o catálogo e a pasta de itinerários a partir dos
+ficheiros versionados. A configuração partilhável do agente está em `.env.example`.
+Também é possível usar `./bin/just blu it` sem instalar o launcher no `PATH`.
+
 O assistente valida o ambiente, guarda a URL em `config/studio.local.json`,
 instala o launcher local e cria o administrador inicial do Monitoring quando
 ainda não existem contas. A palavra-passe inicial fica apenas em

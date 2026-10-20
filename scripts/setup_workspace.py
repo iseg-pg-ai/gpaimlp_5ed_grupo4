@@ -38,27 +38,27 @@ def command_version(command: str, *arguments: str) -> str | None:
     return (result.stdout or result.stderr).strip().splitlines()[0]
 
 
-def node_version() -> str | None:
-    """Preferir uma versão suportada instalada no NVM, mesmo se não estiver ativa."""
+def activate_node() -> None:
+    """Usar Node e npm da mesma instalação suportada durante a preparação."""
     candidates = []
     current = shutil.which("node")
     if current:
         candidates.append(Path(current))
     candidates.extend(sorted((Path.home() / ".nvm/versions/node").glob("v*/bin/node"), reverse=True))
-    fallback = None
     for executable in candidates:
-        result = subprocess.run(
-            [str(executable), "--version"], check=False, capture_output=True,
-            text=True, timeout=10,
-        )
-        value = result.stdout.strip()
-        if not value:
+        result = subprocess.run([str(executable), "--version"], capture_output=True, text=True, timeout=10)
+        try:
+            major, minor, *_ = map(int, result.stdout.strip().lstrip("v").split("."))
+        except ValueError:
             continue
-        fallback = fallback or value
-        major, minor, *_ = map(int, value.lstrip("v").split("."))
         if 22 <= major < 25 and not (major == 22 and minor < 13):
-            return value
-    return fallback
+            os.environ["PATH"] = str(executable.parent) + os.pathsep + os.environ.get("PATH", "")
+            return
+
+
+def node_version() -> str | None:
+    """Consultar a instalação selecionada por activate_node."""
+    return command_version("node", "--version")
 
 
 def write_studio_config(value: str) -> None:
@@ -75,7 +75,8 @@ def ensure_launcher() -> None:
     if destination.exists() or destination.is_symlink():
         if destination.is_symlink() and destination.resolve() == (ROOT / "bin/just").resolve():
             return
-        raise RuntimeError(f"{destination} já existe e não pertence a este checkout.")
+        print("  ! Launcher global já ocupado; usar ./bin/just neste checkout.")
+        return
     destination.symlink_to(ROOT / "bin/just")
 
 
@@ -95,7 +96,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--studio-url", help="URL base copiada do Code Editor")
     parser.add_argument("--check-only", action="store_true", help="Validar sem alterar o checkout")
+    parser.add_argument("--initialize-data", action="store_true", help="Inicializar dados locais com o Python de .venv")
     args = parser.parse_args()
+    if args.check_only and args.initialize_data:
+        parser.error("--check-only não pode inicializar dados.")
 
     raw_url = args.studio_url
     if not raw_url and STUDIO_CONFIG.exists():
@@ -109,6 +113,7 @@ def main() -> int:
     except ValueError as error:
         parser.error(str(error))
 
+    activate_node()
     versions = {
         "Python": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         "Node": node_version(),
@@ -125,6 +130,11 @@ def main() -> int:
     blockers = ([] if python_ok else ["Python 3.12 ou 3.13"])
     blockers += ([] if node_ok else ["Node >=22.13 e <25"])
     blockers += missing
+    required = ["warehouse/blu_etl.sqlite", "warehouse/manifest.json",
+                "warehouse/validation_report.json", "data/reference/structured_dataset.xlsx"]
+    blockers += [f"ficheiro versionado ausente: {name}" for name in required if not (ROOT / name).is_file()]
+    if args.initialize_data and not (ROOT / ".venv/bin/python").is_file():
+        blockers.append("Executar primeiro: uv sync --locked --all-groups")
 
     print("\nBLU · verificação do ambiente")
     for name, value in versions.items():
@@ -140,9 +150,12 @@ def main() -> int:
         write_studio_config(studio_url)
         ensure_launcher()
         created_access = ensure_monitoring_access()
+        if args.initialize_data:
+            subprocess.run([str(ROOT / ".venv/bin/python"), "-B", "-m", "monitoring.recovery", "ensure"],
+                           cwd=ROOT, check=True)
         if created_access:
             print("  ✓ Acesso inicial do Monitoring criado em monitoring/runtime/initial-password.txt")
-        print("\nPreparação local concluída. Próximo passo: just blu it")
+        print("\nPreparação local concluída. Próximo passo: ./bin/just blu it")
     return 0
 
 

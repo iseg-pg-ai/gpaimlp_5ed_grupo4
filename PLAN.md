@@ -27,7 +27,8 @@ Git e em [docs/DECISIONS.md](docs/DECISIONS.md).
 ## Onboarding e qualidade
 
 - [ ] Validar o onboarding completo num segundo espaço SageMaker, com identidade
-  IAM distinta e acesso Bedrock real autorizado.
+  IAM distinta e acesso Bedrock real autorizado. Incluir o fluxo documentado com
+  `--initialize-data`, sem copiar contas, catálogo ou exports da máquina original.
 - [ ] Acrescentar CI do portal para `npm run check` e `npm run build`.
 - [ ] Automatizar em ambiente isolado o fluxo catálogo aprovado → ETL → geração →
   confirmação → versão → PDF.

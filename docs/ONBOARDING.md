@@ -23,7 +23,10 @@ Code Editor apenas a parte terminada em `/codeeditor/default`. Não incluir
 `/ports/...`, parâmetros nem tokens.
 
 ```bash
-python3 scripts/setup_workspace.py \
+python3 -m pip install --user uv==0.12.19
+export PATH="$HOME/.local/bin:$PATH"
+uv sync --locked --all-groups
+.venv/bin/python scripts/setup_workspace.py --initialize-data \
   --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
 ```
 
@@ -33,7 +36,9 @@ O assistente:
 2. confirma as versões de Python, Node, npm, `uv` e Git;
 3. instala o launcher `just` em `~/.local/bin`;
 4. cria o primeiro administrador do Monitoring quando ainda não existem contas;
-5. confirma a presença das fontes e do warehouse.
+5. confirma a presença dos ficheiros versionados necessários;
+6. com `--initialize-data`, cria o catálogo a partir do warehouse e a pasta vazia
+   de itinerários, preservando instalações existentes válidas.
 
 Se `just` não for encontrado na mesma sessão, acrescentar `~/.local/bin` ao `PATH`
 ou abrir um terminal novo. O acesso inicial gerado fica temporariamente em
@@ -52,7 +57,7 @@ python3 scripts/setup_workspace.py --check-only
 Com os pré-requisitos resolvidos:
 
 ```bash
-just blu it
+./bin/just blu it
 ```
 
 Este comando autentica o administrador, prepara todas as dependências bloqueadas e
@@ -96,3 +101,22 @@ just blu up
 
 O ambiente está pronto quando os cinco endpoints aparecem `ONLINE`, as quatro
 interfaces abrem e o Monitoring aceita a conta pessoal do colega.
+
+## Ficheiros incluídos no repositório para desenvolvimento
+
+O clone inclui fontes em `data/`, o warehouse publicado, os lockfiles, o launcher
+`bin/just`, `config/studio.example.json` e `.env.example`. Não requer ficheiros da
+pasta pessoal de quem criou o projeto. O `.env.example` documenta os valores
+predefinidos do agente; copiá-lo para `.env` é opcional. Cada sessão usa a sua
+função IAM, sem copiar chaves AWS. Node e Python são pré-requisitos de sistema;
+`node_modules`, `.venv`, navegadores e bibliotecas são instalados pelos comandos.
+
+Este fluxo aplica-se também aos branches de desenvolvimento: o estado inicial é
+recriado a partir dos ficheiros versionados, sem incluir as contas e o histórico
+operacional de outra instalação. O Git não aplica regras de exclusão por branch;
+um ficheiro publicado num branch continua no histórico se for depois removido.
+
+Para começar com dados locais independentes, não copiar `catalog.sqlite`, exports
+ou contas existentes. Para continuar propostas anteriores, é necessária uma
+transferência autorizada dos respetivos dados e versões; a inicialização não
+reconstitui trabalho que nunca foi publicado no Git ou num backup.
