@@ -1,13 +1,14 @@
-# Deployment e teste do portal na AWS
+# Referência de deployment e teste do portal na AWS
 
-Este guia destina-se ao tester do DMC Workspace. O objetivo é publicar o portal
-Next.js, confirmar que os ficheiros JavaScript são servidos pelo caminho correto
-e recolher informação suficiente caso ainda exista algum erro 404.
+Este guia descreve como validar o DMC Workspace numa arquitetura com serviço
+Next.js, Application Load Balancer e CloudFront. É uma referência técnica:
+essa infraestrutura não está criada nem aprovada neste repositório. A operação
+atual no SageMaker está documentada no [guia do portal](PORTAL.md).
 
 ## Âmbito
 
 - Aplicação: `dmc-workspace` (Next.js).
-- Branch: `fix/aws-javascript-runtime`.
+- Branch: o branch ou commit explicitamente escolhido para o teste.
 - Porta interna: `3001`.
 - Health check: `GET /` com resposta HTTP `200`.
 - Assets do browser: `/_next/static/*`.
@@ -31,14 +32,14 @@ Confirmar a versão de Node.js:
 node --version
 ```
 
-## 1. Obter o branch
+## 1. Obter a revisão
 
 Na máquina de deployment:
 
 ```bash
 git fetch origin
-git switch fix/aws-javascript-runtime
-git pull --ff-only origin fix/aws-javascript-runtime
+git switch <branch-autorizado>
+git pull --ff-only origin <branch-autorizado>
 ```
 
 Confirmar o commit que está a ser testado:
@@ -48,7 +49,8 @@ git rev-parse --short HEAD
 git status --short
 ```
 
-O segundo comando não deve apresentar alterações locais.
+O segundo comando não deve apresentar alterações locais. Registar sempre o commit;
+um nome de branch não identifica de forma imutável a entrega testada.
 
 ## 2. Publicar o portal
 

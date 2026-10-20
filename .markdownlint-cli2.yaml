@@ -8,8 +8,9 @@ config:
 globs:
   - "**/*.md"
 ignores:
-  - ".tools/**"
-  - ".venv/**"
+  - ".*/**"
+  - "**/.*/**"
   - "**/node_modules/**"
   - "dmc-workspace/AGENTS.md"
   - "dmc-workspace/CLAUDE.md"
+  - "sagemaker-code-editor-server-data/**"

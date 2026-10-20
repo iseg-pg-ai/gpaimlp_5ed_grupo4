@@ -84,11 +84,16 @@ da palavra-passe de `admin` elimina também o ficheiro inicial local, quando pos
 ## Logs centralizados
 
 O painel principal apresenta os logs do Portal numa coluna lateral em ecrãs largos
-e numa secção própria em ecrãs menores. A tabela usa os eventos persistentes de
-`monitoring/runtime/portal-events.jsonl`, com rotação, e permite pesquisar, filtrar
-por severidade e módulo, ordenar e abrir mensagens e stack traces reduzidas. IA,
-backups e incidentes reutilizam a mesma tabela no final da página. A API de consulta
-exige uma sessão válida do Monitoring e nunca disponibiliza os ficheiros diretamente.
+e numa secção própria em ecrãs menores. Os controlos mostram **Todos** e
+**Apenas erros**, com as respetivas contagens. Selecionar um evento abre o detalhe
+com timestamp, utilizador técnico, ação, módulo, estado, severidade, mensagem e
+stack reduzida quando existe.
+
+Observatório, Apresentação e Agente IA aparecem em três colunas próprias, com os
+mesmos controlos e detalhe. O Portal usa os eventos persistentes de
+`monitoring/runtime/portal-events.jsonl`; os restantes painéis combinam sondas,
+incidentes e métricas de IA aplicáveis. A API exige uma sessão válida e nunca
+disponibiliza os ficheiros diretamente.
 
 O Next.js regista visualizações, navegações, interações com botões/ligações, chamadas
 às APIs e erros não tratados no browser e no servidor. Operações já instrumentadas,

@@ -89,14 +89,17 @@ está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 - Evidência: check passou com 99 testes aprovados e um ignorado; build passou;
   sintaxe Bash e verificação do diff passaram. Sem publicação remota.
 
-Revisto em 2026-10-08. Decisões anteriores válidas preservadas; evidência atualizada
-contra o checkout atual de main, commit f090e53.
+O bloco seguinte foi importado da revisão de 8 de outubro de 2026. Conserva o
+contexto dessa data; decisões posteriores no mesmo ficheiro prevalecem quando o
+estado mudou.
 
 ## D-001 - Distinguir implementação e arquitetura futura
 
-- Estado: aceite; revisão em 2026-10-08; data original: 2026-09-29.
-- Decisão: ETL, warehouse, Streamlit e DMC Workspace são a base implementada.
-  S3, Bedrock, APIs externas e AWS são objetivos futuros.
+- Estado: parcialmente substituído por decisões posteriores; revisão original em
+  2026-10-08, com data inicial de 2026-09-29.
+- Decisão original: ETL, warehouse, Streamlit e DMC Workspace eram a base
+  implementada. O agente Bedrock e a execução no SageMaker foram acrescentados
+  depois como capacidades opcionais; deployment de produção continua futuro.
 - Razão: diagramas e experiências não demonstram integração funcional.
 - Evidência: etl/pipeline.py, dashboard/app.py e APIs do portal; scripts experimentais.
 - Âmbito: arquitetura e planeamento.
@@ -708,3 +711,15 @@ anterior de centralizar a base mantém-se; a localização passou a ser individu
 para impedir que o identificador de um espaço seja aplicado aos ambientes dos
 restantes colegas. `config/studio.example.json` documenta o contrato e
 `scripts/setup_workspace.py` valida e escreve o valor local.
+
+## 2026-10-20 — Consolidação da documentação ativa
+
+O README fica como entrada curta para preparação e arranque. Arquitetura, dados,
+portal, operações e testes mantêm uma responsabilidade própria e os READMEs dos
+componentes remetem para esses guias em vez de repetir procedimentos extensos.
+Resultados transitórios de testes saem do guia operacional; este ficheiro conserva
+o contexto histórico e o Git preserva versões anteriores.
+
+O lint Markdown ignora diretórios ocultos e extensões do ambiente SageMaker, que não
+pertencem ao repositório. A apresentação deixa de conter o identificador de um
+espaço Studio: o destino do portal deriva do URL atual, com fallback local.

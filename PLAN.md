@@ -1,116 +1,85 @@
 # Plano de evolução do BLU AI System
-Plano consolidado a partir do registo até 19-10-2026. Foram removidos os blocos de tarefas 
-concluídas, resultados repetitivos de testes, pormenores transitórios de sessões, correções 
-pontuais e histórico de implementação. Mantêm-se apenas pendências e informação técnica 
-que condiciona decisões futuras. O estado deve ser confirmado no branch de trabalho antes 
-de executar alterações.
 
-## Estado atual e decisões a preservar
-- Portal e dados: portal de curadoria com catálogo, itinerários, versões e entregas;
- warehouse e ETL existentes. Preservar f ontes Excel/PDF originais, revisões e snapshots
-  históricos. Evitar alterações a dados reais durante testes: usar armazenamento temporário e
-   mocks.
-- Assistente BLU: operações estruturadas sobre itinerários, pré-visualização e confirmação 
-humana antes de aplicar; catálogo e validações determinísticas continuam a ser a fonte de 
-verdade. A implementação das fases 0–6 foi reportada como concluída no branch pc/
-assistant-agent-for-blu-curator, não sendo isso prova de integração noutros branches ou de 
-validação completa em produção.
-- IA: Amazon Bedrock; Nova Pro ficou como modelo predefinido configurável após testes 
-limitados. Testes com mocks não demonstram qualidade do modelo real. Não executar chamadas 
-pagas sem autorização.
-- Observatório: dashboard de leitura e observatório nativo no catálogo, sem alterar fontes 
-operacionais. Destinos, unidades, evidência e validade comercial devem conservar valores 
-originais e distinguir informação confirmada de desconhecida.
-- Monitoring: serviço separado, autenticado, com gestão de utilizadores, sondas, logs 
-estruturados do portal/IA, histórico de incidentes, backups locais verificáveis, limpeza 
-controlada e tabelas de observabilidade. O portal não tem autenticação própria: 
-identificadores de sessão nos logs não identificam pessoas.
-- Operação local: SageMaker Studio com portal (3001), apresentação (3003), monitoring (3004), 
-Observatório (8501) e agente opcional (8000). Existem comandos just blu it (recuperação 
-autenticada) e just blu up (arranque). Isto não equivale a deployment de produção.
-- Segurança: não registar prompts, respostas, dados pessoais, segredos nem conteúdo dos 
-formulários na telemetria. Credenciais locais ficam fora do Git; houve exposição histórica de 
-credenciais versionadas, pelo que importa rodar qualquer palavra-passe ainda em uso.
+Plano consolidado em 20 de outubro de 2026. Mantém apenas trabalho aberto e
+condições que afetam decisões futuras. O histórico de implementação permanece no
+Git e em [docs/DECISIONS.md](docs/DECISIONS.md).
 
-## Próxima iteração do agente
-- [ ] Definir o objetivo, as operações autorizadas e os critérios de aceitação.
-- [ ] Rever o serviço existente `src/blu_ai/` e os contratos de domínio do portal.
-- [ ] Definir esquemas de ações e validar respostas antes de alterar itinerários.
-- [ ] Evitar duplicação de catálogo, regras de curadoria e persistência.
-- [ ] Definir fornecedor, custos, privacidade, timeouts e degradação com mocks.
-- [ ] Manter confirmação humana, atividades protegidas e versões imutáveis.
-- [ ] Validar credenciais e chamadas reais apenas no âmbito autorizado.
+## Estado a preservar
 
-Ver [arquitetura e fronteiras](docs/ARCHITECTURE.md).
+- O portal gere catálogo, itinerários, confirmações, versões e entregas.
+- O ETL publica o warehouse sem alterar as fontes; testes usam cópias temporárias.
+- Catálogo e validações determinísticas são a fonte de verdade. A IA propõe ações
+  sujeitas a validação e confirmação humana.
+- Informação desconhecida não significa compatibilidade, disponibilidade ou preço
+  zero. Custos, pendências e moedas permanecem separados.
+- O Observatório consulta a entrega publicada sem escrever no warehouse.
+- O Monitoring tem autenticação local, gestão de utilizadores, sondas, eventos,
+  incidentes, backups locais e limpeza conservadora. O portal continua sem
+  autenticação própria.
+- `just blu up` arranca o ambiente preparado; `just blu it` executa recuperação
+  local autenticada. Nenhum dos comandos equivale a deployment de produção.
+- Segredos, dados de clientes, prompts, respostas, exports e runtimes ficam fora
+  do Git e dos logs.
 
-## Base e qualidade
-- [ ] Acrescentar CI do portal; o CI de dados e documentação não cobre o frontend.
-- [ ] Automatizar catálogo aprovado → ETL → geração → confirmação → versão → PDF.
+## Onboarding e qualidade
+
+- [ ] Validar o onboarding completo num segundo espaço SageMaker, com identidade
+  IAM distinta e acesso Bedrock real autorizado.
+- [ ] Acrescentar CI do portal para `npm run check` e `npm run build`.
+- [ ] Automatizar em ambiente isolado o fluxo catálogo aprovado → ETL → geração →
+  confirmação → versão → PDF.
 - [ ] Definir gates e exceções auditáveis para qualidade e conflitos das fontes.
-- [ ] Rever os contratos de entrega, snapshot e retenção do warehouse no CI.
+- [ ] Rever retenção e compatibilidade das entregas publicadas no CI.
+
+## Agente de IA
+
+- [ ] Definir objetivo, operações autorizadas e critérios de aceitação da próxima
+  iteração.
+- [ ] Rever `src/blu_ai/` e reutilizar os contratos de domínio do portal.
+- [ ] Validar esquemas de ações antes de alterar itinerários.
+- [ ] Preservar confirmação humana, atividades protegidas e versões imutáveis.
+- [ ] Definir fornecedor, custos, privacidade, timeouts e degradação.
+- [ ] Usar mocks por defeito; chamadas reais exigem autorização e credenciais.
 
 ## Entrega e recuperação
+
 - [ ] Rever acesso, consentimento, retenção e revogação das partilhas e do Lixo.
 - [ ] Inspecionar PDFs nos idiomas suportados e documentar fontes necessárias.
 - [ ] Acrescentar fotografias apenas com autorização e créditos.
-- [ ] Testar backup e recuperação de catálogo, histórico e PDFs.
-- [ ] Atualizar a instalação do plugin Canva após revisão do pacote-fonte.
 - [ ] Validar uma proposta real: TXT → cópia Canva → revisão → PDF final.
+- [ ] Rever o pacote-fonte antes de atualizar uma instalação do plugin Canva.
 
 ## Operação multiutilizador e cloud
-- [ ] Definir autenticação, papéis, permissões e sincronização.
-- [ ] Definir minimização, retenção, eliminação e logs de dados pessoais.
-- [ ] Validar concorrência de catálogo, rascunhos e versões.
-- [ ] Definir deployment, segredos, região e recuperação operacional.
-- [ ] Aprovar migração ou publicação antes de executar alterações externas.
-- [ ] Escolher apenas os fornecedores necessários e definir contratos com mocks.
-- [ ] Definir origem S3, retenção e fallback sem acoplar o ETL ao transporte.
 
-## Histórico
-As integrações anteriores, os resultados e os limites estão em
-[decisões](docs/DECISIONS.md), [testes](docs/TESTING.md) e
-[segurança das dependências](docs/DEPENDABOT_PYTHON.md). O histórico completo dos
-planos anteriores permanece no Git.
+- [ ] Definir ambiente-alvo, utilizadores, identidade, papéis e permissões.
+- [ ] Definir disponibilidade, perda de dados e tempo de recuperação aceitáveis.
+- [ ] Validar concorrência do catálogo, rascunhos e versões.
+- [ ] Definir minimização, retenção e eliminação de dados pessoais.
+- [ ] Escolher hosting, persistência, segredos, região, staging e rollback.
+- [ ] Definir origem S3 e fallback sem acoplar o ETL ao transporte.
+- [ ] Aprovar qualquer criação de infraestrutura, custo ou publicação externa.
 
-
-## Onboarding reproduzível — 2026-10-19
-- [ ] Validar o percurso completo num segundo espaço SageMaker com uma identidade
-  IAM distinta e confirmar o acesso Bedrock real.
-
-
-## Monitoring e deployment — 2026-10-19
-Branch `feat/monitoring-deployment`, criado a partir de `dev` em `aa385fd`,
-com diretório limpo. Proposta em [monitoring e deployment](docs/OPERATIONS.md).
-
-- [ ] Definir ambiente-alvo, utilizadores, disponibilidade e orçamento.
-- [ ] Corrigir e validar empacotamento Node/Python num ambiente isolado.
-- [ ] Definir persistência, backups consistentes e ensaio de restauro.
-- [ ] Instrumentar saúde, logs, métricas e alertas com dados minimizados.
-- [ ] Preparar CI, staging, promoção e rollback da aplicação e dos dados.
-
-### Desenho e alternativas — 2026-10-19
-O utilizador escolheu desenhar a arquitetura e comparar alternativas antes de
-implementar.
-
-- [ ] Recolher requisitos de operação e fechar uma decisão fundamentada.
-
-A VM é uma hipótese preliminar, não uma plataforma já escolhida. Sem criação
-de infraestrutura, alteração de serviços, custos ou publicação.
+A comparação de alternativas e os limites atuais estão em
+[docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## Pendências de monitoring
-Registado a pedido do utilizador em 2026-10-19. A recolha interna, backups locais e
-consumo de IA foram implementados. A operação externa continua incompleta enquanto
-não existirem destinos, responsáveis e infraestrutura fora desta máquina.
 
-- [ ] Configurar notificações externas de incidentes: canal, destinatários,
-  limiares, deduplicação e recuperação. Validar o fluxo; envios reais exigem
-  autorização aplicável do utilizador.
+A recolha interna, consumo de IA, incidentes e backups locais estão implementados.
+O Monitoring continua incompleto para produção até existirem:
 
-Ao retomar monitoring ou preparar deployment/produção, recordar a pendência externa
-desta lista e as duas pendências de produção registadas abaixo. Manter cada item
-aberto até existir implementação e evidência de validação; a existência de um plano
-ou de um painel não basta.
+- [ ] notificações externas com canal, destinatários, limiares, deduplicação e
+  recuperação validados;
+- [ ] destino externo cifrado para backups e política de retenção;
+- [ ] sonda executada fora da máquina, ligada a responsáveis reais.
 
-## Preparação do monitoring para deployment — 2026-10-19
-- [ ] Configurar destino externo cifrado para backups no ambiente escolhido.
-- [ ] Instalar uma sonda fora da máquina e ligar notificações a responsáveis reais.
+Envios reais e infraestrutura externa exigem autorização aplicável. Não encerrar
+uma pendência apenas porque existe um plano ou painel; é necessária implementação
+e evidência de validação.
+
+## Referências
+
+- [Arquitetura](docs/ARCHITECTURE.md)
+- [Operações](docs/OPERATIONS.md)
+- [Testes](docs/TESTING.md)
+- [Decisões](docs/DECISIONS.md)
+- [Segurança das dependências](docs/DEPENDABOT_PYTHON.md)
