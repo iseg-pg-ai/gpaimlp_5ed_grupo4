@@ -623,7 +623,6 @@ Validar capacidade cedo e agrupar operações por página. Autofill permanece
 condicionado a um futuro schema verificado; não alegar melhoria de tempo
 ou tokens faturados sem medição comparável.
 
-
 ## 2026-10-21 — Integrar dev em txt_export_plugin
 
 Integração de `origin/dev` (`aa385fd`) no branch `txt_export_plugin`, mantendo o
