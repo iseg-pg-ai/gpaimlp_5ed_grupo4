@@ -85,6 +85,12 @@ POST aceita coordenadas dos itens do dia. As respostas disponíveis têm cache d
 implementação e distingue histórico de previsão, sem inventar um clima favorável
 quando a consulta falha. Não foram acrescentadas dependências Python.
 
+O cálculo de cada troço rodoviário pertence a `portal/routing.py`. O módulo valida
+coordenadas, modos, margens e timeout, consulta a origem OSRM configurada e aplica
+o fallback geométrico local. `src/lib/road-routing.ts` conserva temporariamente a
+ordenação interativa e a composição dos resumos, chamando Python para cada troço;
+assim existe uma única implementação do cálculo externo e das suas estimativas.
+
 A persistência do catálogo pertence agora ao Python em `etl/portal_catalog.py`,
 com o mesmo esquema `catalog_records`/`catalog_history` e transações
 `BEGIN IMMEDIATE`. O adaptador `src/lib/catalog-store.ts` valida e normaliza as

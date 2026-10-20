@@ -15,6 +15,49 @@ from blu_ai.telemetry import invoke_with_telemetry, usage_from_messages
 
 
 class OperationsTest(unittest.TestCase):
+    @staticmethod
+    def valid_warehouse(root: Path, rows: dict[str, list[dict]] | None = None) -> None:
+        warehouse = root / "warehouse"
+        warehouse.mkdir(parents=True)
+        (warehouse / "manifest.json").write_text(json.dumps({
+            "ran_at_utc": datetime.now(timezone.utc).isoformat()}))
+        (warehouse / "validation_report.json").write_text('{"status":"passed"}')
+        for category in ("atracoes", "restaurantes", "experiencias"):
+            values = (rows or {}).get(category, [])
+            (warehouse / f"{category}.jsonl").write_text(
+                "".join(json.dumps(value) + "\n" for value in values))
+
+    def test_fresh_install_initializes_catalog_and_itineraries_from_warehouse(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.valid_warehouse(root, {"atracoes": [{
+                "id": 7, "nome_da_atracao": "Museu", "cidade": "Lisboa",
+                "_source_sheet": "ATRAÇÕES", "_source_row": 2,
+            }]})
+
+            result = ensure_recovery(root, root / "monitoring/runtime")
+
+            self.assertEqual(result["outcome"], "initialized")
+            self.assertEqual(result["initialized"], ["catalog", "itineraries"])
+            self.assertTrue((root / "exports/itineraries").is_dir())
+            with sqlite3.connect(root / "data/portal/catalog.sqlite") as connection:
+                record = json.loads(connection.execute(
+                    "select snapshot from catalog_records").fetchone()[0])
+            self.assertEqual(record["fields"]["name"], "Museu")
+            self.assertEqual(record["status"], "review")
+
+    def test_partial_install_without_backup_is_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.valid_warehouse(root)
+            catalog = root / "data/portal/catalog.sqlite"
+            catalog.parent.mkdir(parents=True)
+            catalog.write_bytes(b"base-invalida")
+
+            with self.assertRaisesRegex(ValueError, "Não existe backup local"):
+                ensure_recovery(root, root / "monitoring/runtime")
+            self.assertEqual(catalog.read_bytes(), b"base-invalida")
+
     def test_operational_details_expose_only_allowed_technical_fields(self):
         with tempfile.TemporaryDirectory() as directory:
             runtime = Path(directory)

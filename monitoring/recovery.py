@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import closing
 from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
 import shutil
 import sqlite3
+import tempfile
+
+from etl.portal_catalog import CatalogStore
 
 from monitoring.backup import verify_backup
 
@@ -51,6 +55,43 @@ def _latest_backup(runtime: Path) -> Path:
     return candidates[0].parent
 
 
+def _has_backups(runtime: Path) -> bool:
+    """Não confundir uma instalação nova com uma recuperação sem dados."""
+    return any((runtime / "backups").glob("*/manifest.json"))
+
+
+def _fresh_install(root: Path, runtime: Path) -> bool:
+    """Aceitar bootstrap apenas quando nunca existiu estado operacional local."""
+    return (not (root / "data/portal/catalog.sqlite").exists()
+            and not (root / "exports/itineraries").exists()
+            and not _has_backups(runtime))
+
+
+def _initialize_fresh_install(root: Path) -> dict:
+    """Criar estado local inicial sem publicar nem inventar revisões aprovadas."""
+    warehouse = root / "warehouse"
+    if not _warehouse_valid(warehouse):
+        raise ValueError("O warehouse versionado não é válido para inicializar o sistema.")
+
+    catalog = root / "data/portal/catalog.sqlite"
+    catalog.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".bootstrap-", dir=catalog.parent) as directory:
+        temporary_root = Path(directory)
+        with closing(CatalogStore(temporary_root)) as store:
+            store.import_warehouse(warehouse)
+        temporary = temporary_root / "catalog.sqlite"
+        if not _catalog_valid(temporary):
+            raise ValueError("A inicialização do catálogo não produziu uma base válida.")
+        os.replace(temporary, catalog)
+
+    (root / "exports/itineraries").mkdir(parents=True)
+    state = system_state(root)
+    if not all(state.values()):
+        raise ValueError("A inicialização local não produziu todos os conjuntos necessários.")
+    return {"outcome": "initialized", "initialized": ["catalog", "itineraries"],
+            "restored": [], "state": state}
+
+
 def _replace_file(source: Path, target: Path) -> None:
     """Copia para um temporário e faz a substituição atómica do ficheiro."""
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -77,6 +118,8 @@ def ensure_recovery(root: Path, runtime: Path) -> dict:
     required = [name for name, valid in before.items() if not valid]
     if not required:
         return {"outcome": "preserved", "restored": [], "state": before}
+    if _fresh_install(root, runtime):
+        return _initialize_fresh_install(root)
     backup = _latest_backup(runtime)
     # Nunca restaurar um backup antes de confirmar manifesto, hashes e SQLite.
     verify_backup(backup, runtime)

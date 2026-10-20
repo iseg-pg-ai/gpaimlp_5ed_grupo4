@@ -55,8 +55,11 @@ Com os pré-requisitos resolvidos:
 just blu it
 ```
 
-Este comando autentica o administrador, prepara todas as dependências bloqueadas,
-valida ou recupera dados locais, executa testes, constrói o Portal, inicia os cinco
+Este comando autentica o administrador, prepara todas as dependências bloqueadas e
+trata os dados locais antes dos testes. Num clone sem catálogo, itinerários ou
+backups, cria o catálogo a partir do warehouse versionado e uma área de itinerários
+vazia. Numa instalação existente, preserva os conjuntos válidos e recupera os
+restantes apenas de um backup verificado. Depois constrói o Portal, inicia os cinco
 serviços e abre as quatro interfaces. Nos arranques seguintes basta:
 
 ```bash
@@ -71,13 +74,15 @@ não abre um separador.
 
 O Git fornece código, fontes versionadas e a entrega atual de `warehouse/`. Estes
 elementos são específicos de cada ambiente e precisam de backup ou transferência
-autorizada quando devam ser preservados:
+autorizada quando seja necessário preservar trabalho anterior:
 
 - `data/portal/catalog.sqlite`: catálogo editável e revisões;
 - `exports/`: propostas, versões e PDFs;
 - `monitoring/runtime/`: contas, logs, backups e estado operacional.
 
-Transferir cada conjunto pelo canal aprovado pela organização. As contas do
+Uma instalação nova pode começar sem estes conjuntos; o primeiro `just blu it`
+inicializa o catálogo e a estrutura de versões. Para continuar trabalho existente,
+transferir cada conjunto pelo canal aprovado pela organização. As contas do
 Monitoring devem ser criadas novamente para cada instalação; não transferir hashes
 ou palavras-passe como método normal de onboarding.
 

@@ -35,15 +35,17 @@ conta ativa com perfil `admin` do Monitoring e executa:
 
 1. paragem dos cinco serviços e confirmação das portas livres;
 2. validação do ambiente e sincronização das dependências bloqueadas;
-3. validação ou recuperação seletiva dos dados;
+3. inicialização segura de um clone novo ou recuperação seletiva dos dados;
 4. testes Python, Monitoring e portal;
 5. build do portal;
 6. arranque e verificação dos cinco serviços;
 7. abertura das quatro interfaces.
 
 O agente na porta 8000 é validado sem abrir um separador. Dados válidos são
-preservados; conjuntos ausentes ou inválidos só podem ser recuperados a partir de
-um backup verificado. O log técnico fica em
+preservados. Quando catálogo, itinerários e backups ainda não existem, o catálogo
+é criado a partir do warehouse versionado e todos os registos entram em revisão;
+a área de itinerários começa vazia. Uma instalação parcial ou com dados inválidos
+só pode ser recuperada a partir de um backup verificado. O log técnico fica em
 `monitoring/runtime/recovery/just-blu-it.log`.
 
 Estes comandos não renovam tokens SageMaker, não criam infraestrutura AWS e não

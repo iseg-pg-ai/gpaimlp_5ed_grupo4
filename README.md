@@ -90,8 +90,9 @@ just blu it
 ```
 
 Depois de validar uma conta `admin` do Monitoring, o comando para os serviços,
-prepara dependências, valida ou recupera dados, executa testes, constrói o portal,
-reinicia o sistema e abre as interfaces. Os detalhes e limites estão no
+prepara dependências, inicializa um clone novo ou recupera dados existentes,
+executa testes, constrói o portal, reinicia o sistema e abre as interfaces. Os
+detalhes e limites estão no
 [guia de operações](docs/OPERATIONS.md#recuperação-local).
 
 O SageMaker pode exigir a renovação da sessão pela consola AWS; os comandos não

@@ -1,10 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { optimizeRouteSequence } from "../src/lib/road-routing.ts";
 import {
   calculateRoadLeg,
   enrichItineraryWithRoadRouting,
-  optimizeRouteSequence,
-} from "../src/lib/road-routing.ts";
+  updateDayTransitLeg,
+} from "../src/lib/road-routing-server.ts";
 
 test("calculateRoadLeg computes real road travel leg between coordinates", async () => {
   const from = { title: "Castelo de São Jorge", latitude: 38.71391, longitude: -9.13348 };
@@ -265,7 +266,6 @@ test("calculateRoadLeg supports explicit preferredMode (walk vs chauffeur)", asy
 });
 
 test("updateDayTransitLeg switches transit mode and realigns subsequent schedule", async () => {
-  const { updateDayTransitLeg } = await import("../src/lib/road-routing.ts");
   const day = {
     dayNumber: 1,
     date: "2026-10-10",

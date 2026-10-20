@@ -18,6 +18,9 @@ Git e em [docs/DECISIONS.md](docs/DECISIONS.md).
   autenticação própria.
 - `just blu up` arranca o ambiente preparado; `just blu it` executa recuperação
   local autenticada. Nenhum dos comandos equivale a deployment de produção.
+- Num clone sem estado operacional nem backups, `just blu it` inicializa o catálogo
+  a partir do warehouse versionado e cria a estrutura vazia de itinerários. Estado
+  parcial ou inválido continua a exigir recuperação por backup.
 - Segredos, dados de clientes, prompts, respostas, exports e runtimes ficam fora
   do Git e dos logs.
 
@@ -30,6 +33,8 @@ Git e em [docs/DECISIONS.md](docs/DECISIONS.md).
   confirmação → versão → PDF.
 - [ ] Definir gates e exceções auditáveis para qualidade e conflitos das fontes.
 - [ ] Rever retenção e compatibilidade das entregas publicadas no CI.
+- [ ] Continuar a migração incremental do portal: mover ordenação de percursos e
+  resumos para Python antes de retirar o adaptador TypeScript correspondente.
 
 ## Agente de IA
 

@@ -3,6 +3,27 @@
 Os registos históricos conservam as datas e a evidência original. O mapa atual
 está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
+## Inicialização segura de um checkout sem estado operacional — 2026-10-20
+
+- Um checkout sem catálogo, itinerários ou backups é tratado como instalação nova.
+- `just blu it` cria atomicamente `data/portal/catalog.sqlite` a partir do warehouse
+  versionado e importa os registos com estado **Em revisão**; cria também
+  `exports/itineraries/` vazio.
+- A presença de estado parcial ou inválido impede o bootstrap e mantém a exigência
+  de um backup verificado, evitando substituir dados operacionais por engano.
+- Evidência: `monitoring/recovery.py` e `monitoring/test_operations.py`.
+
+## Cálculo rodoviário centralizado em Python — 2026-10-20
+
+- Consulta OSRM, validação dos parâmetros e fallback geométrico passam de
+  `src/lib/road-routing.ts` para `portal/routing.py`.
+- O adaptador TypeScript preserva o contrato assíncrono usado pelas APIs e pelo
+  editor. A ordenação interativa e os resumos permanecem temporariamente no
+  cliente até a próxima fatia da migração.
+- O fornecedor externo é substituível nos testes Python; falhas de rede continuam
+  a produzir estimativas identificadas como não otimizadas.
+- Evidência: `tests/test_routing.py` e `dmc-workspace/tests/road-routing.test.mjs`.
+
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
 ### Consolidação dos testes
