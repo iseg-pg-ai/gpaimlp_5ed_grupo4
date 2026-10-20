@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "blu-curadoria",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Transforma o TXT de um roteiro guardado no DMC numa proposta visual no Canva, preservando conteúdo, orçamento e pendências.",
   "author": {
     "name": "BLU | Grupo 4"
@@ -16,7 +16,7 @@
         "developerName": "BLU | Grupo 4",
         "category": "Productivity",
         "defaultPrompt": [
-          "Vou anexar o TXT de um roteiro do DMC. Transforma-o numa proposta visual usando uma cópia do modelo Canva BLU.",
+          "Transforma o TXT anexado numa proposta visual editável usando uma cópia do modelo Canva BLU. Avança até à entrega sem pedir aceitação do plano; preserva todos os dados e verifica conteúdo e imagens. Pede apenas aprovações obrigatórias da ferramenta.",
           "Revê este roteiro exportado antes de o compor no Canva, preservando atividades, orçamento e pendências."
         ]
       }

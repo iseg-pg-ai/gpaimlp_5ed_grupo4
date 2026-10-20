@@ -119,3 +119,13 @@ A primeira composição manteve metadados de edição e textos de bairros/autor
 do exemplo em páginas bloqueadas, referiu números de página desatualizados
 no índice e omitiu duas variantes de uma atividade. Este caso fundamenta os
 critérios acima; não é um mapa fixo de páginas ou conteúdo para viagens futuras.
+
+## Teste de eficiência — 2026-10-19
+
+O modelo continua com 87 páginas e sem campos autofill. Uma cópia reduzida
+permitiu editar o primeiro dia, mas a nota de confirmação cresceu para além
+do painel original: validar capacidade antes de preencher todas as páginas.
+A edição Canva exige preview e aprovação explícita antes de commit; remover
+confirmações do plano não elimina essa exigência. Um futuro modelo BLU com
+campos preenchíveis permite avaliar autofill sem essa transação, após testar
+schema, cobertura, imagens e limites de texto. Não está implementado neste modelo.

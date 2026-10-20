@@ -611,3 +611,33 @@ Separar arquitetura de tecnologias e conservar detalhes de implementação num
 inventário editorial próprio. Versões declaradas e defaults do código não
 representam configuração efetiva ou métricas medidas. Registar no guião as
 lacunas a preencher com a equipa e manter a distinção entre simulação e sistema.
+
+## 2026-10-19 — TXT e execução Canva
+
+O prompt 1.4.0 concentra regras essenciais sem mudar o JSON 1.1.0. O plugin
+0.4.0 evita carregar curadoria na composição e pedir aceitação do plano.
+A exigência de preview/aprovação antes de commit pertence ao Canva, não é
+removível por prompt. Teste real: DAHDpPXVRsU devolve dataset vazio; cópia de
+quatro páginas aceita edição do dia 1, mas a nota cresce além do painel.
+Validar capacidade cedo e agrupar operações por página. Autofill permanece
+condicionado a um futuro schema verificado; não alegar melhoria de tempo
+ou tokens faturados sem medição comparável.
+
+## 2026-10-21 — Integrar dev em txt_export_plugin
+
+Integração de `origin/dev` (`aa385fd`) no branch `txt_export_plugin`, mantendo o
+histórico dos dois branches. Os conflitos documentais preservam as decisões de
+TXT/Canva de 19 de outubro. O plugin conserva o workflow eficiente, a referência
+visual e os limites de entrega do branch, sem repor o workflow anterior de dev.
+A interface conserva o rótulo Exportar TXT e as traduções correspondentes.
+
+A identidade local Streamlit foi preservada fora do índice, tal como as contas,
+runtime e configuração privada Studio. Nenhum ficheiro de warehouse foi editado
+manualmente: as alterações provêm da integração de dev. Não houve publicação,
+chamadas ao Canva ou ao Bedrock, nem integração de outros branches.
+
+Validação local: 83 testes Python aprovados; check do portal com 97 aprovados e
+um ignorado; build, catálogo/ETL e estrutura documental aprovados. Navegador:
+TXT/Canva em 320/390/1440 px, incluindo histórico, Lixo/restauro, privacidade e
+estado do PDF inalterado; temas em 320/768/1440/2560 px. Armazenamento temporário
+e tradução simulada; sem validação real de fornecedores externos.

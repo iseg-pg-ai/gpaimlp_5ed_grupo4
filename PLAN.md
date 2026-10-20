@@ -1,5 +1,14 @@
 # Plano de evolução do BLU AI System
 
+## Integração de dev em TXT/Canva — 2026-10-21
+
+- [x] Integrar `origin/dev` preservando as melhorias de TXT e do plugin Canva.
+- [x] Validar Python, portal, catálogo/ETL e exportação TXT.
+
+Validação local: 83 testes Python; check do portal com 97 aprovados e um
+ignorado; build e catálogo/ETL aprovados. Navegador: TXT/Canva em
+320/390/1440 px e temas em 320/768/1440/2560 px, com dados temporários.
+
 Registos do assistente acrescentados em 2026-10-16 a partir do plano fornecido
 pelo utilizador. As dez secções seguintes conservam o estado e a evidência
 reportados no contexto de `pc/assistant-agent-for-blu-curator`; a sua inclusão
@@ -682,3 +691,22 @@ as restantes entradas uv para reinstalação e funcionamento sem rede.
 Portal `/catalog`, apresentação e saúde Streamlit respondem HTTP 200.
 Estrutura (356 ficheiros) e `git diff --check` aprovados; só este plano
 foi alterado entre os ficheiros versionados. Nenhum teste foi removido.
+
+## Eficiência TXT/Canva — 2026-10-19
+
+- [x] Alterar o botão e traduções para Exportar TXT.
+- [x] Reduzir repetição no prompt e impedir carregamento da curadoria na composição.
+- [x] Remover aceitação do plano; preservar aprovação obrigatória das ferramentas.
+- [x] Testar dataset e edição de um dia numa cópia reduzida do modelo Canva.
+- [x] Executar verificações locais e preparar pacote 0.4.0, com limites abaixo.
+
+Teste parcial: modelo sem autofill; caixas do dia editáveis, nota ultrapassa
+painel original. Não equivale à validação de uma proposta completa. Instalação
+remota 0.2.0 permanece independente da fonte local; atualização por publicar.
+
+Verificação concluída: cinco testes TXT aprovados; lint, TypeScript e Prettier
+aprovados. Suite geral: 97/98, falha em road-routing (isAlgorithmOptimized).
+Estrutura e diff --check aprovados. Build bloqueado por acesso negado do SWC
+na canonicalização Windows do diretório. Pacote 0.4.0 preparado, não publicado.
+Prompt: 9824 → 3889 caracteres (-60,4%); JSON do caso de seis dias/23 entradas
+idêntico. Sem medição de tokens faturados ou tempo de geração ponta a ponta.

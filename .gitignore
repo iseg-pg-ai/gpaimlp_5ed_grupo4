@@ -61,3 +61,8 @@ Taskfile.yaml
 .nvm/
 sagemaker-code-editor-server-data/
 .sagemaker_remoteAccess_do_not_delete
+
+# Estado privado da sessão
+/.streamlit/machine_id_v4
+/config/studio.local.json
+/monitoring/runtime/
