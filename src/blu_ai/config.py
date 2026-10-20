@@ -15,12 +15,9 @@ DATABASE_PATH = WAREHOUSE_DIR / "blu_etl.sqlite"
 load_dotenv(ROOT_DIR / ".env")
 
 # AWS Bedrock configuration
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_REGION = os.getenv("AWS_REGION", "eu-north-1")
-AWS_BEARER_TOKEN_BEDROCK = os.getenv("AWS_BEARER_TOKEN_BEDROCK")
 
-# Primary model: Claude 3.5 Sonnet on Bedrock or configurable
+# Modelo Bedrock configurável.
 BEDROCK_MODEL_ID = os.getenv(
     "BEDROCK_MODEL_ID",
     "eu.amazon.nova-lite-v1:0"

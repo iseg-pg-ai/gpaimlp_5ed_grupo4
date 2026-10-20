@@ -1,15 +1,12 @@
-import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
+import { launchBrowser, readSnapshot, mockTranslation } from "./helpers.mjs";
+
 import assert from "node:assert/strict";
 
-const browser = await chromium.launch({
-  headless: true,
-  channel: process.env.BROWSER_CHANNEL ?? "msedge",
-});
+const browser = await launchBrowser();
 try {
   for (const corrupted of [true, false]) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    const snapshot = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
+    const snapshot = readSnapshot();
     Object.assign(snapshot.brief, {
       childrenAges: "",
       specialOccasion: "",
@@ -25,16 +22,7 @@ try {
       localStorage.setItem("blu-portal-language", "pt");
       localStorage.setItem("blu-trips-v1", raw);
     }, original);
-    await page.route("**/api/translate", (r) =>
-      r.fulfill({
-        json: {
-          texts: r
-            .request()
-            .postDataJSON()
-            .items.map((i) => i.text),
-        },
-      }),
-    );
+    await mockTranslation(page);
     await page.route("**/api/versions?*", (r) =>
       r.fulfill({
         json: r.request().url().includes("&version=")

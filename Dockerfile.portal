@@ -1,0 +1,25 @@
+FROM node:24-bookworm-slim AS build
+
+WORKDIR /app
+COPY . .
+
+WORKDIR /app/dmc-workspace
+RUN npm ci && npm run build && npm prune --omit=dev
+
+FROM node:24-bookworm-slim AS runtime
+
+ENV NODE_ENV=production \
+    HOSTNAME=0.0.0.0 \
+    PORT=3001
+
+WORKDIR /app
+COPY --from=build /app /app
+
+RUN chown -R node:node /app/data/portal /app/exports
+
+USER node
+WORKDIR /app/dmc-workspace
+EXPOSE 3001
+
+# next start serves .next/static itself, preventing missing JavaScript chunks.
+CMD ["npm", "run", "start", "--", "--hostname", "0.0.0.0", "--port", "3001"]

@@ -1,5 +1,14 @@
 # Plano de evolução do BLU AI System
 
+## Integração de dev em TXT/Canva — 2026-10-21
+
+- [x] Integrar `origin/dev` preservando as melhorias de TXT e do plugin Canva.
+- [x] Validar Python, portal, catálogo/ETL e exportação TXT.
+
+Validação local: 83 testes Python; check do portal com 97 aprovados e um
+ignorado; build e catálogo/ETL aprovados. Navegador: TXT/Canva em
+320/390/1440 px e temas em 320/768/1440/2560 px, com dados temporários.
+
 Registos do assistente acrescentados em 2026-10-16 a partir do plano fornecido
 pelo utilizador. As dez secções seguintes conservam o estado e a evidência
 reportados no contexto de `pc/assistant-agent-for-blu-curator`; a sua inclusão

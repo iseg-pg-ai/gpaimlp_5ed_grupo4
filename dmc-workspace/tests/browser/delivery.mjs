@@ -1,14 +1,11 @@
-import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
+import { launchBrowser, readSnapshot, mockTranslation } from "./helpers.mjs";
+
 import assert from "node:assert/strict";
 
-const browser = await chromium.launch({
-  headless: true,
-  channel: process.env.BROWSER_CHANNEL || "msedge",
-});
+const browser = await launchBrowser();
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  const snapshot = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
+  const snapshot = readSnapshot();
   Object.assign(snapshot.brief, {
     customerEmail: "cliente@example.com",
     childrenAges: "",
@@ -24,16 +21,7 @@ try {
       JSON.stringify([{ ...trip, id: "delivery-browser", version: 3, messages: [] }]),
     );
   }, snapshot);
-  await page.route("**/api/translate", (route) =>
-    route.fulfill({
-      json: {
-        texts: route
-          .request()
-          .postDataJSON()
-          .items.map((item) => item.text),
-      },
-    }),
-  );
+  await mockTranslation(page);
   await page.route("**/api/trash/cleanup", (route) =>
     route.fulfill({ json: { deletedTripIds: [], deletedVersions: [] } }),
   );

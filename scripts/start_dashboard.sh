@@ -20,7 +20,7 @@ cd "$REPOSITORY_ROOT"
 
 # A dashboard without a warehouse would only show an error state.
 if [[ ! -f "$WAREHOUSE" ]]; then
-    echo "Error: Warehouse missing. Run ./scripts/run_full_pipeline.sh first." >&2
+    echo "Warehouse ausente. Executar: uv run --no-default-groups python -m etl.pipeline --data-dir data --output-dir warehouse" >&2
     exit 1
 fi
 
@@ -31,7 +31,18 @@ if [[ ! -x "$PYTHON" ]]; then
     exit 1
 fi
 
+if ! "$PYTHON" -c 'import streamlit, plotly' >/dev/null 2>&1; then
+    echo "Instalar o dashboard: uv sync --locked --inexact --group dashboard" >&2
+    exit 1
+fi
+
+# Endereço público configurado; a porta local continua independente do proxy.
+DASHBOARD_ORIGIN="$("$PYTHON" -B scripts/studio_urls.py --origin)"
+DASHBOARD_URL="$("$PYTHON" -B scripts/studio_urls.py --port "$PORT")"
+printf 'Dashboard analítico: %s\n' "$DASHBOARD_URL"
+
 # Start Streamlit in the foreground so the operator sees logs and can stop it with Ctrl+C.
 exec "$PYTHON" -m streamlit run "$APPLICATION" \
     --server.headless true \
-    --server.port "$PORT"
+    --server.port "$PORT" \
+    --browser.serverAddress "${DASHBOARD_ORIGIN#https://}"

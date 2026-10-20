@@ -1,9 +1,9 @@
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { zipSync } from "fflate";
-import { TranslationError } from "@/lib/translation-error";
+import { TranslationError } from "@/lib/local-translation";
 import { isLocale } from "@/lib/locales";
 import { VersionStore, VersionConflict, checkTripId } from "@/lib/version-store";
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+import { jsonError, noStoreHeaders } from "@/lib/server-http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { renderItineraryPrompt } from "@/lib/itinerary-prompt";
@@ -87,7 +87,12 @@ export async function GET(request: Request) {
         path.resolve(process.cwd(), "../config/prompts/roteiro-visual-canva.txt"),
         "utf8",
       );
-      const text = renderItineraryPrompt(JSON.parse(row.snapshot), row, language, instructions);
+      const text = await renderItineraryPrompt(
+        JSON.parse(row.snapshot),
+        row,
+        language,
+        instructions,
+      );
       const filename = row.filename.replace(/\.pdf$/, `_Canva_${language.toUpperCase()}.txt`);
       return new Response(text, {
         headers: {

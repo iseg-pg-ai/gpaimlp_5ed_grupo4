@@ -1,4 +1,5 @@
 "use client";
+import { portalFetch } from "@/lib/http-client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -31,7 +32,7 @@ export default function TrashPage() {
   const [cleanupMessage, setCleanupMessage] = useState("");
 
   const loadVersions = async () => {
-    const response = await fetch("/api/versions/trash", { cache: "no-store" });
+    const response = await portalFetch("/api/versions/trash", { cache: "no-store" });
     const result = (await response.json()) as VersionRecord[] | { error?: string };
     if (!response.ok || !Array.isArray(result))
       throw new Error(
@@ -103,7 +104,7 @@ export default function TrashPage() {
     if (!window.confirm(`Eliminar definitivamente ${subject}? Esta ação não pode ser anulada.`))
       return;
     try {
-      const response = await fetch("/api/trash/cleanup", {
+      const response = await portalFetch("/api/trash/cleanup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -159,24 +160,26 @@ export default function TrashPage() {
   );
 
   return (
-    <main className="mx-auto max-w-5xl p-4 text-[#143F4B] sm:p-8">
+    <main className="portal-page text-[var(--portal-text-143f4b)]">
       <Link href="/" className="underline">
         <T text="Voltar ao workspace" source="pt" />
       </Link>
       <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 font-serif-blu text-3xl">
-            <Trash2 className="size-7 text-[#70443E]" /> <T text="Lixo" source="pt" />
+            <Trash2 className="size-7 text-[var(--portal-text-70443e)]" />{" "}
+            <T text="Lixo" source="pt" />
           </h1>
-          <p className="mt-2 text-sm text-[#4A636B]">
+          <p className="mt-2 text-sm text-[var(--portal-text-4a636b)]">
             <T
               text="Restaure viagens removidas dos planos ativos e versões retiradas do histórico."
               source="pt"
             />
           </p>
         </div>
-        <label className="flex max-w-md items-start gap-3 rounded-xl border border-[#D5D1C7] bg-white p-4 text-sm">
+        <label className="flex max-w-md items-start gap-3 rounded-xl border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] p-4 text-sm">
           <input
+            name="automaticTrash"
             type="checkbox"
             className="mt-1"
             checked={autoTrash}
@@ -186,7 +189,7 @@ export default function TrashPage() {
             <strong className="block">
               <T text="Remover automaticamente viagens terminadas" source="pt" />
             </strong>
-            <span className="mt-1 block text-xs text-[#4A636B]">
+            <span className="mt-1 block text-xs text-[var(--portal-text-4a636b)]">
               <T
                 text="As viagens cuja data de fim já passou saem dos planos ativos e permanecem recuperáveis aqui."
                 source="pt"
@@ -197,13 +200,14 @@ export default function TrashPage() {
       </div>
 
       <label className="relative mt-6 block">
-        <Search className="absolute left-3 top-3 size-4 text-[#698288]" />
+        <Search className="absolute left-3 top-3 size-4 text-[var(--portal-text-698288)]" />
         <input
+          name="trashSearch"
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Pesquisar por cliente, destino, versão ou ficheiro…"
-          className="h-11 w-full rounded-xl border border-[#D5D1C7] bg-white pl-10 pr-4 text-sm"
+          className="h-11 w-full rounded-xl border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] pl-10 pr-4 text-sm"
         />
       </label>
       {error && (
@@ -235,7 +239,7 @@ export default function TrashPage() {
         <h2 className="font-serif-blu text-2xl">Viagens removidas</h2>
         <div className="mt-3 space-y-3">
           {ready && !visibleTrips.length && (
-            <p className="rounded-xl border border-[#D5D1C7] bg-white p-5 text-sm">
+            <p className="rounded-xl border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] p-5 text-sm">
               Nenhuma viagem encontrada.
             </p>
           )}
@@ -244,19 +248,19 @@ export default function TrashPage() {
             return (
               <article
                 key={entry.trip.id}
-                className="rounded-xl border border-[#D5D1C7] bg-white p-5"
+                className="rounded-xl border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <span className="rounded-full bg-[#F1E4E1] px-2 py-1 text-xs font-semibold text-[#70443E]">
+                    <span className="rounded-full bg-[var(--portal-bg-f1e4e1)] px-2 py-1 text-xs font-semibold text-[var(--portal-text-70443e)]">
                       Viagem
                     </span>
                     <h3 className="mt-2 text-lg font-semibold">{entry.trip.brief.customerName}</h3>
-                    <p className="text-sm text-[#4A636B]">
+                    <p className="text-sm text-[var(--portal-text-4a636b)]">
                       {entry.trip.brief.destination} · {entry.trip.brief.startDate} —{" "}
                       {entry.trip.brief.endDate}
                     </p>
-                    <p className="mt-2 text-xs text-[#698288]">
+                    <p className="mt-2 text-xs text-[var(--portal-text-698288)]">
                       Removida em {new Date(entry.removedAt).toLocaleString()} · remoção{" "}
                       {entry.removal === "automatic" ? "automática" : "manual"}
                     </p>
@@ -279,7 +283,7 @@ export default function TrashPage() {
                     <button
                       type="button"
                       onClick={() => restoreTrip(entry.trip.id)}
-                      className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#2D5B67] px-3 py-2 text-sm font-semibold text-[#143F4B] hover:bg-[#E7EEF0]"
+                      className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--portal-line-2d5b67)] px-3 py-2 text-sm font-semibold text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-e7eef0)]"
                     >
                       <ArchiveRestore className="size-4" /> Restaurar viagem
                     </button>
@@ -295,7 +299,7 @@ export default function TrashPage() {
         <h2 className="font-serif-blu text-2xl">Versões removidas</h2>
         <div className="mt-3 space-y-3">
           {ready && !visibleVersions.length && (
-            <p className="rounded-xl border border-[#D5D1C7] bg-white p-5 text-sm">
+            <p className="rounded-xl border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] p-5 text-sm">
               Nenhuma versão encontrada.
             </p>
           )}
@@ -304,13 +308,13 @@ export default function TrashPage() {
             return (
               <article
                 key={`${entry.tripId}-${entry.version}`}
-                className="rounded-xl border border-[#D5D1C7] bg-white p-5"
+                className="rounded-xl border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] p-5"
               >
-                <span className="rounded-full bg-[#E7EEF0] px-2 py-1 text-xs font-semibold">
+                <span className="rounded-full bg-[var(--portal-bg-e7eef0)] px-2 py-1 text-xs font-semibold">
                   Versão
                 </span>
                 <h3 className="mt-2 break-words font-semibold">{entry.filename}</h3>
-                <p className="my-2 text-xs text-[#698288]">
+                <p className="my-2 text-xs text-[var(--portal-text-698288)]">
                   Removida em {entry.trashedAt ? new Date(entry.trashedAt).toLocaleString() : "—"} ·
                   remoção manual
                 </p>

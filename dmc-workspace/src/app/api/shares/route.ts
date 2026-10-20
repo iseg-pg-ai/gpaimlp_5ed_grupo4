@@ -1,5 +1,6 @@
+import { publicUrl, jsonError, noStoreHeaders } from "@/lib/server-http";
 import { isLocale } from "@/lib/locales";
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+
 import { checkTripId, VersionStore, type ShareMethod } from "@/lib/version-store";
 
 export const runtime = "nodejs";
@@ -42,13 +43,11 @@ export async function POST(request: Request) {
       body.method,
       body.recipient,
     );
-    const configuredOrigin = process.env.BLU_PUBLIC_URL?.replace(/\/$/, "");
-    const origin = configuredOrigin || new URL(request.url).origin;
     const path =
       share.method === "document" ? `/api/shares/${share.token}/document` : `/share/${share.token}`;
     return Response.json(
       {
-        shareUrl: `${origin}${path}`,
+        shareUrl: publicUrl(path, request.url),
         recipient: share.recipient,
         version: share.version,
         locale: share.locale,

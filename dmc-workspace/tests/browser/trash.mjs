@@ -1,36 +1,26 @@
-import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
+import { launchBrowser, readSnapshot, mockTranslation } from "./helpers.mjs";
+
 import assert from "node:assert/strict";
 
-const browser = await chromium.launch({
-  headless: true,
-  channel: process.env.BROWSER_CHANNEL || "msedge",
-});
+const browser = await launchBrowser();
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  const snapshot = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
+  const snapshot = readSnapshot();
   Object.assign(snapshot.brief, {
     childrenAges: "",
     specialOccasion: "",
     notes: "",
     accommodation: "Boutique",
     diningPace: "Relaxed Dining (~90m)",
+    startDate: "2099-10-10",
+    endDate: "2099-10-11",
   });
   const trip = { ...snapshot, id: "trash-browser", version: 1, messages: [] };
   await page.addInitScript((saved) => {
     localStorage.setItem("blu-portal-language", "pt");
     localStorage.setItem("blu-trips-v1", JSON.stringify([saved]));
   }, trip);
-  await page.route("**/api/translate", (route) =>
-    route.fulfill({
-      json: {
-        texts: route
-          .request()
-          .postDataJSON()
-          .items.map((item) => item.text),
-      },
-    }),
-  );
+  await mockTranslation(page);
   await page.route("**/api/versions?*", (route) => route.fulfill({ json: [] }));
   await page.route("**/api/trash/cleanup", (route) =>
     route.fulfill({ json: { deletedTripIds: [], deletedVersions: [] } }),

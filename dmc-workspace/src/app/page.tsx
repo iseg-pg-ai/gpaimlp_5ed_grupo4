@@ -1,4 +1,6 @@
 "use client";
+
+import { portalUrl } from "@/lib/http-client";
 import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
@@ -59,10 +61,10 @@ export default function WorkspacePage() {
     adjustDayCapacity,
   } = useWorkspace();
   return (
-    <div className="responsive-workspace relative flex flex-col lg:flex-row h-full bg-[#F4F0E7]">
+    <div className="responsive-workspace portal-frame relative flex flex-col lg:flex-row h-full bg-[var(--portal-bg-f4f0e7)]">
       <button
         type="button"
-        className="lg:hidden shrink-0 min-h-11 px-4 py-2 border-b text-left text-sm bg-[#EBE5DA]"
+        className="lg:hidden shrink-0 min-h-11 px-4 py-2 border-b text-left text-sm bg-[var(--portal-bg-ebe5da)]"
         aria-expanded={navigationOpen}
         aria-controls="trip-navigation"
         onClick={() => setNavigationOpen((v) => !v)}
@@ -161,7 +163,9 @@ export default function WorkspacePage() {
                           <div key={v.version} className="my-2 break-words">
                             <a
                               className="underline"
-                              href={`/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`}
+                              href={portalUrl(
+                                `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=bundle&locale=${active.clientLanguage ?? clientLanguage}`,
+                              )}
                             >
                               {v.filename}
                             </a>
@@ -172,7 +176,7 @@ export default function WorkspacePage() {
                               type="button"
                               onClick={() => trashVersion(v.version)}
                               disabled={saving || exporting}
-                              className="ml-2 inline-flex min-h-9 items-center gap-1 rounded-lg border border-[#D5D1C7] px-2 py-1 text-xs text-[#70443E] hover:bg-[#F7E9E6] disabled:opacity-50"
+                              className="ml-2 inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--portal-line-d5d1c7)] px-2 py-1 text-xs text-[var(--portal-text-70443e)] hover:bg-[var(--portal-bg-f7e9e6)] disabled:opacity-50"
                               title="Enviar apenas esta versão para o Lixo"
                             >
                               <Trash2 className="size-3.5" />
@@ -180,7 +184,9 @@ export default function WorkspacePage() {
                             </button>
                             <a
                               className="ml-3 underline"
-                              href={`/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=prompt&locale=${active.clientLanguage ?? clientLanguage}`}
+                              href={portalUrl(
+                                `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=prompt&locale=${active.clientLanguage ?? clientLanguage}`,
+                              )}
                             >
                               <T text="TXT para Canva" source="pt" />
                             </a>
@@ -275,7 +281,7 @@ export default function WorkspacePage() {
                     type="button"
                     aria-label={assistantLabel}
                     title={assistantLabel}
-                    className={`${desktopAssistantCollapsed ? "" : "xl:hidden"} fixed right-4 z-40 rounded-full bg-[#143F4B] text-[#F4F0E7] border border-[#D8A65C] shadow-xl flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D8A65C]`}
+                    className={`${desktopAssistantCollapsed ? "" : "xl:hidden"} fixed right-4 z-40 rounded-full bg-[var(--portal-bg-143f4b)] text-[#F4F0E7] border border-[var(--portal-line-d8a65c)] shadow-xl flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D8A65C]`}
                     style={{
                       width: 56,
                       height: 56,
@@ -304,7 +310,7 @@ export default function WorkspacePage() {
                     tabIndex={-1}
                     role="region"
                     aria-label={assistantLabel}
-                    className={`fixed right-4 bottom-20 z-40 w-[calc(100%-2rem)] max-w-sm h-[min(70dvh,36rem)] overflow-hidden rounded-2xl border border-[#D5D1C7] shadow-xl [&>aside]:h-full xl:static xl:w-full xl:max-w-none xl:h-full xl:rounded-none xl:border-0 xl:shadow-none ${assistantOpen ? "block" : "hidden"} ${desktopAssistantCollapsed ? "xl:hidden" : "xl:block"}`}
+                    className={`fixed right-4 bottom-20 z-40 w-[calc(100%-2rem)] max-w-sm h-[min(70dvh,36rem)] overflow-hidden rounded-2xl border border-[var(--portal-line-d5d1c7)] shadow-xl [&>aside]:h-full xl:static xl:w-full xl:max-w-none xl:h-full xl:rounded-none xl:border-0 xl:shadow-none ${assistantOpen ? "block" : "hidden"} ${desktopAssistantCollapsed ? "xl:hidden" : "xl:block"}`}
                   >
                     <AIAssistantPanel
                       onCollapse={() => {

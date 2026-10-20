@@ -93,20 +93,20 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   };
 
   return (
-    <aside className="w-full min-w-0 shrink-0 border-l border-[#D5D1C7] bg-[#FAF8F3] flex flex-col h-[70dvh] xl:h-full xl:min-h-0 select-none">
+    <aside className="w-full min-w-0 shrink-0 border-l border-[var(--portal-line-d5d1c7)] bg-[var(--portal-bg-faf8f3)] flex flex-col h-[70dvh] xl:h-full xl:min-h-0 select-none">
       {/* 1. Header with BLU Costa Primitives */}
-      <div className="shrink-0 p-4 border-b border-[#D5D1C7] bg-[#F4F0E7] flex items-center justify-between">
+      <div className="shrink-0 p-4 border-b border-[var(--portal-line-d5d1c7)] bg-[var(--portal-bg-f4f0e7)] flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
             <Badge variant="gold" className="px-1.5 py-0.5 text-xs font-semibold">
-              <Sparkles className="w-2.5 h-2.5 text-[#D8A65C]" />
+              <Sparkles className="w-2.5 h-2.5 text-[var(--portal-text-d8a65c)]" />
               <span>BLU</span>
             </Badge>
-            <h3 className="font-serif-blu font-bold text-sm text-[#143F4B]">
+            <h3 className="font-serif-blu font-bold text-sm text-[var(--portal-text-143f4b)]">
               <T text="Curation Assistant" source="en" />{" "}
             </h3>
           </div>
-          <p className="text-xs text-[#4A636B] mt-0.5">
+          <p className="text-xs text-[var(--portal-text-4a636b)] mt-0.5">
             <T text="Agente de IA · LangChain & Bedrock" source="pt" />{" "}
           </p>
         </div>
@@ -119,7 +119,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
               aria-label={collapseLabel}
               title={collapseLabel}
               onClick={onCollapse}
-              className="hidden xl:flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[#143F4B] hover:bg-[#E7EEEF]"
+              className="hidden xl:flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-e7eeef)]"
             >
               <PanelRightClose aria-hidden="true" className="size-5" />
             </button>
@@ -137,11 +137,11 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
       </div>
 
       {/* 2. Standardized AI Elements Conversation & Message Components */}
-      <Conversation ref={conversationContainerRef} className="bg-[#FAF8F3]">
+      <Conversation ref={conversationContainerRef} className="bg-[var(--portal-bg-faf8f3)]">
         <ConversationContent>
           {messages.length === 0 ? (
             <ConversationEmptyState
-              icon={<Sparkles className="size-8 text-[#D8A65C]" />}
+              icon={<Sparkles className="size-8 text-[var(--portal-text-d8a65c)]" />}
               title="Curator Ready"
               description="Use Edit Brief para alterar preferências; remova atividades através dos comandos sugeridos."
             />
@@ -152,18 +152,20 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                 <Message key={message.id} from={message.sender}>
                   <div className="flex items-center gap-1.5 mb-1 px-1">
                     <MessageAvatar from={message.sender} />
-                    <span className="text-xs font-medium text-[#4A636B]">
+                    <span className="text-xs font-medium text-[var(--portal-text-4a636b)]">
                       {isAssistant ? "BLU Costa Curator" : "Travel Designer"}
                     </span>
-                    <span className="text-xs text-[#4A636B] ml-auto">{message.timestamp}</span>
+                    <span className="text-xs text-[var(--portal-text-4a636b)] ml-auto">
+                      {message.timestamp}
+                    </span>
                   </div>
 
                   <MessageContent
                     from={message.sender}
                     className={
                       isAssistant
-                        ? "bg-white border border-[#D5D1C7] text-[#143F4B]"
-                        : "bg-[#143F4B] text-[#F4F0E7]"
+                        ? "bg-[var(--portal-white)] border border-[var(--portal-line-d5d1c7)] text-[var(--portal-text-143f4b)]"
+                        : "bg-[var(--portal-bg-143f4b)] text-[#F4F0E7]"
                     }
                   >
                     <MessageResponse>
@@ -177,8 +179,8 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
 
                   {/* Status update indicator */}
                   {isAssistant && message.statusTag && (
-                    <div className="flex items-center gap-1 text-xs font-medium text-[#2D5B67] mt-1 px-1 animate-in fade-in">
-                      <Check className="w-3 h-3 text-[#2D5B67] stroke-[2.5]" />
+                    <div className="flex items-center gap-1 text-xs font-medium text-[var(--portal-text-2d5b67)] mt-1 px-1 animate-in fade-in">
+                      <Check className="w-3 h-3 text-[var(--portal-text-2d5b67)] stroke-[2.5]" />
                       <span>{message.statusTag}</span>
                     </div>
                   )}
@@ -208,15 +210,15 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             <Message from="assistant">
               <div className="flex items-center gap-1.5 mb-1 px-1">
                 <MessageAvatar from="assistant" />
-                <span className="text-xs font-medium text-[#4A636B]">
+                <span className="text-xs font-medium text-[var(--portal-text-4a636b)]">
                   <T text="BLU Costa Curator" source="en" />{" "}
                 </span>
               </div>
               <MessageContent
                 from="assistant"
-                className="text-[#4A636B] flex items-center gap-2 bg-white border border-[#D5D1C7]"
+                className="text-[var(--portal-text-4a636b)] flex items-center gap-2 bg-[var(--portal-white)] border border-[var(--portal-line-d5d1c7)]"
               >
-                <Loader2 className="size-3.5 animate-spin text-[#2D5B67]" />
+                <Loader2 className="size-3.5 animate-spin text-[var(--portal-text-2d5b67)]" />
                 <span>
                   <T text="Validating rules & updating proposal…" source="en" />
                 </span>
@@ -229,7 +231,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
       </Conversation>
 
       {/* 3. AI Elements PromptInput with Suggestion Tools */}
-      <div className="p-3 border-t border-[#D5D1C7] bg-white">
+      <div className="p-3 border-t border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)]">
         <PromptInput
           onSubmit={(e) => {
             e.preventDefault();
@@ -238,7 +240,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
         >
           {/* Suggestion Chips */}
           <div className="px-2 pt-2 pb-1">
-            <span className="text-xs font-semibold text-[#698288] tracking-wider block mb-1.5">
+            <span className="text-xs font-semibold text-[var(--portal-text-698288)] tracking-wider block mb-1.5">
               <T text="Curator Suggestions" source="en" />{" "}
             </span>
             <PromptInputTools>
@@ -248,7 +250,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   type="button"
                   disabled={isProcessing}
                   onClick={() => handleChipClick(chip)}
-                  className="text-xs px-2 py-0.5 rounded-md bg-[#FAF8F3] text-[#143F4B] border border-[#D5D1C7] hover:border-[#2D5B67] hover:bg-[#E7EEF0] transition-all cursor-pointer disabled:opacity-50 text-left"
+                  className="text-xs px-2 py-0.5 rounded-md bg-[var(--portal-bg-faf8f3)] text-[var(--portal-text-143f4b)] border border-[var(--portal-line-d5d1c7)] hover:border-[var(--portal-line-2d5b67)] hover:bg-[var(--portal-bg-e7eef0)] transition-all cursor-pointer disabled:opacity-50 text-left"
                 >
                   <T text={chip} source="pt" />
                 </button>
@@ -259,6 +261,8 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
           {/* Input text body */}
           <PromptInputBody>
             <PromptInputTextarea
+              name="assistantMessage"
+              aria-label="Mensagem para o assistente"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onEnterSubmit={handleSubmit}
@@ -268,7 +272,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             <PromptInputSubmit
               status={isProcessing ? "streaming" : "ready"}
               disabled={!inputText.trim()}
-              className="bg-[#2D5B67] hover:bg-[#1E4651]"
+              className="bg-[var(--portal-bg-2d5b67)] hover:bg-[var(--portal-bg-1e4651)]"
             />
           </PromptInputBody>
 

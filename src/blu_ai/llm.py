@@ -8,8 +8,6 @@ import boto3
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from blu_ai.config import (
-    AWS_ACCESS_KEY_ID,
-    AWS_SECRET_ACCESS_KEY,
     AWS_REGION,
     BEDROCK_MODEL_ID,
     TEMPERATURE,
@@ -29,23 +27,20 @@ def get_llm(model_id: Optional[str] = None, temperature: Optional[float] = None)
     target_model = model_id or BEDROCK_MODEL_ID
 
     # 1. Tentativa com AWS Bedrock
-    if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
+    session = boto3.Session(region_name=AWS_REGION)
+    if session.get_credentials():
         try:
-            from langchain_aws import ChatBedrock
+            from langchain_aws import ChatBedrockConverse
 
-            client = boto3.client(
+            client = session.client(
                 service_name="bedrock-runtime",
                 region_name=AWS_REGION,
-                aws_access_key_id=AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
             )
-            llm = ChatBedrock(
+            llm = ChatBedrockConverse(
                 client=client,
                 model_id=target_model,
-                model_kwargs={
-                    "temperature": temp,
-                    "max_tokens": MAX_TOKENS,
-                },
+                temperature=temp,
+                max_tokens=MAX_TOKENS,
             )
             return llm
         except Exception as e:
@@ -63,11 +58,7 @@ def get_llm(model_id: Optional[str] = None, temperature: Optional[float] = None)
         except Exception as e:
             logger.warning(f"Erro ao instanciar ChatOpenAI: {e}")
 
-    # 3. Fallback local/mock para desenvolvimento offline e testes
-    from langchain_core.language_models.fake_chat_models import FakeChatModel
-    logger.info("A utilizar FakeChatModel para execução local/offline.")
-    return FakeChatModel(
-        responses=[
-            "Com base nas diretrizes da Blu Coast e no briefing do cliente, selecionei atividades culturais e gastronómicas respeitando todas as restrições."
-        ]
+    raise RuntimeError(
+        "Modelo de IA indisponível. Configure um papel IAM com acesso ao Bedrock "
+        "ou credenciais válidas; confirme a região e BEDROCK_MODEL_ID."
     )

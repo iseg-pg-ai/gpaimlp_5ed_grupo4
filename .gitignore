@@ -1,3 +1,11 @@
+# Artefactos locais do sistema e do shell
+.DS_Store
+/.bash_history
+/.bashrc
+/.wget-hsts
+/package-lock.json
+/user-default-efs
+
 # Python
 __pycache__/
 *.py[cod]
@@ -35,3 +43,26 @@ Taskfile.yaml
 # Local editable catalog and its transactional history (back up separately)
 /data/portal/*.sqlite*
 /data/portal/etl.lock
+
+
+# FDC
+.agent/
+.aws/
+.cache/
+.config/
+.copilot/
+.dotnet/
+.kiro/
+.vscode-server/
+.claude/
+.code-editor-server/
+.local/
+.npm/
+.nvm/
+sagemaker-code-editor-server-data/
+.sagemaker_remoteAccess_do_not_delete
+
+# Estado privado da sessão
+/.streamlit/machine_id_v4
+/config/studio.local.json
+/monitoring/runtime/

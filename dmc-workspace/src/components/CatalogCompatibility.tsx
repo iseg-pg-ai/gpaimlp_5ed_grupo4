@@ -1,9 +1,10 @@
 "use client";
-import { selectStyle } from "./ui/select-style";
+import { selectStyle } from "./ui/form-controls";
 import { T } from "./LocaleProvider";
 import { matchingOptions, matchingLabels, type MatchingProfile } from "@/lib/catalog-matching";
 
-const inputClass = "mt-1 w-full min-w-0 rounded-lg border border-[#9DB3B8] bg-white p-3 text-base";
+const inputClass =
+  "mt-1 w-full min-w-0 rounded-lg border border-[var(--portal-line-9db3b8)] bg-[var(--portal-white)] p-3 text-base";
 const profileFieldLabels = {
   minAge: "Idade mínima (anos)",
   maxGroup: "Máximo de participantes",
@@ -27,7 +28,7 @@ export function CatalogCompatibility({
   return (
     <section
       data-testid="catalog-compatibility"
-      className="min-w-0 rounded-xl border border-[#C5D4D8] bg-[#F5F8F8] p-4 sm:p-5"
+      className="min-w-0 rounded-xl border border-[var(--portal-line-c5d4d8)] bg-[var(--portal-bg-f5f8f8)] p-4 sm:p-5"
     >
       <h3 className="text-lg font-semibold">
         <T text="Compatibilidade com o questionário" source="pt" />
@@ -46,7 +47,10 @@ export function CatalogCompatibility({
       </p>
       <div className="mt-4 space-y-3">
         {(Object.keys(matchingOptions) as (keyof typeof matchingOptions)[]).map((key) => (
-          <details key={key} className="rounded-lg border border-[#C5D4D8] bg-white p-3">
+          <details
+            key={key}
+            className="rounded-lg border border-[var(--portal-line-c5d4d8)] bg-[var(--portal-white)] p-3"
+          >
             <summary className="cursor-pointer text-sm font-semibold">
               <T text={matchingLabels[key]} source="pt" /> ({value[key].length})
             </summary>
@@ -54,6 +58,7 @@ export function CatalogCompatibility({
               {matchingOptions[key].map((option) => (
                 <label key={option} className="flex min-w-0 items-start gap-3 text-sm leading-6">
                   <input
+                    name="compatibleProfiles"
                     type="checkbox"
                     className="mt-1 size-4 shrink-0 accent-[#2D5B67]"
                     disabled={!onChange}

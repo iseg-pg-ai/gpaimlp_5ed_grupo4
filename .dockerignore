@@ -1,0 +1,13 @@
+.git
+.github
+.venv
+.tools
+**/__pycache__
+**/*.pyc
+dmc-workspace/.next
+dmc-workspace/node_modules
+dmc-workspace/coverage
+exports/itineraries/*
+data/portal/*.sqlite*
+data/portal/etl.lock
+*.log

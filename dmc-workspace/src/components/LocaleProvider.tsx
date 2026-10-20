@@ -1,8 +1,10 @@
 "use client";
+import { portalFetch } from "@/lib/http-client";
+
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { languages, isLocale, type Locale } from "@/lib/locales";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Input, Textarea } from "@/components/ui/form-controls";
+
 import { TopBar } from "@/components/TopBar";
 import catalogue from "@/i18n/messages.json";
 const messages = catalogue as Record<string, Partial<Record<Locale, string>>>;
@@ -88,11 +90,11 @@ export function LanguagePicker({
   const selected = languages.find((l) => l.code === value)!;
   return (
     <details className="relative inline-block">
-      <summary className="cursor-pointer flex items-center gap-2 rounded border bg-white p-2 text-sm">
+      <summary className="cursor-pointer flex items-center gap-2 rounded border bg-[var(--portal-white)] p-2 text-sm">
         <Flag code={selected.flag} />
         {selected.name} ▾
       </summary>
-      <div className="absolute right-0 z-[100] bg-white border rounded shadow-lg min-w-48 p-1">
+      <div className="absolute right-0 z-[100] bg-[var(--portal-white)] border rounded shadow-lg min-w-48 p-1">
         {languages.map((l) => (
           <button
             type="button"
@@ -141,7 +143,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
         for (const target of languages.map((l) => l.code)) {
           const group = batch.filter(([, item]) => item.target === target);
           if (!group.length) continue;
-          fetch("/api/translate", {
+          portalFetch("/api/translate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -210,25 +212,4 @@ export function LocalizedInput(props: React.InputHTMLAttributes<HTMLInputElement
 export function LocalizedTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const placeholder = useTranslated(props.placeholder ?? "");
   return <Textarea {...props} placeholder={placeholder} />;
-}
-export function ExportLanguageLinks({ tripId, version }: { tripId: string; version: number }) {
-  const [language, setLanguage] = useState<Locale>("en");
-  return (
-    <div className="flex flex-wrap items-center gap-3 my-3">
-      <T text="Idioma do cliente" source="pt" />
-      <LanguagePicker value={language} onChange={setLanguage} />
-      <a
-        className="underline"
-        href={`/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=bundle&locale=${language}`}
-      >
-        <T text="Descarregar PDFs" source="pt" />
-      </a>
-      <a
-        className="underline"
-        href={`/api/versions?tripId=${encodeURIComponent(tripId)}&version=${version}&format=prompt&locale=${language}`}
-      >
-        <T text="TXT para Canva" source="pt" />
-      </a>
-    </div>
-  );
 }

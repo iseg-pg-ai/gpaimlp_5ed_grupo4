@@ -1,6 +1,6 @@
 import { validateSnapshot } from "@/lib/snapshot-validation";
-import { loadPublishedCatalog } from "@/lib/published-catalog";
-import { jsonError } from "@/lib/api-response";
+import { loadPublishedCatalog } from "@/lib/catalog-store";
+import { jsonError } from "@/lib/server-http";
 import { updateDayTransitLeg, optimizeDayRouteOrder } from "@/lib/road-routing";
 import type { TransitMode, ItineraryDay } from "@/types";
 

@@ -31,11 +31,11 @@ O ficheiro contém o nome do cliente; não é anónimo.
 - `skills/curadoria-blu/SKILL.md`: workflow e referência ao prompt.
 - `skills/curadoria-blu/references/curadoria-blu.txt`: prompt completo.
 
-O prompt genérico de curadoria continua em `config/prompts/curadoria-blu.txt`.
+A fonte única do prompt de curadoria é `skills/curadoria-blu/references/curadoria-blu.txt`.
 Para o PDF visual, usar o TXT específico descarregado pelo botão
 **Exportar TXT** na proposta ou no histórico do DMC.
 O TXT inclui os dados do roteiro, idioma, versão, orçamento e pendências.
-O modelo é https://canva.link/5u8zxudd1vkcbth; trabalhar sempre numa cópia.
+O modelo é [LISBON IN PERSPECTIVE](https://canva.link/5u8zxudd1vkcbth); trabalhar sempre numa cópia.
 O pacote exportado é uma fotografia: alterações às instruções exigem reconstruir
 e atualizar o plugin; alterações à viagem exigem apenas exportar um novo TXT.
 O TXT isolado também pode ser usado como referência de

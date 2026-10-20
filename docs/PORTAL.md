@@ -19,12 +19,22 @@ Abrir [http://localhost:3001](http://localhost:3001).
 Para exportar PDFs traduzidos, preparar também o ambiente Python na raiz:
 
 ```powershell
-python -m uv sync --locked --group translation
+python -m uv sync --locked --inexact --group translation
 python translations/setup_models.py
 ```
 
 Os modelos são executados localmente. Não é necessário iniciar um serviço Python
 separado nem fornecer credenciais externas.
+
+## Aparência
+
+O botão com lua/sol no cabeçalho alterna entre os temas claro e escuro.
+O tema claro é o padrão; a preferência fica guardada neste navegador e
+sincroniza entre separadores. A impressão e os PDFs mantêm a apresentação
+clara. O tema do portal não altera o dashboard Streamlit original.
+
+Validar a alternância, persistência, contraste e adaptação ao ecrã com
+`npm run test:theme` em `dmc-workspace/`, com o portal em execução.
 
 ## Fluxo funcional
 
@@ -40,9 +50,47 @@ separado nem fornecer credenciais externas.
 
 ## Catálogo
 
+O **Observatório interativo** é uma versão nativa da análise, com o estilo do
+portal: Panorama, Explorar oferta, Destinos, Preços, Histórico e Qualidade.
+Usa `/api/observatory` e a ponte Python existente para ler o warehouse numa
+transação SQLite, sem nova persistência e sem depender do serviço Streamlit.
+A aplicação original em `dashboard/` e o seu arranque permanecem inalterados.
+
+O mapa permite deslocação, zoom, camadas, nomes dos lugares e agrupamento visual
+que se adapta ao zoom. Selecionar um ponto abre a ficha; os membros de um grupo
+podem ser escolhidos individualmente. Registos sem coordenadas continuam na
+lista. Os contornos reutilizam o recurso Natural Earth existente, em domínio
+público, sem pedidos a fornecedores cartográficos.
+
+A comparação aceita duas a quatro ofertas, sem calcular um vencedor ou somar
+preços. A mediana de preços exige a mesma categoria, unidade harmonizada,
+condições originais, natureza comercial e moeda. Ausências não são zeros.
+O histórico conta roteiros distintos e liga atrações apenas pelo identificador
+explícito, sem inferir correspondências por nome. Não representa vendas.
+
+A confirmação e a validade dos campos são reavaliadas através dos contratos
+partilhados do ETL à data da consulta. Os indicadores distinguem preenchimento,
+evidência e integridade; nenhum certifica disponibilidade ou compatibilidade.
+As análises representam a entrega publicada e não as edições por publicar.
+**Atualizar análise** relê a entrega após uma publicação, preservando os filtros.
+
+**Gerir catálogo** mantém o editor operacional. Alternar entre as duas vistas
+preserva a sessão de exploração e o formulário em curso enquanto a página
+permanecer aberta. Em caso de indisponibilidade analítica, é possível tentar
+novamente ou continuar no editor.
+
+Validação: `npm run test:observatory`, com o portal iniciado, verifica as seis
+áreas e as interações com o warehouse local. O teste usa tradução simulada e
+simula uma falha do endpoint para verificar a recuperação; não guarda registos.
+
 A página `/catalog` permite pesquisar, filtrar, criar, editar e inativar
 atividades, restaurantes e experiências. Os registos seguem os estados Rascunho,
 Em revisão, Aprovado e Inativo. Apenas os aprovados podem entrar na geração.
+
+A persistência do catálogo usa SQLite Python e mantém o esquema existente.
+As validações de entrada são partilhadas com o editor em TypeScript; cada edição
+é guardada com verificação de revisão numa transação. Uma edição concorrente
+obsoleta devolve conflito 409 e exige reabrir o registo.
 
 O editor guarda a oferta e o histórico em `data/portal/catalog.sqlite`. O ETL
 publica os registos aprovados no warehouse; não se deve editar `warehouse/`
@@ -237,14 +285,78 @@ npm test
 npm run build
 ```
 
+## Execução na AWS
+
+### SageMaker Studio Code Editor
+
+A base pública local está em `config/studio.json`. Sem override,
+`scripts/start_aws_portal.sh` usa essa origem; `PORTAL_PUBLIC_ORIGIN` explícito
+continua a ter prioridade. Listar as ligações dos dashboards com
+`python -B scripts/studio_urls.py` na raiz.
+
+O proxy do Code Editor acrescenta um prefixo ao endereço. Usar o script
+específico, a partir da raiz, com a origem HTTPS da instância do utilizador:
+
+```bash
+cd dmc-workspace
+npm ci
+cd ..
+PORTAL_PUBLIC_ORIGIN=https://DOMINIO-DO-TEU-STUDIO bash scripts/start_aws_portal.sh
+```
+
+Abrir `https://DOMINIO-DO-TEU-STUDIO/codeeditor/default/ports/3001/`.
+Substituir o domínio pelo da própria instância. O script recompila com o prefixo
+antes de iniciar; um build criado sem esse prefixo não serve para este proxy.
+Requer Node 22.13 a 24.x; preserva uma versão compatível já selecionada.
+O serviço HTTP do agente Python é opcional. Para o iniciar com o portal, acrescentar
+`BLU_START_AGENT=1` ao comando, depois de preparar as dependências Python.
+
+O arranque valida a origem (apenas HTTPS, sem caminho), a porta e o prefixo.
+Se a porta estiver ocupada, termina antes de recompilar: encerrar o processo
+anterior ou definir outra `PORT`. O prefixo por defeito acompanha essa porta.
+`npm run start:aws` exige um build completo com o mesmo prefixo e a origem
+configurada; perante incompatibilidade, usar novamente o script da raiz.
+Não reutilizar builds de outra configuração nem copiar apenas parte de `.next`.
+
+### Servidor direto ou contentor
+
+O portal é uma aplicação Next.js com rotas de servidor e não pode ser publicado
+como um conjunto de ficheiros estáticos num bucket S3. O diretório de trabalho
+tem de ser `dmc-workspace`, pois os dados operacionais são lidos nas pastas irmãs
+`warehouse`, `config`, `data` e `exports`.
+
+Numa máquina Linux com Node.js 22.13 a 24.x, executar a partir da raiz:
+
+```bash
+chmod +x scripts/start_portal.sh
+PORT=3001 ./scripts/start_portal.sh
+```
+
+O script instala as dependências, cria um build limpo, confirma que
+`.next/static` contém os assets JavaScript e inicia o servidor em `0.0.0.0`.
+Para reutilizar uma instalação ou build já validado, podem ser definidos
+`SKIP_INSTALL=true` e `SKIP_BUILD=true`.
+
+Para ECS, App Runner ou uma instância com Docker:
+
+```bash
+docker build -f Dockerfile.portal -t blu-dmc-portal .
+docker run --rm -p 3001:3001 --env-file .env blu-dmc-portal
+```
+
+O `Dockerfile.portal` copia o build completo, incluindo `.next/static`, e inicia
+o Next.js a partir da pasta correta. As pastas `data/portal` e `exports` devem ser
+associadas a armazenamento persistente em produção. Depois de cada deployment,
+qualquer cache do CloudFront para HTML deve ser invalidado para que não aponte
+para chunks de um build anterior.
+
 `npm run check` acrescenta `format:check` a estas verificações e deve terminar sem
 avisos antes de integrar alterações no portal.
 
 Com o portal iniciado na porta 3001:
 
 ```powershell
-npm run test:responsive
-npm run test:navigation
+npm run test:ui
 npm run test:catalog
 npm run test:confirmations
 npm run test:itinerary
@@ -257,6 +369,50 @@ node tests/browser/canva-prompt.mjs
 No Windows, definir `$env:BROWSER_CHANNEL = "msedge"` quando o Chromium do
 Playwright não estiver instalado.
 
+## Meteorologia e controlos HTML nativos
+
+O navegador consulta `/api/weather` no próprio portal. O servidor chama
+`portal/weather.py`, sem serviço adicional ou bibliotecas Python extra. Previsão
+e referência histórica são identificadas separadamente. Uma falha ou resposta
+incompleta não é substituída por temperaturas fixas. Precipitação ausente aparece
+como «Por confirmar». A mesma consulta é reutilizada pela ferramenta do agente.
+
+O painel de detalhes abre num popover HTML nativo. Pode ser fechado com Escape,
+clique fora ou o botão Fechar. A consulta dinâmica continua a precisar de
+JavaScript; a gestão de abertura e fecho é feita pelo navegador.
+
+Em `/exports`, **Enviar para o Lixo** usa um formulário HTML e funciona sem
+JavaScript. Após o POST, o histórico é recarregado; erros aparecem no próprio
+histórico. Os formulários exigem origem válida. A API JSON e o restauro no Lixo
+interativo continuam disponíveis.
+
+Em `/exports`, escolher o idioma e carregar em **Descarregar PDFs** ou **TXT para
+Canva**. O formulário transmite versão, idioma e formato sem estado React e
+funciona sem JavaScript. O ZIP preserva os PDFs da versão; o TXT continua a
+excluir notas internas e contactos. PDF traduzido requer os modelos locais.
+
+## Consulta das fontes em HTML
+
+Em `/references`, escolher a folha, escrever a pesquisa e carregar em **Filtrar**.
+A seleção e a pesquisa ficam no URL; os links Anterior/Seguinte conservam os
+filtros. O formulário, a paginação e os detalhes funcionam sem JavaScript.
+A tradução da interface continua disponível quando JavaScript está ativo.
+
+A pesquisa e o enriquecimento de fontes usam `portal/data.py`; a composição
+TXT/Canva usa `portal/prompt.py`. Ambos usam apenas a biblioteca
+padrão Python. O portal usa `BLU_PYTHON`, o ambiente `.venv` ou o Python do sistema,
+por esta ordem. Não é necessário iniciar o agente ou outro servidor. Os registos
+são renderizados pelo template `dmc-workspace/templates/dataset-row.html`, com
+escaping das fontes; valores vazios aparecem como «—».
+
+### Isolar dados de testes
+
+`BLU_DATA_DIR` define a pasta de fontes e a base `portal/catalog.sqlite`;
+`BLU_WAREHOUSE_DIR` define a entrega publicada. O endpoint de publicação usa os
+mesmos caminhos, permitindo testar edição e ETL sem tocar nas pastas reais.
+Para versões e PDFs temporários, definir também `BLU_EXPORT_DIR`. As fontes
+necessárias devem existir no diretório de dados escolhido.
+
 ## Resolução de problemas
 
 - **Warehouse indisponível:** executar o ETL a partir da raiz.
@@ -268,3 +424,12 @@ Playwright não estiver instalado.
 - **PDF mandarim sem fonte:** configurar `BLU_PDF_CJK_FONT`.
 - **Dados locais ilegíveis:** não limpar o armazenamento antes de recuperar ou
   exportar as viagens existentes.
+
+- **Geist ou stack frames com 404 no Studio:** reiniciar o servidor após alterar
+  a configuração Next.js e atualizar a página sem cache. O loader de
+  desenvolvimento aplica o prefixo aos caminhos internos do overlay Next 16.4;
+  reavaliar esta adaptação quando atualizar o Next.js.
+- **Atributos Grammarly no body:** a extensão acrescenta atributos antes da
+  hidratação. O layout suprime apenas diferenças de atributos nesse elemento;
+  os componentes descendentes continuam sujeitos à validação React.
+- **React DevTools e HMR connected:** mensagens informativas de desenvolvimento.

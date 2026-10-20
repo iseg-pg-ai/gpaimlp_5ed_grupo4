@@ -1,23 +1,11 @@
-import { chromium } from "playwright";
+import { launchBrowser, mockTranslation } from "./helpers.mjs";
 import assert from "node:assert/strict";
-const browser = await chromium.launch({
-  headless: true,
-  channel: process.env.BROWSER_CHANNEL ?? "msedge",
-});
+const browser = await launchBrowser();
 try {
   for (const width of [360, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     await page.addInitScript(() => localStorage.setItem("blu-portal-language", "pt"));
-    await page.route("**/api/translate", (r) =>
-      r.fulfill({
-        json: {
-          texts: r
-            .request()
-            .postDataJSON()
-            .items.map((i) => i.text),
-        },
-      }),
-    );
+    await mockTranslation(page);
     let submitted;
     await page.route("**/api/itineraries", (r) => {
       submitted = r.request().postDataJSON();
@@ -28,6 +16,34 @@ try {
       .locator("main button")
       .filter({ has: page.locator("svg.lucide-rotate-ccw") })
       .click();
+    const formIssues = await page.locator("main").evaluate((main) => {
+      const fields = [...main.querySelectorAll("input, select, textarea")];
+      return {
+        unidentified: fields
+          .filter((field) => !field.id && !field.name)
+          .map((field) => field.outerHTML),
+        unlabelled: fields
+          .filter(
+            (field) =>
+              !field.labels?.length &&
+              !field.getAttribute("aria-label") &&
+              !field.getAttribute("aria-labelledby"),
+          )
+          .map((field) => field.name),
+        orphanLabels: [...main.querySelectorAll("label")]
+          .filter((label) => !label.control)
+          .map((label) => label.textContent),
+        duplicateIds: fields
+          .filter((field) => field.id && document.querySelectorAll(`[id="${field.id}"]`).length > 1)
+          .map((field) => field.id),
+      };
+    });
+    assert.deepEqual(formIssues, {
+      unidentified: [],
+      unlabelled: [],
+      orphanLabels: [],
+      duplicateIds: [],
+    });
     const navigation = page.getByRole("navigation", { name: "Etapas do briefing" });
     await navigation.getByRole("button").nth(2).click();
     const personal = page.getByTestId("brief-personalization");
