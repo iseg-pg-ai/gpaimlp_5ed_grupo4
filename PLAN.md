@@ -33,6 +33,8 @@ Git e em [docs/DECISIONS.md](docs/DECISIONS.md).
   confirmação → versão → PDF.
 - [ ] Definir gates e exceções auditáveis para qualidade e conflitos das fontes.
 - [ ] Rever retenção e compatibilidade das entregas publicadas no CI.
+- [ ] Continuar a migração incremental do portal: mover ordenação de percursos e
+  resumos para Python antes de retirar o adaptador TypeScript correspondente.
 
 ## Agente de IA
 

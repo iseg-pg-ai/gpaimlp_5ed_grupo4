@@ -2,7 +2,7 @@ import { validateSnapshot } from "@/lib/snapshot-validation";
 import { loadPublishedCatalog } from "@/lib/catalog-store";
 import { editWithAssistant } from "@/lib/assistant-editing";
 import { jsonError } from "@/lib/server-http";
-import { enrichItineraryWithRoadRouting } from "@/lib/road-routing";
+import { enrichItineraryWithRoadRouting } from "@/lib/road-routing-server";
 import { recordOperationalEvent } from "@/lib/operational-telemetry";
 
 export const runtime = "nodejs";

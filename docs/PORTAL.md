@@ -381,6 +381,13 @@ O painel de detalhes abre num popover HTML nativo. Pode ser fechado com Escape,
 clique fora ou o botão Fechar. A consulta dinâmica continua a precisar de
 JavaScript; a gestão de abertura e fecho é feita pelo navegador.
 
+## Percursos em Python
+
+O cálculo de um troço usa `portal/routing.py` através do adaptador local. Python
+valida coordenadas, modo, margem e timeout, consulta OSRM e aplica uma estimativa
+geométrica identificada quando o fornecedor não responde. A ordenação de pontos e
+os resumos diários permanecem temporariamente no módulo TypeScript do editor.
+
 Em `/exports`, **Enviar para o Lixo** usa um formulário HTML e funciona sem
 JavaScript. Após o POST, o histórico é recarregado; erros aparecem no próprio
 histórico. Os formulários exigem origem válida. A API JSON e o restauro no Lixo
