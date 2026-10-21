@@ -110,3 +110,21 @@ A experiência tem pedido, território, proposta, colaboração, entrega e
 encerramento. Os capítulos repetidos de dados e arquitetura foram retirados,
 com o código e estilos específicos. A auditoria e as lacunas estão registadas
 no [guião](../docs/APRESENTACAO.md).
+
+## Conteúdo incorporado do PowerPoint — 21 de outubro de 2026
+
+A apresentação integra informação do ficheiro local
+`PG 5_edicao - GPAIDMP - Trabalho de Grupo - Apresentação - FDC - v2026-10-30.pptx`:
+contexto académico P6, parceria BLU, objetivo de apoio ao curador, três componentes
+(fontes, portal e Canva), abordagens Soft/Classic/Signature, equipa e visão futura.
+A data de 30 de outubro é apresentada como prevista, conforme o documento.
+
+No capítulo **A proposta**, as três abordagens têm seleção interativa, com Classic
+predefinido. A seleção explica a profundidade da experiência e acompanha o resumo
+da entrega; não recalcula o roteiro fictício nem inventa preços.
+
+As páginas de trabalho do PPT não comprovam funcionalidades. Google Forms foi
+substituído pelo briefing do portal; TXT inclui JSON, e o PDF Canva é independente
+do PDF DMC. O portal tem seis idiomas e o Observatório nativo seis áreas. HPO,
+Model Registry, Endpoint e Model Monitor não são apresentados como serviços
+operacionais, nem os resultados históricos do PPT como medições atuais.

@@ -1,5 +1,15 @@
 # Plano de evolução do BLU AI System
 
+## Apresentação a partir do PowerPoint — 2026-10-21
+
+- [x] Incorporar contexto P6, parceria BLU, três componentes e abordagens de curadoria.
+- [x] Distinguir implementação, intenção futura e notas provisórias do PPT.
+- [x] Validar navegação, acessibilidade e apresentação em quatro larguras.
+
+Cenários completos de navegador aprovados em 320/768/1440/2560 px, incluindo
+seleção das abordagens, preservação do roteiro, animações e isolamento. Markdown,
+estrutura documental e sintaxe JavaScript aprovados. PPT original preservado.
+
 ## Integração de monitoring na apresentação — 2026-10-21
 
 - [x] Integrar monitoring preservando o histórico de ambos os branches.

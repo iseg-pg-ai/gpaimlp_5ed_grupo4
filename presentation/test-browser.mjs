@@ -27,6 +27,9 @@ try {
         unexpected.push(request.url());
     });
     await page.goto(origin);
+    await page
+      .getByText("ISEG · 5.ª EDIÇÃO · PROJETO P6", { exact: true })
+      .waitFor();
     const check = async () => {
       assert.equal(
         await page.evaluate(
@@ -58,6 +61,7 @@ try {
       .getByRole("heading", { name: "Uma escolha com origem." })
       .waitFor();
     await page.getByRole("button", { name: "Revelar a arquitetura" }).click();
+    await page.locator('[aria-label="Três componentes da solução"]').waitFor();
     await page.locator('[data-tech-node="3"]').click();
     await page
       .locator("#tech-node-detail")
@@ -184,6 +188,28 @@ try {
       true,
     );
     await check();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Classic", exact: true })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    const originalDay = await page.locator(".show-day").first().innerText();
+    await page.getByRole("button", { name: "Signature", exact: true }).click();
+    await page
+      .locator("#mode-description")
+      .filter({ hasText: "maior profundidade" })
+      .waitFor();
+    assert.equal(
+      await page.locator(".show-day").first().innerText(),
+      originalDay,
+    );
+    await page.getByRole("button", { name: "Soft", exact: true }).click();
+    await page
+      .locator("#mode-description")
+      .filter({ hasText: "mais leve" })
+      .waitFor();
+    await page.getByRole("button", { name: "Classic", exact: true }).click();
     const unchanged = await page.locator(".show-day").first().innerText();
     await page.getByRole("button", { name: "Reservar a tarde livre" }).focus();
     await page.keyboard.press("Enter");
@@ -254,7 +280,7 @@ try {
     });
     assert.equal(
       await finalLink.getAttribute("href"),
-      "https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/catalog",
+      new URL("/codeeditor/default/ports/3001/catalog", origin).href,
     );
     assert.equal(await finalLink.getAttribute("target"), "_blank");
     assert.ok((await finalLink.getAttribute("rel")).includes("noopener"));

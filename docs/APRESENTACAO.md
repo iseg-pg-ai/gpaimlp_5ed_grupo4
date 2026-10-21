@@ -1,6 +1,6 @@
 # BLU AI System — fundamentos, experiência e portal
 
-Guião revisto em 20 de outubro de 2026.
+Guião revisto em 21 de outubro de 2026, no branch `apresentacao-tecnica`.
 Público de referência: avaliação académica e responsáveis da operação.
 
 A apresentação passa a ter **três partes: explicar como o sistema foi construído,
@@ -438,3 +438,26 @@ data, fonte e distinção entre proposta, implementação e resultado observado.
 - [Catálogo operacional](../etl/portal_catalog.py)
 - [Comandos determinísticos](../dmc-workspace/src/lib/assistant-editing.ts)
 - [Agente e ferramentas](../src/blu_ai/agents/curator_agent.py)
+
+## Integração do PowerPoint do Grupo 4
+
+O documento local de apresentação, versão com data 2026-10-30, foi usado como
+fonte editorial, sem alterar o PPT. Correspondência com as cenas:
+
+| Páginas do PPT | Informação incorporada | Cena |
+| --- | --- | --- |
+| 1, 3–5 | P6, parceria BLU, objetivo, perfil e restrições | Requisitos |
+| 6–8 | Fontes → portal → Canva, com revisão humana | Arquitetura e A entrega |
+| 5 | Soft, Classic predefinido e Signature como profundidades da Journey | A proposta |
+| 13–15 | Limites, evolução, contributos e equipa | Validação e O próximo passo |
+
+O briefing atual pertence ao portal, não ao Google Forms. A exportação TXT leva
+JSON da versão guardada para composição numa cópia Canva; o PDF resultante não
+substitui o histórico DMC. Foram mantidos os seis idiomas e seis áreas do
+Observatório nativo, verificados no código, em vez das contagens antigas do PPT.
+As notas WIP e perguntas técnicas não se tornam funcionalidades. Treino, HPO,
+Model Registry, Endpoint e Model Monitor não têm execução comprovada neste
+checkout. CRM e autosserviço são evolução proposta, não operações disponíveis.
+As contagens de testes do PPT são históricas e não constituem resultados atuais.
+Os nomes e data previstos vêm da capa; não se adotou a identificação de outra
+disciplina que aparece no encerramento do documento de trabalho.

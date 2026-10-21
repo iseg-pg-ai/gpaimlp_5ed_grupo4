@@ -697,3 +697,99 @@
     min-height: 58px;
   }
 }
+
+/* Contexto e abordagem do projeto P6, conservando a apresentação adaptável. */
+.show-project-context {
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  border-left: 2px solid var(--gold);
+  background: #dfbb7c08;
+}
+.show-project-context h3 {
+  margin: 0.7rem 0;
+  font:
+    1.5rem Georgia,
+    serif;
+}
+.show-project-context p,
+.show-component-flow p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+.show-component-flow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.show-component-flow > div {
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+}
+.show-component-flow span,
+.show-component-flow strong {
+  display: block;
+}
+.show-component-flow span {
+  color: var(--gold);
+  font-size: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.show-journey-modes {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.show-journey-modes [role="group"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.show-journey-modes button {
+  min-height: 44px;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: #14313a66;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.show-journey-modes p {
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.show-journey-modes button[aria-pressed="true"] {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: #dfbb7c12;
+}
+.show-journey-modes small,
+.show-project-conclusion small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.8;
+}
+.show-project-conclusion {
+  max-width: 740px;
+  margin: 2rem auto;
+}
+.show-project-conclusion h2 {
+  font:
+    clamp(1.5rem, 3vw, 2.3rem) Georgia,
+    serif;
+}
+.show-project-conclusion p {
+  line-height: 1.8;
+  color: var(--muted);
+}
+@media (max-width: 700px) {
+  .show-component-flow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

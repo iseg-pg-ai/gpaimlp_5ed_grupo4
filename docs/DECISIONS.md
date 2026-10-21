@@ -811,3 +811,23 @@ painéis de logs existentes, em vez dos seletores de filtros já removidos.
 Validação: 90 testes Python, 35 testes de monitoring/operações, check do portal
 com 98 aprovados e um ignorado, build e catálogo/ETL aprovados. Testes com mocks
 e dados temporários; sem publicação, infraestrutura ou fornecedores reais.
+
+## 2026-10-21 — Incorporar o PowerPoint na apresentação interativa
+
+O PowerPoint local do Grupo 4, versão 2026-10-30, fornece o contexto académico
+P6, a parceria BLU, a visão de três componentes, as interpretações Soft/Classic/
+Signature e a equipa. Estes conteúdos foram incorporados nas cenas existentes,
+conservando os seis capítulos técnicos e os seis narrativos. Classic é a seleção
+inicial; a escolha explica a abordagem e acompanha o resumo, sem recalcular
+atividades ou preços na simulação. O ficheiro PowerPoint não foi alterado.
+
+As notas WIP do documento não comprovam implementação. Google Forms foi
+substituído pelo briefing do portal; contagens antigas não substituem os seis
+idiomas e seis áreas atuais. O fluxo Canva usa TXT com JSON da versão guardada
+e o PDF Canva não altera o PDF DMC. Autosserviço e CRM são evolução proposta;
+HPO, Model Registry, Endpoint e Model Monitor não são apresentados como ativos.
+
+Validação: navegador em 320/768/1440/2560 px, navegação, seleção das abordagens,
+preservação do roteiro, animações e isolamento aprovados; estrutura documental,
+Markdown e sintaxe JavaScript aprovados. Conteúdo e layout inspecionados em
+capturas locais. Sem chamadas a fornecedores ou alterações no portal real.

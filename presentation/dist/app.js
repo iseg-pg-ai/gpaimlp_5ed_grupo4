@@ -2,11 +2,41 @@
 const state = {
   scene: 0,
   preference: "culture",
+  mode: "classic",
   selected: 0,
   free: false,
   response: null,
   version: 2,
 };
+const journeyModes = {
+  soft: {
+    label: "Soft",
+    description:
+      "Uma forma mais leve de viver a Journey: menos tempo ou profundidade, mantendo a curadoria.",
+  },
+  classic: {
+    label: "Classic",
+    description:
+      "A abordagem de referência: mais tempo para explorar e uma experiência mais desenvolvida.",
+  },
+  signature: {
+    label: "Signature",
+    description:
+      "A expressão mais completa da Journey: maior profundidade, riqueza de experiência e personalização.",
+  },
+};
+function modeSelector() {
+  return `<div class="show-journey-modes"><span class="show-eyebrow">TRÊS INTERPRETAÇÕES DA MESMA JOURNEY</span><div role="group" aria-label="Abordagem de curadoria">${Object.entries(
+    journeyModes,
+  )
+    .map(
+      ([key, mode]) =>
+        `<button type="button" data-mode="${key}" aria-pressed="${state.mode === key}">${mode.label}</button>`,
+    )
+    .join(
+      "",
+    )}</div><p id="mode-description" aria-live="polite">${journeyModes[state.mode].description}</p><small>Não são graus de qualidade nem tarifas. Nesta ilustração, a seleção explica a abordagem; não recalcula o roteiro ou o preço.</small></div>`;
+}
 const choices = {
   culture: {
     label: "Cultura & património",
@@ -108,7 +138,7 @@ function placeDetail() {
 }
 function itineraryScene() {
   const choice = choices[state.preference];
-  return `<div class="show-itinerary"><div class="show-panel-title">${icon("route")}<span>O PERCURSO DO GRUPO</span><span class="show-tag">SIMULAÇÃO</span></div><div class="show-day"><div class="show-day-heading"><span>01</span><h2>Descobrir Lisboa</h2><small>Dia 1 / sem pressa</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>${choice.detail}</h3><p>${choice.label} · escolha alinhada com o briefing</p></div>${icon(choice.icon)}</li><li><span class="show-time">ALMOÇO</span><div><h3>À mesa, com tempo</h3><p>Uma pausa faz parte da experiência</p></div></li><li><span class="show-time">TARDE</span><div><h3>Outro ponto de vista</h3><p>Acesso e deslocação por validar</p></div></li></ol></div><div class="show-day"><div class="show-day-heading"><span>02</span><h2>Ao ritmo de quem viaja</h2><small>Dia 2 / adaptável</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>Continuar a explorar</h3><p>Margem para uma descoberta local</p></div></li><li id="free-slot" class="${state.free ? "show-free-time" : ""}">${freeSlot()}</li></ol></div></div><div class="show-decision"><span class="show-eyebrow">UMA VIAGEM NÃO É ESTÁTICA</span><h2>E se o cliente<br>mudar de ideias?</h2><p>«Preferia ter a segunda tarde livre.»</p><button type="button" id="free-toggle" class="show-primary" aria-pressed="${state.free}">${state.free ? "✓ Repor a experiência" : icon("spark") + "Reservar a tarde livre"}</button><p class="show-change-status" role="status">${changeStatus()}</p></div>`;
+  return `<div class="show-itinerary"><div class="show-panel-title">${icon("route")}<span>O PERCURSO DO GRUPO</span><span class="show-tag">SIMULAÇÃO</span></div><div class="show-day"><div class="show-day-heading"><span>01</span><h2>Descobrir Lisboa</h2><small>Dia 1 / sem pressa</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>${choice.detail}</h3><p>${choice.label} · escolha alinhada com o briefing</p></div>${icon(choice.icon)}</li><li><span class="show-time">ALMOÇO</span><div><h3>À mesa, com tempo</h3><p>Uma pausa faz parte da experiência</p></div></li><li><span class="show-time">TARDE</span><div><h3>Outro ponto de vista</h3><p>Acesso e deslocação por validar</p></div></li></ol></div><div class="show-day"><div class="show-day-heading"><span>02</span><h2>Ao ritmo de quem viaja</h2><small>Dia 2 / adaptável</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>Continuar a explorar</h3><p>Margem para uma descoberta local</p></div></li><li id="free-slot" class="${state.free ? "show-free-time" : ""}">${freeSlot()}</li></ol></div></div><div class="show-decision">${modeSelector()}<span class="show-eyebrow">UMA VIAGEM NÃO É ESTÁTICA</span><h2>E se o cliente<br>mudar de ideias?</h2><p>«Preferia ter a segunda tarde livre.»</p><button type="button" id="free-toggle" class="show-primary" aria-pressed="${state.free}">${state.free ? "✓ Repor a experiência" : icon("spark") + "Reservar a tarde livre"}</button><p class="show-change-status" role="status">${changeStatus()}</p></div>`;
 }
 function freeSlot() {
   return `<span class="show-time">TARDE</span><div><h3>${state.free ? "Uma tarde só sua" : "Uma experiência por escolher"}</h3><p>${state.free ? "Tempo livre reservado · a proposta acompanha o pedido" : "O curador ainda tem uma decisão a rever"}</p></div>${state.free ? icon("moon") : ""}`;
@@ -130,14 +160,14 @@ function assistantResponse() {
   return `<div class="show-message show-message-assistant"><small>A ASSISTÊNCIA</small><h3>Qual é a próxima decisão?</h3><p>Escolha um pedido ao lado para observar uma alteração permitida ou um limite de proteção.</p></div>`;
 }
 function deliveryScene() {
-  return `<div class="show-document-wrap"><div class="show-version-switch" role="group" aria-label="Exemplos de versões"><button type="button" data-version="1" aria-pressed="${state.version === 1}">01 / Exemplo inicial</button><button type="button" data-version="2" aria-pressed="${state.version === 2}">02 / As suas escolhas</button></div><div id="document-preview" class="show-document" aria-live="polite" aria-atomic="true">${documentPreview()}</div><p class="show-context">Pré-visualização ilustrativa. Não é um PDF exportado nem uma versão guardada no portal.</p></div><div class="show-delivery-detail"><span class="show-eyebrow">AS ESCOLHAS TORNAM-SE VISÍVEIS</span><h2>A sua viagem,<br>nas suas escolhas.</h2><dl class="show-choice-summary"><div><dt>O interesse</dt><dd>${choices[state.preference].label}</dd></div><div><dt>O ritmo</dt><dd>Dois dias, sem pressa</dd></div><div><dt>A segunda tarde</dt><dd>${state.free ? "Tempo livre reservado" : "Uma experiência por escolher"}</dd></div></dl><p class="show-context">Compare o ponto de partida com as escolhas que fez. No portal real, o curador revê e guarda a proposta antes da entrega.</p></div>`;
+  return `<div class="show-document-wrap"><div class="show-version-switch" role="group" aria-label="Exemplos de versões"><button type="button" data-version="1" aria-pressed="${state.version === 1}">01 / Exemplo inicial</button><button type="button" data-version="2" aria-pressed="${state.version === 2}">02 / As suas escolhas</button></div><div id="document-preview" class="show-document" aria-live="polite" aria-atomic="true">${documentPreview()}</div><p class="show-context">Pré-visualização ilustrativa. Não é um PDF exportado nem uma versão guardada no portal.</p></div><div class="show-delivery-detail"><span class="show-eyebrow">AS ESCOLHAS TORNAM-SE VISÍVEIS</span><h2>A sua viagem,<br>nas suas escolhas.</h2><dl class="show-choice-summary"><div><dt>O interesse</dt><dd>${choices[state.preference].label}</dd></div><div><dt>A abordagem</dt><dd>${journeyModes[state.mode].label} · dois dias, sem pressa</dd></div><div><dt>A segunda tarde</dt><dd>${state.free ? "Tempo livre reservado" : "Uma experiência por escolher"}</dd></div></dl><p class="show-context">Compare o ponto de partida com as escolhas que fez. No portal real, o curador revê e guarda a proposta antes da entrega. Para a composição visual, exporta TXT com JSON para o plugin Canva, trabalha numa cópia do modelo BLU e revê o PDF. O PDF Canva não substitui o PDF DMC nem atualiza a partilha.</p></div>`;
 }
 function documentPreview() {
   const current = state.version === 2;
-  return `<div class="show-document-brand">blu<span>.</span><small>TRAVEL CURATION / EXEMPLO</small></div><span class="show-eyebrow">PORTUGAL / DOIS DIAS</span><h2>Lisboa,<br>ao seu ritmo.</h2><p class="show-document-intro">${current ? choices[state.preference].label : choices.culture.label} · dois adultos · sem pressa</p><div class="show-document-days"><div><span>01</span><h3>Descobrir Lisboa</h3><p>${current ? choices[state.preference].detail : choices.culture.detail}<br>À mesa, com tempo<br>Outro ponto de vista</p></div><div><span>02</span><h3>Continuar a explorar</h3><p>${current && state.free ? "Uma tarde só sua · tempo livre reservado" : "Uma experiência por escolher"}</p></div></div><div class="show-document-pending">PREÇO E DISPONIBILIDADE POR CONFIRMAR</div><small class="show-document-footer">GRUPO DEMONSTRAÇÃO BLU / EXEMPLO 0${state.version}</small>`;
+  return `<div class="show-document-brand">blu<span>.</span><small>TRAVEL CURATION / EXEMPLO</small></div><span class="show-eyebrow">PORTUGAL / DOIS DIAS</span><h2>Lisboa,<br>ao seu ritmo.</h2><p class="show-document-intro">${current ? choices[state.preference].label : choices.culture.label} · ${current ? journeyModes[state.mode].label : "Classic"} · dois adultos · sem pressa</p><div class="show-document-days"><div><span>01</span><h3>Descobrir Lisboa</h3><p>${current ? choices[state.preference].detail : choices.culture.detail}<br>À mesa, com tempo<br>Outro ponto de vista</p></div><div><span>02</span><h3>Continuar a explorar</h3><p>${current && state.free ? "Uma tarde só sua · tempo livre reservado" : "Uma experiência por escolher"}</p></div></div><div class="show-document-pending">PREÇO E DISPONIBILIDADE POR CONFIRMAR</div><small class="show-document-footer">GRUPO DEMONSTRAÇÃO BLU / EXEMPLO 0${state.version}</small>`;
 }
 function finalScene() {
-  return `<div class="show-finale"><div class="show-final-symbol" aria-hidden="true">${icon("compass")}</div><div class="show-final-summary"><span>02 dias em Lisboa</span><span>${choices[state.preference].label}</span><span>${state.free ? "Uma tarde livre reservada" : "Um roteiro ainda por rever"}</span></div><a id="observatory-final" class="show-primary" href="${observatoryUrl}" target="_blank" rel="noopener noreferrer">Explorar o Observatório real <span aria-hidden="true">↗</span></a><p class="show-final-note">Abre o portal real num novo separador. O acesso depende da sua sessão SageMaker.</p><div class="show-final-principles"><span>${icon("compass")} Conhecimento com origem</span><span>${icon("shield")} Revisão humana</span><span>${icon("route")} Entregas identificáveis</span></div></div>`;
+  return `<div class="show-finale"><div class="show-final-symbol" aria-hidden="true">${icon("compass")}</div><div class="show-final-summary"><span>02 dias em Lisboa</span><span>${choices[state.preference].label}</span><span>${state.free ? "Uma tarde livre reservada" : "Um roteiro ainda por rever"}</span></div><a id="observatory-final" class="show-primary" href="${observatoryUrl}" target="_blank" rel="noopener noreferrer">Explorar o Observatório real <span aria-hidden="true">↗</span></a><p class="show-final-note">Abre o portal real num novo separador. O acesso depende da sua sessão SageMaker.</p><div class="show-project-conclusion"><h2>Do conhecimento disperso à proposta revista.</h2><p>O contributo é ligar fontes rastreáveis, regras de curadoria e versões identificáveis. A automação prepara; o curador decide e aprova a entrega.</p><p>A evolução proposta é o autosserviço do cliente e a ligação ao CRM, com reservas, pagamentos e comunicações sujeitos a desenvolvimento e validação.</p><small>Grupo 4 · Fernando Carvalheiro · Gisela Matos · Henrique Reduto · Manuel Amaral · Pedro Carreiro<br>PG Applied AI &amp; Machine Learning · 5.ª edição · Apresentação prevista: 30 de outubro de 2026</small></div><div class="show-final-principles"><span>${icon("compass")} Conhecimento com origem</span><span>${icon("shield")} Revisão humana</span><span>${icon("route")} Entregas identificáveis</span></div></div>`;
 }
 const experienceScenes = [
   {
@@ -258,6 +288,7 @@ $("#next").addEventListener("click", () => {
     Object.assign(state, {
       scene: 0,
       preference: "culture",
+      mode: "classic",
       selected: 0,
       free: false,
       response: null,
@@ -279,6 +310,19 @@ $(".show-parts").addEventListener("click", (event) => {
 });
 $("#scene").addEventListener("click", (event) => {
   if (window.BluTechnical.handleClick(event)) return;
+  const mode = event.target.closest("[data-mode]");
+  if (mode && journeyModes[mode.dataset.mode]) {
+    state.mode = mode.dataset.mode;
+    document
+      .querySelectorAll("[data-mode]")
+      .forEach((button) =>
+        button.setAttribute(
+          "aria-pressed",
+          String(button.dataset.mode === state.mode),
+        ),
+      );
+    $("#mode-description").textContent = journeyModes[state.mode].description;
+  }
   const assist = event.target.closest("[data-assist]");
   if (assist) {
     state.response = assist.dataset.assist;
