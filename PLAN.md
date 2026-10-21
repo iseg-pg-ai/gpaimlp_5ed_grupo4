@@ -1,5 +1,57 @@
 # Plano de evolução do BLU AI System
 
+## Integração transacional do assistente — Fase 2, 2026-10-21
+
+Autorizada pelo proprietário após a entrega da Fase 1. Trabalho em cópia isolada,
+com aplicação ao original apenas depois de validar e confirmar os ficheiros.
+Esta secção prevalece sobre os relatos históricos de outras branches abaixo.
+
+- [x] Fixar contrato partilhado das onze operações de itinerário e PT/EN.
+- [x] Ligar planeador Bedrock ao portal sem execução implícita no chat.
+- [x] Pré-visualizar, aceitar ou rejeitar com validação e auditoria transacional.
+- [x] Preservar proteções, versões e dados de confirmação manual.
+- [x] Concluir testes locais, navegador e revisão independente.
+- [x] Aplicar ficheiros verificados ao original e entregar evidências da Fase 2.
+- [ ] Obter aprovação separada antes da Fase 3 e das chamadas reais ao modelo.
+
+Evidências locais: 117 testes Python e 138 testes do portal aprovados; lint,
+tipos, formatação, build, catálogo/ETL, Markdown e estrutura/links aprovados.
+Os 48 testes específicos cobrem ações, proteções, concorrência e rollback.
+Ciclo HTTP PT/EN aprovado com fornecedor local simulado, incluindo controlos
+manuais, falhas, esclarecimento, rejeição, aceitação e conflitos. Navegador
+aprovado em 390/1600 px e PT/EN, incluindo duplo clique e troca de viagem.
+Trinta testes Python específicos aprovados e 34 casos reais apenas listados.
+Sem AWS real, deployment, novos pacotes, commits ou alterações a dados.
+
+TXT mantém o formato atual para o Canva, conforme decisão do proprietário.
+Não integrar ranking, feedback, recuperação de casos, proatividade, alterações
+ao briefing/catálogo/confirmações ou deployment. Contrato em docs/ASSISTANT.md.
+
+## Preparação da base para o piloto transacional — 2026-10-21
+
+Fase 1 autorizada pelo proprietário após diagnóstico na cópia isolada em D:.
+Base f280971; preservar a evolução existente e não integrar ainda a branch do
+novo assistente. Sem chamadas Bedrock, publicação ou alteração de fontes.
+
+- [x] Corrigir fecho SQLite dos testes Windows e repetir os cenários afetados.
+- [x] Demonstrar a causa do erro de publicação ETL, corrigir e verificar rollback.
+- [x] Reproduzir instalação estável de todos os grupos Python pelo lock existente.
+- [x] Tornar os testes de rotas independentes do serviço público OSRM.
+- [x] Atualizar README e explicação ao proprietário, verificando links locais.
+- [x] Executar checks conjuntos, rever o diff e aplicar apenas ficheiros validados.
+- [x] Entregar base preparada; Fase 2 autorizada pelo proprietário.
+
+Validação da base corrigida: 92 testes Python aprovados (191 s), 100 testes do
+portal e lint/tipos/formatação aprovados, catálogo/ETL aprovado e cinco testes
+de tradução simulada aprovados. Smoke Streamlit Panorama/Qualidade aprovado,
+com bytes do warehouse preservados. Estrutura/links, Markdown e diff verificados.
+Instalação Python de todos os grupos repetida com sucesso sem alterar o lock.
+Não foi repetido o build Next.js aprovado na Fase 0, porque as alterações do
+portal nesta fase limitam-se a testes. Sem tradução real, Bedrock ou deployment.
+Os testes reais de tradução/Bedrock e a meta de 90% por operação/idioma continuam
+por validar na fase própria. A exceção de metadata Argos/Stanza mantém-se; não
+alterar o override de segurança para silenciar a verificação de metadata.
+
 ## Atualização local do grafo Graphify — 2026-10-21
 
 - [x] Reconstruir o grafo de código e documentação, excluindo fontes protegidas e dados operacionais: 246 ficheiros, 1344 nós, 2810 relações e 92 comunidades.

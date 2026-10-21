@@ -83,7 +83,56 @@ function diagnoseIneligibility(
   return "Oferta incompatível com o briefing, data, orçamento ou regras de curadoria.";
 }
 
-export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Catalog) {
+type EditResult = { itinerary: Snapshot["itinerary"]; changed: boolean; reply: string };
+export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Catalog): EditResult {
+  return applyEdit(snapshot, input, catalog);
+}
+export function moveWithAssistant(
+  snapshot: Snapshot,
+  dayNumber: number,
+  itemId: string,
+  targetDayNumber: number,
+  catalog: Catalog,
+): EditResult {
+  const reject = (reply: string) => ({ itinerary: snapshot.itinerary, changed: false, reply });
+  const source = snapshot.itinerary.find((day) => day.dayNumber === dayNumber);
+  const target = snapshot.itinerary.find((day) => day.dayNumber === targetDayNumber);
+  const item = source?.items.find((item) => item.id === itemId);
+  if (!source || !target || !item || dayNumber === targetDayNumber)
+    return reject("Dias ou atividade inválidos para mover.");
+  if (protectedItem(item) || item.category === "free_time" || /["\r\n]/.test(item.id))
+    return reject(
+      "Não é possível mover esta atividade protegida, confirmada ou sem referência de catálogo.",
+    );
+  const removed = applyEdit(
+    snapshot,
+    `remover atividade ${source.items.indexOf(item) + 1} do dia ${dayNumber}`,
+    catalog,
+  );
+  if (!removed.changed) return removed;
+  const result = applyEdit(
+    { ...snapshot, itinerary: removed.itinerary },
+    `adicionar "${item.id}" ao dia ${targetDayNumber}`,
+    catalog,
+    item,
+  );
+  if (!result.changed) return reject(result.reply);
+  const moved = result.itinerary
+    .find((day) => day.dayNumber === targetDayNumber)!
+    .items.find((candidate) => candidate.id === item.id);
+  if (!moved || moved.time === "Por agendar")
+    return reject("A atividade não tem horário validável no dia de destino.");
+  return {
+    ...result,
+    reply: `Proposta para mover ${item.title} do dia ${dayNumber} para o dia ${targetDayNumber}.`,
+  };
+}
+function applyEdit(
+  snapshot: Snapshot,
+  input: string,
+  catalog: Catalog,
+  movedItem?: ActivityItem,
+): EditResult {
   const original = snapshot.itinerary;
   const reject = (reason: string) => ({
     itinerary: original,
@@ -106,15 +155,40 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
     if (day.items.length <= 2) {
       return reject("O dia já tem 2 ou menos atividades e não requer otimização de sequência.");
     }
+    if (day.items.some(protectedItem))
+      return reject(
+        "O dia contém atividades protegidas ou confirmadas; a otimização foi recusada.",
+      );
     const allRecords = [...catalog.atracoes, ...catalog.experiencias, ...catalog.restaurantes];
     const coordMap = buildCoordMap(allRecords);
+    if (
+      day.items.some(
+        (item) =>
+          item.category !== "free_time" &&
+          !(
+            (Number.isFinite(item.latitude) && Number.isFinite(item.longitude)) ||
+            coordMap.has(item.id)
+          ),
+      )
+    )
+      return reject("Faltam coordenadas para otimizar a sequência sem inventar distâncias.");
     const optimizedItems = optimizeRouteSequence(day.items, coordMap);
-    const itinerary = original.map((d) => (d === day ? { ...d, items: optimizedItems } : d));
-    return {
-      itinerary,
-      changed: true,
-      reply: `Rota do dia ${number} otimizada pelo BLU Routing Engine para o trajeto rodoviário mais eficiente. Horários sequenciais atualizados.`,
-    };
+    const order = optimizedItems.map(
+      (item) => day.items.findIndex((existing) => existing.id === item.id) + 1,
+    );
+    if (order.every((position, index) => position === index + 1))
+      return reject("A sequência geográfica já está na ordem proposta.");
+    const validated = applyEdit(
+      snapshot,
+      `reorganizar dia ${number} na ordem ${order.join(",")}`,
+      catalog,
+    );
+    return validated.changed
+      ? {
+          ...validated,
+          reply: `Sequência geográfica estimada do dia ${number} proposta e horários validados. Não comprova um ótimo rodoviário; percursos e disponibilidade requerem confirmação.`,
+        }
+      : validated;
   }
 
   const adjustCapacity =
@@ -269,7 +343,7 @@ export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Ca
       const reason = diagnoseIneligibility(candidate, snapshot.brief, day.date, day.location);
       return reject(reason);
     }
-    if (add) items.push(eligible);
+    if (add) items.push(movedItem ? structuredClone(movedItem) : eligible);
     else items[index] = eligible;
     changedIds.add(eligible.id);
     description = add

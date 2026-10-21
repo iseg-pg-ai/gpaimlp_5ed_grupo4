@@ -3,6 +3,51 @@
 Os registos históricos conservam as datas e a evidência original. O mapa atual
 está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
+## Preparação Windows antes do agente transacional — 2026-10-21
+
+O proprietário aprovou corrigir a base depois do diagnóstico, preservando o
+histórico e sem iniciar a integração do agente. A base é f280971, com evolução
+existente além de dev; não foi reiniciada noutro branch para evitar perdê-la.
+
+### Ligações SQLite e leitura do dashboard
+
+O contexto de uma ligação SQLite gere a transação mas não fecha a ligação.
+Os testes e duas funções do dashboard deixavam handles ativos no Windows.
+Usar `closing` externo ao contexto transacional garante commit/rollback antes
+do fecho, inclusive em erro. Preservam-se URI read-only, parâmetros e o `BEGIN`
+do snapshot. Regressões verificam fecho após sucesso/erro; smoke Streamlit e
+hash do warehouse confirmam o percurso de leitura sem reescrever a entrega.
+
+### Publicação ETL com bloqueio transitório Windows
+
+Um caso com o writer real e 100 mil linhas reproduziu o erro de rename em
+segundos, sem PDFs nem carga SQLite. A mesma pasta pôde ser renomeada depois
+de esperar, sem alterar conteúdo ou permissões. Os probes não demonstraram
+qual o processo externo responsável; não se atribui o erro a um antivírus.
+
+As renomeações de backup, publicação e restauro podem repetir apenas no
+Windows, perante códigos 5/32/33. São seis tentativas e cinco esperas de
+50/100/200/400/800 ms: até 1,55 s de espera por renomeação, não por execução
+completa. Erros persistentes propagam; outros sistemas e erros não repetem.
+Construção e validação não são repetidas, e preserva-se o rollback existente.
+Sete regressões exercitam publicação, backup, restauro e falhas persistentes.
+O caso real reduzido, ETL completo e catálogo/ETL passaram após a correção.
+
+### Referência reproduzível e limites
+
+Todos os grupos Python instalaram pelo lock em ambiente estável, sem mudar
+versões. Mantém-se o override Stanza de segurança documentado. O README foi
+alinhado com manifests, comandos e documentos presentes. `AIREADME.md` explica
+o processo ao proprietário. Testes de rotas passam a simular fetch sem rede.
+O verificador Markdown exclui os artefactos locais gerados em graphify-out,
+já ignorados pelo Git, preservando os relatórios e validando os documentos fonte.
+
+Evidência: 92 testes Python, 100 do portal, catálogo/ETL, cinco testes de
+tradução simulada, smoke Streamlit e verificações documentais aprovados.
+Build Next.js já aprovado na Fase 0; não repetido por alterações só de testes
+no portal. Não houve inferência real, modelos de tradução instalados,
+publicação ou certificação do SageMaker. A Fase 2 requer decisão separada.
+
 ## Âmbito do grafo local Graphify — 2026-10-21
 
 O grafo indexa código, documentação e recursos visuais da aplicação. A deteção
@@ -668,3 +713,14 @@ Validação local: 83 testes Python; check do portal com 97 aprovados e um
 ignorado; build, catálogo/ETL, estrutura e Markdown aprovados. Os testes usam
 dados temporários e mocks. Não se repetiu a validação de navegador, porque o
 código funcional coincide com dev e a resolução é documental.
+
+## 2026-10-21 — Fase 2 limitada ao itinerário
+
+Decisão do proprietário: integrar o agente em incrementos com aprovação entre
+fases. Nova Pro configurável, falha explícita sem fallback; PT/EN no chat;
+apenas onze operações de itinerário. O servidor valida e persiste a aceitação
+atomicamente, sem texto integral dos pedidos. Conversa local por viagem.
+Dados de confirmação manual não são editados como efeito da alteração de
+horários. TXT mantém o formato atual para o Canva. Ranking, feedback, casos
+históricos e proatividade ficam para incrementos posteriores. Validação real
+do modelo e dos seis idiomas de exportação pertence à fase seguinte.

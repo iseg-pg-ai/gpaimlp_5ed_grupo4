@@ -1,63 +1,71 @@
 # BLU AI System
 
-Plataforma de itinerários inteligentes: ingestão ETL, DNA do viajante, curadoria baseada em regras, itinerários por tier, preços, reservas, CRM e integrações AWS/Bedrock.
+Sistema de curadoria de viagens: transforma fontes locais num warehouse auditável
+e permite criar, rever, versionar e exportar itinerários no portal operacional.
 
-## Dependências Python
+## Componentes
 
-A fonte de dependências é `pyproject.toml`; `uv.lock` fixa as versões diretas e
-transitivas para Python 3.12 e 3.13. `requirements.txt` e
-`translations/requirements.txt` são exports gerados, não devem ser editados à mão.
+- `data/`: fontes Excel/PDF e catálogo operacional, preservando a proveniência.
+- `etl/`: ingestão, validação e publicação do warehouse com rollback.
+- `warehouse/`: entrega gerada pelo ETL; não editar manualmente.
+- `dashboard/`: observatório analítico Streamlit, de leitura.
+- `dmc-workspace/`: portal Next.js para briefing, catálogo, itinerários e exportações.
+- `src/blu_ai/`: agente legado opcional; o novo fluxo transacional está em preparação.
+- `translations/`: tradução local dos conteúdos exportados.
+- `exports/itineraries/`: versões e PDFs operacionais, fora do Git.
+
+## Preparar o ambiente
+
+Usar Python 3.12 ou 3.13, Node.js >=22.13 e <25 (preferindo 24 LTS) e uv instalado.
+Os manifests e lockfiles são as fontes de dependências; não alterar os exports pip à mão.
+
+Na raiz do projeto, preparar apenas a base ETL:
 
 ```powershell
-python -m pip install uv==0.12.19
-python -m uv sync --locked --group translation
+uv sync --locked --python 3.12
 ```
 
-O conjunto base instala o ETL e o dashboard Streamlit. Grupos opcionais:
+Os grupos opcionais atuais são `dashboard`, `agent` e `translation`.
+Para desenvolver e verificar o conjunto:
 
-- `translation`: tradução local do DMC Workspace; os modelos continuam a ser
-  instalados com `python translations/setup_models.py` usando o Python do ambiente.
-- `sagemaker`: SDK AWS/SageMaker, MLflow, IPython e bibliotecas de machine learning.
-- `dev`: pytest e análise de complexidade.
+```powershell
+uv sync --locked --all-groups --python 3.12
+```
 
-Use `python -m uv sync --locked --group sagemaker --group dev` para o ambiente
-SageMaker. Os grupos podem ser combinados. `uv sync` remove dependências que não
-pertencem aos grupos escolhidos; inclua `--group translation` se este ambiente
-for também usado pelo portal. O frontend mantém as dependências Node em
-`dmc-workspace/package.json` e `package-lock.json`.
+`uv sync` pode remover grupos não selecionados; usar todos os grupos necessários
+ou `--inexact` quando se pretende conservar os pacotes adicionais já instalados.
+Não existem grupos `dev` ou `sagemaker` neste checkout.
 
-A instalação por pip continua disponível:
+A tradução exige também os modelos locais, preparados separadamente por
+`translations/setup_models.py`. Antes de instalar, consultar a
+[exceção de compatibilidade Argos/Stanza](docs/DEPENDABOT_PYTHON.md).
+Os testes com mocks não demonstram que os modelos estejam instalados.
+
+Alternativa pip para a base e o grafo de tradução exportado:
 
 ```powershell
 python -m pip install -r requirements.txt
-python -m pip install -r translations/requirements.txt
+python -m pip install --no-deps -r translations/requirements.txt
 ```
 
-Depois de alterar dependências no `pyproject.toml`:
+Preferir uv para respeitar o override Stanza. Ao manter dependências, o script
+`scripts/export_requirements.py` exige que o interpretador usado tenha o módulo
+`uv` instalado; suporta `--check` para detetar exports desatualizados.
 
-```powershell
-python -m uv lock
-python scripts/export_requirements.py
-python -m uv lock --check --offline
-python scripts/export_requirements.py --check
-```
+## Dados e arranque
 
-O workflow Data pipeline verifica o lock e os exports antes de instalar as
- dependências e executar os testes. O uv é uma ferramenta de manutenção;
- não é necessário para executar a aplicação instalada por pip.
-
-## Fluxo de dados local
-
-`data/` (Excel e PDF, incluindo subpastas) → ETL → `warehouse/` → DMC Workspace.
+O percurso é `data/` → ETL → `warehouse/` → observatório e portal. A publicação
+valida a entrega antes de substituir o destino e preserva rollback. Executar
+apenas quando se pretende atualizar o warehouse:
 
 ```powershell
 .\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse
 ```
 
-A origem local é separada da transformação para permitir acrescentar S3 mais tarde.
-Nenhum serviço AWS é usado nesta fase. Ver [README_ETL.md](README_ETL.md).
+Nos testes usar fontes copiadas e destinos temporários separados, nunca a
+entrega operacional. Consultar [dados e operações](docs/DATA_PIPELINE.md).
 
-## Dashboard DMC com dados reais
+Para iniciar o portal:
 
 ```powershell
 cd dmc-workspace
@@ -65,63 +73,62 @@ npm ci
 npm run dev -- -p 3001
 ```
 
-Requer Node.js 24 LTS e os ficheiros JSONL existentes em `warehouse/`.
-Abra http://localhost:3001, preencha o briefing e gere uma proposta preliminar.
-As viagens em edição ficam neste navegador; as versões e os PDFs são guardados no servidor local em `exports/itineraries/`, fora do ETL. Use **Export PDF** ou consulte `/exports` para aceder ao histórico. Horários, acessibilidade, disponibilidade
- e preços finais exigem confirmação. Consulte o estado atual e os limites em
-[README_UIMOCK.md](README_UIMOCK.md).
+Abrir [http://localhost:3001](http://localhost:3001). O Python do portal pode ser
+indicado por `BLU_PYTHON`; a tradução usa `BLU_TRANSLATION_PYTHON`.
+As versões e PDFs usam `BLU_EXPORT_DIR` ou `exports/itineraries/` por defeito.
+O [guia do portal](dmc-workspace/README.md) descreve SageMaker, proxy e fontes CJK.
 
-## Arranque rápido (arquitetura de referência anterior)
+O dashboard analítico pode ser iniciado, com o grupo `dashboard` instalado:
 
-```bash
-cp .env.example .env
-docker compose up --build
-# ou: pip install -e ".[dev]" && uvicorn services.api_gateway.app:app --reload
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1
 ```
 
-Abra `http://localhost:8000/docs`. Para uma chamada autenticada, crie um token com `POST /auth/token?subject=demo` e use-o no botão **Authorize**.
+O agente legado é opcional. O seu código existente não comprova a implementação
+do fluxo proposta → pré-visualização → aceitação → versão. Confirmar o
+[estado da arquitetura](docs/ARCHITECTURE.md) e o [plano](PLAN.md).
 
-## Componentes
+## Verificações
 
-- `services/etl_service`: ingestão, limpeza, transformação e persistência opcional em S3/DynamoDB.
-- `services/dna_service`, `curation_service`, `itinerary_service`: decisão explicável e Bedrock opcional.
-- `services/pricing_service`, `reservation_service`, `crm_service`: operações comerciais.
-- `services/api_gateway`: FastAPI, OpenAPI, JWT e limitação por IP.
-- `services/forms_ingestion_service`: refresh direto, sem cache, de respostas Google Forms via Sheet; use `GET /forms/latest`.
-- `shared`: contratos Pydantic, adaptadores AWS/external APIs, segurança e logs.
-- `infrastructure`: Terraform e CDK inicializáveis por ambiente.
-- `dmc-workspace`: protótipo interativo frontend (Next.js 16, React 19, Tailwind CSS v4, shadcn/ui, AI Elements) do workspace do consultor/curador de viagens da BLU Costa Travel.
+Na raiz, usando a `.venv` preparada:
 
-## Workspace UI Prototype (DMC Travel Designer)
+```powershell
+.\.venv\Scripts\python.exe -B scripts/check_project.py
+$env:PYTHONPATH = "src"
+.\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -B -m unittest translations.test_worker -v
+```
 
-Para testar o fluxo de experiência de utilizador (*Intake do Briefing → Curadoria Simulada → Itinerário Interativo → Copiloto AI com Destaques Visuais*):
+No portal:
 
-```bash
+```powershell
 cd dmc-workspace
-npm install
-npm run dev -- -p 3001
+npm run check
+npm run build
+npm run test:catalog-etl
 ```
 
-Aceda a **[http://localhost:3001](http://localhost:3001)**. Consulte o guia detalhado em **[README_UIMOCK.md](README_UIMOCK.md)**.
+Nos outros sistemas usar o executável equivalente em `.venv/bin/python`.
+Os testes de navegador exigem o portal e configuração próprios. PDF real,
+tradução real e acesso SageMaker/Bedrock são verificações separadas dos mocks.
+Ver [testes e limitações](docs/TESTING.md).
 
+## Documentação e limites
 
-## Qualidade e entrega
+- [Como trabalhar neste projeto](AIREADME.md).
+- [Arquitetura e âmbito](docs/ARCHITECTURE.md).
+- [Portal operacional](docs/PORTAL.md).
+- [Dados e operações](docs/DATA_PIPELINE.md).
+- [Decisões](docs/DECISIONS.md).
+- [Plano de evolução](PLAN.md).
 
-```bash
-make test
-make lint
-locust -f tests/load_itineraries.py --host http://localhost:8000
-terraform -chdir=infrastructure/terraform init
-terraform -chdir=infrastructure/terraform plan
-```
+O portal não confirma automaticamente disponibilidade, reservas, preços finais,
+acessibilidade ou condições alimentares. Propostas e pendências exigem revisão
+humana. Preservar fontes, histórico, atividades protegidas e credenciais.
 
-O workflow GitHub Actions corre lint, testes e validação Terraform. Nunca coloque chaves no repositório: use `.env` apenas localmente e Secrets Manager em produção. Consulte [arquitetura](docs/architecture.md), [API](docs/api.md), [ETL](docs/etl.md), [curadoria/DNA](docs/curation.md), [operações](docs/operations.md) e [modelo ER](docs/er-diagram.md).
+## Assistente de itinerário — Fase 2
 
-## Próximos passos de produção
-
-Criar imagens por serviço, adicionar redes privadas/NAT/Aurora e tarefas ECS por ambiente, configurar Secrets Manager/WAF/observabilidade e preencher os adaptadores contratuais de Places, TripAdvisor, Uber, Bolt e CRM com as APIs e permissões contratadas.
-
-## Google Forms / Google Sheets
-
-Ative a Google Sheets API, crie uma service account de leitura e partilhe a Sheet de respostas com o email dessa conta. Guarde o JSON de credenciais fora do Git (por exemplo, AWS Secrets Manager montado como ficheiro em ECS/Lambda) e configure `BLU_GOOGLE_SHEET_ID`, `BLU_GOOGLE_SHEET_RANGE` e `BLU_GOOGLE_SERVICE_ACCOUNT_FILE`. Cada chamada de `GET /forms/latest` faz uma chamada nova à API Google e encaminha os registos por `process_form_responses`; não existe cache de respostas.
-
+O fluxo de propostas com aceitação explícita, configuração privada e limites
+está em [docs/ASSISTANT.md](docs/ASSISTANT.md). A exportação TXT mantém o
+contrato atual para o Canva. Testes com fornecedor simulado não substituem
+a avaliação real aprovada numa fase posterior.

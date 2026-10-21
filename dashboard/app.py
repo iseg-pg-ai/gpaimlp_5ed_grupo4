@@ -1,6 +1,7 @@
 """Observatório BLU: exploração só de leitura da entrega publicada pelo ETL."""
 from __future__ import annotations
 
+from contextlib import closing
 import json
 from html import escape as escape_plot_text
 import math
@@ -24,7 +25,7 @@ MAP_HEIGHT = 420
 
 def query(sql: str, params: tuple = ()) -> pd.DataFrame:
     """Ler a entrega publicada, sem cache que sobreviva a uma nova publicação."""
-    with sqlite3.connect(f"file:{DATABASE.as_posix()}?mode=ro", uri=True) as connection:
+    with closing(sqlite3.connect(f"file:{DATABASE.as_posix()}?mode=ro", uri=True)) as connection, connection:
         return pd.read_sql_query(sql, connection, params=params)
 
 
@@ -41,7 +42,7 @@ def model_data(name: str) -> pd.DataFrame:
         return query(f'SELECT * FROM "{name}"')
     # Compatibilidade com entregas anteriores: usar o mesmo contrato do ETL
     # sobre um snapshot só de leitura, sem reescrever ou criar outro catálogo.
-    with sqlite3.connect(f"file:{DATABASE.as_posix()}?mode=ro", uri=True) as connection:
+    with closing(sqlite3.connect(f"file:{DATABASE.as_posix()}?mode=ro", uri=True)) as connection, connection:
         connection.execute("BEGIN")
         tables = {}
         for table in ("atracoes", "restaurantes", "experiencias", "precos"):

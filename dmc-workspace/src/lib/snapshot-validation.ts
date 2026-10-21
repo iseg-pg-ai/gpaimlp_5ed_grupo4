@@ -3,6 +3,18 @@ import { validateCatalogDetails } from "./catalog-details.ts";
 import { validateBrief } from "./curation.ts";
 import type { Snapshot } from "./itinerary-pdf";
 
+// A mesma representação no navegador e no histórico, sem alterar hashes existentes.
+export function canonicalSnapshot(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalSnapshot).join(",")}]`;
+  if (value && typeof value === "object")
+    return `{${Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${JSON.stringify(k)}:${canonicalSnapshot(v)}`)
+      .join(",")}}`;
+  return JSON.stringify(value);
+}
+
 export function validateSnapshot(value: unknown): asserts value is Snapshot {
   if (!value || typeof value !== "object") throw new Error("Roteiro inválido.");
   const s = value as Snapshot;
@@ -29,6 +41,11 @@ export function validateSnapshot(value: unknown): asserts value is Snapshot {
     )
       throw new Error("Dia inválido.");
     for (const item of day.items) {
+      if (
+        item.catalogRevision !== undefined &&
+        (!Number.isSafeInteger(item.catalogRevision) || item.catalogRevision < 1)
+      )
+        throw new Error("Revisão de catálogo inválida.");
       if (!item || !string(item.id) || !string(item.time) || !string(item.title))
         throw new Error("Atividade inválida.");
       for (const key of [

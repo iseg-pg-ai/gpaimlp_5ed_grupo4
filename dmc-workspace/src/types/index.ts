@@ -21,6 +21,7 @@ export interface TransitLeg {
 }
 
 export interface ActivityItem {
+  catalogRevision?: number;
   catalogDetails?: import("../lib/catalog-details").CatalogDetails;
   confirmation?: import("../lib/activity-confirmation").ActivityConfirmation;
   id: string;
@@ -110,6 +111,7 @@ export interface CustomerBrief {
 }
 
 export interface ChatMessage {
+  language?: "pt" | "en";
   id: string;
   sender: "user" | "assistant";
   text: string;

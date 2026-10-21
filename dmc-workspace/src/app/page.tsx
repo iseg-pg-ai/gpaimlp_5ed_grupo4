@@ -47,6 +47,12 @@ export default function WorkspacePage() {
     generate,
     send,
     assistantBusy,
+    assistantLanguage,
+    changeAssistantLanguage,
+    agentProposal,
+    decideAgentProposal,
+    selectAgentAlternative,
+    dismissAgentProposal,
     setEditing,
     startNewTrip,
     selectTrip,
@@ -313,10 +319,17 @@ export default function WorkspacePage() {
                     className={`fixed right-4 bottom-20 z-40 w-[calc(100%-2rem)] max-w-sm h-[min(70dvh,36rem)] overflow-hidden rounded-2xl border border-[var(--portal-line-d5d1c7)] shadow-xl [&>aside]:h-full xl:static xl:w-full xl:max-w-none xl:h-full xl:rounded-none xl:border-0 xl:shadow-none ${assistantOpen ? "block" : "hidden"} ${desktopAssistantCollapsed ? "xl:hidden" : "xl:block"}`}
                   >
                     <AIAssistantPanel
+                      key={active.id}
                       onCollapse={() => {
                         setDesktopAssistantCollapsed(true);
                         requestAnimationFrame(() => assistantButton.current?.focus());
                       }}
+                      language={assistantLanguage}
+                      onLanguageChange={changeAssistantLanguage}
+                      proposal={agentProposal}
+                      onDecideProposal={decideAgentProposal}
+                      onSelectAlternative={selectAgentAlternative}
+                      onDismissProposal={dismissAgentProposal}
                       messages={active.messages}
                       onSendMessage={send}
                       isProcessing={assistantBusy}
