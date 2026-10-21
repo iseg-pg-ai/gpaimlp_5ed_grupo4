@@ -831,3 +831,15 @@ Validação: navegador em 320/768/1440/2560 px, navegação, seleção das abord
 preservação do roteiro, animações e isolamento aprovados; estrutura documental,
 Markdown e sintaxe JavaScript aprovados. Conteúdo e layout inspecionados em
 capturas locais. Sem chamadas a fornecedores ou alterações no portal real.
+
+## 2026-10-21 — Ícone comum nos separadores BLU
+
+O portal, o Observatório Streamlit e as três páginas do Monitoring reutilizam
+o SVG b da apresentação. A configuração partilhada reside em
+`dmc-workspace/public/branding.json`, dentro da raiz de build do portal, e é
+consumida também pelas interfaces Python. O Monitoring permite imagens data URI
+na política de conteúdo para apresentar este ícone sem pedidos externos.
+
+Validação: build do portal aprovado, seis testes HTTP do Monitoring aprovados,
+SVG confirmado nas páginas de login, painel e utilizadores e no adaptador
+Streamlit; estrutura documental e whitespace verificados.

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import branding from "../../public/branding.json";
 import "./globals.css";
 import { themeInitScript } from "@/lib/theme";
 import { LocaleProvider } from "@/components/LocaleProvider";
 
 export const metadata: Metadata = {
   icons: {
-    icon: `${process.env.PORTAL_ASSET_PREFIX ?? (process.env.SAGEMAKER_APP_TYPE === "CodeEditor" ? "/codeeditor/default/ports/3001" : "")}/favicon.ico`,
+    icon: branding.favicon,
   },
   title: "BLU · Curation Studio",
   description:

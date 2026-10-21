@@ -54,7 +54,7 @@ def make_server(port, security, collector, public_url, insecure_local=False):
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "same-origin")
             self.send_header("X-Frame-Options", "DENY")
-            self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
+            self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
             self.send_header("Connection", "close")
             for name, value in (headers or {}).items():
                 self.send_header(name, value)
@@ -88,6 +88,8 @@ def make_server(port, security, collector, public_url, insecure_local=False):
 
         def template(self, name, csrf="", error="", session=None):
             content = (STATIC / name).read_text()
+            favicon = json.loads((ROOT / "dmc-workspace/public/branding.json").read_text())["favicon"]
+            content = content.replace("{{FAVICON}}", html.escape(favicon, quote=True))
             content = content.replace("{{BASE}}", html.escape(prefix + "/", quote=True)).replace(
                 "{{CSRF}}", html.escape(csrf, quote=True)).replace("{{ERROR}}", html.escape(error))
             content = content.replace("{{USERNAME}}", html.escape(session["username"] if session else "")).replace(

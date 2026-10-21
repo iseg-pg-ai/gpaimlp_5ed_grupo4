@@ -1,5 +1,10 @@
 # Plano de evolução do BLU AI System
 
+## Ícone comum dos separadores — 2026-10-21
+
+- [x] Reutilizar o ícone b da apresentação no portal, Observatório e Monitoring.
+- [x] Validar configuração, páginas e build do portal.
+
 ## Apresentação a partir do PowerPoint — 2026-10-21
 
 - [x] Incorporar contexto P6, parceria BLU, três componentes e abordagens de curadoria.
