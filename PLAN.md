@@ -124,7 +124,7 @@ atuais estão no plano acima; este conteúdo não reabre tarefas concluídas.
 
 ### Plano de evolução do BLU AI System
 
-#### Integração de dev em TXT/Canva — 2026-10-21
+## Integração de dev em TXT/Canva — 2026-10-21
 
 - [x] Integrar `origin/dev` preservando as melhorias de TXT e do plugin Canva.
 - [x] Validar Python, portal, catálogo/ETL e exportação TXT.

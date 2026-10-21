@@ -1,6 +1,7 @@
 # BLU AI System — fundamentos, experiência e portal
 
 Guião revisto em 21 de outubro de 2026, no branch `apresentacao-tecnica`.
+Guião revisto em 21 de outubro de 2026, no branch `apresentacao-tecnica`.
 Público de referência: avaliação académica e responsáveis da operação.
 
 A apresentação passa a ter **três partes: explicar como o sistema foi construído,

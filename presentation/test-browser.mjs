@@ -30,6 +30,9 @@ try {
     await page
       .getByText("ISEG · 5.ª EDIÇÃO · PROJETO P6", { exact: true })
       .waitFor();
+    await page
+      .getByText("ISEG · 5.ª EDIÇÃO · PROJETO P6", { exact: true })
+      .waitFor();
     const check = async () => {
       assert.equal(
         await page.evaluate(
@@ -61,6 +64,7 @@ try {
       .getByRole("heading", { name: "Uma escolha com origem." })
       .waitFor();
     await page.getByRole("button", { name: "Revelar a arquitetura" }).click();
+    await page.locator('[aria-label="Três componentes da solução"]').waitFor();
     await page.locator('[aria-label="Três componentes da solução"]').waitFor();
     await page.locator('[data-tech-node="3"]').click();
     await page
@@ -188,6 +192,28 @@ try {
       true,
     );
     await check();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Classic", exact: true })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    const originalDay = await page.locator(".show-day").first().innerText();
+    await page.getByRole("button", { name: "Signature", exact: true }).click();
+    await page
+      .locator("#mode-description")
+      .filter({ hasText: "maior profundidade" })
+      .waitFor();
+    assert.equal(
+      await page.locator(".show-day").first().innerText(),
+      originalDay,
+    );
+    await page.getByRole("button", { name: "Soft", exact: true }).click();
+    await page
+      .locator("#mode-description")
+      .filter({ hasText: "mais leve" })
+      .waitFor();
+    await page.getByRole("button", { name: "Classic", exact: true }).click();
     assert.equal(
       await page
         .getByRole("button", { name: "Classic", exact: true })
