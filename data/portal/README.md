@@ -1,8 +1,9 @@
 # Catálogo editável local
 
 O portal guarda nesta pasta o ficheiro `catalog.sqlite`, com os registos atuais e
-o histórico de revisões. A base é criada ao abrir **Catálogo** e importar a oferta
-existente como **Em revisão**.
+o histórico de revisões. Num clone novo, `just blu it` cria a base a partir do
+warehouse versionado e importa a oferta existente como **Em revisão**. Abrir
+**Catálogo** também faz essa importação de forma idempotente.
 
 Não editar o warehouse manualmente. A oferta deve ser criada, revista e aprovada
 no portal e publicada através do ETL.

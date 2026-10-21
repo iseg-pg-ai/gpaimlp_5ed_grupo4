@@ -1,11 +1,11 @@
 {
   "pipeline": "blu-local-etl",
-  "ran_at_utc": "2026-10-16T02:19:07.056449+00:00",
-  "input_directory": "data",
-  "workbook": "data/Requisitos informações Alunos ISEG.xlsx",
+  "ran_at_utc": "2026-10-20T18:33:08.152366+00:00",
+  "input_directory": "/home/sagemaker-user/data",
+  "workbook": "/home/sagemaker-user/data/Requisitos informações Alunos ISEG.xlsx",
   "source": {
     "type": "local",
-    "root": "data",
+    "root": "/home/sagemaker-user/data",
     "objects": [
       {
         "key": "Requisitos informações Alunos ISEG.xlsx",
@@ -372,7 +372,7 @@
   "pdfs_discovered": 50,
   "pdf_errors": [],
   "structured_dataset": {
-    "file": "data/reference/structured_dataset.xlsx",
+    "file": "/home/sagemaker-user/data/reference/structured_dataset.xlsx",
     "sha256": "64843c0b749fcee2487e3d1eb9504117d7582703b992513dba67002eb69a8f61",
     "sheets": {
       "Guia_dataset": 77,

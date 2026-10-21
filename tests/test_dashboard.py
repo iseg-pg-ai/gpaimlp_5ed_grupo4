@@ -47,6 +47,11 @@ class DashboardContractsTest(unittest.TestCase):
         self.assertEqual(app.display_value("  "), "Por confirmar")
         self.assertEqual(app.display_value(0), "0")
 
+    def test_missing_optional_warehouse_column_is_read_as_unknown(self):
+        columns = {"nome_da_experiencia", "latitude"}
+        self.assertEqual(app.column_or_null(columns, "latitude"), '"latitude"')
+        self.assertEqual(app.column_or_null(columns, "horario"), 'NULL AS "horario"')
+
     def test_history_uses_explicit_parameterized_identifier(self):
         row = pd.Series({"Tipo": "Atração", "Identificador": "A'1"})
         with patch.object(app, "query", return_value=pd.DataFrame()) as read:

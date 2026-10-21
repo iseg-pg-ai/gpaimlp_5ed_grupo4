@@ -3,6 +3,27 @@
 Os registos históricos conservam as datas e a evidência original. O mapa atual
 está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
+## Inicialização segura de um checkout sem estado operacional — 2026-10-20
+
+- Um checkout sem catálogo, itinerários ou backups é tratado como instalação nova.
+- `just blu it` cria atomicamente `data/portal/catalog.sqlite` a partir do warehouse
+  versionado e importa os registos com estado **Em revisão**; cria também
+  `exports/itineraries/` vazio.
+- A presença de estado parcial ou inválido impede o bootstrap e mantém a exigência
+  de um backup verificado, evitando substituir dados operacionais por engano.
+- Evidência: `monitoring/recovery.py` e `monitoring/test_operations.py`.
+
+## Cálculo rodoviário centralizado em Python — 2026-10-20
+
+- Consulta OSRM, validação dos parâmetros e fallback geométrico passam de
+  `src/lib/road-routing.ts` para `portal/routing.py`.
+- O adaptador TypeScript preserva o contrato assíncrono usado pelas APIs e pelo
+  editor. A ordenação interativa e os resumos permanecem temporariamente no
+  cliente até a próxima fatia da migração.
+- O fornecedor externo é substituível nos testes Python; falhas de rede continuam
+  a produzir estimativas identificadas como não otimizadas.
+- Evidência: `tests/test_routing.py` e `dmc-workspace/tests/road-routing.test.mjs`.
+
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
 ### Consolidação dos testes
@@ -89,14 +110,17 @@ está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 - Evidência: check passou com 99 testes aprovados e um ignorado; build passou;
   sintaxe Bash e verificação do diff passaram. Sem publicação remota.
 
-Revisto em 2026-10-08. Decisões anteriores válidas preservadas; evidência atualizada
-contra o checkout atual de main, commit f090e53.
+O bloco seguinte foi importado da revisão de 8 de outubro de 2026. Conserva o
+contexto dessa data; decisões posteriores no mesmo ficheiro prevalecem quando o
+estado mudou.
 
 ## D-001 - Distinguir implementação e arquitetura futura
 
-- Estado: aceite; revisão em 2026-10-08; data original: 2026-09-29.
-- Decisão: ETL, warehouse, Streamlit e DMC Workspace são a base implementada.
-  S3, Bedrock, APIs externas e AWS são objetivos futuros.
+- Estado: parcialmente substituído por decisões posteriores; revisão original em
+  2026-10-08, com data inicial de 2026-09-29.
+- Decisão original: ETL, warehouse, Streamlit e DMC Workspace eram a base
+  implementada. O agente Bedrock e a execução no SageMaker foram acrescentados
+  depois como capacidades opcionais; deployment de produção continua futuro.
 - Razão: diagramas e experiências não demonstram integração funcional.
 - Evidência: etl/pipeline.py, dashboard/app.py e APIs do portal; scripts experimentais.
 - Âmbito: arquitetura e planeamento.
@@ -641,3 +665,132 @@ um ignorado; build, catálogo/ETL e estrutura documental aprovados. Navegador:
 TXT/Canva em 320/390/1440 px, incluindo histórico, Lixo/restauro, privacidade e
 estado do PDF inalterado; temas em 320/768/1440/2560 px. Armazenamento temporário
 e tradução simulada; sem validação real de fornecedores externos.
+
+## Monitoring independente no Studio — 2026-10-19
+
+A pedido do utilizador, a primeira implementação fica em `monitoring/`, porta
+3004, com login próprio e escuta apenas em loopback atrás do HTTPS Studio.
+Usa biblioteca padrão Python para não exigir os grupos opcionais do sistema.
+A interface e a API de estado exigem sessão; o CSS do login é público.
+
+Sondas de leitura e agregados do warehouse alimentam histórico em memória e
+logs com rotação, sem escrever nas aplicações, executar ETL ou chamar modelos.
+Não existe ainda tracing, instrumentação de todos os pedidos nem notificações
+externas. A cadência do warehouse é desconhecida até ser configurada.
+
+Credenciais derivadas, acesso inicial e logs ficam em `monitoring/runtime/`,
+excluído do Git e do contexto Docker. O servidor interno e as sessões em memória
+não constituem uma decisão de hosting de produção. Consultar os contratos e
+limites no [guia do monitoring](../monitoring/README.md).
+
+Evidência: dez testes Python de autenticação/sondas/HTTP e cenários de navegador
+em quatro larguras aprovados. Recolha local real dos serviços existentes
+confirmada; proxy HTTPS autenticado e fornecedores externos não validados.
+
+### Encaminhamento no Code Editor — 2026-10-19
+
+O proxy instalado rejeita com HTTP 400 portas ausentes da sua lista de
+encaminhamento; o login local disponível não comprova esse acesso. O arranque
+e o README passam a indicar a adição da porta no separador Ports do editor.
+
+O proxy também acrescenta o seu prefixo a cabeçalhos Location iniciados por
+`/`. Os redirects do monitoring passam a usar o URL público canónico completo
+para evitar duplicação. Dez testes Python e quatro larguras de navegador
+aprovados após a alteração; acesso AWS depende do encaminhamento no editor.
+
+## Gestão de contas no monitoring — 2026-10-19
+
+A administração de acessos fica no próprio monitoring, em `/users`. Perfis
+`admin` e `viewer` distinguem gestão de contas e consulta, com autorização
+no servidor e CSRF em todas as alterações. A conta legada conserva o hash e
+passa a administrador; o formato local com várias contas é guardado de forma
+atómica na primeira alteração. Não foi criada outra base do catálogo.
+
+Alterações de palavra-passe, perfil, estado e remoção revogam as sessões da
+conta. Não se pode remover/desativar a conta em uso nem retirar o último
+administrador ativo, incluindo em pedidos concorrentes. A recuperação CLI
+preserva outras contas e deve ser feita com o serviço parado.
+
+A exclusão de `monitoring/runtime/` estava comentada e os seus ficheiros
+tinham sido versionados. A regra foi reativada, os ficheiros foram retirados
+do índice sem eliminar as cópias locais e o verificador estrutural passa a
+rejeitar esses caminhos no Git. O histórico não foi reescrito; a credencial
+inicial deve ser alterada se ainda for usada.
+
+Evidência: 18 testes Python e cenários completos de gestão de contas em
+320/768/1440/2560 px aprovados, com inspeção visual. As quatro pendências
+de monitoring do plano continuam abertas.
+
+## 2026-10-19 — Telemetria operacional reduzida e privada
+
+O monitoring agrega eventos locais do portal e do agente sem guardar prompts,
+respostas, corpos de pedidos, dados de clientes ou exceções completas. Backups do
+catálogo, warehouse e itinerários incluem hashes e só contam como verificados após
+um restauro isolado e verificação de integridade SQLite. Incidentes são deduplicados
+numa fila local com eventos de abertura e recuperação. Integrações externas ficam
+desativadas até serem definidos canal, destinatários e gestão de credenciais.
+
+## 2026-10-19 — Limpeza automática conservadora
+
+O monitoring pode libertar caches regeneráveis e aplicar retenção aos seus próprios
+backups quando a ocupação do disco atingir 85%, com intervalo mínimo de 24 horas.
+Mantém pelo menos cinco backups completos e só remove excedentes com sete dias.
+Catálogo, fontes, warehouse, exports, credenciais, ambientes e dependências ficam
+fora do âmbito. A execução manual exige perfil administrador, origem válida e CSRF.
+
+## 2026-10-19 — Logs operacionais centralizados
+
+Reutilizar `monitoring/runtime/portal-events.jsonl` como fonte persistente dos logs do
+portal, mantendo rotação e compatibilidade com os sinais operacionais existentes. A
+instrumentação cliente regista navegação, interações e pedidos API; a instrumentação
+do servidor regista erros não tratados e os fluxos explícitos continuam a registar
+operações de domínio. Escritas no processo Node são serializadas e eventos idênticos
+da mesma interação são limitados no browser.
+
+O portal não dispõe de identidade própria. A tabela apresenta um identificador
+aleatório da sessão do separador, `server` ou `system`, sem atribuir a ação a uma
+pessoa. Valores de formulários, corpos HTTP, labels, prompts e respostas não são
+capturados. Mensagens e stacks são limitadas e redigidas antes da persistência. A
+consulta permanece protegida pelo login do Monitoring e os ficheiros não são servidos
+diretamente.
+
+## 2026-10-19 — Configuração individual do SageMaker Studio
+
+A 2026-10-19, a configuração pública do Studio passou de
+`config/studio.json` para `config/studio.local.json`, ignorado pelo Git. A decisão
+anterior de centralizar a base mantém-se; a localização passou a ser individual
+para impedir que o identificador de um espaço seja aplicado aos ambientes dos
+restantes colegas. `config/studio.example.json` documenta o contrato e
+`scripts/setup_workspace.py` valida e escreve o valor local.
+
+## 2026-10-20 — Consolidação da documentação ativa
+
+O README fica como entrada curta para preparação e arranque. Arquitetura, dados,
+portal, operações e testes mantêm uma responsabilidade própria e os READMEs dos
+componentes remetem para esses guias em vez de repetir procedimentos extensos.
+Resultados transitórios de testes saem do guia operacional; este ficheiro conserva
+o contexto histórico e o Git preserva versões anteriores.
+
+O lint Markdown ignora diretórios ocultos e extensões do ambiente SageMaker, que não
+pertencem ao repositório. A apresentação deixa de conter o identificador de um
+espaço Studio: o destino do portal deriva do URL atual, com fallback local.
+
+## 2026-10-20 — Preparação independente de clones de desenvolvimento
+
+O repo fornece os ficheiros necessários para inicializar uma sessão: fontes,
+warehouse publicado, lockfiles, launcher e exemplos de configuração. Acrescentado
+`.env.example` sem segredos e `--initialize-data` ao assistente para criar catálogo
+e itinerários locais através do contrato de recuperação existente. As contas são
+geradas por instalação, sem versionar credenciais ou duplicar persistência.
+
+A preparação seleciona Node e npm da mesma instalação suportada, verifica os
+artefactos mínimos e permite usar `./bin/just` quando o launcher global pertence
+a outro checkout. O guia inclui os comandos para instalar dependências antes da
+inicialização. Não existe publicação nem transferência de dados operacionais.
+
+Evidência: 16 testes de preparação/operações aprovados; ensaio com `git archive`
+num diretório e HOME temporários, sobrepondo apenas o assistente alterado e o
+exemplo de configuração. Sem catálogo, exports ou contas de origem, criou os três
+conjuntos necessários e preservou-os numa segunda execução. Reutilizaram-se Python,
+Node e dependências locais; não se validaram downloads, proxy Studio, outra
+identidade IAM ou Bedrock real. A validação num segundo espaço AWS mantém-se no plano.

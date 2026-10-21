@@ -10,6 +10,6 @@
   "observatory": {
     "description": "Normalização explícita e evidência por campo; valores das fontes preservados.",
     "contract_version": 2,
-    "rules_sha256": "e4b0de6ac05fb3614c208c3be3682337ed98698393de0dc6b2786940bcc05e87"
+    "rules_sha256": "1793c929ee241439a6c7c1e829d8dff48c6ed0b80fa8ea79c93c53f2ea53cbb9"
   }
 }

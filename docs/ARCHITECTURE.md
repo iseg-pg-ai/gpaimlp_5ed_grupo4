@@ -1,9 +1,7 @@
 # Arquitetura e âmbito do BLU AI System
 
-Revisto em 2026-10-15; migração incremental em `refactor/html-python`,
-a partir de `chore/project-cleanup` em `da8de67`.
-Este documento concentra o mapa do projeto, as capacidades e as fronteiras para
-a próxima iteração do agente. Os comandos estão no [README](../README.md),
+Revisto em 20 de outubro de 2026. Este documento concentra o mapa do projeto,
+as capacidades atuais e as fronteiras entre componentes. Os comandos estão no [README](../README.md),
 as tarefas no [plano](../PLAN.md) e o histórico em [decisões](DECISIONS.md).
 
 ## Fluxo dos dados
@@ -17,6 +15,8 @@ data/portal/catalog.sqlite — catálogo editável, revisões e aprovações
      -> dmc-workspace/ — portal operacional
         -> localStorage — rascunhos e preferências
         -> exports/itineraries/ — versões, hashes e PDFs históricos
+     -> monitoring/ — saúde, eventos, incidentes e backups locais
+     -> presentation/ — apresentação estática independente
 ```
 
 O catálogo operacional e o histórico estão fora do Git e precisam de backup.
@@ -48,6 +48,8 @@ não requer SageMaker SDK, MLflow ou outro ambiente experimental de treino.
 | Ferramentas do agente | `src/blu_ai/tools/` | Pesquisa, meteorologia e verificação de restrições |
 | Tradução | `translations/worker.py` | Protocolo JSON-lines, modelos locais e cache |
 | Adaptador TXT/Canva | `src/lib/itinerary-prompt.ts`, `plugins/blu-curadoria/` | Reutilizar regras partilhadas e orientar a composição visual |
+| Monitoring | `monitoring/server.py`, `monitoring/collector.py` | Autenticar utilizadores e agregar sinais operacionais locais |
+| Apresentação | `presentation/serve.py` | Servir a narrativa interativa sem alterar o portal |
 
 Na tabela, `src/` pertence a `dmc-workspace/`, exceto os caminhos `src/blu_ai/`,
 que são relativos à raiz. As APIs e páginas do Next.js são entradas do framework;
@@ -82,6 +84,12 @@ POST aceita coordenadas dos itens do dia. As respostas disponíveis têm cache d
 30 minutos; indisponibilidade não é guardada em cache. O agente usa a mesma
 implementação e distingue histórico de previsão, sem inventar um clima favorável
 quando a consulta falha. Não foram acrescentadas dependências Python.
+
+O cálculo de cada troço rodoviário pertence a `portal/routing.py`. O módulo valida
+coordenadas, modos, margens e timeout, consulta a origem OSRM configurada e aplica
+o fallback geométrico local. `src/lib/road-routing.ts` conserva temporariamente a
+ordenação interativa e a composição dos resumos, chamando Python para cada troço;
+assim existe uma única implementação do cálculo externo e das suas estimativas.
 
 A persistência do catálogo pertence agora ao Python em `etl/portal_catalog.py`,
 com o mesmo esquema `catalog_records`/`catalog_history` e transações
@@ -136,10 +144,11 @@ guardados. O plugin-fonte 0.3.0 aceita TXT 1.0.0 e 1.1.0; a atualização de uma
 instalação remota exige uma operação própria. O modelo visual Canva não fornece
 factos para outras viagens. Ver o [guia do portal](PORTAL.md).
 
-O sistema produz propostas; não efetua reservas. Autenticação, papéis,
-sincronização multiutilizador, persistência cloud e fotografias autorizadas nos
-PDFs DMC continuam pendentes. Partilha e retenção precisam de revisão antes de
-produção. Acesso pelo Studio não torna a proposta pública para clientes externos.
+O sistema produz propostas; não efetua reservas. O Monitoring tem autenticação
+local própria, mas o portal não tem identidade, papéis ou sincronização
+multiutilizador. Persistência cloud e fotografias autorizadas nos PDFs DMC
+continuam pendentes. Partilha e retenção precisam de revisão antes de produção.
+Acesso pelo Studio não torna a proposta pública para clientes externos.
 
 ## Fronteira para a próxima iteração do agente
 
@@ -154,7 +163,7 @@ paralelo de catálogo, planeamento ou persistência.
 4. Preservar confirmação humana, concorrência e histórico antes de aplicar ações.
 5. Testar com mocks, snapshots e diretórios temporários antes de usar fornecedores.
 
-Esta limpeza não implementa essa iteração nem muda os contratos atuais.
+Essa evolução ainda não está integrada como um novo fluxo autoritativo.
 
 ## Verificação e manutenção
 
@@ -173,5 +182,5 @@ enquanto os componentes estão instalados ou em execução.
 - Não há CI do portal neste checkout; executar `npm run check` e `npm run build`.
 
 Manter um guia por responsabilidade: [dados e operações](DATA_PIPELINE.md),
-[portal](PORTAL.md), [deployment AWS](AWS_PORTAL_TESTING.md),
-[testes e histórico](TESTING.md) e [dependências Python](DEPENDABOT_PYTHON.md).
+[portal](PORTAL.md), [operações](OPERATIONS.md), [teste AWS](AWS_PORTAL_TESTING.md),
+[testes](TESTING.md) e [dependências Python](DEPENDABOT_PYTHON.md).

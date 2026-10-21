@@ -13,6 +13,7 @@ from blu_ai.tools.weather_tools import get_weather_forecast
 from blu_ai.tools.constraint_tools import validate_activity_constraints
 from blu_ai.schemas.brief import CustomerBrief
 from blu_ai.agents.prompts import CURATOR_SYSTEM_PROMPT
+from blu_ai.telemetry import invoke_with_telemetry
 
 
 AVAILABLE_TOOLS = [
@@ -63,7 +64,7 @@ Passos requeridos:
 """
 
     inputs = {"messages": [HumanMessage(content=user_prompt)]}
-    result = agent.invoke(inputs)
+    result = invoke_with_telemetry(agent, inputs, "curate")
 
     # Extrair mensagens finais e chamadas de ferramentas
     messages = result.get("messages", [])
@@ -178,7 +179,7 @@ DIRETRIZES ESTRITAS DE EXECUÇÃO:
 """
 
     inputs = {"messages": [HumanMessage(content=prompt)]}
-    result = agent.invoke(inputs)
+    result = invoke_with_telemetry(agent, inputs, "chat")
     messages = result.get("messages", [])
     raw_content = messages[-1].content if messages else ""
     final_reply = extract_text_content(raw_content)

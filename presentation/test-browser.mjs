@@ -42,9 +42,12 @@ try {
       assert.equal(await page.locator(".show-chapters button").count(), 6);
       assert.match(await page.locator("#counter").innerText(), /\/ 06$/);
       assert.equal(
-        await page.locator(".show-chapters").evaluate((nav) =>
-          getComputedStyle(nav).gridTemplateColumns.split(" ").length,
-        ),
+        await page
+          .locator(".show-chapters")
+          .evaluate(
+            (nav) =>
+              getComputedStyle(nav).gridTemplateColumns.split(" ").length,
+          ),
         width <= 540 ? 2 : width <= 1100 ? 3 : 6,
         "A navegação deve preencher a grelha de seis capítulos",
       );

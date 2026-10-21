@@ -2,7 +2,8 @@ import { validateSnapshot } from "@/lib/snapshot-validation";
 import { loadPublishedCatalog } from "@/lib/catalog-store";
 import { editWithAssistant } from "@/lib/assistant-editing";
 import { jsonError } from "@/lib/server-http";
-import { enrichItineraryWithRoadRouting } from "@/lib/road-routing";
+import { enrichItineraryWithRoadRouting } from "@/lib/road-routing-server";
+import { recordOperationalEvent } from "@/lib/operational-telemetry";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
@@ -32,8 +33,8 @@ export async function POST(request: Request) {
     // Se o comando determinístico não alterou o itinerário (perguntas, linguagem natural, sugestões),
     // invocar o Agente de IA LangChain / Bedrock em http://127.0.0.1:8000
     const agentUrl = process.env.BLU_AI_AGENT_URL || "http://127.0.0.1:8000";
+    const started = performance.now();
     try {
-      console.log(`[Assistant API] Calling AI Agent at ${agentUrl} with input: "${body.input}"`);
       const agentResp = await fetch(`${agentUrl}/api/agent/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,22 +45,33 @@ export async function POST(request: Request) {
         }),
         signal: AbortSignal.timeout(20000),
       });
-      console.log(`[Assistant API] AI Agent response status: ${agentResp.status}`);
+      await recordOperationalEvent({
+        component: "ai-agent",
+        operation: "chat",
+        outcome: agentResp.ok ? "success" : "failed",
+        level: agentResp.ok ? "info" : "warning",
+        durationMs: performance.now() - started,
+        httpStatus: agentResp.status,
+      });
       if (agentResp.ok) {
         const agentData = (await agentResp.json()) as { reply?: string };
         if (agentData?.reply) {
-          console.log(`[Assistant API] Returning AI Agent reply!`);
           return Response.json({
             itinerary: body.snapshot.itinerary,
             changed: false,
             reply: agentData.reply,
           });
         }
-      } else {
-        console.warn(`[Assistant API] AI Agent returned error status: ${agentResp.status}`);
       }
-    } catch (agentErr) {
-      console.warn("[Assistant API] Agent service error:", agentErr);
+    } catch {
+      await recordOperationalEvent({
+        component: "ai-agent",
+        operation: "chat",
+        outcome: "failed",
+        level: "warning",
+        durationMs: performance.now() - started,
+        errorCode: "AGENT_UNAVAILABLE",
+      });
     }
 
     return Response.json(result);

@@ -4,12 +4,17 @@ from __future__ import annotations
 import argparse
 from io import BytesIO
 import re
-import json
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import sys
 from urllib.parse import urlsplit
 
-DIST = Path(__file__).resolve().parent / "dist"
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from scripts.studio_urls import studio_base
+
+DIST = ROOT / "presentation/dist"
 
 
 def main():
@@ -53,10 +58,10 @@ def main():
             pass
 
     with ThreadingHTTPServer((args.host, args.port), Handler) as server:
-        config = DIST.parent.parent / "config/studio.json"
-        if config.exists():
-            base = json.loads(config.read_text())["base_url"].rstrip("/")
-            print(f"Apresentação: {base}/ports/{args.port}/", flush=True)
+        try:
+            print(f"Apresentação: {studio_base()}/ports/{args.port}/", flush=True)
+        except ValueError:
+            pass
         print(f"Endereço local: http://{args.host}:{args.port}/", flush=True)
         try:
             server.serve_forever()
