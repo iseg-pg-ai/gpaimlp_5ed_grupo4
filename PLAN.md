@@ -3,7 +3,7 @@
 ## Integração de monitoring na apresentação — 2026-10-21
 
 - [x] Integrar monitoring preservando o histórico de ambos os branches.
-- [ ] Validar Python, portal, catálogo/ETL e documentação.
+- [x] Validar Python, portal, catálogo/ETL e documentação.
 - [ ] Reaplicar e validar a apresentação baseada no PowerPoint.
 
 Plano consolidado em 20 de outubro de 2026. Mantém apenas trabalho aberto e

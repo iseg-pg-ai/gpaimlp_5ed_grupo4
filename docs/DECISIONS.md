@@ -794,3 +794,20 @@ exemplo de configuração. Sem catálogo, exports ou contas de origem, criou os 
 conjuntos necessários e preservou-os numa segunda execução. Reutilizaram-se Python,
 Node e dependências locais; não se validaram downloads, proxy Studio, outra
 identidade IAM ou Bedrock real. A validação num segundo espaço AWS mantém-se no plano.
+
+## 2026-10-21 — Integrar monitoring na apresentação técnica
+
+Integração de `feat/monitoring-deployment` (`8c0dee2`) em
+`apresentacao-tecnica`, preservando as decisões TXT/Canva e o plano anterior como
+registo histórico. O plano ativo mantém as pendências de monitoring para
+produção: notificações externas, backups externos cifrados e sonda externa.
+
+As alterações locais da apresentação baseada no PPT foram guardadas num stash
+identificado antes do merge para reaplicação posterior, sem incluir o PPT ou
+dados privados. As contas e o runtime reais não são versionados nem substituídos.
+O teste de navegador foi atualizado para os controlos Todos/Apenas erros e os
+painéis de logs existentes, em vez dos seletores de filtros já removidos.
+
+Validação: 90 testes Python, 35 testes de monitoring/operações, check do portal
+com 98 aprovados e um ignorado, build e catálogo/ETL aprovados. Testes com mocks
+e dados temporários; sem publicação, infraestrutura ou fornecedores reais.
