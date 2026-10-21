@@ -40,7 +40,8 @@ A navegação abre um separador separado e depende da sessão SageMaker do visit
 
 ## Controlos
 
-- Anterior/Seguinte ou setas esquerda/direita: mudar de capítulo.
+- Anterior/Seguinte: mudar de capítulo. As setas esquerda/direita percorrem os
+  passos laterais; nos extremos passam para o capítulo anterior ou seguinte.
 - Partes no topo: aceder aos fundamentos, à experiência ou ao portal real.
 - Capítulos: acesso direto às cenas da parte selecionada.
 - Pausar/Ativar animações: desligar ou ligar o movimento sem perder o estado.
@@ -128,3 +129,22 @@ substituído pelo briefing do portal; TXT inclui JSON, e o PDF Canva é independ
 do PDF DMC. O portal tem seis idiomas e o Observatório nativo seis áreas. HPO,
 Model Registry, Endpoint e Model Monitor não são apresentados como serviços
 operacionais, nem os resultados históricos do PPT como medições atuais.
+
+## Enquadramento adaptável ao ecrã
+
+Cada capítulo ocupa a largura e a altura da janela, sem deslocação vertical.
+Títulos, navegação e controlos de avanço mantêm-se visíveis. A composição normal
+é usada quando o conteúdo cabe; o conteúdo mais denso é dividido em passos
+laterais, mantendo o tamanho de leitura, o estado e as interações. Os controlos
+**Passo anterior/seguinte**, o indicador e o gesto horizontal permitem percorrê-lo.
+Ao selecionar um requisito, camada ou mecanismo, o respetivo detalhe é revelado.
+
+Em janelas baixas, o índice passa para **Escolher capítulo**. O enquadramento
+recalcula os passos ao redimensionar, abrir detalhes ou atualizar conteúdo.
+O texto introdutório continua disponível nos passos dos layouts compactos.
+O modo de impressão volta a apresentar o conteúdo em fluxo contínuo.
+
+Para verificar todos os capítulos e passos em sete tamanhos de janela, com a
+apresentação iniciada, executar `node presentation/test-viewport.mjs`. O teste
+verifica limites do ecrã, ausência de cortes, texto de leitura com pelo menos
+14 px, preservação de estado ao redimensionar e navegação por teclado.

@@ -51,7 +51,7 @@ try {
             (nav) =>
               getComputedStyle(nav).gridTemplateColumns.split(" ").length,
           ),
-        width <= 540 ? 2 : width <= 1100 ? 3 : 6,
+        width <= 900 ? 3 : width <= 1000 ? 3 : 6,
         "A navegação deve preencher a grelha de seis capítulos",
       );
     };
@@ -177,7 +177,7 @@ try {
         .getAttribute("aria-pressed"),
       "true",
     );
-    await page.keyboard.press("ArrowRight");
+    await page.locator("#next").click();
     await page
       .getByRole("heading", { name: "Experiência gastronómica" })
       .waitFor();
@@ -218,8 +218,8 @@ try {
       await page.locator(".show-day").first().innerText(),
       unchanged,
     );
-    await page.keyboard.press("ArrowLeft");
-    await page.keyboard.press("ArrowRight");
+    await page.locator("#previous").click();
+    await page.locator("#next").click();
     await page.getByRole("heading", { name: "Uma tarde só sua" }).waitFor();
     await page.getByRole("button", { name: "Repor a experiência" }).click();
     await page

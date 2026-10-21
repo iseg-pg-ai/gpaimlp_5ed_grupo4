@@ -1,5 +1,11 @@
 # Plano de evolução do BLU AI System
 
+## Apresentação sem deslocação vertical — 2026-10-21
+
+- [x] Adaptar o enquadramento à largura e altura disponíveis, com texto legível.
+- [x] Paginar lateralmente conteúdo denso sem perder informação ou interações.
+- [x] Verificar cenas e controlos em telemóveis, portáteis e monitores.
+
 ## Ícone comum dos separadores — 2026-10-21
 
 - [x] Reutilizar o ícone b da apresentação no portal, Observatório e Monitoring.

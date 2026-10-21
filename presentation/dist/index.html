@@ -16,9 +16,11 @@
     />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="technical.css" />
+    <link rel="stylesheet" href="viewport.css?v=20261021-screen-fit" />
     <script src="technology-content.js" defer></script>
     <script src="technical.js" defer></script>
-    <script src="app.js?v=20261019-title" defer></script>
+    <script src="viewport.js?v=20261021-screen-fit" defer></script>
+    <script src="app.js?v=20261021-screen-fit" defer></script>
   </head>
   <body>
     <main id="experience">
@@ -70,6 +72,10 @@
         role="status"
         hidden
       ></p>
+      <label class="show-compact-navigation"
+        >Capítulo
+        <select id="chapter-select" aria-label="Escolher capítulo"></select
+      ></label>
       <nav class="show-parts" aria-label="Partes da apresentação"></nav>
       <nav class="show-chapters" aria-label="Capítulos da apresentação"></nav>
       <section class="show-stage" aria-labelledby="show-title">
@@ -78,7 +84,20 @@
           <h1 id="show-title" tabindex="-1"></h1>
           <p id="intro" class="show-intro"></p>
         </div>
-        <div id="scene"></div>
+        <div id="scene-window"><div id="scene"></div></div>
+        <nav id="content-pages" aria-label="Passos deste capítulo">
+          <button
+            type="button"
+            id="content-previous"
+            aria-label="Passo anterior"
+          >
+            ←
+          </button>
+          <span id="content-counter" role="status" aria-live="polite"></span>
+          <button type="button" id="content-next" aria-label="Passo seguinte">
+            →
+          </button>
+        </nav>
       </section>
       <footer class="show-footer">
         <div class="show-footer-note">

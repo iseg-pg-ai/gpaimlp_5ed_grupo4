@@ -843,3 +843,24 @@ na política de conteúdo para apresentar este ícone sem pedidos externos.
 Validação: build do portal aprovado, seis testes HTTP do Monitoring aprovados,
 SVG confirmado nas páginas de login, painel e utilizadores e no adaptador
 Streamlit; estrutura documental e whitespace verificados.
+
+## 2026-10-21 — Enquadrar a apresentação na janela
+
+A apresentação mantém título, navegação e avanço dentro da altura disponível.
+O módulo `viewport.js` mede a cena e conserva a composição normal quando cabe;
+caso contrário, a folha `viewport.css` divide o conteúdo em passos laterais
+dentro do mesmo capítulo, sem reduzir globalmente a escala da página. O texto
+de leitura varia entre 14 e 18 px conforme a largura. Em janelas baixas, um
+seletor compacto substitui o índice; a introdução permanece nos passos.
+
+O estado das escolhas é preservado ao redimensionar, e os detalhes selecionados
+são revelados no passo correspondente. As setas percorrem os passos antes de
+mudar de capítulo; os botões principais conservam o avanço entre capítulos.
+O modo de impressão recupera o fluxo contínuo. Os assets novos têm referências
+versionadas para evitar a utilização de scripts ou estilos anteriores em cache.
+
+Validação: 12 capítulos e todos os passos em 320×568, 390×844, 768×1024,
+1366×768, 1440×900, 1920×1080 e 844×390; limites horizontais e verticais,
+conteúdo sem cortes, tamanho de leitura, estado ao redimensionar e teclado.
+Regressões completas de interações e animações aprovadas em quatro larguras.
+Capturas locais inspecionadas; nenhuma chamada a modelos ou alteração ao portal.

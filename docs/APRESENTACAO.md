@@ -461,3 +461,18 @@ checkout. CRM e autosserviço são evolução proposta, não operações dispon�
 As contagens de testes do PPT são históricas e não constituem resultados atuais.
 Os nomes e data previstos vêm da capa; não se adotou a identificação de outra
 disciplina que aparece no encerramento do documento de trabalho.
+
+## Enquadramento por janela — 21 de outubro de 2026
+
+A apresentação ocupa a altura e a largura disponíveis, mantendo título, avanço
+e navegação visíveis. Quando o conteúdo não cabe na composição normal, passa
+para passos laterais dentro do mesmo capítulo, sem deslocação vertical. Não
+se aplica uma redução global que torne o texto ilegível. O estado interativo
+permanece ao redimensionar e os detalhes selecionados são revelados no passo
+correspondente. Em janelas baixas, o índice é substituído por um seletor.
+
+As setas percorrem os passos; nos extremos avançam entre capítulos. Os botões
+principais continuam a mudar de capítulo. O texto introdutório dos layouts
+compactos é transferido para o conteúdo, e não eliminado. O teste
+`presentation/test-viewport.mjs` percorre todos os capítulos e passos em sete
+combinações de largura e altura, incluindo telemóvel horizontal e portátil.

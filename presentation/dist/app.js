@@ -245,7 +245,7 @@ function render(focus = true) {
     : scenes.slice(technicalCount);
   const localIndex = state.scene - offset;
   $("#experience").dataset.part = technical ? "technical" : "experience";
-  $("#show-title").innerHTML = scene.heading;
+  $("#show-title").innerHTML = scene.heading.replaceAll("<br>", "<br> ");
   $("#eyebrow").textContent = "BLU INTELLIGENCE / " + scene.eyebrow;
   $("#intro").textContent = scene.intro;
   $(".show-parts").innerHTML =
@@ -254,7 +254,13 @@ function render(focus = true) {
   $(".show-chapters").innerHTML = group
     .map(
       (item, index) =>
-        `<button type="button" data-scene="${index + offset}" ${localIndex === index ? 'aria-current="step"' : ""}><span>0${index + 1}</span>${item.label}<i aria-hidden="true"></i></button>`,
+        `<button type="button" aria-label="0${index + 1} ${item.label}" data-scene="${index + offset}" ${localIndex === index ? 'aria-current="step"' : ""}><span>0${index + 1}</span>${item.label}<i aria-hidden="true"></i></button>`,
+    )
+    .join("");
+  $("#chapter-select").innerHTML = scenes
+    .map(
+      (item, index) =>
+        `<option value="${index}" ${index === state.scene ? "selected" : ""}>${index < technicalCount ? "I" : "II"} · ${item.label}</option>`,
     )
     .join("");
   $("#scene").className =
@@ -273,6 +279,7 @@ function render(focus = true) {
     ? "CONTEÚDO BASEADO NO PROJETO · sem executar ETL, testes, modelos ou alterações a dados"
     : "PROTÓTIPO INDEPENDENTE · sem geração por IA, reservas ou alterações a dados reais";
   window.BluTechnical.mount();
+  window.BluViewport.refresh(true);
   if (focus) {
     $("#show-title").focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -299,6 +306,9 @@ $("#next").addEventListener("click", () => {
   } else go(state.scene + 1);
 });
 
+$("#chapter-select").addEventListener("change", (event) =>
+  go(Number(event.target.value)),
+);
 $("#previous").addEventListener("click", () => go(state.scene - 1));
 $(".show-chapters").addEventListener("click", (event) => {
   const button = event.target.closest("[data-scene]");
@@ -382,7 +392,8 @@ document.addEventListener("keydown", (event) => {
     return;
   if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
     event.preventDefault();
-    go(state.scene + (event.key === "ArrowRight" ? 1 : -1));
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    if (!window.BluViewport.step(direction)) go(state.scene + direction);
   }
 });
 $("#fullscreen").addEventListener("click", async () => {
