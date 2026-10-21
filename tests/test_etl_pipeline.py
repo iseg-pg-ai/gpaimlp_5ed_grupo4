@@ -31,3 +31,7 @@ class FullLocalEtlTest(unittest.TestCase):
         self.assertEqual(json.loads((output / "manifest.json").read_text(encoding="utf-8"))["tables"], manifest["tables"])
         with closing(sqlite3.connect(output / "blu_etl.sqlite")) as connection:
             self.assertGreater(connection.execute("SELECT COUNT(*) FROM proposal_pages").fetchone()[0], 0)
+            catalog_count = sum(manifest['tables'][name] for name in ('atracoes', 'restaurantes', 'experiencias'))
+            self.assertEqual(connection.execute('SELECT COUNT(*) FROM model_observatory_catalog').fetchone()[0], catalog_count)
+            self.assertEqual(connection.execute('SELECT COUNT(*) FROM model_observatory_prices').fetchone()[0], manifest['tables']['precos'])
+            self.assertEqual(connection.execute('SELECT COUNT(*) FROM model_field_evidence').fetchone()[0], catalog_count * 7 + manifest['tables']['precos'])

@@ -1,0 +1,50 @@
+{
+  "brief": {
+    "customerName": "João & Inês",
+    "destination": "Lisboa / Sintra",
+    "startDate": "2026-10-10",
+    "endDate": "2026-10-11",
+    "adults": 2,
+    "children": 1,
+    "budget": 2000,
+    "currency": "EUR",
+    "proposalTier": "Soft",
+    "arrivalLocation": "LIS",
+    "departureLocation": "LIS",
+    "pace": "Relaxed",
+    "physicalEffort": "Baixo (Low)",
+    "morningPreference": "Late Start (10:30+)",
+    "interests": [
+      "Culture & Heritage"
+    ],
+    "mobilityRestrictions": [],
+    "dietaryRestrictions": [],
+    "exclusions": []
+  },
+  "itinerary": [
+    {
+      "dayNumber": 1,
+      "date": "2026-10-10",
+      "title": "Belém e património",
+      "location": "Lisboa",
+      "summary": "Proposta preliminar",
+      "items": [
+        {
+          "id": "a",
+          "time": "Por agendar",
+          "title": "Mosteiro dos Jerónimos",
+          "description": "Visita sujeita a confirmação.",
+          "category": "activity",
+          "source": "ATRACOES, linha 10",
+          "priceNote": "Referência: €10; confirmar",
+          "pendingChecks": [
+            "Disponibilidade"
+          ]
+        }
+      ]
+    }
+  ],
+  "pending": [
+    "Disponibilidade e preços por confirmar."
+  ]
+}

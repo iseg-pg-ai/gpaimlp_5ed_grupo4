@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Sparkles, User, Copy, Check } from "lucide-react";
+import { Sparkles, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-export interface MessageProps extends React.HTMLAttributes<HTMLDivElement> {
+interface MessageProps extends React.HTMLAttributes<HTMLDivElement> {
   from: "user" | "assistant" | "system";
   children: React.ReactNode;
 }
@@ -16,46 +16,40 @@ export const Message = React.forwardRef<HTMLDivElement, MessageProps>(
     return (
       <div
         ref={ref}
+        className={cn("flex flex-col group", isUser ? "items-end" : "items-start", className)}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  },
+);
+Message.displayName = "Message";
+
+interface MessageContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  from?: "user" | "assistant" | "system";
+}
+
+export const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
+  ({ className, from = "assistant", children, ...props }, ref) => {
+    const isUser = from === "user";
+    return (
+      <div
+        ref={ref}
         className={cn(
-          "flex flex-col group",
-          isUser ? "items-end" : "items-start",
-          className
+          "max-w-[90%] rounded-xl p-3 text-xs leading-relaxed transition-all shadow-2xs",
+          isUser
+            ? "bg-[var(--portal-bg-1a1917)] text-white rounded-br-xs"
+            : "bg-[var(--portal-white)] border border-[var(--portal-line-eae6df)] text-[var(--portal-text-1a1917)] rounded-bl-xs",
+          className,
         )}
         {...props}
       >
         {children}
       </div>
     );
-  }
+  },
 );
-Message.displayName = "Message";
-
-export interface MessageContentProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  from?: "user" | "assistant" | "system";
-}
-
-export const MessageContent = React.forwardRef<
-  HTMLDivElement,
-  MessageContentProps
->(({ className, from = "assistant", children, ...props }, ref) => {
-  const isUser = from === "user";
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "max-w-[90%] rounded-xl p-3 text-xs leading-relaxed transition-all shadow-2xs",
-        isUser
-          ? "bg-[#1A1917] text-white rounded-br-xs"
-          : "bg-white border border-[#EAE6DF] text-[#1A1917] rounded-bl-xs",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-});
 MessageContent.displayName = "MessageContent";
 
 export const MessageResponse: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
@@ -79,8 +73,8 @@ export const MessageAvatar: React.FC<{
     return (
       <div
         className={cn(
-          "w-5 h-5 rounded-full bg-[#E27151]/15 text-[#E27151] flex items-center justify-center shrink-0 mb-1",
-          className
+          "w-5 h-5 rounded-full bg-[#E27151]/15 text-[var(--portal-text-e27151)] flex items-center justify-center shrink-0 mb-1",
+          className,
         )}
       >
         <Sparkles className="w-2.5 h-2.5" />
@@ -90,8 +84,8 @@ export const MessageAvatar: React.FC<{
   return (
     <div
       className={cn(
-        "w-5 h-5 rounded-full bg-[#1A1917]/10 text-[#1A1917] flex items-center justify-center shrink-0 mb-1",
-        className
+        "w-5 h-5 rounded-full bg-[var(--portal-bg-1a1917)]/10 text-[var(--portal-text-1a1917)] flex items-center justify-center shrink-0 mb-1",
+        className,
       )}
     >
       <User className="w-2.5 h-2.5" />
@@ -109,7 +103,7 @@ export const MessageActions: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     <div
       className={cn(
         "flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity",
-        className
+        className,
       )}
       {...props}
     >
@@ -119,8 +113,7 @@ export const MessageActions: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
 };
 MessageActions.displayName = "MessageActions";
 
-export interface MessageActionProps
-  extends React.ComponentProps<typeof Button> {
+interface MessageActionProps extends React.ComponentProps<typeof Button> {
   label: string;
 }
 
@@ -135,7 +128,10 @@ export const MessageAction: React.FC<MessageActionProps> = ({
       variant="ghost"
       size="iconSm"
       title={label}
-      className={cn("h-6 w-6 text-[#8F8B82] hover:text-[#1A1917]", className)}
+      className={cn(
+        "h-6 w-6 text-[var(--portal-text-8f8b82)] hover:text-[var(--portal-text-1a1917)]",
+        className,
+      )}
       {...props}
     >
       {children}

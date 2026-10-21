@@ -237,6 +237,9 @@ def _build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     tables["proposal_documents"] = documents
     tables["proposal_pages"] = pages
 
+    from etl.portal_catalog import integrate_portal
+    source_manifest["objects"].append(integrate_portal(data_dir.resolve(), tables))
+
     # Validate transformed data before publishing any metrics or analytical models.
     validation_report, validation_issues = validate(tables)
     # Only validated records feed the descriptive KPIs and transparent score models.

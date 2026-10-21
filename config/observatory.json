@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "localities": [
+    "Lisboa",
+    "Porto",
+    "Sintra",
+    "Braga",
+    "Vila Nova de Gaia",
+    "Nazaré",
+    "Azeitão",
+    "Setúbal",
+    "Guimarães",
+    "Cascais",
+    "Aveiro",
+    "Évora",
+    "Fátima",
+    "Sabrosa",
+    "Pinhão",
+    "Queluz",
+    "Óbidos",
+    "Mira de Aire",
+    "Vagos",
+    "Almada",
+    "Azaruja",
+    "Redondo",
+    "Lagos",
+    "Vila Real",
+    "Armamar",
+    "Tabuaço",
+    "Lamego",
+    "Sanfins do Douro",
+    "Batalha",
+    "Ílhavo",
+    "Sangalhos"
+  ],
+  "location_aliases": {
+    "Nafarros (Sintra)": "Sintra",
+    "Azenhas do Mar (Sintra)": "Sintra",
+    "Azóia (Sintra)": "Sintra",
+    "Vila Nogueira de Azeitão": "Azeitão"
+  },
+  "regions": [
+    "Douro",
+    "Alentejo",
+    "Bairrada",
+    "Região de Aveiro"
+  ],
+  "unit_aliases": {
+    "por pessoa": "pessoa",
+    "por grupo": "grupo",
+    "por família": "família",
+    "por serviço": "serviço",
+    "por veículo": "veículo",
+    "por hora de tour": "hora de tour",
+    "por refeição": "refeição",
+    "por pessoa / atividade": "pessoa / atividade",
+    "por voucher": "voucher"
+  }
+}
