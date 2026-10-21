@@ -1,5 +1,10 @@
 # Plano de evolução do BLU AI System
 
+## Integração de monitoring neste branch — 2026-10-22
+
+- [x] Integrar monitoring preservando o fluxo transacional da Fase 2.
+- [x] Validar Python, monitoring, portal, catálogo/ETL e documentação.
+
 ## Integração transacional do assistente — Fase 2, 2026-10-21
 
 Autorizada pelo proprietário após a entrega da Fase 1. Trabalho em cópia isolada,
@@ -27,7 +32,132 @@ TXT mantém o formato atual para o Canva, conforme decisão do proprietário.
 Não integrar ranking, feedback, recuperação de casos, proatividade, alterações
 ao briefing/catálogo/confirmações ou deployment. Contrato em docs/ASSISTANT.md.
 
-## Preparação da base para o piloto transacional — 2026-10-21
+Plano consolidado em 20 de outubro de 2026. Mantém apenas trabalho aberto e
+condições que afetam decisões futuras. O histórico de implementação permanece no
+Git e em [docs/DECISIONS.md](docs/DECISIONS.md).
+
+## Estado a preservar
+
+- O portal gere catálogo, itinerários, confirmações, versões e entregas.
+- O ETL publica o warehouse sem alterar as fontes; testes usam cópias temporárias.
+- Catálogo e validações determinísticas são a fonte de verdade. A IA propõe ações
+  sujeitas a validação e confirmação humana.
+- Informação desconhecida não significa compatibilidade, disponibilidade ou preço
+  zero. Custos, pendências e moedas permanecem separados.
+- O Observatório consulta a entrega publicada sem escrever no warehouse.
+- O Monitoring tem autenticação local, gestão de utilizadores, sondas, eventos,
+  incidentes, backups locais e limpeza conservadora. O portal continua sem
+  autenticação própria.
+- `just blu up` arranca o ambiente preparado; `just blu it` executa recuperação
+  local autenticada. Nenhum dos comandos equivale a deployment de produção.
+- Num clone sem estado operacional nem backups, `just blu it` inicializa o catálogo
+  a partir do warehouse versionado e cria a estrutura vazia de itinerários. Estado
+  parcial ou inválido continua a exigir recuperação por backup.
+- Segredos, dados de clientes, prompts, respostas, exports e runtimes ficam fora
+  do Git e dos logs.
+
+## Onboarding e qualidade
+
+- [ ] Validar o onboarding completo num segundo espaço SageMaker, com identidade
+  IAM distinta e acesso Bedrock real autorizado. Incluir o fluxo documentado com
+  `--initialize-data`, sem copiar contas, catálogo ou exports da máquina original.
+- [ ] Acrescentar CI do portal para `npm run check` e `npm run build`.
+- [ ] Automatizar em ambiente isolado o fluxo catálogo aprovado → ETL → geração →
+  confirmação → versão → PDF.
+- [ ] Definir gates e exceções auditáveis para qualidade e conflitos das fontes.
+- [ ] Rever retenção e compatibilidade das entregas publicadas no CI.
+- [ ] Continuar a migração incremental do portal: mover ordenação de percursos e
+  resumos para Python antes de retirar o adaptador TypeScript correspondente.
+
+## Agente de IA
+
+- [ ] Definir objetivo, operações autorizadas e critérios de aceitação da próxima
+  iteração.
+- [ ] Rever `src/blu_ai/` e reutilizar os contratos de domínio do portal.
+- [ ] Validar esquemas de ações antes de alterar itinerários.
+- [ ] Preservar confirmação humana, atividades protegidas e versões imutáveis.
+- [ ] Definir fornecedor, custos, privacidade, timeouts e degradação.
+- [ ] Usar mocks por defeito; chamadas reais exigem autorização e credenciais.
+
+## Entrega e recuperação
+
+- [ ] Rever acesso, consentimento, retenção e revogação das partilhas e do Lixo.
+- [ ] Inspecionar PDFs nos idiomas suportados e documentar fontes necessárias.
+- [ ] Acrescentar fotografias apenas com autorização e créditos.
+- [ ] Validar uma proposta real: TXT → cópia Canva → revisão → PDF final.
+- [ ] Rever o pacote-fonte antes de atualizar uma instalação do plugin Canva.
+
+## Operação multiutilizador e cloud
+
+- [ ] Definir ambiente-alvo, utilizadores, identidade, papéis e permissões.
+- [ ] Definir disponibilidade, perda de dados e tempo de recuperação aceitáveis.
+- [ ] Validar concorrência do catálogo, rascunhos e versões.
+- [ ] Definir minimização, retenção e eliminação de dados pessoais.
+- [ ] Escolher hosting, persistência, segredos, região, staging e rollback.
+- [ ] Definir origem S3 e fallback sem acoplar o ETL ao transporte.
+- [ ] Aprovar qualquer criação de infraestrutura, custo ou publicação externa.
+
+A comparação de alternativas e os limites atuais estão em
+[docs/OPERATIONS.md](docs/OPERATIONS.md).
+
+## Pendências de monitoring
+
+A recolha interna, consumo de IA, incidentes e backups locais estão implementados.
+O Monitoring continua incompleto para produção até existirem:
+
+- [ ] notificações externas com canal, destinatários, limiares, deduplicação e
+  recuperação validados;
+- [ ] destino externo cifrado para backups e política de retenção;
+- [ ] sonda executada fora da máquina, ligada a responsáveis reais.
+
+Envios reais e infraestrutura externa exigem autorização aplicável. Não encerrar
+uma pendência apenas porque existe um plano ou painel; é necessária implementação
+e evidência de validação.
+
+## Referências
+
+- [Arquitetura](docs/ARCHITECTURE.md)
+- [Operações](docs/OPERATIONS.md)
+- [Testes](docs/TESTING.md)
+- [Decisões](docs/DECISIONS.md)
+- [Segurança das dependências](docs/DEPENDABOT_PYTHON.md)
+
+## Plano anterior preservado — 2026-10-22
+
+Registo histórico deste branch. O estado atual de monitoring e as condições
+da Fase 2 estão nas secções ativas acima. Não reabrir fases nem chamadas reais
+com base nos relatos históricos seguintes.
+
+### Plano de evolução do BLU AI System
+
+#### Integração transacional do assistente — Fase 2, 2026-10-21
+
+Autorizada pelo proprietário após a entrega da Fase 1. Trabalho em cópia isolada,
+com aplicação ao original apenas depois de validar e confirmar os ficheiros.
+Esta secção prevalece sobre os relatos históricos de outras branches abaixo.
+
+- [x] Fixar contrato partilhado das onze operações de itinerário e PT/EN.
+- [x] Ligar planeador Bedrock ao portal sem execução implícita no chat.
+- [x] Pré-visualizar, aceitar ou rejeitar com validação e auditoria transacional.
+- [x] Preservar proteções, versões e dados de confirmação manual.
+- [x] Concluir testes locais, navegador e revisão independente.
+- [x] Aplicar ficheiros verificados ao original e entregar evidências da Fase 2.
+- [ ] Obter aprovação separada antes da Fase 3 e das chamadas reais ao modelo.
+
+Evidências locais: 117 testes Python e 138 testes do portal aprovados; lint,
+tipos, formatação, build, catálogo/ETL, Markdown e estrutura/links aprovados.
+Os 48 testes específicos cobrem ações, proteções, concorrência e rollback.
+Ciclo HTTP PT/EN aprovado com fornecedor local simulado, incluindo controlos
+manuais, falhas, esclarecimento, rejeição, aceitação e conflitos. Navegador
+aprovado em 390/1600 px e PT/EN, incluindo duplo clique e troca de viagem.
+Trinta testes Python específicos aprovados e 34 casos reais apenas listados.
+Sem AWS real, deployment, novos pacotes, commits ou alterações a dados.
+
+TXT mantém o formato atual para o Canva, conforme decisão do proprietário.
+Não integrar ranking, feedback, recuperação de casos, proatividade, alterações
+ao briefing/catálogo/confirmações ou deployment. Contrato em docs/ASSISTANT.md.
+
+#### Preparação da base para o piloto transacional — 2026-10-21
 
 Fase 1 autorizada pelo proprietário após diagnóstico na cópia isolada em D:.
 Base f280971; preservar a evolução existente e não integrar ainda a branch do
@@ -52,13 +182,13 @@ Os testes reais de tradução/Bedrock e a meta de 90% por operação/idioma cont
 por validar na fase própria. A exceção de metadata Argos/Stanza mantém-se; não
 alterar o override de segurança para silenciar a verificação de metadata.
 
-## Atualização local do grafo Graphify — 2026-10-21
+#### Atualização local do grafo Graphify — 2026-10-21
 
 - [x] Reconstruir o grafo de código e documentação, excluindo fontes protegidas e dados operacionais: 246 ficheiros, 1344 nós, 2810 relações e 92 comunidades.
 - [x] Gerar JSON, relatório e HTML; integridade final e consulta local aprovadas. Diagnóstico: 479 relações com símbolos sem nó excluídas e 46 relações agregadas no formato não dirigido.
 - [x] Registar resultados e limitações, sem publicação nem fornecedores externos. `git diff --check` aprovado; Markdownlint indisponível offline e `check_project.py` não executado por falta de Python 3.12/3.13.
 
-## Integração de dev nas instruções — 2026-10-21
+#### Integração de dev nas instruções — 2026-10-21
 
 - [x] Integrar `origin/dev` preservando os planos e as orientações anteriores.
 - [x] Validar documentação, Python, portal e catálogo/ETL.
@@ -67,7 +197,7 @@ Validação local: 83 testes Python; check do portal com 97 aprovados e um
 ignorado; build, catálogo/ETL, estrutura e Markdown aprovados. Código funcional
 igual a dev; não foram repetidos cenários de navegador nesta integração.
 
-## Integração de dev em TXT/Canva — 2026-10-21
+#### Integração de dev em TXT/Canva — 2026-10-21
 
 - [x] Integrar `origin/dev` preservando as melhorias de TXT e do plugin Canva.
 - [x] Validar Python, portal, catálogo/ETL e exportação TXT.
@@ -85,7 +215,7 @@ documentos específicos do assistente pertencem à sessão e ao branch de origem
 não demonstram disponibilidade neste checkout. As tarefas gerais pendentes e
 o trabalho do dashboard são preservados.
 
-## Distinguir adição, substituição e ranking — 2026-10-16
+#### Distinguir adição, substituição e ranking — 2026-10-16
 
 - [x] Reproduzir o pedido de adição e a correção explícita com a grafia reportada.
 - [x] Apresentar apenas opções de adição viáveis para pedidos genéricos.
@@ -98,7 +228,7 @@ aprovados; build e navegador em 390/1600 px aprovados. As frases reportadas
 foram reproduzidas com catálogo e versões temporários. Sem chamadas pagas ao
 modelo; o contrato específico de ranking foi verificado com fornecedor simulado.
 
-## Conclusão funcional das seis fases — 2026-10-16
+#### Conclusão funcional das seis fases — 2026-10-16
 
 Pedido: implementar todas as fases antes da ronda de testes e correções.
 Não marcar uma fase como validada apenas por concluir a implementação.
@@ -125,7 +255,7 @@ da sessão em `/tmp/blu-operations.env`, fora do Git e sem impressão do segredo
 Critérios e dependências externas em docs/ASSISTANT_VALIDATION.md. CI apenas
 manual; 18 cenários reais por executar no Bedrock com autorização de custos.
 
-## Impacto das propostas do agente — 2026-10-16
+#### Impacto das propostas do agente — 2026-10-16
 
 - [x] Calcular diferenças de atividades, horários, ordem e capacidade no servidor.
 - [x] Reutilizar o orçamento existente, separando moedas e valores pendentes.
@@ -137,7 +267,7 @@ Resumo validado em 390/1600 px com fornecedor simulado e exports temporários.
 Abrir os detalhes não cria versões nem chamadas adicionais ao modelo. Sem
 chamadas AWS nesta entrega; portal reiniciado com a configuração Nova Pro.
 
-## Avaliação de grounding e injeção — 2026-10-16
+#### Avaliação de grounding e injeção — 2026-10-16
 
 - [x] Alargar os casos sintéticos a ambiguidade, proteções e dados maliciosos.
 - [x] Exigir contrato completo e correspondência exata de ações e alternativas.
@@ -148,7 +278,7 @@ Concluído: 11 casos sintéticos e 15 testes do agente aprovados sem chamadas
 externas. Corrigido falso positivo para alternativas no dia errado. A nova
 bateria ainda não foi executada no Bedrock; não inferir sucesso do modelo.
 
-## Conversa contextual e alternativas — 2026-10-15
+#### Conversa contextual e alternativas — 2026-10-15
 
 - [x] Transmitir contexto recente limitado à viagem e proposta corrente validada.
 - [x] Acrescentar alternativas estruturadas ao contrato partilhado.
@@ -166,7 +296,7 @@ ampla. Nova Pro passa a predefinido configurável. Fontes e warehouse preservado
 Preservar confirmação humana, catálogo e warehouse. Modelo continua no Bedrock;
 testes com fornecedores simulados e armazenamento temporário por defeito.
 
-## Respostas sem ações e confirmação no chat — 2026-10-15
+#### Respostas sem ações e confirmação no chat — 2026-10-15
 
 A auditoria revelou uma proposta com ação válida. A pré-visualização estava
 antes das mensagens, fora da zona visível após o scroll automático. Corrigir a
@@ -183,7 +313,7 @@ aprovado. Navegador em 390/1600 px: botão de aceitação no viewport, «ok» n�
 o fornecedor nem apaga a proposta e uma resposta sem ações fica identificada.
 Interface validada com mocks em exports temporários, sem alterar viagens reais.
 
-## Origem do portal em execução — 2026-10-15
+#### Origem do portal em execução — 2026-10-15
 
 - [x] Identificar a recusa: domínio configurado no arranque diferente do navegador.
 - [x] Reiniciar com a origem confirmada pelo utilizador e verificar a barreira de origem.
@@ -195,7 +325,7 @@ verificação. Não foi alterada nenhuma viagem.
 Manter a comparação exata de origem; não confiar em qualquer domínio recebido
 no pedido para contornar uma configuração errada.
 
-## Correção do envio no chat — 2026-10-15
+#### Correção do envio no chat — 2026-10-15
 
 - [x] Guardar imediatamente a mensagem enviada, mesmo quando o pedido falha.
 - [x] Apresentar o erro no próprio chat, preservando roteiro e versões.
@@ -208,7 +338,7 @@ atividade reproduzido pela API e Bedrock reais com dados sintéticos: HTTP 200.
 Esta reprodução não identifica o erro específico da sessão do utilizador; agora
 o erro fica visível no chat em vez de a mensagem desaparecer.
 
-## Agente AWS — primeira entrega de 2026-10-15
+#### Agente AWS — primeira entrega de 2026-10-15
 
 - [x] Confirmar IAM Role e perfil Nova Lite em eu-west-1 sem credenciais fixas.
 - [x] Implementar contrato partilhado e propostas estruturadas via Bedrock Converse.
@@ -228,7 +358,7 @@ Validação: 99 testes Node aprovados, um ignorado; 50 Python aprovados; build,
 API com fornecedor simulado e UI em 390/1600 px aprovados. Exports e catálogo
 de integração isolados em diretórios temporários. Lambda não publicado.
 
-## Base do assistente — integração de 2026-10-15
+#### Base do assistente — integração de 2026-10-15
 
 - [x] Atualizar referências e selecionar `pc/assistant-agent-for-blu-curator`.
 - [x] Integrar `refactor/html-python`, preservando também a sua entrega completa
@@ -241,7 +371,7 @@ O plano específico tem avaliações anteriores à migração; confirmar as prem
 no código. Reutilizar o catálogo Python e as validações do portal. Modelos usam
 mocks nesta preparação, sem chamadas pagas.
 
-## Limpeza após migrações — 2026-10-15
+#### Limpeza após migrações — 2026-10-15
 
 - [x] Remover adaptadores e operações sem consumidores de produção.
 - [x] Consolidar testes úteis e retirar cobertura duplicada entre Node e Python.
@@ -252,7 +382,7 @@ Retirados comandos `enrich`/`catalog-id` e adaptadores sem consumidores de produ
 95 testes Node aprovados, um ignorado; 44 Python aprovados; build e integração
 catálogo/ETL aprovados. Fontes e dados operacionais preservados.
 
-## Migração incremental HTML/Python — 2026-10-15
+#### Migração incremental HTML/Python — 2026-10-15
 
 Base: `chore/project-cleanup` em `da8de67`; branch `refactor/html-python`.
 
@@ -274,7 +404,7 @@ Python usa a biblioteca padrão e não requer outro serviço nem instalação de
 framework. Não converter componentes interativos para HTML estático quando isso
 eliminar operações existentes ou exigir uma segunda implementação em JavaScript.
 
-## Continuação HTML/Python — meteorologia
+#### Continuação HTML/Python — meteorologia
 
 - [x] Migrar coordenadas, códigos WMO, previsão e fallback histórico para Python.
 - [x] Manter o navegador como consumidor da API do portal, com cache e falhas explícitas.
@@ -288,7 +418,7 @@ eliminar operações existentes ou exigir uma segunda implementação em JavaScr
 Popover em 320/1440 px; downloads TXT e ZIP PDF em duas larguras, com e sem JS.
 Meteorologia simulada e exports isolados num diretório temporário.
 
-## Continuação HTML/Python — catálogo e histórico
+#### Continuação HTML/Python — catálogo e histórico
 
 - [x] Migrar a persistência do catálogo para SQLite Python, preservando o esquema.
 - [x] Adaptar APIs e testes para operações assíncronas e validar conflitos.
@@ -302,7 +432,7 @@ catálogo/ETL aprovados. 267 identificadores equivalentes. APIs reais com ediç�
 conflito e publicação em dados temporários; editor em seis idiomas; histórico
 com e sem JavaScript em duas larguras.
 
-## Simplificação para a próxima iteração do agente — 2026-10-15
+#### Simplificação para a próxima iteração do agente — 2026-10-15
 
 Base: dev em `a4b7626`; branch `chore/project-cleanup`.
 Âmbito: limpeza e consolidação, com commits separados por etapa.
@@ -322,7 +452,7 @@ apenas para reduzir a contagem. Fontes Excel/PDF, catálogo, exports e warehouse
 ficam preservados. A implementação da próxima iteração do agente está fora
 desta entrega.
 
-## Revisão integral do diretório — 2026-10-15
+#### Revisão integral do diretório — 2026-10-15
 
 - [x] Inventariar recursivamente o diretório, sem seguir a montagem EFS.
 - [x] Remover ficheiros órfãos, experiências não integradas e artefactos locais.
@@ -337,7 +467,7 @@ Preservar as ferramentas do ambiente/IDE, fontes, propostas, backups, modelos
 locais e a entrega warehouse usada pelo portal. A montagem EFS sai do Git mas
 permanece disponível na instância.
 
-## Fusão dos módulos auxiliares — 2026-10-15
+#### Fusão dos módulos auxiliares — 2026-10-15
 
 - [x] Reunir caminhos e leitura de respostas em `http-client.ts`.
 - [x] Reunir respostas e URLs públicas das APIs em `server-http.ts`.
@@ -347,7 +477,7 @@ permanece disponível na instância.
 Sete ficheiros passam a três, mantendo a separação cliente/servidor e os mesmos
 exports públicos. Registar esta etapa num commit separado.
 
-## Consolidação dos testes — 2026-10-15
+#### Consolidação dos testes — 2026-10-15
 
 - [x] Reunir navegação e responsividade em browser/ui.mjs, mantendo todos os cenários.
 - [x] Reunir configuração, URLs públicas e compatibilidade em infrastructure.test.mjs.
@@ -359,7 +489,7 @@ As asserções e condições de falha originais foram comparadas automaticamente
 interface, stress, dois cenários de briefing e apresentação do itinerário
 aprovados numa instância de produção com armazenamento temporário.
 
-## Consola de desenvolvimento no SageMaker
+#### Consola de desenvolvimento no SageMaker
 
 - [x] Corrigir URLs da fonte e stack frames do overlay para respeitarem o prefixo.
 - [x] Limitar a supressão de atributos de extensões à hidratação do body.
@@ -367,7 +497,7 @@ aprovados numa instância de produção com armazenamento temporário.
 
 100 testes aprovados e um ignorado; fonte e stack frames HTTP 200.
 
-## Identificação e rótulos dos formulários
+#### Identificação e rótulos dos formulários
 
 - [x] Associar os rótulos do briefing e identificar os campos sem id/name.
 - [x] Usar fieldset/legend nos grupos de escolhas e nome acessível na pesquisa.
@@ -376,7 +506,7 @@ aprovados numa instância de produção com armazenamento temporário.
 Check aprovado (100 testes e um ignorado), build aprovado e briefing validado
 em 360 e 1440 px, incluindo edição, revisão e payload.
 
-## Próxima iteração do agente
+#### Próxima iteração do agente
 
 - [ ] Definir o objetivo, as operações autorizadas e os critérios de aceitação.
 - [ ] Rever o serviço existente `src/blu_ai/` e os contratos de domínio do portal.
@@ -388,14 +518,14 @@ em 360 e 1440 px, incluindo edição, revisão e payload.
 
 Ver [arquitetura e fronteiras](docs/ARCHITECTURE.md).
 
-## Base e qualidade
+#### Base e qualidade
 
 - [ ] Acrescentar CI do portal; o CI de dados e documentação não cobre o frontend.
 - [ ] Automatizar catálogo aprovado → ETL → geração → confirmação → versão → PDF.
 - [ ] Definir gates e exceções auditáveis para qualidade e conflitos das fontes.
 - [ ] Rever os contratos de entrega, snapshot e retenção do warehouse no CI.
 
-## Entrega e recuperação
+#### Entrega e recuperação
 
 - [ ] Rever acesso, consentimento, retenção e revogação das partilhas e do Lixo.
 - [ ] Inspecionar PDFs nos idiomas suportados e documentar fontes necessárias.
@@ -404,7 +534,7 @@ Ver [arquitetura e fronteiras](docs/ARCHITECTURE.md).
 - [ ] Atualizar a instalação do plugin Canva após revisão do pacote-fonte.
 - [ ] Validar uma proposta real: TXT → cópia Canva → revisão → PDF final.
 
-## Operação multiutilizador e cloud
+#### Operação multiutilizador e cloud
 
 - [ ] Definir autenticação, papéis, permissões e sincronização.
 - [ ] Definir minimização, retenção, eliminação e logs de dados pessoais.
@@ -414,14 +544,14 @@ Ver [arquitetura e fronteiras](docs/ARCHITECTURE.md).
 - [ ] Escolher apenas os fornecedores necessários e definir contratos com mocks.
 - [ ] Definir origem S3, retenção e fallback sem acoplar o ETL ao transporte.
 
-## Histórico
+#### Histórico
 
 As integrações anteriores, os resultados e os limites estão em
 [decisões](docs/DECISIONS.md), [testes](docs/TESTING.md) e
 [segurança das dependências](docs/DEPENDABOT_PYTHON.md). O histórico completo dos
 planos anteriores permanece no Git.
 
-## Observatório de dados BLU — 2026-10-16
+#### Observatório de dados BLU — 2026-10-16
 
 - [x] Organizar o dashboard em Panorama, Explorar oferta, Preços, Histórico e Qualidade.
 - [x] Aplicar identidade visual escura, tipografia editorial e gráficos legíveis.
@@ -436,7 +566,7 @@ Dashboard só de leitura; sem alteração das fontes, catálogo operacional ou w
 Mapa com contornos locais Natural Earth da Europa e norte de África, sem mosaicos externos; coordenadas válidas em intervalo não certificam a
 localização. Experiências sem coordenadas continuam pesquisáveis na lista.
 
-### Ferramentas de exploração — 2026-10-16
+##### Ferramentas de exploração — 2026-10-16
 
 - [x] Ligar seleção de pontos às fichas, preservando identificadores por tipo.
 - [x] Comparar duas a quatro opções com duração, condições, acessibilidade e fonte.
@@ -453,7 +583,7 @@ dashboard. AppTest nas seis áreas, comparação, filtros e camadas vazias; nave
 local com cliques em pontos/grupos, comparação, destino Lisboa, apresentação e
 vista móvel sem transbordo horizontal. Sem chamadas a IA ou alteração dos dados.
 
-### Conclusão do Observatório — 2026-10-16
+##### Conclusão do Observatório — 2026-10-16
 
 Contratos versionados para destinos, âmbito geográfico, unidades e condições;
 valores originais preservados. Modelos ETL com evidência por campo, confirmação
@@ -473,7 +603,7 @@ local com seleção, grupos, comparação, destino Lisboa, fotografia, apresenta
 e vista móvel sem transbordo. Markdown e ligações locais sem erros. Fontes e
 warehouse reais inalterados; sem chamadas pagas ou publicação cloud.
 
-## Preenchimento verificado do warehouse — 2026-10-16
+#### Preenchimento verificado do warehouse — 2026-10-16
 
 - [x] Inventariar lacunas e procurar valores em fontes oficiais.
 - [x] Distinguir modalidades e tarifas públicas de valores comerciais BLU.
@@ -494,7 +624,7 @@ morada, tarifa, evidência e apresentação móvel. ETL publicado com zero erros
 13 revisões correntes correspondem à entrega e os snapshots anteriores foram
 comparados sem alterações. Os Excel/PDF e as propostas históricas ficaram intactos.
 
-## Refinamento visual do portal — 2026-10-18
+#### Refinamento visual do portal — 2026-10-18
 
 - [x] Confirmar `portal-observatorio` e preservar a lógica dos fluxos.
 - [x] Reforçar a identidade, navegação, hierarquia e legibilidade dos formulários.
@@ -510,7 +640,7 @@ campos, etapas e ações revistos. Três traduções portuguesas afinadas após 
 bateria, com nova compilação e verificação de apresentação. Documentação e
 `git diff --check` aprovados. Portal local na porta 3001, sem publicação.
 
-## Observatório nativo no catálogo — 2026-10-18
+#### Observatório nativo no catálogo — 2026-10-18
 
 - [x] Criar contrato de leitura do warehouse reutilizando as regras ETL.
 - [x] Implementar seis vistas interativas com o estilo claro do portal.
@@ -531,7 +661,7 @@ formulário preservado sem guardar. Inspeção visual da apresentação final.
 arranque Streamlit e configuração do proxy. Leitura real: 252 ofertas, 257
 referências e 2021 campos de evidência. Sem chamadas a IA ou publicação.
 
-## Legibilidade do mapa e alinhamento dos painéis — 2026-10-18
+#### Legibilidade do mapa e alinhamento dos painéis — 2026-10-18
 
 - [x] Dimensionar pontos e áreas de clique em píxeis, independentemente do zoom.
 - [x] Agrupar visualmente pontos próximos e melhorar etiquetas e informação de foco.
@@ -547,7 +677,7 @@ contagens de grupos com vários destinos sem atribuição ao primeiro destino.
 Tradução e falha de recuperação simuladas; dados analíticos locais só de leitura.
 Dashboard original, dados e configuração de arranque preservados.
 
-## Largura comum das páginas — 2026-10-18
+#### Largura comum das páginas — 2026-10-18
 
 - [x] Centralizar a largura exterior em 1440 px e as margens em 16/32 px.
 - [x] Aplicar o contentor a Catálogo, Histórico, Referências, Lixo e partilhas.
@@ -563,7 +693,7 @@ os cinco contentores medidos têm 1440 px e começam em x=240. Tradução e
 geração de itinerários simuladas nos cenários aplicáveis. Inspeção visual do
 catálogo e briefing em ecrã largo aprovada.
 
-## Contentores responsivos — 2026-10-18
+#### Contentores responsivos — 2026-10-18
 
 - [x] Substituir o teto de 1440 px por largura fluida comum a todas as páginas.
 - [x] Tornar as margens proporcionais ao ecrã, entre 16 e 64 px.
@@ -575,7 +705,7 @@ verificados em 320/768/1024/1440/1920/2560 px, sem transbordo horizontal.
 Observatório aprovado em 320/1440 px; tradução e geração simuladas nos
 cenários aplicáveis. Dashboard original e dados preservados.
 
-## Limpeza local de artefactos — 2026-10-18
+#### Limpeza local de artefactos — 2026-10-18
 
 - [x] Inventariar os ficheiros ignorados e confirmar os serviços ativos.
 - [x] Remover caches Next.js de desenvolvimento/compilação, cache TypeScript
@@ -586,7 +716,7 @@ Removidos 426 MiB de artefactos regeneráveis. Portal e dashboard original
 respondem HTTP 200 após a limpeza. Verificação da estrutura (340 ficheiros)
 e `git diff --check` aprovados. Código, dados, exports e ambientes preservados.
 
-## Tema claro e escuro — 2026-10-18
+#### Tema claro e escuro — 2026-10-18
 
 - [x] Manter o tema claro original como padrão e centralizar a paleta do portal.
 - [x] Adicionar seletor acessível no cabeçalho, com preferência no navegador.
@@ -602,7 +732,7 @@ escuro após as transições. Observatório aprovado em 320/1440 px. Inspeção
 visual do briefing e catálogo em tema escuro aprovada. Tradução e geração
 simuladas nos cenários aplicáveis; dashboard, dados e templates PDF intactos.
 
-## Revisão de testes e artefactos — 2026-10-18
+#### Revisão de testes e artefactos — 2026-10-18
 
 - [x] Rever testes unitários, de integração e navegador face ao código atual.
 - [x] Retirar 12 combinações visuais redundantes e asserções imediatas que
@@ -621,7 +751,7 @@ testes do worker de tradução aprovados com modelos simulados. Estrutura de
 344 ficheiros, Markdown e `git diff --check` aprovados. Portal e dashboard
 respondem HTTP 200. Código funcional, dados, exports e modelos preservados.
 
-## Guião de apresentação interativa — 2026-10-18
+#### Guião de apresentação interativa — 2026-10-18
 
 - [x] Rever arquitetura, portal, dados e implementação do assistente.
 - [x] Criar `docs/APRESENTACAO.md` com narrativa de 12 minutos, caso fictício,
@@ -633,7 +763,7 @@ Validação: ligações locais do novo guião, Markdown, verificação da estrut
 e `git diff --check` aprovados. Alteração apenas documental; sem execução de
 serviços externos, alteração de dados ou implementação da apresentação.
 
-## Dashboard de apresentação independente — 2026-10-18
+#### Dashboard de apresentação independente — 2026-10-18
 
 - [x] Criar uma aplicação estática em `presentation/dist`, com três cenas
   fictícias, mapa esquemático e adaptação do roteiro em memória.
@@ -651,7 +781,7 @@ estrutura e `git diff --check` aprovados. Portal e Streamlit mantêm os mesmos
 processos e HTTP 200; não houve build, restart ou alterações aos seus ficheiros.
 O acesso autenticado pelo proxy AWS real não foi validado pelo navegador local.
 
-## Continuação da apresentação — 2026-10-18
+#### Continuação da apresentação — 2026-10-18
 
 - [x] Alargar o percurso de três para oito capítulos com dados, colaboração,
   entrega, arquitetura e encerramento.
@@ -667,7 +797,7 @@ visitar o destino real, chamadas a APIs, escrita no navegador ou erros JS.
 Inspeção visual das novas cenas concluída. Sintaxe JS, documentação, Markdown
 e `git diff --check` aprovados; serviços e ficheiros do portal intactos.
 
-## Guião técnico em três partes — 2026-10-18
+#### Guião técnico em três partes — 2026-10-18
 
 - [x] Reorganizar `docs/APRESENTACAO.md` em fundamentos técnicos, experiência
   interativa e demonstração do portal real.
@@ -684,7 +814,7 @@ Revisão concluída em 2026-10-19: ligações locais, Markdown, estrutura do
 projeto e `git diff --check` aprovados. Quatro esquemas Mermaid incluídos.
 Alteração apenas documental; a abertura técnica ainda está proposta no guião.
 
-## Ato técnico com animações explicativas — 2026-10-19
+#### Ato técnico com animações explicativas — 2026-10-19
 
 - [x] Preparar cinco cenas técnicas com requisitos, arquitetura/tecnologias,
   percurso dos dados, mecanismos de IA e contratos de validação.
@@ -700,7 +830,7 @@ localStorage ou erros JS. Inspeção visual da abertura técnica concluída.
 JS, Markdown, estrutura e `git diff --check` aprovados. Apenas a apresentação
 independente foi iniciada; código e dados do portal/Streamlit intactos.
 
-## Base pública dos dashboards — 2026-10-19
+#### Base pública dos dashboards — 2026-10-19
 
 - [x] Guardar o endereço Studio fornecido em `config/studio.json`.
 - [x] Gerar os três URLs com `scripts/studio_urls.py`; usar a origem no
@@ -714,7 +844,7 @@ serviços foram reiniciados com a configuração correta e respondem HTTP 200
 localmente. Markdown, estrutura e `git diff --check` aprovados. Sem build,
 alteração de dados ou renovação automática da sessão AWS.
 
-## Auditoria editorial e detalhe técnico — 2026-10-19
+#### Auditoria editorial e detalhe técnico — 2026-10-19
 
 - [x] Identificar repetição de dados, arquitetura, limites e mensagens de revisão.
 - [x] Remover cenas e explicações duplicadas da parte narrativa.
@@ -732,7 +862,7 @@ aprovados. Portal, dashboard original e dados sem alterações. Valores dos
 manifests e predefinições de código não são apresentados como medições ou
 configuração efetiva dos serviços.
 
-## Grelha dos seis capítulos — 2026-10-19
+#### Grelha dos seis capítulos — 2026-10-19
 
 - [x] Corrigir a grelha narrativa que ainda reservava oito colunas.
 - [x] Distribuir seis capítulos por seis, três ou duas colunas conforme o ecrã.
@@ -741,7 +871,7 @@ configuração efetiva dos serviços.
 Grelha, seis botões e contador `/ 06` verificados em 320/768/1440/2560 px,
 na técnica e na curadoria. Estrutura e `git diff --check` aprovados.
 
-## Limpeza local do diretório — 2026-10-19
+#### Limpeza local do diretório — 2026-10-19
 
 - [x] Inspecionar ficheiros, referências e serviços em execução.
 - [x] Limpar caches de instalação dispensáveis e bytecode local.
@@ -759,7 +889,7 @@ Portal `/catalog`, apresentação e saúde Streamlit respondem HTTP 200.
 Estrutura (356 ficheiros) e `git diff --check` aprovados; só este plano
 foi alterado entre os ficheiros versionados. Nenhum teste foi removido.
 
-## Eficiência TXT/Canva — 2026-10-19
+#### Eficiência TXT/Canva — 2026-10-19
 
 - [x] Alterar o botão e traduções para Exportar TXT.
 - [x] Reduzir repetição no prompt e impedir carregamento da curadoria na composição.
@@ -778,15 +908,15 @@ na canonicalização Windows do diretório. Pacote 0.4.0 preparado, não publica
 Prompt: 9824 → 3889 caracteres (-60,4%); JSON do caso de seis dias/23 entradas
 idêntico. Sem medição de tokens faturados ou tempo de geração ponta a ponta.
 
-## Plano histórico deste branch — 2026-10-21
+#### Plano histórico deste branch — 2026-10-21
 
 O conteúdo seguinte é preservado como registo do plano original. Não reabre
 tarefas já realizadas nem comprova o estado atual; o plano de dev acima e
 o código são as referências operacionais desta integração.
 
-### Active plan
+##### Active plan
 
-#### Objective
+###### Objective
 
 Evolve the validated local BLU system toward the supplied architecture diagram
 while preserving source lineage, deterministic curation, human approval, privacy,
@@ -800,7 +930,7 @@ requests, and save behavior. The repository currently implements a local ETL,
 warehouse, analytical Streamlit dashboard, and a richer Next.js operational
 workspace.
 
-#### Current baseline
+###### Current baseline
 
 - [x] Local source discovery, lineage, structured enrichment, and validated
   atomic warehouse publication.
@@ -817,7 +947,7 @@ workspace.
 - [ ] Decide whether `origin/dev` becomes `main` or the repository default
   branch changes.
 
-#### Phase 0 - Decisions and contracts
+###### Phase 0 - Decisions and contracts
 
 - [ ] Document the accepted operational boundary: Next.js owns embedded intake
   and curation; Streamlit remains analytical.
@@ -834,7 +964,7 @@ workspace.
 Completion: decisions are recorded in `memory/decisions.md` or ADRs and the
 acceptance scenario can be tested without selecting a live provider.
 
-#### Phase 1 - Harden the local baseline
+###### Phase 1 - Harden the local baseline
 
 - [ ] Decide whether `warehouse/` is a committed release snapshot, CI artifact,
   or both.
@@ -853,7 +983,7 @@ acceptance scenario can be tested without selecting a live provider.
 Completion: both applications consume a validated compatible delivery, branch-only
 fixes are reconciled, and the local acceptance path is automated.
 
-#### Phase 2 - Provider-neutral integration layer
+###### Phase 2 - Provider-neutral integration layer
 
 - [ ] Add typed interfaces for intake, routing, weather, POIs, object storage,
   and model orchestration.
@@ -867,7 +997,7 @@ fixes are reconciled, and the local acceptance path is automated.
 Completion: the chosen acceptance scenario runs entirely with mocks and records
 provider, retrieval time, request context, status, and evidence.
 
-#### Phase 3 - First live provider
+###### Phase 3 - First live provider
 
 - [ ] Re-verify current availability, licensing, pricing, coverage, and data terms
   for the diagram's routing candidates.
@@ -878,7 +1008,7 @@ provider, retrieval time, request context, status, and evidence.
 Completion: one route result is traceable, replaceable, failure-tolerant, and
 visible to the curator before approval.
 
-#### Phase 4 - Embedded intake and object storage
+###### Phase 4 - Embedded intake and object storage
 
 - [ ] Evolve the version 1.0 dashboard form against the approved
   `TravelerBrief` contract without creating a separate intake channel.
@@ -892,7 +1022,7 @@ Completion: one consented dashboard intake can be validated, curated, replayed
 locally, and persisted through the approved cloud boundary without changing
 domain logic.
 
-#### Phase 5 - Agent orchestration
+###### Phase 5 - Agent orchestration
 
 - [ ] Place Bedrock or the approved model behind the provider-neutral interface.
 - [ ] Version prompts and company knowledge independently from generated text.
@@ -905,7 +1035,7 @@ domain logic.
 Completion: model output cannot bypass deterministic constraints, evidence
 boundaries, version history, or the human release gate.
 
-#### Phase 6 - Weather and POI enrichment
+###### Phase 6 - Weather and POI enrichment
 
 - [ ] Re-verify and select providers only for an approved acceptance scenario.
 - [ ] Define freshness, attribution, conflict, and degradation policies.
@@ -915,7 +1045,7 @@ boundaries, version history, or the human release gate.
 Completion: weather and POI data are traceable enhancements, never silent
 replacements for warehouse facts.
 
-#### Phase 7 - Deployment and operations
+###### Phase 7 - Deployment and operations
 
 - [ ] Define environments, infrastructure as code, secrets, logging, alerting,
   backups, recovery, retention, and incident response.
@@ -925,14 +1055,14 @@ replacements for warehouse facts.
 Completion: production readiness is evidenced by tested operational controls, not
 only a successful deployment.
 
-#### Deferred
+###### Deferred
 
 - Ride-hailing, public transit, events, tourism trends, flight status, and visa
   providers listed in the diagram.
 - Multi-provider failover before one provider contract is proven.
 - Automated itinerary release without curator approval.
 
-#### Validation policy
+###### Validation policy
 
 Use the closest `AGENTS.md` for commands. Every phase must include focused tests,
 `git diff --check`, and an explicit review of skipped checks, costs, side effects,

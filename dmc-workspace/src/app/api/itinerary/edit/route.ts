@@ -2,7 +2,7 @@ import { validateSnapshot } from "@/lib/snapshot-validation";
 import { loadPublishedCatalog } from "@/lib/catalog-store";
 import { editWithAssistant } from "@/lib/assistant-editing";
 import { jsonError, noStoreHeaders, publicOrigin } from "@/lib/server-http";
-import { enrichItineraryWithRoadRouting } from "@/lib/road-routing";
+import { enrichItineraryWithRoadRouting } from "@/lib/road-routing-server";
 
 export const runtime = "nodejs";
 // Controlos manuais explícitos: sem modelo, sem aceitar propostas do chat.

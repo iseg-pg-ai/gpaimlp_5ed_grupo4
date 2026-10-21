@@ -289,7 +289,7 @@ npm run build
 
 ### SageMaker Studio Code Editor
 
-A base pública local está em `config/studio.json`. Sem override,
+A base pública local está em `config/studio.local.json`. Sem override,
 `scripts/start_aws_portal.sh` usa essa origem; `PORTAL_PUBLIC_ORIGIN` explícito
 continua a ter prioridade. Listar as ligações dos dashboards com
 `python -B scripts/studio_urls.py` na raiz.
@@ -380,6 +380,13 @@ como «Por confirmar». A mesma consulta é reutilizada pela ferramenta do agent
 O painel de detalhes abre num popover HTML nativo. Pode ser fechado com Escape,
 clique fora ou o botão Fechar. A consulta dinâmica continua a precisar de
 JavaScript; a gestão de abertura e fecho é feita pelo navegador.
+
+## Percursos em Python
+
+O cálculo de um troço usa `portal/routing.py` através do adaptador local. Python
+valida coordenadas, modo, margem e timeout, consulta OSRM e aplica uma estimativa
+geométrica identificada quando o fornecedor não responde. A ordenação de pontos e
+os resumos diários permanecem temporariamente no módulo TypeScript do editor.
 
 Em `/exports`, **Enviar para o Lixo** usa um formulário HTML e funciona sem
 JavaScript. Após o POST, o histórico é recarregado; erros aparecem no próprio

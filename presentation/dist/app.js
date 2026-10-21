@@ -77,8 +77,12 @@ const icon = (name) =>
   `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]}</svg>`;
 const $ = (selector) => document.querySelector(selector);
 // Destino indicado pelo utilizador; não inferir o domínio a partir da apresentação.
-const observatoryUrl =
-  "https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/catalog";
+const studioPath = window.location.pathname.match(
+  /^(.*\/codeeditor\/default\/ports\/)\d+/,
+);
+const observatoryUrl = studioPath
+  ? `${window.location.origin}${studioPath[1]}3001/catalog`
+  : "http://localhost:3001/catalog";
 $("#portal-link").href = observatoryUrl;
 
 function requestScene() {
@@ -238,7 +242,6 @@ function render(focus = true) {
   $(".show-bottom-note").textContent = technical
     ? "CONTEÚDO BASEADO NO PROJETO · sem executar ETL, testes, modelos ou alterações a dados"
     : "PROTÓTIPO INDEPENDENTE · sem geração por IA, reservas ou alterações a dados reais";
-  document.title = `BLU — ${scene.label}`;
   window.BluTechnical.mount();
   if (focus) {
     $("#show-title").focus({ preventScroll: true });

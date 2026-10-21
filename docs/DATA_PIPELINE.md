@@ -4,25 +4,18 @@ O diretório `data/` é a origem local que representa o futuro bucket S3. A pipe
 descobre ficheiros Excel e PDF recursivamente, valida os dados e publica um
 warehouse completo. A origem nunca é alterada.
 
-## Execução
+## Gerar ou atualizar o warehouse
 
 Na raiz do repositório:
 
-```powershell
-.\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse
+```bash
+uv run python -B -m etl.pipeline --data-dir data --output-dir warehouse
 ```
 
-Ou executar o fluxo completo, incluindo instalação e testes:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1
-```
-
-Para um ambiente já preparado:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1 -SkipInstall
-```
+No Windows também pode ser usado
+`.\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse`.
+O fluxo com instalação, validação e testes está em
+[Automação e operações](#automação-e-operações).
 
 ## Contrato de entrada
 
@@ -97,7 +90,7 @@ pipeline. A transformação e a validação não devem depender do transporte.
 
 ## Documentação relacionada
 
-- [Automação e operações](DATA_PIPELINE.md)
+- [Operações e recuperação](OPERATIONS.md)
 - [Modelo de dados](../reports/data_model_report.md)
 - [DMC Workspace](PORTAL.md)
 
@@ -181,5 +174,5 @@ depois de serem definidos a cadência, a origem e o processo de aprovação.
 - Não guardar segredos, credenciais ou ficheiros `.env` no Git.
 - Não tratar `warehouse/` como fonte editável.
 
-Consulte também [o contrato do ETL](DATA_PIPELINE.md) e o
-[guia do portal](PORTAL.md).
+Consulte também o [guia do portal](PORTAL.md) e o
+[plano de operações](OPERATIONS.md).

@@ -1,26 +1,53 @@
-import { afterEach, beforeEach, test } from "node:test";
+import { after, before, beforeEach, test } from "node:test";
+import { createServer } from "node:http";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import assert from "node:assert/strict";
+import { optimizeRouteSequence } from "../src/lib/road-routing.ts";
 import {
   calculateRoadLeg,
   enrichItineraryWithRoadRouting,
-  optimizeRouteSequence,
-} from "../src/lib/road-routing.ts";
+  updateDayTransitLeg,
+} from "../src/lib/road-routing-server.ts";
 
-const originalFetch = globalThis.fetch;
-const routerUrl = process.env.OSRM_ROUTER_URL || "http://router.project-osrm.org";
+const previousRouter = process.env.OSRM_ROUTER_URL;
+const previousTelemetry = process.env.BLU_TELEMETRY_DIR;
+let routerUrl;
 let routingCalls;
-
-// Nenhum cenário deste ficheiro pode contactar um fornecedor externo.
-beforeEach(() => {
-  routingCalls = [];
-  globalThis.fetch = async (url, options) => {
-    routingCalls.push({ url, options });
-    return Response.json({ code: "Ok", routes: [{ distance: 1600, duration: 240 }] });
-  };
+let routingResponse;
+let telemetry;
+const provider = createServer(async (request, response) => {
+  routingCalls.push({ url: routerUrl + request.url });
+  try {
+    const result = await routingResponse();
+    response.writeHead(result.status, { "content-type": "application/json" });
+    response.end(await result.text());
+  } catch {
+    request.socket.destroy();
+  }
 });
 
-afterEach(() => {
-  globalThis.fetch = originalFetch;
+// O cálculo corre em Python: o fornecedor simulado deve atravessar a mesma fronteira HTTP.
+before(async () => {
+  telemetry = mkdtempSync(path.join(tmpdir(), "blu-routing-telemetry-"));
+  await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
+  routerUrl = `http://127.0.0.1:${provider.address().port}`;
+  process.env.OSRM_ROUTER_URL = routerUrl;
+  process.env.BLU_TELEMETRY_DIR = telemetry;
+});
+beforeEach(() => {
+  routingCalls = [];
+  routingResponse = async () =>
+    Response.json({ code: "Ok", routes: [{ distance: 1600, duration: 240 }] });
+});
+after(async () => {
+  await new Promise((resolve) => provider.close(resolve));
+  if (previousRouter === undefined) delete process.env.OSRM_ROUTER_URL;
+  else process.env.OSRM_ROUTER_URL = previousRouter;
+  if (previousTelemetry === undefined) delete process.env.BLU_TELEMETRY_DIR;
+  else process.env.BLU_TELEMETRY_DIR = previousTelemetry;
+  rmSync(telemetry, { recursive: true, force: true });
 });
 
 test("calculateRoadLeg uses the measured OSRM response without external requests", async () => {
@@ -43,7 +70,7 @@ test("calculateRoadLeg uses the measured OSRM response without external requests
     routingCalls[0].url,
     `${routerUrl}/route/v1/driving/-9.13348,38.71391;-9.13571,38.7202?overview=false`,
   );
-  assert.ok(routingCalls[0].options.signal instanceof AbortSignal);
+  assert.equal(new URL(routingCalls[0].url).searchParams.get("overview"), "false");
 });
 
 test("calculateRoadLeg falls back gracefully when coordinates are missing", async () => {
@@ -60,8 +87,7 @@ test("calculateRoadLeg falls back gracefully when coordinates are missing", asyn
 });
 
 test("OSRM unavailable keeps estimates distinct from measured routes", async () => {
-  globalThis.fetch = async (url, options) => {
-    routingCalls.push({ url, options });
+  routingResponse = async () => {
     return Response.json({ code: "ServiceUnavailable" }, { status: 503 });
   };
   const leg = await calculateRoadLeg(
@@ -80,8 +106,7 @@ test("OSRM unavailable keeps estimates distinct from measured routes", async () 
 });
 
 test("OSRM network failure returns an explicit estimate without a second request", async () => {
-  globalThis.fetch = async (url, options) => {
-    routingCalls.push({ url, options });
+  routingResponse = async () => {
     throw new TypeError("Fornecedor simulado indisponível");
   };
   const leg = await calculateRoadLeg(
@@ -340,7 +365,6 @@ test("calculateRoadLeg supports explicit preferredMode (walk vs chauffeur)", asy
 });
 
 test("updateDayTransitLeg switches transit mode and realigns subsequent schedule", async () => {
-  const { updateDayTransitLeg } = await import("../src/lib/road-routing.ts");
   const day = {
     dayNumber: 1,
     date: "2026-10-10",

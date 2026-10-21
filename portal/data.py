@@ -156,6 +156,10 @@ def main() -> None:
                     result = store.published_flags(params["rows"])
                 else:
                     raise ValueError("Operação de catálogo desconhecida.")
+        elif operation == "routing-leg":
+            from portal.routing import calculate_road_leg
+            result = calculate_road_leg(params.get("from"), params.get("to"),
+                                        params.get("options"))
         elif operation == "query":
             result = query_dataset(root, params)
         elif operation == "observatory":

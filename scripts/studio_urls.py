@@ -6,11 +6,16 @@ import json
 from pathlib import Path
 from urllib.parse import urlsplit
 
-CONFIG = Path(__file__).resolve().parents[1] / "config/studio.json"
+CONFIG = Path(__file__).resolve().parents[1] / "config/studio.local.json"
 
 
 def studio_base() -> str:
-    value = json.loads(CONFIG.read_text())["base_url"].rstrip("/")
+    try:
+        value = json.loads(CONFIG.read_text())["base_url"].rstrip("/")
+    except FileNotFoundError as error:
+        raise ValueError(
+            "Configuração Studio ausente. Executar: python3 scripts/setup_workspace.py"
+        ) from error
     parsed = urlsplit(value)
     if (parsed.scheme != "https" or not parsed.hostname or parsed.username
             or parsed.password or parsed.query or parsed.fragment
@@ -40,8 +45,11 @@ def main():
     elif args.port is not None:
         print(dashboard_url(args.port, args.path))
     else:
-        for name, port in [("Portal BLU", 3001), ("Dashboard analítico", 8501),
-                           ("Apresentação interativa", 3003)]:
+        for name, port in [("Portal BLU", 3001),
+                           ("Apresentação interativa", 3003),
+                           ("Monitoring privado", 3004),
+                           ("Agente IA", 8000),
+                           ("Dashboard analítico", 8501)]:
             print(f"{name}: {dashboard_url(port)}")
 
 

@@ -1,6 +1,6 @@
 # BLU AI System — fundamentos, experiência e portal
 
-Guião revisto em 19 de outubro de 2026, no branch `apresentacao-tecnica`.
+Guião revisto em 20 de outubro de 2026.
 Público de referência: avaliação académica e responsáveis da operação.
 
 A apresentação passa a ter **três partes: explicar como o sistema foi construído,
@@ -229,13 +229,13 @@ Distinguir resultados de testes unitários, integração com dados temporários,
 interface com APIs simuladas e serviços externos reais. Uma bateria aprovada
 não prova, por si só, adequação comercial ou prontidão para produção.
 
-Se forem usados números, apresentar data, ambiente e âmbito da execução. Os
-registos locais anteriores estão no [plano](../PLAN.md) e em
-[testes e histórico](TESTING.md); esta revisão documental não executou de novo
-a bateria completa do sistema.
+Se forem usados números, apresentar data, ambiente e âmbito da execução. O
+[guia de testes](TESTING.md) explica o que cada bateria valida; resultados
+transitórios não devem ser apresentados como estado permanente.
 
-Fechar com os limites atuais: autenticação e papéis, sincronização
-multiutilizador, persistência cloud e revisão do acesso externo. Ganhos de
+Fechar com os limites atuais: o login local do Monitoring não autentica o portal;
+identidade, papéis, sincronização multiutilizador, persistência cloud e acesso
+externo continuam por definir. Ganhos de
 rapidez, consistência e qualidade devem ser avaliados com curadores; não
 atribuir percentagens sem medições.
 
@@ -404,22 +404,7 @@ uma decisão importante. Referências detalhadas ficam disponíveis no guião.
 - Preparar capturas ou gravação de apoio, sem apresentar uma gravação como execução
   ao vivo se uma dependência falhar.
 
-## 8. Auditoria de redundâncias
-
-| Repetição encontrada | Alteração | Informação preservada ou acrescentada |
-| --- | --- | --- |
-| Dados/ETL explicados nas duas partes | Retirar a cena Os dados da experiência e o código/estilos exclusivos | Processo técnico mantém publicação, recuperação, origem e contexto temporal |
-| Arquitetura repetida depois da demonstração | Retirar Por dentro da experiência | Arquitetura fica na abertura e ganha um capítulo próprio de tecnologias |
-| Lista de tecnologias misturada com papéis dos componentes | Separar arquitetura de inventário técnico | Dependências, fronteiras, versões declaradas e exemplos de implementação |
-| Falha de publicação ilustrada em processos e repetida em validação | Manter a simulação no processo; usar números na tradução em validação | Cobertura nova do worker e distinção entre fidelidade numérica e fluência |
-| Revisão humana, mecanismo do agente e formatos repetidos em vários painéis | Reduzir os textos de apoio da experiência | A colaboração demonstra o efeito; a entrega reflete as escolhas; os mecanismos ficam na técnica |
-| Várias mensagens de fecho e acesso ao portal durante a proposta | Simplificar o encerramento e retirar o CTA intermédio | Manter o CTA final exato e o acesso global ao sistema |
-
-A repetição necessária para orientar o público mantém-se: requisitos e
-verificações usam o mesmo contrato com papéis diferentes; os avisos de simulação
-continuam visíveis para não confundir uma ilustração com dados ou serviços reais.
-
-## 9. Informação a complementar mais tarde
+## 8. Informação a complementar mais tarde
 
 Esta revisão não exige que a equipa responda já. A matriz identifica o que
 falta e onde integrar essa informação quando estiver disponível.

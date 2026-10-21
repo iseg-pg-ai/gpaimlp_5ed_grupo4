@@ -1,0 +1,27 @@
+{
+  "remote.autoForwardPorts": true,
+  "remote.autoForwardPortsSource": "process",
+  "remote.restoreForwardedPorts": false,
+  "remote.portsAttributes": {
+    "3001": {
+      "label": "BLU Curator Portal",
+      "onAutoForward": "silent"
+    },
+    "3003": {
+      "label": "Apresentação interativa",
+      "onAutoForward": "silent"
+    },
+    "3004": {
+      "label": "BLU Operations Monitoring",
+      "onAutoForward": "silent"
+    },
+    "8000": {
+      "label": "BLU AI Agent",
+      "onAutoForward": "silent"
+    },
+    "8501": {
+      "label": "Observatório analítico",
+      "onAutoForward": "silent"
+    }
+  }
+}

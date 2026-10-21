@@ -21,10 +21,9 @@ Na raiz do projeto, com Python 3.12 ou 3.13:
 python -B presentation/serve.py --port 3003
 ```
 
-Abrir [a apresentação local](http://127.0.0.1:3003/) ou
-[a apresentação no Studio](https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3003/).
-A base pública dos dashboards está em `config/studio.json`. Para listar as
-ligações a partir da raiz: `python -B scripts/studio_urls.py`.
+Abrir [a apresentação local](http://127.0.0.1:3003/). No Studio, obter a ligação
+correta do ambiente atual com `python -B scripts/studio_urls.py --port 3003`.
+A base pública dos dashboards está em `config/studio.local.json`.
 No SageMaker Code Editor, abrir a porta 3003 com o caminho
 `/codeeditor/default/ports/3003/` no domínio da instância. O servidor aceita o
 prefixo ou o caminho direto e serve apenas a pasta `dist/`.
@@ -34,10 +33,10 @@ O servidor usa a biblioteca padrão de Python e escuta em `127.0.0.1` por defeit
 Pode usar `--host 0.0.0.0` quando o ambiente exigir escuta noutras interfaces.
 
 Os ficheiros estáticos também podem ser servidos por outro servidor HTTP.
-O botão Abrir sistema e o CTA final **Explorar o Observatório real** apontam
-para o [endereço indicado pelo utilizador](https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/catalog).
+O botão Abrir sistema e o CTA final **Explorar o Observatório real** derivam a
+porta 3001 do endereço onde a apresentação está aberta. Localmente usam
+`http://localhost:3001/catalog`; no Studio conservam o domínio e prefixo da sessão.
 A navegação abre um separador separado e depende da sessão SageMaker do visitante.
-O endereço está centralizado em `observatoryUrl`, no ficheiro `dist/app.js`.
 
 ## Controlos
 

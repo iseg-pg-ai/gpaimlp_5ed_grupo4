@@ -1,85 +1,70 @@
-# Correção dos alertas Dependabot Python
+# Dependências Python e exceção Argos
 
-Revisão de 2026-10-15 no branch `fix/dependabot-python`, criado a partir de
-`origin/dev` em `f0d4476`. A alteração cobre os oito pacotes dos alertas anexados.
+Estado revisto em 20 de outubro de 2026. O `pyproject.toml` e o `uv.lock`
+definem o ambiente Python. `requirements.txt` e
+`translations/requirements.txt` são exports gerados por
+`scripts/export_requirements.py`; não devem ser editados manualmente.
 
-Nota de manutenção: na limpeza posterior em `chore/project-cleanup`, os grupos
-experimentais SageMaker/MLflow e ferramentas de desenvolvimento sem utilização
-foram removidos. SageMaker, pytest, sqlparse e cryptography deixam de integrar o
-lockfile. As versões abaixo registam a correção anterior; não são requisitos
-para voltar a instalar esses pacotes. Os grupos ativos são `dashboard`, `agent`
-e `translation`, todos opcionais.
+## Grupos ativos
 
-## Versões resolvidas
+A instalação base contém o ETL. Os grupos opcionais são:
 
-| Pacote | Antes | Depois |
-| --- | --- | --- |
-| GitPython | 3.1.58 | 3.2.1 |
-| SageMaker | 2.254.1 | 2.257.7 |
-| urllib3 | 2.7.0 | 2.8.0 |
-| sqlparse | 0.5.5 | 0.6.0 |
-| cryptography | 46.0.7 | 50.0.2 |
-| protobuf | 6.31.1 | 6.33.6 |
-| Stanza | 1.10.1 | 1.12.2 |
-| pytest | 9.0.0 | 9.1.1 |
+- `dashboard`: Streamlit e Plotly;
+- `agent`: FastAPI, LangGraph, integração Bedrock e respetivas dependências;
+- `translation`: Argos Translate e CTranslate2.
 
-`pyproject.toml` mantém as versões diretas de SageMaker e pytest e impõe mínimos
-de segurança às dependências transitivas. SageMaker permanece na série 2.x;
-esta correção não migra as APIs para a série 3.x.
+SageMaker SDK, MLflow, pytest, sqlparse e cryptography não pertencem ao ambiente
+atual. O projeto usa a função IAM do ambiente AWS através de boto3; não precisa do
+SDK SageMaker.
 
-`uv.lock` foi resolvido com uv 0.12.19. Os ficheiros `requirements.txt` e
-`translations/requirements.txt` foram regenerados por
-`scripts/export_requirements.py`, sem alterações manuais aos pins.
+Preparar tudo com:
+
+```bash
+uv sync --locked --all-groups
+```
+
+`uv sync` sem `--all-groups` pode remover grupos opcionais que já estejam
+instalados. Para acrescentar um grupo preservando o ambiente existente, usar
+`--inexact --group NOME`.
 
 ## Exceção de compatibilidade do Argos
 
-Argos Translate 1.11.0 fixa `stanza==1.10.1` no seu próprio metadata.
-Essa versão é afetada por
+Argos Translate 1.11.0 fixa `stanza==1.10.1` no seu metadata. Essa versão é
+afetada por
 [GHSA-v5jw-96jm-7h2c](https://github.com/advisories/GHSA-v5jw-96jm-7h2c).
-O override `stanza>=1.12.2,<1.13` seleciona a primeira série corrigida.
-O worker do projeto usa os modelos CTranslate2 e a API de pacotes do Argos;
-os seus testes passaram com esta combinação instalada.
+O projeto aplica `stanza>=1.12.2,<1.13` através de
+`override-dependencies` no `pyproject.toml`.
 
-Preferir a instalação pelo lockfile:
+Preferir o lockfile:
 
 ```bash
-uv sync --locked --group translation
+uv sync --locked --inexact --group translation
+python translations/setup_models.py
 ```
 
-O export pip contém o grafo completo, mas o pip não interpreta os overrides de
-uv. A instalação desse export exige desativar a resolução adicional:
+O export pip contém o grafo resolvido, mas o pip não interpreta overrides de uv.
+Quando `uv` não puder ser usado, instalar o export de tradução sem nova resolução:
 
 ```bash
 python -m pip install --no-deps -r translations/requirements.txt
 ```
 
-Sem `--no-deps`, o pip rejeita a incompatibilidade com o pin antigo do Argos.
-Ferramentas como `pip check` também podem assinalar essa diferença de metadata.
-Reavaliar este override quando o Argos publicar um requisito de Stanza corrigido.
+Sem `--no-deps`, o resolver pode rejeitar a diferença entre o metadata do Argos
+e a versão corrigida de Stanza. Reavaliar o override quando o Argos publicar um
+requisito corrigido.
 
-## Validação executada
+## Manutenção e validação
 
-- Instalação de todos os grupos com `uv sync --locked --inexact --all-groups`.
-- `uv lock --check --offline` e exports `--check`: aprovados.
-- Testes Python: 20 aprovados; testes de tradução: cinco aprovados.
-- Imports dos oito pacotes corrigidos, Streamlit e Argos: aprovados.
-- Auditoria `pip-audit` do export de todos os grupos: zero vulnerabilidades conhecidas.
-- Auditoria dos 220 pacotes de registry de todas as plataformas do lockfile:
-  zero vulnerabilidades conhecidas.
+Depois de alterar dependências:
 
-As auditorias usaram versões fixas com `--no-deps --disable-pip`, sem instalar
-os pacotes durante a consulta. Os resultados representam a base de avisos
-disponível na data da revisão.
+```bash
+uv lock --check --offline
+python scripts/export_requirements.py --check
+PYTHONPATH=src .venv/bin/python -B -m unittest discover -s tests -v
+.venv/bin/python -B -m unittest translations.test_worker -v
+```
 
-Os testes de tradução usam modelos simulados; não existem pares de modelos
-locais neste ambiente. Não foram executadas inferências reais, deployments ou
-chamadas aos serviços SageMaker. O SDK 2.x emite um aviso de descontinuação;
-a sua migração para 3.x exige uma alteração própria.
-
-## Referências de segurança
-
-- [GitPython: injeção de configuração](https://github.com/advisories/GHSA-284h-m62q-gf8w).
-- [SageMaker: chave HMAC exposta](https://github.com/advisories/GHSA-7hh5-prp2-mfh5).
-- [urllib3: correções na série 2.8](https://github.com/urllib3/urllib3/releases).
-- [sqlparse: complexidade de TokenList](https://github.com/advisories/GHSA-pwgv-4x5q-6m9f).
-- [protobuf: limite de recursão JSON](https://github.com/advisories/GHSA-7gcm-g887-7qv7).
+Executar também os testes e builds da área afetada. Os testes de tradução usam
+modelos simulados por defeito; não comprovam que os pares de idiomas estejam
+instalados nem a qualidade de uma tradução real. Auditorias de vulnerabilidades
+representam apenas a base de avisos disponível na data da execução.

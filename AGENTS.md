@@ -203,3 +203,11 @@ checks with the affected boundaries and report skipped checks explicitly.
 
 Report the outcome, changed files, validation and results, skipped checks,
 residual risks or decisions, and any `PLAN.md` or memory updates.
+
+## Lembrete persistente: monitoring incompleto
+
+Ao retomar monitoring ou preparar deployment/produção, consultar a secção
+**Pendências de monitoring** do [PLAN.md](PLAN.md) e avisar o utilizador dos
+itens ainda abertos. Essa secção é a fonte de verdade para o estado da próxima
+etapa. Não apresentar logs de sondas e incidentes locais como monitoring
+completo; só dar uma pendência como concluída com implementação e validação.
