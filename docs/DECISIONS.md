@@ -3,6 +3,16 @@
 Os registos históricos conservam as datas e a evidência original. O mapa atual
 está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
+## Âmbito do grafo local Graphify — 2026-10-21
+
+O grafo indexa código, documentação e recursos visuais da aplicação. A deteção
+inicial incluiu PDFs de `data/`; o ficheiro `.graphifyignore` exclui agora fontes
+protegidas, dados operacionais, warehouse, exports e ambientes locais.
+Os resultados e caches de `graphify-out/` são artefactos locais ignorados pelo Git;
+os ficheiros já versionados mantêm-se no histórico e não são removidos nesta tarefa.
+A extração semântica usa a sessão do assistente, sem fornecedores externos.
+O grafo auxilia a navegação; o código e os contratos continuam a prevalecer.
+
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
 ### Consolidação dos testes

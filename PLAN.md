@@ -1,5 +1,11 @@
 # Plano de evolução do BLU AI System
 
+## Atualização local do grafo Graphify — 2026-10-21
+
+- [x] Reconstruir o grafo de código e documentação, excluindo fontes protegidas e dados operacionais: 246 ficheiros, 1344 nós, 2810 relações e 92 comunidades.
+- [x] Gerar JSON, relatório e HTML; integridade final e consulta local aprovadas. Diagnóstico: 479 relações com símbolos sem nó excluídas e 46 relações agregadas no formato não dirigido.
+- [x] Registar resultados e limitações, sem publicação nem fornecedores externos. `git diff --check` aprovado; Markdownlint indisponível offline e `check_project.py` não executado por falta de Python 3.12/3.13.
+
 ## Integração de dev nas instruções — 2026-10-21
 
 - [x] Integrar `origin/dev` preservando os planos e as orientações anteriores.
