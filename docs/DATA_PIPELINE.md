@@ -91,10 +91,63 @@ Os testes usam diretórios temporários e não reescrevem o warehouse operaciona
 
 ## Origem ETL em S3
 
-O transporte S3 dos checkpoints operacionais está implementado e é independente
-do ETL. O adaptador S3 para fontes da pipeline ainda não está implementado. Deve
-listar e descarregar objetos para uma área local controlada e entregá-los à mesma
-pipeline. A transformação e a validação não devem depender do transporte.
+O transporte S3 dos checkpoints operacionais permanece independente do ETL. O
+bucket de dados recebe releases imutáveis de `sources` e `warehouse`, separadas
+por ambiente, tipo e data. Cada ficheiro tem SHA-256 e o manifesto da release é
+publicado por último; a ausência desse manifesto significa que a publicação não
+está completa.
+
+As fontes incluem apenas Excel e PDF inventariados por `LocalSource`. Excluem
+explicitamente `data/portal/catalog.sqlite`, que é estado operacional protegido
+pelos checkpoints. O warehouse só pode ser publicado quando
+`validation_report.json` e `manifest.json` confirmam `passed`.
+
+```bash
+python3 -B -m etl.s3_transport publish sources --path data
+python3 -B -m etl.s3_transport publish warehouse --path warehouse
+```
+
+Uma recuperação descarrega para um diretório novo ou vazio e confirma manifesto,
+tamanho e hash de todos os objetos antes de publicar a pasta local:
+
+```bash
+python3 -B -m etl.s3_transport fetch-latest sources --path /tmp/blu-sources
+python3 -B -m etl.s3_transport fetch-latest warehouse --path /tmp/blu-warehouse
+```
+
+O adaptador usa `BLU_DATA_S3_BUCKET`, `BLU_ENVIRONMENT` e o IAM do ambiente. Não
+guarda credenciais, não elimina objetos e não substitui automaticamente `data/`
+ou `warehouse/`. A transformação e a validação continuam independentes do
+transporte.
+
+Alterações confirmadas no catálogo e nas versões são registadas em
+`exports/portal-persistence/data-s3-outbox/`. O evento contém a operação completa
+necessária à recuperação, com identificador idempotente. O ciclo do Monitoring e
+o arranque enviam-no para `operational-changes/`; o ficheiro local só é removido
+depois de `PutObject` e `HeadObject` confirmarem tamanho, AES-256 e SHA-256.
+
+### Estado operacional do portal
+
+O destino final usa o bucket de dados como persistência permanente. Como o S3
+não executa SQLite, `etl.operational_s3` publica snapshots consistentes do
+catálogo e do histórico, juntamente com propostas PDF e filas pendentes. Os
+objetos da release são imutáveis; `operational/current.json` identifica a release
+ativa e o versionamento do bucket conserva as revisões anteriores.
+
+```bash
+python3 -B -m etl.operational_s3 publish \
+  --catalog data/portal/catalog.sqlite \
+  --exports exports/itineraries \
+  --pending exports/portal-persistence
+
+python3 -B -m etl.operational_s3 materialize \
+  --destination /tmp/blu-runtime
+```
+
+A materialização valida manifesto, tamanho, SHA-256 e integridade SQLite antes
+de trocar atomicamente a cache. Estes comandos constituem a camada de transporte;
+a ativação nos launchers só ocorre depois de migrar e validar todos os pontos de
+escrita do portal.
 
 ## Documentação relacionada
 

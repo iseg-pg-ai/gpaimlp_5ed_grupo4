@@ -4,6 +4,7 @@ import { TranslationError } from "@/lib/local-translation";
 import { isLocale } from "@/lib/locales";
 import { VersionStore, VersionConflict, checkTripId } from "@/lib/version-store";
 import { persistVersion, syncPendingVersions } from "@/lib/version-persistence";
+import { syncOperationalState } from "@/lib/operational-s3";
 import { jsonError, noStoreHeaders } from "@/lib/server-http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
       reason: body.reason,
       baseVersion: body.baseVersion,
     });
+    await syncOperationalState();
     if (result.queued) return Response.json(result, { status: 202, headers: noStoreHeaders });
     return Response.json(result.record, { headers: noStoreHeaders });
   } catch (e) {
@@ -113,6 +115,7 @@ export async function GET(request: Request) {
         const client = await store.localizedPdf(id, version, language);
         files[client.filename] = new Uint8Array(client.bytes);
       }
+      await syncOperationalState();
       const filename = row.filename.replace(
         /\.pdf$/,
         `_PT${language === "pt" ? "" : "-" + language.toUpperCase()}.zip`,
@@ -129,6 +132,7 @@ export async function GET(request: Request) {
       const pdf = params.has("locale")
         ? await store.localizedPdf(id, version, language)
         : await store.pdf(id, version);
+      await syncOperationalState();
       return new Response(new Uint8Array(pdf.bytes), {
         headers: {
           ...noStoreHeaders,

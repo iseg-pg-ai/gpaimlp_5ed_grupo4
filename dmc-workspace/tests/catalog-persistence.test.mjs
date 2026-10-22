@@ -1,14 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { persistCatalog, syncPendingCatalog } from "../src/lib/catalog-persistence.ts";
@@ -49,7 +41,13 @@ test("catálogo grava em SQL quando disponível", async (t) => {
   });
   assert.equal(result.queued, false);
   assert.equal(result.record.revision, 1);
-  assert.equal(existsSync(operations), false);
+  const events = readdirSync(path.join(operations, "data-s3-outbox"));
+  assert.equal(events.length, 1);
+  const event = JSON.parse(
+    readFileSync(path.join(operations, "data-s3-outbox", events[0]), "utf8"),
+  );
+  assert.equal(event.operationType, "catalog.save");
+  assert.equal(event.syncState, "pending");
 });
 
 test("catálogo usa JSON, sincroniza e não duplica uma operação já confirmada", async (t) => {

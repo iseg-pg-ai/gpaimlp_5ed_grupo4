@@ -2,6 +2,20 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Carregar apenas chaves operacionais conhecidas do ficheiro local, sem executar
+# o seu conteúdo como código shell. Variáveis já exportadas têm prioridade.
+if [ -f "$ROOT/.env" ]; then
+    while IFS='=' read -r key value; do
+        case "$key" in
+            BLU_BACKUP_DIR|BLU_BACKUP_S3_BUCKET|BLU_BACKUP_S3_PREFIX|BLU_BACKUP_S3_KMS_KEY_ID|BLU_DATA_S3_BUCKET|BLU_ENVIRONMENT|AWS_REGION|AWS_DEFAULT_REGION)
+                if [ -z "${!key+x}" ]; then
+                    export "$key=$value"
+                fi
+                ;;
+        esac
+    done < <(sed -n '/^[A-Z][A-Z0-9_]*=[A-Za-z0-9._:\/@-]*$/p' "$ROOT/.env")
+fi
 # Tudo o que é volátil fica fora do Git, dentro do runtime privado do monitoring.
 RUNTIME="$ROOT/monitoring/runtime/recovery"
 LOG="$RUNTIME/just-blu-it.log"
@@ -270,19 +284,38 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
     : >> "$LOG"
     trap fail ERR
     printf '[%s] just blu up · preparação persistente\n' "$(date -u +%FT%TZ)" >> "$LOG"
-    verify_environment >> "$LOG" 2>&1
-    python3 -B -m monitoring.checkpoint restore-missing >> "$LOG" 2>&1
-    env PYTHONPATH=src python3 -B -m monitoring.recovery ensure >> "$LOG" 2>&1
-    (cd dmc-workspace && node --experimental-strip-types scripts/sync-persistence.mjs) >> "$LOG" 2>&1
-    python3 -B -m monitoring.checkpoint create >> "$LOG" 2>&1
     if [ ! -f monitoring/runtime/credentials.json ]; then
         printf 'Falta configurar o acesso ao Monitoring: python -B -m monitoring.setup\n' >&2
         exit 1
     fi
-    verify_environment
+    EXECUTION_ID="blu-up-$(date -u +%Y%m%dT%H%M%SZ)-$(python3 -c 'import uuid; print(uuid.uuid4().hex[:12])')"
+    export EXECUTION_ID
+    run_task "1. Verificar ambiente" verify_environment
+    # A cópia local é obrigatória; a cópia S3 é tentada e registada sem impedir
+    # o reinício quando a rede remota está temporariamente indisponível.
+    run_task "2. Guardar checkpoint da execução" \
+        python3 -B -m monitoring.checkpoint create --execution-id "$EXECUTION_ID"
+    run_task "3. Parar serviços BLU" stop_all_services
+    if python3 -B -m monitoring.checkpoint restore-missing \
+            --backup-id "$EXECUTION_ID" >> "$LOG" 2>&1; then
+        complete_task "4. Recuperar checkpoint da execução"
+    else
+        run_task "4. Recuperar dados do bucket" bash -c '
+            .venv/bin/python -B -m etl.s3_transport restore-missing sources --path data
+            .venv/bin/python -B -m etl.s3_transport restore-missing warehouse --path warehouse
+        '
+    fi
+    run_task "5. Validar persistência" env PYTHONPATH=src python3 -B -m monitoring.recovery ensure
+    run_task "6. Sincronizar operações pendentes" bash -c '
+        cd dmc-workspace
+        node --experimental-strip-types scripts/sync-persistence.mjs
+        cd ..
+        .venv/bin/python -B -m etl.s3_outbox
+    '
     PORTAL_PUBLIC_ORIGIN="$(python3 -B scripts/studio_urls.py --origin)"
     export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="/codeeditor/default/ports/3001"
-    start_missing_services
+    run_task "7. Iniciar serviços" start_all_services
+    run_task "8. Confirmar serviços" confirm_services
     quick_start_status
     python3 -B scripts/open_dashboards.py --quiet
     printf '\n  %s✓%s  5 serviços operacionais\n' "$GREEN" "$RESET"

@@ -1,5 +1,6 @@
 import { jsonError, noStoreHeaders, publicOrigin, publicUrl } from "@/lib/server-http";
 import { checkTripId, VersionStore } from "@/lib/version-store";
+import { syncOperationalState } from "@/lib/operational-s3";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
       body.action === "trash"
         ? store.trashVersion(body.tripId, body.version)
         : store.restoreVersion(body.tripId, body.version);
+    await syncOperationalState();
     return isForm ? history() : Response.json(version, { headers: noStoreHeaders });
   } catch {
     return fail("Versão não encontrada.", 404);

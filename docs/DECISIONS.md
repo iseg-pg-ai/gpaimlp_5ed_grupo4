@@ -1,5 +1,62 @@
 # Decisões e questões abertas
 
+## S3 é a fonte permanente; SQLite é cache materializada — 2026-10-22
+
+Esta decisão substitui a afirmação transitória abaixo de que o SQL local é
+autoritativo. O bucket de dados guarda três domínios separados: fontes originais,
+releases validadas do warehouse e releases operacionais do portal. Uma release
+operacional inclui o catálogo, histórico de itinerários, partilhas, PDFs e
+operações pendentes; o manifesto ativo só muda depois de todos os objetos e
+hashes estarem confirmados.
+
+O SQLite não pode ser consultado diretamente no S3. Por isso, o portal usa uma
+cache SQLite temporária, reconstruída atomicamente a partir do manifesto ativo.
+Uma eliminação remove a entidade da release ativa e gera uma nova revisão; as
+releases anteriores continuam disponíveis. O bucket de backups é independente,
+imutável e usado pelo `just blu it` para recuperação explícita.
+
+A migração não elimina dados locais antes de publicar, descarregar e validar o
+estado completo. A remoção física posterior é uma operação destrutiva separada.
+
+Evidência de migração: a release operacional
+`20261022T231932.545515Z-4d53fb6a1c06` publicou as duas bases SQLite e dois PDFs.
+O download para uma cache temporária passou os hashes, a integridade SQLite e a
+comparação das contagens de todas as tabelas.
+
+## Reinício por checkpoint e outbox de alterações — 2026-10-23
+
+`just blu up` passa a ser um reinício controlado. Cada execução cria um
+identificador usado diretamente no checkpoint, tenta a cópia remota, para os
+serviços e recupera essa versão específica. O bucket de dados é fallback apenas
+quando o checkpoint da execução não existe; a recuperação preenche ausências e
+preserva ficheiros locais atuais.
+
+Nesta implementação transitória, o SQL continuava autoritativo. Depois de um
+commit de catálogo ou versão, uma
+outbox local conserva a operação completa com a mesma chave idempotente. O
+Monitoring envia-a para o bucket de dados e só elimina o evento depois da
+confirmação por tamanho, encriptação e SHA-256. Uma falha remota não invalida o
+commit SQL e mantém a alteração pendente para repetição.
+
+## Bucket de dados separado do backup — 2026-10-22
+
+O bucket de dados usa releases imutáveis distintas para `sources` e `warehouse`.
+O manifesto com estado `complete` é enviado apenas depois dos ficheiros e cada
+objeto é confirmado por tamanho, AES-256 e SHA-256. A recuperação usa uma área
+nova ou vazia e não substitui automaticamente a entrega ativa.
+
+As fontes S3 são os Excel e PDF inventariados pelo contrato `LocalSource`. O
+catálogo `data/portal/catalog.sqlite` fica excluído porque é estado operacional,
+independente do ETL e protegido pelos checkpoints. O warehouse só é publicável
+após validação `passed`. Não existe eliminação no adaptador; retenção continua a
+ser uma decisão explícita do bucket.
+
+Evidência real de 22 de outubro de 2026: uma release de 54 fontes e
+954 741 843 bytes e uma release de 40 artefactos de warehouse e 9 826 948 bytes
+foram publicadas num bucket dedicado em `eu-west-1`. Ambas foram descarregadas
+para diretórios temporários, integralmente verificadas e removidas depois do
+ensaio, sem alterar `data/` ou `warehouse/` ativos.
+
 ## Checkpoint S3 opcional — 2026-10-22
 
 O checkpoint local continua a ser a primeira cópia. Quando
@@ -12,8 +69,12 @@ só publica localmente um arquivo cujo hash e manifesto sejam válidos.
 O Monitoring agrega o último resultado S3, disponibilidade das bases SQLite,
 operações JSON pendentes e último resultado de sincronização. Não foi criada uma
 base ou serviço AWS adicional. A política de retenção fica no bucket e não há
-eliminação automática no código até essa política ser aprovada. Evidência local:
-restauro e falha de rede com cliente S3 simulado; nenhuma chamada AWS real.
+eliminação automática no código até essa política ser aprovada. Evidência:
+restauro e falha de rede com cliente S3 simulado e, em 22 de outubro de 2026,
+upload real de 947 078 910 bytes para um bucket dedicado em `eu-west-1`, seguido
+de download temporário, validação do SHA-256 e manifesto e remoção apenas da
+cópia de ensaio. IAM limita listagem, leitura e escrita ao prefixo do ambiente;
+`DeleteObject` foi recusado como previsto.
 
 ## Checkpoint externo integrado no arranque — 2026-10-22
 

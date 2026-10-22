@@ -2,6 +2,7 @@ import { portalRequest, PortalPythonError } from "@/lib/python-portal";
 import { publicOrigin, jsonError, noStoreHeaders } from "@/lib/server-http";
 import { CatalogStore, CatalogConflict, catalogRoot, warehouseRoot } from "@/lib/catalog-store";
 import { persistCatalog, syncPendingCatalog } from "@/lib/catalog-persistence";
+import { syncOperationalState } from "@/lib/operational-s3";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
   }
   try {
     const result = await persistCatalog(input);
+    await syncOperationalState();
     if (result.queued) return Response.json(result, { status: 202, headers: noStoreHeaders });
     return Response.json(result.record, { headers: noStoreHeaders });
   } catch (e) {

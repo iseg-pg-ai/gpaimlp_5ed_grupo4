@@ -19,6 +19,7 @@ from monitoring.alerts import AlertStore
 from monitoring.backup import BackupScheduler
 from monitoring.cleanup import CleanupManager
 from monitoring.signals import operational_signals
+from etl.s3_outbox import flush as flush_s3_outbox
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -138,6 +139,18 @@ class Collector:
                   "load_1m": round(os.getloadavg()[0], 2) if hasattr(os, "getloadavg") else None}
         system["cleanup"] = self.cleanup.maybe_run(system["disk_used_pct"])
         system["backup_schedule"] = self.backups.maybe_run()
+        try:
+            bucket = os.environ.get("BLU_DATA_S3_BUCKET", "").strip()
+            if bucket:
+                system["data_s3_outbox"] = flush_s3_outbox(
+                    Path(os.environ.get("BLU_OPERATIONAL_DIR",
+                                        self.root / "exports/portal-persistence")),
+                    bucket, os.environ.get("BLU_ENVIRONMENT", "development"))
+        except Exception as error:
+            pending = self.root / "exports/portal-persistence/data-s3-outbox"
+            system["data_s3_outbox"] = {
+                "outcome": "failed", "error_code": type(error).__name__,
+                "pending": len(list(pending.glob("*.json"))) if pending.is_dir() else 0}
         snapshot = {"checked_at": now, "interval_seconds": self.interval, "services": services,
                     "warehouse": warehouse, "system": system}
         snapshot["operations"] = operational_signals(self.runtime)

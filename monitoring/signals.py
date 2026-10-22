@@ -35,7 +35,8 @@ def _persistence(runtime: Path) -> dict:
     operational = Path(os.environ.get(
         "BLU_OPERATIONAL_DIR", str(root / "exports/portal-persistence")))
     pending = {}
-    for name, folder in (("catalog", "pending-catalog"), ("versions", "pending-versions")):
+    for name, folder in (("catalog", "pending-catalog"), ("versions", "pending-versions"),
+                         ("data_s3", "data-s3-outbox")):
         directory = operational / folder
         pending[name] = sum(1 for item in directory.glob("*.json") if item.is_file()) \
             if directory.is_dir() else 0
@@ -95,9 +96,14 @@ def operational_signals(runtime: Path, now: datetime | None = None) -> dict:
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
         backup["last_attempt_at"] = None
     s3 = _json(runtime / "s3-backup-status.json") or {}
+    data_s3 = _json(runtime / "data-s3-status.json") or {}
     backup.update(s3_state=s3.get("outcome", "not_configured"),
                   s3_last_at=s3.get("at"), s3_operation=s3.get("operation"),
-                  s3_backup_id=s3.get("backup_id"))
+                  s3_backup_id=s3.get("backup_id"),
+                  data_s3_state=data_s3.get("outcome", "not_configured"),
+                  data_s3_last_at=data_s3.get("at"),
+                  data_s3_kind=data_s3.get("kind"),
+                  data_s3_release_id=data_s3.get("release_id"))
     token_rows = [row for row in ai if isinstance(row.get("total_tokens"), int)]
     return {
         "portal": {"state": "degraded" if any(row.get("outcome") != "success" for row in portal) else "up",
@@ -138,6 +144,9 @@ def operational_details(runtime: Path, kind: str) -> dict:
              ("checked_at", "outcome", "backup_id", "backup_created_at", "artifact_count")),
             ("s3-backup-status.json", "Cópia remota S3",
              ("at", "outcome", "backup_id", "bytes", "error_code")),
+            ("data-s3-status.json", "Publicação de dados S3",
+             ("at", "outcome", "kind", "release_id", "file_count", "bytes",
+              "error_code")),
         ):
             try:
                 row = json.loads((runtime / name).read_text())

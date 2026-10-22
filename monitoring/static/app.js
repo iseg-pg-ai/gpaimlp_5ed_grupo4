@@ -323,6 +323,7 @@ function render(data) {
           ? `Restauro · ${date(ops.backup.last_restore_at)}`
           : "Restauro por ensaiar",
         `S3 · ${ops.backup.s3_state === "passed" ? "verificado" : ops.backup.s3_state === "failed" ? "falhou" : "não configurado"}`,
+        `Dados S3 · ${ops.backup.data_s3_state === "passed" ? "verificados" : ops.backup.data_s3_state === "failed" ? "falharam" : "sem publicação"}`,
         `${ops.persistence?.pending_total ?? 0} operações pendentes`,
         `SQL · ${ops.persistence?.state === "up" ? "disponível" : "degradado"}`,
       ].join(" · "),

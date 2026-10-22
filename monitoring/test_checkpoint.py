@@ -43,6 +43,15 @@ class FakeS3:
 
 
 class CheckpointTests(unittest.TestCase):
+    def test_execution_identifier_names_the_checkpoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, store = Path(directory) / "project", Path(directory) / "backups"
+            root.mkdir()
+            snapshot = create(root, store, "blu-up-test-123")
+            self.assertEqual(snapshot.name, "blu-up-test-123")
+            self.assertEqual(json.loads((snapshot / "manifest.json").read_text())["backup_id"],
+                             "blu-up-test-123")
+
     def test_s3_roundtrip_recovers_when_local_store_is_empty(self):
         with tempfile.TemporaryDirectory() as directory:
             root, store = Path(directory) / "project", Path(directory) / "backups"

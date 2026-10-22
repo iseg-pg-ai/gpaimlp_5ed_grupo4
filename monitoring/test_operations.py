@@ -268,10 +268,14 @@ class OperationsTest(unittest.TestCase):
             (runtime / "s3-backup-status.json").write_text(json.dumps({
                 "at": datetime.now(timezone.utc).isoformat(), "outcome": "passed",
                 "operation": "upload", "backup_id": "safe-id"}))
+            (runtime / "data-s3-status.json").write_text(json.dumps({
+                "at": datetime.now(timezone.utc).isoformat(), "outcome": "passed",
+                "operation": "publish", "kind": "warehouse", "release_id": "release-id"}))
             result = operational_signals(runtime)
             self.assertEqual(result["persistence"]["state"], "up")
             self.assertEqual(result["persistence"]["pending_total"], 1)
             self.assertEqual(result["backup"]["s3_state"], "passed")
+            self.assertEqual(result["backup"]["data_s3_state"], "passed")
             details = operational_details(runtime, "backup")
             self.assertTrue(any(entry["fields"].get("operation") == "Cópia remota S3"
                                 for entry in details["entries"]))

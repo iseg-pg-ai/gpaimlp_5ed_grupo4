@@ -12,6 +12,7 @@ import path from "node:path";
 import { validateCatalogInput, type CatalogInput, type CatalogRecord } from "./catalog-schema.ts";
 import { CatalogConflict, CatalogStore, catalogRoot } from "./catalog-store.ts";
 import { PortalPythonError } from "./python-portal.ts";
+import { enqueueDataChange } from "./data-s3-outbox.ts";
 import { operationalRoot } from "./version-persistence.ts";
 
 type PendingCatalogWrite = {
@@ -97,7 +98,14 @@ export async function syncPendingCatalog(store: CatalogStore, root = operational
         a.item.createdAt.localeCompare(b.item.createdAt),
     );
   for (const { file, item } of entries) {
-    await store.save(item.input, item.operationId);
+    const record = await store.save(item.input, item.operationId);
+    enqueueDataChange(
+      "catalog.save",
+      item.operationId,
+      item.input.id ?? record.id,
+      item.input,
+      root,
+    );
     unlinkSync(file);
   }
   return entries.length;
@@ -113,7 +121,9 @@ export async function persistCatalog(
   const store = new CatalogStore(options.catalogRoot ?? catalogRoot());
   try {
     await syncPendingCatalog(store, queueRoot);
-    return { queued: false, record: await store.save(input, id) };
+    const record = await store.save(input, id);
+    enqueueDataChange("catalog.save", id, input.id ?? record.id, input, queueRoot);
+    return { queued: false, record };
   } catch (error) {
     if (
       error instanceof CatalogConflict ||

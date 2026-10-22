@@ -1,14 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -72,7 +64,13 @@ test("grava diretamente em SQL quando a base está disponível", (t) => {
   );
   assert.equal(result.queued, false);
   assert.equal(result.record.version, 1);
-  assert.equal(existsSync(operations), false);
+  const events = readdirSync(path.join(operations, "data-s3-outbox"));
+  assert.equal(events.length, 1);
+  const event = JSON.parse(
+    readFileSync(path.join(operations, "data-s3-outbox", events[0]), "utf8"),
+  );
+  assert.equal(event.operationType, "version.save");
+  assert.equal(event.syncState, "pending");
   const store = new VersionStore(versions);
   assert.equal(store.list("sql-online").length, 1);
   store.close();

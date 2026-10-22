@@ -1,5 +1,27 @@
 # Plano de evolução do BLU AI System
 
+## S3 como fonte autoritativa de dados — 2026-10-22
+
+Objetivo confirmado: o bucket de dados contém fontes, warehouse e todo o estado
+operacional do portal. O disco da instância conserva apenas uma cache temporária,
+reconstruível e exterior ao repositório. O bucket de backups mantém checkpoints
+imutáveis para o protocolo de recuperação.
+
+- [x] Definir releases operacionais completas com manifesto, hashes e apontador ativo.
+- [x] Incluir catálogo, histórico, propostas PDF e operações pendentes na release.
+- [x] Materializar atomicamente uma release S3 numa cache temporária validada.
+- [x] Representar eliminações pela ausência na release ativa, preservando revisões.
+- [x] Migrar e validar o estado local atual no bucket antes da mudança de caminhos.
+- [x] Cobrir catálogo, versões, Lixo, restauros, partilhas, PDFs e ações do agente
+  com publicação confirmada ou operação remota pendente.
+- [ ] Executar portal, ETL e Observatório exclusivamente sobre a cache temporária.
+- [ ] Fazer `just blu up` reconstruir o estado ativo a partir do bucket de dados.
+- [ ] Fazer `just blu it` restaurar um checkpoint do bucket de backups e publicar
+  explicitamente o estado recuperado como nova release ativa.
+- [ ] Validar indisponibilidade S3, concorrência, repetição e recuperação ponta a ponta.
+- [ ] Depois da validação e de autorização destrutiva, remover os dados persistentes
+  locais do diretório do projeto.
+
 ## Persistência operacional independente do ETL — 2026-10-22
 
 - [x] Mapear o warehouse e as duas bases SQLite operacionais.
@@ -17,12 +39,35 @@
 - [x] Organizar objetos por ambiente, tipo e data, sem substituição ou eliminação.
 - [x] Expor SQL, filas pendentes, último sync e estado S3 no Monitoring.
 - [x] Validar restauro remoto, falha de rede e sincronização idempotente com mocks.
-- [ ] Validar IAM, encriptação e restauro num bucket real autorizado.
+- [x] Validar IAM, AES-256, versionamento, upload e restauro num bucket real.
 - [ ] Aprovar e configurar uma lifecycle policy de retenção no bucket.
 
-O SQLite continua adequado ao deployment atual de instância única. Uma base
-gerida só se justifica com múltiplas réplicas ou escritores concorrentes. A fila
-JSON é transitória e não constitui outra fonte de verdade.
+## Transporte S3 de dados ETL — 2026-10-22
+
+- [x] Separar o bucket de dados do bucket de checkpoints operacionais.
+- [x] Publicar releases imutáveis de fontes e warehouse com manifesto final.
+- [x] Excluir o catálogo SQLite operacional das fontes S3.
+- [x] Bloquear warehouse sem validação aprovada.
+- [x] Validar tamanho e SHA-256 após upload e download.
+- [x] Recuperar apenas para diretórios novos ou vazios, sem substituir dados ativos.
+- [x] Validar releases reais de fontes e warehouse no bucket autorizado.
+- [ ] Aprovar lifecycle policies distintas para fontes, warehouse e testes.
+
+## Reinício identificado e alterações contínuas S3 — implementação transitória
+
+- [x] Associar cada `just blu up` a um checkpoint com identificador único.
+- [x] Parar todos os serviços depois do checkpoint e reerguê-los de forma controlada.
+- [x] Recuperar primeiro o checkpoint da execução e usar o bucket de dados como fallback.
+- [x] Preservar ficheiros locais atuais durante o fallback de fontes e warehouse.
+- [x] Criar uma outbox para cada alteração SQL confirmada do portal.
+- [x] Enviar alterações periodicamente e remover JSON apenas após confirmação S3.
+- [ ] Executar um ciclo real completo de `just blu up` com paragem e reinício.
+
+Esta implementação é transitória e não satisfaz a decisão posterior de usar S3
+como fonte autoritativa. O SQLite continuará a existir apenas como cache local
+de acesso enquanto o portal permanecer numa única instância; a release S3 ativa
+é a fonte permanente. A fila JSON é transitória e não constitui outra fonte de
+verdade.
 
 ## Arranque com checkpoint e sincronização — 2026-10-22
 

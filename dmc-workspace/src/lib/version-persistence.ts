@@ -12,6 +12,7 @@ import path from "node:path";
 import type { Snapshot, VersionMeta } from "./itinerary-pdf.ts";
 import { canonicalSnapshot, validateSnapshot } from "./snapshot-validation.ts";
 import { checkTripId, VersionConflict, VersionStore } from "./version-store.ts";
+import { enqueueDataChange } from "./data-s3-outbox.ts";
 
 export type PendingVersionWrite = {
   schemaVersion: 2;
@@ -134,6 +135,7 @@ export function syncPendingVersions(store: VersionStore, root = operationalRoot(
       undefined,
       item.operationId,
     );
+    enqueueDataChange("version.save", item.operationId, item.tripId, item, root);
     unlinkSync(file);
     synchronized += 1;
   }
@@ -167,6 +169,13 @@ export function persistVersion(
       input.baseVersion,
       undefined,
       id,
+    );
+    enqueueDataChange(
+      "version.save",
+      id,
+      input.tripId,
+      item,
+      options.operationalRoot ?? operationalRoot(),
     );
     return { queued: false, record, synchronized: synchronized.synchronized };
   } catch (error) {

@@ -20,6 +20,7 @@ import { agentFailure } from "@/lib/agent-errors";
 import { recentConversation } from "@/lib/assistant-conversation";
 import { proposalImpact } from "@/lib/assistant-impact";
 import { requestIntent, assertPlanIntent, IntentConflict } from "@/lib/assistant-intent";
+import { syncOperationalState } from "@/lib/operational-s3";
 
 export const runtime = "nodejs";
 type Language = "pt" | "en";
@@ -272,6 +273,7 @@ export async function POST(request: Request) {
       noStoreHeaders,
     );
   } finally {
+    await syncOperationalState();
     store.close();
   }
 }

@@ -123,6 +123,17 @@ export BLU_BACKUP_S3_PREFIX=blu-backups
 just blu up
 ```
 
+Os launchers carregam estas chaves reconhecidas a partir do `.env` local, sem
+executar o ficheiro como código. Valores já exportados no terminal prevalecem.
+
+O bucket de dados é separado dos checkpoints. Releases validadas podem ser
+publicadas e recuperadas com `python3 -B -m etl.s3_transport`; os contratos e
+comandos estão em [Dados e operações](docs/DATA_PIPELINE.md#origem-etl-em-s3).
+O mesmo bucket guarda releases operacionais versionadas do catálogo, itinerários
+e propostas. O SQLite é materializado como cache porque o S3 não executa uma base
+SQL diretamente; a migração dos launchers para essa cache está registada no
+[plano](PLAN.md#s3-como-fonte-autoritativa-de-dados).
+
 O S3 guarda objetos imutáveis por ambiente e data. Sem cópia local válida, o
 arranque tenta automaticamente a cópia remota mais recente. Configuração KMS,
 permissões mínimas e recuperação manual estão no
@@ -142,7 +153,16 @@ detalhes e limites estão no
 
 O `just blu it` também guarda e verifica um backup antes de parar os serviços;
 uma falha impede a paragem. Depois de parar, guarda outra cópia do estado estável.
-O `just blu up` continua a preservar os serviços que já estão ativos.
+O `just blu up` faz um reinício controlado. Cria um identificador único, guarda
+um checkpoint local e tenta confirmá-lo no S3, para todos os serviços BLU e
+recupera primeiro esse checkpoint. Se a cópia específica não estiver disponível,
+recupera apenas ficheiros ausentes das releases de fontes e warehouse no bucket
+de dados. Depois sincroniza operações pendentes, inicia e confirma os serviços.
+
+Cada alteração confirmada do catálogo ou das versões gera também um evento numa
+outbox persistente. O Monitoring envia estes eventos de forma idempotente para
+`operational-changes/` no bucket de dados e só remove o JSON local depois da
+confirmação remota. Falhas de rede mantêm a operação pendente.
 
 Quando executados num terminal interativo do VS Code/SageMaker, ambos os comandos
 abrem o Codex num **novo terminal em split**, ao lado do Bash de origem. O painel

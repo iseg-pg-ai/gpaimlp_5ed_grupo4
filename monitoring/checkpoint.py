@@ -102,10 +102,12 @@ def _verify(snapshot: Path) -> dict:
     return manifest
 
 
-def create(root: Path, store: Path) -> Path:
+def create(root: Path, store: Path, backup_id: str | None = None) -> Path:
     created_at = datetime.now(timezone.utc).isoformat()
-    backup_id = (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ-")
-                 + uuid4().hex[:12])
+    backup_id = backup_id or (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ-")
+                              + uuid4().hex[:12])
+    if not all(character.isalnum() or character in ".-_" for character in backup_id):
+        raise ValueError("Identificador de backup inválido.")
     with private_store(store):
         with tempfile.TemporaryDirectory(prefix=".pending-", dir=store) as temporary:
             pending = Path(temporary)
@@ -222,12 +224,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("create", "restore-missing"))
     parser.add_argument("--backup-id", help="Restaurar ausências a partir desta versão específica.")
+    parser.add_argument("--execution-id",
+                        help="Usar este identificador único no backup criado pela execução.")
     parser.add_argument("--remote-required", action="store_true",
                         help="Falhar a criação se o upload S3 configurado não for confirmado.")
     args = parser.parse_args()
     store = backup_home(ROOT)
     if args.command == "create":
-        snapshot = create(ROOT, store)
+        snapshot = create(ROOT, store, args.execution_id)
         print(f"Backup local verificado: {snapshot}")
         from monitoring.s3_checkpoint import S3Config, upload
         config = S3Config.from_environment()
