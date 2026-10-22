@@ -1,5 +1,16 @@
 # Plano de evolução do BLU AI System
 
+## Backups antes do arranque e recuperação — 2026-10-22
+
+- [x] Guardar dados fora do projeto antes de qualquer paragem do launcher.
+- [x] Recuperar ausências sem substituir ficheiros atuais no arranque.
+- [x] Validar cópia real local e testes isolados de integridade e recuperação.
+
+Validação: 39 testes de checkpoint, Monitoring e operações aprovados, sintaxe
+shell aprovada e primeira cópia real verificada fora do projeto, sem parar
+serviços. O restauro completo dos dados reais e o ciclo de paragem/arranque não
+foram executados nesta alteração.
+
 Plano consolidado em 20 de outubro de 2026. Mantém apenas trabalho aberto e
 condições que afetam decisões futuras. O histórico de implementação permanece no
 Git e em [docs/DECISIONS.md](docs/DECISIONS.md).

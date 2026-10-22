@@ -14,3 +14,4 @@ ignores:
   - "dmc-workspace/AGENTS.md"
   - "dmc-workspace/CLAUDE.md"
   - "sagemaker-code-editor-server-data/**"
+  - "monitoring/runtime/**"

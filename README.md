@@ -88,6 +88,20 @@ O comando mantém serviços ativos, inicia os que estejam parados, confirma os
 cinco endpoints e abre as quatro interfaces. A porta técnica 8000 é validada,
 mas não abre um separador.
 
+Antes do arranque, recupera ficheiros em falta do último backup verificado e
+guarda uma nova cópia em `/home/blu-system-backups/sagemaker-user` neste ambiente
+(por defeito, `blu-system-backups/<nome-do-projeto>` ao lado do projeto).
+É possível escolher outro destino fora do projeto com `BLU_BACKUP_DIR`.
+O destino deve permitir escrita pelo utilizador que executa o comando.
+As cópias incluem `data/`, `warehouse/`, `exports/` e ficheiros JSON, JSONL e
+SQLite persistentes diretamente em `monitoring/runtime/`, incluindo contas.
+São privadas, verificadas por SHA-256 e acumuladas sem eliminação automática.
+SQLite usa a API de backup para incluir transações confirmadas no WAL.
+Ficheiros existentes têm prioridade; dados em falta são recuperados sem repetir
+o ETL. Rascunhos do navegador, dependências, builds e credenciais AWS não entram
+nestas cópias. Uma cópia com serviços ativos não garante uma transação conjunta
+entre catálogo e exports; evitar edições durante o comando.
+
 Para uma recuperação integral autenticada:
 
 ```bash
@@ -99,6 +113,10 @@ prepara dependências, inicializa um clone novo ou recupera dados existentes,
 executa testes, constrói o portal, reinicia o sistema e abre as interfaces. Os
 detalhes e limites estão no
 [guia de operações](docs/OPERATIONS.md#recuperação-local).
+
+O `just blu it` também guarda e verifica um backup antes de parar os serviços;
+uma falha impede a paragem. Depois de parar, guarda outra cópia do estado estável.
+O `just blu up` continua a preservar os serviços que já estão ativos.
 
 O SageMaker pode exigir a renovação da sessão pela consola AWS; os comandos não
 conseguem renovar tokens externos expirados.

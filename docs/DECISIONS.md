@@ -1,5 +1,19 @@
 # Decisões e questões abertas
 
+## Backups locais fora do projeto no launcher — 2026-10-22
+
+- `monitoring.checkpoint` guarda fontes, warehouse, exports e estado persistente
+  direto do Monitoring fora do projeto, com permissões privadas e SHA-256.
+- SQLite usa a API de backup; o arranque recupera apenas ficheiros ausentes,
+  preservando alterações atuais. O último backup tem de passar a verificação.
+- `just blu up` mantém serviços ativos. `just blu it` exige uma cópia verificada
+  antes da paragem e cria outra com serviços parados. Uma falha impede avançar.
+- Não há retenção automática nem cópia de rascunhos do navegador ou ambientes.
+  Cópias com serviços ativos não garantem atomicidade entre vários conjuntos.
+- Evidência: 39 testes de checkpoint, Monitoring e operações aprovados e primeira
+  cópia local real verificada em 22 de outubro. Sem executar paragem ou restauro
+  dos dados reais.
+
 Os registos históricos conservam as datas e a evidência original. O mapa atual
 está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
@@ -744,7 +758,6 @@ o contexto histórico e o Git preserva versões anteriores.
 O lint Markdown ignora diretórios ocultos e extensões do ambiente SageMaker, que não
 pertencem ao repositório. A apresentação deixa de conter o identificador de um
 espaço Studio: o destino do portal deriva do URL atual, com fallback local.
-
 
 ## 2026-10-20 — Preparação independente de clones de desenvolvimento
 

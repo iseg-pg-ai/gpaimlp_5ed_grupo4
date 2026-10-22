@@ -6,6 +6,7 @@ Thumbs.db
 *~
 /.bash_history
 /.bashrc
+/.profile
 /.gitconfig
 /.wget-hsts
 /user-default-efs
