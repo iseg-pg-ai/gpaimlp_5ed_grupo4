@@ -15,6 +15,7 @@ data/portal/catalog.sqlite — catálogo editável, revisões e aprovações
      -> dmc-workspace/ — portal operacional
         -> localStorage — rascunhos e preferências
         -> exports/itineraries/ — versões, hashes e PDFs históricos
+        -> exports/portal-persistence/ — escritas pendentes enquanto SQLite está indisponível
      -> monitoring/ — saúde, eventos, incidentes e backups locais
      -> presentation/ — apresentação estática independente
 ```
@@ -22,6 +23,13 @@ data/portal/catalog.sqlite — catálogo editável, revisões e aprovações
 O catálogo operacional e o histórico estão fora do Git e precisam de backup.
 O portal não reescreve o warehouse; o ETL não modifica as fontes. Uma alteração
 no catálogo não altera uma proposta já guardada.
+
+O ciclo de vida do ETL abrange apenas `warehouse/`. As bases operacionais
+`data/portal/catalog.sqlite` e `exports/itineraries/history.sqlite` devem estar
+num volume persistente. Uma reconstrução pode substituir o warehouse e os
+containers, mas não deve apagar `data/portal/` nem `exports/`. Em deployment,
+`BLU_DATA_DIR`, `BLU_EXPORT_DIR` e `BLU_OPERATIONAL_DIR` permitem montar estes
+diretórios fora do filesystem efémero do processo.
 
 ## Pontos de entrada e responsabilidades
 
@@ -107,6 +115,17 @@ Para testes isolados, `BLU_DATA_DIR` e `BLU_WAREHOUSE_DIR` substituem os diretó
 padrão, incluindo no endpoint de publicação. Caminhos relativos resolvem a partir
 da raiz do projeto. A base operacional fica em `BLU_DATA_DIR/portal/catalog.sqlite`.
 `BLU_EXPORT_DIR` continua a controlar apenas o histórico de versões e PDFs.
+
+As novas versões e revisões do catálogo usam `version-persistence.ts` e
+`catalog-persistence.ts`. Uma gravação tenta primeiro o SQLite autoritativo. Se a
+base estiver indisponível, guarda uma operação validada em
+`BLU_OPERATIONAL_DIR/pending-versions/` ou `pending-catalog/`; por defeito, a área
+é `exports/portal-persistence/`. Cada operação tem uma chave SHA-256 determinística,
+registada na mesma transação SQL em `portal_operations`. A sincronização é tentada
+automaticamente antes de novas gravações e leituras. Uma repetição depois de um
+commit devolve o resultado já confirmado e não cria outra versão ou revisão. O
+JSON só é removido depois dessa confirmação; nunca se torna uma segunda fonte de
+verdade permanente.
 
 O painel meteorológico usa `popover`, `popovertarget` e fecho HTML nativo, sem
 estado React de abertura nem listeners globais. O histórico usa formulário GET

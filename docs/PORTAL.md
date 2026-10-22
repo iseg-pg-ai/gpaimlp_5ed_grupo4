@@ -419,6 +419,11 @@ escaping das fontes; valores vazios aparecem como «—».
 mesmos caminhos, permitindo testar edição e ETL sem tocar nas pastas reais.
 Para versões e PDFs temporários, definir também `BLU_EXPORT_DIR`. As fontes
 necessárias devem existir no diretório de dados escolhido.
+`BLU_OPERATIONAL_DIR` pode colocar a fila temporária de versões noutro volume;
+sem configuração, usa `exports/portal-persistence/`. Em produção, estes três
+diretórios operacionais devem ser montados fora do filesystem efémero do
+container. O JSON pendente é removido apenas depois de a operação ficar registada
+no SQLite e pode ser restaurado pelos backups do Monitoring.
 
 ## Resolução de problemas
 

@@ -145,8 +145,9 @@ O resultado da tentativa fica em `monitoring/runtime/backup-schedule.json`. O ci
 começa no arranque se não existir uma tentativa recente e não substitui um destino
 externo cifrado, que depende da arquitetura de deployment.
 
-Para criar uma cópia local do catálogo SQLite, warehouse e itinerários e validar
-imediatamente hashes, integridade SQLite e restauro num diretório temporário:
+Para criar uma cópia local do catálogo SQLite, warehouse, itinerários e operações
+JSON pendentes, e validar imediatamente hashes, integridade SQLite e restauro num
+diretório temporário:
 
 ```bash
 python -B -m monitoring.backup create-and-verify

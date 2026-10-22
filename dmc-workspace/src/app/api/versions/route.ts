@@ -3,6 +3,7 @@ import { zipSync } from "fflate";
 import { TranslationError } from "@/lib/local-translation";
 import { isLocale } from "@/lib/locales";
 import { VersionStore, VersionConflict, checkTripId } from "@/lib/version-store";
+import { persistVersion, syncPendingVersions } from "@/lib/version-persistence";
 import { jsonError, noStoreHeaders } from "@/lib/server-http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -28,21 +29,19 @@ export async function POST(request: Request) {
   } catch (e) {
     return jsonError(e instanceof Error ? e.message : "Pedido inválido.", 400);
   }
-  const store = new VersionStore();
   try {
-    return Response.json(
-      store.save(
-        body.tripId,
-        {
-          brief: body.snapshot.brief,
-          itinerary: body.snapshot.itinerary,
-          pending: body.snapshot.pending,
-        },
-        body.reason,
-        body.baseVersion,
-      ),
-      { headers: noStoreHeaders },
-    );
+    const result = persistVersion({
+      tripId: body.tripId,
+      snapshot: {
+        brief: body.snapshot.brief,
+        itinerary: body.snapshot.itinerary,
+        pending: body.snapshot.pending,
+      },
+      reason: body.reason,
+      baseVersion: body.baseVersion,
+    });
+    if (result.queued) return Response.json(result, { status: 202, headers: noStoreHeaders });
+    return Response.json(result.record, { headers: noStoreHeaders });
   } catch (e) {
     return jsonError(
       e instanceof VersionConflict
@@ -50,8 +49,6 @@ export async function POST(request: Request) {
         : "Não foi possível guardar a versão. Tente novamente.",
       e instanceof VersionConflict ? 409 : 500,
     );
-  } finally {
-    store.close();
   }
 }
 export async function GET(request: Request) {
@@ -64,6 +61,11 @@ export async function GET(request: Request) {
   }
   const store = new VersionStore();
   try {
+    try {
+      syncPendingVersions(store);
+    } catch (error) {
+      console.error("Pending version synchronization failed", error);
+    }
     if (!params.has("version"))
       return Response.json(store.list(id ?? undefined), { headers: noStoreHeaders });
     if (!id) return jsonError("Indique a viagem.", 400);

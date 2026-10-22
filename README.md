@@ -275,6 +275,9 @@ npm run dev -- -p 3001
 Abrir [http://localhost:3001](http://localhost:3001). O Python do portal pode ser
 indicado por `BLU_PYTHON`; a tradução usa `BLU_TRANSLATION_PYTHON`.
 As versões e PDFs usam `BLU_EXPORT_DIR` ou `exports/itineraries/` por defeito.
+As versões que aguardam recuperação do SQLite usam `BLU_OPERATIONAL_DIR` ou
+`exports/portal-persistence/`. Em containers, `data/portal/` e `exports/` têm de
+ser volumes persistentes e independentes da publicação do ETL em `warehouse/`.
 O [guia do portal](dmc-workspace/README.md) descreve SageMaker, proxy e fontes CJK.
 
 O dashboard analítico pode ser iniciado, com o grupo `dashboard` instalado:

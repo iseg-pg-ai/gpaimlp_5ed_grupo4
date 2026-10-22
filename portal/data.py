@@ -151,7 +151,7 @@ def main() -> None:
                     store.import_warehouse(params["warehouse"])
                     result = None
                 elif operation == "catalog-save":
-                    result = store.save_validated(params["input"])
+                    result = store.save_validated(params["input"], params.get("operationId"))
                 elif operation == "catalog-published":
                     result = store.published_flags(params["rows"])
                 else:

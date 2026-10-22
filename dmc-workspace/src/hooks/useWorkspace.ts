@@ -193,10 +193,23 @@ export function useWorkspace() {
       }
       await responseJson(response);
     }
-    const result = await responseJson<{ version: number }>(response);
-    if (!Number.isSafeInteger(result?.version) || result.version < 1)
+    const result = await responseJson<{
+      version?: number;
+      queued?: boolean;
+      expectedVersion?: number;
+    }>(response);
+    if (result.queued) {
+      if (!Number.isSafeInteger(result.expectedVersion) || result.expectedVersion! < 1)
+        throw new Error("Confirmação temporária inválida recebida do servidor.");
+      setStorageError(
+        "A base operacional está temporariamente indisponível. A alteração ficou protegida na fila persistente e será sincronizada automaticamente.",
+      );
+      return { ...trip, version: result.expectedVersion };
+    }
+    const savedVersion = result.version;
+    if (!Number.isSafeInteger(savedVersion) || savedVersion === undefined || savedVersion < 1)
       throw new Error("Versão inválida recebida do servidor.");
-    return { ...trip, version: result.version };
+    return { ...trip, version: savedVersion };
   };
   const update = async (fn: (trip: Trip) => Trip | Promise<Trip>) => {
     if (!active || operation.current) return false;

@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import shutil
 import sqlite3
 import tempfile
 import unittest
@@ -86,16 +87,21 @@ class OperationsTest(unittest.TestCase):
             (root / "warehouse/validation_report.json").write_text('{"status":"passed"}')
             (root / "exports/itineraries").mkdir(parents=True)
             (root / "exports/itineraries/item.pdf").write_bytes(b"pdf")
+            (root / "exports/portal-persistence/pending-versions").mkdir(parents=True)
+            (root / "exports/portal-persistence/pending-versions/item.json").write_text("{}")
             create_backup(root, runtime)
             preserved = ensure_recovery(root, runtime)
             self.assertEqual(preserved["outcome"], "preserved")
             (root / "data/portal/catalog.sqlite").unlink()
             (root / "exports/itineraries/item.pdf").unlink()
             (root / "exports/itineraries").rmdir()
+            shutil.rmtree(root / "exports/portal-persistence")
             restored = ensure_recovery(root, runtime)
             self.assertEqual(restored["outcome"], "restored")
-            self.assertEqual(set(restored["restored"]), {"catalog", "itineraries"})
+            self.assertEqual(set(restored["restored"]),
+                             {"catalog", "itineraries", "portal-persistence"})
             self.assertTrue((root / "exports/itineraries/item.pdf").is_file())
+            self.assertTrue((root / "exports/portal-persistence/pending-versions/item.json").is_file())
 
     def test_backup_scheduler_runs_once_per_interval_and_records_failure(self):
         with tempfile.TemporaryDirectory() as directory:

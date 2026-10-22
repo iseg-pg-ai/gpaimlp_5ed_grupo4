@@ -79,7 +79,8 @@ def create_backup(root: Path, runtime: Path) -> Path:
         with sqlite3.connect(catalog) as source, sqlite3.connect(destination) as output:
             source.backup(output)
     for name, source in (("warehouse", root / "warehouse"),
-                         ("itineraries", root / "exports/itineraries")):
+                         ("itineraries", root / "exports/itineraries"),
+                         ("portal-persistence", root / "exports/portal-persistence")):
         if source.exists():
             shutil.copytree(source, temporary / name)
     artifacts = []

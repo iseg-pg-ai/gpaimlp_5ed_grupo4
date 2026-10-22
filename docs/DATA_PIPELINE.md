@@ -70,6 +70,13 @@ ETL incorpora apenas revisões aprovadas, preservando IDs e histórico. O portal
 sempre a oferta publicada no warehouse para gerar itinerários. Consulte o
 [contrato do catálogo local](../data/portal/README.md).
 
+Esta base e `exports/itineraries/history.sqlite` são operacionais e não pertencem
+ao ciclo de vida do ETL. Recriar `warehouse/` não as remove. Os deployments devem
+montar `data/portal/` e `exports/` em armazenamento persistente separado do
+container. Se uma base SQLite operacional estiver temporariamente indisponível,
+as novas versões ou revisões ficam em JSON sob `BLU_OPERATIONAL_DIR` e são
+sincronizadas de forma idempotente quando a base regressa.
+
 ## Validação e testes
 
 ```powershell
@@ -170,6 +177,7 @@ depois de serem definidos a cadência, a origem e o processo de aprovação.
 ### Cópias de segurança
 
 - Fazer backup de `exports/itineraries/` para preservar versões e PDFs.
+- Fazer backup de `exports/portal-persistence/` enquanto existirem operações pendentes.
 - Fazer backup de `data/portal/catalog.sqlite` com o portal e o ETL parados.
 - Não guardar segredos, credenciais ou ficheiros `.env` no Git.
 - Não tratar `warehouse/` como fonte editável.

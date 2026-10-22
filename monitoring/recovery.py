@@ -136,6 +136,11 @@ def ensure_recovery(root: Path, runtime: Path) -> dict:
         _replace_directory(backup / "itineraries", root / "exports/itineraries",
                            quarantine / "itineraries")
         restored.append("itineraries")
+    pending = root / "exports/portal-persistence"
+    if not pending.exists() and (backup / "portal-persistence").is_dir():
+        _replace_directory(backup / "portal-persistence", pending,
+                           quarantine / "portal-persistence")
+        restored.append("portal-persistence")
     after = system_state(root)
     if not all(after.values()):
         raise ValueError("O backup não contém todos os conjuntos necessários.")

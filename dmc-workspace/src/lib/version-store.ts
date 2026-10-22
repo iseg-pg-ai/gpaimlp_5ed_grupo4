@@ -86,7 +86,9 @@ export class VersionStore {
         token TEXT PRIMARY KEY, tripId TEXT NOT NULL, version INTEGER NOT NULL,
         locale TEXT NOT NULL, method TEXT NOT NULL, recipient TEXT NOT NULL,
         createdAt TEXT NOT NULL,
-        FOREIGN KEY(tripId,version) REFERENCES versions(tripId,version));`);
+        FOREIGN KEY(tripId,version) REFERENCES versions(tripId,version));
+      CREATE TABLE IF NOT EXISTS portal_operations (
+        id TEXT PRIMARY KEY, kind TEXT NOT NULL, result TEXT NOT NULL, createdAt TEXT NOT NULL);`);
     const versionColumns = this.db
       .prepare("PRAGMA table_info(versions)")
       .all() as unknown as Array<{
@@ -344,12 +346,24 @@ export class VersionStore {
     reason: string,
     baseVersion: number | null,
     onSaved?: (version: number) => void,
+    operationId?: string,
   ): VersionMeta {
     checkTripId(tripId);
+    if (operationId && !/^[a-f0-9]{64}$/.test(operationId))
+      throw new Error("Identificador da operação inválido.");
     const serialized = canonical(snapshot),
       snapshotHash = hash(serialized);
     this.db.exec("BEGIN IMMEDIATE");
     try {
+      if (operationId) {
+        const completed = this.db
+          .prepare("SELECT result FROM portal_operations WHERE id=? AND kind='version.save'")
+          .get(operationId) as unknown as { result: string } | undefined;
+        if (completed) {
+          this.db.exec("COMMIT");
+          return JSON.parse(completed.result) as VersionMeta;
+        }
+      }
       const previous = this.db
         .prepare("SELECT * FROM versions WHERE tripId=? ORDER BY version DESC LIMIT 1")
         .get(tripId) as unknown as Stored | undefined;
@@ -361,8 +375,13 @@ export class VersionStore {
       if (previous?.snapshotHash === snapshotHash) {
         if (previous.trashedAt) this.restoreVersion(tripId, previous.version);
         onSaved?.(previous.version);
+        const result = this.list(tripId)[0];
+        if (operationId)
+          this.db
+            .prepare("INSERT INTO portal_operations VALUES (?, 'version.save', ?, ?)")
+            .run(operationId, JSON.stringify(result), new Date().toISOString());
         this.db.exec("COMMIT");
-        return this.list(tripId)[0];
+        return result;
       }
       if ((previous?.version ?? null) !== baseVersion)
         throw new VersionConflict(
@@ -390,8 +409,7 @@ export class VersionStore {
           serialized,
         );
       onSaved?.(version);
-      this.db.exec("COMMIT");
-      return {
+      const result = {
         tripId,
         version,
         filename,
@@ -401,6 +419,12 @@ export class VersionStore {
         chainHash,
         parentVersion: previous?.version ?? null,
       };
+      if (operationId)
+        this.db
+          .prepare("INSERT INTO portal_operations VALUES (?, 'version.save', ?, ?)")
+          .run(operationId, JSON.stringify(result), createdAt);
+      this.db.exec("COMMIT");
+      return result;
     } catch (error) {
       this.db.exec("ROLLBACK");
       throw error;

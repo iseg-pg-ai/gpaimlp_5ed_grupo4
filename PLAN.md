@@ -1,5 +1,19 @@
 # Plano de evolução do BLU AI System
 
+## Persistência operacional independente do ETL — 2026-10-22
+
+- [x] Mapear o warehouse e as duas bases SQLite operacionais.
+- [x] Manter catálogo, histórico e fila fora do ciclo de publicação do ETL.
+- [x] Proteger versões e revisões novas em JSON quando o SQLite está indisponível.
+- [x] Sincronizar por chave idempotente e apagar apenas após confirmação SQL.
+- [x] Incluir a fila persistente no backup e no restauro locais.
+- [ ] Montar `data/portal/`, `exports/` e o destino de backup cifrado em volumes
+  duráveis no deployment de produção.
+
+O SQLite continua adequado ao deployment atual de instância única. Uma base
+gerida só se justifica com múltiplas réplicas ou escritores concorrentes. A fila
+JSON é transitória e não constitui outra fonte de verdade.
+
 ## Backups antes do arranque e recuperação — 2026-10-22
 
 - [x] Guardar dados fora do projeto antes de qualquer paragem do launcher.

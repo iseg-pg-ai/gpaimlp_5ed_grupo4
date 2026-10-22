@@ -1,5 +1,25 @@
 # Decisões e questões abertas
 
+## Persistência das versões independente do ETL — 2026-10-22
+
+O `warehouse/blu_etl.sqlite` continua a ser uma entrega regenerável. O catálogo
+em `data/portal/catalog.sqlite` e o histórico em
+`exports/itineraries/history.sqlite` são bases operacionais e não são destruídos
+pela publicação do ETL. Mantém-se SQLite porque o deployment atual tem um único
+escritor, as transações e o backup já existem e uma migração para outra tecnologia
+não resolveria por si só a durabilidade do volume.
+
+As gravações de versões e revisões do catálogo usam uma fila JSON transitória em
+`exports/portal-persistence/` ou `BLU_OPERATIONAL_DIR`. A chave SHA-256 do pedido
+é confirmada na mesma transação da versão, permitindo repetir uma operação depois
+de uma falha sem duplicar dados. O ficheiro só é removido após confirmação SQL.
+O backup e o restauro locais incluem a fila. Produção continua a exigir volumes
+persistentes e backup externo cifrado; a fila não substitui esses controlos.
+
+Evidência: testes dos dois domínios com SQL disponível, SQL indisponível,
+sincronização posterior, repetição após commit e restauro da fila. Sem migração,
+alteração destrutiva, deployment ou dados reais.
+
 ## Backups locais fora do projeto no launcher — 2026-10-22
 
 - `monitoring.checkpoint` guarda fontes, warehouse, exports e estado persistente
