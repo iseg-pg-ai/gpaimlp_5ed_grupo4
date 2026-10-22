@@ -14,6 +14,14 @@ O SQLite continua adequado ao deployment atual de instância única. Uma base
 gerida só se justifica com múltiplas réplicas ou escritores concorrentes. A fila
 JSON é transitória e não constitui outra fonte de verdade.
 
+## Arranque com checkpoint e sincronização — 2026-10-22
+
+- [x] Restaurar no `just blu up` o checkpoint externo válido mais recente.
+- [x] Recuar para uma versão anterior quando a mais recente estiver corrompida.
+- [x] Inicializar estado novo e sincronizar JSON antes de iniciar serviços.
+- [x] Versionar metadados por recurso e permitir restauro manual identificado.
+- [x] Excluir credenciais, sessões e tokens das cópias.
+
 ## Backups antes do arranque e recuperação — 2026-10-22
 
 - [x] Guardar dados fora do projeto antes de qualquer paragem do launcher.

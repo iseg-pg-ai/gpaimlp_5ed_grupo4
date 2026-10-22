@@ -94,13 +94,24 @@ guarda uma nova cópia em `/home/blu-system-backups/sagemaker-user` neste ambien
 É possível escolher outro destino fora do projeto com `BLU_BACKUP_DIR`.
 O destino deve permitir escrita pelo utilizador que executa o comando.
 As cópias incluem `data/`, `warehouse/`, `exports/` e ficheiros JSON, JSONL e
-SQLite persistentes diretamente em `monitoring/runtime/`, incluindo contas.
-São privadas, verificadas por SHA-256 e acumuladas sem eliminação automática.
+SQLite operacionais não secretos diretamente em `monitoring/runtime/`.
+As contas, sessões, tokens e estado privado do editor são excluídos. As cópias
+são privadas, verificadas por SHA-256 e acumuladas sem eliminação automática.
 SQLite usa a API de backup para incluir transações confirmadas no WAL.
 Ficheiros existentes têm prioridade; dados em falta são recuperados sem repetir
-o ETL. Rascunhos do navegador, dependências, builds e credenciais AWS não entram
+o ETL. Se a cópia mais recente estiver corrompida, o arranque regista a rejeição
+e tenta a versão válida anterior. Rascunhos do navegador, dependências, builds e credenciais não entram
 nestas cópias. Uma cópia com serviços ativos não garante uma transação conjunta
 entre catálogo e exports; evitar edições durante o comando.
+
+O arranque também inicializa de forma controlada um ambiente sem estado, recupera
+os JSON pendentes e sincroniza-os com SQLite antes de iniciar serviços em falta.
+Para recuperar manualmente apenas ficheiros ausentes de uma versão específica:
+
+```bash
+BLU_BACKUP_DIR=/caminho/externo python3 -B -m monitoring.checkpoint \
+  restore-missing --backup-id IDENTIFICADOR
+```
 
 Para uma recuperação integral autenticada:
 

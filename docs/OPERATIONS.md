@@ -28,7 +28,10 @@ máquina, não consegue observar a indisponibilidade total do ambiente.
 ## Recuperação local
 
 `just blu up` é o arranque diário. Mantém processos ativos, inicia apenas os
-serviços parados, verifica os cinco endpoints e abre as quatro interfaces.
+serviços parados, verifica os cinco endpoints e abre as quatro interfaces. Antes
+do arranque, escolhe o checkpoint externo válido mais recente, recupera apenas
+ausências, inicializa um ambiente novo de forma controlada, sincroniza as filas
+JSON e cria outro checkpoint verificado.
 
 `just blu it` é a recuperação integral. Exige autenticação interativa de uma
 conta ativa com perfil `admin` do Monitoring e executa:
@@ -65,6 +68,25 @@ O Git não é backup destes dados. O backup local do Monitoring verifica hashes,
 integridade SQLite e um restauro isolado, mas continua sujeito à falha da mesma
 máquina. Reverter código não implica reverter dados; alterações de esquema exigem
 compatibilidade e plano próprios.
+
+O procedimento de recuperação integral para apenas processos e portas; não apaga
+automaticamente `data/`, `warehouse/` ou `exports/`. `uv sync`, `npm ci` e o build
+podem reconstruir dependências e artefactos efémeros. Os checkpoints ficam fora
+do projeto em `BLU_BACKUP_DIR`, pelo que não dependem desses recursos.
+
+Cada checkpoint tem data, hora, identificador aleatório, versão de esquema,
+estado e inventário por recurso. A publicação é atómica e só ocorre depois da
+verificação de hashes e SQLite. Um checkpoint corrompido é registado em
+`monitoring/runtime/recovery/checkpoint-events.jsonl` e o arranque procura uma
+versão válida anterior. O restauro nunca substitui um ficheiro existente.
+Credenciais, sessões, tokens e dados privados do editor são excluídos.
+
+Restauro manual de uma versão, limitado a ficheiros ausentes:
+
+```bash
+BLU_BACKUP_DIR=/caminho/externo python3 -B -m monitoring.checkpoint \
+  restore-missing --backup-id IDENTIFICADOR
+```
 
 ## Sinais e resposta
 

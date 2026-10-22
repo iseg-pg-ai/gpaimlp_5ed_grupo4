@@ -267,8 +267,14 @@ cd "$ROOT"
 if [ "${BLU_MODE:-it}" = "up" ]; then
     ui_header "QUICK START" "NODE AWS"
     mkdir -p "$RUNTIME" "$SERVICES"
-    python3 -B -m monitoring.checkpoint restore-missing
-    python3 -B -m monitoring.checkpoint create
+    : >> "$LOG"
+    trap fail ERR
+    printf '[%s] just blu up · preparação persistente\n' "$(date -u +%FT%TZ)" >> "$LOG"
+    verify_environment >> "$LOG" 2>&1
+    python3 -B -m monitoring.checkpoint restore-missing >> "$LOG" 2>&1
+    env PYTHONPATH=src python3 -B -m monitoring.recovery ensure >> "$LOG" 2>&1
+    (cd dmc-workspace && node --experimental-strip-types scripts/sync-persistence.mjs) >> "$LOG" 2>&1
+    python3 -B -m monitoring.checkpoint create >> "$LOG" 2>&1
     if [ ! -f monitoring/runtime/credentials.json ]; then
         printf 'Falta configurar o acesso ao Monitoring: python -B -m monitoring.setup\n' >&2
         exit 1
@@ -283,6 +289,7 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
     printf '  %s✓%s  5 endpoints validados\n' "$GREEN" "$RESET"
     printf '  %s✓%s  4 interfaces abertas\n' "$GREEN" "$RESET"
     ui_footer "SYSTEM READY" "just blu up · completed"
+    trap - ERR
     bash scripts/start_codex.sh
     exit 0
 fi
@@ -325,7 +332,11 @@ else
     complete_task "4. Preservar acesso de monitoring"
 fi
 
-run_task "5. Validar ou recuperar dados" env PYTHONPATH=src .venv/bin/python -B -m monitoring.recovery ensure
+run_task "5. Validar ou recuperar dados" bash -c '
+    PYTHONPATH=src .venv/bin/python -B -m monitoring.recovery ensure
+    cd dmc-workspace
+    node --experimental-strip-types scripts/sync-persistence.mjs
+'
 run_task "6. Testar Python e monitoring" bash -c '
     PYTHONPATH=src .venv/bin/python -B -m unittest discover -s tests -v
     PYTHONPATH=src .venv/bin/python -B -m unittest monitoring.test_monitoring monitoring.test_operations -v

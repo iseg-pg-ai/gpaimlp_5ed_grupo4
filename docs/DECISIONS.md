@@ -1,5 +1,19 @@
 # Decisões e questões abertas
 
+## Checkpoint externo integrado no arranque — 2026-10-22
+
+`just blu up` valida o ambiente, recupera apenas ficheiros ausentes do checkpoint
+externo válido mais recente, inicializa bases quando não existe estado anterior e
+sincroniza as filas JSON antes de iniciar serviços. O backup usa publicação
+atómica, identificador temporal e aleatório, manifesto de esquema 2 e inventário
+por recurso. Se a versão mais recente falhar a verificação, regista a rejeição e
+tenta a anterior.
+
+O procedimento para serviços, portas e processos conhecidos; não elimina as
+árvores persistentes. O diretório configurável `BLU_BACKUP_DIR` tem de ficar fora
+do projeto. Credenciais, sessões, tokens e estado privado do editor não entram no
+checkpoint. O restauro específico por identificador preserva ficheiros existentes.
+
 ## Persistência das versões independente do ETL — 2026-10-22
 
 O `warehouse/blu_etl.sqlite` continua a ser uma entrega regenerável. O catálogo
