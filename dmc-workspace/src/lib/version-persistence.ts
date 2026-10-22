@@ -14,8 +14,11 @@ import { canonicalSnapshot, validateSnapshot } from "./snapshot-validation.ts";
 import { checkTripId, VersionConflict, VersionStore } from "./version-store.ts";
 
 export type PendingVersionWrite = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   operationId: string;
+  operationType: "version.save";
+  entity: string;
+  syncState: "pending";
   createdAt: string;
   tripId: string;
   snapshot: Snapshot;
@@ -41,7 +44,7 @@ export const operationalRoot = () => {
 const pendingRoot = (root: string) => path.join(root, "pending-versions");
 
 function operationId(
-  input: Omit<PendingVersionWrite, "schemaVersion" | "operationId" | "createdAt">,
+  input: Pick<PendingVersionWrite, "tripId" | "snapshot" | "reason" | "baseVersion">,
 ) {
   return createHash("sha256")
     .update(
@@ -59,13 +62,20 @@ function validatePending(value: unknown): asserts value is PendingVersionWrite {
   if (!value || typeof value !== "object") throw new Error("Operação pendente inválida.");
   const item = value as PendingVersionWrite;
   if (
-    item.schemaVersion !== 1 ||
+    ![1, 2].includes(item.schemaVersion) ||
     !/^[a-f0-9]{64}$/.test(item.operationId) ||
     !Number.isFinite(Date.parse(item.createdAt)) ||
     !["generated", "edited", "export"].includes(item.reason) ||
     (item.baseVersion !== null && (!Number.isSafeInteger(item.baseVersion) || item.baseVersion < 1))
   )
     throw new Error("Operação pendente inválida.");
+  if (
+    item.schemaVersion === 2 &&
+    (item.operationType !== "version.save" ||
+      item.entity !== item.tripId ||
+      item.syncState !== "pending")
+  )
+    throw new Error("Metadados da operação pendente inválidos.");
   checkTripId(item.tripId);
   validateSnapshot(item.snapshot);
   if (
@@ -131,15 +141,18 @@ export function syncPendingVersions(store: VersionStore, root = operationalRoot(
 }
 
 export function persistVersion(
-  input: Omit<PendingVersionWrite, "schemaVersion" | "operationId" | "createdAt">,
+  input: Pick<PendingVersionWrite, "tripId" | "snapshot" | "reason" | "baseVersion">,
   options: { versionRoot?: string; operationalRoot?: string } = {},
 ): DurableVersionResult {
   checkTripId(input.tripId);
   validateSnapshot(input.snapshot);
   const id = operationId(input);
   const item: PendingVersionWrite = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     operationId: id,
+    operationType: "version.save",
+    entity: input.tripId,
+    syncState: "pending",
     createdAt: new Date().toISOString(),
     ...input,
   };

@@ -113,6 +113,21 @@ BLU_BACKUP_DIR=/caminho/externo python3 -B -m monitoring.checkpoint \
   restore-missing --backup-id IDENTIFICADOR
 ```
 
+Para manter também uma cópia S3, indicar um bucket existente antes do arranque.
+O SDK usa o perfil ou papel IAM da máquina; não colocar credenciais no ficheiro:
+
+```bash
+export BLU_BACKUP_S3_BUCKET=nome-do-bucket
+export BLU_ENVIRONMENT=development
+export BLU_BACKUP_S3_PREFIX=blu-backups
+just blu up
+```
+
+O S3 guarda objetos imutáveis por ambiente e data. Sem cópia local válida, o
+arranque tenta automaticamente a cópia remota mais recente. Configuração KMS,
+permissões mínimas e recuperação manual estão no
+[guia de operações](docs/OPERATIONS.md#recuperação-local).
+
 Para uma recuperação integral autenticada:
 
 ```bash

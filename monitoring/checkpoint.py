@@ -172,10 +172,21 @@ def _select_snapshot(root: Path, store: Path, backup_id: str | None = None) -> t
     return None
 
 
-def restore_missing(root: Path, store: Path, backup_id: str | None = None) -> int:
+def restore_missing(root: Path, store: Path, backup_id: str | None = None,
+                    remote=True, s3_client=None) -> int:
     """Recupera ausências; nunca recua ficheiros existentes para uma versão antiga."""
     with private_store(store):
-        selected = _select_snapshot(root, store, backup_id)
+        from monitoring.s3_checkpoint import S3Config, download_latest
+        config = S3Config.from_environment() if remote else None
+        try:
+            selected = _select_snapshot(root, store, backup_id)
+        except ValueError:
+            if not config:
+                raise
+            selected = None
+        if selected is None and config:
+            download_latest(root, store, config, backup_id, s3_client)
+            selected = _select_snapshot(root, store, backup_id)
         if selected is None:
             return 0
         snapshot, manifest = selected
@@ -211,10 +222,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("create", "restore-missing"))
     parser.add_argument("--backup-id", help="Restaurar ausências a partir desta versão específica.")
+    parser.add_argument("--remote-required", action="store_true",
+                        help="Falhar a criação se o upload S3 configurado não for confirmado.")
     args = parser.parse_args()
     store = backup_home(ROOT)
     if args.command == "create":
-        print(f"Backup local verificado: {create(ROOT, store)}")
+        snapshot = create(ROOT, store)
+        print(f"Backup local verificado: {snapshot}")
+        from monitoring.s3_checkpoint import S3Config, upload
+        config = S3Config.from_environment()
+        if config:
+            try:
+                result = upload(ROOT, snapshot, config)
+                print(f"Backup S3 verificado: {result['backup_id']}")
+            except Exception:
+                if args.remote_required:
+                    raise
+                print("Aviso: cópia local válida; upload S3 falhou.")
     else:
         print(f"Ficheiros recuperados do backup local: {restore_missing(ROOT, store, args.backup_id)}")
 

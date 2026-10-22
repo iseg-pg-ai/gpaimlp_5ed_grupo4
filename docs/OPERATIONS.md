@@ -81,6 +81,28 @@ verificação de hashes e SQLite. Um checkpoint corrompido é registado em
 versão válida anterior. O restauro nunca substitui um ficheiro existente.
 Credenciais, sessões, tokens e dados privados do editor são excluídos.
 
+Quando `BLU_BACKUP_S3_BUCKET` está definido, a mesma operação conserva a cópia
+local e publica também um arquivo cifrado no bucket existente, usando as
+credenciais IAM normais do ambiente. Não existem chaves AWS no projeto. Os
+objetos são imutáveis e organizados por ambiente, tipo e data. O upload e o
+download confirmam tamanho, SHA-256, identificador e manifesto; se não houver um
+checkpoint local válido, o restauro procura a cópia S3 válida mais recente.
+
+```bash
+export BLU_BACKUP_S3_BUCKET=nome-do-bucket-existente
+export BLU_ENVIRONMENT=staging
+export BLU_BACKUP_S3_PREFIX=blu-backups
+# Opcional; sem esta variável é usada encriptação S3 AES-256.
+export BLU_BACKUP_S3_KMS_KEY_ID=alias/chave-existente
+python3 -B -m monitoring.checkpoint create --remote-required
+```
+
+Não existe eliminação remota automática. A retenção deve ser aprovada e aplicada
+como lifecycle policy do bucket. O estado técnico do último upload/download, das
+bases SQLite e das filas pendentes aparece no cartão de backup do Monitoring.
+O papel IAM precisa apenas de `s3:ListBucket`, `s3:GetObject` e `s3:PutObject` no
+prefixo configurado; com KMS, acrescentar as permissões da chave já existente.
+
 Restauro manual de uma versão, limitado a ficheiros ausentes:
 
 ```bash
@@ -95,7 +117,7 @@ BLU_BACKUP_DIR=/caminho/externo python3 -B -m monitoring.checkpoint \
 | Serviços | Disponibilidade, latência e alterações de estado |
 | Portal | Navegação, operações, falhas de API e erros reduzidos |
 | Dados | Idade e validação da publicação ETL |
-| Persistência | Espaço livre, backups e evidência do último restauro |
+| Persistência | SQLite, filas pendentes, cópias local/S3 e último restauro |
 | IA | Chamadas, falhas, latência e tokens quando reportados |
 | Incidentes | Abertura, deduplicação e recuperação local |
 

@@ -1,5 +1,20 @@
 # Decisões e questões abertas
 
+## Checkpoint S3 opcional — 2026-10-22
+
+O checkpoint local continua a ser a primeira cópia. Quando
+`BLU_BACKUP_S3_BUCKET` está configurado, o mesmo checkpoint é empacotado e
+publicado com chave imutável por ambiente e data, encriptação S3 AES-256 ou KMS
+existente e SHA-256 nos metadados. O SDK usa IAM e a aplicação não gere chaves.
+Sem backup local válido, o restauro tenta os objetos remotos por ordem recente e
+só publica localmente um arquivo cujo hash e manifesto sejam válidos.
+
+O Monitoring agrega o último resultado S3, disponibilidade das bases SQLite,
+operações JSON pendentes e último resultado de sincronização. Não foi criada uma
+base ou serviço AWS adicional. A política de retenção fica no bucket e não há
+eliminação automática no código até essa política ser aprovada. Evidência local:
+restauro e falha de rede com cliente S3 simulado; nenhuma chamada AWS real.
+
 ## Checkpoint externo integrado no arranque — 2026-10-22
 
 `just blu up` valida o ambiente, recupera apenas ficheiros ausentes do checkpoint
@@ -27,8 +42,9 @@ As gravações de versões e revisões do catálogo usam uma fila JSON transitó
 `exports/portal-persistence/` ou `BLU_OPERATIONAL_DIR`. A chave SHA-256 do pedido
 é confirmada na mesma transação da versão, permitindo repetir uma operação depois
 de uma falha sem duplicar dados. O ficheiro só é removido após confirmação SQL.
-O backup e o restauro locais incluem a fila. Produção continua a exigir volumes
-persistentes e backup externo cifrado; a fila não substitui esses controlos.
+O backup e o restauro incluem a fila e suportam uma cópia S3 cifrada. Produção
+continua a exigir volumes persistentes e validação do bucket, IAM e retenção; a
+fila não substitui esses controlos.
 
 Evidência: testes dos dois domínios com SQL disponível, SQL indisponível,
 sincronização posterior, repetição após commit e restauro da fila. Sem migração,
@@ -377,7 +393,8 @@ a dmc-workspace/src/components/.
 - O-002 - Definir Bedrock/OpenAI, contratos, avaliação e revisão antes de integrar.
 - O-003 - Escolher cenário e fornecedor, termos, custos, evidência e falhas.
   Rotas são hipótese, não decisão.
-- O-004 - Definir conteúdo S3, região, encriptação, retenção e fallback.
+- O-004 - Validar IAM/região/encriptação num bucket real e aprovar retenção. O
+  conteúdo, organização, integridade e fallback já estão implementados.
 - O-005 - Definir consentimento, minimização, acesso, logs e eliminação antes de
   partilha pública ou envio de briefs a fornecedores.
 - O-006 - Definir política de snapshot/artefacto CI do warehouse.

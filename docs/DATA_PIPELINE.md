@@ -89,9 +89,10 @@ sincronizadas de forma idempotente quando a base regressa.
 
 Os testes usam diretórios temporários e não reescrevem o warehouse operacional.
 
-## Evolução para S3
+## Origem ETL em S3
 
-O adaptador S3 ainda não está implementado. A futura camada de origem deverá
+O transporte S3 dos checkpoints operacionais está implementado e é independente
+do ETL. O adaptador S3 para fontes da pipeline ainda não está implementado. Deve
 listar e descarregar objetos para uma área local controlada e entregá-los à mesma
 pipeline. A transformação e a validação não devem depender do transporte.
 

@@ -1,15 +1,82 @@
 """Ensaios de backup e recuperação exclusivamente com dados temporários."""
 import json
+from datetime import datetime, timezone
 from pathlib import Path
+import shutil
 import sqlite3
 import tempfile
 import unittest
 from unittest.mock import patch
 
 from monitoring.checkpoint import backup_home, create, restore_missing
+from monitoring.s3_checkpoint import S3Config, upload
+
+
+class FakeS3:
+    def __init__(self, fail_upload=False):
+        self.objects = {}
+        self.fail_upload = fail_upload
+
+    def put_object(self, **values):
+        if self.fail_upload:
+            raise ConnectionError("rede indisponível")
+        body = values["Body"].read()
+        key = (values["Bucket"], values["Key"])
+        if key in self.objects:
+            raise ValueError("objeto existente")
+        self.objects[key] = {"Body": body, "Metadata": values["Metadata"],
+                             "LastModified": datetime.now(timezone.utc)}
+
+    def head_object(self, Bucket, Key):
+        item = self.objects[(Bucket, Key)]
+        return {"ContentLength": len(item["Body"]), "Metadata": item["Metadata"]}
+
+    def list_objects_v2(self, Bucket, Prefix):
+        return {"Contents": [
+            {"Key": key, "LastModified": value["LastModified"]}
+            for (bucket, key), value in self.objects.items()
+            if bucket == Bucket and key.startswith(Prefix)
+        ]}
+
+    def download_file(self, bucket, key, filename):
+        Path(filename).write_bytes(self.objects[(bucket, key)]["Body"])
 
 
 class CheckpointTests(unittest.TestCase):
+    def test_s3_roundtrip_recovers_when_local_store_is_empty(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, store = Path(directory) / "project", Path(directory) / "backups"
+            (root / "data").mkdir(parents=True)
+            source = root / "data/source.txt"
+            source.write_text("persistente")
+            snapshot = create(root, store)
+            client = FakeS3()
+            config = S3Config("existing-bucket", "blu", "test")
+            result = upload(root, snapshot, config, client)
+            self.assertEqual(result["outcome"], "passed")
+            shutil.rmtree(store)
+            source.unlink()
+            with patch.dict("os.environ", {"BLU_BACKUP_S3_BUCKET": "existing-bucket",
+                                            "BLU_BACKUP_S3_PREFIX": "blu",
+                                            "BLU_ENVIRONMENT": "test"}, clear=False):
+                self.assertEqual(restore_missing(root, store, s3_client=client), 1)
+            self.assertEqual(source.read_text(), "persistente")
+            status = json.loads((root / "monitoring/runtime/s3-backup-status.json").read_text())
+            self.assertEqual(status["operation"], "download")
+            self.assertNotIn("existing-bucket", json.dumps(status))
+
+    def test_s3_network_failure_preserves_verified_local_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, store = Path(directory) / "project", Path(directory) / "backups"
+            root.mkdir()
+            snapshot = create(root, store)
+            with self.assertRaises(ConnectionError):
+                upload(root, snapshot, S3Config("bucket", "blu", "test"),
+                       FakeS3(fail_upload=True))
+            self.assertTrue((snapshot / "manifest.json").is_file())
+            status = json.loads((root / "monitoring/runtime/s3-backup-status.json").read_text())
+            self.assertEqual(status["outcome"], "failed")
+
     def test_roundtrip_preserves_current_files_and_empty_directories(self):
         with tempfile.TemporaryDirectory() as directory:
             root, store = Path(directory) / "project", Path(directory) / "backups"

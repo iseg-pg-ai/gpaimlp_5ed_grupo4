@@ -314,7 +314,7 @@ if [ "${BLU_IT_VALIDATE_ONLY:-0}" = "1" ]; then
 fi
 
 run_task "Recuperar ficheiros em falta" python3 -B -m monitoring.checkpoint restore-missing
-run_task "Guardar backup antes da paragem" python3 -B -m monitoring.checkpoint create
+run_task "Guardar backup antes da paragem" python3 -B -m monitoring.checkpoint create --remote-required
 run_task "0. Parar todo o sistema" stop_all_services
 run_task "Guardar estado com serviços parados" python3 -B -m monitoring.checkpoint create
 run_task "1. Verificar ambiente" verify_environment

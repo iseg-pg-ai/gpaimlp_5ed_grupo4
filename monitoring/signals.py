@@ -3,10 +3,52 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import json
+import os
 from pathlib import Path
+import sqlite3
 
 MAX_BYTES = 2_000_000
 SEVERITIES = {"INFO", "WARNING", "ERROR", "CRITICAL"}
+
+
+def _json(path: Path) -> dict | None:
+    try:
+        value = json.loads(path.read_text())
+        return value if isinstance(value, dict) else None
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return None
+
+
+def _database_state(path: Path) -> str:
+    if not path.is_file():
+        return "missing"
+    try:
+        with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True,
+                             timeout=1) as database:
+            return "up" if database.execute("PRAGMA quick_check").fetchone()[0] == "ok" else "down"
+    except sqlite3.Error:
+        return "down"
+
+
+def _persistence(runtime: Path) -> dict:
+    root = runtime.parents[1]
+    operational = Path(os.environ.get(
+        "BLU_OPERATIONAL_DIR", str(root / "exports/portal-persistence")))
+    pending = {}
+    for name, folder in (("catalog", "pending-catalog"), ("versions", "pending-versions")):
+        directory = operational / folder
+        pending[name] = sum(1 for item in directory.glob("*.json") if item.is_file()) \
+            if directory.is_dir() else 0
+    sync = _json(operational / "sync-status.json") or {}
+    databases = {
+        "catalog": _database_state(root / "data/portal/catalog.sqlite"),
+        "versions": _database_state(root / "exports/itineraries/history.sqlite"),
+    }
+    return {"state": "up" if all(value == "up" for value in databases.values()) else "degraded",
+            "databases": databases, "pending": pending,
+            "pending_total": sum(pending.values()), "last_sync_at": sync.get("at"),
+            "sync_state": sync.get("status", "unknown"),
+            "sync_error_code": sync.get("errorCode")}
 
 
 def _events(path: Path, since: datetime) -> list[dict]:
@@ -52,6 +94,10 @@ def operational_signals(runtime: Path, now: datetime | None = None) -> dict:
             backup["state"] = "down"
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
         backup["last_attempt_at"] = None
+    s3 = _json(runtime / "s3-backup-status.json") or {}
+    backup.update(s3_state=s3.get("outcome", "not_configured"),
+                  s3_last_at=s3.get("at"), s3_operation=s3.get("operation"),
+                  s3_backup_id=s3.get("backup_id"))
     token_rows = [row for row in ai if isinstance(row.get("total_tokens"), int)]
     return {
         "portal": {"state": "degraded" if any(row.get("outcome") != "success" for row in portal) else "up",
@@ -63,6 +109,7 @@ def operational_signals(runtime: Path, now: datetime | None = None) -> dict:
                "tokens_reported": sum(row["total_tokens"] for row in token_rows),
                "calls_with_tokens": len(token_rows)},
         "backup": backup,
+        "persistence": _persistence(runtime),
     }
 
 
@@ -89,6 +136,8 @@ def operational_details(runtime: Path, kind: str) -> dict:
              ("at", "outcome", "backup_id", "artifact_count")),
             ("restore-evidence.json", "Ensaio de restauro",
              ("checked_at", "outcome", "backup_id", "backup_created_at", "artifact_count")),
+            ("s3-backup-status.json", "Cópia remota S3",
+             ("at", "outcome", "backup_id", "bytes", "error_code")),
         ):
             try:
                 row = json.loads((runtime / name).read_text())
@@ -99,6 +148,16 @@ def operational_details(runtime: Path, kind: str) -> dict:
                 }}})
             except (OSError, ValueError, TypeError, json.JSONDecodeError):
                 continue
+        persistence = _persistence(runtime)
+        entries.append({"at": persistence["last_sync_at"],
+                        "is_error": persistence["sync_state"] == "failed",
+                        "fields": {"operation": "Sincronização SQL",
+                                   "outcome": persistence["sync_state"],
+                                   "pending": persistence["pending_total"],
+                                   "catalog_database": persistence["databases"]["catalog"],
+                                   "versions_database": persistence["databases"]["versions"],
+                                   **({"error_code": persistence["sync_error_code"]}
+                                      if persistence["sync_error_code"] else {})}})
         return {"kind": kind, "entries": entries}
     rows = _events(runtime / "notifications.jsonl", datetime.min.replace(tzinfo=timezone.utc))[-100:]
     return {"kind": kind, "entries": [

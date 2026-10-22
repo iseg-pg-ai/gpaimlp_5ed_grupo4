@@ -9,16 +9,20 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
-import { validateCatalogInput, type CatalogRecord } from "./catalog-schema.ts";
+import { validateCatalogInput, type CatalogInput, type CatalogRecord } from "./catalog-schema.ts";
 import { CatalogConflict, CatalogStore, catalogRoot } from "./catalog-store.ts";
 import { PortalPythonError } from "./python-portal.ts";
 import { operationalRoot } from "./version-persistence.ts";
 
 type PendingCatalogWrite = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   operationId: string;
+  operationType: "catalog.save";
+  entity: string;
+  syncState: "pending";
+  baseVersion: number | null;
   createdAt: string;
-  input: unknown;
+  input: CatalogInput;
 };
 
 const canonical = (value: unknown): string => {
@@ -40,12 +44,20 @@ function validatePending(value: unknown): asserts value is PendingCatalogWrite {
   const item = value as PendingCatalogWrite;
   validateCatalogInput(item.input);
   if (
-    item.schemaVersion !== 1 ||
+    ![1, 2].includes(item.schemaVersion) ||
     !/^[a-f0-9]{64}$/.test(item.operationId) ||
     !Number.isFinite(Date.parse(item.createdAt)) ||
     operationId(item.input) !== item.operationId
   )
     throw new Error("Integridade da operação de catálogo inválida.");
+  if (
+    item.schemaVersion === 2 &&
+    (item.operationType !== "catalog.save" ||
+      item.syncState !== "pending" ||
+      item.entity !== (item.input.id ?? `new:${item.input.category}`) ||
+      item.baseVersion !== item.input.baseRevision)
+  )
+    throw new Error("Metadados da operação de catálogo inválidos.");
 }
 
 function enqueue(item: PendingCatalogWrite, root: string) {
@@ -76,7 +88,14 @@ export async function syncPendingCatalog(store: CatalogStore, root = operational
       validatePending(item);
       return { file, item };
     })
-    .sort((a, b) => a.item.createdAt.localeCompare(b.item.createdAt));
+    .sort(
+      (a, b) =>
+        (a.item.input.id ?? `new:${a.item.input.category}`).localeCompare(
+          b.item.input.id ?? `new:${b.item.input.category}`,
+        ) ||
+        (a.item.input.baseRevision ?? -1) - (b.item.input.baseRevision ?? -1) ||
+        a.item.createdAt.localeCompare(b.item.createdAt),
+    );
   for (const { file, item } of entries) {
     await store.save(item.input, item.operationId);
     unlinkSync(file);
@@ -102,7 +121,16 @@ export async function persistCatalog(
     )
       throw error;
     enqueue(
-      { schemaVersion: 1, operationId: id, createdAt: new Date().toISOString(), input },
+      {
+        schemaVersion: 2,
+        operationId: id,
+        operationType: "catalog.save",
+        entity: input.id ?? `new:${input.category}`,
+        syncState: "pending",
+        baseVersion: input.baseRevision,
+        createdAt: new Date().toISOString(),
+        input,
+      },
       queueRoot,
     );
     return { queued: true, operationId: id };

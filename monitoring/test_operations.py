@@ -249,6 +249,33 @@ class OperationsTest(unittest.TestCase):
             self.assertEqual(result["portal"]["events_24h"], 2)
             self.assertEqual(result["portal"]["errors_24h"], 1)
 
+    def test_signals_report_s3_sql_and_pending_operations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            runtime = root / "monitoring/runtime"
+            runtime.mkdir(parents=True)
+            (root / "data/portal").mkdir(parents=True)
+            (root / "exports/itineraries").mkdir(parents=True)
+            for database_path in (root / "data/portal/catalog.sqlite",
+                                  root / "exports/itineraries/history.sqlite"):
+                with sqlite3.connect(database_path) as database:
+                    database.execute("create table state (id integer primary key)")
+            pending = root / "exports/portal-persistence/pending-catalog"
+            pending.mkdir(parents=True)
+            (pending / "operation.json").write_text("{}")
+            (root / "exports/portal-persistence/sync-status.json").write_text(json.dumps({
+                "at": datetime.now(timezone.utc).isoformat(), "status": "ready"}))
+            (runtime / "s3-backup-status.json").write_text(json.dumps({
+                "at": datetime.now(timezone.utc).isoformat(), "outcome": "passed",
+                "operation": "upload", "backup_id": "safe-id"}))
+            result = operational_signals(runtime)
+            self.assertEqual(result["persistence"]["state"], "up")
+            self.assertEqual(result["persistence"]["pending_total"], 1)
+            self.assertEqual(result["backup"]["s3_state"], "passed")
+            details = operational_details(runtime, "backup")
+            self.assertTrue(any(entry["fields"].get("operation") == "Cópia remota S3"
+                                for entry in details["entries"]))
+
     def test_log_query_normalizes_filters_and_orders_persistent_events(self):
         with tempfile.TemporaryDirectory() as directory:
             runtime = Path(directory)

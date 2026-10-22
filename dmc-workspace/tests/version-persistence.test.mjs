@@ -87,7 +87,12 @@ test("protege em JSON quando SQL falha e sincroniza apenas depois da confirma√ß√
   );
   assert.equal(queued.queued, true);
   const pending = path.join(operations, "pending-versions", `${queued.operationId}.json`);
-  assert.equal(JSON.parse(readFileSync(pending, "utf8")).tripId, "sql-offline");
+  const queuedOperation = JSON.parse(readFileSync(pending, "utf8"));
+  assert.equal(queuedOperation.tripId, "sql-offline");
+  assert.equal(queuedOperation.schemaVersion, 2);
+  assert.equal(queuedOperation.operationType, "version.save");
+  assert.equal(queuedOperation.entity, "sql-offline");
+  assert.equal(queuedOperation.syncState, "pending");
 
   unlinkSync(versions);
   const store = new VersionStore(versions);

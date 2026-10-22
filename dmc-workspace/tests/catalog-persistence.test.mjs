@@ -62,6 +62,11 @@ test("catálogo usa JSON, sincroniza e não duplica uma operação já confirmad
   assert.equal(queued.queued, true);
   const pendingFile = path.join(operations, "pending-catalog", `${queued.operationId}.json`);
   const pending = JSON.parse(readFileSync(pendingFile, "utf8"));
+  assert.equal(pending.schemaVersion, 2);
+  assert.equal(pending.operationType, "catalog.save");
+  assert.equal(pending.syncState, "pending");
+  assert.equal(pending.entity, "new:atracoes");
+  assert.equal(pending.baseVersion, null);
 
   unlinkSync(catalog);
   const store = new CatalogStore(catalog);

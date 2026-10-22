@@ -318,9 +318,14 @@ function render(data) {
     );
     text(
       "backup-restore",
-      ops.backup.last_restore_at
-        ? `Restauro ensaiado · ${date(ops.backup.last_restore_at)}`
-        : "Ainda sem ensaio de restauro",
+      [
+        ops.backup.last_restore_at
+          ? `Restauro · ${date(ops.backup.last_restore_at)}`
+          : "Restauro por ensaiar",
+        `S3 · ${ops.backup.s3_state === "passed" ? "verificado" : ops.backup.s3_state === "failed" ? "falhou" : "não configurado"}`,
+        `${ops.persistence?.pending_total ?? 0} operações pendentes`,
+        `SQL · ${ops.persistence?.state === "up" ? "disponível" : "degradado"}`,
+      ].join(" · "),
     );
     text("alert-state", s.alerts.active.toLocaleString("pt-PT"));
     const health = s.alerts.active ? "degraded" : "up";

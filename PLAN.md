@@ -10,6 +10,16 @@
 - [ ] Montar `data/portal/`, `exports/` e o destino de backup cifrado em volumes
   duráveis no deployment de produção.
 
+## Cópias S3 e observabilidade da persistência — 2026-10-22
+
+- [x] Manter checkpoint local e publicar uma cópia S3 quando configurada.
+- [x] Validar upload/download por SHA-256 e recuperar remotamente sem cópia local.
+- [x] Organizar objetos por ambiente, tipo e data, sem substituição ou eliminação.
+- [x] Expor SQL, filas pendentes, último sync e estado S3 no Monitoring.
+- [x] Validar restauro remoto, falha de rede e sincronização idempotente com mocks.
+- [ ] Validar IAM, encriptação e restauro num bucket real autorizado.
+- [ ] Aprovar e configurar uma lifecycle policy de retenção no bucket.
+
 O SQLite continua adequado ao deployment atual de instância única. Uma base
 gerida só se justifica com múltiplas réplicas ou escritores concorrentes. A fila
 JSON é transitória e não constitui outra fonte de verdade.
@@ -136,7 +146,7 @@ Git e em [docs/DECISIONS.md](docs/DECISIONS.md).
 - [ ] Validar concorrência do catálogo, rascunhos e versões.
 - [ ] Definir minimização, retenção e eliminação de dados pessoais.
 - [ ] Escolher hosting, persistência, segredos, região, staging e rollback.
-- [ ] Definir origem S3 e fallback sem acoplar o ETL ao transporte.
+- [x] Implementar origem S3 e fallback sem acoplar o ETL ao transporte.
 - [ ] Aprovar qualquer criação de infraestrutura, custo ou publicação externa.
 
 A comparação de alternativas e os limites atuais estão em
@@ -149,7 +159,7 @@ O Monitoring continua incompleto para produção até existirem:
 
 - [ ] notificações externas com canal, destinatários, limiares, deduplicação e
   recuperação validados;
-- [ ] destino externo cifrado para backups e política de retenção;
+- [ ] validar o destino S3 cifrado real e aprovar a política de retenção;
 - [ ] sonda executada fora da máquina, ligada a responsáveis reais.
 
 Envios reais e infraestrutura externa exigem autorização aplicável. Não encerrar
