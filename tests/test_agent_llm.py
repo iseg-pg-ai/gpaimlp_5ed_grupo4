@@ -30,12 +30,30 @@ class AgentLlmTest(unittest.TestCase):
         self.assertEqual(model.call_args.kwargs["temperature"], 0.1)
         self.assertNotIn("aws_access_key_id", session.return_value.client.call_args.kwargs)
 
-    @patch("blu_ai.llm.OPENAI_API_KEY", None)
     @patch("blu_ai.llm.boto3.Session")
     def test_missing_credentials_reports_failure_instead_of_fake_success(self, session):
         session.return_value.get_credentials.return_value = None
         with self.assertRaisesRegex(RuntimeError, "Modelo de IA indisponível"):
             get_llm()
+
+
+    @patch("langchain_aws.ChatBedrockConverse")
+    @patch("blu_ai.llm.boto3.Session")
+    def test_bedrock_failure_is_sanitized_without_openai_fallback(self, session, model):
+        import os
+        import sys
+        session.return_value.get_credentials.return_value = MagicMock()
+        model.side_effect = RuntimeError("SEGREDO_SDK")
+        alternative = MagicMock()
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "CHAVE_SINTETICA"}), patch.dict(sys.modules, {"langchain_openai": alternative}):
+            with self.assertRaises(RuntimeError) as raised:
+                get_llm()
+        self.assertNotIn("SEGREDO", str(raised.exception))
+        self.assertNotIn("CHAVE", str(raised.exception))
+        alternative.ChatOpenAI.assert_not_called()
+        config = session.return_value.client.call_args.kwargs["config"]
+        self.assertEqual(config.connect_timeout, 3)
+        self.assertEqual(config.read_timeout, 35)
 
 
 class AgentWeatherTest(unittest.TestCase):

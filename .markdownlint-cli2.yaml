@@ -8,6 +8,10 @@ config:
 globs:
   - "**/*.md"
 ignores:
+  - "graphify-out/**"
+  - ".tools/**"
+  - ".venv/**"
+
   - ".*/**"
   - "**/.*/**"
   - "**/node_modules/**"

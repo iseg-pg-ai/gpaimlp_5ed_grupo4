@@ -65,6 +65,29 @@ mlruns/
 /data/portal/etl.lock
 /monitoring/runtime/
 
+# FDC
+.agent/
+.aws/
+.cache/
+.config/
+.copilot/
+.dotnet/
+.kiro/
+.vscode-server/
+.claude/
+.code-editor-server/
+.local/
+.npm/
+.nvm/
+sagemaker-code-editor-server-data/
+.sagemaker_remoteAccess_do_not_delete
+
+# Estado privado da sessão
+/graphify-out/
+/.streamlit/machine_id_v4
+/config/studio.local.json
+/monitoring/runtime/
+
 # Entradas locais antigas que não pertencem ao projeto
 /exemplo/
 /Taskfile.yaml

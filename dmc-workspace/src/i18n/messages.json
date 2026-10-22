@@ -1567,13 +1567,13 @@
     "de": "Kundensprache",
     "zh": "客户语言"
   },
-  "Exportar TXT para Canva": {
-    "pt": "Exportar TXT para Canva",
-    "en": "Export TXT for Canva",
-    "es": "Exportar TXT para Canva",
-    "fr": "Exporter TXT pour Canva",
-    "de": "TXT für Canva exportieren",
-    "zh": "导出 Canva TXT"
+  "Exportar TXT": {
+    "pt": "Exportar TXT",
+    "en": "Export TXT",
+    "es": "Exportar TXT",
+    "fr": "Exporter TXT",
+    "de": "TXT exportieren",
+    "zh": "导出 TXT"
   },
   "TXT para Canva": {
     "pt": "TXT para Canva",

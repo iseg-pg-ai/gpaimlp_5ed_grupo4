@@ -20,12 +20,8 @@ AWS_REGION = os.getenv("AWS_REGION", "eu-north-1")
 # Modelo Bedrock configurável.
 BEDROCK_MODEL_ID = os.getenv(
     "BEDROCK_MODEL_ID",
-    "eu.amazon.nova-lite-v1:0"
+    "eu.amazon.nova-pro-v1:0"
 )
-
-# Optional OpenAI key if available
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL_ID = os.getenv("OPENAI_MODEL_ID", "gpt-4o-mini")
 
 # Agent settings
 TEMPERATURE = float(os.getenv("AGENT_TEMPERATURE", "0.2"))

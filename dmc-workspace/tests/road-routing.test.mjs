@@ -1,4 +1,8 @@
-import { test } from "node:test";
+import { after, before, beforeEach, test } from "node:test";
+import { createServer } from "node:http";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import assert from "node:assert/strict";
 import { optimizeRouteSequence } from "../src/lib/road-routing.ts";
 import {
@@ -7,7 +11,46 @@ import {
   updateDayTransitLeg,
 } from "../src/lib/road-routing-server.ts";
 
-test("calculateRoadLeg computes real road travel leg between coordinates", async () => {
+const previousRouter = process.env.OSRM_ROUTER_URL;
+const previousTelemetry = process.env.BLU_TELEMETRY_DIR;
+let routerUrl;
+let routingCalls;
+let routingResponse;
+let telemetry;
+const provider = createServer(async (request, response) => {
+  routingCalls.push({ url: routerUrl + request.url });
+  try {
+    const result = await routingResponse();
+    response.writeHead(result.status, { "content-type": "application/json" });
+    response.end(await result.text());
+  } catch {
+    request.socket.destroy();
+  }
+});
+
+// O cálculo corre em Python: o fornecedor simulado deve atravessar a mesma fronteira HTTP.
+before(async () => {
+  telemetry = mkdtempSync(path.join(tmpdir(), "blu-routing-telemetry-"));
+  await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
+  routerUrl = `http://127.0.0.1:${provider.address().port}`;
+  process.env.OSRM_ROUTER_URL = routerUrl;
+  process.env.BLU_TELEMETRY_DIR = telemetry;
+});
+beforeEach(() => {
+  routingCalls = [];
+  routingResponse = async () =>
+    Response.json({ code: "Ok", routes: [{ distance: 1600, duration: 240 }] });
+});
+after(async () => {
+  await new Promise((resolve) => provider.close(resolve));
+  if (previousRouter === undefined) delete process.env.OSRM_ROUTER_URL;
+  else process.env.OSRM_ROUTER_URL = previousRouter;
+  if (previousTelemetry === undefined) delete process.env.BLU_TELEMETRY_DIR;
+  else process.env.BLU_TELEMETRY_DIR = previousTelemetry;
+  rmSync(telemetry, { recursive: true, force: true });
+});
+
+test("calculateRoadLeg uses the measured OSRM response without external requests", async () => {
   const from = { title: "Castelo de São Jorge", latitude: 38.71391, longitude: -9.13348 };
   const to = { title: "Cervejaria Ramiro", latitude: 38.7202, longitude: -9.13571 };
 
@@ -19,6 +62,15 @@ test("calculateRoadLeg computes real road travel leg between coordinates", async
   assert.match(leg.distance, /[\d.]+\s*(km|m)/);
   assert.ok(["chauffeur", "walk"].includes(leg.mode));
   assert.ok(leg.isAlgorithmOptimized);
+  assert.equal(leg.distance, "1.6 km");
+  assert.equal(leg.duration, "4 min");
+  assert.equal(leg.mode, "chauffeur");
+  assert.equal(routingCalls.length, 1);
+  assert.equal(
+    routingCalls[0].url,
+    `${routerUrl}/route/v1/driving/-9.13348,38.71391;-9.13571,38.7202?overview=false`,
+  );
+  assert.equal(new URL(routingCalls[0].url).searchParams.get("overview"), "false");
 });
 
 test("calculateRoadLeg falls back gracefully when coordinates are missing", async () => {
@@ -30,6 +82,43 @@ test("calculateRoadLeg falls back gracefully when coordinates are missing", asyn
   assert.equal(leg.fromLocation, "Local Sem GPS A");
   assert.equal(leg.toLocation, "Local Sem GPS B");
   assert.equal(leg.isAlgorithmOptimized, false);
+  assert.equal(leg.distance, "Por confirmar");
+  assert.equal(routingCalls.length, 0);
+});
+
+test("OSRM unavailable keeps estimates distinct from measured routes", async () => {
+  routingResponse = async () => {
+    return Response.json({ code: "ServiceUnavailable" }, { status: 503 });
+  };
+  const leg = await calculateRoadLeg(
+    { title: "A", latitude: 38.71391, longitude: -9.13348 },
+    { title: "B", latitude: 38.7202, longitude: -9.13571 },
+    { preferredMode: "walk", bufferMinutes: 7 },
+  );
+  assert.equal(routingCalls.length, 1);
+  assert.equal(new URL(routingCalls[0].url).pathname.split("/")[3], "walking");
+  assert.equal(leg.isAlgorithmOptimized, false);
+  assert.equal(leg.mode, "walk");
+  assert.equal(leg.bufferMinutes, 7);
+  assert.match(leg.distance, /\(estimado\)$/);
+  assert.match(leg.routeNote, /estimada/);
+  assert.doesNotMatch(leg.algorithmNote, /via OSRM/);
+});
+
+test("OSRM network failure returns an explicit estimate without a second request", async () => {
+  routingResponse = async () => {
+    throw new TypeError("Fornecedor simulado indisponível");
+  };
+  const leg = await calculateRoadLeg(
+    { title: "A", latitude: 38.71391, longitude: -9.13348 },
+    { title: "B", latitude: 38.7202, longitude: -9.13571 },
+    { preferredMode: "chauffeur", timeoutMs: 1 },
+  );
+  assert.equal(routingCalls.length, 1);
+  assert.equal(leg.isAlgorithmOptimized, false);
+  assert.equal(leg.mode, "chauffeur");
+  assert.match(leg.distance, /\(estimado\)$/);
+  assert.match(leg.routeNote, /estimada/);
 });
 
 test("enrichItineraryWithRoadRouting attaches transitToNext and routeSummary to days", async () => {
@@ -73,6 +162,7 @@ test("enrichItineraryWithRoadRouting attaches transitToNext and routeSummary to 
 
   const enriched = await enrichItineraryWithRoadRouting(mockDays, catalogRecords);
   assert.equal(enriched.length, 1);
+  assert.equal(routingCalls.length, 2);
   const day = enriched[0];
 
   assert.ok(day.items[0].transitToNext);
@@ -137,6 +227,7 @@ test("enrichItineraryWithRoadRouting resolves coordinates by catalog ID, title a
 
   const enriched = await enrichItineraryWithRoadRouting(mockDays, catalogRecords);
   const leg = enriched[0].items[0].transitToNext;
+  assert.equal(routingCalls.length, 1);
   assert.ok(leg);
   assert.equal(leg.fromLocation, "Telecabine Lisboa");
   assert.equal(leg.toLocation, "Time Out Market Lisboa");
@@ -244,6 +335,7 @@ test("enrichItineraryWithRoadRouting skips road legs for free_time periods", asy
   // No transit leg between poi-1 and free-time-1
   assert.equal(enriched.items[0].transitToNext, undefined);
   assert.equal(enriched.routeSummary, undefined);
+  assert.equal(routingCalls.length, 0);
 });
 
 test("calculateRoadLeg supports explicit preferredMode (walk vs chauffeur)", async () => {
@@ -263,6 +355,13 @@ test("calculateRoadLeg supports explicit preferredMode (walk vs chauffeur)", asy
   assert.ok(carLeg);
   assert.equal(carLeg.mode, "chauffeur");
   assert.equal(carLeg.bufferMinutes, 12);
+  assert.equal(routingCalls.length, 2);
+  assert.deepEqual(
+    routingCalls.map(({ url }) => new URL(url).pathname.split("/")[3]),
+    ["walking", "driving"],
+  );
+  assert.equal(walkLeg.duration, "21 min");
+  assert.equal(carLeg.duration, "4 min");
 });
 
 test("updateDayTransitLeg switches transit mode and realigns subsequent schedule", async () => {
@@ -296,4 +395,5 @@ test("updateDayTransitLeg switches transit mode and realigns subsequent schedule
   assert.equal(updatedDay.items[0].transitToNext?.bufferMinutes, 8);
   assert.ok(updatedDay.routeSummary);
   assert.equal(updatedDay.routeSummary.legsCount, 1);
+  assert.equal(routingCalls.length, 1);
 });

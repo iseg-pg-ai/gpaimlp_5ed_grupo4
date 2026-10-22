@@ -1,6 +1,7 @@
 """Contratos de exploração; requerem o grupo opcional dashboard."""
 from __future__ import annotations
 
+from contextlib import closing
 import importlib.util
 import json
 import hashlib
@@ -86,7 +87,7 @@ class DashboardContractsTest(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as temporary:
             database = Path(temporary) / 'warehouse.sqlite'
-            with sqlite3.connect(database) as connection:
+            with closing(sqlite3.connect(database)) as connection, connection:
                 for name, rows in tables.items():
                     load_table(connection, name, rows)
             before = database.read_bytes()
@@ -94,6 +95,43 @@ class DashboardContractsTest(unittest.TestCase):
                 frame = app.model_data('model_observatory_catalog')
             self.assertEqual(frame.to_dict('records'), build_observatory(tables)['model_observatory_catalog'])
             self.assertEqual(database.read_bytes(), before)
+
+    def test_query_closes_connection_after_success_and_error(self):
+        for sql, expected_error in (("SELECT 1 AS value", False), ("SELECT * FROM missing", True)):
+            with self.subTest(sql=sql):
+                connection = sqlite3.connect(":memory:")
+                self.addCleanup(connection.close)
+                with patch.object(app.sqlite3, "connect", return_value=connection):
+                    if expected_error:
+                        with self.assertRaises(pd.errors.DatabaseError):
+                            app.query(sql)
+                    else:
+                        self.assertEqual(app.query(sql).iloc[0]["value"], 1)
+                with self.assertRaises(sqlite3.ProgrammingError):
+                    connection.execute("SELECT 1")
+
+    def test_model_data_closes_snapshot_after_success_and_error(self):
+        for complete in (True, False):
+            with self.subTest(complete=complete):
+                connection = sqlite3.connect(":memory:")
+                self.addCleanup(connection.close)
+                if complete:
+                    connection.executescript("""
+                        CREATE TABLE atracoes(id TEXT);
+                        CREATE TABLE restaurantes(id_blu TEXT);
+                        CREATE TABLE experiencias(nome_da_experiencia TEXT);
+                        CREATE TABLE precos(id TEXT);
+                    """)
+                with patch.object(app, "table_exists", return_value=False), patch.object(
+                    app.sqlite3, "connect", return_value=connection
+                ):
+                    if complete:
+                        self.assertTrue(app.model_data("model_observatory_catalog").empty)
+                    else:
+                        with self.assertRaises(pd.errors.DatabaseError):
+                            app.model_data("model_observatory_catalog")
+                with self.assertRaises(sqlite3.ProgrammingError):
+                    connection.execute("SELECT 1")
 
     def test_evidence_is_reassessed_after_publication(self):
         row = {'name': 'Jardim', 'field_label': 'Preço', 'confirmation': 'confirmado',

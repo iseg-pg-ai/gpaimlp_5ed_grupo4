@@ -27,6 +27,8 @@ const row = (id) => ({
   _catalog_status: "approved",
   _source_row: 1,
   cidade: "Lisboa",
+  latitude: { Visit: 38.71, Other: 38.76, Third: 38.72 }[id] ?? 38.7,
+  longitude: -9.13,
   nome_da_atracao: id,
   nome_da_experiencia: id,
   estabelecimento: id,
@@ -181,8 +183,8 @@ test("assistant optimizes day route sequence on request", () => {
   assert.equal(withThree.itinerary[0].items.length, 3);
 
   const optimized = editWithAssistant(withThree, "otimizar rota do dia 1", c);
-  assert.equal(optimized.changed, true);
-  assert.match(optimized.reply, /Rota do dia 1 otimizada/);
+  assert.equal(optimized.changed, true, optimized.reply);
+  assert.match(optimized.reply, /estimad/i);
   assert.equal(optimized.itinerary[0].items.length, 3);
 });
 

@@ -17,6 +17,61 @@
 Os registos históricos conservam as datas e a evidência original. O mapa atual
 está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
+## Preparação Windows antes do agente transacional — 2026-10-21
+
+O proprietário aprovou corrigir a base depois do diagnóstico, preservando o
+histórico e sem iniciar a integração do agente. A base é f280971, com evolução
+existente além de dev; não foi reiniciada noutro branch para evitar perdê-la.
+
+### Ligações SQLite e leitura do dashboard
+
+O contexto de uma ligação SQLite gere a transação mas não fecha a ligação.
+Os testes e duas funções do dashboard deixavam handles ativos no Windows.
+Usar `closing` externo ao contexto transacional garante commit/rollback antes
+do fecho, inclusive em erro. Preservam-se URI read-only, parâmetros e o `BEGIN`
+do snapshot. Regressões verificam fecho após sucesso/erro; smoke Streamlit e
+hash do warehouse confirmam o percurso de leitura sem reescrever a entrega.
+
+### Publicação ETL com bloqueio transitório Windows
+
+Um caso com o writer real e 100 mil linhas reproduziu o erro de rename em
+segundos, sem PDFs nem carga SQLite. A mesma pasta pôde ser renomeada depois
+de esperar, sem alterar conteúdo ou permissões. Os probes não demonstraram
+qual o processo externo responsável; não se atribui o erro a um antivírus.
+
+As renomeações de backup, publicação e restauro podem repetir apenas no
+Windows, perante códigos 5/32/33. São seis tentativas e cinco esperas de
+50/100/200/400/800 ms: até 1,55 s de espera por renomeação, não por execução
+completa. Erros persistentes propagam; outros sistemas e erros não repetem.
+Construção e validação não são repetidas, e preserva-se o rollback existente.
+Sete regressões exercitam publicação, backup, restauro e falhas persistentes.
+O caso real reduzido, ETL completo e catálogo/ETL passaram após a correção.
+
+### Referência reproduzível e limites
+
+Todos os grupos Python instalaram pelo lock em ambiente estável, sem mudar
+versões. Mantém-se o override Stanza de segurança documentado. O README foi
+alinhado com manifests, comandos e documentos presentes. `AIREADME.md` explica
+o processo ao proprietário. Testes de rotas passam a simular fetch sem rede.
+O verificador Markdown exclui os artefactos locais gerados em graphify-out,
+já ignorados pelo Git, preservando os relatórios e validando os documentos fonte.
+
+Evidência: 92 testes Python, 100 do portal, catálogo/ETL, cinco testes de
+tradução simulada, smoke Streamlit e verificações documentais aprovados.
+Build Next.js já aprovado na Fase 0; não repetido por alterações só de testes
+no portal. Não houve inferência real, modelos de tradução instalados,
+publicação ou certificação do SageMaker. A Fase 2 requer decisão separada.
+
+## Âmbito do grafo local Graphify — 2026-10-21
+
+O grafo indexa código, documentação e recursos visuais da aplicação. A deteção
+inicial incluiu PDFs de `data/`; o ficheiro `.graphifyignore` exclui agora fontes
+protegidas, dados operacionais, warehouse, exports e ambientes locais.
+Os resultados e caches de `graphify-out/` são artefactos locais ignorados pelo Git;
+os ficheiros já versionados mantêm-se no histórico e não são removidos nesta tarefa.
+A extração semântica usa a sessão do assistente, sem fornecedores externos.
+O grafo auxilia a navegação; o código e os contratos continuam a prevalecer.
+
 ## Inicialização segura de um checkout sem estado operacional — 2026-10-20
 
 - Um checkout sem catálogo, itinerários ou backups é tratado como instalação nova.
@@ -650,6 +705,64 @@ inventário editorial próprio. Versões declaradas e defaults do código não
 representam configuração efetiva ou métricas medidas. Registar no guião as
 lacunas a preencher com a equipa e manter a distinção entre simulação e sistema.
 
+## 2026-10-19 — TXT e execução Canva
+
+O prompt 1.4.0 concentra regras essenciais sem mudar o JSON 1.1.0. O plugin
+0.4.0 evita carregar curadoria na composição e pedir aceitação do plano.
+A exigência de preview/aprovação antes de commit pertence ao Canva, não é
+removível por prompt. Teste real: DAHDpPXVRsU devolve dataset vazio; cópia de
+quatro páginas aceita edição do dia 1, mas a nota cresce além do painel.
+Validar capacidade cedo e agrupar operações por página. Autofill permanece
+condicionado a um futuro schema verificado; não alegar melhoria de tempo
+ou tokens faturados sem medição comparável.
+
+## 2026-10-21 — Integrar dev em txt_export_plugin
+
+Integração de `origin/dev` (`aa385fd`) no branch `txt_export_plugin`, mantendo o
+histórico dos dois branches. Os conflitos documentais preservam as decisões de
+TXT/Canva de 19 de outubro. O plugin conserva o workflow eficiente, a referência
+visual e os limites de entrega do branch, sem repor o workflow anterior de dev.
+A interface conserva o rótulo Exportar TXT e as traduções correspondentes.
+
+A identidade local Streamlit foi preservada fora do índice, tal como as contas,
+runtime e configuração privada Studio. Nenhum ficheiro de warehouse foi editado
+manualmente: as alterações provêm da integração de dev. Não houve publicação,
+chamadas ao Canva ou ao Bedrock, nem integração de outros branches.
+
+Validação local: 83 testes Python aprovados; check do portal com 97 aprovados e
+um ignorado; build, catálogo/ETL e estrutura documental aprovados. Navegador:
+TXT/Canva em 320/390/1440 px, incluindo histórico, Lixo/restauro, privacidade e
+estado do PDF inalterado; temas em 320/768/1440/2560 px. Armazenamento temporário
+e tradução simulada; sem validação real de fornecedores externos.
+
+## 2026-10-21 — Integrar dev no branch de orientações
+
+Integração de `origin/dev` (`9e03e62`) em `docs/code-agent-guidance`.
+Os conflitos add/add de `AGENTS.md` e `PLAN.md` conservam o conteúdo dos dois
+branches. As regras e o plano atuais de dev aparecem primeiro; o conteúdo antigo
+permanece identificado como histórico, sem reabrir tarefas ou apresentar estados
+antigos como capacidade atual. As orientações por área foram preservadas.
+
+O código funcional integrado coincide com dev. Não houve alterações manuais às
+fontes ou ao warehouse, publicação, acesso a fornecedores reais ou remoção dos
+ficheiros específicos deste branch. Os dados locais existentes foram preservados.
+
+Validação local: 83 testes Python; check do portal com 97 aprovados e um
+ignorado; build, catálogo/ETL, estrutura e Markdown aprovados. Os testes usam
+dados temporários e mocks. Não se repetiu a validação de navegador, porque o
+código funcional coincide com dev e a resolução é documental.
+
+## 2026-10-21 — Fase 2 limitada ao itinerário
+
+Decisão do proprietário: integrar o agente em incrementos com aprovação entre
+fases. Nova Pro configurável, falha explícita sem fallback; PT/EN no chat;
+apenas onze operações de itinerário. O servidor valida e persiste a aceitação
+atomicamente, sem texto integral dos pedidos. Conversa local por viagem.
+Dados de confirmação manual não são editados como efeito da alteração de
+horários. TXT mantém o formato atual para o Canva. Ranking, feedback, casos
+históricos e proatividade ficam para incrementos posteriores. Validação real
+do modelo e dos seis idiomas de exportação pertence à fase seguinte.
+
 ## Monitoring independente no Studio — 2026-10-19
 
 A pedido do utilizador, a primeira implementação fica em `monitoring/`, porta
@@ -778,3 +891,58 @@ exemplo de configuração. Sem catálogo, exports ou contas de origem, criou os 
 conjuntos necessários e preservou-os numa segunda execução. Reutilizaram-se Python,
 Node e dependências locais; não se validaram downloads, proxy Studio, outra
 identidade IAM ou Bedrock real. A validação num segundo espaço AWS mantém-se no plano.
+
+## 2026-10-22 — Integrar monitoring no branch de orientações e Fase 2
+
+Integração de `feat/monitoring-deployment` em `docs/code-agent-guidance`.
+Os conflitos de documentação preservam as orientações e o plano anterior como
+registo histórico, mantendo a Fase 2 transacional como estado ativo. A rota de
+compatibilidade `/api/assistant` continua a delegar no planeador atual, com
+pré-visualização e aceitação explícita; não foi reposta a edição implícita antiga.
+
+O endpoint de edição manual passa a importar o enriquecimento rodoviário de
+`road-routing-server`, conforme a fronteira Python integrada. Os testes de
+routing usam um fornecedor HTTP loopback, pois o mock de fetch do Node já não
+interceta os pedidos feitos em Python. A telemetria desses testes usa uma pasta
+temporária. Os testes de navegador do monitoring usam os controlos Todos/Apenas
+erros e o título dinâmico do evento que existem na interface atual.
+
+O estado operacional, as contas e as fontes foram preservados. Não houve
+publicação, criação de infraestrutura ou chamadas reais ao modelo. As pendências
+de monitoring para produção continuam abertas no plano: alertas externos,
+backups externos cifrados e sonda fora da máquina. A integração não autoriza
+a Fase 3 nem validação paga do modelo.
+
+Validação: 124 testes Python, 35 de monitoring/operações, build, catálogo/ETL,
+estrutura documental e Markdown aprovados. Navegador: assistente transacional
+PT/EN em 390/1600 px com APIs simuladas; login, contas e logs do monitoring em
+320/768/1440/2560 px com fixtures locais. Os dez testes de routing com fornecedor
+loopback passaram; o check completo do portal passou com 138 testes aprovados
+e um ignorado após essa adaptação.
+
+## 2026-10-22 — Codex num terminal dividido do VS Code
+
+`just blu up` e `just blu it` invocam `scripts/start_codex.sh` apenas depois de
+concluírem com sucesso. Em terminais interativos, o launcher pede à extensão
+local `scripts/vscode-terminal/` um novo terminal Codex ao lado do Bash de origem.
+A API `parentTerminal` cria o split; colocar o painel em baixo permite apresentar
+Bash à esquerda e Codex à direita. Se a origem não for identificada pelos PID
+ancestrais, a extensão cria um novo par Bash/Codex. Pedidos repetidos reutilizam
+o Codex existente. Nunca executa o Codex dentro do Bash que arrancou os serviços.
+
+A ponte usa um socket Unix numa pasta privada e um apontador não versionado em
+`monitoring/runtime/editor-terminal.json`. O pedido contém apenas o executável
+local e os PID ancestrais; o Codex arranca com argumentos separados, sem comando
+interpolado e sem pedido inicial. A instalação empacota exclusivamente as fontes
+locais num VSIX temporário, sem dependências do Marketplace. Novos ambientes
+instalam a extensão com o launcher; instalações anteriores podem executar
+`python3 scripts/vscode_terminal.py --install` e recarregar a janela se necessário.
+
+`BLU_CODEX_AUTO=0`, redirecionamentos, ausência do Codex ou indisponibilidade do
+editor deixam o Bash livre e não invalidam os serviços já iniciados. A integração
+é específica do VS Code em Linux, incluindo o SageMaker Code Editor.
+
+Validação: cinco testes com API de terminais simulada, incluindo seleção da
+origem, criação de par novo, reutilização, fecho e rejeição de executável inválido.
+Instalação e pedido de abertura reais aceites pelo editor desta sessão. Sem
+reiniciar serviços ou enviar pedidos ao modelo; disposição visual não inspecionada.
