@@ -88,6 +88,20 @@ O comando mantém serviços ativos, inicia os que estejam parados, confirma os
 cinco endpoints e abre as quatro interfaces. A porta técnica 8000 é validada,
 mas não abre um separador.
 
+Antes do arranque, recupera ficheiros em falta do último backup verificado e
+guarda uma nova cópia em `/home/blu-system-backups/sagemaker-user` neste ambiente
+(por defeito, `blu-system-backups/<nome-do-projeto>` ao lado do projeto).
+É possível escolher outro destino fora do projeto com `BLU_BACKUP_DIR`.
+O destino deve permitir escrita pelo utilizador que executa o comando.
+As cópias incluem `data/`, `warehouse/`, `exports/` e ficheiros JSON, JSONL e
+SQLite persistentes diretamente em `monitoring/runtime/`, incluindo contas.
+São privadas, verificadas por SHA-256 e acumuladas sem eliminação automática.
+SQLite usa a API de backup para incluir transações confirmadas no WAL.
+Ficheiros existentes têm prioridade; dados em falta são recuperados sem repetir
+o ETL. Rascunhos do navegador, dependências, builds e credenciais AWS não entram
+nestas cópias. Uma cópia com serviços ativos não garante uma transação conjunta
+entre catálogo e exports; evitar edições durante o comando.
+
 Para uma recuperação integral autenticada:
 
 ```bash
@@ -99,6 +113,32 @@ prepara dependências, inicializa um clone novo ou recupera dados existentes,
 executa testes, constrói o portal, reinicia o sistema e abre as interfaces. Os
 detalhes e limites estão no
 [guia de operações](docs/OPERATIONS.md#recuperação-local).
+
+O `just blu it` também guarda e verifica um backup antes de parar os serviços;
+uma falha impede a paragem. Depois de parar, guarda outra cópia do estado estável.
+O `just blu up` continua a preservar os serviços que já estão ativos.
+
+Quando executados num terminal interativo do VS Code/SageMaker, ambos os comandos
+abrem o Codex num **novo terminal em split**, ao lado do Bash de origem. O painel
+fica em baixo para apresentar Bash à esquerda e Codex à direita. O Bash volta a
+ficar disponível; um terminal Codex já aberto pela integração é reutilizado.
+O Codex CLI tem de estar instalado e autenticado nesse ambiente e não recebe
+nenhum pedido inicial. Sair do Codex com `/quit` mantém os serviços ativos.
+
+A integração usa a extensão local `scripts/vscode-terminal/`, instalada por
+`scripts/install_just_blu_it.sh`. Num ambiente que já tinha o launcher instalado,
+executar uma vez:
+
+```bash
+python3 scripts/vscode_terminal.py --install
+```
+
+Se o editor não ativar a extensão imediatamente, usar **Developer: Reload Window**.
+A instalação usa apenas fontes do repositório, sem dependências do Marketplace.
+Sem integração disponível, o comando informa como a instalar e deixa o Bash livre.
+Para arrancar sem abrir o Codex, usar `BLU_CODEX_AUTO=0 just blu up` ou
+`BLU_CODEX_AUTO=0 just blu it`. Execuções com entrada ou saída redirecionada
+não abrem terminais. Esta integração é específica do VS Code em Linux.
 
 O SageMaker pode exigir a renovação da sessão pela consola AWS; os comandos não
 conseguem renovar tokens externos expirados.

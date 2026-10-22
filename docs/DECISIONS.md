@@ -1,5 +1,19 @@
 # Decisões e questões abertas
 
+## Backups locais fora do projeto no launcher — 2026-10-22
+
+- `monitoring.checkpoint` guarda fontes, warehouse, exports e estado persistente
+  direto do Monitoring fora do projeto, com permissões privadas e SHA-256.
+- SQLite usa a API de backup; o arranque recupera apenas ficheiros ausentes,
+  preservando alterações atuais. O último backup tem de passar a verificação.
+- `just blu up` mantém serviços ativos. `just blu it` exige uma cópia verificada
+  antes da paragem e cria outra com serviços parados. Uma falha impede avançar.
+- Não há retenção automática nem cópia de rascunhos do navegador ou ambientes.
+  Cópias com serviços ativos não garantem atomicidade entre vários conjuntos.
+- Evidência: 39 testes de checkpoint, Monitoring e operações aprovados e primeira
+  cópia local real verificada em 22 de outubro. Sem executar paragem ou restauro
+  dos dados reais.
+
 Os registos históricos conservam as datas e a evidência original. O mapa atual
 está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 
@@ -905,3 +919,30 @@ PT/EN em 390/1600 px com APIs simuladas; login, contas e logs do monitoring em
 320/768/1440/2560 px com fixtures locais. Os dez testes de routing com fornecedor
 loopback passaram; o check completo do portal passou com 138 testes aprovados
 e um ignorado após essa adaptação.
+
+## 2026-10-22 — Codex num terminal dividido do VS Code
+
+`just blu up` e `just blu it` invocam `scripts/start_codex.sh` apenas depois de
+concluírem com sucesso. Em terminais interativos, o launcher pede à extensão
+local `scripts/vscode-terminal/` um novo terminal Codex ao lado do Bash de origem.
+A API `parentTerminal` cria o split; colocar o painel em baixo permite apresentar
+Bash à esquerda e Codex à direita. Se a origem não for identificada pelos PID
+ancestrais, a extensão cria um novo par Bash/Codex. Pedidos repetidos reutilizam
+o Codex existente. Nunca executa o Codex dentro do Bash que arrancou os serviços.
+
+A ponte usa um socket Unix numa pasta privada e um apontador não versionado em
+`monitoring/runtime/editor-terminal.json`. O pedido contém apenas o executável
+local e os PID ancestrais; o Codex arranca com argumentos separados, sem comando
+interpolado e sem pedido inicial. A instalação empacota exclusivamente as fontes
+locais num VSIX temporário, sem dependências do Marketplace. Novos ambientes
+instalam a extensão com o launcher; instalações anteriores podem executar
+`python3 scripts/vscode_terminal.py --install` e recarregar a janela se necessário.
+
+`BLU_CODEX_AUTO=0`, redirecionamentos, ausência do Codex ou indisponibilidade do
+editor deixam o Bash livre e não invalidam os serviços já iniciados. A integração
+é específica do VS Code em Linux, incluindo o SageMaker Code Editor.
+
+Validação: cinco testes com API de terminais simulada, incluindo seleção da
+origem, criação de par novo, reutilização, fecho e rejeição de executável inválido.
+Instalação e pedido de abertura reais aceites pelo editor desta sessão. Sem
+reiniciar serviços ou enviar pedidos ao modelo; disposição visual não inspecionada.

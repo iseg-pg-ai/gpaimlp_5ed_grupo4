@@ -1,5 +1,25 @@
 # Plano de evolução do BLU AI System
 
+## Backups antes do arranque e recuperação — 2026-10-22
+
+- [x] Guardar dados fora do projeto antes de qualquer paragem do launcher.
+- [x] Recuperar ausências sem substituir ficheiros atuais no arranque.
+- [x] Validar cópia real local e testes isolados de integridade e recuperação.
+
+Validação: 39 testes de checkpoint, Monitoring e operações aprovados, sintaxe
+shell aprovada e primeira cópia real verificada fora do projeto, sem parar
+serviços. O restauro completo dos dados reais e o ciclo de paragem/arranque não
+foram executados nesta alteração.
+
+## Codex num split do VS Code — 2026-10-22
+
+- [x] Substituir abertura no Bash por novo terminal Codex à direita.
+- [x] Instalar uma extensão local reproduzível, com ponte privada para o editor.
+- [x] Validar seleção do Bash, reutilização e falhas sem iniciar modelos ou serviços.
+
+Cinco testes da API simulada e abertura real confirmada pelo editor SageMaker.
+O Bash de origem fica disponível e o Codex não recebe pedidos iniciais.
+
 ## Integração de monitoring neste branch — 2026-10-22
 
 - [x] Integrar monitoring preservando o fluxo transacional da Fase 2.

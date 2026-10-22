@@ -267,6 +267,8 @@ cd "$ROOT"
 if [ "${BLU_MODE:-it}" = "up" ]; then
     ui_header "QUICK START" "NODE AWS"
     mkdir -p "$RUNTIME" "$SERVICES"
+    python3 -B -m monitoring.checkpoint restore-missing
+    python3 -B -m monitoring.checkpoint create
     if [ ! -f monitoring/runtime/credentials.json ]; then
         printf 'Falta configurar o acesso ao Monitoring: python -B -m monitoring.setup\n' >&2
         exit 1
@@ -281,6 +283,7 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
     printf '  %s✓%s  5 endpoints validados\n' "$GREEN" "$RESET"
     printf '  %s✓%s  4 interfaces abertas\n' "$GREEN" "$RESET"
     ui_footer "SYSTEM READY" "just blu up · completed"
+    bash scripts/start_codex.sh
     exit 0
 fi
 
@@ -303,7 +306,10 @@ if [ "${BLU_IT_VALIDATE_ONLY:-0}" = "1" ]; then
     exit 0
 fi
 
+run_task "Recuperar ficheiros em falta" python3 -B -m monitoring.checkpoint restore-missing
+run_task "Guardar backup antes da paragem" python3 -B -m monitoring.checkpoint create
 run_task "0. Parar todo o sistema" stop_all_services
+run_task "Guardar estado com serviços parados" python3 -B -m monitoring.checkpoint create
 run_task "1. Verificar ambiente" verify_environment
 run_task "2. Preparar Python" uv sync --locked --all-groups
 run_task "3. Preparar portal" bash -c '
@@ -343,3 +349,5 @@ run_task "11. Testes finais dos dashboards" bash -c '
 python3 -B scripts/studio_urls.py >> "$LOG"
 run_task "12. Sistema BLU recuperado" python3 -B scripts/open_dashboards.py --quiet
 ui_footer "BLU SYSTEM RESTORED" "12 tarefas · 5 serviços · 4 interfaces"
+
+bash scripts/start_codex.sh

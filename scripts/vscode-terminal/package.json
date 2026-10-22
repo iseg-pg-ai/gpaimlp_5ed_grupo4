@@ -1,0 +1,13 @@
+{
+  "name": "blu-terminal",
+  "displayName": "BLU — Bash e Codex",
+  "description": "Abre o Codex num split ao lado do Bash após o arranque local BLU.",
+  "publisher": "blu-local",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.85.0" },
+  "main": "./extension.cjs",
+  "extensionKind": ["workspace"],
+  "activationEvents": ["onStartupFinished"],
+  "capabilities": { "untrustedWorkspaces": { "supported": false } },
+  "license": "UNLICENSED"
+}
