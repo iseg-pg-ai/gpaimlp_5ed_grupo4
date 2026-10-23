@@ -63,10 +63,10 @@ python3 scripts/setup_workspace.py \
   --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
 ```
 
-Num clone sem dados locais, o [guia de onboarding](docs/ONBOARDING.md) inclui
-`--initialize-data` para criar o catálogo e a pasta de itinerários a partir dos
-ficheiros versionados. A configuração partilhável do agente está em `.env.example`.
-Também é possível usar `./bin/just blu it` sem instalar o launcher no `PATH`.
+Num clone sem dados locais, o [guia de onboarding](docs/ONBOARDING.md) prepara o
+ambiente e o `just blu it` materializa as releases S3 autorizadas. A configuração
+partilhável do agente está em `.env.example`. Também é possível usar
+`./bin/just blu it` sem instalar o launcher no `PATH`.
 
 O assistente valida o ambiente, guarda a URL em `config/studio.local.json`,
 instala o launcher local e cria o administrador inicial do Monitoring quando
@@ -99,8 +99,9 @@ comandos estão em [Dados e operações](docs/DATA_PIPELINE.md#origem-etl-em-s3)
 O mesmo bucket guarda releases operacionais versionadas do catálogo, itinerários
 e propostas. O SQLite é materializado como cache porque o S3 não executa uma base
 SQL diretamente. Os launchers apontam todos os consumidores para essa cache.
-O percurso completo de criação, alteração, eliminação, recuperação e ETL está em
-[Persistência, recuperação e ETL](docs/PERSISTENCIA_RECUPERACAO_ETL.md).
+O percurso de criação, alteração e publicação está em
+[Dados e ETL](docs/DATA_PIPELINE.md); checkpoints, recuperação e limites estão em
+[Operações](docs/OPERATIONS.md).
 
 O S3 guarda objetos imutáveis por ambiente e data. Sem cópia local válida, o
 arranque tenta automaticamente a cópia remota mais recente. Configuração KMS,
@@ -183,154 +184,11 @@ O portal produz propostas e documentos; não efetua reservas nem confirma
 automaticamente preços, disponibilidade, acessibilidade ou condições alimentares.
 O portal não tem autenticação própria nem sincronização multiutilizador. O login
 do Monitoring protege apenas o painel operacional. A publicação em produção,
-identidade central, backups externos e alertas externos continuam por definir.
+identidade central, retenção administrada e alertas externos continuam por definir.
 
-## Assistente transacional — Fase 2
+## Assistente transacional
 
 O fluxo proposta → pré-visualização → aceitação explícita usa os contratos
 atuais de [docs/ASSISTANT.md](docs/ASSISTANT.md). A rota anterior de assistência
 permanece como entrada de compatibilidade para este mesmo fluxo. O monitoring
-não autoriza execução implícita, Fase 3 ou chamadas reais a fornecedores.
-
-## Guia anterior preservado — 2026-10-22
-
-Registo histórico do guia deste branch, preservado durante a integração.
-As instruções atuais de preparação e arranque estão nas secções acima.
-
-### BLU AI System
-
-Sistema de curadoria de viagens: transforma fontes locais num warehouse auditável
-e permite criar, rever, versionar e exportar itinerários no portal operacional.
-
-#### Componentes
-
-- `data/`: fontes Excel/PDF e catálogo operacional, preservando a proveniência.
-- `etl/`: ingestão, validação e publicação do warehouse com rollback.
-- `warehouse/`: entrega gerada pelo ETL; não editar manualmente.
-- `dashboard/`: observatório analítico Streamlit, de leitura.
-- `dmc-workspace/`: portal Next.js para briefing, catálogo, itinerários e exportações.
-- `src/blu_ai/`: agente legado opcional; o novo fluxo transacional está em preparação.
-- `translations/`: tradução local dos conteúdos exportados.
-- `exports/itineraries/`: versões e PDFs operacionais, fora do Git.
-
-#### Preparar o ambiente
-
-Usar Python 3.12 ou 3.13, Node.js >=22.13 e <25 (preferindo 24 LTS) e uv instalado.
-Os manifests e lockfiles são as fontes de dependências; não alterar os exports pip à mão.
-
-Na raiz do projeto, preparar apenas a base ETL:
-
-```powershell
-uv sync --locked --python 3.12
-```
-
-Os grupos opcionais atuais são `dashboard`, `agent` e `translation`.
-Para desenvolver e verificar o conjunto:
-
-```powershell
-uv sync --locked --all-groups --python 3.12
-```
-
-`uv sync` pode remover grupos não selecionados; usar todos os grupos necessários
-ou `--inexact` quando se pretende conservar os pacotes adicionais já instalados.
-Não existem grupos `dev` ou `sagemaker` neste checkout.
-
-A tradução exige também os modelos locais, preparados separadamente por
-`translations/setup_models.py`. Antes de instalar, consultar a
-[exceção de compatibilidade Argos/Stanza](docs/DEPENDABOT_PYTHON.md).
-Os testes com mocks não demonstram que os modelos estejam instalados.
-
-Alternativa pip para a base e o grafo de tradução exportado:
-
-```powershell
-python -m pip install -r requirements.txt
-python -m pip install --no-deps -r translations/requirements.txt
-```
-
-Preferir uv para respeitar o override Stanza. Ao manter dependências, o script
-`scripts/export_requirements.py` exige que o interpretador usado tenha o módulo
-`uv` instalado; suporta `--check` para detetar exports desatualizados.
-
-#### Dados e arranque
-
-O percurso é `data/` → ETL → `warehouse/` → observatório e portal. A publicação
-valida a entrega antes de substituir o destino e preserva rollback. Executar
-apenas quando se pretende atualizar o warehouse:
-
-```powershell
-.\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse
-```
-
-Nos testes usar fontes copiadas e destinos temporários separados, nunca a
-entrega operacional. Consultar [dados e operações](docs/DATA_PIPELINE.md).
-
-Para iniciar o portal:
-
-```powershell
-cd dmc-workspace
-npm ci
-npm run dev -- -p 3001
-```
-
-Abrir [http://localhost:3001](http://localhost:3001). O Python do portal pode ser
-indicado por `BLU_PYTHON`; a tradução usa `BLU_TRANSLATION_PYTHON`.
-As versões e PDFs usam `BLU_EXPORT_DIR` ou `exports/itineraries/` por defeito.
-As versões que aguardam recuperação do SQLite usam `BLU_OPERATIONAL_DIR` ou
-`exports/portal-persistence/`. Em containers, `data/portal/` e `exports/` têm de
-ser volumes persistentes e independentes da publicação do ETL em `warehouse/`.
-O [guia do portal](dmc-workspace/README.md) descreve SageMaker, proxy e fontes CJK.
-
-O dashboard analítico pode ser iniciado, com o grupo `dashboard` instalado:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\start_dashboard.ps1
-```
-
-O agente legado é opcional. O seu código existente não comprova a implementação
-do fluxo proposta → pré-visualização → aceitação → versão. Confirmar o
-[estado da arquitetura](docs/ARCHITECTURE.md) e o [plano](PLAN.md).
-
-#### Verificações
-
-Na raiz, usando a `.venv` preparada:
-
-```powershell
-.\.venv\Scripts\python.exe -B scripts/check_project.py
-$env:PYTHONPATH = "src"
-.\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe -B -m unittest translations.test_worker -v
-```
-
-No portal:
-
-```powershell
-cd dmc-workspace
-npm run check
-npm run build
-npm run test:catalog-etl
-```
-
-Nos outros sistemas usar o executável equivalente em `.venv/bin/python`.
-Os testes de navegador exigem o portal e configuração próprios. PDF real,
-tradução real e acesso SageMaker/Bedrock são verificações separadas dos mocks.
-Ver [testes e limitações](docs/TESTING.md).
-
-#### Documentação e limites
-
-- [Como trabalhar neste projeto](AIREADME.md).
-- [Arquitetura e âmbito](docs/ARCHITECTURE.md).
-- [Portal operacional](docs/PORTAL.md).
-- [Dados e operações](docs/DATA_PIPELINE.md).
-- [Decisões](docs/DECISIONS.md).
-- [Plano de evolução](PLAN.md).
-
-O portal não confirma automaticamente disponibilidade, reservas, preços finais,
-acessibilidade ou condições alimentares. Propostas e pendências exigem revisão
-humana. Preservar fontes, histórico, atividades protegidas e credenciais.
-
-#### Assistente de itinerário — Fase 2
-
-O fluxo de propostas com aceitação explícita, configuração privada e limites
-está em [docs/ASSISTANT.md](docs/ASSISTANT.md). A exportação TXT mantém o
-contrato atual para o Canva. Testes com fornecedor simulado não substituem
-a avaliação real aprovada numa fase posterior.
+não autoriza execução implícita nem chamadas reais a fornecedores.

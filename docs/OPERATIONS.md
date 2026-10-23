@@ -10,7 +10,7 @@ Este documento separa o que está implementado das decisões ainda abertas.
 | --- | --- | --- |
 | Portal | Next.js/Node com subprocessos Python, porta 3001 | Catálogo e entregas |
 | Apresentação | Servidor estático Python, porta 3003 | Nenhum |
-| Monitoring | Servidor Python autenticado, porta 3004 | Contas, eventos, incidentes e backups locais |
+| Monitoring | Servidor Python autenticado, porta 3004 | Contas, eventos, incidentes e backups locais/S3 |
 | Agente | FastAPI opcional, porta 8000 | Logs operacionais reduzidos |
 | Observatório | Streamlit, porta 8501 | Lê o warehouse sem o alterar |
 | ETL | Processo invocado sob pedido | Publica o warehouse de forma atómica |
@@ -21,7 +21,7 @@ Os comandos locais, portas e configuração do Studio estão no
 [runbook](MONITORING_RUNBOOK.md).
 
 O Monitoring recolhe saúde dos serviços, eventos reduzidos do portal e do agente,
-estado do warehouse, disco, backups locais e incidentes deduplicados. Não guarda
+estado do warehouse, disco, backups locais/S3 e incidentes deduplicados. Não guarda
 prompts, respostas, passwords, tokens ou conteúdo de clientes. Como está na mesma
 máquina, não consegue observar a indisponibilidade total do ambiente.
 
@@ -49,11 +49,11 @@ preservados. O arranque exige as releases S3 de fontes e estado operacional ou
 um checkpoint verificado; não existe um warehouse versionado como fallback. O log técnico fica em
 `monitoring/runtime/recovery/just-blu-it.log`.
 
-O fluxo detalhado, incluindo checkpoints, fallback S3, dados operacionais e ETL,
-está em [Persistência, recuperação e ETL](PERSISTENCIA_RECUPERACAO_ETL.md).
+O transporte de fontes, warehouse e estado operacional está em
+[Dados e ETL](DATA_PIPELINE.md#origem-etl-em-s3).
 
 Estes comandos não renovam tokens SageMaker, não criam infraestrutura AWS e não
-substituem backup externo, DNS, TLS, identidade ou regras de rede.
+substituem redundância entre regiões/contas, DNS, TLS, identidade ou regras de rede.
 
 ### Exceções que exigem intervenção humana
 
@@ -131,6 +131,19 @@ BLU_BACKUP_DIR=/caminho/externo python3 -B -m monitoring.checkpoint \
   restore-missing --backup-id IDENTIFICADOR
 ```
 
+O restauro republica o estado recuperado como uma nova release operacional ativa.
+É repetível: chaves idempotentes impedem revisões duplicadas e os JSON pendentes
+só desaparecem depois da confirmação SQL e S3. Se o checkpoint mais recente estiver
+corrompido, o launcher regista o problema e procura uma versão válida anterior.
+
+Na validação de 23 de outubro de 2026, a cache foi reconstruída a partir dos dois
+buckets, as bases SQLite e os hashes dos PDFs foram comparados e os serviços
+responderam sem dados persistentes no checkout. Uma reconstrução sem checkpoint
+local demorou 63,291 segundos neste ambiente; é uma medição, não um objetivo de
+RTO. Para operações confirmadas pela API, o RPO observado foi zero. Uma transação
+SQL ainda não confirmada no S3 permanece na outbox e pode perder-se se a máquina
+desaparecer antes da repetição.
+
 ## Sinais e resposta
 
 | Área | Sinais disponíveis ou necessários |
@@ -154,7 +167,7 @@ Antes de escolher plataforma, definir:
 - utilizadores, identidade, papéis e exposição;
 - disponibilidade, perda de dados e tempo de recuperação aceitáveis;
 - região, orçamento e responsável operacional;
-- política de retenção, backups externos e dados pessoais;
+- política de retenção, redundância entre regiões/contas e dados pessoais;
 - cadência e aprovação da publicação ETL.
 
 As alternativas em análise são:
@@ -169,11 +182,11 @@ SQLite e ficheiros locais favorecem inicialmente uma única instância escritora
 Escalar horizontalmente exige rever catálogo, bloqueios, versões e armazenamento
 dos PDFs. Nenhuma alternativa está aprovada ou instalada como produção.
 
-O `Dockerfile.portal` cobre o portal Node, mas não representa uma imagem completa
-do sistema Python, dados persistentes e serviços auxiliares. O
-[guia AWS do portal](AWS_PORTAL_TESTING.md) é uma referência de teste para uma
-arquitetura com load balancer e CloudFront, não prova que essa infraestrutura
-exista.
+O `Dockerfile.portal` cobre apenas o portal Node. Não inclui a materialização S3,
+ETL, Observatório, Monitoring, apresentação ou agente. Uma futura arquitetura com
+load balancer ou CDN terá de encaminhar as rotas dinâmicas e `/_next/static/*`
+para o mesmo build, validar APIs e assets e definir health checks, cache, TLS,
+rede e rollback. Essa infraestrutura ainda não existe neste repositório.
 
 ## Fluxo de entrega pretendido
 
@@ -198,7 +211,6 @@ A fonte de verdade das tarefas abertas é a secção
 [Pendências de monitoring](../PLAN.md#pendências-de-monitoring). Neste momento
 faltam:
 
-- destino externo cifrado para backups;
 - sonda executada fora da máquina;
 - notificações externas com canal, responsáveis, limiares e deduplicação;
 - decisão de hosting, identidade central, CI do portal, staging e rollback.

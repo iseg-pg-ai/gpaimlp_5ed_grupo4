@@ -10,7 +10,8 @@ definem o ambiente Python. `requirements.txt` e
 A instalação base contém o ETL. Os grupos opcionais são:
 
 - `dashboard`: Streamlit e Plotly;
-- `agent`: FastAPI, LangGraph, integração Bedrock e respetivas dependências;
+- `agent`: FastAPI, LangChain/LangGraph, integração Bedrock e respetivas
+  dependências;
 - `translation`: Argos Translate e CTranslate2.
 
 SageMaker SDK, MLflow, pytest, sqlparse e cryptography não pertencem ao ambiente

@@ -25,9 +25,10 @@ o warehouse manualmente. Em falha, conservar a última entrega válida.
 
 ## Backup falhado
 
-Confirmar espaço em disco e permissões de `monitoring/runtime/`. Não declarar os
-dados protegidos enquanto o painel não mostrar cópia e restauro verificados. Uma
-cópia local não cobre perda da máquina; o deployment deve configurar destino externo.
+Confirmar espaço em disco, permissões de `monitoring/runtime/` e estado IAM dos
+buckets. Não declarar os dados protegidos enquanto o painel não mostrar cópia e
+restauro verificados. O backup agendado local não cobre perda da máquina; para uma
+paragem controlada, `just blu it` exige um checkpoint confirmado no bucket remoto.
 
 ## Disco elevado
 

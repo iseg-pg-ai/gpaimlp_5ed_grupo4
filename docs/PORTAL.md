@@ -1,6 +1,6 @@
 # DMC Workspace
 
-O DMC Workspace é o portal local usado pelo consultor ou curador para recolher o
+O DMC Workspace é o portal operacional usado pelo consultor ou curador para recolher o
 briefing, consultar e manter o catálogo, gerar itinerários, acompanhar
 confirmações e exportar propostas versionadas.
 
@@ -153,10 +153,10 @@ reagendar ou mover uma atividade específica continua sujeito à revisão e acei
 
 ## Exportação e versões
 
-As versões são imutáveis e sequenciais por viagem. O armazenamento autoritativo é
-`exports/itineraries/history.sqlite`; os PDFs e os JSON de suporte são também
-materializados em `exports/itineraries/<id>/`. Esta pasta não pertence ao ETL nem
-ao Git e deve ser incluída nos backups locais.
+As versões são imutáveis e sequenciais por viagem. Durante a execução, o histórico
+é materializado em `BLU_EXPORT_DIR/history.sqlite`; os PDFs e JSON de suporte ficam
+sob o mesmo diretório. A release operacional ativa no S3 é a persistência
+permanente, e os checkpoints do `just blu it` protegem a recuperação integral.
 
 O painel reúne a versão atual, o idioma do cliente, a exportação e o histórico. A
 exportação entrega português e o idioma escolhido no mesmo ZIP. Variantes
@@ -231,7 +231,7 @@ diretamente no PDF.
 
 ## TXT para Canva
 
-O contrato atual é `blu-roteiro-canva/1.1.0`; o plugin local 0.3.0 aceita também
+O contrato atual é `blu-roteiro-canva/1.1.0`; o plugin local 0.4.0 aceita também
 TXT 1.0.0. O idioma escolhido aplica-se ao TXT e aos PDFs.
 
 1. Rever o roteiro e escolher o idioma do cliente.
@@ -281,9 +281,11 @@ src/lib/          curadoria, validação, versões, tradução e PDFs
 tests/            testes unitários, integração e navegador
 ```
 
-O portal lê `../warehouse`, `../config` e, para o catálogo editável,
-`../data/portal`. As viagens em edição também são mantidas no `localStorage` do
-navegador. Não existe autenticação nem sincronização multiutilizador.
+O portal lê os caminhos indicados por `BLU_WAREHOUSE_DIR`, `BLU_DATA_DIR`,
+`BLU_EXPORT_DIR` e `BLU_OPERATIONAL_DIR`. No SageMaker, estes caminhos pertencem
+à cache efémera materializada a partir do S3. As viagens em edição também são
+mantidas no `localStorage` do navegador. Não existe autenticação própria nem
+sincronização multiutilizador.
 
 ## Validação
 
@@ -329,12 +331,12 @@ anterior ou definir outra `PORT`. O prefixo por defeito acompanha essa porta.
 configurada; perante incompatibilidade, usar novamente o script da raiz.
 Não reutilizar builds de outra configuração nem copiar apenas parte de `.next`.
 
-### Servidor direto ou contentor
+### Servidor direto experimental
 
 O portal é uma aplicação Next.js com rotas de servidor e não pode ser publicado
 como um conjunto de ficheiros estáticos num bucket S3. O diretório de trabalho
-tem de ser `dmc-workspace`, pois os dados operacionais são lidos nas pastas irmãs
-`warehouse`, `config`, `data` e `exports`.
+tem de ser `dmc-workspace`; os caminhos de dados devem ser fornecidos pelas
+variáveis `BLU_*_DIR` e materializados antes do arranque.
 
 Numa máquina Linux com Node.js 22.13 a 24.x, executar a partir da raiz:
 
@@ -348,37 +350,15 @@ O script instala as dependências, cria um build limpo, confirma que
 Para reutilizar uma instalação ou build já validado, podem ser definidos
 `SKIP_INSTALL=true` e `SKIP_BUILD=true`.
 
-Para ECS, App Runner ou uma instância com Docker:
-
-```bash
-docker build -f Dockerfile.portal -t blu-dmc-portal .
-docker run --rm -p 3001:3001 --env-file .env blu-dmc-portal
-```
-
-O `Dockerfile.portal` copia o build completo, incluindo `.next/static`, e inicia
-o Next.js a partir da pasta correta. As pastas `data/portal` e `exports` devem ser
-associadas a armazenamento persistente em produção. Depois de cada deployment,
-qualquer cache do CloudFront para HTML deve ser invalidado para que não aponte
-para chunks de um build anterior.
+O `Dockerfile.portal` cobre apenas este processo Node. A materialização S3 e os
+restantes serviços pertencem a uma futura arquitetura de deployment, descrita em
+[Operações](OPERATIONS.md#deployment-ainda-por-decidir).
 
 `npm run check` acrescenta `format:check` a estas verificações e deve terminar sem
 avisos antes de integrar alterações no portal.
 
-Com o portal iniciado na porta 3001:
-
-```powershell
-npm run test:ui
-npm run test:catalog
-npm run test:confirmations
-npm run test:itinerary
-node tests/browser/briefing.mjs
-node tests/browser/assistant.mjs
-node tests/browser/delivery.mjs
-node tests/browser/canva-prompt.mjs
-```
-
-No Windows, definir `$env:BROWSER_CHANNEL = "msedge"` quando o Chromium do
-Playwright não estiver instalado.
+Os testes de navegador, variáveis para armazenamento isolado e alternativa Edge
+no Windows estão centralizados no [guia de testes](TESTING.md#testes-de-navegador).
 
 ## Meteorologia e controlos HTML nativos
 

@@ -1,6 +1,6 @@
-# Assistente BLU — piloto de itinerário
+# Assistente BLU — itinerário transacional
 
-## Âmbito da Fase 2
+## Âmbito atual
 
 O modelo propõe alterações; o portal valida-as com as regras já existentes.
 O fluxo é pedido → proposta → validação → pré-visualização → aceitação explícita
@@ -36,7 +36,7 @@ alterá-las. O mesmo dia pode ser editado repetidamente pelo Blu.
 
 ## Autoridade, persistência e falhas
 
-O esquema partilhado está em src/blu_ai/schemas/action-plan.json. O planeador
+O esquema partilhado está em `src/blu_ai/schemas/action-plan.json`. O planeador
 Python usa Bedrock Converse, sem ferramentas de escrita. A autoridade de
 elegibilidade, horários, capacidade e proteções permanece no TypeScript.
 O servidor volta a simular ao aceitar e compara o resultado com a pré-visualização.
@@ -46,7 +46,7 @@ auditoria na mesma transação SQLite, incluindo a proteção contra duplo cliqu
 As marcas de origem acompanham o snapshot, pelo que sobrevivem ao refresh, ao
 reinício e às exportações baseadas nessa versão.
 
-A tabela agent_runs partilha a base de versões em exports/itineraries. Guarda
+A tabela `agent_runs` partilha a base materializada em `BLU_EXPORT_DIR`. Guarda
 hash do pedido, ações/resumo/avisos, estado, versão base/final, modelo, tokens e
 latência. Não guarda o texto integral do pedido nem o histórico da conversa.
 Os diagnósticos registam códigos de erro, sem prompts ou exceções do fornecedor.
@@ -93,6 +93,6 @@ scripts/evaluate_agent.py --list lista casos sintéticos sem chamar o modelo;
 a execução real exige --live e aprovação da fase aplicável.
 
 Os mocks demonstram o funcionamento técnico e as proteções, não a qualidade
-semântica de Nova Pro. A Fase 3 deverá validar acesso privado e modelo real,
+semântica de Nova Pro. Uma avaliação real deverá validar acesso privado e modelo,
 com pelo menos 90% por operação e por idioma de conversa, e testar PDF/TXT em
 PT, EN, ES, FR, DE e ZH. Não declarar esses critérios cumpridos nesta fase.

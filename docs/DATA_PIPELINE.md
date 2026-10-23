@@ -128,7 +128,7 @@ permissões administrativas ao ETL. As exceções e o procedimento manual estão
 [Retenção dos buckets S3](S3_RETENTION.md#exceções-e-validações-manuais).
 
 Alterações confirmadas no catálogo e nas versões são registadas em
-`exports/portal-persistence/data-s3-outbox/`. O evento contém a operação completa
+`BLU_OPERATIONAL_DIR/data-s3-outbox/`. O evento contém a operação completa
 necessária à recuperação, com identificador idempotente. O ciclo do Monitoring e
 o arranque enviam-no para `operational-changes/`; o ficheiro local só é removido
 depois de `PutObject` e `HeadObject` confirmarem tamanho, AES-256 e SHA-256.
@@ -155,10 +155,19 @@ A materialização valida manifesto, tamanho, SHA-256 e integridade SQLite antes
 de trocar atomicamente a cache. O launcher exporta os caminhos da cache para
 todos os consumidores.
 
+Uma operação confirmada do catálogo ou das versões escreve primeiro numa
+transação SQLite da cache, regista uma chave idempotente e publica uma nova
+snapshot operacional. Se SQLite estiver indisponível, a operação validada fica
+em JSON sob `BLU_OPERATIONAL_DIR`; se o S3 falhar depois do commit, fica na outbox.
+A sincronização respeita a ordem e só remove o JSON após confirmação.
+
+Enviar uma versão para o Lixo conserva-a na release ativa com `trashedAt`.
+Uma eliminação permanente retira-a apenas da release ativa seguinte; releases e
+checkpoints anteriores não são apagados automaticamente.
+
 ## Documentação relacionada
 
 - [Operações e recuperação](OPERATIONS.md)
-- [Persistência, recuperação e ETL](PERSISTENCIA_RECUPERACAO_ETL.md)
 - [Retenção dos buckets S3](S3_RETENTION.md)
 - [Modelo de dados](../reports/data_model_report.md)
 - [DMC Workspace](PORTAL.md)
@@ -245,11 +254,15 @@ depois de serem definidos a cadência, a origem e o processo de aprovação.
 
 ### Cópias de segurança
 
-- Fazer backup de `exports/itineraries/` para preservar versões e PDFs.
-- Fazer backup de `exports/portal-persistence/` enquanto existirem operações pendentes.
-- Fazer backup de `data/portal/catalog.sqlite` com o portal e o ETL parados.
-- Não guardar segredos, credenciais ou ficheiros `.env` no Git.
-- Não tratar `warehouse/` como fonte editável.
+No SageMaker, usar `just blu it`: o launcher cria um checkpoint consistente do
+catálogo, histórico, PDFs e operações pendentes, valida-o e confirma a cópia no
+bucket de backups antes de parar os serviços. O bucket de dados conserva as
+releases autoritativas de fontes, warehouse e estado operacional.
+
+`monitoring.checkpoint` permite criar, verificar ou restaurar uma versão
+identificada manualmente. Não copiar bases SQLite enquanto os serviços escrevem,
+não guardar segredos no Git e não tratar `warehouse/` como fonte editável. Ver o
+[procedimento de recuperação](OPERATIONS.md#recuperação-local).
 
 Consulte também o [guia do portal](PORTAL.md) e o
 [plano de operações](OPERATIONS.md).

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 from typing import Dict, Any, List, Optional
-from langgraph.prebuilt import create_react_agent
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain.agents import create_agent
+from langchain_core.messages import HumanMessage
 
 from blu_ai.llm import get_llm
 from blu_ai.tools.catalog_tools import search_blu_catalog
@@ -24,12 +24,12 @@ AVAILABLE_TOOLS = [
 
 
 def build_curator_agent(model_id: Optional[str] = None, temperature: Optional[float] = None):
-    """Constrói e devolve o Agente ReAct LangGraph equipado com as ferramentas BLU."""
+    """Constrói e devolve o agente equipado com as ferramentas BLU."""
     llm = get_llm(model_id=model_id, temperature=temperature)
-    agent = create_react_agent(
+    agent = create_agent(
         model=llm,
         tools=AVAILABLE_TOOLS,
-        prompt=CURATOR_SYSTEM_PROMPT,
+        system_prompt=CURATOR_SYSTEM_PROMPT,
     )
     return agent
 

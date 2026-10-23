@@ -11,7 +11,7 @@ Antes da instalação, cada colega precisa de:
 - um espaço SageMaker Code Editor próprio;
 - uma função IAM com as permissões Bedrock exigidas pelo Agente IA;
 - Python 3.12 ou 3.13, Node 24 LTS, npm, Git e `uv` 0.12.19;
-- acesso autorizado às fontes e exports operacionais que não estejam no Git.
+- acesso IAM autorizado aos buckets de dados e backups do ambiente.
 
 As permissões AWS e o acesso ao repositório são provisionados fora deste projeto.
 Não copiar `.aws/`, `.env`, `monitoring/runtime/` ou credenciais entre utilizadores.
@@ -26,7 +26,7 @@ Code Editor apenas a parte terminada em `/codeeditor/default`. Não incluir
 python3 -m pip install --user uv==0.12.19
 export PATH="$HOME/.local/bin:$PATH"
 uv sync --locked --all-groups
-.venv/bin/python scripts/setup_workspace.py --initialize-data \
+.venv/bin/python scripts/setup_workspace.py \
   --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
 ```
 
@@ -36,9 +36,11 @@ O assistente:
 2. confirma as versões de Python, Node, npm, `uv` e Git;
 3. instala o launcher `just` em `~/.local/bin`;
 4. cria o primeiro administrador do Monitoring quando ainda não existem contas;
-5. confirma a presença dos ficheiros versionados necessários;
-6. com `--initialize-data`, cria o catálogo a partir do warehouse e a pasta vazia
-   de itinerários, preservando instalações existentes válidas.
+5. confirma a estrutura do checkout; os dados não precisam de existir localmente;
+6. deixa a materialização das releases S3 autorizadas para o launcher.
+
+`--initialize-data` existe apenas para desenvolvimento local legado e exige uma
+fonte e um warehouse já materializados. Não o usar no onboarding normal S3.
 
 Se `just` não for encontrado na mesma sessão, acrescentar `~/.local/bin` ao `PATH`
 ou abrir um terminal novo. O acesso inicial gerado fica temporariamente em
@@ -60,12 +62,11 @@ Com os pré-requisitos resolvidos:
 ./bin/just blu it
 ```
 
-Este comando autentica o administrador, prepara todas as dependências bloqueadas e
-trata os dados locais antes dos testes. Num clone sem catálogo, itinerários ou
-backups, cria o catálogo a partir do warehouse versionado e uma área de itinerários
-vazia. Numa instalação existente, preserva os conjuntos válidos e recupera os
-restantes apenas de um backup verificado. Depois constrói o Portal, inicia os cinco
-serviços e abre as quatro interfaces. Nos arranques seguintes basta:
+Este comando autentica o administrador, cria e confirma um checkpoint remoto
+quando existe estado a preservar, para os serviços e materializa a cache a partir
+desse checkpoint ou das releases do bucket de dados. Depois prepara dependências,
+testa, constrói o Portal, inicia os cinco serviços e abre as quatro interfaces.
+Nos arranques seguintes basta:
 
 ```bash
 just blu up
@@ -83,19 +84,12 @@ interfaces públicas configuradas em `config/studio.local.json`.
 
 ## Estado local e transferência
 
-O Git fornece código, fontes versionadas e a entrega atual de `warehouse/`. Estes
-elementos são específicos de cada ambiente e precisam de backup ou transferência
-autorizada quando seja necessário preservar trabalho anterior:
-
-- `data/portal/catalog.sqlite`: catálogo editável e revisões;
-- `exports/`: propostas, versões e PDFs;
-- `monitoring/runtime/`: contas, logs, backups e estado operacional.
-
-Uma instalação nova pode começar sem estes conjuntos; o primeiro `just blu it`
-inicializa o catálogo e a estrutura de versões. Para continuar trabalho existente,
-transferir cada conjunto pelo canal aprovado pela organização. As contas do
-Monitoring devem ser criadas novamente para cada instalação; não transferir hashes
-ou palavras-passe como método normal de onboarding.
+O Git fornece código, configuração partilhável e lockfiles. As fontes, o
+warehouse, o catálogo, as versões e os PDFs são recuperados dos buckets
+autorizados para uma cache em `/tmp`; não devem ser copiados para o repositório.
+`monitoring/runtime/` permanece local porque contém contas, sessões e logs do
+ambiente. As contas do Monitoring devem ser criadas novamente em cada instalação;
+não transferir hashes ou palavras-passe como método normal de onboarding.
 
 ## Verificação final
 
@@ -110,19 +104,18 @@ interfaces abrem e o Monitoring aceita a conta pessoal do colega.
 
 ## Ficheiros incluídos no repositório para desenvolvimento
 
-O clone inclui fontes em `data/`, o warehouse publicado, os lockfiles, o launcher
+O clone inclui código, fixtures sintéticas de teste, os lockfiles, o launcher
 `bin/just`, `config/studio.example.json` e `.env.example`. Não requer ficheiros da
 pasta pessoal de quem criou o projeto. O `.env.example` documenta os valores
 predefinidos do agente; copiá-lo para `.env` é opcional. Cada sessão usa a sua
 função IAM, sem copiar chaves AWS. Node e Python são pré-requisitos de sistema;
 `node_modules`, `.venv`, navegadores e bibliotecas são instalados pelos comandos.
 
-Este fluxo aplica-se também aos branches de desenvolvimento: o estado inicial é
-recriado a partir dos ficheiros versionados, sem incluir as contas e o histórico
-operacional de outra instalação. O Git não aplica regras de exclusão por branch;
+Este fluxo aplica-se também aos branches de desenvolvimento: o estado operacional
+é materializado do S3 autorizado, sem incluir as contas de outra instalação. O Git
+não aplica regras de exclusão por branch;
 um ficheiro publicado num branch continua no histórico se for depois removido.
 
-Para começar com dados locais independentes, não copiar `catalog.sqlite`, exports
-ou contas existentes. Para continuar propostas anteriores, é necessária uma
-transferência autorizada dos respetivos dados e versões; a inicialização não
-reconstitui trabalho que nunca foi publicado no Git ou num backup.
+Para começar num ambiente independente, usar prefixos S3 próprios e criar contas
+novas. Trabalho que nunca tenha sido publicado numa release ou checkpoint não pode
+ser reconstituído pelo launcher.

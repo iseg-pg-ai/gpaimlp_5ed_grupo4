@@ -10,9 +10,6 @@ Translation is optional local infrastructure layered onto the DMC workspace.
   sanitized error categories. Never log traveler text.
 - `ui_sources.json` and `ui_overrides.json` are inputs;
   `dmc-workspace/src/i18n/messages.json` is generated output.
-- Branch `origin/fix/pdf-export-translation-setup` commit `0c1ba50` contains
-  unmerged setup diagnostics and tests. Verify whether it has landed before
-  changing failure handling.
 
 Validation from the repository root:
 

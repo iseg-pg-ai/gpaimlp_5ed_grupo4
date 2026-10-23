@@ -130,9 +130,15 @@ def main() -> int:
     blockers = ([] if python_ok else ["Python 3.12 ou 3.13"])
     blockers += ([] if node_ok else ["Node >=22.13 e <25"])
     blockers += missing
+    if versions["uv"] and versions["uv"].split()[:2] != ["uv", "0.12.19"]:
+        blockers.append("uv 0.12.19")
+    # O modo normal prepara código e acesso; `just blu it` materializa os dados S3.
+    # A inicialização local legada continua a exigir uma entrega já presente.
     required = ["warehouse/blu_etl.sqlite", "warehouse/manifest.json",
                 "warehouse/validation_report.json", "data/reference/structured_dataset.xlsx"]
-    blockers += [f"ficheiro versionado ausente: {name}" for name in required if not (ROOT / name).is_file()]
+    if args.initialize_data:
+        blockers += [f"ficheiro local ausente: {name}" for name in required
+                     if not (ROOT / name).is_file()]
     if args.initialize_data and not (ROOT / ".venv/bin/python").is_file():
         blockers.append("Executar primeiro: uv sync --locked --all-groups")
 
@@ -140,8 +146,9 @@ def main() -> int:
     for name, value in versions.items():
         print(f"  {'✓' if value else '✗'} {name}: {value or 'ausente'}")
     print(f"  ✓ Studio: {studio_url}")
-    print(f"  {'✓' if (ROOT / 'data').is_dir() else '!'} Fontes locais: data/")
-    print(f"  {'✓' if (ROOT / 'warehouse/blu_etl.sqlite').is_file() else '!'} Warehouse publicado")
+    print(f"  {'✓' if (ROOT / 'data').is_dir() else '!'} Estrutura local: data/")
+    print(f"  {'✓' if (ROOT / 'warehouse/blu_etl.sqlite').is_file() else '·'} Cache local: "
+          f"{'disponível' if (ROOT / 'warehouse/blu_etl.sqlite').is_file() else 'será materializada pelo just blu it'}")
     if blockers:
         print("\nBloqueios: " + ", ".join(blockers), file=sys.stderr)
         return 1

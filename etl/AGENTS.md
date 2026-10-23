@@ -10,7 +10,7 @@
   preserve the previous warehouse if build or publication fails.
 - PDF extraction errors and structured merge conflicts require explicit review;
   never infer that `validation_report.status == passed` resolves them.
-- Never write into `data/` and never patch `warehouse/` by hand.
+- Never modify source releases and never patch a materialized warehouse by hand.
 
 Validation from the repository root:
 
@@ -19,6 +19,8 @@ Validation from the repository root:
 .\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse
 ```
 
+This direct command is for isolated local validation. The SageMaker operational
+flow uses `etl.cloud_runtime` to fetch sources and publish a validated S3 release.
 After regeneration, inspect `manifest.json`, `validation_report.json`,
 `pdf_errors`, structured conflicts, and the complete warehouse diff before
 accepting the delivery.

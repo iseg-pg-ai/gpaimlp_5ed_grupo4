@@ -17,7 +17,7 @@ S3 operational/current.json — catálogo, histórico, PDFs e filas
         -> localStorage — rascunhos e preferências
         -> cache/exports/itineraries/ — versões, hashes e PDFs históricos
         -> cache/exports/portal-persistence/ — escritas pendentes
-     -> monitoring/ — saúde, eventos, incidentes e backups locais
+     -> monitoring/ — saúde, eventos, incidentes e backups locais/S3
      -> presentation/ — apresentação estática independente
 ```
 
@@ -116,10 +116,12 @@ da raiz do projeto. A base operacional fica em `BLU_DATA_DIR/portal/catalog.sqli
 `BLU_EXPORT_DIR` continua a controlar apenas o histórico de versões e PDFs.
 
 As novas versões e revisões do catálogo usam `version-persistence.ts` e
-`catalog-persistence.ts`. Uma gravação tenta primeiro o SQLite autoritativo. Se a
+`catalog-persistence.ts`. Uma gravação tenta primeiro o SQLite transacional da
+cache. A release operacional S3 continua a ser a fonte permanente. Se a
 base estiver indisponível, guarda uma operação validada em
-`BLU_OPERATIONAL_DIR/pending-versions/` ou `pending-catalog/`; por defeito, a área
-é `exports/portal-persistence/`. Cada operação tem uma chave SHA-256 determinística,
+`BLU_OPERATIONAL_DIR/pending-versions/` ou `pending-catalog/`. Fora do launcher,
+o fallback é `exports/portal-persistence/`; no SageMaker, o caminho pertence à
+cache temporária. Cada operação tem uma chave SHA-256 determinística,
 registada na mesma transação SQL em `portal_operations`. A sincronização é tentada
 automaticamente antes de novas gravações e leituras. Uma repetição depois de um
 commit devolve o resultado já confirmado e não cria outra versão ou revisão. O
@@ -158,30 +160,29 @@ LangChain/Bedrock em `BLU_AI_AGENT_URL`. A existência desse serviço não compr
 a sua disponibilidade nem autoriza chamadas reais. O portal funciona sem ele.
 
 TXT 1.1.0 preserva personalização, capacidade diária, períodos livres e percursos
-guardados. O plugin-fonte 0.3.0 aceita TXT 1.0.0 e 1.1.0; a atualização de uma
+guardados. O plugin-fonte 0.4.0 aceita TXT 1.0.0 e 1.1.0; a atualização de uma
 instalação remota exige uma operação própria. O modelo visual Canva não fornece
 factos para outras viagens. Ver o [guia do portal](PORTAL.md).
 
 O sistema produz propostas; não efetua reservas. O Monitoring tem autenticação
 local própria, mas o portal não tem identidade, papéis ou sincronização
-multiutilizador. Persistência cloud e fotografias autorizadas nos PDFs DMC
-continuam pendentes. Partilha e retenção precisam de revisão antes de produção.
+multiutilizador. A persistência S3 está implementada, mas hosting de produção e
+fotografias autorizadas nos PDFs DMC continuam pendentes. Partilha e retenção
+precisam de revisão antes de produção.
 Acesso pelo Studio não torna a proposta pública para clientes externos.
 
-## Fronteira para a próxima iteração do agente
+## Fronteira atual do agente
 
-O agente existente é um serviço opcional separado do portal. A evolução deve
-partir dessa fronteira e dos contratos de domínio, em vez de criar outro fluxo
-paralelo de catálogo, planeamento ou persistência.
+O fluxo transacional está integrado: o planeador produz propostas estruturadas,
+o portal volta a validá-las e o curador tem de as aceitar antes da criação de uma
+versão. As onze operações suportadas, proteções e limites estão em
+[Assistente BLU](ASSISTANT.md).
 
-1. Definir as operações permitidas e os seus esquemas de entrada e saída.
-2. Reutilizar a pesquisa e as validações de domínio; centralizar as regras antes
-   de acrescentar ferramentas que as repitam.
-3. Converter respostas do modelo em propostas de ações validadas pelo servidor.
-4. Preservar confirmação humana, concorrência e histórico antes de aplicar ações.
-5. Testar com mocks, snapshots e diretórios temporários antes de usar fornecedores.
-
-Essa evolução ainda não está integrada como um novo fluxo autoritativo.
+O serviço HTTP na porta 8000 é opcional e não constitui outra autoridade sobre o
+itinerário. A próxima iteração deve concentrar-se em avaliar o modelo real,
+custos, privacidade e degradação, mantendo contratos, confirmação humana,
+concorrência e histórico. Novas ferramentas devem reutilizar a pesquisa e as
+validações existentes, sem criar outro catálogo ou persistência.
 
 ## Verificação e manutenção
 
@@ -199,7 +200,6 @@ enquanto os componentes estão instalados ou em execução.
 - CI de dados: verifica dependências, ETL e entrega; CI documental: Markdown.
 - Não há CI do portal neste checkout; executar `npm run check` e `npm run build`.
 
-Manter um guia por responsabilidade: [dados e operações](DATA_PIPELINE.md),
-[persistência, recuperação e ETL](PERSISTENCIA_RECUPERACAO_ETL.md),
-[portal](PORTAL.md), [operações](OPERATIONS.md), [teste AWS](AWS_PORTAL_TESTING.md),
-[testes](TESTING.md) e [dependências Python](DEPENDABOT_PYTHON.md).
+Manter um guia por responsabilidade: [dados e ETL](DATA_PIPELINE.md),
+[portal](PORTAL.md), [operações](OPERATIONS.md), [testes](TESTING.md) e
+[dependências Python](DEPENDABOT_PYTHON.md).

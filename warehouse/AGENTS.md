@@ -1,6 +1,8 @@
 # Warehouse guidance
 
-This directory is generated delivery data owned by `etl.pipeline`.
+This directory represents generated delivery data owned by `etl.pipeline`.
+In SageMaker, `BLU_WAREHOUSE_DIR` points to the temporary cache materialized
+from the validated S3 release.
 
 - Never hand-edit JSON, JSONL, or SQLite outputs.
 - Regenerate only for approved source or ETL behavior changes:
@@ -13,5 +15,5 @@ This directory is generated delivery data owned by `etl.pipeline`.
   inventory and PDF errors, and explicit review of structured merge conflicts.
 - Review generated diffs for deterministic output, schema compatibility,
   unexpected row-count changes, source lineage, and accidental customer data.
-- The team must still decide whether this directory is a committed release
-  snapshot, a CI artifact, or both; do not change that policy implicitly.
+- The S3 release is authoritative. CI produces only the synthetic
+  `blu-warehouse-ci-smoke` artefact and must never publish it as operational data.

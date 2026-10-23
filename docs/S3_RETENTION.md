@@ -44,8 +44,9 @@ neste projeto só pode ser considerada aplicada depois de um administrador:
 3. confirmar Versioning, Default Encryption e Block Public Access;
 4. voltar a consultar a configuração e guardar evidência da validação.
 
-Estas exceções permanecem abertas no `PLAN.md`; não devem ser marcadas como
-concluídas apenas porque os uploads e restauros da aplicação funcionam.
+Estas exceções estão registadas no `PLAN.md` como fronteira administrativa
+aceite. A regra não deve ser apresentada como aplicada enquanto um administrador
+não a confirmar na consola.
 
 ## Decisão proposta
 

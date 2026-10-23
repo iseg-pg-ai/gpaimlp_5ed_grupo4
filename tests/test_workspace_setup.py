@@ -1,4 +1,6 @@
 """Contratos de preparação de um ambiente independente."""
+from contextlib import redirect_stdout
+from io import StringIO
 import os
 from pathlib import Path
 import tempfile
@@ -9,6 +11,49 @@ from scripts import setup_workspace as setup
 
 
 class WorkspaceSetupTest(unittest.TestCase):
+    def test_check_only_does_not_require_materialized_data(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "data").mkdir()
+            arguments = [
+                "setup_workspace.py",
+                "--check-only",
+                "--studio-url",
+                "https://workspace.studio.eu-west-1.sagemaker.aws/codeeditor/default",
+            ]
+            with (
+                patch.object(setup, "ROOT", root),
+                patch.object(setup, "activate_node"),
+                patch.object(setup, "node_version", return_value="v24.0.0"),
+                patch.object(setup, "command_version", side_effect=lambda command, *args: (
+                    "uv 0.12.19" if command == "uv" else "disponível"
+                )),
+                patch.object(setup.sys, "argv", arguments),
+                redirect_stdout(StringIO()),
+            ):
+                self.assertEqual(setup.main(), 0)
+
+    def test_check_only_rejects_an_outdated_uv(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            arguments = [
+                "setup_workspace.py",
+                "--check-only",
+                "--studio-url",
+                "https://workspace.studio.eu-west-1.sagemaker.aws/codeeditor/default",
+            ]
+            with (
+                patch.object(setup, "ROOT", root),
+                patch.object(setup, "activate_node"),
+                patch.object(setup, "node_version", return_value="v24.0.0"),
+                patch.object(setup, "command_version", side_effect=lambda command, *args: (
+                    "uv 0.12.17" if command == "uv" else "disponível"
+                )),
+                patch.object(setup.sys, "argv", arguments),
+                redirect_stdout(StringIO()),
+            ):
+                self.assertEqual(setup.main(), 1)
+
     def test_selects_node_and_npm_from_same_supported_installation(self):
         with tempfile.TemporaryDirectory() as directory:
             home = Path(directory)

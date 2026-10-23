@@ -1,8 +1,9 @@
 # DMC Workspace guidance
 
-This is the operational itinerary workspace. It reads `../warehouse/` and
-`../config/curation_rule_overrides.json`; it writes runtime state only under
-`../exports/` or `BLU_EXPORT_DIR`.
+This is the operational itinerary workspace. It reads the warehouse and runtime
+paths selected by the `BLU_*_DIR` variables plus
+`../config/curation_rule_overrides.json`. In SageMaker these paths point to a
+temporary cache materialized from the authoritative S3 release.
 
 The existing `src/components/NewTripScreen.tsx` form is the version 1.0 intake
 baseline. Keep intake, curation, review, versioning, and export in this curator
@@ -12,8 +13,9 @@ workspace; do not introduce Google Forms or a separate intake application.
 
 - Keep `src/lib/curation.ts` deterministic and explainable. It is rule-based
   domain logic, not an autonomous model agent.
-- Browser `localStorage` is draft/UI state. SQLite in `exports/itineraries` is
-  authoritative version history.
+- Browser `localStorage` is draft/UI state. SQLite and write-once files under
+  `BLU_EXPORT_DIR` are the runtime representation; the active operational S3
+  release is the permanent source of truth.
 - Preserve `baseVersion` conflict checks, immutable snapshots, parent links,
   snapshot/hash-chain semantics, write-once files, and persisted PDF bytes.
 - Keep portal localization separate from itinerary translation:

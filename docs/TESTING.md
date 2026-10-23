@@ -116,8 +116,8 @@ credenciais e runtime temporários; não usa contas reais.
 - Um HTTP 200 não prova que a curadoria completa ou o acesso Bedrock funcionam.
 - Testes locais não validam proxy, sessão, DNS, TLS ou regras de rede da AWS.
 - A estrutura de um PDF não substitui a inspeção visual nos idiomas suportados.
-- A aprovação de um build não confirma backups externos, alertas ou recuperação
-  de uma máquina completa.
+- A aprovação de um build não confirma a configuração administrativa dos buckets,
+  alertas externos ou recuperação de uma máquina completa.
 
 Registar em [DECISIONS.md](DECISIONS.md) apenas resultados que condicionem uma
 decisão durável. Resultados transitórios pertencem ao log da execução ou à revisão

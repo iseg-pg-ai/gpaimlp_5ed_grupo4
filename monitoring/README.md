@@ -141,9 +141,9 @@ exigem reinício do monitoring.
 ## Backups e ensaio de restauro
 
 Com `backup.enabled`, o coletor cria e verifica uma cópia local a cada 24 horas.
-O resultado da tentativa fica em `monitoring/runtime/backup-schedule.json`. O ciclo
-começa no arranque se não existir uma tentativa recente e não substitui um destino
-externo cifrado, que depende da arquitetura de deployment.
+O resultado da tentativa fica em `monitoring/runtime/backup-schedule.json`. Esta
+rotina permite ensaios frequentes; o checkpoint remoto obrigatório antes de uma
+paragem controlada pertence ao `just blu it` e usa `BLU_BACKUP_S3_BUCKET`.
 
 Para criar uma cópia local do catálogo SQLite, warehouse, itinerários e operações
 JSON pendentes, e validar imediatamente hashes, integridade SQLite e restauro num
@@ -160,9 +160,9 @@ python -B -m monitoring.backup verify monitoring/runtime/backups/IDENTIFICADOR
 ```
 
 O manifesto inclui hashes SHA-256 e tamanhos. A evidência mais recente fica em
-`monitoring/runtime/restore-evidence.json` e alimenta o painel. Estas cópias são
-locais ao mesmo ambiente; uma política de retenção e armazenamento externo ainda
-tem de ser definida antes de produção.
+`monitoring/runtime/restore-evidence.json` e alimenta o painel. A retenção remota
+não elimina backups válidos; a regra proposta apenas aborta uploads multipart
+incompletos após sete dias e requer aplicação administrativa na consola AWS.
 
 ## Cobertura
 

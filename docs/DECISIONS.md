@@ -1,5 +1,11 @@
 # Decisões e questões abertas
 
+Este ficheiro preserva decisões por ordem de registo. Entradas antigas podem ter
+sido substituídas por decisões posteriores; para o estado operacional atual,
+consultar [Arquitetura](ARCHITECTURE.md) e [Plano](../PLAN.md).
+Nomes de documentos ou branches entretanto removidos permanecem apenas como
+evidência histórica da decisão registada.
+
 ## S3 é a fonte permanente; SQLite é cache materializada — 2026-10-22
 
 Esta decisão substitui a afirmação transitória abaixo de que o SQL local é
@@ -1062,3 +1068,14 @@ evidência passa a incluir `recovery_seconds`. O RPO de operações que recebera
 sucesso da API é zero porque a publicação operacional S3 é aguardada; alterações
 locais cuja publicação falha não são apresentadas como confirmadas. Os objetivos
 de serviço ainda precisam de aprovação operacional.
+
+## 2026-10-23 — API atual do agente e versão reprodutível do uv
+
+O agente usa `langchain.agents.create_agent`, com LangChain declarado no grupo
+opcional `agent`. Esta substituição elimina a API descontinuada
+`langgraph.prebuilt.create_react_agent` e mantém o grafo e as ferramentas já
+existentes. O projeto exige `uv 0.12.19`; o assistente de configuração rejeita
+outras versões para que o lockfile seja interpretado de forma reprodutível.
+
+Evidência: verificação completa do ambiente aprovada e seis testes do agente
+aprovados com um modelo simulado, sem chamadas a fornecedores externos.
