@@ -1,0 +1,24 @@
+{
+  "name": "blu-infra",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "synth": "node aws-split-app.mjs",
+    "synth:aws": "node aws-split-app.mjs",
+    "synth:split": "node aws-split-app.mjs",
+    "synth:cloud": "node aws-split-app.mjs",
+    "deploy:cloud": "cdk deploy --all --app \"node aws-split-app.mjs\"",
+    "synthetic:cloud": "node scripts/generate-synthetic-interactions.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "deploy:local": "node aws-split-app.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudformation": "^3.900.0",
+    "aws-cdk-lib": "^2.220.0",
+    "constructs": "^10.4.0",
+    "semver": "7.8.5"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.1030.0"
+  }
+}

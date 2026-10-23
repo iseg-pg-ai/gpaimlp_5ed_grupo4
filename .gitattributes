@@ -1,3 +1,2 @@
-dmc-workspace/src/**/*.ts text eol=lf
-dmc-workspace/src/**/*.tsx text eol=lf
-dmc-workspace/tests/**/*.mjs text eol=lf
+*.sh text eol=lf
+Makefile text eol=lf

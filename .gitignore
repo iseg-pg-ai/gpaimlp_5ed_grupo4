@@ -41,6 +41,12 @@ htmlcov/
 .eggs/
 *.egg-info/
 *.egg
+node_modules/
+dist/
+
+# Generated infrastructure assemblies
+cdk.out/
+cdk.aws.out/
 
 # Segredos e configuração local
 .env
@@ -63,6 +69,13 @@ mlruns/
 /exports/
 /data/**/*.xlsx
 /data/**/*.pdf
+
+# Estado local do chatbot e capturas visuais
+/backend_chatbot/.data/
+/backend_chatbot/.workspace*.log
+/frontend/frontend_chatbot/source-captures/
+
+# Catálogo editável local e respetivo histórico transacional
 /data/portal/*.sqlite*
 /data/portal/etl.lock
 /warehouse/*
@@ -79,6 +92,7 @@ mlruns/
 .kiro/
 .vscode-server/
 .claude/
+/.openai/
 .code-editor-server/
 .local/
 .npm/
