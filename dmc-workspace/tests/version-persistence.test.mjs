@@ -128,3 +128,39 @@ test("a repetição após commit SQL não duplica a versão e só então remove 
   assert.equal(readdirSync(path.dirname(pendingFile)).length, 0);
   store.close();
 });
+
+test("várias versões sobrevivem à interrupção e sincronizam por dependência", (t) => {
+  const { versions, operations } = fixture(t);
+  writeFileSync(versions, "indisponível");
+  const changed = {
+    ...snapshot,
+    itinerary: [{ ...snapshot.itinerary[0], title: "Lisboa revista" }],
+  };
+  const first = persistVersion(
+    { tripId: "interrupcao", snapshot, reason: "generated", baseVersion: null },
+    { versionRoot: versions, operationalRoot: operations },
+  );
+  const second = persistVersion(
+    { tripId: "interrupcao", snapshot: changed, reason: "edited", baseVersion: 1 },
+    { versionRoot: versions, operationalRoot: operations },
+  );
+  const repeated = persistVersion(
+    { tripId: "interrupcao", snapshot: changed, reason: "edited", baseVersion: 1 },
+    { versionRoot: versions, operationalRoot: operations },
+  );
+  assert.equal(first.queued, true);
+  assert.equal(second.queued, true);
+  assert.equal(repeated.queued, true);
+  assert.equal(readdirSync(path.join(operations, "pending-versions")).length, 2);
+
+  unlinkSync(versions);
+  const restarted = new VersionStore(versions);
+  assert.deepEqual(syncPendingVersions(restarted, operations), { synchronized: 2, pending: 0 });
+  assert.deepEqual(syncPendingVersions(restarted, operations), { synchronized: 0, pending: 0 });
+  assert.equal(restarted.list("interrupcao").length, 2);
+  assert.equal(
+    JSON.parse(restarted.get("interrupcao", 2).snapshot).itinerary[0].title,
+    "Lisboa revista",
+  );
+  restarted.close();
+});

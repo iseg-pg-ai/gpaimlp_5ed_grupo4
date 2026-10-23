@@ -1083,3 +1083,9 @@ ensaio adicional, `data/`, `warehouse/` e `exports/` foram retirados
 temporariamente do projeto e os quatro dashboards e a API do catálogo
 responderam a partir da cache. Passaram 133 testes Python, 143 testes Node com um
 ignorado, build Next.js, validação estrutural, Markdown e `git diff --check`.
+
+Uma medição posterior reconstruiu e publicou o warehouse em 63,291 segundos. A
+evidência passa a incluir `recovery_seconds`. O RPO de operações que receberam
+sucesso da API é zero porque a publicação operacional S3 é aguardada; alterações
+locais cuja publicação falha não são apresentadas como confirmadas. Os objetivos
+de serviço ainda precisam de aprovação operacional.

@@ -57,6 +57,18 @@ Aplicar a mesma regra aos dois buckets. A alteração é administrativa e só de
 ser efetuada depois de rever na consola que nenhuma outra ação de expiração ficou
 selecionada.
 
+O ficheiro [`config/s3-lifecycle-abort-multipart.json`](../config/s3-lifecycle-abort-multipart.json)
+contém a mesma regra para aplicação por um administrador através da AWS CLI:
+
+```bash
+aws s3api put-bucket-lifecycle-configuration \
+  --bucket NOME-DO-BUCKET \
+  --lifecycle-configuration file://config/s3-lifecycle-abort-multipart.json
+```
+
+Este comando deve ser executado separadamente nos buckets de dados e backups,
+depois de confirmar que não substitui regras organizacionais existentes.
+
 ## Confirmações administrativas
 
 Em **S3 → bucket → Properties**, confirmar em ambos os buckets:
@@ -64,6 +76,11 @@ Em **S3 → bucket → Properties**, confirmar em ambos os buckets:
 - Bucket Versioning: `Enabled`;
 - Default encryption: `SSE-S3` ou a chave KMS aprovada;
 - Block Public Access: todas as opções ativas.
+
+A `SageMakerTeachingExecutionRole` foi novamente testada em 23 de outubro de
+2026 e recebeu `AccessDenied` nos quatro controlos administrativos de ambos os
+buckets. A aplicação mantém assim privilégio mínimo; a aplicação e verificação
+da regra exigem uma sessão administrativa.
 
 SSE-KMS só é necessário se existir um requisito organizacional de controlo e
 auditoria da chave. Nesse caso, é preciso acrescentar à role permissões mínimas

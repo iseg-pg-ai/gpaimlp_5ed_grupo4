@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 import sqlite3
 import tempfile
+import time
 
 from etl.operational_s3 import _configuration, materialize, publish
 from etl.pipeline import run
@@ -54,6 +55,7 @@ def _promote(staged: Path, destination: Path) -> None:
 
 def rebuild(recovered: Path | None, destination: Path, client=None) -> dict:
     """Republica o backup recuperado e constrói uma cache só a partir do S3."""
+    started = time.monotonic()
     destination = destination.resolve()
     bucket, environment = _configuration()
     operational = None
@@ -91,6 +93,7 @@ def rebuild(recovered: Path | None, destination: Path, client=None) -> dict:
         "source_release": sources["release_id"],
         "warehouse_release": warehouse["release_id"],
         "warehouse_validation": manifest["validation"]["status"],
+        "recovery_seconds": round(time.monotonic() - started, 3),
     }
     runtime = ROOT / "monitoring/runtime"
     runtime.mkdir(parents=True, exist_ok=True, mode=0o700)

@@ -248,6 +248,23 @@ e `exports/` foram retirados temporariamente do projeto; os quatro dashboards e
 a API do catálogo responderam usando apenas a cache. Só depois desse resultado
 os dados persistentes foram removidos do Git.
 
+Uma reconstrução adicional, sem checkpoint local, demorou 63,291 segundos desde
+a consulta das releases até à promoção da cache e publicou um warehouse
+validado. `etl.cloud_runtime` passou a guardar `recovery_seconds` na evidência do
+Monitoring. Este valor é uma medição do ambiente atual, não um objetivo de RTO.
+
+Para operações confirmadas pela API, o RPO observado é zero: a resposta só é
+devolvida depois de a release operacional S3 ser confirmada. Se o SQLite aceitar
+a transação mas o S3 falhar, o pedido falha e a outbox preserva a operação; uma
+falha definitiva da máquina antes da repetição pode perder essa alteração ainda
+não confirmada. O limite aceitável de RTO e RPO continua a ser uma decisão de
+serviço.
+
+O ensaio prolongado da fila cobriu várias revisões e versões dependentes, ficheiro
+SQLite indisponível, nova instância do armazenamento, ordenação, repetição sem
+duplicados e conflito concorrente. Uma operação em conflito permanece em JSON
+para resolução, em vez de ser eliminada.
+
 ## Implementação relacionada
 
 - `etl/operational_s3.py`: snapshot e materialização operacional.

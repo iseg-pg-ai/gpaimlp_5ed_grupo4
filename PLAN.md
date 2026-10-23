@@ -19,7 +19,8 @@ imutáveis para o protocolo de recuperação.
   quando não existir um checkpoint recuperável.
 - [x] Fazer `just blu it` restaurar um checkpoint do bucket de backups e publicar
   explicitamente o estado recuperado como nova release ativa.
-- [ ] Validar indisponibilidade S3, concorrência, repetição e recuperação ponta a ponta.
+- [x] Validar indisponibilidade S3, concorrência, repetição e recuperação dos
+  componentes; falta apenas executar o launcher integral com login interativo.
 - [x] Depois da validação e de autorização destrutiva, remover os dados persistentes
   locais do diretório do projeto.
 
@@ -30,7 +31,7 @@ imutáveis para o protocolo de recuperação.
 - [x] Proteger versões e revisões novas em JSON quando o SQLite está indisponível.
 - [x] Sincronizar por chave idempotente e apagar apenas após confirmação SQL.
 - [x] Incluir a fila persistente no backup e no restauro locais.
-- [ ] Executar um ensaio prolongado com SQLite indisponível, reinício do processo,
+- [x] Executar um ensaio prolongado com SQLite indisponível, reinício do processo,
   várias operações dependentes e sincronização posterior.
 - [x] Substituir a persistência local por cache temporária reconstruída a partir
   da release operacional ativa no S3.
@@ -59,20 +60,19 @@ imutáveis para o protocolo de recuperação.
 - [x] Validar releases reais de fontes e warehouse no bucket autorizado.
 - [ ] Marcar releases substituídas antes de aprovar expiração de fontes ou warehouse.
 
-## Recuperação identificada e alterações contínuas S3 — implementação transitória
+## Recuperação identificada e alterações contínuas S3
 
 - [x] Associar cada `just blu it` a um checkpoint com identificador único.
 - [x] Parar todos os serviços depois do checkpoint e reerguê-los de forma controlada.
 - [x] Recuperar primeiro o checkpoint da execução e usar o bucket de dados como fallback.
-- [x] Preservar ficheiros locais atuais durante o fallback de fontes e warehouse.
+- [x] Reconstruir fontes e warehouse na cache temporária durante o fallback.
 - [x] Criar uma outbox para cada alteração SQL confirmada do portal.
 - [x] Enviar alterações periodicamente e remover JSON apenas após confirmação S3.
 - [ ] Executar um ciclo real completo de `just blu it` com paragem e reinício.
 
-Esta implementação é transitória e não satisfaz a decisão posterior de usar S3
-como fonte autoritativa. O SQLite continuará a existir apenas como cache local
-de acesso enquanto o portal permanecer numa única instância; a release S3 ativa
-é a fonte permanente. A fila JSON é transitória e não constitui outra fonte de
+O SQLite existe apenas como cache efémera de acesso enquanto o portal permanecer
+numa única instância; a release S3 ativa é a fonte permanente. A fila JSON é
+transitória, entra nas releases e checkpoints e não constitui outra fonte de
 verdade.
 
 ## Recuperação com checkpoint e sincronização — 2026-10-22
@@ -210,7 +210,7 @@ O Monitoring continua incompleto para produção até existirem:
 
 - [ ] notificações externas com canal, destinatários, limiares, deduplicação e
   recuperação validados;
-- [ ] validar o destino S3 cifrado real e aprovar a política de retenção;
+- [ ] aplicar e confirmar administrativamente a política de retenção S3 proposta;
 - [ ] sonda executada fora da máquina, ligada a responsáveis reais.
 
 Envios reais e infraestrutura externa exigem autorização aplicável. Não encerrar

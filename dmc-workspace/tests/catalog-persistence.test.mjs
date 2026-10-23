@@ -1,11 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { persistCatalog, syncPendingCatalog } from "../src/lib/catalog-persistence.ts";
 import { emptyFields } from "../src/lib/catalog-schema.ts";
-import { CatalogStore } from "../src/lib/catalog-store.ts";
+import { CatalogConflict, CatalogStore } from "../src/lib/catalog-store.ts";
 
 const input = () => ({
   category: "atracoes",
@@ -72,4 +80,67 @@ test("catálogo usa JSON, sincroniza e não duplica uma operação já confirmad
   assert.equal(await syncPendingCatalog(store, operations), 1);
   assert.equal((await store.list()).length, 1);
   assert.equal(readdirSync(path.dirname(pendingFile)).length, 0);
+});
+
+test("interrupção prolongada preserva ordem, reinício, repetição e conflitos", async (t) => {
+  const { catalog, operations } = fixture(t);
+  const store = new CatalogStore(catalog);
+  const original = await store.save(input());
+  const available = `${catalog}-available`;
+  renameSync(catalog, available);
+  writeFileSync(catalog, "indisponível");
+
+  const revision2 = {
+    ...input(),
+    id: original.id,
+    baseRevision: 1,
+    fields: { ...input().fields, name: "Jardim revisto" },
+  };
+  const revision3 = {
+    ...revision2,
+    baseRevision: 2,
+    fields: { ...revision2.fields, description: "Descrição confirmada" },
+  };
+  const first = await persistCatalog(revision2, {
+    catalogRoot: catalog,
+    operationalRoot: operations,
+  });
+  const second = await persistCatalog(revision3, {
+    catalogRoot: catalog,
+    operationalRoot: operations,
+  });
+  const repeated = await persistCatalog(revision3, {
+    catalogRoot: catalog,
+    operationalRoot: operations,
+  });
+  assert.equal(first.queued, true);
+  assert.equal(second.queued, true);
+  assert.equal(repeated.queued, true);
+  assert.equal(readdirSync(path.join(operations, "pending-catalog")).length, 2);
+
+  unlinkSync(catalog);
+  renameSync(available, catalog);
+  const restarted = new CatalogStore(catalog);
+  assert.equal(await syncPendingCatalog(restarted, operations), 2);
+  assert.equal(await syncPendingCatalog(restarted, operations), 0);
+  const current = (await restarted.list()).find((record) => record.id === original.id);
+  assert.equal(current?.revision, 3);
+  assert.equal(current?.fields.description, "Descrição confirmada");
+
+  renameSync(catalog, available);
+  writeFileSync(catalog, "indisponível");
+  const conflict = await persistCatalog(
+    { ...revision3, baseRevision: 3, fields: { ...revision3.fields, name: "Fila" } },
+    { catalogRoot: catalog, operationalRoot: operations },
+  );
+  assert.equal(conflict.queued, true);
+  unlinkSync(catalog);
+  renameSync(available, catalog);
+  await restarted.save({
+    ...revision3,
+    baseRevision: 3,
+    fields: { ...revision3.fields, name: "Edição concorrente" },
+  });
+  await assert.rejects(syncPendingCatalog(new CatalogStore(catalog), operations), CatalogConflict);
+  assert.equal(readdirSync(path.join(operations, "pending-catalog")).length, 1);
 });

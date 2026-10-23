@@ -48,6 +48,7 @@ class CloudRuntimeTests(unittest.TestCase):
 
             operational.assert_called_once()
             self.assertEqual(result["operational_release"], "operational-2")
+            self.assertGreaterEqual(result["recovery_seconds"], 0)
             self.assertTrue((destination / "data/portal/catalog.sqlite").is_file())
             self.assertTrue((destination / "warehouse/blu_etl.sqlite").is_file())
 
@@ -77,6 +78,7 @@ class CloudRuntimeTests(unittest.TestCase):
 
             operational.assert_not_called()
             self.assertEqual(result["operational_release"], "current")
+            self.assertGreaterEqual(result["recovery_seconds"], 0)
 
 
 if __name__ == "__main__":
