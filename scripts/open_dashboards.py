@@ -12,7 +12,7 @@ from studio_urls import dashboard_url
 
 
 DASHBOARDS = (
-    ("Portal", 3001, "/catalog"),
+    ("Portal", 3001, "/"),
     ("Apresentação", 3003, "/"),
     ("Monitoring", 3004, "/"),
     ("Observatório", 8501, "/"),

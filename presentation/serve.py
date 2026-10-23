@@ -42,7 +42,7 @@ def main():
                     (DIST / "index.html").read_text(),
                 )
                 try:
-                    portal_url = dashboard_url(3001, "/catalog")
+                    portal_url = dashboard_url(3001)
                 except ValueError:
                     portal_url = ""
                 document = re.sub(

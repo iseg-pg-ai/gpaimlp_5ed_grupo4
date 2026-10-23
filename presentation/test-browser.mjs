@@ -254,7 +254,7 @@ try {
     });
     assert.equal(
       await finalLink.getAttribute("href"),
-      "https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/catalog",
+      "https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/",
     );
     assert.equal(await finalLink.getAttribute("target"), "_blank");
     assert.ok((await finalLink.getAttribute("rel")).includes("noopener"));

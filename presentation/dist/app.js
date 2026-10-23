@@ -88,8 +88,8 @@ const studioPath = window.location.pathname.match(
 const observatoryUrl =
   configuredPortalUrl ||
   (studioPath
-    ? `${window.location.origin}${studioPath[1]}3001/catalog`
-    : "http://localhost:3001/catalog");
+    ? `${window.location.origin}${studioPath[1]}3001/`
+    : "http://localhost:3001/");
 $("#portal-link").href = observatoryUrl;
 
 function requestScene() {

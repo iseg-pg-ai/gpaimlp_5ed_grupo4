@@ -35,7 +35,7 @@ Pode usar `--host 0.0.0.0` quando o ambiente exigir escuta noutras interfaces.
 Os ficheiros estáticos também podem ser servidos por outro servidor HTTP.
 O botão Abrir sistema e o CTA final **Explorar o Observatório real** derivam a
 porta 3001 do endereço onde a apresentação está aberta. Localmente usam
-`http://localhost:3001/catalog`; no Studio conservam o domínio e prefixo da sessão.
+`http://localhost:3001/`; no Studio conservam o domínio e prefixo da sessão.
 A navegação abre um separador separado e depende da sessão SageMaker do visitante.
 
 ## Controlos
