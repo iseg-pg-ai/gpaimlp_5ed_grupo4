@@ -84,8 +84,59 @@ function diagnoseIneligibility(
 }
 
 type EditResult = { itinerary: Snapshot["itinerary"]; changed: boolean; reply: string };
-export function editWithAssistant(snapshot: Snapshot, input: string, catalog: Catalog): EditResult {
-  return applyEdit(snapshot, input, catalog);
+export type EditOrigin = "user" | "assistant";
+
+const itemContent = (item: ActivityItem) => {
+  const content = { ...item };
+  delete content.isRecentlyModified;
+  delete content.lastModifiedBy;
+  return content;
+};
+const dayContent = (day: Snapshot["itinerary"][number]) => {
+  const content = { ...day, items: day.items.map(itemContent) };
+  delete content.isRecentlyModified;
+  delete content.lastModifiedBy;
+  return content;
+};
+
+export function markEditOrigin(
+  before: Snapshot["itinerary"],
+  after: Snapshot["itinerary"],
+  origin: EditOrigin,
+): Snapshot["itinerary"] {
+  return after.map((day) => {
+    const previousDay = before.find((candidate) => candidate.dayNumber === day.dayNumber);
+    if (previousDay && JSON.stringify(dayContent(previousDay)) === JSON.stringify(dayContent(day)))
+      return day;
+    return {
+      ...day,
+      lastModifiedBy: origin,
+      isRecentlyModified: origin === "assistant",
+      items: day.items.map((item) => {
+        const previous = previousDay?.items.find((candidate) => candidate.id === item.id);
+        if (previous && JSON.stringify(itemContent(previous)) === JSON.stringify(itemContent(item)))
+          return item;
+        const content = itemContent(item);
+        return {
+          ...content,
+          lastModifiedBy: origin,
+          isRecentlyModified: origin === "assistant",
+        };
+      }),
+    };
+  });
+}
+
+export function editWithAssistant(
+  snapshot: Snapshot,
+  input: string,
+  catalog: Catalog,
+  origin?: EditOrigin,
+): EditResult {
+  const result = applyEdit(snapshot, input, catalog);
+  return result.changed && origin
+    ? { ...result, itinerary: markEditOrigin(snapshot.itinerary, result.itinerary, origin) }
+    : result;
 }
 export function moveWithAssistant(
   snapshot: Snapshot,
@@ -93,6 +144,7 @@ export function moveWithAssistant(
   itemId: string,
   targetDayNumber: number,
   catalog: Catalog,
+  origin?: EditOrigin,
 ): EditResult {
   const reject = (reply: string) => ({ itinerary: snapshot.itinerary, changed: false, reply });
   const source = snapshot.itinerary.find((day) => day.dayNumber === dayNumber);
@@ -122,10 +174,13 @@ export function moveWithAssistant(
     .items.find((candidate) => candidate.id === item.id);
   if (!moved || moved.time === "Por agendar")
     return reject("A atividade não tem horário validável no dia de destino.");
-  return {
+  const completed = {
     ...result,
     reply: `Proposta para mover ${item.title} do dia ${dayNumber} para o dia ${targetDayNumber}.`,
   };
+  return origin
+    ? { ...completed, itinerary: markEditOrigin(snapshot.itinerary, completed.itinerary, origin) }
+    : completed;
 }
 function applyEdit(
   snapshot: Snapshot,

@@ -1,5 +1,15 @@
 # Plano de evolução do BLU AI System
 
+## Edição de itinerários pelo Blu — 2026-10-23
+
+- [x] Separar a origem de uma alteração do bloqueio explícito da atividade.
+- [x] Permitir alterações consecutivas pelo Blu no mesmo dia e em dias diferentes.
+- [x] Preservar alterações manuais durante regenerações amplas do dia.
+- [x] Manter ações explícitas do Blu disponíveis quando não existe proteção ou
+  confirmação concluída.
+- [x] Validar flags e origem nos snapshots para rejeitar estados antigos malformados.
+- [x] Validar regressões, persistência, concorrência, histórico e build do portal.
+
 ## CI do warehouse sem fontes privadas — 2026-10-23
 
 - [x] Remover do workflow a suposição de que as fontes ETL estão no Git.

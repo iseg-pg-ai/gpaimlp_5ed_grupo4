@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { editWithAssistant, moveWithAssistant } from "./assistant-editing.ts";
+import { editWithAssistant, markEditOrigin, moveWithAssistant } from "./assistant-editing.ts";
 import { generateItinerary, type Catalog } from "./curation.ts";
 import { canonicalSnapshot, validateSnapshot } from "./snapshot-validation.ts";
 import type { Snapshot } from "./itinerary-pdf";
@@ -140,7 +140,11 @@ export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catal
     const n = day.dayNumber;
     const position = index + 1;
     if (action.type === "regenerate_day") {
-      const protectedIds = day.items.filter(protectedItem).map((item) => item.id);
+      // Uma regeneração ampla preserva trabalho manual sem o transformar num
+      // bloqueio: ações explícitas continuam a poder alterar estes cartões.
+      const protectedIds = day.items
+        .filter((item) => protectedItem(item) || item.lastModifiedBy === "user")
+        .map((item) => item.id);
       let regenerated = structuredClone(current);
       for (const item of day.items.filter((item) => !protectedIds.includes(item.id))) {
         const source = regenerated.itinerary.find((d) => d.dayNumber === n)!;
@@ -186,7 +190,10 @@ export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catal
         throw new Error(
           "Não há opções elegíveis com horários viáveis para regenerar este dia sem alterar as marcações protegidas.",
         );
-      current = regenerated;
+      current = {
+        ...regenerated,
+        itinerary: markEditOrigin(current.itinerary, regenerated.itinerary, "assistant"),
+      };
       continue;
     }
     if (action.type === "move_item") {
@@ -196,6 +203,7 @@ export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catal
         action.itemId!,
         action.targetDayNumber!,
         catalog,
+        "assistant",
       );
       if (!result.changed) throw new Error(result.reply);
       current = { ...current, itinerary: result.itinerary };
@@ -244,7 +252,7 @@ export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catal
       default:
         throw new Error("Ação não suportada.");
     }
-    const result = editWithAssistant(current, command, catalog);
+    const result = editWithAssistant(current, command, catalog, "assistant");
     if (!result.changed) throw new Error(result.reply);
     current = { ...current, itinerary: result.itinerary };
   }

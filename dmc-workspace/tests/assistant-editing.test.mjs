@@ -110,6 +110,43 @@ test("assistant adds, replaces, reschedules, reorders and removes without mutati
   );
   assert.equal(JSON.stringify(snapshot), before);
 });
+test("manual and Blu edits can alternate on the same day without creating a lock", () => {
+  const { c, snapshot } = setup();
+  const manual = editWithAssistant(
+    snapshot,
+    "reagendar atividade 1 do dia 1 para 14:00",
+    c,
+    "user",
+  );
+  assert.equal(manual.changed, true);
+  assert.equal(manual.itinerary[0].lastModifiedBy, "user");
+  assert.equal(manual.itinerary[0].items[0].lastModifiedBy, "user");
+  assert.equal(manual.itinerary[0].items[0].isRecentlyModified, false);
+  assert.equal(manual.itinerary[0].items[0].isLocked, undefined);
+
+  const byBlu = editWithAssistant(
+    { ...snapshot, itinerary: manual.itinerary },
+    "reagendar atividade 1 do dia 1 para 15:30",
+    c,
+    "assistant",
+  );
+  assert.equal(byBlu.changed, true);
+  assert.match(byBlu.itinerary[0].items[0].time, /15:30/);
+  assert.equal(byBlu.itinerary[0].lastModifiedBy, "assistant");
+  assert.equal(byBlu.itinerary[0].items[0].lastModifiedBy, "assistant");
+  assert.equal(byBlu.itinerary[0].items[0].isRecentlyModified, true);
+  assert.equal(byBlu.itinerary[0].items[0].isLocked, undefined);
+
+  const byBluAgain = editWithAssistant(
+    { ...snapshot, itinerary: byBlu.itinerary },
+    "reagendar atividade 1 do dia 1 para 16:30",
+    c,
+    "assistant",
+  );
+  assert.equal(byBluAgain.changed, true);
+  assert.match(byBluAgain.itinerary[0].items[0].time, /16:30/);
+  assert.equal(byBluAgain.itinerary[0].items[0].isLocked, undefined);
+});
 test("protected and confirmed activities cannot be removed, replaced, rescheduled or reordered", () => {
   for (const protection of [{ isLocked: true }, { confirmation: { status: "confirmed" } }]) {
     const { c, snapshot } = setup();
@@ -161,13 +198,19 @@ test("overlap and unknown opening data leave the itinerary intact", () => {
 test("changed proposal enters immutable version history", () => {
   const { c, snapshot } = setup();
   const root = mkdtempSync(path.join(tmpdir(), "blu-assistant-"));
-  const store = new VersionStore(root);
+  let store = new VersionStore(root);
   try {
     store.save("assistant", snapshot, "generated", null);
-    const result = editWithAssistant(snapshot, 'adicionar "Other" ao dia 1', c);
+    const result = editWithAssistant(snapshot, 'adicionar "Other" ao dia 1', c, "assistant");
     store.save("assistant", { ...snapshot, itinerary: result.itinerary }, "edited", 1);
     assert.equal(JSON.parse(store.get("assistant", 1).snapshot).itinerary[0].items.length, 1);
     assert.equal(JSON.parse(store.get("assistant", 2).snapshot).itinerary[0].items.length, 2);
+    store.close();
+    store = new VersionStore(root);
+    const restored = JSON.parse(store.get("assistant", 2).snapshot);
+    assert.equal(restored.itinerary[0].lastModifiedBy, "assistant");
+    assert.equal(restored.itinerary[0].items[1].lastModifiedBy, "assistant");
+    assert.equal(restored.itinerary[0].items[1].isLocked, undefined);
   } finally {
     store.close();
     rmSync(root, { recursive: true, force: true });

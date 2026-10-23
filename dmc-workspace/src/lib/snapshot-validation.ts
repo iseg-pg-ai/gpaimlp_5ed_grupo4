@@ -37,7 +37,9 @@ export function validateSnapshot(value: unknown): asserts value is Snapshot {
       !string(day.location) ||
       (day.summary !== undefined && !string(day.summary)) ||
       !Array.isArray(day.items) ||
-      day.items.length > 100
+      day.items.length > 100 ||
+      (day.isRecentlyModified !== undefined && typeof day.isRecentlyModified !== "boolean") ||
+      (day.lastModifiedBy !== undefined && !["user", "assistant"].includes(day.lastModifiedBy))
     )
       throw new Error("Dia inválido.");
     for (const item of day.items) {
@@ -48,6 +50,12 @@ export function validateSnapshot(value: unknown): asserts value is Snapshot {
         throw new Error("Revisão de catálogo inválida.");
       if (!item || !string(item.id) || !string(item.time) || !string(item.title))
         throw new Error("Atividade inválida.");
+      if (
+        (item.isLocked !== undefined && typeof item.isLocked !== "boolean") ||
+        (item.isRecentlyModified !== undefined && typeof item.isRecentlyModified !== "boolean") ||
+        (item.lastModifiedBy !== undefined && !["user", "assistant"].includes(item.lastModifiedBy))
+      )
+        throw new Error("Estado de edição da atividade inválido.");
       for (const key of [
         "description",
         "location",

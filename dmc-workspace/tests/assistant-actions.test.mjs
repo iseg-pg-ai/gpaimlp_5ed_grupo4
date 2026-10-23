@@ -444,8 +444,65 @@ for (const [type, fields] of validOperations) {
       assert.equal(result.itinerary[1].items[0].id, before.itinerary[0].items[0].id);
     }
     if (type === "regenerate_day") assert.ok(result.itinerary[0].items.length > 0);
+    assert.equal(result.itinerary[0].lastModifiedBy, "assistant");
+    assert.notEqual(
+      result.itinerary[0].items.some((item) => item.isLocked === true),
+      true,
+    );
   });
 }
+
+test("Blu edita repetidamente o mesmo dia e dias diferentes sem bloqueios implícitos", () => {
+  const { c, s } = twoDaysSetup();
+  const itemId = s.itinerary[0].items[0].id;
+  const first = simulatePlan(
+    s,
+    plan([{ type: "reschedule_item", dayNumber: 1, itemId, time: "14:00" }]),
+    c,
+  );
+  const second = simulatePlan(
+    first,
+    plan([{ type: "reschedule_item", dayNumber: 1, itemId, time: "15:30" }]),
+    c,
+  );
+  const third = simulatePlan(
+    second,
+    plan([{ type: "add_catalog_item", dayNumber: 2, catalogId: "atracoes:Museu" }]),
+    c,
+  );
+  assert.match(third.itinerary[0].items[0].time, /15:30/);
+  assert.equal(third.itinerary[0].items[0].lastModifiedBy, "assistant");
+  assert.equal(third.itinerary[0].items[0].isLocked, undefined);
+  assert.equal(third.itinerary[1].items[0].lastModifiedBy, "assistant");
+  assert.equal(third.itinerary[1].items[0].isLocked, undefined);
+});
+
+test("regeneração ampla preserva edição manual sem impedir uma remoção Blu explícita", () => {
+  const { c, s } = alternativesSetup();
+  const itemId = s.itinerary[0].items[0].id;
+  s.itinerary[0].items[0].lastModifiedBy = "user";
+  s.itinerary[0].items[0].isRecentlyModified = false;
+  const regenerated = simulatePlan(s, plan([{ type: "regenerate_day", dayNumber: 1 }]), c);
+  assert.deepEqual(
+    regenerated.itinerary[0].items.find((item) => item.id === itemId),
+    s.itinerary[0].items[0],
+  );
+  assert.equal(
+    regenerated.itinerary[0].items.find((item) => item.id === itemId).isLocked,
+    undefined,
+  );
+
+  const explicit = simulatePlan(
+    regenerated,
+    plan([{ type: "remove_item", dayNumber: 1, itemId }]),
+    c,
+  );
+  assert.equal(
+    explicit.itinerary[0].items.some((item) => item.id === itemId),
+    false,
+  );
+  assert.equal(explicit.itinerary[0].lastModifiedBy, "assistant");
+});
 
 test("schema recusa campos adicionais, funcionalidades adiadas, valores inválidos e mais de oito ações", () => {
   const action = { type: "remove_item", dayNumber: 1, itemId: "a" };

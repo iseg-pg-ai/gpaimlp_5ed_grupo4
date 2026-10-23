@@ -39,6 +39,7 @@ export interface ActivityItem {
   accessibilityNotes?: string;
   isRecentlyModified?: boolean;
   isLocked?: boolean;
+  lastModifiedBy?: "user" | "assistant";
   transitToNext?: TransitLeg;
   source?: string;
   appliedRules?: string[];
@@ -70,6 +71,7 @@ export interface ItineraryDay {
   items: ActivityItem[];
   routeSummary?: DailyRouteSummary;
   isRecentlyModified?: boolean;
+  lastModifiedBy?: "user" | "assistant";
   dailyCapacity?: number;
 }
 

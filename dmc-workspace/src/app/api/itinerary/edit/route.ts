@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   }
   try {
     const catalog = await loadPublishedCatalog();
-    const result = editWithAssistant(body.snapshot, body.input, catalog);
+    const result = editWithAssistant(body.snapshot, body.input, catalog, "user");
     if (result.changed) {
       try {
         result.itinerary = await enrichItineraryWithRoadRouting(result.itinerary, [

@@ -27,6 +27,13 @@ indiretos. Ao mudar horários ou dias, dados de confirmação pendente permanece
 intactos e o portal avisa que exigem revisão manual. A sequência geográfica é
 uma estimativa; não demonstra tempos reais ou disponibilidade.
 
+Uma edição e um bloqueio são estados distintos. O portal regista se a última
+alteração de cada dia ou atividade veio do utilizador ou do assistente, mas essa
+origem nunca ativa `isLocked`. Só a proteção explícita do curador e uma confirmação
+concluída impedem novas alterações. Uma regeneração ampla preserva atividades
+editadas manualmente; uma ação explícita e revista pelo curador pode voltar a
+alterá-las. O mesmo dia pode ser editado repetidamente pelo Blu.
+
 ## Autoridade, persistência e falhas
 
 O esquema partilhado está em src/blu_ai/schemas/action-plan.json. O planeador
@@ -36,6 +43,8 @@ O servidor volta a simular ao aceitar e compara o resultado com a pré-visualiza
 Mudanças de versão, catálogo ou regras que afetem o resultado invalidam a proposta.
 As propostas expiram após 30 minutos. A aceitação cria a versão e atualiza a
 auditoria na mesma transação SQLite, incluindo a proteção contra duplo clique.
+As marcas de origem acompanham o snapshot, pelo que sobrevivem ao refresh, ao
+reinício e às exportações baseadas nessa versão.
 
 A tabela agent_runs partilha a base de versões em exports/itineraries. Guarda
 hash do pedido, ações/resumo/avisos, estado, versão base/final, modelo, tokens e

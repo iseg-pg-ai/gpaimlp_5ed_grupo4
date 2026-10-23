@@ -139,6 +139,10 @@ remover última atividade do dia 1
 
 O comando `Ajuda` apresenta os formatos disponíveis. Pedidos incompatíveis com o
 briefing, o orçamento, os horários ou as proteções são recusados com uma explicação.
+As alterações manuais e as propostas aceites do Blu guardam a respetiva origem,
+sem bloquear o dia. O bloqueio continua a ser uma escolha explícita do curador.
+Regenerar um dia preserva atividades alteradas manualmente; remover, substituir,
+reagendar ou mover uma atividade específica continua sujeito à revisão e aceitação.
 
 ## Exportação e versões
 

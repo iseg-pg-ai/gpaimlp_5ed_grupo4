@@ -28,6 +28,19 @@ test("legacy snapshots remain valid while malformed catalog details are rejected
   assert.throws(() => validateSnapshot(value));
 });
 
+test("snapshot rejects malformed lock and edit-origin states", () => {
+  for (const mutate of [
+    (value) => (value.itinerary[0].items[0].isLocked = "false"),
+    (value) => (value.itinerary[0].items[0].isRecentlyModified = 1),
+    (value) => (value.itinerary[0].items[0].lastModifiedBy = "model"),
+    (value) => (value.itinerary[0].lastModifiedBy = "model"),
+  ]) {
+    const value = snapshot();
+    mutate(value);
+    assert.throws(() => validateSnapshot(value));
+  }
+});
+
 test("API response handling retains server errors and handles non-JSON responses", async () => {
   assert.deepEqual(await responseJson(Response.json({ version: 2 })), { version: 2 });
   await assert.rejects(
