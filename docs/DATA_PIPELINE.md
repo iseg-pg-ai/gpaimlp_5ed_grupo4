@@ -121,6 +121,12 @@ O adaptador usa `BLU_DATA_S3_BUCKET`, `BLU_ENVIRONMENT` e o IAM do ambiente. Nã
 guarda credenciais nem elimina objetos. A transformação e a validação continuam
 independentes do transporte.
 
+A role da aplicação valida objetos dentro dos prefixos autorizados, mas não
+administra Versioning, Default Encryption, Block Public Access ou lifecycle. Um
+`AccessDenied` nesses controlos é esperado e não deve ser contornado dando
+permissões administrativas ao ETL. As exceções e o procedimento manual estão em
+[Retenção dos buckets S3](S3_RETENTION.md#exceções-e-validações-manuais).
+
 Alterações confirmadas no catálogo e nas versões são registadas em
 `exports/portal-persistence/data-s3-outbox/`. O evento contém a operação completa
 necessária à recuperação, com identificador idempotente. O ciclo do Monitoring e
@@ -158,6 +164,13 @@ todos os consumidores.
 - [DMC Workspace](PORTAL.md)
 
 ## Automação e operações
+
+O CI não descarrega fontes reais do S3 nem recebe credenciais AWS. Em Windows,
+`scripts/create_ci_etl_fixture.py` cria um catálogo exclusivamente sintético num
+diretório temporário e o workflow executa sobre ele o ETL, o gate de validação e
+os testes de regressão. O artefacto `blu-warehouse-ci-smoke` comprova o percurso
+técnico, mas não é uma entrega de dados BLU e nunca deve ser publicado como
+warehouse operacional.
 
 ### Fluxo local completo
 

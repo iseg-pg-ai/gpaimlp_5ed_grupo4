@@ -87,40 +87,8 @@ O comando mantém serviços ativos, inicia os que estejam parados, confirma os
 cinco endpoints e abre as quatro interfaces. A porta técnica 8000 é validada,
 mas não abre um separador.
 
-Antes do arranque, recupera ficheiros em falta do último backup verificado e
-guarda uma nova cópia em `/home/blu-system-backups/sagemaker-user` neste ambiente
-(por defeito, `blu-system-backups/<nome-do-projeto>` ao lado do projeto).
-É possível escolher outro destino fora do projeto com `BLU_BACKUP_DIR`.
-O destino deve permitir escrita pelo utilizador que executa o comando.
-As cópias incluem `data/`, `warehouse/`, `exports/` e ficheiros JSON, JSONL e
-SQLite operacionais não secretos diretamente em `monitoring/runtime/`.
-As contas, sessões, tokens e estado privado do editor são excluídos. As cópias
-são privadas, verificadas por SHA-256 e acumuladas sem eliminação automática.
-SQLite usa a API de backup para incluir transações confirmadas no WAL.
-Ficheiros existentes têm prioridade; dados em falta são recuperados sem repetir
-o ETL. Se a cópia mais recente estiver corrompida, o arranque regista a rejeição
-e tenta a versão válida anterior. Rascunhos do navegador, dependências, builds e credenciais não entram
-nestas cópias. Uma cópia com serviços ativos não garante uma transação conjunta
-entre catálogo e exports; evitar edições durante o comando.
-
-O arranque também inicializa de forma controlada um ambiente sem estado, recupera
-os JSON pendentes e sincroniza-os com SQLite antes de iniciar serviços em falta.
-Para recuperar manualmente apenas ficheiros ausentes de uma versão específica:
-
-```bash
-BLU_BACKUP_DIR=/caminho/externo python3 -B -m monitoring.checkpoint \
-  restore-missing --backup-id IDENTIFICADOR
-```
-
-Para manter também uma cópia S3, indicar um bucket existente antes do arranque.
-O SDK usa o perfil ou papel IAM da máquina; não colocar credenciais no ficheiro:
-
-```bash
-export BLU_BACKUP_S3_BUCKET=nome-do-bucket
-export BLU_ENVIRONMENT=development
-export BLU_BACKUP_S3_PREFIX=blu-backups
-just blu up
-```
+Este arranque rápido não cria checkpoints, não recupera backups e não para
+processos ativos. Essas ações pertencem exclusivamente ao `just blu it`.
 
 Os launchers carregam estas chaves reconhecidas a partir do `.env` local, sem
 executar o ficheiro como código. Valores já exportados no terminal prevalecem.
@@ -157,6 +125,12 @@ cópia específica; se ela não estiver disponível, recupera os ficheiros ausen
 das releases de fontes e warehouse do bucket de dados. Depois prepara e testa o
 sistema, sincroniza as operações pendentes, inicia os serviços e abre os
 dashboards. Uma falha no backup obrigatório impede a paragem.
+
+A autenticação administrativa é sempre interativa; não colocar a palavra-passe
+em variáveis, scripts ou logs. A role da aplicação também não administra
+Versioning, encriptação por defeito, Block Public Access ou lifecycle dos buckets.
+As exceções e confirmações manuais estão documentadas em
+[Retenção dos buckets S3](docs/S3_RETENTION.md#exceções-e-validações-manuais).
 
 O `just blu up` não executa recuperação nem para processos ativos. Inicia apenas
 os serviços parados, confirma os cinco endpoints e abre os quatro dashboards.

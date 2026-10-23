@@ -1,6 +1,6 @@
 # Retenção dos buckets S3
 
-Revisto em 22 de outubro de 2026. Esta política distingue dados ativos de cópias
+Revisto em 23 de outubro de 2026. Esta política distingue dados ativos de cópias
 de recuperação e não concede à aplicação permissões administrativas sobre os
 buckets.
 
@@ -19,6 +19,33 @@ A negação de `GetBucketVersioning`, `GetEncryptionConfiguration`,
 `GetPublicAccessBlock` e `GetLifecycleConfiguration` à role da aplicação é
 intencional. Estas definições são administradas na consola e não são necessárias
 para o portal ler ou escrever nos prefixos autorizados.
+
+## Exceções e validações manuais
+
+As seguintes ações ficam deliberadamente fora da role
+`SageMakerTeachingExecutionRole`:
+
+- consultar ou alterar versionamento, encriptação por defeito, Block Public
+  Access e lifecycle;
+- substituir a configuração lifecycle completa de um bucket;
+- eliminar objetos ou versões de backups.
+
+Um `AccessDenied` nestas operações não representa uma falha do backup. Confirma
+que a aplicação mantém privilégio mínimo. Upload, `HeadObject`, validação por
+SHA-256 e restauro continuam a ser verificados pelo fluxo operacional.
+
+Não executar `PutBucketLifecycleConfiguration` com uma identidade que não possa
+ler primeiro `GetBucketLifecycleConfiguration`: a operação substitui a
+configuração existente e pode remover regras organizacionais. A regra preparada
+neste projeto só pode ser considerada aplicada depois de um administrador:
+
+1. rever as regras existentes nos dois buckets;
+2. adicionar apenas o aborto de multipart incompleto após sete dias;
+3. confirmar Versioning, Default Encryption e Block Public Access;
+4. voltar a consultar a configuração e guardar evidência da validação.
+
+Estas exceções permanecem abertas no `PLAN.md`; não devem ser marcadas como
+concluídas apenas porque os uploads e restauros da aplicação funcionam.
 
 ## Decisão proposta
 

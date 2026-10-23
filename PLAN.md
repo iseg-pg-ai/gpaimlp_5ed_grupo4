@@ -1,5 +1,12 @@
 # Plano de evolução do BLU AI System
 
+## CI do warehouse sem fontes privadas — 2026-10-23
+
+- [x] Remover do workflow a suposição de que as fontes ETL estão no Git.
+- [x] Gerar uma fonte sintética temporária e executar o pipeline completo no CI.
+- [x] Distinguir o artefacto de smoke test de uma entrega operacional BLU.
+- [x] Validar localmente ETL, gate de qualidade e regressões equivalentes.
+
 ## Ligação pública da apresentação — 2026-10-23
 
 - [x] Injetar na apresentação o URL absoluto do portal definido pela configuração

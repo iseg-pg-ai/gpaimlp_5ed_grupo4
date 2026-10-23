@@ -1,6 +1,6 @@
 # Operações, monitoring e deployment
 
-Estado revisto em 20 de outubro de 2026. O sistema funciona localmente no
+Estado revisto em 23 de outubro de 2026. O sistema funciona localmente no
 SageMaker Code Editor; ainda não existe um deployment de produção aprovado.
 Este documento separa o que está implementado das decisões ainda abertas.
 
@@ -54,6 +54,25 @@ está em [Persistência, recuperação e ETL](PERSISTENCIA_RECUPERACAO_ETL.md).
 
 Estes comandos não renovam tokens SageMaker, não criam infraestrutura AWS e não
 substituem backup externo, DNS, TLS, identidade ou regras de rede.
+
+### Exceções que exigem intervenção humana
+
+- O `just blu it` exige uma conta ativa do Monitoring com perfil `admin` e lê a
+  palavra-passe apenas no terminal interativo. Automação, logs e agentes não devem
+  receber, guardar ou contornar essa credencial.
+- Um ensaio só fica concluído quando o comando chega à tarefa 12. A execução de
+  23 de outubro confirmou checkpoint S3, paragem, recuperação e reinício, mas foi
+  interrompida na tarefa 11. A causa foi corrigida e os testes de navegador
+  passaram isoladamente; falta repetir o comando completo por um administrador.
+- A role da aplicação não pode consultar ou alterar Versioning, Default
+  Encryption, Block Public Access ou lifecycle. Estas verificações pertencem a
+  uma sessão administrativa AWS.
+- Não se aplica lifecycle sem consultar primeiro as regras existentes, porque a
+  escrita substitui a configuração completa. Consultar o procedimento em
+  [Retenção dos buckets S3](S3_RETENTION.md#exceções-e-validações-manuais).
+
+Estas limitações não impedem os backups S3 já validados. Delimitam apenas a
+administração do bucket e a confirmação final do protocolo autenticado.
 
 ## Persistência e recuperação
 
