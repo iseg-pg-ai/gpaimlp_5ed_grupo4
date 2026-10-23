@@ -313,6 +313,8 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
     printf '\n  %s✓%s  5 serviços operacionais\n' "$GREEN" "$RESET"
     printf '  %s✓%s  5 endpoints validados\n' "$GREEN" "$RESET"
     printf '  %s✓%s  4 interfaces abertas\n' "$GREEN" "$RESET"
+    printf '  %s↗%s  Portal AWS: %s\n' "$CYAN" "$RESET" \
+        "$(python3 -B scripts/studio_urls.py --port 3001 --path /catalog)"
     ui_footer "SYSTEM READY" "just blu up · completed"
     trap - ERR
     bash scripts/start_codex.sh
@@ -408,6 +410,8 @@ run_task "11. Testes finais dos dashboards" bash -c '
 
 python3 -B scripts/studio_urls.py >> "$LOG"
 run_task "12. Sistema BLU recuperado" python3 -B scripts/open_dashboards.py --quiet
+printf '  %s↗%s  Portal AWS: %s\n' "$CYAN" "$RESET" \
+    "$(python3 -B scripts/studio_urls.py --port 3001 --path /catalog)"
 ui_footer "BLU SYSTEM RESTORED" "12 tarefas · 5 serviços · 4 interfaces"
 
 bash scripts/start_codex.sh

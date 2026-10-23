@@ -17,10 +17,15 @@ def studio_base() -> str:
             "Configuração Studio ausente. Executar: python3 scripts/setup_workspace.py"
         ) from error
     parsed = urlsplit(value)
-    if (parsed.scheme != "https" or not parsed.hostname or parsed.username
+    if (parsed.scheme != "https" or not parsed.hostname
+            or not parsed.hostname.endswith(".studio.eu-west-1.sagemaker.aws")
+            or parsed.username
             or parsed.password or parsed.query or parsed.fragment
             or parsed.path != "/codeeditor/default"):
-        raise ValueError("base_url deve ser uma origem HTTPS seguida de /codeeditor/default.")
+        raise ValueError(
+            "base_url deve ser o URL AWS do Studio em eu-west-1 seguido de "
+            "/codeeditor/default."
+        )
     return value
 
 
