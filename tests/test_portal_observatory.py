@@ -1,4 +1,5 @@
 """Contratos da leitura analítica nativa, com SQLite temporário."""
+from contextlib import closing
 from datetime import date
 import hashlib
 from pathlib import Path
@@ -15,7 +16,7 @@ class PortalObservatoryTest(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
         self.db = self.root / "blu_etl.sqlite"
-        with sqlite3.connect(self.db) as conn:
+        with closing(sqlite3.connect(self.db)) as conn, conn:
             conn.executescript("""
                 CREATE TABLE atracoes(id TEXT, nome_da_atracao TEXT, cidade TEXT, categoria TEXT,
                     preco_da_atracao REAL, latitude REAL, longitude REAL, morada TEXT,
@@ -69,7 +70,7 @@ class PortalObservatoryTest(unittest.TestCase):
         self.assertIsNone(self.snapshot()['history']['documentCount'])
 
     def test_published_location_contract_takes_precedence(self):
-        with sqlite3.connect(self.db) as conn:
+        with closing(sqlite3.connect(self.db)) as conn, conn:
             conn.execute('CREATE TABLE model_observatory_catalog(entity_key TEXT,destination TEXT,raw_location TEXT,geographic_scope TEXT,location_rule TEXT)')
             conn.execute("INSERT INTO model_observatory_catalog VALUES ('Atração:A1','Destino publicado','Lisboa','localidade','publicada')")
         self.assertEqual(self.snapshot()['records'][0]['destination'], 'Destino publicado')
@@ -79,7 +80,7 @@ class PortalObservatoryTest(unittest.TestCase):
             with self.assertRaises(sqlite3.Error):
                 observatory_snapshot(Path(empty))
             self.assertEqual(list(Path(empty).iterdir()), [])
-        with sqlite3.connect(self.db) as conn:
+        with closing(sqlite3.connect(self.db)) as conn, conn:
             conn.execute('DROP TABLE precos')
         with self.assertRaises(ValueError):
             self.snapshot()

@@ -82,3 +82,11 @@ Executar apenas as verificações relevantes:
 
 Reportar alterações, evidência e limitações. Distinguir testes com mocks,
 execução local e validação de serviços reais. Ver [testes](docs/TESTING.md).
+
+## Lembrete persistente: monitoring incompleto
+
+Ao retomar monitoring ou preparar deployment/produção, consultar a secção
+**Pendências de monitoring** do [PLAN.md](PLAN.md) e avisar o utilizador dos
+itens ainda abertos. Essa secção é a fonte de verdade para o estado da próxima
+etapa. Não apresentar logs de sondas e incidentes locais como monitoring
+completo; só dar uma pendência como concluída com implementação e validação.

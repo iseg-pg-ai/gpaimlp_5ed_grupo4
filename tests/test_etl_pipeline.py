@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 import unittest
 import tempfile
@@ -12,13 +13,14 @@ class FullLocalEtlTest(unittest.TestCase):
     """Integration check for the complete workbook and PDF ingestion flow."""
 
     def test_covers_every_pdf_and_sheet(self):
+        data = Path(os.environ.get("BLU_DATA_DIR", "data")).resolve()
+        if not list(data.glob("*.xlsx")):
+            self.skipTest("As fontes ETL são materializadas do S3 no arranque.")
         # Isolated output: running tests never overwrites the operational warehouse.
-        tools = Path(".tools")
-        tools.mkdir(exist_ok=True)
-        temporary = tempfile.TemporaryDirectory(dir=tools)
+        temporary = tempfile.TemporaryDirectory(prefix="blu-etl-test-")
         self.addCleanup(temporary.cleanup)
         output = Path(temporary.name) / "warehouse"
-        manifest = run(Path("data"), output)
+        manifest = run(data, output)
 
         # Confirm source coverage and the two key workbook structures.
         self.assertEqual(manifest["source"]["type"], "local")

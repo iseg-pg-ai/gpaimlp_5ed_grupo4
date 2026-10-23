@@ -190,7 +190,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                     />
                   </div>
 
-                  <div>
+                  <div className="space-y-3">
                     <label
                       htmlFor="brief-specialOccasion"
                       className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
@@ -336,7 +336,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                     />
                   </div>
 
-                  <div>
+                  <div className="space-y-3">
                     <label
                       htmlFor="brief-arrivalLocation"
                       className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
@@ -350,9 +350,43 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                       onChange={(e) => setBrief({ ...brief, arrivalLocation: e.target.value })}
                       placeholder="e.g. Lisbon Humberto Delgado Airport (LIS)"
                     />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label
+                          htmlFor="brief-arrivalTime"
+                          className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
+                        >
+                          <T text="Arrival time" source="en" />
+                        </label>
+                        <LocalizedInput
+                          id="brief-arrivalTime"
+                          name="arrivalTime"
+                          type="time"
+                          value={brief.arrivalTime ?? ""}
+                          onChange={(e) => setBrief({ ...brief, arrivalTime: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="brief-arrivalFlightNumber"
+                          className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
+                        >
+                          <T text="Arrival flight number" source="en" />
+                        </label>
+                        <LocalizedInput
+                          id="brief-arrivalFlightNumber"
+                          name="arrivalFlightNumber"
+                          value={brief.arrivalFlightNumber ?? ""}
+                          onChange={(e) =>
+                            setBrief({ ...brief, arrivalFlightNumber: e.target.value })
+                          }
+                          placeholder="e.g. TP 1363"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
+                  <div className="space-y-3">
                     <label
                       htmlFor="brief-departureLocation"
                       className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
@@ -366,6 +400,40 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                       onChange={(e) => setBrief({ ...brief, departureLocation: e.target.value })}
                       placeholder="e.g. Porto Francisco Sá Carneiro Airport (OPO)"
                     />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label
+                          htmlFor="brief-departureTime"
+                          className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
+                        >
+                          <T text="Departure time" source="en" />
+                        </label>
+                        <LocalizedInput
+                          id="brief-departureTime"
+                          name="departureTime"
+                          type="time"
+                          value={brief.departureTime ?? ""}
+                          onChange={(e) => setBrief({ ...brief, departureTime: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="brief-departureFlightNumber"
+                          className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
+                        >
+                          <T text="Departure flight number" source="en" />
+                        </label>
+                        <LocalizedInput
+                          id="brief-departureFlightNumber"
+                          name="departureFlightNumber"
+                          value={brief.departureFlightNumber ?? ""}
+                          onChange={(e) =>
+                            setBrief({ ...brief, departureFlightNumber: e.target.value })
+                          }
+                          placeholder="e.g. TP 1931"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -966,7 +1034,11 @@ const reviewLabels: Record<string, string> = {
   startDate: "Data de início",
   endDate: "Data de fim",
   arrivalLocation: "Chegada",
+  arrivalTime: "Hora de chegada",
+  arrivalFlightNumber: "Voo de chegada",
   departureLocation: "Partida",
+  departureTime: "Hora de partida",
+  departureFlightNumber: "Voo de partida",
   budget: "Orçamento",
   currency: "Moeda",
   interests: "Interesses",

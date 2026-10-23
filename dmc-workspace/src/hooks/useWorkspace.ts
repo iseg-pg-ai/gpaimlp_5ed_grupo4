@@ -5,8 +5,9 @@ import type { Locale } from "@/lib/locales";
 import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip, TransitMode } from "@/types";
 import { initialBrief } from "@/data/initialBrief";
 import { assistantHelp } from "@/lib/assistant-editing";
+import type { AgentProposal } from "@/lib/assistant-actions";
 
-import { validateSnapshot } from "@/lib/snapshot-validation";
+import { canonicalSnapshot, validateSnapshot } from "@/lib/snapshot-validation";
 
 import type { Snapshot } from "@/lib/itinerary-pdf";
 import {
@@ -20,7 +21,8 @@ import {
 } from "@/lib/trip-trash";
 import { runScheduledTrashCleanup } from "@/lib/scheduled-trash-cleanup";
 
-type Trip = StoredTrip;
+type ChatLanguage = "pt" | "en";
+type Trip = StoredTrip & { assistantLanguage?: ChatLanguage };
 type HistoryVersion = {
   version: number;
   filename: string;
@@ -35,7 +37,11 @@ const emptyBrief = (): CustomerBrief => ({
   startDate: "",
   endDate: "",
   arrivalLocation: "",
+  arrivalTime: "",
+  arrivalFlightNumber: "",
   departureLocation: "",
+  departureTime: "",
+  departureFlightNumber: "",
   interests: [],
   mobilityRestrictions: [],
   dietaryRestrictions: [],
@@ -44,7 +50,12 @@ const emptyBrief = (): CustomerBrief => ({
   notes: "",
   childrenAges: "",
 });
-const message = (sender: ChatMessage["sender"], text: string): ChatMessage => ({
+const message = (
+  sender: ChatMessage["sender"],
+  text: string,
+  language: ChatLanguage = "pt",
+): ChatMessage => ({
+  language,
   id: crypto.randomUUID(),
   sender,
   text,
@@ -63,6 +74,7 @@ export function useWorkspace() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [assistantBusy, setAssistantBusy] = useState(false);
+  const [agentProposal, setAgentProposal] = useState<AgentProposal | null>(null);
   const operation = useRef(false);
   const cleanupStarted = useRef(false);
   const [history, setHistory] = useState<{ id: string; versions: HistoryVersion[] }>({
@@ -185,10 +197,23 @@ export function useWorkspace() {
       }
       await responseJson(response);
     }
-    const result = await responseJson<{ version: number }>(response);
-    if (!Number.isSafeInteger(result?.version) || result.version < 1)
+    const result = await responseJson<{
+      version?: number;
+      queued?: boolean;
+      expectedVersion?: number;
+    }>(response);
+    if (result.queued) {
+      if (!Number.isSafeInteger(result.expectedVersion) || result.expectedVersion! < 1)
+        throw new Error("Confirmação temporária inválida recebida do servidor.");
+      setStorageError(
+        "A base operacional está temporariamente indisponível. A alteração ficou protegida na fila persistente e será sincronizada automaticamente.",
+      );
+      return { ...trip, version: result.expectedVersion };
+    }
+    const savedVersion = result.version;
+    if (!Number.isSafeInteger(savedVersion) || savedVersion === undefined || savedVersion < 1)
       throw new Error("Versão inválida recebida do servidor.");
-    return { ...trip, version: result.version };
+    return { ...trip, version: savedVersion };
   };
   const update = async (fn: (trip: Trip) => Trip | Promise<Trip>) => {
     if (!active || operation.current) return false;
@@ -197,6 +222,7 @@ export function useWorkspace() {
     setError("");
     try {
       const changed = await saveVersion(await fn(active), "edited");
+      setAgentProposal(null);
       setTrips((prev) => prev.map((t) => (t.id === changed.id ? changed : t)));
       return true;
     } catch (e) {
@@ -316,13 +342,22 @@ export function useWorkspace() {
       const result = await responseJson<Snapshot>(response);
       validateSnapshot({ ...result, brief });
       const trip: Trip = {
+        assistantLanguage: active?.assistantLanguage ?? "pt",
         clientLanguage: active?.clientLanguage ?? clientLanguage,
         version: active?.version,
         id: activeId || crypto.randomUUID(),
         brief,
         itinerary: result.itinerary,
         pending: result.pending,
-        messages: [message("assistant", assistantHelp)],
+        messages: [
+          message(
+            "assistant",
+            active?.assistantLanguage === "en"
+              ? "Describe the itinerary change you would like. I will preview the proposal before you accept it. Use the manual controls for briefing and confirmations."
+              : assistantHelp,
+            active?.assistantLanguage ?? "pt",
+          ),
+        ],
       };
       const saved = await saveVersion(trip, "generated");
       setTrips((prev) => [...prev.filter((t) => t.id !== saved.id), saved]);
@@ -335,29 +370,270 @@ export function useWorkspace() {
       operation.current = false;
     }
   };
-  const send = async (input: string) => {
-    if (!active || operation.current) return false;
+  const appendAssistantMessage = (tripId: string, text: string, language: ChatLanguage) =>
+    setTrips((previous) =>
+      previous.map((trip) =>
+        trip.id === tripId
+          ? { ...trip, messages: [...trip.messages, message("assistant", text, language)] }
+          : trip,
+      ),
+    );
+
+  const validateAgentProposal = (result: AgentProposal, trip: Trip) => {
+    if (
+      !result ||
+      result.tripId !== trip.id ||
+      result.baseVersion !== trip.version ||
+      typeof result.runId !== "string" ||
+      !result.runId ||
+      !result.plan ||
+      !Array.isArray(result.plan.actions) ||
+      typeof result.plan.summary !== "string" ||
+      !Array.isArray(result.plan.warnings) ||
+      result.plan.warnings.some((warning) => typeof warning !== "string") ||
+      result.plan.requiresConfirmation !== true ||
+      canonicalSnapshot(result.before) !== canonicalSnapshot(trip.itinerary)
+    )
+      throw new Error(
+        trip.assistantLanguage === "en"
+          ? "The proposal is invalid or outdated. Request a new proposal."
+          : "Proposta inválida ou desatualizada. Peça uma nova proposta.",
+      );
+    validateSnapshot({ brief: trip.brief, itinerary: result.after, pending: trip.pending });
+  };
+
+  const send = async (rawInput: string) => {
+    const input = rawInput.trim();
+    if (!active || !input || operation.current) return false;
+    const language = active.assistantLanguage ?? "pt";
+    const say = (pt: string, en: string) => (language === "en" ? en : pt);
+    operation.current = true;
     setAssistantBusy(true);
+    setError("");
+    setTrips((previous) =>
+      previous.map((trip) =>
+        trip.id === active.id
+          ? { ...trip, messages: [...trip.messages, message("user", input, language)] }
+          : trip,
+      ),
+    );
     try {
-      return await update(async (trip) => {
-        const response = await portalFetch("/api/assistant", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ snapshot: trip, input }),
-        });
-        const result = await responseJson<{ itinerary: ItineraryDay[]; reply: string }>(response);
-        validateSnapshot({ ...trip, itinerary: result.itinerary });
-        if (typeof result.reply !== "string") throw new Error("Resposta inválida do assistente.");
-        const { itinerary, reply } = result;
-        return {
-          ...trip,
-          itinerary,
-          messages: [...trip.messages, message("user", input), message("assistant", reply)],
-        };
+      if (
+        /^(ok|okay|yes|confirm|confirmed|accept|go ahead|apply|sim|confirmo|aceito|podes aplicar)[.!?]*$/i.test(
+          input,
+        )
+      ) {
+        const pending =
+          agentProposal?.tripId === active.id && agentProposal.baseVersion === active.version;
+        appendAssistantMessage(
+          active.id,
+          pending && agentProposal.plan.actions.length
+            ? say(
+                "Para aplicar a proposta pendente, use «Aceitar e guardar versão». Escrever «ok» não altera o roteiro.",
+                "To apply the pending proposal, use the Accept and save version button. Writing 'ok' does not change the itinerary.",
+              )
+            : say(
+                "Não há alterações pendentes para aceitar. Indique a alteração concreta que pretende.",
+                "There are no pending changes to accept. Describe the change you would like.",
+              ),
+          language,
+        );
+        return true;
+      }
+      const pendingRunId =
+        agentProposal?.tripId === active.id && agentProposal.baseVersion === active.version
+          ? agentProposal.runId
+          : undefined;
+      setAgentProposal(null);
+      if (/^(ajuda|help)[.!?]*$/i.test(input)) {
+        appendAssistantMessage(
+          active.id,
+          say(
+            assistantHelp +
+              " Os pedidos ao agente apresentam uma pré-visualização antes da aceitação. Briefing, catálogo e confirmações usam os controlos manuais.",
+            "Ask me to add, replace, remove, reschedule or move activities, reorder a day, reserve free time, change daily capacity, optimize a route or regenerate one day. I will preview changes before you accept them. Use the manual controls to edit the brief, catalogue or booking confirmations.",
+          ),
+          language,
+        );
+        return true;
+      }
+      if (!active.version)
+        throw new Error(
+          say(
+            "Guarde a viagem antes de usar o assistente.",
+            "Save the journey before using the assistant.",
+          ),
+        );
+      const response = await portalFetch("/api/assistant/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tripId: active.id,
+          baseVersion: active.version,
+          input,
+          snapshot: { brief: active.brief, itinerary: active.itinerary, pending: active.pending },
+          conversation: active.messages
+            .slice(-8)
+            .map(({ sender, text }) => ({ sender, text: text.slice(0, 1000) })),
+          pendingRunId,
+          language,
+        }),
       });
+      const result = await responseJson<AgentProposal>(response);
+      validateAgentProposal(result, active);
+      setAgentProposal(result.plan.actions.length || result.alternatives?.length ? result : null);
+      appendAssistantMessage(
+        active.id,
+        result.plan.summary +
+          (result.plan.warnings.length ? "\n" + result.plan.warnings.join("\n") : "") +
+          "\n\n" +
+          (result.plan.actions.length
+            ? say(
+                "Reveja a pré-visualização e escolha aceitar ou rejeitar. O roteiro ainda não foi alterado.",
+                "Review the preview and choose accept or reject. The itinerary has not changed yet.",
+              )
+            : result.alternatives?.length
+              ? say(
+                  "Escolha uma alternativa para preparar a substituição. O roteiro permanece igual.",
+                  "Choose an alternative to preview its replacement. The itinerary remains unchanged.",
+                )
+              : say(
+                  "Esta resposta não contém alterações para aceitar. O roteiro permanece igual.",
+                  "This response contains no changes to accept. The itinerary remains unchanged.",
+                )),
+        language,
+      );
+      return true;
+    } catch (error) {
+      const reason =
+        error instanceof Error
+          ? error.message
+          : say("Não foi possível preparar a proposta.", "The proposal could not be prepared.");
+      setError(reason);
+      appendAssistantMessage(active.id, reason, language);
+      return false;
     } finally {
+      operation.current = false;
       setAssistantBusy(false);
     }
+  };
+
+  const selectAgentAlternative = async (dayNumber: number, itemId: string, catalogId: string) => {
+    if (!active || !agentProposal || operation.current) return;
+    const language = active.assistantLanguage ?? "pt";
+    operation.current = true;
+    setAssistantBusy(true);
+    setError("");
+    try {
+      validateAgentProposal(agentProposal, active);
+      const response = await portalFetch("/api/assistant/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tripId: active.id,
+          baseVersion: active.version,
+          runId: agentProposal.runId,
+          decision: "select",
+          dayNumber,
+          itemId,
+          catalogId,
+          language,
+        }),
+      });
+      if (response.status === 409 || response.status === 410) setAgentProposal(null);
+      const result = await responseJson<AgentProposal>(response);
+      validateAgentProposal(result, active);
+      setAgentProposal(result);
+      appendAssistantMessage(active.id, result.plan.summary, language);
+    } catch (error) {
+      const reason =
+        error instanceof Error ? error.message : "Não foi possível preparar a alternativa.";
+      setError(reason);
+      appendAssistantMessage(active.id, reason, language);
+    } finally {
+      operation.current = false;
+      setAssistantBusy(false);
+    }
+  };
+
+  const decideAgentProposal = async (decision: "accept" | "reject") => {
+    if (!active || !agentProposal || operation.current) return;
+    const language = active.assistantLanguage ?? "pt";
+    operation.current = true;
+    setAssistantBusy(true);
+    setError("");
+    try {
+      validateAgentProposal(agentProposal, active);
+      const response = await portalFetch("/api/assistant/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tripId: active.id,
+          baseVersion: active.version,
+          runId: agentProposal.runId,
+          decision,
+          language,
+        }),
+      });
+      if (response.status === 409 || response.status === 410) setAgentProposal(null);
+      const result = await responseJson<{ snapshot?: Snapshot; version?: number }>(response);
+      if (decision === "accept") {
+        validateSnapshot(result.snapshot);
+        if (!Number.isSafeInteger(result.version) || result.version! < active.version!)
+          throw new Error(
+            language === "en"
+              ? "The server returned an invalid version."
+              : "Versão inválida recebida do servidor.",
+          );
+        setTrips((previous) =>
+          previous.map((trip) =>
+            trip.id === active.id
+              ? {
+                  ...trip,
+                  ...result.snapshot!,
+                  version: result.version,
+                  messages: [
+                    ...trip.messages,
+                    message(
+                      "assistant",
+                      language === "en"
+                        ? "Proposal accepted and saved in the journey history."
+                        : "Proposta aceite e guardada no histórico da viagem.",
+                      language,
+                    ),
+                  ],
+                }
+              : trip,
+          ),
+        );
+      } else {
+        appendAssistantMessage(
+          active.id,
+          language === "en"
+            ? "Proposal rejected. The itinerary remains unchanged."
+            : "Proposta rejeitada. O roteiro foi preservado.",
+          language,
+        );
+      }
+      setAgentProposal(null);
+    } catch (error) {
+      const reason =
+        error instanceof Error ? error.message : "Não foi possível confirmar a proposta.";
+      setError(reason);
+      appendAssistantMessage(active.id, reason, language);
+    } finally {
+      operation.current = false;
+      setAssistantBusy(false);
+    }
+  };
+
+  const changeAssistantLanguage = (language: ChatLanguage) => {
+    if (!active || operation.current) return;
+    setTrips((previous) =>
+      previous.map((trip) =>
+        trip.id === active.id ? { ...trip, assistantLanguage: language } : trip,
+      ),
+    );
   };
   const recent: RecentTrip[] = trips.map((t) => ({
     id: t.id,
@@ -476,7 +752,7 @@ export function useWorkspace() {
     update(async (trip) => {
       const prepared = prepareTrip(trip);
       const command = typeof commandOrFn === "function" ? commandOrFn(prepared) : commandOrFn;
-      const response = await portalFetch("/api/assistant", {
+      const response = await portalFetch("/api/itinerary/edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ snapshot: prepared, input: command }),
@@ -554,6 +830,19 @@ export function useWorkspace() {
     active,
     busy,
     assistantBusy,
+    assistantLanguage: active?.assistantLanguage ?? "pt",
+    changeAssistantLanguage,
+    agentProposal:
+      agentProposal?.tripId === activeId &&
+      agentProposal.baseVersion === active?.version &&
+      canonicalSnapshot(agentProposal.before) === canonicalSnapshot(active?.itinerary)
+        ? agentProposal
+        : null,
+    decideAgentProposal,
+    selectAgentAlternative,
+    dismissAgentProposal: () => {
+      if (!operation.current) setAgentProposal(null);
+    },
     editing,
     ready,
     draft,

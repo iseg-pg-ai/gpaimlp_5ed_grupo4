@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "BLU: Mostrar URLs AWS",
+      "type": "shell",
+      "command": "python3",
+      "args": ["-B", "scripts/studio_urls.py"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "BLU: Abrir dashboards AWS",
+      "type": "shell",
+      "command": "python3",
+      "args": ["-B", "scripts/open_dashboards.py"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated",
+        "clear": true
+      }
+    }
+  ]
+}

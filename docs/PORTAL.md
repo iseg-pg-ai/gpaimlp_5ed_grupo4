@@ -1,6 +1,6 @@
 # DMC Workspace
 
-O DMC Workspace é o portal local usado pelo consultor ou curador para recolher o
+O DMC Workspace é o portal operacional usado pelo consultor ou curador para recolher o
 briefing, consultar e manter o catálogo, gerar itinerários, acompanhar
 confirmações e exportar propostas versionadas.
 
@@ -124,6 +124,13 @@ atividade** exige os campos e evidências aplicáveis. A confirmação é manual
 contacta o fornecedor. Atividades protegidas ou confirmadas não podem ser removidas
 pelo assistente.
 
+## Logística da viagem
+
+O briefing guarda o ponto, a hora e o número de voo de chegada e partida. Horas
+e voos são opcionais para preservar propostas antigas e podem ser completados
+mais tarde. Estes dados acompanham o snapshot da versão, o resumo de revisão e o
+PDF; não são inferidos nem substituídos pelo ETL ou pelo assistente.
+
 ## Assistente
 
 O assistente aceita comandos explícitos em português:
@@ -139,13 +146,17 @@ remover última atividade do dia 1
 
 O comando `Ajuda` apresenta os formatos disponíveis. Pedidos incompatíveis com o
 briefing, o orçamento, os horários ou as proteções são recusados com uma explicação.
+As alterações manuais e as propostas aceites do Blu guardam a respetiva origem,
+sem bloquear o dia. O bloqueio continua a ser uma escolha explícita do curador.
+Regenerar um dia preserva atividades alteradas manualmente; remover, substituir,
+reagendar ou mover uma atividade específica continua sujeito à revisão e aceitação.
 
 ## Exportação e versões
 
-As versões são imutáveis e sequenciais por viagem. O armazenamento autoritativo é
-`exports/itineraries/history.sqlite`; os PDFs e os JSON de suporte são também
-materializados em `exports/itineraries/<id>/`. Esta pasta não pertence ao ETL nem
-ao Git e deve ser incluída nos backups locais.
+As versões são imutáveis e sequenciais por viagem. Durante a execução, o histórico
+é materializado em `BLU_EXPORT_DIR/history.sqlite`; os PDFs e JSON de suporte ficam
+sob o mesmo diretório. A release operacional ativa no S3 é a persistência
+permanente, e os checkpoints do `just blu it` protegem a recuperação integral.
 
 O painel reúne a versão atual, o idioma do cliente, a exportação e o histórico. A
 exportação entrega português e o idioma escolhido no mesmo ZIP. Variantes
@@ -220,7 +231,7 @@ diretamente no PDF.
 
 ## TXT para Canva
 
-O contrato atual é `blu-roteiro-canva/1.1.0`; o plugin local 0.3.0 aceita também
+O contrato atual é `blu-roteiro-canva/1.1.0`; o plugin local 0.4.0 aceita também
 TXT 1.0.0. O idioma escolhido aplica-se ao TXT e aos PDFs.
 
 1. Rever o roteiro e escolher o idioma do cliente.
@@ -270,9 +281,11 @@ src/lib/          curadoria, validação, versões, tradução e PDFs
 tests/            testes unitários, integração e navegador
 ```
 
-O portal lê `../warehouse`, `../config` e, para o catálogo editável,
-`../data/portal`. As viagens em edição também são mantidas no `localStorage` do
-navegador. Não existe autenticação nem sincronização multiutilizador.
+O portal lê os caminhos indicados por `BLU_WAREHOUSE_DIR`, `BLU_DATA_DIR`,
+`BLU_EXPORT_DIR` e `BLU_OPERATIONAL_DIR`. No SageMaker, estes caminhos pertencem
+à cache efémera materializada a partir do S3. As viagens em edição também são
+mantidas no `localStorage` do navegador. Não existe autenticação própria nem
+sincronização multiutilizador.
 
 ## Validação
 
@@ -289,7 +302,7 @@ npm run build
 
 ### SageMaker Studio Code Editor
 
-A base pública local está em `config/studio.json`. Sem override,
+A base pública local está em `config/studio.local.json`. Sem override,
 `scripts/start_aws_portal.sh` usa essa origem; `PORTAL_PUBLIC_ORIGIN` explícito
 continua a ter prioridade. Listar as ligações dos dashboards com
 `python -B scripts/studio_urls.py` na raiz.
@@ -318,12 +331,12 @@ anterior ou definir outra `PORT`. O prefixo por defeito acompanha essa porta.
 configurada; perante incompatibilidade, usar novamente o script da raiz.
 Não reutilizar builds de outra configuração nem copiar apenas parte de `.next`.
 
-### Servidor direto ou contentor
+### Servidor direto experimental
 
 O portal é uma aplicação Next.js com rotas de servidor e não pode ser publicado
 como um conjunto de ficheiros estáticos num bucket S3. O diretório de trabalho
-tem de ser `dmc-workspace`, pois os dados operacionais são lidos nas pastas irmãs
-`warehouse`, `config`, `data` e `exports`.
+tem de ser `dmc-workspace`; os caminhos de dados devem ser fornecidos pelas
+variáveis `BLU_*_DIR` e materializados antes do arranque.
 
 Numa máquina Linux com Node.js 22.13 a 24.x, executar a partir da raiz:
 
@@ -337,37 +350,15 @@ O script instala as dependências, cria um build limpo, confirma que
 Para reutilizar uma instalação ou build já validado, podem ser definidos
 `SKIP_INSTALL=true` e `SKIP_BUILD=true`.
 
-Para ECS, App Runner ou uma instância com Docker:
-
-```bash
-docker build -f Dockerfile.portal -t blu-dmc-portal .
-docker run --rm -p 3001:3001 --env-file .env blu-dmc-portal
-```
-
-O `Dockerfile.portal` copia o build completo, incluindo `.next/static`, e inicia
-o Next.js a partir da pasta correta. As pastas `data/portal` e `exports` devem ser
-associadas a armazenamento persistente em produção. Depois de cada deployment,
-qualquer cache do CloudFront para HTML deve ser invalidado para que não aponte
-para chunks de um build anterior.
+O `Dockerfile.portal` cobre apenas este processo Node. A materialização S3 e os
+restantes serviços pertencem a uma futura arquitetura de deployment, descrita em
+[Operações](OPERATIONS.md#deployment-ainda-por-decidir).
 
 `npm run check` acrescenta `format:check` a estas verificações e deve terminar sem
 avisos antes de integrar alterações no portal.
 
-Com o portal iniciado na porta 3001:
-
-```powershell
-npm run test:ui
-npm run test:catalog
-npm run test:confirmations
-npm run test:itinerary
-node tests/browser/briefing.mjs
-node tests/browser/assistant.mjs
-node tests/browser/delivery.mjs
-node tests/browser/canva-prompt.mjs
-```
-
-No Windows, definir `$env:BROWSER_CHANNEL = "msedge"` quando o Chromium do
-Playwright não estiver instalado.
+Os testes de navegador, variáveis para armazenamento isolado e alternativa Edge
+no Windows estão centralizados no [guia de testes](TESTING.md#testes-de-navegador).
 
 ## Meteorologia e controlos HTML nativos
 
@@ -380,6 +371,13 @@ como «Por confirmar». A mesma consulta é reutilizada pela ferramenta do agent
 O painel de detalhes abre num popover HTML nativo. Pode ser fechado com Escape,
 clique fora ou o botão Fechar. A consulta dinâmica continua a precisar de
 JavaScript; a gestão de abertura e fecho é feita pelo navegador.
+
+## Percursos em Python
+
+O cálculo de um troço usa `portal/routing.py` através do adaptador local. Python
+valida coordenadas, modo, margem e timeout, consulta OSRM e aplica uma estimativa
+geométrica identificada quando o fornecedor não responde. A ordenação de pontos e
+os resumos diários permanecem temporariamente no módulo TypeScript do editor.
 
 Em `/exports`, **Enviar para o Lixo** usa um formulário HTML e funciona sem
 JavaScript. Após o POST, o histórico é recarregado; erros aparecem no próprio
@@ -412,6 +410,11 @@ escaping das fontes; valores vazios aparecem como «—».
 mesmos caminhos, permitindo testar edição e ETL sem tocar nas pastas reais.
 Para versões e PDFs temporários, definir também `BLU_EXPORT_DIR`. As fontes
 necessárias devem existir no diretório de dados escolhido.
+`BLU_OPERATIONAL_DIR` pode colocar a fila temporária de versões noutro volume;
+sem configuração, usa `exports/portal-persistence/`. Em produção, estes três
+diretórios operacionais devem ser montados fora do filesystem efémero do
+container. O JSON pendente é removido apenas depois de a operação ficar registada
+no SQLite e pode ser restaurado pelos backups do Monitoring.
 
 ## Resolução de problemas
 

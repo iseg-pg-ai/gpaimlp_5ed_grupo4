@@ -3678,5 +3678,37 @@
     "fr": "Réserves et conditions",
     "de": "Vorbehalte und Bedingungen",
     "zh": "保留和条件"
+  },
+  "Arrival time": {
+    "pt": "Hora de chegada",
+    "en": "Arrival time",
+    "es": "Hora de llegada",
+    "fr": "Heure d’arrivée",
+    "de": "Ankunftszeit",
+    "zh": "抵达时间"
+  },
+  "Arrival flight number": {
+    "pt": "Número do voo de chegada",
+    "en": "Arrival flight number",
+    "es": "Número de vuelo de llegada",
+    "fr": "Numéro du vol d’arrivée",
+    "de": "Ankunftsflugnummer",
+    "zh": "抵达航班号"
+  },
+  "Departure time": {
+    "pt": "Hora de partida",
+    "en": "Departure time",
+    "es": "Hora de salida",
+    "fr": "Heure de départ",
+    "de": "Abflugzeit",
+    "zh": "出发时间"
+  },
+  "Departure flight number": {
+    "pt": "Número do voo de partida",
+    "en": "Departure flight number",
+    "es": "Número de vuelo de salida",
+    "fr": "Numéro du vol de départ",
+    "de": "Abflugnummer",
+    "zh": "出发航班号"
   }
 }

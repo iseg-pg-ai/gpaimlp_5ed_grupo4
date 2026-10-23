@@ -1,0 +1,176 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1200
+    },
+    "actions": {
+      "type": "array",
+      "description": "Alterações explicitamente pedidas. Pedir opções não autoriza add_catalog_item ou replace_item; opções pertencem exclusivamente a alternatives.",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "add_catalog_item",
+              "replace_item",
+              "remove_item",
+              "reschedule_item",
+              "reorder_day",
+              "set_day_capacity",
+              "add_free_period",
+              "set_free_day",
+              "move_item",
+              "optimize_route",
+              "regenerate_day"
+            ]
+          },
+          "dayNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 366
+          },
+          "itemId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "catalogId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "time": {
+            "type": "string",
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          },
+          "itemIds": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "morning",
+              "afternoon"
+            ]
+          },
+          "targetDayNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 366
+          }
+        },
+        "required": [
+          "type",
+          "dayNumber"
+        ]
+      }
+    },
+    "alternatives": {
+      "type": "array",
+      "description": "Opções de substituição APENAS para revisão. Nunca aplicar estas opções em actions sem escolha explícita do utilizador.",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dayNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 366
+          },
+          "itemId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "catalogIds": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          }
+        },
+        "required": [
+          "dayNumber",
+          "itemId",
+          "catalogIds"
+        ]
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "maxLength": 500
+      }
+    },
+    "requiresConfirmation": {
+      "type": "boolean",
+      "enum": [
+        true
+      ]
+    }
+  },
+  "required": [
+    "summary",
+    "actions",
+    "warnings",
+    "requiresConfirmation"
+  ],
+  "additionalProperties": false,
+  "x-action-fields": {
+    "add_catalog_item": [
+      "catalogId"
+    ],
+    "replace_item": [
+      "itemId",
+      "catalogId"
+    ],
+    "remove_item": [
+      "itemId"
+    ],
+    "reschedule_item": [
+      "itemId",
+      "time"
+    ],
+    "reorder_day": [
+      "itemIds"
+    ],
+    "set_day_capacity": [
+      "capacity"
+    ],
+    "add_free_period": [
+      "period"
+    ],
+    "set_free_day": [],
+    "move_item": [
+      "itemId",
+      "targetDayNumber"
+    ],
+    "optimize_route": [],
+    "regenerate_day": []
+  }
+}

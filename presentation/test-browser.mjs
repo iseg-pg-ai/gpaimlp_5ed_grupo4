@@ -42,9 +42,12 @@ try {
       assert.equal(await page.locator(".show-chapters button").count(), 6);
       assert.match(await page.locator("#counter").innerText(), /\/ 06$/);
       assert.equal(
-        await page.locator(".show-chapters").evaluate((nav) =>
-          getComputedStyle(nav).gridTemplateColumns.split(" ").length,
-        ),
+        await page
+          .locator(".show-chapters")
+          .evaluate(
+            (nav) =>
+              getComputedStyle(nav).gridTemplateColumns.split(" ").length,
+          ),
         width <= 540 ? 2 : width <= 1100 ? 3 : 6,
         "A navegação deve preencher a grelha de seis capítulos",
       );
@@ -251,7 +254,7 @@ try {
     });
     assert.equal(
       await finalLink.getAttribute("href"),
-      "https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/catalog",
+      "https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/",
     );
     assert.equal(await finalLink.getAttribute("target"), "_blank");
     assert.ok((await finalLink.getAttribute("rel")).includes("noopener"));
