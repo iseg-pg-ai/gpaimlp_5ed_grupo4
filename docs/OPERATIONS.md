@@ -28,40 +28,41 @@ máquina, não consegue observar a indisponibilidade total do ambiente.
 ## Recuperação local
 
 `just blu up` é o arranque diário. Mantém processos ativos, inicia apenas os
-serviços parados, verifica os cinco endpoints e abre as quatro interfaces. Antes
-do arranque, escolhe o checkpoint externo válido mais recente, recupera apenas
-ausências, inicializa um ambiente novo de forma controlada, sincroniza as filas
-JSON e cria outro checkpoint verificado.
+serviços parados, verifica os cinco endpoints e abre as quatro interfaces. Não
+cria checkpoints, não para serviços e não executa recuperação.
 
 `just blu it` é a recuperação integral. Exige autenticação interativa de uma
 conta ativa com perfil `admin` do Monitoring e executa:
 
-1. paragem dos cinco serviços e confirmação das portas livres;
-2. validação do ambiente e sincronização das dependências bloqueadas;
-3. inicialização segura de um clone novo ou recuperação seletiva dos dados;
-4. testes Python, Monitoring e portal;
-5. build do portal;
-6. arranque e verificação dos cinco serviços;
-7. abertura das quatro interfaces.
+1. criação e confirmação remota do checkpoint identificado da execução;
+2. paragem dos cinco serviços e confirmação das portas livres;
+3. recuperação do checkpoint identificado da execução ou fallback para as
+   releases do bucket de dados;
+4. validação do ambiente e sincronização das dependências bloqueadas;
+5. testes Python, Monitoring e portal;
+6. build do portal;
+7. arranque e verificação dos cinco serviços;
+8. abertura das quatro interfaces.
 
 O agente na porta 8000 é validado sem abrir um separador. Dados válidos são
-preservados. Quando catálogo, itinerários e backups ainda não existem, o catálogo
-é criado a partir do warehouse versionado e todos os registos entram em revisão;
-a área de itinerários começa vazia. Uma instalação parcial ou com dados inválidos
-só pode ser recuperada a partir de um backup verificado. O log técnico fica em
+preservados. O arranque exige as releases S3 de fontes e estado operacional ou
+um checkpoint verificado; não existe um warehouse versionado como fallback. O log técnico fica em
 `monitoring/runtime/recovery/just-blu-it.log`.
+
+O fluxo detalhado, incluindo checkpoints, fallback S3, dados operacionais e ETL,
+está em [Persistência, recuperação e ETL](PERSISTENCIA_RECUPERACAO_ETL.md).
 
 Estes comandos não renovam tokens SageMaker, não criam infraestrutura AWS e não
 substituem backup externo, DNS, TLS, identidade ou regras de rede.
 
 ## Persistência e recuperação
 
-Proteger separadamente:
+O S3 protege separadamente:
 
-- fontes Excel/PDF e suplementos em `data/`;
-- catálogo operacional em `data/portal/catalog.sqlite`;
-- entrega publicada em `warehouse/`;
-- versões e PDFs em `exports/itineraries/`;
+- releases de fontes Excel/PDF e suplementos;
+- releases operacionais com catálogo, histórico, versões, PDFs e filas;
+- releases validadas do warehouse;
+- checkpoints integrais no bucket de backups;
 - contas e evidência operacional em `monitoring/runtime/`.
 
 O Git não é backup destes dados. O backup local do Monitoring verifica hashes,
@@ -69,10 +70,10 @@ integridade SQLite e um restauro isolado, mas continua sujeito à falha da mesma
 máquina. Reverter código não implica reverter dados; alterações de esquema exigem
 compatibilidade e plano próprios.
 
-O procedimento de recuperação integral para apenas processos e portas; não apaga
-automaticamente `data/`, `warehouse/` ou `exports/`. `uv sync`, `npm ci` e o build
-podem reconstruir dependências e artefactos efémeros. Os checkpoints ficam fora
-do projeto em `BLU_BACKUP_DIR`, pelo que não dependem desses recursos.
+O procedimento de recuperação integral para os processos, recupera o estado,
+reconstrói o ETL e materializa uma cache em `/tmp/blu-runtime-<uid>`. `uv sync`,
+`npm ci` e o build recompõem dependências e artefactos efémeros. Os checkpoints
+ficam fora do projeto em `BLU_BACKUP_DIR` e no bucket de backups.
 
 Cada checkpoint tem data, hora, identificador aleatório, versão de esquema,
 estado e inventário por recurso. A publicação é atómica e só ocorre depois da

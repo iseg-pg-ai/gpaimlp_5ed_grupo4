@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 
 # Base paths
 ROOT_DIR = Path(__file__).resolve().parents[2]
-WAREHOUSE_DIR = ROOT_DIR / "warehouse"
-DATABASE_PATH = WAREHOUSE_DIR / "blu_etl.sqlite"
 
 # Load root .env
 load_dotenv(ROOT_DIR / ".env")
+WAREHOUSE_DIR = Path(os.getenv("BLU_WAREHOUSE_DIR", ROOT_DIR / "warehouse")).resolve()
+DATABASE_PATH = WAREHOUSE_DIR / "blu_etl.sqlite"
 
 # AWS Bedrock configuration
 AWS_REGION = os.getenv("AWS_REGION", "eu-north-1")

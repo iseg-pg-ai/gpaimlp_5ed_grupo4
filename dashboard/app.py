@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import closing
 import json
+import os
 from html import escape as escape_plot_text
 import math
 import hashlib
@@ -17,7 +18,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
-WAREHOUSE = ROOT / "warehouse"
+WAREHOUSE = Path(os.environ.get("BLU_WAREHOUSE_DIR", ROOT / "warehouse")).resolve()
 DATABASE = WAREHOUSE / "blu_etl.sqlite"
 COLORS = ["#66e5cf", "#d8b776", "#799dff"]
 MAP_HEIGHT = 420

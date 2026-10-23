@@ -52,7 +52,8 @@ def _sha256(path: Path) -> str:
 
 
 def _status(root: Path, **values: Any) -> None:
-    runtime = root / "monitoring/runtime"
+    runtime = Path(os.environ.get(
+        "BLU_MONITORING_RUNTIME", str(root / "monitoring/runtime"))).resolve()
     runtime.mkdir(parents=True, exist_ok=True, mode=0o700)
     target = runtime / "s3-backup-status.json"
     temporary = target.with_suffix(".tmp")

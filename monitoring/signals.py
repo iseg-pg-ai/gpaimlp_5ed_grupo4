@@ -41,9 +41,12 @@ def _persistence(runtime: Path) -> dict:
         pending[name] = sum(1 for item in directory.glob("*.json") if item.is_file()) \
             if directory.is_dir() else 0
     sync = _json(operational / "sync-status.json") or {}
+    data_root = Path(os.environ.get("BLU_DATA_DIR", str(root / "data")))
+    export_root = Path(os.environ.get(
+        "BLU_EXPORT_DIR", str(root / "exports/itineraries")))
     databases = {
-        "catalog": _database_state(root / "data/portal/catalog.sqlite"),
-        "versions": _database_state(root / "exports/itineraries/history.sqlite"),
+        "catalog": _database_state(data_root / "portal/catalog.sqlite"),
+        "versions": _database_state(export_root / "history.sqlite"),
     }
     return {"state": "up" if all(value == "up" for value in databases.values()) else "degraded",
             "databases": databases, "pending": pending,

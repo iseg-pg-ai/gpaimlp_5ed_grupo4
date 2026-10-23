@@ -14,12 +14,13 @@ imutáveis para o protocolo de recuperação.
 - [x] Migrar e validar o estado local atual no bucket antes da mudança de caminhos.
 - [x] Cobrir catálogo, versões, Lixo, restauros, partilhas, PDFs e ações do agente
   com publicação confirmada ou operação remota pendente.
-- [ ] Executar portal, ETL e Observatório exclusivamente sobre a cache temporária.
-- [ ] Fazer `just blu up` reconstruir o estado ativo a partir do bucket de dados.
-- [ ] Fazer `just blu it` restaurar um checkpoint do bucket de backups e publicar
+- [x] Executar portal, ETL e Observatório exclusivamente sobre a cache temporária.
+- [x] Fazer `just blu it` reconstruir o estado ativo a partir do bucket de dados
+  quando não existir um checkpoint recuperável.
+- [x] Fazer `just blu it` restaurar um checkpoint do bucket de backups e publicar
   explicitamente o estado recuperado como nova release ativa.
 - [ ] Validar indisponibilidade S3, concorrência, repetição e recuperação ponta a ponta.
-- [ ] Depois da validação e de autorização destrutiva, remover os dados persistentes
+- [x] Depois da validação e de autorização destrutiva, remover os dados persistentes
   locais do diretório do projeto.
 
 ## Persistência operacional independente do ETL — 2026-10-22
@@ -29,8 +30,10 @@ imutáveis para o protocolo de recuperação.
 - [x] Proteger versões e revisões novas em JSON quando o SQLite está indisponível.
 - [x] Sincronizar por chave idempotente e apagar apenas após confirmação SQL.
 - [x] Incluir a fila persistente no backup e no restauro locais.
-- [ ] Montar `data/portal/`, `exports/` e o destino de backup cifrado em volumes
-  duráveis no deployment de produção.
+- [ ] Executar um ensaio prolongado com SQLite indisponível, reinício do processo,
+  várias operações dependentes e sincronização posterior.
+- [x] Substituir a persistência local por cache temporária reconstruída a partir
+  da release operacional ativa no S3.
 
 ## Cópias S3 e observabilidade da persistência — 2026-10-22
 
@@ -40,7 +43,10 @@ imutáveis para o protocolo de recuperação.
 - [x] Expor SQL, filas pendentes, último sync e estado S3 no Monitoring.
 - [x] Validar restauro remoto, falha de rede e sincronização idempotente com mocks.
 - [x] Validar IAM, AES-256, versionamento, upload e restauro num bucket real.
-- [ ] Aprovar e configurar uma lifecycle policy de retenção no bucket.
+- [x] Definir uma proposta de lifecycle sem expiração de backups válidos.
+- [ ] Aplicar na consola a limpeza de uploads multipart incompletos após sete dias.
+- [ ] Confirmar administrativamente versionamento, Block Public Access e
+  encriptação por defeito nos dois buckets.
 
 ## Transporte S3 de dados ETL — 2026-10-22
 
@@ -51,17 +57,17 @@ imutáveis para o protocolo de recuperação.
 - [x] Validar tamanho e SHA-256 após upload e download.
 - [x] Recuperar apenas para diretórios novos ou vazios, sem substituir dados ativos.
 - [x] Validar releases reais de fontes e warehouse no bucket autorizado.
-- [ ] Aprovar lifecycle policies distintas para fontes, warehouse e testes.
+- [ ] Marcar releases substituídas antes de aprovar expiração de fontes ou warehouse.
 
-## Reinício identificado e alterações contínuas S3 — implementação transitória
+## Recuperação identificada e alterações contínuas S3 — implementação transitória
 
-- [x] Associar cada `just blu up` a um checkpoint com identificador único.
+- [x] Associar cada `just blu it` a um checkpoint com identificador único.
 - [x] Parar todos os serviços depois do checkpoint e reerguê-los de forma controlada.
 - [x] Recuperar primeiro o checkpoint da execução e usar o bucket de dados como fallback.
 - [x] Preservar ficheiros locais atuais durante o fallback de fontes e warehouse.
 - [x] Criar uma outbox para cada alteração SQL confirmada do portal.
 - [x] Enviar alterações periodicamente e remover JSON apenas após confirmação S3.
-- [ ] Executar um ciclo real completo de `just blu up` com paragem e reinício.
+- [ ] Executar um ciclo real completo de `just blu it` com paragem e reinício.
 
 Esta implementação é transitória e não satisfaz a decisão posterior de usar S3
 como fonte autoritativa. O SQLite continuará a existir apenas como cache local
@@ -69,9 +75,9 @@ de acesso enquanto o portal permanecer numa única instância; a release S3 ativ
 é a fonte permanente. A fila JSON é transitória e não constitui outra fonte de
 verdade.
 
-## Arranque com checkpoint e sincronização — 2026-10-22
+## Recuperação com checkpoint e sincronização — 2026-10-22
 
-- [x] Restaurar no `just blu up` o checkpoint externo válido mais recente.
+- [x] Restaurar no `just blu it` um checkpoint externo válido identificado.
 - [x] Recuar para uma versão anterior quando a mais recente estiver corrompida.
 - [x] Inicializar estado novo e sincronizar JSON antes de iniciar serviços.
 - [x] Versionar metadados por recurso e permitir restauro manual identificado.

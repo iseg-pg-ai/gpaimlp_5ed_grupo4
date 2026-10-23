@@ -100,8 +100,9 @@ test("catalog revisions survive reopen, reject stale edits and immediately revok
 test("warehouse import is idempotent and does not overwrite edits or approve legacy rows", async () => {
   const root = mkdtempSync(path.join(tmpdir(), "blu-catalog-"));
   const store = new CatalogStore(root);
+  const warehouse = path.resolve(process.env.BLU_WAREHOUSE_DIR ?? "../warehouse");
   try {
-    await store.importWarehouse(path.resolve("../warehouse"));
+    await store.importWarehouse(warehouse);
     const initial = await store.list();
     assert.ok(initial.length > 0);
     assert.ok(initial.every((r) => r.status === "review"));
@@ -112,7 +113,7 @@ test("warehouse import is idempotent and does not overwrite edits or approve leg
       fields: { ...first.fields, name: "Nome alterado" },
       reason: "Correção",
     });
-    await store.importWarehouse(path.resolve("../warehouse"));
+    await store.importWarehouse(warehouse);
     assert.equal((await store.list()).length, initial.length);
     assert.equal((await store.history(first.id)).length, 2);
     assert.equal((await store.history(first.id))[0].fields.name, "Nome alterado");

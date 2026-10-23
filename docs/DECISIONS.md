@@ -23,13 +23,17 @@ Evidência de migração: a release operacional
 O download para uma cache temporária passou os hashes, a integridade SQLite e a
 comparação das contagens de todas as tabelas.
 
-## Reinício por checkpoint e outbox de alterações — 2026-10-23
+## Recuperação por checkpoint e outbox de alterações — 2026-10-23
 
-`just blu up` passa a ser um reinício controlado. Cada execução cria um
+`just blu it` executa a recuperação controlada. Cada execução cria um
 identificador usado diretamente no checkpoint, tenta a cópia remota, para os
 serviços e recupera essa versão específica. O bucket de dados é fallback apenas
 quando o checkpoint da execução não existe; a recuperação preenche ausências e
 preserva ficheiros locais atuais.
+
+`just blu up` mantém o contrato de arranque rápido: não cria checkpoints, não
+para serviços e não executa recuperação. Inicia apenas o que estiver parado,
+confirma os endpoints e abre as interfaces.
 
 Nesta implementação transitória, o SQL continuava autoritativo. Depois de um
 commit de catálogo ou versão, uma
@@ -76,11 +80,10 @@ de download temporário, validação do SHA-256 e manifesto e remoção apenas d
 cópia de ensaio. IAM limita listagem, leitura e escrita ao prefixo do ambiente;
 `DeleteObject` foi recusado como previsto.
 
-## Checkpoint externo integrado no arranque — 2026-10-22
+## Checkpoint externo integrado na recuperação — 2026-10-22
 
-`just blu up` valida o ambiente, recupera apenas ficheiros ausentes do checkpoint
-externo válido mais recente, inicializa bases quando não existe estado anterior e
-sincroniza as filas JSON antes de iniciar serviços. O backup usa publicação
+`just blu it` valida o ambiente, recupera o checkpoint identificado da execução
+e sincroniza as filas JSON antes de iniciar serviços. O backup usa publicação
 atómica, identificador temporal e aleatório, manifesto de esquema 2 e inventário
 por recurso. Se a versão mais recente falhar a verificação, regista a rejeição e
 tenta a anterior.
@@ -1058,3 +1061,25 @@ Validação: cinco testes com API de terminais simulada, incluindo seleção da
 origem, criação de par novo, reutilização, fecho e rejeição de executável inválido.
 Instalação e pedido de abertura reais aceites pelo editor desta sessão. Sem
 reiniciar serviços ou enviar pedidos ao modelo; disposição visual não inspecionada.
+
+## 2026-10-23 — S3 como persistência permanente e cache efémera
+
+As releases S3 de fontes, estado operacional e warehouse passam a ser a fonte
+permanente. O `just blu it` cria primeiro um checkpoint remoto, para os serviços,
+recupera e republica o checkpoint como release operacional ativa ou usa
+`operational/current.json`, descarrega as fontes, executa o ETL e publica o
+warehouse validado. Portal e Observatório recebem apenas caminhos sob
+`/tmp/blu-runtime-<uid>`.
+
+Os Excel, PDF e artefactos de warehouse deixam de ser versionados. Os testes de
+integração usam `BLU_DATA_DIR` e `BLU_WAREHOUSE_DIR`; sem fontes materializadas,
+os testes dependentes de dados são ignorados explicitamente. O `just blu up`
+continua limitado ao arranque e recusa uma cache incompleta.
+
+Evidência real: checkpoint remoto de 947 079 052 bytes; materialização das
+releases operacional e de fontes; execução e publicação do warehouse; bases
+SQLite íntegras, contagens iguais e hashes dos dois PDFs operacionais iguais. Num
+ensaio adicional, `data/`, `warehouse/` e `exports/` foram retirados
+temporariamente do projeto e os quatro dashboards e a API do catálogo
+responderam a partir da cache. Passaram 133 testes Python, 143 testes Node com um
+ignorado, build Next.js, validação estrutural, Markdown e `git diff --check`.

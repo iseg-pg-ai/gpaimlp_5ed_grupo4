@@ -7,29 +7,28 @@ as tarefas no [plano](../PLAN.md) e o histórico em [decisões](DECISIONS.md).
 ## Fluxo dos dados
 
 ```text
-data/ — Excel, suplementos e PDFs de origem
-data/portal/catalog.sqlite — catálogo editável, revisões e aprovações
+S3 sources — Excel, suplementos e PDFs de origem
+S3 operational/current.json — catálogo, histórico, PDFs e filas
+  -> /tmp/blu-runtime-<uid>/ — cache efémera validada
   -> etl.pipeline — ingestão, validação e publicação atómica
-  -> warehouse/ — entrega gerada: JSONL, relatórios e SQLite
+  -> cache/warehouse/ — entrega gerada: JSONL, relatórios e SQLite
      -> dashboard/app.py — análise Streamlit
      -> dmc-workspace/ — portal operacional
         -> localStorage — rascunhos e preferências
-        -> exports/itineraries/ — versões, hashes e PDFs históricos
-        -> exports/portal-persistence/ — escritas pendentes enquanto SQLite está indisponível
+        -> cache/exports/itineraries/ — versões, hashes e PDFs históricos
+        -> cache/exports/portal-persistence/ — escritas pendentes
      -> monitoring/ — saúde, eventos, incidentes e backups locais
      -> presentation/ — apresentação estática independente
 ```
 
-O catálogo operacional e o histórico estão fora do Git e precisam de backup.
+O catálogo operacional, o histórico, as fontes e o warehouse estão fora do Git.
 O portal não reescreve o warehouse; o ETL não modifica as fontes. Uma alteração
 no catálogo não altera uma proposta já guardada.
 
-O ciclo de vida do ETL abrange apenas `warehouse/`. As bases operacionais
-`data/portal/catalog.sqlite` e `exports/itineraries/history.sqlite` devem estar
-num volume persistente. Uma reconstrução pode substituir o warehouse e os
-containers, mas não deve apagar `data/portal/` nem `exports/`. Em deployment,
-`BLU_DATA_DIR`, `BLU_EXPORT_DIR` e `BLU_OPERATIONAL_DIR` permitem montar estes
-diretórios fora do filesystem efémero do processo.
+O ciclo de vida do ETL abrange apenas o warehouse da cache. O `just blu it`
+materializa SQLite, PDFs e filas a partir do S3, aponta `BLU_DATA_DIR`,
+`BLU_WAREHOUSE_DIR`, `BLU_EXPORT_DIR` e `BLU_OPERATIONAL_DIR` para essa cache e
+publica novamente no S3 apenas depois da validação.
 
 ## Pontos de entrada e responsabilidades
 
@@ -201,5 +200,6 @@ enquanto os componentes estão instalados ou em execução.
 - Não há CI do portal neste checkout; executar `npm run check` e `npm run build`.
 
 Manter um guia por responsabilidade: [dados e operações](DATA_PIPELINE.md),
+[persistência, recuperação e ETL](PERSISTENCIA_RECUPERACAO_ETL.md),
 [portal](PORTAL.md), [operações](OPERATIONS.md), [teste AWS](AWS_PORTAL_TESTING.md),
 [testes](TESTING.md) e [dependências Python](DEPENDABOT_PYTHON.md).

@@ -52,15 +52,16 @@ def _sources(root: Path):
         if folder.is_symlink():
             raise ValueError("Não é possível guardar uma árvore de dados simbólica.")
         if folder.exists():
-            yield folder
-            yield from sorted(folder.rglob("*"))
-    runtime = root / "monitoring/runtime"
+            yield Path(name), folder
+            yield from ((path.relative_to(root), path) for path in sorted(folder.rglob("*")))
+    runtime = Path(os.environ.get(
+        "BLU_MONITORING_RUNTIME", str(root / "monitoring/runtime"))).resolve()
     if runtime.exists():
         # Apenas estado persistente; excluir processos, sessões, caches e logs.
         for path in sorted(runtime.iterdir()):
             if (path.is_file() and path.name not in PRIVATE_RUNTIME
                     and path.suffix in {".json", ".jsonl", ".sqlite", ".db"}):
-                yield path
+                yield Path("monitoring/runtime") / path.name, path
 
 
 def _copy(source: Path, target: Path) -> None:
@@ -112,8 +113,7 @@ def create(root: Path, store: Path, backup_id: str | None = None) -> Path:
         with tempfile.TemporaryDirectory(prefix=".pending-", dir=store) as temporary:
             pending = Path(temporary)
             files, directories = [], []
-            for source in _sources(root):
-                relative = source.relative_to(root)
+            for relative, source in _sources(root):
                 if source.is_symlink():
                     raise ValueError("O backup não aceita ligações simbólicas nos dados.")
                 if source.is_dir():
@@ -228,23 +228,26 @@ def main() -> None:
                         help="Usar este identificador único no backup criado pela execução.")
     parser.add_argument("--remote-required", action="store_true",
                         help="Falhar a criação se o upload S3 configurado não for confirmado.")
+    parser.add_argument("--root", type=Path, default=ROOT,
+                        help="Raiz lógica dos dados a guardar ou recuperar.")
     args = parser.parse_args()
-    store = backup_home(ROOT)
+    root = args.root.resolve()
+    store = backup_home(root)
     if args.command == "create":
-        snapshot = create(ROOT, store, args.execution_id)
+        snapshot = create(root, store, args.execution_id)
         print(f"Backup local verificado: {snapshot}")
         from monitoring.s3_checkpoint import S3Config, upload
         config = S3Config.from_environment()
         if config:
             try:
-                result = upload(ROOT, snapshot, config)
+                result = upload(root, snapshot, config)
                 print(f"Backup S3 verificado: {result['backup_id']}")
             except Exception:
                 if args.remote_required:
                     raise
                 print("Aviso: cópia local válida; upload S3 falhou.")
     else:
-        print(f"Ficheiros recuperados do backup local: {restore_missing(ROOT, store, args.backup_id)}")
+        print(f"Ficheiros recuperados do backup local: {restore_missing(root, store, args.backup_id)}")
 
 
 if __name__ == "__main__":

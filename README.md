@@ -18,10 +18,9 @@ itinerário. Neste contexto, DMC significa *Destination Management Company*.
 | Agente de IA | API FastAPI opcional com integração Bedrock | 8000 |
 | Observatório | Dashboard analítico Streamlit, só de leitura | 8501 |
 
-As fontes estão em `data/`; o catálogo editável em
-`data/portal/catalog.sqlite`; e as versões e PDFs autoritativos em
-`exports/itineraries/`. Segredos, runtimes e dados operacionais locais não são
-partilhados pelo Git.
+As fontes, o catálogo editável, as versões, os PDFs e o warehouse vivem em
+releases S3. O arranque materializa uma cache efémera em `/tmp`; segredos,
+runtimes e dados operacionais não são partilhados pelo Git.
 
 ## Requisitos
 
@@ -131,8 +130,9 @@ publicadas e recuperadas com `python3 -B -m etl.s3_transport`; os contratos e
 comandos estão em [Dados e operações](docs/DATA_PIPELINE.md#origem-etl-em-s3).
 O mesmo bucket guarda releases operacionais versionadas do catálogo, itinerários
 e propostas. O SQLite é materializado como cache porque o S3 não executa uma base
-SQL diretamente; a migração dos launchers para essa cache está registada no
-[plano](PLAN.md#s3-como-fonte-autoritativa-de-dados).
+SQL diretamente. Os launchers apontam todos os consumidores para essa cache.
+O percurso completo de criação, alteração, eliminação, recuperação e ETL está em
+[Persistência, recuperação e ETL](docs/PERSISTENCIA_RECUPERACAO_ETL.md).
 
 O S3 guarda objetos imutáveis por ambiente e data. Sem cópia local válida, o
 arranque tenta automaticamente a cópia remota mais recente. Configuração KMS,
@@ -151,13 +151,15 @@ executa testes, constrói o portal, reinicia o sistema e abre as interfaces. Os
 detalhes e limites estão no
 [guia de operações](docs/OPERATIONS.md#recuperação-local).
 
-O `just blu it` também guarda e verifica um backup antes de parar os serviços;
-uma falha impede a paragem. Depois de parar, guarda outra cópia do estado estável.
-O `just blu up` faz um reinício controlado. Cria um identificador único, guarda
-um checkpoint local e tenta confirmá-lo no S3, para todos os serviços BLU e
-recupera primeiro esse checkpoint. Se a cópia específica não estiver disponível,
-recupera apenas ficheiros ausentes das releases de fontes e warehouse no bucket
-de dados. Depois sincroniza operações pendentes, inicia e confirma os serviços.
+O `just blu it` cria um identificador único, guarda e confirma no bucket de
+backups o checkpoint dessa execução e só depois para os serviços. Recupera essa
+cópia específica; se ela não estiver disponível, recupera os ficheiros ausentes
+das releases de fontes e warehouse do bucket de dados. Depois prepara e testa o
+sistema, sincroniza as operações pendentes, inicia os serviços e abre os
+dashboards. Uma falha no backup obrigatório impede a paragem.
+
+O `just blu up` não executa recuperação nem para processos ativos. Inicia apenas
+os serviços parados, confirma os cinco endpoints e abre os quatro dashboards.
 
 Cada alteração confirmada do catálogo ou das versões gera também um evento numa
 outbox persistente. O Monitoring envia estes eventos de forma idempotente para

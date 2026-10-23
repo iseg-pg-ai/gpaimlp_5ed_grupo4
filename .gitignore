@@ -61,8 +61,12 @@ mlruns/
 
 # Dados operacionais locais, exports e credenciais de monitoring
 /exports/
+/data/**/*.xlsx
+/data/**/*.pdf
 /data/portal/*.sqlite*
 /data/portal/etl.lock
+/warehouse/*
+!/warehouse/AGENTS.md
 /monitoring/runtime/
 
 # FDC

@@ -1,15 +1,16 @@
-# ETL local: `data` → `warehouse`
+# ETL: S3 → cache temporária → S3
 
-O diretório `data/` é a origem local que representa o futuro bucket S3. A pipeline
-descobre ficheiros Excel e PDF recursivamente, valida os dados e publica um
-warehouse completo. A origem nunca é alterada.
+O bucket de dados é a origem permanente. O `just blu it` descarrega a release
+`sources` para uma área temporária, descobre os Excel e PDF, valida os dados e
+publica um warehouse completo na cache e numa nova release S3. A origem nunca é
+alterada.
 
 ## Gerar ou atualizar o warehouse
 
-Na raiz do repositório:
+Para uma execução manual, na raiz do repositório:
 
 ```bash
-uv run python -B -m etl.pipeline --data-dir data --output-dir warehouse
+python -B -m etl.cloud_runtime --destination /tmp/blu-runtime-manual
 ```
 
 No Windows também pode ser usado
@@ -50,7 +51,8 @@ Principais artefactos:
 | `analytical_models.json` | Definições dos modelos analíticos. |
 | `model_*.jsonl` | Scores explicáveis, destinos/unidades harmonizados e evidência por campo. |
 
-O `warehouse/` é uma entrega gerada. Não deve ser editado manualmente.
+O `BLU_WAREHOUSE_DIR` é uma entrega gerada na cache. Não deve ser editado
+manualmente nem versionado.
 
 ## Dataset estruturado complementar
 
@@ -65,15 +67,15 @@ reservas, disponibilidade ou tarifas atuais. Consulte a
 
 ## Catálogo editável
 
-O portal guarda alterações em `data/portal/catalog.sqlite`. Durante a execução, o
+O portal guarda alterações em `BLU_DATA_DIR/portal/catalog.sqlite`. Durante a execução, o
 ETL incorpora apenas revisões aprovadas, preservando IDs e histórico. O portal lê
 sempre a oferta publicada no warehouse para gerar itinerários. Consulte o
 [contrato do catálogo local](../data/portal/README.md).
 
-Esta base e `exports/itineraries/history.sqlite` são operacionais e não pertencem
-ao ciclo de vida do ETL. Recriar `warehouse/` não as remove. Os deployments devem
-montar `data/portal/` e `exports/` em armazenamento persistente separado do
-container. Se uma base SQLite operacional estiver temporariamente indisponível,
+Esta base e `BLU_EXPORT_DIR/history.sqlite` são operacionais e não pertencem ao
+ciclo de vida do ETL. Recriar o warehouse não as remove. O deployment guarda o
+estado permanente em releases S3 e reconstrói uma cache SQLite temporária. Se uma
+base SQLite operacional estiver temporariamente indisponível,
 as novas versões ou revisões ficam em JSON sob `BLU_OPERATIONAL_DIR` e são
 sincronizadas de forma idempotente quando a base regressa.
 
@@ -116,9 +118,8 @@ python3 -B -m etl.s3_transport fetch-latest warehouse --path /tmp/blu-warehouse
 ```
 
 O adaptador usa `BLU_DATA_S3_BUCKET`, `BLU_ENVIRONMENT` e o IAM do ambiente. Não
-guarda credenciais, não elimina objetos e não substitui automaticamente `data/`
-ou `warehouse/`. A transformação e a validação continuam independentes do
-transporte.
+guarda credenciais nem elimina objetos. A transformação e a validação continuam
+independentes do transporte.
 
 Alterações confirmadas no catálogo e nas versões são registadas em
 `exports/portal-persistence/data-s3-outbox/`. O evento contém a operação completa
@@ -145,13 +146,14 @@ python3 -B -m etl.operational_s3 materialize \
 ```
 
 A materialização valida manifesto, tamanho, SHA-256 e integridade SQLite antes
-de trocar atomicamente a cache. Estes comandos constituem a camada de transporte;
-a ativação nos launchers só ocorre depois de migrar e validar todos os pontos de
-escrita do portal.
+de trocar atomicamente a cache. O launcher exporta os caminhos da cache para
+todos os consumidores.
 
 ## Documentação relacionada
 
 - [Operações e recuperação](OPERATIONS.md)
+- [Persistência, recuperação e ETL](PERSISTENCIA_RECUPERACAO_ETL.md)
+- [Retenção dos buckets S3](S3_RETENTION.md)
 - [Modelo de dados](../reports/data_model_report.md)
 - [DMC Workspace](PORTAL.md)
 

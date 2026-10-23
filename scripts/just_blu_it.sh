@@ -16,6 +16,15 @@ if [ -f "$ROOT/.env" ]; then
         esac
     done < <(sed -n '/^[A-Z][A-Z0-9_]*=[A-Za-z0-9._:\/@-]*$/p' "$ROOT/.env")
 fi
+# O repositório contém código; os serviços consomem apenas esta cache efémera.
+CACHE_ROOT="${BLU_RUNTIME_ROOT:-/tmp/blu-runtime-${UID}}"
+export BLU_RUNTIME_ROOT="$CACHE_ROOT"
+export BLU_DATA_DIR="$CACHE_ROOT/data"
+export BLU_WAREHOUSE_DIR="$CACHE_ROOT/warehouse"
+export BLU_EXPORT_DIR="$CACHE_ROOT/exports/itineraries"
+export BLU_OPERATIONAL_DIR="$CACHE_ROOT/exports/portal-persistence"
+export BLU_BACKUP_DIR="${BLU_BACKUP_DIR:-$(dirname "$ROOT")/blu-system-backups/$(basename "$ROOT")}"
+export BLU_MONITORING_RUNTIME="${BLU_MONITORING_RUNTIME:-$ROOT/monitoring/runtime}"
 # Tudo o que é volátil fica fora do Git, dentro do runtime privado do monitoring.
 RUNTIME="$ROOT/monitoring/runtime/recovery"
 LOG="$RUNTIME/just-blu-it.log"
@@ -288,34 +297,17 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
         printf 'Falta configurar o acesso ao Monitoring: python -B -m monitoring.setup\n' >&2
         exit 1
     fi
-    EXECUTION_ID="blu-up-$(date -u +%Y%m%dT%H%M%SZ)-$(python3 -c 'import uuid; print(uuid.uuid4().hex[:12])')"
-    export EXECUTION_ID
-    run_task "1. Verificar ambiente" verify_environment
-    # A cópia local é obrigatória; a cópia S3 é tentada e registada sem impedir
-    # o reinício quando a rede remota está temporariamente indisponível.
-    run_task "2. Guardar checkpoint da execução" \
-        python3 -B -m monitoring.checkpoint create --execution-id "$EXECUTION_ID"
-    run_task "3. Parar serviços BLU" stop_all_services
-    if python3 -B -m monitoring.checkpoint restore-missing \
-            --backup-id "$EXECUTION_ID" >> "$LOG" 2>&1; then
-        complete_task "4. Recuperar checkpoint da execução"
-    else
-        run_task "4. Recuperar dados do bucket" bash -c '
-            .venv/bin/python -B -m etl.s3_transport restore-missing sources --path data
-            .venv/bin/python -B -m etl.s3_transport restore-missing warehouse --path warehouse
-        '
+    if [ ! -f "$BLU_DATA_DIR/portal/catalog.sqlite" ] \
+            || [ ! -f "$BLU_WAREHOUSE_DIR/blu_etl.sqlite" ] \
+            || [ ! -f "$BLU_EXPORT_DIR/history.sqlite" ]; then
+        printf 'Cache S3 ausente ou incompleta. Executar primeiro: just blu it\n' >&2
+        exit 1
     fi
-    run_task "5. Validar persistência" env PYTHONPATH=src python3 -B -m monitoring.recovery ensure
-    run_task "6. Sincronizar operações pendentes" bash -c '
-        cd dmc-workspace
-        node --experimental-strip-types scripts/sync-persistence.mjs
-        cd ..
-        .venv/bin/python -B -m etl.s3_outbox
-    '
+    verify_environment
     PORTAL_PUBLIC_ORIGIN="$(python3 -B scripts/studio_urls.py --origin)"
     export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="/codeeditor/default/ports/3001"
-    run_task "7. Iniciar serviços" start_all_services
-    run_task "8. Confirmar serviços" confirm_services
+    start_missing_services
+    confirm_service_endpoints
     quick_start_status
     python3 -B scripts/open_dashboards.py --quiet
     printf '\n  %s✓%s  5 serviços operacionais\n' "$GREEN" "$RESET"
@@ -346,12 +338,34 @@ if [ "${BLU_IT_VALIDATE_ONLY:-0}" = "1" ]; then
     exit 0
 fi
 
-run_task "Recuperar ficheiros em falta" python3 -B -m monitoring.checkpoint restore-missing
-run_task "Guardar backup antes da paragem" python3 -B -m monitoring.checkpoint create --remote-required
+EXECUTION_ID="blu-it-$(date -u +%Y%m%dT%H%M%SZ)-$(python3 -c 'import uuid; print(uuid.uuid4().hex[:12])')"
+export EXECUTION_ID
+SOURCE_ROOT="$ROOT"
+if [ -f "$CACHE_ROOT/data/portal/catalog.sqlite" ] \
+        && [ -f "$CACHE_ROOT/exports/itineraries/history.sqlite" ]; then
+    SOURCE_ROOT="$CACHE_ROOT"
+fi
+run_task "Guardar checkpoint da execução" \
+    python3 -B -m monitoring.checkpoint create --root "$SOURCE_ROOT" \
+        --execution-id "$EXECUTION_ID" --remote-required
 run_task "0. Parar todo o sistema" stop_all_services
-run_task "Guardar estado com serviços parados" python3 -B -m monitoring.checkpoint create
 run_task "1. Verificar ambiente" verify_environment
 run_task "2. Preparar Python" uv sync --locked --all-groups
+RECOVERED_ROOT="/tmp/blu-recovered-$EXECUTION_ID"
+rm -rf "$RECOVERED_ROOT"
+if python3 -B -m monitoring.checkpoint restore-missing \
+        --root "$RECOVERED_ROOT" --backup-id "$EXECUTION_ID" >> "$LOG" 2>&1 \
+        && [ -f "$RECOVERED_ROOT/data/portal/catalog.sqlite" ] \
+        && [ -f "$RECOVERED_ROOT/exports/itineraries/history.sqlite" ]; then
+    complete_task "Recuperar checkpoint da execução"
+    run_task "Materializar dados e executar ETL" \
+        .venv/bin/python -B -m etl.cloud_runtime \
+            --recovered "$RECOVERED_ROOT" --destination "$CACHE_ROOT"
+else
+    run_task "Recuperar estado ativo e executar ETL" \
+        .venv/bin/python -B -m etl.cloud_runtime --destination "$CACHE_ROOT"
+fi
+rm -rf "$RECOVERED_ROOT"
 run_task "3. Preparar portal" bash -c '
     npm --prefix dmc-workspace ci
     npm --prefix dmc-workspace exec playwright install chromium
@@ -366,9 +380,11 @@ else
 fi
 
 run_task "5. Validar ou recuperar dados" bash -c '
-    PYTHONPATH=src .venv/bin/python -B -m monitoring.recovery ensure
+    PYTHONPATH=src .venv/bin/python -B -m monitoring.recovery ensure --root "$BLU_RUNTIME_ROOT"
     cd dmc-workspace
     node --experimental-strip-types scripts/sync-persistence.mjs
+    cd ..
+    .venv/bin/python -B -m etl.s3_outbox
 '
 run_task "6. Testar Python e monitoring" bash -c '
     PYTHONPATH=src .venv/bin/python -B -m unittest discover -s tests -v
