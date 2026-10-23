@@ -317,7 +317,6 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
         "$(python3 -B scripts/studio_urls.py --port 3001 --path /catalog)"
     ui_footer "SYSTEM READY" "just blu up · completed"
     trap - ERR
-    bash scripts/start_codex.sh
     exit 0
 fi
 
@@ -413,5 +412,3 @@ run_task "12. Sistema BLU recuperado" python3 -B scripts/open_dashboards.py --qu
 printf '  %s↗%s  Portal AWS: %s\n' "$CYAN" "$RESET" \
     "$(python3 -B scripts/studio_urls.py --port 3001 --path /catalog)"
 ui_footer "BLU SYSTEM RESTORED" "12 tarefas · 5 serviços · 4 interfaces"
-
-bash scripts/start_codex.sh

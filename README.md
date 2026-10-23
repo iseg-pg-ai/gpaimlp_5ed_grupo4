@@ -140,28 +140,6 @@ outbox persistente. O Monitoring envia estes eventos de forma idempotente para
 `operational-changes/` no bucket de dados e só remove o JSON local depois da
 confirmação remota. Falhas de rede mantêm a operação pendente.
 
-Quando executados num terminal interativo do VS Code/SageMaker, ambos os comandos
-abrem o Codex num **novo terminal em split**, ao lado do Bash de origem. O painel
-fica em baixo para apresentar Bash à esquerda e Codex à direita. O Bash volta a
-ficar disponível; um terminal Codex já aberto pela integração é reutilizado.
-O Codex CLI tem de estar instalado e autenticado nesse ambiente e não recebe
-nenhum pedido inicial. Sair do Codex com `/quit` mantém os serviços ativos.
-
-A integração usa a extensão local `scripts/vscode-terminal/`, instalada por
-`scripts/install_just_blu_it.sh`. Num ambiente que já tinha o launcher instalado,
-executar uma vez:
-
-```bash
-python3 scripts/vscode_terminal.py --install
-```
-
-Se o editor não ativar a extensão imediatamente, usar **Developer: Reload Window**.
-A instalação usa apenas fontes do repositório, sem dependências do Marketplace.
-Sem integração disponível, o comando informa como a instalar e deixa o Bash livre.
-Para arrancar sem abrir o Codex, usar `BLU_CODEX_AUTO=0 just blu up` ou
-`BLU_CODEX_AUTO=0 just blu it`. Execuções com entrada ou saída redirecionada
-não abrem terminais. Esta integração é específica do VS Code em Linux.
-
 O SageMaker pode exigir a renovação da sessão pela consola AWS; os comandos não
 conseguem renovar tokens externos expirados.
 

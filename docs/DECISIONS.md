@@ -1035,33 +1035,6 @@ PT/EN em 390/1600 px com APIs simuladas; login, contas e logs do monitoring em
 loopback passaram; o check completo do portal passou com 138 testes aprovados
 e um ignorado após essa adaptação.
 
-## 2026-10-22 — Codex num terminal dividido do VS Code
-
-`just blu up` e `just blu it` invocam `scripts/start_codex.sh` apenas depois de
-concluírem com sucesso. Em terminais interativos, o launcher pede à extensão
-local `scripts/vscode-terminal/` um novo terminal Codex ao lado do Bash de origem.
-A API `parentTerminal` cria o split; colocar o painel em baixo permite apresentar
-Bash à esquerda e Codex à direita. Se a origem não for identificada pelos PID
-ancestrais, a extensão cria um novo par Bash/Codex. Pedidos repetidos reutilizam
-o Codex existente. Nunca executa o Codex dentro do Bash que arrancou os serviços.
-
-A ponte usa um socket Unix numa pasta privada e um apontador não versionado em
-`monitoring/runtime/editor-terminal.json`. O pedido contém apenas o executável
-local e os PID ancestrais; o Codex arranca com argumentos separados, sem comando
-interpolado e sem pedido inicial. A instalação empacota exclusivamente as fontes
-locais num VSIX temporário, sem dependências do Marketplace. Novos ambientes
-instalam a extensão com o launcher; instalações anteriores podem executar
-`python3 scripts/vscode_terminal.py --install` e recarregar a janela se necessário.
-
-`BLU_CODEX_AUTO=0`, redirecionamentos, ausência do Codex ou indisponibilidade do
-editor deixam o Bash livre e não invalidam os serviços já iniciados. A integração
-é específica do VS Code em Linux, incluindo o SageMaker Code Editor.
-
-Validação: cinco testes com API de terminais simulada, incluindo seleção da
-origem, criação de par novo, reutilização, fecho e rejeição de executável inválido.
-Instalação e pedido de abertura reais aceites pelo editor desta sessão. Sem
-reiniciar serviços ou enviar pedidos ao modelo; disposição visual não inspecionada.
-
 ## 2026-10-23 — S3 como persistência permanente e cache efémera
 
 As releases S3 de fontes, estado operacional e warehouse passam a ser a fonte
