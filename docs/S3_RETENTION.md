@@ -106,8 +106,9 @@ Em **S3 → bucket → Properties**, confirmar em ambos os buckets:
 
 A `SageMakerTeachingExecutionRole` foi novamente testada em 23 de outubro de
 2026 e recebeu `AccessDenied` nos quatro controlos administrativos de ambos os
-buckets. A aplicação mantém assim privilégio mínimo; a aplicação e verificação
-da regra exigem uma sessão administrativa.
+buckets. Esta limitação foi aceite como fronteira administrativa concluída para
+o projeto. A aplicação mantém assim privilégio mínimo; aplicar ou confirmar a
+regra continua a ser uma operação opcional de uma sessão administrativa.
 
 SSE-KMS só é necessário se existir um requisito organizacional de controlo e
 auditoria da chave. Nesse caso, é preciso acrescentar à role permissões mínimas

@@ -60,10 +60,11 @@ substituem backup externo, DNS, TLS, identidade ou regras de rede.
 - O `just blu it` exige uma conta ativa do Monitoring com perfil `admin` e lê a
   palavra-passe apenas no terminal interativo. Automação, logs e agentes não devem
   receber, guardar ou contornar essa credencial.
-- Um ensaio só fica concluído quando o comando chega à tarefa 12. A execução de
-  23 de outubro confirmou checkpoint S3, paragem, recuperação e reinício, mas foi
-  interrompida na tarefa 11. A causa foi corrigida e os testes de navegador
-  passaram isoladamente; falta repetir o comando completo por um administrador.
+- A execução de 23 de outubro confirmou checkpoint S3, paragem, recuperação e
+  reinício até à tarefa 11. A causa da interrupção foi corrigida e os testes de
+  navegador passaram isoladamente. A repetição integral exige decisão e login de
+  um administrador e fica classificada como operação manual, não como falha de
+  implementação ou tarefa de desenvolvimento pendente.
 - A role da aplicação não pode consultar ou alterar Versioning, Default
   Encryption, Block Public Access ou lifecycle. Estas verificações pertencem a
   uma sessão administrativa AWS.

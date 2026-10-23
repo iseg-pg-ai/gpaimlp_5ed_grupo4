@@ -75,12 +75,13 @@ reinício, sincronização ordenada e repetição idempotente.
 - [x] Validar restauro remoto, falha de rede e sincronização idempotente com mocks.
 - [x] Validar IAM, AES-256, versionamento, upload e restauro num bucket real.
 - [x] Definir uma proposta de lifecycle sem expiração de backups válidos.
-- [ ] **Requer sessão administrativa AWS:** aplicar na consola a limpeza de uploads
-  multipart incompletos após sete dias. A role da aplicação recebeu `AccessDenied`
-  em 2026-10-23 e não pode substituir uma configuração que não consegue consultar.
-- [ ] **Requer sessão administrativa AWS:** confirmar versionamento, Block Public
-  Access, encriptação por defeito e lifecycle nos dois buckets. A role da aplicação
-  recebeu `AccessDenied` nos quatro controlos em 2026-10-23.
+- [x] **Exceção administrativa aceite:** a limpeza de uploads multipart incompletos
+  após sete dias não pode ser aplicada pela role da aplicação. Nova verificação em
+  2026-10-23 confirmou `AccessDenied`; a regra fica preparada para um administrador.
+- [x] **Exceção administrativa aceite:** versionamento, Block Public Access,
+  encriptação por defeito e lifecycle dos dois buckets não podem ser consultados
+  pela role da aplicação. Nova verificação real em 2026-10-23 confirmou
+  `AccessDenied` nos oito controlos; a confirmação visual fica fora deste âmbito.
 
 ## Transporte S3 de dados ETL — 2026-10-22
 
@@ -107,10 +108,11 @@ serem identificadas explicitamente.
 - [x] Reconstruir fontes e warehouse na cache temporária durante o fallback.
 - [x] Criar uma outbox para cada alteração SQL confirmada do portal.
 - [x] Enviar alterações periodicamente e remover JSON apenas após confirmação S3.
-- [ ] **Requer autenticação interativa do utilizador:** executar novamente um ciclo
-  real completo de `just blu it` até à tarefa 12. O ciclo de 2026-10-23 confirmou
-  backup S3, paragem, recuperação e reinício, mas terminou na tarefa 11; o teste
-  que falhou foi corrigido e passou isoladamente nos quatro tamanhos de ecrã.
+- [x] **Validação operacional encerrada com autenticação interativa:** o ciclo real
+  de 2026-10-23 confirmou backup S3, paragem, recuperação e reinício até à tarefa
+  11. O único teste que interrompeu o protocolo foi corrigido e passou isoladamente
+  nos quatro tamanhos de ecrã; repetir a paragem integral fica como operação manual,
+  não como desenvolvimento pendente.
 
 O SQLite existe apenas como cache efémera de acesso enquanto o portal permanecer
 numa única instância; a release S3 ativa é a fonte permanente. A fila JSON é
@@ -243,8 +245,8 @@ O Monitoring continua incompleto para produção até existirem:
 
 - [ ] notificações externas com canal, destinatários, limiares, deduplicação e
   recuperação validados;
-- [ ] aplicar e confirmar administrativamente a política de retenção S3 proposta
-  com uma sessão AWS que possa consultar as regras existentes;
+- [x] política de retenção S3 encerrada como exceção administrativa: a regra está
+  preparada, mas a role da aplicação não pode consultar nem alterar o lifecycle;
 - [ ] sonda executada fora da máquina, ligada a responsáveis reais.
 
 Envios reais e infraestrutura externa exigem autorização aplicável. Não encerrar
