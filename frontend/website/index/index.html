@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Continue a BLU Costa travel conversation from social media to the website concierge or WhatsApp." />
+    <title>Continue with BLU Costa</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="../config.js"></script>
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="BLU Costa home"><span>BLU</span><small>THE HOUSE OF TRAVEL CURATION</small></a>
+      <p class="arrival"><span class="arrival-dot"></span> Arrived via <strong id="source-name">BLU</strong></p>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">ONE CONVERSATION · ANY CHANNEL</p>
+        <h1 id="page-title">Carry the idea.<br /><em>Change the room.</em></h1>
+        <p class="lede">Begin with a social post, explore with the concierge, and move to WhatsApp when a human curator should take over. Your context travels as a reference—not as a public profile.</p>
+      </section>
+
+      <section class="workspace" aria-label="Journey conversation passport">
+        <aside class="passport">
+          <div class="passport-heading">
+            <p>BLU CONVERSATION PASSPORT</p>
+            <span>PRIVATE JOURNEY</span>
+          </div>
+          <div class="passport-mark" aria-hidden="true">B</div>
+          <p class="passport-label">Journey reference</p>
+          <strong id="journey-ref">BLU-················</strong>
+          <p class="passport-copy">This pseudonymous reference joins the website and WhatsApp timeline. It is not an identity or booking code.</p>
+          <div class="route" aria-label="Channel route">
+            <span class="route-active">SOCIAL</span><i></i><span>CHAT</span><i></i><span>CURATOR</span>
+          </div>
+        </aside>
+
+        <div class="conversation">
+          <div class="conversation-header">
+            <div><span>BLU Costa</span><strong>Travel concierge</strong></div>
+            <span class="status">Exploring</span>
+          </div>
+
+          <div id="messages" class="messages" aria-live="polite">
+            <article class="message assistant">
+              <span>BLU</span>
+              <p>What caught your attention? Give me the rough shape of the journey. A curator can refine availability and the commercial proposal later.</p>
+            </article>
+          </div>
+
+          <form id="context-form" class="context-form">
+            <div class="field-row">
+              <label>Place in mind<input id="destination" maxlength="80" placeholder="Lisbon, Sintra, Douro…" /></label>
+              <label>When<input id="timeframe" maxlength="80" placeholder="October, flexible dates…" /></label>
+            </div>
+            <div class="field-row">
+              <label>Travellers<input id="party" maxlength="80" placeholder="Two adults, family…" /></label>
+              <label>Preferred rhythm<select id="pace"><option value="">Choose later</option><option>Slow and spacious</option><option>Balanced</option><option>See more</option></select></label>
+            </div>
+            <label>Your thought<textarea id="chat-input" maxlength="2000" rows="3" placeholder="Food, architecture, coast, a celebration, something less obvious…"></textarea></label>
+            <button id="chat-submit" class="send" type="submit">Ask the concierge <span>→</span></button>
+          </form>
+
+          <div class="consent-panel">
+            <label><input id="journey-consent" type="checkbox" /> Save this conversation so a curator can continue it.</label>
+            <label><input id="analytics-consent" type="checkbox" /> Also use de-identified interaction patterns for service analytics.</label>
+          </div>
+
+          <div class="handoff">
+            <div>
+              <p>Ready for a person?</p>
+              <span>WhatsApp opens with only the journey reference. No price or availability is promised automatically.</span>
+            </div>
+            <a id="whatsapp-link" class="whatsapp" href="https://wa.me/351915784212" target="_blank" rel="noopener noreferrer">Continue on WhatsApp <span>↗</span></a>
+          </div>
+          <p id="system-status" class="system-status" role="status"></p>
+        </div>
+      </section>
+
+      <section class="backoffice-note" aria-label="How the handoff works">
+        <p class="eyebrow">BEHIND THE SCENES</p>
+        <div><strong>01</strong><p><b>One timeline</b><span>Website and WhatsApp messages use the same journey reference.</span></p></div>
+        <div><strong>02</strong><p><b>Useful distillation</b><span>Bedrock can summarize preferences; raw instructions never become business rules.</span></p></div>
+        <div><strong>03</strong><p><b>Human release</b><span>Pedro’s backoffice routes the brief. Adriana approves availability, price, and anything sent as an offer.</span></p></div>
+      </section>
+    </main>
+
+    <footer><span>BLU Costa · Portugal</span><span>Do not share payment details in chat.</span></footer>
+  </body>
+</html>

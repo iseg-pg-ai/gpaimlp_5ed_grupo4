@@ -1,0 +1,8 @@
+# Review ownership for the focused customer-channel addon.
+/frontend/website/ @GiselaInge
+/infra/aws-split-app.mjs @GiselaInge
+/infra/lambda/whatsapp-*/ @GiselaInge
+/infra/lambda/ingest/ @GiselaInge
+/infra/lambda/event-processor/ @GiselaInge
+/infra/tests/whatsapp.test.mjs @GiselaInge
+/docs/ADDON_PROVENANCE.md @GiselaInge
