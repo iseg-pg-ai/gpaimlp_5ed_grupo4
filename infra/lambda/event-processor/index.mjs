@@ -1,4 +1,4 @@
-import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
@@ -21,6 +21,26 @@ export async function handler(event) {
         eventType: { S: record.eventType || 'conversation.message.recorded' },
         ...(record.context ? { contextJson: { S: JSON.stringify(record.context) } } : {}),
       } }));
+      const followUpAt = new Date(Date.parse(record.occurredAt) + 3 * 86400000).toISOString();
+      await db.send(new UpdateItemCommand({
+        TableName: process.env.INTELLIGENCE_TABLE_NAME,
+        Key: { conversationId: { S: record.conversationId }, recordKey: { S: 'PROFILE' } },
+        UpdateExpression: 'SET lastActivityAt=:at, followUpAt=:due, followUpStatus=:pending, lastChannel=:channel, lastEventType=:type, analyticsConsent=:analytics, synthetic=:synthetic, updatedAt=:at ADD messageCount :one',
+        ExpressionAttributeValues: {
+          ':at': { S: record.occurredAt }, ':due': { S: followUpAt }, ':pending': { S: 'PENDING' },
+          ':channel': { S: record.message.channel }, ':type': { S: record.eventType || 'conversation.message.recorded' },
+          ':analytics': { BOOL: record.analyticsConsent === true }, ':synthetic': { BOOL: record.synthetic === true }, ':one': { N: '1' },
+        },
+      }));
+      if (record.eventType !== 'conversation.message.recorded' || record.context) {
+        await db.send(new PutItemCommand({ TableName: process.env.INTELLIGENCE_TABLE_NAME, Item: {
+          conversationId: { S: record.conversationId }, recordKey: { S: `EVENT#${occurredAtId}` },
+          eventType: { S: record.eventType || 'conversation.message.recorded' }, occurredAt: { S: record.occurredAt },
+          sourceId: { S: record.id }, source: { S: record.source },
+          summary: { S: record.message.text.slice(0, 1000) },
+          ...(record.context ? { contextJson: { S: JSON.stringify(record.context) } } : {}),
+        } }));
+      }
       await s3.send(new PutObjectCommand({
         Bucket: process.env.ARCHIVE_BUCKET,
         Key: `sessions/${record.conversationId}/${record.occurredAt.replaceAll(':', '-')}#${record.id}.json`,

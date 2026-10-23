@@ -14,6 +14,8 @@ import {
   aws_cloudfront_origins as origins,
   aws_dynamodb as dynamodb,
   aws_ec2 as ec2,
+  aws_events as events,
+  aws_events_targets as targets,
   aws_iam as iam,
   aws_lambda as lambda,
   aws_lambda_event_sources as eventSources,
@@ -33,8 +35,10 @@ const environmentName = process.env.DEPLOY_ENVIRONMENT ?? 'pilot';
 const projectName = process.env.PROJECT_NAME ?? 'blu-costa';
 const outdir = process.env.CDK_OUTDIR ?? 'cdk.split.out';
 const infraDir = path.dirname(fileURLToPath(import.meta.url));
-// Deploy the compact source website directly; no generated or copied asset tree.
-const siteAsset = path.resolve(infraDir, '../frontend/website');
+// The polished BLU site is the public root; the compact channel bridge remains
+// available under /connect for campaign and WhatsApp hand-offs.
+const siteAsset = path.resolve(infraDir, '../frontend/blu-cloud-site/dist/client');
+const socialBridgeAsset = path.resolve(infraDir, '../frontend/website');
 if (!/^[0-9]{12}$/.test(account ?? '')) throw new Error('TARGET_AWS_ACCOUNT_ID must be the twelve-digit destination AWS account');
 
 const app = new App({ outdir });
@@ -66,6 +70,20 @@ class DataStack extends Stack {
       removalPolicy: RemovalPolicy.RETAIN,
     });
     this.messages.addGlobalSecondaryIndex({ indexName: 'LeadIndex', partitionKey: { name: 'leadId', type: dynamodb.AttributeType.STRING }, sortKey: { name: 'occurredAtId', type: dynamodb.AttributeType.STRING }, projectionType: dynamodb.ProjectionType.ALL });
+    this.intelligence = new dynamodb.Table(this, 'CustomerIntelligence', {
+      partitionKey: { name: 'conversationId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'recordKey', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    this.intelligence.addGlobalSecondaryIndex({
+      indexName: 'FollowUpIndex',
+      partitionKey: { name: 'followUpStatus', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'followUpAt', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
     this.archive = new s3.Bucket(this, 'ConversationArchive', {
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -99,6 +117,7 @@ class DataStack extends Stack {
       visibilityTimeout: Duration.seconds(60),
     });
     new CfnOutput(this, 'ConversationTableName', { value: this.messages.tableName, exportName: `${projectName}-${environmentName}-conversation-table` });
+    new CfnOutput(this, 'CustomerIntelligenceTableName', { value: this.intelligence.tableName, exportName: `${projectName}-${environmentName}-customer-intelligence` });
     new CfnOutput(this, 'ConversationEventsQueueUrl', { value: this.events.queueUrl, exportName: `${projectName}-${environmentName}-conversation-events` });
     new CfnOutput(this, 'BackofficeCrmQueueUrl', { value: this.crmEvents.queueUrl, exportName: `${projectName}-${environmentName}-crm-events` });
     new CfnOutput(this, 'ConversationArchiveBucket', { value: this.archive.bucketName, exportName: `${projectName}-${environmentName}-conversation-archive` });
@@ -170,6 +189,7 @@ class FrontendStack extends Stack {
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
         TABLE_NAME: props.data.messages.tableName,
+        INTELLIGENCE_TABLE_NAME: props.data.intelligence.tableName,
         ARCHIVE_BUCKET: props.data.archive.bucketName,
         CRM_QUEUE_URL: props.data.crmEvents.queueUrl,
       },
@@ -180,6 +200,7 @@ class FrontendStack extends Stack {
       reportBatchItemFailures: true,
     }));
     props.data.messages.grantWriteData(processor);
+    props.data.intelligence.grantReadWriteData(processor);
     props.data.archive.grantPut(processor, 'sessions/*');
     props.data.crmEvents.grantSendMessages(processor);
 
@@ -226,7 +247,7 @@ class FrontendStack extends Stack {
       autoDeleteObjects: false,
     });
     const distribution = new cloudfront.Distribution(this, 'FrontendDistribution', {
-      defaultRootObject: 'index/index.html',
+      defaultRootObject: 'index.html',
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(siteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -234,8 +255,8 @@ class FrontendStack extends Stack {
         compress: true,
       },
       errorResponses: [
-        { httpStatus: 403, responseHttpStatus: 200, responsePagePath: '/index/index.html', ttl: Duration.minutes(1) },
-        { httpStatus: 404, responseHttpStatus: 200, responsePagePath: '/index/index.html', ttl: Duration.minutes(1) },
+        { httpStatus: 403, responseHttpStatus: 200, responsePagePath: '/index.html', ttl: Duration.minutes(1) },
+        { httpStatus: 404, responseHttpStatus: 200, responsePagePath: '/index.html', ttl: Duration.minutes(1) },
       ],
     });
     const whatsappNumber = process.env.WHATSAPP_PUBLIC_NUMBER ?? '351915784212';
@@ -249,12 +270,23 @@ class FrontendStack extends Stack {
         s3deploy.Source.data('config.js', `window.BLU_CHAT_API=${JSON.stringify(`${api.apiEndpoint}/v1/chat`)};window.BLU_CONVERSATION_EVENTS_ENDPOINT=${JSON.stringify(`${api.apiEndpoint}/v1/conversation-events`)};window.BLU_WHATSAPP_URL=${JSON.stringify(`https://wa.me/${whatsappNumber}`)};`),
       ],
     });
+    new s3deploy.BucketDeployment(this, 'DeploySocialConversationBridge', {
+      destinationBucket: siteBucket,
+      destinationKeyPrefix: 'connect',
+      distribution,
+      distributionPaths: ['/connect/*'],
+      prune: false,
+      sources: [
+        s3deploy.Source.asset(socialBridgeAsset),
+        s3deploy.Source.data('config.js', `window.BLU_CHAT_API=${JSON.stringify(`${api.apiEndpoint}/v1/chat`)};window.BLU_CONVERSATION_EVENTS_ENDPOINT=${JSON.stringify(`${api.apiEndpoint}/v1/conversation-events`)};window.BLU_WHATSAPP_URL=${JSON.stringify(`https://wa.me/${whatsappNumber}`)};`),
+      ],
+    });
 
     new CfnOutput(this, 'ConversationEventsEndpoint', { value: `${api.apiEndpoint}/v1/conversation-events` });
     new CfnOutput(this, 'ChatEndpoint', { value: `${api.apiEndpoint}/v1/chat` });
     new CfnOutput(this, 'WhatsAppWebhookEndpoint', { value: `${api.apiEndpoint}/v1/channels/whatsapp` });
     new CfnOutput(this, 'FrontendUrl', { value: `https://${distribution.distributionDomainName}` });
-    new CfnOutput(this, 'SocialConversationBridgeUrl', { value: `https://${distribution.distributionDomainName}` });
+    new CfnOutput(this, 'SocialConversationBridgeUrl', { value: `https://${distribution.distributionDomainName}/connect/index/index.html` });
     new CfnOutput(this, 'FrontendBucketName', { value: siteBucket.bucketName });
     new CfnOutput(this, 'FrontendContract', { value: 'POST journeyConsent=true, analyticsConsent, conversationId, leadId?, message={actor,channel,text}' });
   }
@@ -265,8 +297,10 @@ class BackofficeStack extends Stack {
     super(scope, id, props);
     tag(this);
     const exportsBucket = new s3.Bucket(this, 'AnalysisExports', { encryption: s3.BucketEncryption.S3_MANAGED, blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, enforceSSL: true, versioned: true, removalPolicy: RemovalPolicy.RETAIN, autoDeleteObjects: false });
+    const evidenceBucket = new s3.Bucket(this, 'GovernanceEvidence', { encryption: s3.BucketEncryption.S3_MANAGED, blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, enforceSSL: true, versioned: true, removalPolicy: RemovalPolicy.RETAIN, autoDeleteObjects: false });
     const analysisRole = new iam.Role(this, 'BackofficeAnalysisRole', { assumedBy: new iam.AccountPrincipal(account), description: 'Backoffice conversation analysis and explicitly approved channel dispatch' });
     props.data.messages.grantReadData(analysisRole);
+    props.data.intelligence.grantReadWriteData(analysisRole);
     props.data.archive.grantRead(analysisRole, 'sessions/*', 'curated/*');
     props.data.crmEvents.grantConsumeMessages(analysisRole);
     const whatsappOutbound = new lambda.Function(this, 'WhatsAppOutbound', {
@@ -284,8 +318,73 @@ class BackofficeStack extends Stack {
     props.data.whatsappSecret.grantRead(whatsappOutbound);
     props.data.events.grantSendMessages(whatsappOutbound);
     whatsappOutbound.grantInvoke(analysisRole);
+
+    const rag = new lambda.Function(this, 'BackofficeRag', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'index.handler',
+      timeout: Duration.seconds(30),
+      memorySize: 512,
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      environment: {
+        MESSAGE_TABLE_NAME: props.data.messages.tableName,
+        INTELLIGENCE_TABLE_NAME: props.data.intelligence.tableName,
+        KNOWLEDGE_BUCKET: props.data.archive.bucketName,
+        MODEL_ID: process.env.BEDROCK_BACKOFFICE_MODEL_ID ?? (region === 'eu-west-1' ? 'eu.amazon.nova-lite-v1:0' : 'amazon.nova-lite-v1:0'),
+      },
+      code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/backoffice-rag')),
+    });
+    props.data.messages.grantReadData(rag);
+    props.data.intelligence.grantReadData(rag);
+    props.data.archive.grantRead(rag, 'curated/approved/*');
+    rag.addToRolePolicy(new iam.PolicyStatement({ actions: ['bedrock:InvokeModel'], resources: ['*'] }));
+    rag.grantInvoke(analysisRole);
+
+    const churnEvaluator = new lambda.Function(this, 'ChurnFollowUpEvaluator', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'index.handler',
+      timeout: Duration.seconds(60),
+      memorySize: 256,
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      environment: {
+        INTELLIGENCE_TABLE_NAME: props.data.intelligence.tableName,
+        CRM_QUEUE_URL: props.data.crmEvents.queueUrl,
+        EVIDENCE_BUCKET: evidenceBucket.bucketName,
+      },
+      code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/churn-evaluator')),
+    });
+    props.data.intelligence.grantReadWriteData(churnEvaluator);
+    props.data.crmEvents.grantSendMessages(churnEvaluator);
+    evidenceBucket.grantPut(churnEvaluator, 'controls/churn-followups/*');
+    new events.Rule(this, 'DailyChurnReview', {
+      description: 'Creates curator review tasks for due follow-ups; never contacts customers automatically.',
+      schedule: events.Schedule.rate(Duration.days(1)),
+      targets: [new targets.LambdaFunction(churnEvaluator)],
+    });
+
+    new s3deploy.BucketDeployment(this, 'DeployGovernanceControlManifest', {
+      destinationBucket: evidenceBucket,
+      destinationKeyPrefix: 'controls/manifests',
+      prune: false,
+      sources: [s3deploy.Source.data('customer-intelligence-controls.json', JSON.stringify({
+        schemaVersion: 1,
+        scope: ['conversation-ingestion', 'customer-intelligence', 'backoffice-rag', 'churn-followups', 'feedback'],
+        controls: {
+          humanApprovalRequired: true,
+          automaticCustomerContact: false,
+          rawTranscriptsExcludedFromKnowledgeBase: true,
+          iamProtectedBackofficeInvocation: true,
+          evidenceVersioning: true,
+          syntheticExcludedFromBusinessKpis: true,
+        },
+        reviewCadence: 'quarterly',
+        note: 'Audit evidence and control mapping; not a claim of ISO certification.',
+      }, null, 2))],
+    });
     new CfnOutput(this, 'ConversationTableForBackoffice', { value: props.data.messages.tableName });
     new CfnOutput(this, 'AnalysisExportBucket', { value: exportsBucket.bucketName });
+    new CfnOutput(this, 'GovernanceEvidenceBucket', { value: evidenceBucket.bucketName });
+    new CfnOutput(this, 'BackofficeRagFunctionArn', { value: rag.functionArn });
+    new CfnOutput(this, 'ChurnEvaluatorFunctionArn', { value: churnEvaluator.functionArn });
     new CfnOutput(this, 'BackofficeCrmQueueUrl', { value: props.data.crmEvents.queueUrl });
     new CfnOutput(this, 'WhatsAppOutboundFunctionArn', { value: whatsappOutbound.functionArn });
   }

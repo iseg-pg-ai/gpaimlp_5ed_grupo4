@@ -1,0 +1,91 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+
+const opening = { id: "opening", role: "assistant", text: "Tell me what you have in mind for Portugal. I can explore the possibilities with you, then pass the useful details to a curator." };
+const prompts = [
+  ["destination", /lisbon|sintra|porto|douro|alentejo|algarve|portugal/i, "Which part of Portugal would you like to explore?"],
+  ["dates", /\b(20\d{2}|january|february|march|april|may|june|july|august|september|october|november|december|week|day)\b/i, "When are you travelling, and how flexible are your dates?"],
+  ["party", /\b(solo|alone|couple|family|families|friends|people|adults|children|kids|\d+\s*(people|adults|children|guests))\b/i, "Who will share the journey with you?"],
+  ["interests", /food|wine|history|art|culture|architecture|nature|coast|river|walking|craft|garden|relax/i, "What would make the journey worth remembering for you?"],
+  ["budget", /\b(budget|eur|euro|€|£|\$|\d{3,})\b/i, "What budget range should the curator work within?"],
+];
+
+function localReply(history) {
+  const joined = history.filter(message => message.role === "user").map(message => message.text).join(" ");
+  const missing = prompts.find(([, expression]) => !expression.test(joined));
+  return missing ? missing[2] : "Please provide your email address or phone number so a curator can confirm availability and prepare a proposal shaped around what you are looking for.";
+}
+
+export function App() {
+  const sessionId = useMemo(() => crypto.randomUUID(), []);
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([opening]);
+  const [text, setText] = useState("");
+  const [pending, setPending] = useState(false);
+  const [journeyConsent, setJourneyConsent] = useState(false);
+  const [analyticsConsent, setAnalyticsConsent] = useState(false);
+  const listRef = useRef(null);
+  const publishedIds = useRef(new Set());
+
+  useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" }); }, [messages, pending]);
+
+  async function publish(message, consent = {}) {
+    const endpoint = window.BLU_CONVERSATION_EVENTS_ENDPOINT;
+    const retainJourney = consent.journeyConsent ?? journeyConsent;
+    const allowAnalytics = consent.analyticsConsent ?? analyticsConsent;
+    if (!endpoint || !retainJourney || publishedIds.current.has(message.id)) return;
+    try {
+      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ journeyConsent: true, analyticsConsent: allowAnalytics, conversationId: sessionId, synthetic: false, source: "blu-cloud-site", message: { actor: message.role === "user" ? "customer" : "assistant", channel: "website", text: message.text } }) });
+      if (response.ok) publishedIds.current.add(message.id);
+    } catch (error) { console.warn("Conversation analytics unavailable", error); }
+  }
+
+  async function changeJourneyConsent(event) {
+    const enabled = event.target.checked;
+    setJourneyConsent(enabled);
+    if (enabled) await Promise.all(messages.map(message => publish(message, { journeyConsent: true })));
+  }
+
+  async function submit(event) {
+    event.preventDefault();
+    const value = text.trim();
+    if (!value || pending) return;
+    const userMessage = { id: crypto.randomUUID(), role: "user", text: value };
+    const nextHistory = [...messages, userMessage];
+    setMessages(nextHistory); setText(""); setPending(true);
+    await publish(userMessage);
+    try {
+      let reply;
+      if (window.BLU_CHAT_API) {
+        const response = await fetch(window.BLU_CHAT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId: sessionId, message: value, messages: messages.slice(-10), analyticsConsent }) });
+        if (!response.ok) throw new Error(`Chat returned ${response.status}`);
+        reply = (await response.json()).reply;
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 420));
+        reply = localReply(nextHistory);
+      }
+      const assistantMessage = { id: crypto.randomUUID(), role: "assistant", text: reply };
+      setMessages(current => [...current, assistantMessage]);
+      await publish(assistantMessage);
+    } catch {
+      setMessages(current => [...current, { id: crypto.randomUUID(), role: "assistant", text: "I cannot continue the conversation just now. You can reach the BLU team at hello@blucostatravel.com." }]);
+    } finally { setPending(false); }
+  }
+
+  return <>
+    <button className="concierge-launcher" type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-controls="blu-concierge">Talk to BLU</button>
+    <section id="blu-concierge" className={`concierge-panel ${open ? "is-open" : ""}`} aria-hidden={!open} aria-label="BLU travel concierge">
+      <header className="concierge-header"><div><span>BLU Costa</span><strong>Travel concierge</strong></div><button type="button" onClick={() => setOpen(false)} aria-label="Close concierge">Close</button></header>
+      <div className="concierge-messages" ref={listRef} aria-live="polite">
+        {messages.map(message => <p key={message.id} className={`concierge-message ${message.role}`}>{message.text}</p>)}
+        {pending && <p className="concierge-message assistant pending">Considering your answer…</p>}
+      </div>
+      <form className="concierge-form" onSubmit={submit}>
+        <label htmlFor="concierge-input">Your message</label>
+        <div><input id="concierge-input" value={text} onChange={event => setText(event.target.value)} maxLength="2000" placeholder="Tell us what matters…" /><button disabled={pending}>Send</button></div>
+        <label className="analytics-choice"><input type="checkbox" checked={journeyConsent} onChange={changeJourneyConsent} /> Retain this conversation so a curator can follow up on my journey.</label>
+        <label className="analytics-choice"><input type="checkbox" checked={analyticsConsent} onChange={event => setAnalyticsConsent(event.target.checked)} /> Also allow this conversation to be used for planning analytics.</label>
+        <small className="concierge-privacy">Avoid sharing payment details. You may continue without saving the conversation.</small>
+      </form>
+    </section>
+  </>;
+}
