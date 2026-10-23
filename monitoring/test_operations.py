@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timedelta, timezone
+import os
 from pathlib import Path
 import shutil
 import sqlite3
@@ -271,12 +272,17 @@ class OperationsTest(unittest.TestCase):
             (runtime / "data-s3-status.json").write_text(json.dumps({
                 "at": datetime.now(timezone.utc).isoformat(), "outcome": "passed",
                 "operation": "publish", "kind": "warehouse", "release_id": "release-id"}))
-            result = operational_signals(runtime)
+            with patch.dict(os.environ, {
+                "BLU_OPERATIONAL_DIR": str(root / "exports/portal-persistence"),
+                "BLU_DATA_DIR": str(root / "data"),
+                "BLU_EXPORT_DIR": str(root / "exports/itineraries"),
+            }):
+                result = operational_signals(runtime)
+                details = operational_details(runtime, "backup")
             self.assertEqual(result["persistence"]["state"], "up")
             self.assertEqual(result["persistence"]["pending_total"], 1)
             self.assertEqual(result["backup"]["s3_state"], "passed")
             self.assertEqual(result["backup"]["data_s3_state"], "passed")
-            details = operational_details(runtime, "backup")
             self.assertTrue(any(entry["fields"].get("operation") == "Cópia remota S3"
                                 for entry in details["entries"]))
 

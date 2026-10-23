@@ -75,6 +75,12 @@ As portas esperadas são 3001, 3003, 3004, 8000 e 8501. A configuração version
 em `.vscode/settings.json` encaminha-as silenciosamente; a porta 8000 é técnica e
 não abre um separador.
 
+O painel **Ports** do VS Code apresenta `localhost` na coluna de encaminhamento
+porque mostra o extremo local do túnel. Os nomes identificam agora as interfaces
+AWS. Para obter os endereços públicos SageMaker, executar **Tasks: Run Task →
+BLU: Mostrar URLs AWS**; **BLU: Abrir dashboards AWS** abre diretamente as quatro
+interfaces públicas configuradas em `config/studio.local.json`.
+
 ## Estado local e transferência
 
 O Git fornece código, fontes versionadas e a entrega atual de `warehouse/`. Estes
