@@ -1,5 +1,6 @@
 # Review ownership for the focused customer-channel addon.
 /frontend/website/ @GiselaInge
+/frontend/blucostatravel.com/ @GiselaInge
 /infra/aws-split-app.mjs @GiselaInge
 /infra/lambda/whatsapp-*/ @GiselaInge
 /infra/lambda/ingest/ @GiselaInge
