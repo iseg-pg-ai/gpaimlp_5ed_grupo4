@@ -14,6 +14,9 @@ operacional do portal. O disco da instância conserva apenas uma cache temporár
 reconstruível e exterior ao repositório. O bucket de backups mantém checkpoints
 imutáveis para o protocolo de recuperação.
 
+Estado: implementação operacional concluída. Permanecem as confirmações
+administrativas, a política lifecycle e o ensaio integral indicados abaixo.
+
 - [x] Definir releases operacionais completas com manifesto, hashes e apontador ativo.
 - [x] Incluir catálogo, histórico, propostas PDF e operações pendentes na release.
 - [x] Materializar atomicamente uma release S3 numa cache temporária validada.
@@ -32,6 +35,9 @@ imutáveis para o protocolo de recuperação.
   locais do diretório do projeto.
 
 ## Persistência operacional independente do ETL — 2026-10-22
+
+Estado: concluída e validada, incluindo indisponibilidade prolongada do SQLite,
+reinício, sincronização ordenada e repetição idempotente.
 
 - [x] Mapear o warehouse e as duas bases SQLite operacionais.
 - [x] Manter catálogo, histórico e fila fora do ciclo de publicação do ETL.
@@ -52,11 +58,18 @@ imutáveis para o protocolo de recuperação.
 - [x] Validar restauro remoto, falha de rede e sincronização idempotente com mocks.
 - [x] Validar IAM, AES-256, versionamento, upload e restauro num bucket real.
 - [x] Definir uma proposta de lifecycle sem expiração de backups válidos.
-- [ ] Aplicar na consola a limpeza de uploads multipart incompletos após sete dias.
-- [ ] Confirmar administrativamente versionamento, Block Public Access e
-  encriptação por defeito nos dois buckets.
+- [ ] **Requer sessão administrativa AWS:** aplicar na consola a limpeza de uploads
+  multipart incompletos após sete dias. A role da aplicação recebeu `AccessDenied`
+  em 2026-10-23 e não pode substituir uma configuração que não consegue consultar.
+- [ ] **Requer sessão administrativa AWS:** confirmar versionamento, Block Public
+  Access, encriptação por defeito e lifecycle nos dois buckets. A role da aplicação
+  recebeu `AccessDenied` nos quatro controlos em 2026-10-23.
 
 ## Transporte S3 de dados ETL — 2026-10-22
+
+Estado: separação entre estado operacional, ETL e transporte S3 concluída. A
+política futura de expiração continua bloqueada até as releases substituídas
+serem identificadas explicitamente.
 
 - [x] Separar o bucket de dados do bucket de checkpoints operacionais.
 - [x] Publicar releases imutáveis de fontes e warehouse com manifesto final.
@@ -65,7 +78,9 @@ imutáveis para o protocolo de recuperação.
 - [x] Validar tamanho e SHA-256 após upload e download.
 - [x] Recuperar apenas para diretórios novos ou vazios, sem substituir dados ativos.
 - [x] Validar releases reais de fontes e warehouse no bucket autorizado.
-- [ ] Marcar releases substituídas antes de aprovar expiração de fontes ou warehouse.
+- [ ] **Condicionada a uma política de expiração futura:** marcar releases
+  substituídas antes de aprovar expiração de fontes ou warehouse. Até lá, nenhuma
+  release válida é expirada.
 
 ## Recuperação identificada e alterações contínuas S3
 
@@ -75,7 +90,10 @@ imutáveis para o protocolo de recuperação.
 - [x] Reconstruir fontes e warehouse na cache temporária durante o fallback.
 - [x] Criar uma outbox para cada alteração SQL confirmada do portal.
 - [x] Enviar alterações periodicamente e remover JSON apenas após confirmação S3.
-- [ ] Executar um ciclo real completo de `just blu it` com paragem e reinício.
+- [ ] **Requer autenticação interativa do utilizador:** executar novamente um ciclo
+  real completo de `just blu it` até à tarefa 12. O ciclo de 2026-10-23 confirmou
+  backup S3, paragem, recuperação e reinício, mas terminou na tarefa 11; o teste
+  que falhou foi corrigido e passou isoladamente nos quatro tamanhos de ecrã.
 
 O SQLite existe apenas como cache efémera de acesso enquanto o portal permanecer
 numa única instância; a release S3 ativa é a fonte permanente. A fila JSON é
@@ -217,7 +235,8 @@ O Monitoring continua incompleto para produção até existirem:
 
 - [ ] notificações externas com canal, destinatários, limiares, deduplicação e
   recuperação validados;
-- [ ] aplicar e confirmar administrativamente a política de retenção S3 proposta;
+- [ ] aplicar e confirmar administrativamente a política de retenção S3 proposta
+  com uma sessão AWS que possa consultar as regras existentes;
 - [ ] sonda executada fora da máquina, ligada a responsáveis reais.
 
 Envios reais e infraestrutura externa exigem autorização aplicável. Não encerrar
@@ -640,7 +659,8 @@ Ver [arquitetura e fronteiras](docs/ARCHITECTURE.md).
 - [ ] Rever acesso, consentimento, retenção e revogação das partilhas e do Lixo.
 - [ ] Inspecionar PDFs nos idiomas suportados e documentar fontes necessárias.
 - [ ] Acrescentar fotografias apenas com autorização e créditos.
-- [ ] Testar backup e recuperação de catálogo, histórico e PDFs.
+- [x] Testar backup e recuperação de catálogo, histórico e PDFs através de
+  checkpoints locais e S3 verificados.
 - [ ] Atualizar a instalação do plugin Canva após revisão do pacote-fonte.
 - [ ] Validar uma proposta real: TXT → cópia Canva → revisão → PDF final.
 
@@ -652,7 +672,8 @@ Ver [arquitetura e fronteiras](docs/ARCHITECTURE.md).
 - [ ] Definir deployment, segredos, região e recuperação operacional.
 - [ ] Aprovar migração ou publicação antes de executar alterações externas.
 - [ ] Escolher apenas os fornecedores necessários e definir contratos com mocks.
-- [ ] Definir origem S3, retenção e fallback sem acoplar o ETL ao transporte.
+- [x] Definir origem S3, retenção proposta e fallback sem acoplar o ETL ao
+  transporte.
 
 #### Histórico
 
@@ -1065,7 +1086,7 @@ workspace.
   and `CompanyKnowledge` contracts.
 - [ ] Decide the Bedrock/OpenAI responsibility boundary and require a
   provider-neutral application interface.
-- [ ] Define what S3 would store, including identifiers, encryption, retention,
+- [x] Define what S3 stores, including identifiers, encryption, retention,
   deletion, regional constraints, and local fallback.
 - [ ] Approve privacy, consent, prompt-redaction, audit, and release roles.
 - [ ] Choose one acceptance scenario and measurable cost, latency, reliability,
@@ -1076,8 +1097,8 @@ acceptance scenario can be tested without selecting a live provider.
 
 ###### Phase 1 - Harden the local baseline
 
-- [ ] Decide whether `warehouse/` is a committed release snapshot, CI artifact,
-  or both.
+- [x] Define the warehouse as a validated immutable S3 release materialized into
+  a disposable runtime cache.
 - [ ] Make PDF extraction failures a publication gate or define an explicit,
   auditable waiver.
 - [ ] Define approved structured conflicts by identity and test them, rather than
@@ -1124,9 +1145,9 @@ visible to the curator before approval.
   `TravelerBrief` contract without creating a separate intake channel.
 - [ ] Preserve validation errors and draft state inside the curator workflow.
 - [ ] Validate, minimize, and redact data before persistence or model calls.
-- [ ] Add an S3 adapter with least privilege, encryption, lifecycle policy, and
-  idempotent writes.
-- [ ] Preserve local adapters for development and offline tests.
+- [x] Add an S3 adapter with least privilege, encryption, proposed lifecycle
+  policy, and idempotent writes.
+- [x] Preserve temporary local adapters for development and offline tests.
 
 Completion: one consented dashboard intake can be validated, curated, replayed
 locally, and persisted through the approved cloud boundary without changing
