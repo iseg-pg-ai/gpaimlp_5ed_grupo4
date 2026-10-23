@@ -35,8 +35,10 @@ const environmentName = process.env.DEPLOY_ENVIRONMENT ?? 'pilot';
 const projectName = process.env.PROJECT_NAME ?? 'blu-costa';
 const outdir = process.env.CDK_OUTDIR ?? 'cdk.split.out';
 const infraDir = path.dirname(fileURLToPath(import.meta.url));
-// Deploy the compact source website directly; no generated or copied asset tree.
-const siteAsset = path.resolve(infraDir, '../frontend/website');
+// The polished BLU site is the public root; the compact channel bridge remains
+// available under /connect for campaign and WhatsApp hand-offs.
+const siteAsset = path.resolve(infraDir, '../frontend/blu-cloud-site/dist/client');
+const socialBridgeAsset = path.resolve(infraDir, '../frontend/website');
 if (!/^[0-9]{12}$/.test(account ?? '')) throw new Error('TARGET_AWS_ACCOUNT_ID must be the twelve-digit destination AWS account');
 
 const app = new App({ outdir });
@@ -245,7 +247,7 @@ class FrontendStack extends Stack {
       autoDeleteObjects: false,
     });
     const distribution = new cloudfront.Distribution(this, 'FrontendDistribution', {
-      defaultRootObject: 'index/index.html',
+      defaultRootObject: 'index.html',
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(siteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -253,8 +255,8 @@ class FrontendStack extends Stack {
         compress: true,
       },
       errorResponses: [
-        { httpStatus: 403, responseHttpStatus: 200, responsePagePath: '/index/index.html', ttl: Duration.minutes(1) },
-        { httpStatus: 404, responseHttpStatus: 200, responsePagePath: '/index/index.html', ttl: Duration.minutes(1) },
+        { httpStatus: 403, responseHttpStatus: 200, responsePagePath: '/index.html', ttl: Duration.minutes(1) },
+        { httpStatus: 404, responseHttpStatus: 200, responsePagePath: '/index.html', ttl: Duration.minutes(1) },
       ],
     });
     const whatsappNumber = process.env.WHATSAPP_PUBLIC_NUMBER ?? '351915784212';
@@ -268,12 +270,23 @@ class FrontendStack extends Stack {
         s3deploy.Source.data('config.js', `window.BLU_CHAT_API=${JSON.stringify(`${api.apiEndpoint}/v1/chat`)};window.BLU_CONVERSATION_EVENTS_ENDPOINT=${JSON.stringify(`${api.apiEndpoint}/v1/conversation-events`)};window.BLU_WHATSAPP_URL=${JSON.stringify(`https://wa.me/${whatsappNumber}`)};`),
       ],
     });
+    new s3deploy.BucketDeployment(this, 'DeploySocialConversationBridge', {
+      destinationBucket: siteBucket,
+      destinationKeyPrefix: 'connect',
+      distribution,
+      distributionPaths: ['/connect/*'],
+      prune: false,
+      sources: [
+        s3deploy.Source.asset(socialBridgeAsset),
+        s3deploy.Source.data('config.js', `window.BLU_CHAT_API=${JSON.stringify(`${api.apiEndpoint}/v1/chat`)};window.BLU_CONVERSATION_EVENTS_ENDPOINT=${JSON.stringify(`${api.apiEndpoint}/v1/conversation-events`)};window.BLU_WHATSAPP_URL=${JSON.stringify(`https://wa.me/${whatsappNumber}`)};`),
+      ],
+    });
 
     new CfnOutput(this, 'ConversationEventsEndpoint', { value: `${api.apiEndpoint}/v1/conversation-events` });
     new CfnOutput(this, 'ChatEndpoint', { value: `${api.apiEndpoint}/v1/chat` });
     new CfnOutput(this, 'WhatsAppWebhookEndpoint', { value: `${api.apiEndpoint}/v1/channels/whatsapp` });
     new CfnOutput(this, 'FrontendUrl', { value: `https://${distribution.distributionDomainName}` });
-    new CfnOutput(this, 'SocialConversationBridgeUrl', { value: `https://${distribution.distributionDomainName}` });
+    new CfnOutput(this, 'SocialConversationBridgeUrl', { value: `https://${distribution.distributionDomainName}/connect/index/index.html` });
     new CfnOutput(this, 'FrontendBucketName', { value: siteBucket.bucketName });
     new CfnOutput(this, 'FrontendContract', { value: 'POST journeyConsent=true, analyticsConsent, conversationId, leadId?, message={actor,channel,text}' });
   }

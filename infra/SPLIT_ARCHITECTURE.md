@@ -27,13 +27,14 @@ ARN ending in `guardrail-profile/eu.guardrail.v1:0`.
   consume the CRM queue. It also owns the curator-approved WhatsApp sender Lambda and has no
   public backoffice HTTP route.
 
-The compact source website in `frontend/website` is copied to private S3 and served only
+The production build from `frontend/blu-cloud-site/dist/client` is copied to private S3 and served only
 through CloudFront. CDK generates `config.js` during deployment with the emitted `/v1/chat` and
 `/v1/conversation-events` URLs. A custom domain and certificate are intentionally not guessed;
 attach them after the target Route 53 zone and certificate are selected.
 
-The social conversation bridge is deployed at the `SocialConversationBridgeUrl` output from
-`frontend/website`. Campaign links may add `utm_source`, `utm_medium`, `utm_campaign`, and
+The smaller social conversation bridge is deployed under `/connect` at the
+`SocialConversationBridgeUrl` output from `frontend/website`. Campaign links may add
+`utm_source`, `utm_medium`, `utm_campaign`, and
 `utm_content`. The browser creates a pseudonymous `BLU-` journey reference and uses it for both
 website events and the prefilled WhatsApp handoff. That reference is correlation, not
 authentication, entitlement, or proof of customer identity.

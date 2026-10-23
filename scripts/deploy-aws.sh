@@ -17,6 +17,9 @@ command -v aws >/dev/null || { echo "AWS CLI is required" >&2; exit 2; }
 caller_account="$(aws sts get-caller-identity --query Account --output text)"
 [[ "$caller_account" == "$TARGET_AWS_ACCOUNT_ID" ]] || { echo "AWS identity is account $caller_account, expected $TARGET_AWS_ACCOUNT_ID" >&2; exit 3; }
 
+echo "Installing and building the canonical BLU frontend..."
+npm --prefix frontend/blu-cloud-site ci --ignore-scripts --no-audit --no-fund
+npm --prefix frontend/blu-cloud-site run build
 echo "Installing locked infrastructure dependencies..."
 npm --prefix infra ci --ignore-scripts --no-audit --no-fund
 echo "Running focused infrastructure tests..."
