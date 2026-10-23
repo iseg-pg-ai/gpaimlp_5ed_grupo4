@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from scripts.studio_urls import studio_base
+from scripts.studio_urls import dashboard_url, studio_base
 
 DIST = ROOT / "presentation/dist"
 
@@ -36,11 +36,21 @@ def main():
                 self.path = self.path[len(prefix):] or "/"
                 path = urlsplit(self.path).path
             if path in ("/", "/index.html"):
-                content = re.sub(
+                document = re.sub(
                     r'<base\s+href="\./"\s*/?>',
                     f'<base href="{prefix}/">',
                     (DIST / "index.html").read_text(),
-                ).encode("utf-8")
+                )
+                try:
+                    portal_url = dashboard_url(3001, "/catalog")
+                except ValueError:
+                    portal_url = ""
+                document = re.sub(
+                    r'(<meta\s+name="blu-portal-url"\s+content=")[^"]*("\s*/?>)',
+                    rf"\g<1>{portal_url}\g<2>",
+                    document,
+                )
+                content = document.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Content-Length", str(len(content)))

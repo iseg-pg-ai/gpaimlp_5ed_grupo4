@@ -1,5 +1,12 @@
 # Plano de evolução do BLU AI System
 
+## Ligação pública da apresentação — 2026-10-23
+
+- [x] Injetar na apresentação o URL absoluto do portal definido pela configuração
+  do SageMaker Studio.
+- [x] Validar o CTA final nos quatro tamanhos de ecrã usados pelo `just blu it`.
+- [x] Reexecutar em conjunto os testes finais do protocolo de recuperação.
+
 ## S3 como fonte autoritativa de dados — 2026-10-22
 
 Objetivo confirmado: o bucket de dados contém fontes, warehouse e todo o estado
