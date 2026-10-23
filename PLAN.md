@@ -1,5 +1,12 @@
 # Plano de evolução do BLU AI System
 
+## Logística de chegada e partida — 2026-10-23
+
+- [x] Acrescentar horas e números de voo de chegada e partida ao briefing.
+- [x] Preservar compatibilidade com versões antigas sem estes campos.
+- [x] Incluir a logística no resumo, histórico e PDF do itinerário.
+- [x] Validar formulário responsivo, persistência, testes e build do portal.
+
 ## Edição de itinerários pelo Blu — 2026-10-23
 
 - [x] Separar a origem de uma alteração do bloqueio explícito da atividade.

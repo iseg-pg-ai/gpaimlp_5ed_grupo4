@@ -124,6 +124,13 @@ atividade** exige os campos e evidências aplicáveis. A confirmação é manual
 contacta o fornecedor. Atividades protegidas ou confirmadas não podem ser removidas
 pelo assistente.
 
+## Logística da viagem
+
+O briefing guarda o ponto, a hora e o número de voo de chegada e partida. Horas
+e voos são opcionais para preservar propostas antigas e podem ser completados
+mais tarde. Estes dados acompanham o snapshot da versão, o resumo de revisão e o
+PDF; não são inferidos nem substituídos pelo ETL ou pelo assistente.
+
 ## Assistente
 
 O assistente aceita comandos explícitos em português:

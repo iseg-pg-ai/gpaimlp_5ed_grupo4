@@ -47,6 +47,21 @@ export function validateBrief(value: unknown): asserts value is CustomerBrief {
   ] as const)
     if (typeof b[field] !== "string" || b[field].length > 4000)
       throw new Error(`Campo inválido: ${field}`);
+  for (const field of [
+    "arrivalTime",
+    "arrivalFlightNumber",
+    "departureTime",
+    "departureFlightNumber",
+  ] as const) {
+    const value = b[field];
+    if (value !== undefined && (typeof value !== "string" || value.length > 100))
+      throw new Error(`Campo inválido: ${field}`);
+  }
+  for (const field of ["arrivalTime", "departureTime"] as const) {
+    const value = b[field]?.trim();
+    if (value && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value))
+      throw new Error(`Hora inválida: ${field}`);
+  }
   if (!b.customerName.trim() || !b.destination.trim())
     throw new Error("Indique cliente e destino.");
   if (

@@ -10,7 +10,11 @@ export const initialBrief: CustomerBrief = {
   startDate: "2026-10-10",
   endDate: "2026-10-17",
   arrivalLocation: "Lisbon Humberto Delgado Airport (LIS)",
+  arrivalTime: "10:35",
+  arrivalFlightNumber: "TP 1363",
   departureLocation: "Porto Francisco Sá Carneiro Airport (OPO)",
+  departureTime: "17:20",
+  departureFlightNumber: "TP 1931",
   budget: 6000,
   currency: "EUR",
   interests: [

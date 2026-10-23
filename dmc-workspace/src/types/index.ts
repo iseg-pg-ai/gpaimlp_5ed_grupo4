@@ -94,7 +94,11 @@ export interface CustomerBrief {
   startDate: string;
   endDate: string;
   arrivalLocation: string;
+  arrivalTime?: string;
+  arrivalFlightNumber?: string;
   departureLocation: string;
+  departureTime?: string;
+  departureFlightNumber?: string;
   budget: number;
   currency: string;
   interests: string[];
