@@ -124,6 +124,15 @@ as a RAG source: they may contain names, emails, phone numbers, or prompt attack
 small operational journal here, not the knowledge base; it can later be replaced behind the queue
 contract without changing the browser.
 
+The deployed backoffice assistant uses a low-cost bounded retrieval layer rather than OpenSearch:
+it joins the selected conversation timeline and lifecycle/feedback records from the customer
+intelligence table with JSON documents found only under `curated/approved/`. The Lambda is directly
+invokable only by the backoffice IAM role, returns source IDs, and labels every recommendation as
+requiring human approval. A daily evaluator creates CRM review tasks for conversations whose
+follow-up date is due; it never contacts customers. Each run writes versioned evidence to the
+governance bucket. These artifacts support control testing and an ISO audit, but are not themselves
+an ISO certification.
+
 ## Synthetic pipeline check
 
 After deployment, copy `ConversationEventsEndpoint` and optionally `ChatEndpoint` from CDK outputs:
