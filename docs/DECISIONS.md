@@ -56,6 +56,16 @@ leitura e não editam os artefactos manualmente.
 
 ## Recuperação e operação
 
+### Releases S3 são inventariadas antes de qualquer retenção — 2026-10-24
+
+O inventário de fontes e warehouse valida manifestos e hashes sem alterar o
+bucket. A release válida mais recente é `active`, as válidas anteriores são
+`superseded` e manifestos incompatíveis ou corrompidos são `invalid`. Se a release
+mais recente for inválida, a anterior válida permanece ativa, como no restauro.
+
+Esta classificação é evidência para uma futura política de retenção, não uma
+autorização de eliminação. A role da aplicação continua sem `s3:DeleteObject`.
+
 ### Os buckets de dados e backups têm responsabilidades distintas — 2026-10-22
 
 O bucket de dados contém o estado ativo e as releases de fontes e warehouse. O

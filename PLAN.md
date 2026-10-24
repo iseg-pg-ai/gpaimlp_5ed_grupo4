@@ -61,16 +61,6 @@ Implementações e validações concluídas permanecem no histórico Git e em
 A comparação de alternativas e os limites atuais estão em
 [Operações](docs/OPERATIONS.md).
 
-## Prioridade 5 — Retenção S3
-
-- [ ] Definir como identificar releases de fontes e warehouse substituídas antes
-  de aprovar qualquer política de expiração. Até essa decisão, nenhuma release
-  válida deve ser eliminada.
-
-As verificações administrativas de versionamento, Block Public Access,
-encriptação e lifecycle exigem uma identidade AWS com permissões próprias. A role
-da aplicação mantém privilégio mínimo e não recebe permissões administrativas.
-
 ## Prioridade 6 — Monitoring
 
 O Monitoring continua incompleto para produção até concluir:

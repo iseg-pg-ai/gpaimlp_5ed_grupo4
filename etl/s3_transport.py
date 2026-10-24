@@ -151,6 +151,45 @@ def _manifest_keys(client, bucket: str, prefix: str) -> Iterable[str]:
             break
 
 
+def inventory_releases(kind: str, bucket: str, environment: str, client=None) -> dict:
+    """Classificar releases sem alterar ou eliminar objetos no bucket."""
+    if kind not in KINDS:
+        raise ValueError("Tipo de publicação S3 desconhecido.")
+    client = client or _client()
+    keys = sorted(_manifest_keys(client, bucket, f"{environment}/{kind}/"), reverse=True)
+    releases = []
+    active_selected = False
+    for manifest_key in keys:
+        try:
+            with tempfile.TemporaryDirectory(prefix="blu-release-inventory-") as temporary:
+                manifest_path = Path(temporary) / "manifest.json"
+                client.download_file(bucket, manifest_key, str(manifest_path))
+                remote = client.head_object(Bucket=bucket, Key=manifest_key)
+                digest = remote.get("Metadata", {}).get("sha256")
+                if not digest or _hash(manifest_path) != digest:
+                    raise ValueError("Hash do manifesto inválido.")
+                manifest = json.loads(manifest_path.read_text())
+                if (manifest.get("schema_version") != 1
+                        or manifest.get("state") != "complete"
+                        or manifest.get("kind") != kind
+                        or manifest.get("environment") != environment
+                        or not isinstance(manifest.get("files"), list)):
+                    raise ValueError("Manifesto incompatível.")
+                state = "active" if not active_selected else "superseded"
+                active_selected = True
+                releases.append({"release_id": manifest["release_id"],
+                                 "manifest_key": manifest_key,
+                                 "created_at": manifest["created_at"],
+                                 "file_count": len(manifest["files"]),
+                                 "bytes": sum(int(item["bytes"]) for item in manifest["files"]),
+                                 "retention_state": state})
+        except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+            releases.append({"manifest_key": manifest_key,
+                             "retention_state": "invalid"})
+    return {"schema_version": 1, "environment": environment, "kind": kind,
+            "release_count": len(releases), "releases": releases}
+
+
 def fetch_latest(kind: str, destination: Path, bucket: str, environment: str,
                  client=None) -> dict:
     """Descarrega a release completa mais recente para um destino novo ou vazio."""
@@ -228,12 +267,17 @@ def restore_missing(kind: str, destination: Path, bucket: str, environment: str,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("publish", "fetch-latest", "restore-missing"))
+    parser.add_argument("command", choices=("publish", "fetch-latest", "restore-missing",
+                                             "inventory"))
     parser.add_argument("kind", choices=sorted(KINDS))
-    parser.add_argument("--path", type=Path, required=True)
+    parser.add_argument("--path", type=Path)
     args = parser.parse_args()
     bucket, environment = _configuration()
-    if args.command == "publish":
+    if args.command == "inventory":
+        print(json.dumps(inventory_releases(args.kind, bucket, environment), indent=2))
+    elif args.path is None:
+        parser.error("--path é obrigatório para esta operação")
+    elif args.command == "publish":
         print(json.dumps(publish(args.kind, args.path, bucket, environment)))
     elif args.command == "fetch-latest":
         print(json.dumps(fetch_latest(args.kind, args.path, bucket, environment)))

@@ -117,6 +117,18 @@ python3 -B -m etl.s3_transport fetch-latest sources --path /tmp/blu-sources
 python3 -B -m etl.s3_transport fetch-latest warehouse --path /tmp/blu-warehouse
 ```
 
+Antes de definir retenção, o inventário de releases identifica a release válida
+ativa, as releases válidas substituídas e manifestos inválidos, sem escrever ou
+eliminar objetos:
+
+```bash
+python3 -B -m etl.s3_transport inventory sources
+python3 -B -m etl.s3_transport inventory warehouse
+```
+
+A classificação usa a mesma validação de integridade da recuperação. Não concede
+por si só autorização para apagar releases substituídas.
+
 O adaptador usa `BLU_DATA_S3_BUCKET`, `BLU_ENVIRONMENT` e o IAM do ambiente. Não
 guarda credenciais nem elimina objetos. A transformação e a validação continuam
 independentes do transporte.

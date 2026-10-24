@@ -70,6 +70,20 @@ No bucket de dados:
 - só introduzir expiração depois de marcar releases substituídas e de testar que
   o lifecycle nunca alcança a release ativa.
 
+As releases de fontes e warehouse podem ser inventariadas sem alterar o bucket:
+
+```bash
+python3 -B -m etl.s3_transport inventory sources
+python3 -B -m etl.s3_transport inventory warehouse
+```
+
+O inventário aplica a mesma validação usada na recuperação. A release válida mais
+recente fica marcada como `active`, as restantes releases válidas como
+`superseded` e manifestos incompatíveis ou corrompidos como `invalid`. A operação
+é estritamente de leitura: não apaga objetos e uma classificação `superseded` não
+constitui autorização automática para os eliminar. Uma release `invalid` deve ser
+investigada; se for a mais recente, a release válida anterior permanece ativa.
+
 ## Regra segura para aplicar na consola
 
 Em **S3 → bucket → Management → Lifecycle rules → Create lifecycle rule**:
