@@ -5,10 +5,10 @@ partilhar palavras-passe, tokens ou a URL privada de outra pessoa.
 
 ## Pré-requisitos de acesso
 
-Antes da instalação, cada colega precisa de:
+Antes da instalação, assegurar:
 
 - acesso ao repositório Git;
-- um espaço SageMaker Code Editor próprio;
+- workspace SageMaker Code Editor próprio;
 - uma função IAM com as permissões Bedrock exigidas pelo Agente IA;
 - Python 3.12 ou 3.13, Node 24 LTS, npm, Git e `uv` 0.12.19;
 - acesso IAM autorizado aos buckets de dados e backups do ambiente.
@@ -30,6 +30,15 @@ uv sync --locked --all-groups
   --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
 ```
 
+
+```bash FDC
+uv run  python -B -m monitoring.setup
+
+python3 -m pip install --user uv==0.12.19
+export PATH="$HOME/BLU/bin:$PATH"
+uv sync --locked --all-groups
+uv run python scripts/setup_workspace.py --studio-url "https://ekg16an0qsybxru.studio.eu-west-1.sagemaker.aws/codeeditor/default" --initialize-data
+```
 O assistente:
 
 1. valida a URL e guarda-a em `config/studio.local.json`, fora do Git;
@@ -51,7 +60,8 @@ o acesso inicial.
 Para repetir apenas o diagnóstico:
 
 ```bash
-python3 scripts/setup_workspace.py --check-only
+# FDC python3 scripts/setup_workspace.py --check-only
+uv run python scripts/setup_workspace.py --studio-url "https://ekg16an0qsybxru.studio.eu-west-1.sagemaker.aws/codeeditor/default" --check-only
 ```
 
 ## Construção e arranque
@@ -71,10 +81,34 @@ Nos arranques seguintes basta:
 ```bash
 just blu up
 ```
+> - Este comando mantém os serviços ativos, inicia os que estejam parados, confirma os cinco endpoints e abre as quatro interfaces web.
+  >    - 01  AGENTE IA            ● ONLINE    8000       1 ms
+  >    - 02  OBSERVATÓRIO         ● ONLINE    8501       1 ms
+  >    - 03  APRESENTAÇÃO         ● ONLINE    3003       0 ms
+  >    - 04  MONITORING           ● ONLINE    3004       0 ms
+  >    - 05  CURATION STUDIO      ● ONLINE    3001       3 ms
+  >    - NETWORK READINESS      ━━━━━━━  100%
+  >    - Codex CLI não instalado; os serviços BLU continuam ativos.
+  >    - A porta técnica 8000 é validada, mas não abre um separador.
 
 As portas esperadas são 3001, 3003, 3004, 8000 e 8501. A configuração versionada
 em `.vscode/settings.json` encaminha-as silenciosamente; a porta 8000 é técnica e
 não abre um separador.
+
+  
+> - **Descrição do processo**
+- Antes do arranque, recupera ficheiros em falta do último backup verificado e guarda uma nova cópia em `/home/blu-system-backups/sagemaker-user` neste ambiente
+(por defeito, `blu-system-backups/<nome-do-projeto>` ao lado do projeto).
+- É possível escolher outro destino fora do projeto com `BLU_BACKUP_DIR`.
+- O destino deve permitir escrita pelo utilizador que executa o comando.
+- As cópias incluem `data/`, `warehouse/`, `exports/` e ficheiros JSON, JSONL e SQLite persistentes diretamente em `monitoring/runtime/`, incluindo contas.
+- São privadas, verificadas por SHA-256 e acumuladas sem eliminação automática.
+- SQLite usa a API de backup para incluir transações confirmadas no WAL.
+- Ficheiros existentes têm prioridade; dados em falta são recuperados sem repetir o ETL. Rascunhos do navegador, dependências, builds e credenciais AWS não entram nestas cópias. 
+- Uma cópia com serviços ativos não garante uma transação conjunta
+entre catálogo e exports; evitar edições durante o comando.
+
+
 
 O painel **Ports** do VS Code apresenta `localhost` na coluna de encaminhamento
 porque mostra o extremo local do túnel. Os nomes identificam agora as interfaces
