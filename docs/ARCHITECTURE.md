@@ -2,7 +2,8 @@
 
 Revisto em 20 de outubro de 2026. Este documento concentra o mapa do projeto,
 as capacidades atuais e as fronteiras entre componentes. Os comandos estão no [README](../README.md),
-as tarefas no [plano](../PLAN.md) e o histórico em [decisões](DECISIONS.md).
+as tarefas no [plano](../PLAN.md) e os contratos duráveis em
+[decisões](DECISIONS.md).
 
 ## Fluxo dos dados
 

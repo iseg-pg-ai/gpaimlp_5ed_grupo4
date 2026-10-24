@@ -176,7 +176,7 @@ testes de navegador estão em [docs/TESTING.md](docs/TESTING.md).
 - [Monitoring e deployment](docs/OPERATIONS.md)
 - [Testes](docs/TESTING.md)
 - [Plano ativo](PLAN.md)
-- [Decisões históricas](docs/DECISIONS.md)
+- [Decisões técnicas vigentes](docs/DECISIONS.md)
 
 ## Limites atuais
 
