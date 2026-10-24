@@ -173,6 +173,7 @@ testes de navegador estão em [docs/TESTING.md](docs/TESTING.md).
 - [Preparar um novo ambiente](docs/ONBOARDING.md)
 - [Dados e ETL](docs/DATA_PIPELINE.md)
 - [Portal](docs/PORTAL.md)
+- [Integração do agente OpenAI/Codex](agente_codex.md)
 - [Monitoring e deployment](docs/OPERATIONS.md)
 - [Testes](docs/TESTING.md)
 - [Plano ativo](PLAN.md)

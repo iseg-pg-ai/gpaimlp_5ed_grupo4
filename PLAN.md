@@ -112,5 +112,6 @@ execução externa.
 - [Dados e ETL](docs/DATA_PIPELINE.md)
 - [Operações](docs/OPERATIONS.md)
 - [Portal](docs/PORTAL.md)
+- [Agente OpenAI/Codex](agente_codex.md)
 - [Testes](docs/TESTING.md)
 - [Decisões](docs/DECISIONS.md)
