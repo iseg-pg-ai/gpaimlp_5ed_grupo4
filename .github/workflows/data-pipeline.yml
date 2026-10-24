@@ -57,10 +57,7 @@ jobs:
       - name: Run ETL and validation gate
         run: python -m etl.pipeline --data-dir $env:CI_DATA_DIR --output-dir $env:CI_WAREHOUSE_DIR
       - name: Verify validation gate
-        shell: pwsh
-        run: |
-          $report = Get-Content "$env:CI_WAREHOUSE_DIR\validation_report.json" -Raw | ConvertFrom-Json
-          if ($report.status -ne 'passed') { throw "Validation status: $($report.status)" }
+        run: python scripts/check_warehouse_release.py --warehouse $env:CI_WAREHOUSE_DIR
       - name: Run regression tests
         run: python -m unittest tests.test_local_source tests.test_structured_dataset tests.test_etl_pipeline tests.test_portal_catalog tests.test_portal_data tests.test_weather -v
       - name: Publish warehouse delivery
@@ -69,3 +66,5 @@ jobs:
           name: blu-warehouse-ci-smoke
           path: ${{ runner.temp }}/blu-warehouse/
           if-no-files-found: error
+          # Entrega sintética de diagnóstico, não uma release operacional.
+          retention-days: 14

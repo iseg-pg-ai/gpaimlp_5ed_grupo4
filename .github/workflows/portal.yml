@@ -1,0 +1,60 @@
+name: Portal
+
+on:
+  push:
+    paths:
+      - "dmc-workspace/**"
+      - "portal/**"
+      - "etl/**"
+      - "scripts/create_ci_etl_fixture.py"
+      - "requirements.txt"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/portal.yml"
+  pull_request:
+    paths:
+      - "dmc-workspace/**"
+      - "portal/**"
+      - "etl/**"
+      - "scripts/create_ci_etl_fixture.py"
+      - "requirements.txt"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/portal.yml"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      CI_DATA_DIR: ${{ runner.temp }}/blu-data
+      BLU_WAREHOUSE_DIR: ${{ runner.temp }}/blu-warehouse
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+          cache: npm
+          cache-dependency-path: dmc-workspace/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Install portal dependencies
+        working-directory: dmc-workspace
+        run: npm ci
+      - name: Prepare synthetic warehouse
+        run: |
+          python scripts/create_ci_etl_fixture.py --output "$CI_DATA_DIR"
+          python -m etl.pipeline --data-dir "$CI_DATA_DIR" --output-dir "$BLU_WAREHOUSE_DIR"
+          python scripts/check_warehouse_release.py --warehouse "$BLU_WAREHOUSE_DIR"
+      - name: Validate portal
+        working-directory: dmc-workspace
+        run: npm run check
+      - name: Build portal
+        working-directory: dmc-workspace
+        run: npm run build
+      - name: Validate isolated catalogue lifecycle
+        working-directory: dmc-workspace
+        run: npm run test:catalog-etl

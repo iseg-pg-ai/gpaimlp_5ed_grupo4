@@ -1,5 +1,10 @@
 # Preenchimento verificado — 2026-10-16
 
+Estado revisto em 2026-10-24. As lacunas abaixo são aceites como dados
+desconhecidos até existir uma fonte inequívoca ou validação comercial. Não
+bloqueiam o ETL, mas bloqueiam qualquer afirmação automática de preço,
+disponibilidade ou compatibilidade que dependa desses campos.
+
 Foram preenchidos **45 valores em 13 registos do catálogo** e **três valores
 numéricos numa referência de preços**. O ETL publicou a entrega enriquecida.
 Não foram alterados os Excel/PDF originais, os identificadores, as revisões
@@ -18,9 +23,10 @@ anteriores, restrições ou preços comerciais já preenchidos.
 | Clube de Fado | Morada, telefone e horário de abertura/espetáculo. |
 | Jardim Botânico de Lisboa | Contacto e referência de bilhete regular/adulto de 5 EUR, sénior de 4 EUR, com condições oficiais. |
 
-Os valores e as provas exatas estão nas novas revisões de
-`data/portal/catalog.sqlite`. A entrega mantém a correspondência de ID e revisão.
-Os contactos são públicos de fornecedores, não dados pessoais de viajantes.
+Os valores e as provas exatas pertencem às revisões do catálogo operacional
+materializado a partir da release ativa no S3. A entrega mantém a correspondência
+de ID e revisão. Os contactos são públicos de fornecedores, não dados pessoais
+de viajantes.
 
 ## Fontes oficiais consultadas
 
@@ -35,11 +41,12 @@ Os contactos são públicos de fornecedores, não dados pessoais de viajantes.
 
 ## Preservação e rastreabilidade
 
-O lote foi primeiro aplicado a uma cópia e validado pelo ETL. A aplicação real
-criou novas revisões numa transação; as revisões anteriores foram comparadas
-byte a byte. Cópias de segurança e o lote operacional ficam localmente em
-`.tools/enrichment-2026-10-16/`, fora do Git. A cópia final do catálogo é `catalog-after.sqlite` nessa pasta. Não executar
-novamente o lote sem rever o estado e as revisões atuais.
+O lote histórico foi primeiro aplicado a uma cópia e validado pelo ETL. A
+aplicação criou novas revisões numa transação e as revisões anteriores foram
+comparadas byte a byte. Os artefactos locais usados nessa intervenção não são
+uma fonte de verdade nem fazem parte da instalação atual. Não repetir o lote:
+qualquer correção nova deve criar uma revisão normal no catálogo operacional e
+ser publicada pelo fluxo S3 documentado.
 
 O campo contratual existente `sourceData` guarda a evidência por campo e as
 referências de preço. O ETL só preenche referências preexistentes com ID e nome
@@ -72,6 +79,13 @@ para uma viagem, reserva ou tarifa BLU negociada.
   comercial BLU já registada: são naturezas comerciais distintas.
 - Não foram inferidas datas, número de viajantes ou preços atuais a partir de
   propostas históricas.
+
+Estas exceções são uma decisão conservadora, não tarefas de preenchimento
+automático. São revistas quando surge evidência nova; até lá, a interface deve
+mostrar «por confirmar» e exigir revisão humana. Conflitos estruturados que
+afetem uma release são tratados separadamente pelo gate
+`scripts/check_warehouse_release.py`; qualquer exceção exige responsável,
+justificação, data de expiração e correspondência exata com o conflito.
 
 O dashboard apresenta condições verificadas e distingue estado de origem de
 confirmação por campo. Para preços e validade, consultar o

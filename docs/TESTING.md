@@ -49,8 +49,10 @@ cd dmc-workspace
 npm run test:catalog-etl
 ```
 
-O workflow `data-pipeline.yml` cobre dependências exportadas, ETL, validação e
-uma seleção dos testes Python. Não cobre todo o portal.
+O workflow `data-pipeline.yml` cobre dependências exportadas, ETL, o gate
+versionado de qualidade e compatibilidade e uma seleção dos testes Python. A
+entrega sintética de diagnóstico é conservada durante 14 dias; não é uma release
+operacional nem contém fontes reais.
 
 ## Portal
 
@@ -62,8 +64,9 @@ npm run build
 ```
 
 `check` executa lint, TypeScript, formatação e testes Node. O build confirma a
-compilação de produção. Não existe atualmente um workflow de CI que execute estas
-duas verificações para todo o frontend; devem passar antes da integração.
+compilação de produção. O workflow `portal.yml` executa ambos e acrescenta o
+ensaio isolado catálogo aprovado → ETL → geração → confirmação → versão → PDF.
+Usa fontes sintéticas e diretórios temporários, sem catálogo ou exports reais.
 
 ## Testes de navegador
 

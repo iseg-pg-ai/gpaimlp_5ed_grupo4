@@ -273,6 +273,7 @@ def _build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
 
     # Publish run metadata so consumers can verify data coverage and quality.
     manifest = {
+        "schema_version": 1,
         "pipeline": "blu-local-etl", "ran_at_utc": datetime.now(UTC).isoformat(),
         "input_directory": data_dir.as_posix(), "workbook": workbook.as_posix(), "source": source_manifest,
         "tables": {table: len(records) for table, records in tables.items()},

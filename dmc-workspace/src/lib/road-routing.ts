@@ -1,4 +1,4 @@
-import type { ActivityItem, DailyRouteSummary, TransitLeg } from "../types/index";
+import type { ActivityItem } from "../types/index";
 import { clockTime, durationMinutes } from "./itinerary-scheduling.ts";
 
 export interface LocationCoords {
@@ -422,42 +422,4 @@ export function optimizeRouteSequence(
   }
 
   return realignTimeSlots(result, coordMap);
-}
-
-/**
- * Recomputes route summary statistics for a list of activity items.
- */
-export function recomputeDailyRouteSummary(items: ActivityItem[]): DailyRouteSummary | undefined {
-  const legs = items.map((i) => i.transitToNext).filter((l): l is TransitLeg => Boolean(l));
-  if (!legs.length) return undefined;
-
-  let totalMinutes = 0;
-  let totalKm = 0;
-  let walkingMeters = 0;
-
-  for (const leg of legs) {
-    const durNum = parseInt(leg.duration, 10) || 0;
-    totalMinutes += durNum;
-
-    const distMatch = leg.distance?.match(/^([\d.]+)\s*(km|m)/i);
-    if (distMatch) {
-      const val = parseFloat(distMatch[1]);
-      const unit = distMatch[2].toLowerCase();
-      const meters = unit === "km" ? val * 1000 : val;
-      totalKm += meters / 1000;
-      if (leg.mode === "walk") walkingMeters += meters;
-    }
-  }
-
-  const walkStr =
-    walkingMeters >= 1000 ? `${(walkingMeters / 1000).toFixed(1)} km` : `${walkingMeters} m`;
-
-  return {
-    totalTransitTime: `${totalMinutes} min`,
-    totalDistance: `${totalKm.toFixed(1)} km`,
-    legsCount: legs.length,
-    walkingDistance: walkStr,
-    routePath: [items[0].title, ...legs.map((l) => l.toLocation)],
-    algorithmStatus: "Viável e Otimizado",
-  };
 }

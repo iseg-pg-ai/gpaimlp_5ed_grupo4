@@ -11,15 +11,6 @@ Implementações e validações concluídas permanecem no histórico Git e em
   deve partir de um clone limpo, executar `scripts/setup_workspace.py` e
   materializar os dados através do fluxo S3 documentado, sem copiar contas,
   catálogo ou exports da máquina original.
-- [ ] Acrescentar CI do portal para executar `npm run check` e `npm run build`.
-- [ ] Automatizar num ambiente isolado o percurso catálogo aprovado → ETL →
-  geração → confirmação → versão → PDF.
-- [ ] Definir gates e exceções auditáveis para qualidade e conflitos das fontes.
-- [ ] Resolver ou aceitar explicitamente as lacunas de dados inventariadas em
-  `docs/DATA_ENRICHMENT.md`, incluindo preços, suplementos e entidades ambíguas.
-- [ ] Rever no CI a retenção e a compatibilidade das entregas publicadas.
-- [ ] Continuar a migração incremental do portal, movendo para Python a ordenação
-  de percursos e os resumos antes de retirar os adaptadores TypeScript respetivos.
 
 ## Prioridade 2 — Agente de IA
 

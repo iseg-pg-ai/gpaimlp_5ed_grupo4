@@ -2,13 +2,230 @@
 from __future__ import annotations
 
 import json
+import itertools
 import math
 import os
+import re
+import unicodedata
 from decimal import Decimal, ROUND_HALF_UP
 from urllib.parse import quote
 from urllib.request import urlopen
 
 MODES = {"chauffeur", "walk", "boat", "train", "funicular"}
+
+
+def _norm_key(value) -> str:
+    text = unicodedata.normalize("NFD", str(value or ""))
+    return "".join(char for char in text if unicodedata.category(char) != "Mn").lower().strip()
+
+
+def _coordinate(value):
+    if isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+        return number if math.isfinite(number) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _coordinate_map(records: list[dict] | None) -> dict[str, tuple[float, float]]:
+    result = {}
+    for record in records or []:
+        latitude, longitude = _coordinate(record.get("latitude")), _coordinate(record.get("longitude"))
+        if latitude is None or longitude is None:
+            continue
+        keys = []
+        for field in ("id", "id_blu", "_catalog_id"):
+            if record.get(field) is not None:
+                identifier = str(record[field])
+                keys.extend((identifier, _norm_key(identifier)))
+                categories = ("restaurantes",) if field == "id_blu" else ("atracoes", "experiencias")
+                if field == "_catalog_id":
+                    categories = ("atracoes", "experiencias", "restaurantes")
+                keys.extend(f"{category}:{identifier}" for category in categories)
+        for field in ("nome_da_atracao", "estabelecimento", "nome_da_experiencia"):
+            if isinstance(record.get(field), str) and record[field].strip():
+                keys.extend((record[field].strip(), _norm_key(record[field])))
+        for key in keys:
+            result[key] = (latitude, longitude)
+    return result
+
+
+def _item_coordinates(item: dict, coordinates: dict[str, tuple[float, float]]):
+    direct = (_coordinate(item.get("latitude")), _coordinate(item.get("longitude")))
+    if None not in direct:
+        return direct
+    identifier = str(item.get("id") or "")
+    raw_identifier = re.sub(r"^[a-z_]+:", "", identifier, flags=re.I)
+    for key in (identifier, _norm_key(identifier), raw_identifier, _norm_key(raw_identifier),
+                str(item.get("title") or ""), _norm_key(item.get("title"))):
+        if key in coordinates:
+            return coordinates[key]
+    return None
+
+
+def _distance(first: dict, second: dict, coordinates: dict[str, tuple[float, float]]) -> float:
+    start, end = _item_coordinates(first, coordinates), _item_coordinates(second, coordinates)
+    if not start or not end:
+        return 5000
+    lat_delta, lon_delta = math.radians(end[0] - start[0]), math.radians(end[1] - start[1])
+    value = (math.sin(lat_delta / 2) ** 2 + math.cos(math.radians(start[0]))
+             * math.cos(math.radians(end[0])) * math.sin(lon_delta / 2) ** 2)
+    return 6371000 * 2 * math.asin(math.sqrt(min(1, value)))
+
+
+def _best_permutation(segment: list[dict], previous, following, coordinates):
+    if len(segment) <= 1:
+        return segment
+    if len(segment) > 7:
+        remaining, result, current = list(segment), [], previous
+        while remaining:
+            index = min(range(len(remaining)), key=lambda position:
+                        _distance(current, remaining[position], coordinates) if current else 0)
+            current = remaining.pop(index)
+            result.append(current)
+        return result
+    best, minimum = segment, math.inf
+    for candidate in itertools.permutations(segment):
+        cost = _distance(previous, candidate[0], coordinates) if previous else 0
+        cost += sum(_distance(candidate[index], candidate[index + 1], coordinates)
+                    for index in range(len(candidate) - 1))
+        cost += _distance(candidate[-1], following, coordinates) if following else 0
+        if cost < minimum:
+            best, minimum = list(candidate), cost
+    return best
+
+
+def _start_minutes(value) -> int:
+    match = re.match(r"^(\d{1,2}):(\d{2})", value or "")
+    return int(match[1]) * 60 + int(match[2]) if match else 570
+
+
+def _duration_minutes(item: dict) -> int:
+    value = item.get("duration") or ""
+    hours = re.search(r"(\d+(?:[.,]\d+)?)\s*h", value, re.I)
+    minutes = re.search(r"(\d+)\s*min", value, re.I)
+    if hours or minutes:
+        total = round(float(hours[1].replace(",", ".")) * 60) if hours else 0
+        total += int(minutes[1]) if minutes else 0
+        if total > 0:
+            return total
+    match = re.match(r"^(\d{1,2}):(\d{2})[–-](\d{1,2}):(\d{2})", item.get("time") or "")
+    if match:
+        start, end = int(match[1]) * 60 + int(match[2]), int(match[3]) * 60 + int(match[4])
+        if end > start:
+            return end - start
+    return 90 if item.get("category") == "restaurant" else 75
+
+
+def _clock(minutes: int) -> str:
+    return f"{minutes // 60 % 24:02d}:{minutes % 60:02d}"
+
+
+def realign_time_slots(items: list[dict], catalog_records: list[dict] | None = None) -> list[dict]:
+    """Realinhar horários sem alterar os restantes campos das atividades."""
+    if not items:
+        return items
+    coordinates, cursor, result = _coordinate_map(catalog_records), _start_minutes(items[0].get("time")), []
+    for index, original in enumerate(items):
+        item = dict(original)
+        duration = _duration_minutes(item)
+        scheduled = bool(item.get("time")) and "por agendar" not in item["time"].lower()
+        if scheduled or index == 0:
+            item["time"] = f"{_clock(cursor)}–{_clock(cursor + duration)} (proposto)"
+            cursor += duration
+        if index < len(items) - 1:
+            leg = item.get("transitToNext") or {}
+            match = re.match(r"(\d+)", str(leg.get("duration") or ""))
+            if match:
+                travel = int(match[1]) or 15
+                buffer = leg.get("bufferMinutes") if isinstance(leg.get("bufferMinutes"), (int, float)) else (5 if leg.get("mode") == "walk" else 10)
+            else:
+                distance = _distance(item, items[index + 1], coordinates)
+                travel, buffer = max(5, math.ceil(distance / 1000 / 30 * 60)), 5 if distance <= 1000 else 10
+            cursor += travel + buffer
+        result.append(item)
+    return result
+
+
+def optimize_route_sequence(items: list[dict], catalog_records: list[dict] | None = None) -> list[dict]:
+    """Ordenar o percurso preservando refeições e atividades bloqueadas/confirmadas."""
+    if len(items) <= 2:
+        return items
+    coordinates = _coordinate_map(catalog_records)
+    free = [item for item in items if item.get("category") == "free_time"]
+    if free:
+        active = [item for item in items if item.get("category") != "free_time"]
+        if len(active) <= 2:
+            return items
+        morning = [item for index, item in enumerate(items) if item.get("category") == "free_time" and index == 0]
+        afternoon = [item for index, item in enumerate(items) if item.get("category") == "free_time" and index > 0]
+        return morning + optimize_route_sequence(active, catalog_records) + afternoon
+
+    def locked(item):
+        return bool(item.get("isLocked")) or (item.get("confirmation") or {}).get("status") == "confirmed"
+
+    restaurants = [item for item in items if item.get("category") == "restaurant"]
+    if len(restaurants) == 1 and len(items) <= 8:
+        restaurant, restaurant_index = restaurants[0], items.index(restaurants[0])
+        others = [item for item in items if item is not restaurant]
+        locked_morning = [item for item in items[:restaurant_index] if locked(item)]
+        locked_afternoon = [item for item in items[restaurant_index + 1:] if locked(item)]
+        best, minimum = items, math.inf
+        for morning_tuple in itertools.combinations(others, restaurant_index):
+            morning = list(morning_tuple)
+            if any(item not in morning for item in locked_morning):
+                continue
+            afternoon = [item for item in others if item not in morning]
+            if any(item not in afternoon for item in locked_afternoon):
+                continue
+            first = _best_permutation(morning, None, restaurant, coordinates)
+            second = _best_permutation(afternoon, restaurant, None, coordinates)
+            route = first + [restaurant] + second
+            cost = sum(_distance(route[index], route[index + 1], coordinates)
+                       for index in range(len(route) - 1))
+            if cost < minimum:
+                best, minimum = route, cost
+        return realign_time_slots(best, catalog_records)
+
+    def anchor(item):
+        return locked(item) or item.get("category") == "restaurant"
+
+    if sum(not anchor(item) for item in items) <= 1:
+        return items
+    result, segment, previous = [], [], None
+    for item in items:
+        if anchor(item):
+            result.extend(_best_permutation(segment, previous, item, coordinates))
+            segment = []
+            result.append(item)
+            previous = item
+        else:
+            segment.append(item)
+    result.extend(_best_permutation(segment, previous, None, coordinates))
+    return realign_time_slots(result, catalog_records)
+
+
+def route_summary(items: list[dict]):
+    """Resumir apenas troços efetivamente presentes no itinerário."""
+    legs = [item.get("transitToNext") for item in items if item.get("transitToNext")]
+    if not legs:
+        return None
+    total_minutes = total_km = walking_meters = 0
+    for leg in legs:
+        duration = re.match(r"(\d+)", str(leg.get("duration") or ""))
+        total_minutes += int(duration[1]) if duration else 0
+        distance = re.match(r"^([\d.]+)\s*(km|m)", str(leg.get("distance") or ""), re.I)
+        if distance:
+            meters = float(distance[1]) * (1000 if distance[2].lower() == "km" else 1)
+            total_km += meters / 1000
+            walking_meters += meters if leg.get("mode") == "walk" else 0
+    walking = f"{_fixed(walking_meters / 1000)} km" if walking_meters >= 1000 else f"{walking_meters:g} m"
+    return {"totalTransitTime": f"{total_minutes} min", "totalDistance": f"{_fixed(total_km)} km",
+            "legsCount": len(legs), "walkingDistance": walking,
+            "routePath": [items[0].get("title"), *[leg.get("toLocation") for leg in legs]],
+            "algorithmStatus": "Viável e Otimizado"}
 
 
 def _number(value):

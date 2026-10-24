@@ -231,3 +231,25 @@ exige Python 3.12 ou 3.13, Node entre 22.13 e 24 e `uv 0.12.19`.
 A exceção Stanza/Argos está documentada em
 [Dependências Python](DEPENDABOT_PYTHON.md) e deve ser revista quando o Argos
 publicar um requisito compatível corrigido.
+
+### Entregas CI têm contrato versionado e dados sintéticos — 2026-10-24
+
+O manifesto do warehouse declara `schema_version`. O gate
+`scripts/check_warehouse_release.py` recusa versões incompatíveis, ficheiros
+obrigatórios em falta, validação reprovada, erros PDF e conflitos sem exceção
+auditável. Uma exceção identifica exatamente tabela, registo e campo, bem como
+responsável, justificação e validade; exceções expiradas ou sem conflito também
+falham.
+
+O CI não usa fontes comerciais. Gera um conjunto sintético e testa o percurso
+catálogo aprovado → ETL → geração → confirmação → versão → PDF. O artefacto é
+apenas diagnóstico e expira após 14 dias. As lacunas de preço, suplemento e
+entidade descritas em [Preenchimento](DATA_ENRICHMENT.md) são aceites como
+desconhecidas, nunca convertidas em zero ou em compatibilidade presumida.
+
+### Cálculo autoritativo de percurso passa pela fronteira Python — 2026-10-24
+
+O servidor do portal delega em `portal.routing` o cálculo de troços, a ordenação,
+o realinhamento horário e o resumo diário. O adaptador TypeScript de ordenação
+permanece temporariamente apenas no editor síncrono do agente e será tratado com
+a próxima iteração desse agente; não é usado pelo fluxo rodoviário do servidor.
