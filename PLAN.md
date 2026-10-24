@@ -10,7 +10,8 @@ Implementações e validações concluídas permanecem no histórico Git e em
   IAM distinta, acesso aos buckets autorizados e acesso Bedrock real. O ensaio
   deve partir de um clone limpo, executar `scripts/setup_workspace.py` e
   materializar os dados através do fluxo S3 documentado, sem copiar contas,
-  catálogo ou exports da máquina original.
+  catálogo ou exports da máquina original. O ensaio em curso está registado em
+  [Validação num segundo SageMaker](docs/SECOND_WORKSPACE_VALIDATION.md).
 
 ## Prioridade 2 — Agente de IA
 

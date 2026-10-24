@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 const require = createRequire(
   new URL("../dmc-workspace/package.json", import.meta.url),
@@ -8,6 +9,10 @@ const browser = await chromium.launch();
 const origin =
   process.env.PRESENTATION_URL ??
   "http://127.0.0.1:3003/codeeditor/default/ports/3003/";
+const studioConfig = JSON.parse(
+  readFileSync(new URL("../config/studio.local.json", import.meta.url), "utf8"),
+);
+const expectedPortalUrl = `${studioConfig.base_url.replace(/\/$/, "")}/ports/3001/`;
 try {
   for (const width of [320, 768, 1440, 2560]) {
     const context = await browser.newContext({
@@ -252,10 +257,7 @@ try {
     const finalLink = page.getByRole("link", {
       name: "Explorar o Observatório real",
     });
-    assert.equal(
-      await finalLink.getAttribute("href"),
-      "https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/",
-    );
+    assert.equal(await finalLink.getAttribute("href"), expectedPortalUrl);
     assert.equal(await finalLink.getAttribute("target"), "_blank");
     assert.ok((await finalLink.getAttribute("rel")).includes("noopener"));
     await page

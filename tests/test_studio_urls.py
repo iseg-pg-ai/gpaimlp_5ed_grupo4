@@ -8,6 +8,12 @@ from scripts import studio_urls
 
 
 class StudioUrlsTest(unittest.TestCase):
+    def test_presentation_browser_test_uses_local_workspace_configuration(self):
+        source = (Path(__file__).resolve().parents[1]
+                  / "presentation/test-browser.mjs").read_text(encoding="utf-8")
+        self.assertIn("config/studio.local.json", source)
+        self.assertNotRegex(source, r"https://[a-z0-9]+\.studio\.eu-west-1")
+
     def test_uses_configured_aws_origin_and_never_localhost(self):
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / "studio.json"
