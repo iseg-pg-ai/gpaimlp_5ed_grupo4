@@ -67,6 +67,11 @@ npm run build
 compilação de produção. O workflow `portal.yml` executa ambos e acrescenta o
 ensaio isolado catálogo aprovado → ETL → geração → confirmação → versão → PDF.
 Usa fontes sintéticas e diretórios temporários, sem catálogo ou exports reais.
+Os testes Node incluem dois processos independentes a disputar a mesma
+revisão-base do catálogo e das versões: exatamente um escritor é aceite e o
+outro recebe conflito, sem revisão duplicada. Isto valida uma única instância
+SQLite partilhada; não demonstra concorrência entre máquinas nem sincronização
+de rascunhos guardados no navegador.
 
 ## Testes de navegador
 

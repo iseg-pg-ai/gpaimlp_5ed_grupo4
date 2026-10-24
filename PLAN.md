@@ -49,8 +49,9 @@ Implementações e validações concluídas permanecem no histórico Git e em
 - [ ] Definir o ambiente-alvo, utilizadores, identidade, papéis e permissões.
 - [ ] Aprovar objetivos de disponibilidade, perda máxima de dados e tempo máximo
   de recuperação.
-- [ ] Validar concorrência do catálogo, rascunhos e versões com vários utilizadores
-  e processos reais.
+- [ ] Decidir se os rascunhos devem permanecer privados em cada navegador ou ser
+  sincronizados entre utilizadores. Catálogo e versões já foram validados com
+  processos SQLite independentes e recusam corretamente escritores obsoletos.
 - [ ] Eliminar a janela entre o commit SQLite e a confirmação S3, ou aprovar um RPO
   que aceite a possível perda da outbox se a máquina desaparecer nesse intervalo.
 - [ ] Definir minimização, retenção e eliminação de dados pessoais.

@@ -182,6 +182,19 @@ SQLite e ficheiros locais favorecem inicialmente uma única instância escritora
 Escalar horizontalmente exige rever catálogo, bloqueios, versões e armazenamento
 dos PDFs. Nenhuma alternativa está aprovada ou instalada como produção.
 
+Em 24 de outubro de 2026, testes com processos Node independentes confirmaram que
+`BEGIN IMMEDIATE` e as revisões-base deixam apenas uma edição concorrente avançar
+no catálogo e apenas uma versão suceder à mesma versão anterior. O segundo
+escritor recebe conflito e não cria duplicados. Esta evidência cobre processos na
+mesma máquina e no mesmo SQLite, não várias réplicas ou máquinas.
+
+Os rascunhos permanecem no `localStorage` e são intencionalmente privados ao
+navegador. Dois utilizadores não veem nem conciliam o mesmo rascunho. Antes de
+uma operação multiutilizador é necessário escolher entre conservar esse modelo
+privado ou criar sincronização autenticada com ownership, revisão e resolução de
+conflitos; não se deve transformar o catálogo ou o S3 numa segunda fonte de
+rascunhos por acidente.
+
 O `Dockerfile.portal` cobre apenas o portal Node. Não inclui a materialização S3,
 ETL, Observatório, Monitoring, apresentação ou agente. Uma futura arquitetura com
 load balancer ou CDN terá de encaminhar as rotas dinâmicas e `/_next/static/*`

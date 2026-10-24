@@ -272,3 +272,16 @@ O servidor do portal delega em `portal.routing` o cálculo de troços, a ordena�
 o realinhamento horário e o resumo diário. O adaptador TypeScript de ordenação
 permanece temporariamente apenas no editor síncrono do agente e será tratado com
 a próxima iteração desse agente; não é usado pelo fluxo rodoviário do servidor.
+
+### SQLite suporta vários processos numa instância, não várias réplicas — 2026-10-24
+
+Processos Node independentes foram executados em simultâneo contra o mesmo
+catálogo e histórico de versões. Em ambos os casos, uma única escrita baseada na
+revisão corrente foi aceite e a outra foi recusada como obsoleta, preservando a
+sequência e evitando duplicados. O contrato é adequado a uma instância escritora
+com SQLite partilhado.
+
+Rascunhos continuam privados ao navegador e não têm concorrência distribuída.
+SQLite não é apresentado como base multi-réplica: uma futura execução horizontal
+exige outra persistência operacional ou um único serviço escritor, identidade e
+ownership explícitos e testes entre máquinas.
