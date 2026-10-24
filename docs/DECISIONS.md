@@ -56,6 +56,18 @@ leitura e não editam os artefactos manualmente.
 
 ## Recuperação e operação
 
+### Colegas partilham a role de ensino em workspaces isolados — 2026-10-24
+
+O onboarding foi validado num segundo SageMaker Code Editor criado de raiz. Por
+decisão do ambiente académico, os colegas podem assumir a mesma
+`SageMakerTeachingExecutionRole`; não é obrigatório criar uma role por pessoa.
+
+O isolamento exigido aplica-se ao workspace, URL Studio, clone, configuração
+local, conta do Monitoring e cache efémera. Não se copiam credenciais, sessões,
+catálogo, exports ou caches entre colegas. O ensaio comprovou S3, Bedrock,
+recuperação integral, testes, cinco serviços e quatro interfaces. Esta decisão não
+equivale ao desenho de identidade para produção, que continua por definir.
+
 ### Releases S3 são inventariadas antes de qualquer retenção — 2026-10-24
 
 O inventário de fontes e warehouse valida manifestos e hashes sem alterar o

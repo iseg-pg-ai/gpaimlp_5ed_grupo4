@@ -4,15 +4,6 @@ Revisto em 24 de outubro de 2026. Este ficheiro contém apenas trabalho aberto.
 Implementações e validações concluídas permanecem no histórico Git e em
 [Decisões](docs/DECISIONS.md).
 
-## Prioridade 1 — Qualidade e onboarding
-
-- [ ] Validar o onboarding completo num segundo espaço SageMaker, com identidade
-  IAM distinta, acesso aos buckets autorizados e acesso Bedrock real. O ensaio
-  deve partir de um clone limpo, executar `scripts/setup_workspace.py` e
-  materializar os dados através do fluxo S3 documentado, sem copiar contas,
-  catálogo ou exports da máquina original. O ensaio em curso está registado em
-  [Validação num segundo SageMaker](docs/SECOND_WORKSPACE_VALIDATION.md).
-
 ## Prioridade 2 — Agente de IA
 
 - [ ] Definir o âmbito e os critérios de aceitação da próxima iteração do agente.
@@ -55,6 +46,9 @@ Implementações e validações concluídas permanecem no histórico Git e em
   processos SQLite independentes e recusam corretamente escritores obsoletos.
 - [ ] Eliminar a janela entre o commit SQLite e a confirmação S3, ou aprovar um RPO
   que aceite a possível perda da outbox se a máquina desaparecer nesse intervalo.
+- [ ] Decidir se os checkpoints devem continuar integrais ou passar a conservar
+  apenas estado operacional. O contrato atual duplica fontes e warehouse já
+  existentes no bucket de dados e pode gerar cerca de 1 GB por `just blu it`.
 - [ ] Definir minimização, retenção e eliminação de dados pessoais.
 - [ ] Escolher hosting, persistência, gestão de segredos, região, staging e rollback.
 - [ ] Aprovar antes de criar infraestrutura, gerar custos ou publicar serviços.

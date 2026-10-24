@@ -10,7 +10,7 @@ marcado como concluído depois de existirem evidências de todas as etapas.
 - Região: `eu-west-1`
 - URL base do segundo Code Editor: guardada apenas em
   `config/studio.local.json`, fora do Git.
-- Estado: em execução
+- Estado: concluído em 24 de outubro de 2026
 
 Não copiar `.aws/`, `.env`, caches, contas do Monitoring, catálogo ou exports do
 primeiro workspace.
@@ -51,7 +51,8 @@ de validar a saída desta etapa.
 - npm 11.21.0: disponível, mas será revalidado com o Node selecionado.
 - A chamada STS funcionou, mas devolveu a mesma
   `SageMakerTeachingExecutionRole` do primeiro workspace. O isolamento do espaço
-  está comprovado; a validação com identidade IAM distinta continua pendente.
+  ficou comprovado. Foi formalmente aceite que os colegas partilham esta role de
+  ensino, mantendo ambientes locais independentes.
 
 ## Etapa 2 — Selecionar Node 24 LTS
 
@@ -316,18 +317,69 @@ A correção passou a calcular o URL esperado a partir de
 SageMaker fixos. A validação local passou nas quatro larguras. O segundo workspace
 deve atualizar o branch e repetir o protocolo depois de a correção ser publicada.
 
+### Validação da correção no segundo workspace
+
+O segundo clone avançou por fast-forward para o commit corretivo, sem conflitos.
+O teste de apresentação passou nesse workspace nas larguras 320, 768, 1440 e
+2560. Depois do teste isolado, limpar as variáveis temporárias do browser para não
+forçar ferramentas como `curl` a carregar bibliotecas da Conda:
+
+```bash
+unset LD_LIBRARY_PATH FONTCONFIG_FILE
+```
+
+### Resultado integral
+
+Na segunda execução, todas as tarefas do `just blu it` chegaram a 100% em 4 min
+49 s. O protocolo criou o checkpoint, parou o sistema, recuperou o checkpoint da
+execução, materializou os dados, executou o ETL, testou e construiu os componentes,
+iniciou os serviços e concluiu os testes finais.
+
+O comando `just blu up` confirmou depois os cinco serviços online, cinco endpoints
+validados e quatro interfaces abertas. Os avisos `libcurl` observados nesse comando
+foram causados pelo `LD_LIBRARY_PATH` exportado manualmente no teste isolado; o
+comando terminou com sucesso. A sintaxe válida mantém o espaço: `just blu up` ou
+`./bin/just blu up`, nunca `bluup`.
+
+Falta confirmar o novo objeto no bucket de backups, testar manualmente as quatro
+interfaces e resolver ou aceitar formalmente que ambos os workspaces usam a mesma
+role IAM.
+
+### Evidência do backup remoto
+
+O bucket de backups recebeu um checkpoint novo às 13:56 UTC com cerca de 947 MB,
+depois de um checkpoint inicial reduzido criado no primeiro ensaio. O tamanho
+elevado decorre do contrato atual: quando a cache já está completa, o checkpoint
+inclui as árvores `data`, `warehouse` e `exports`, além do estado persistente do
+Monitoring. Isto fornece uma cópia integral, mas também duplica no bucket de
+backups as fontes e o warehouse já conservados no bucket de dados. A política deve
+ser revista antes de uso frequente para decidir entre recuperação integral e
+custos/tempo de aproximadamente 1 GB por execução.
+
+### Validação manual das interfaces
+
+No domínio próprio do segundo workspace foram confirmados:
+
+- Portal: página inicial e navegação do catálogo com dados;
+- Apresentação: seis capítulos visíveis;
+- Monitoring: login apresentado e conta local aceite;
+- Observatório: arranque sem erro de base de dados.
+
+A porta 8000 permaneceu técnica e não foi aberta como interface. O ensaio funcional
+e o critério de onboarding ficaram concluídos com a exceção IAM formalizada.
+
 ## Evidência
 
 - [x] Clone independente concluído.
 - [x] Versões de Python, Node, npm e Git conformes.
 - [x] Identidade IAM efetiva confirmada.
-- [ ] Ensaio repetido com identidade IAM distinta.
+- [x] Utilização da role IAM de ensino partilhada formalmente aceite.
 - [x] Dependências instaladas pelo lockfile.
 - [x] Configuração local criada com a URL deste workspace.
 - [x] Leitura IAM do bucket de dados validada.
 - [x] Leitura IAM do bucket de backups validada.
 - [x] Acesso real ao Bedrock validado.
-- [ ] Dados materializados sem cópia do primeiro workspace.
-- [ ] Cinco serviços confirmados online.
-- [ ] Quatro interfaces abertas através dos URLs AWS.
-- [ ] Login do Monitoring e fluxo funcional verificados.
+- [x] Dados materializados sem cópia do primeiro workspace.
+- [x] Cinco serviços confirmados online.
+- [x] Quatro interfaces abertas através dos URLs AWS.
+- [x] Login do Monitoring e fluxo funcional verificados.
