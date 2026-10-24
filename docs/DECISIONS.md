@@ -256,6 +256,19 @@ ficam fora do seu alcance.
 Notificações externas e uma sonda fora da máquina continuam abertas no
 [plano](../PLAN.md); logs e sondas locais não constituem monitoring de produção.
 
+### SNS é o transporte externo preparado para incidentes — 2026-10-24
+
+O Monitoring possui uma integração SNS opcional, desativada por defeito. Publica
+apenas a abertura e a recuperação de incidentes técnicos, através da role IAM do
+ambiente e de um tópico indicado por variável local. A fila e o estado de entrega
+são persistentes; falhas são repetidas com atraso exponencial e eventos entregues
+não são reenviados durante a operação normal.
+
+O código e os testes não equivalem a uma entrega externa validada. O tópico,
+subscrições confirmadas, responsáveis, permissão `sns:Publish` e ensaio real
+continuam pendentes. A sonda externa depende ainda de um endpoint estável fora da
+máquina observada.
+
 ## Configuração e dependências
 
 ### A configuração Studio é individual — 2026-10-19

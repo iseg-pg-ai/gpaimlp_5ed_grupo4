@@ -71,6 +71,10 @@ try {
     await page.getByRole("heading", { name: "O sistema, à vista." }).waitFor();
     await page.locator("#service-count").getByText("2 / 3").waitFor();
     assert.equal(await page.locator("#incident-count").innerText(), "1");
+    assert.equal(
+      await page.locator("#alert-delivery").innerText(),
+      "Fila local · envio externo desativado",
+    );
     assert.equal(await page.locator(".service-card").count(), 4);
     assert.equal(
       await page.locator("#freshness").innerText(),

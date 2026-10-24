@@ -329,6 +329,12 @@ function render(data) {
       ].join(" · "),
     );
     text("alert-state", s.alerts.active.toLocaleString("pt-PT"));
+    text(
+      "alert-delivery",
+      (s.alerts.external ?? "disabled") === "disabled"
+        ? "Fila local · envio externo desativado"
+        : `SNS · ${s.alerts.external_delivered} entregues · ${s.alerts.external_pending} pendentes`,
+    );
     const health = s.alerts.active ? "degraded" : "up";
     text(
       "ops-health",

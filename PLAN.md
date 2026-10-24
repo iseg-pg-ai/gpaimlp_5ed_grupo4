@@ -51,8 +51,9 @@ A comparação de alternativas e os limites atuais estão em
 
 O Monitoring continua incompleto para produção até concluir:
 
-- [ ] Configurar e validar notificações externas, incluindo canal, destinatários,
-  limiares, deduplicação, tentativas e recuperação após falha.
+- [ ] Criar o tópico SNS real, confirmar subscrições e responsáveis, conceder
+  `sns:Publish` apenas nesse ARN e validar abertura, deduplicação, repetição após
+  falha e recuperação. O transporte persistente e os testes locais já existem.
 - [ ] Executar uma sonda fora da máquina do BLU e associá-la a responsáveis reais.
 
 Envios reais e infraestrutura externa exigem autorização aplicável. Logs, sondas

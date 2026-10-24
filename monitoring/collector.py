@@ -18,6 +18,7 @@ from urllib.request import build_opener, HTTPRedirectHandler, ProxyHandler, Requ
 from monitoring.alerts import AlertStore
 from monitoring.backup import BackupScheduler
 from monitoring.cleanup import CleanupManager
+from monitoring.notifications import NotificationDispatcher
 from monitoring.signals import operational_signals
 from etl.s3_outbox import flush as flush_s3_outbox
 
@@ -116,6 +117,8 @@ class Collector:
         runtime.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.runtime = runtime
         self.alerts = AlertStore(runtime)
+        self.notifications = NotificationDispatcher(
+            runtime, config, environment=os.environ.get("BLU_ENVIRONMENT", "development"))
         self.cleanup = CleanupManager(root, runtime, config)
         self.backups = BackupScheduler(root, runtime, config)
         self.logger = logging.Logger("blu-monitor-probes")
@@ -169,6 +172,8 @@ class Collector:
                            "ai-failures": snapshot["operations"]["ai"]["failures_24h"] >= thresholds.get("ai_failures_24h", 3),
                            "backup": snapshot["operations"]["backup"]["state"] == "down"})
         snapshot["alerts"] = self.alerts.reconcile(conditions)
+        snapshot["alerts"].update(
+            self.notifications.flush(snapshot["alerts"]["recent"]))
         entities = [(x["name"], x["state"]) for x in services] + [("Warehouse", warehouse["state"])]
         with self.lock:
             for name, state in entities:

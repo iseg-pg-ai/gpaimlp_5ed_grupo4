@@ -157,11 +157,15 @@ desaparecer antes da repetição.
 | Dados | Idade e validação da publicação ETL |
 | Persistência | SQLite, filas pendentes, cópias local/S3 e último restauro |
 | IA | Chamadas, falhas, latência e tokens quando reportados |
-| Incidentes | Abertura, deduplicação e recuperação local |
+| Incidentes | Abertura, deduplicação, recuperação local e transporte SNS configurável |
 
 Um HTTP 200 não comprova um fluxo completo, acesso ao Bedrock ou validade dos
 dados. Os limiares locais são preliminares até existirem objetivos operacionais.
 Cada alerta de produção precisará de responsável, canal e ação de recuperação.
+O transporte SNS conserva uma fila local, repete falhas com atraso exponencial e
+expõe entregas e pendências no painel. Continua desativado até existir um tópico
+privado, subscrições confirmadas, `sns:Publish` limitado ao respetivo ARN e um
+ensaio real autorizado.
 
 ## Deployment ainda por decidir
 

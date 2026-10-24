@@ -116,8 +116,42 @@ uma janela máxima de sete dias dentro dos ficheiros rotativos disponíveis.
 
 O coletor transforma falhas em incidentes locais, deduplica estados repetidos e
 regista uma recuperação quando a condição desaparece. A fila está em
-`monitoring/runtime/notifications.jsonl`. O envio externo permanece desativado em
-`monitoring/config.json`; ativá-lo exige escolher canal, destinatários e credenciais.
+`monitoring/runtime/notifications.jsonl`.
+
+O transporte externo por Amazon SNS está implementado, mas permanece desativado
+por defeito. Quando ativo, apenas transições técnicas de abertura e recuperação
+são copiadas para `external-notifications.jsonl`; o estado de entrega fica em
+`notification-delivery.json`. Uma falha conserva a fila e repete com atraso
+exponencial entre 60 segundos e uma hora. Eventos entregues não são reenviados e
+o histórico local nunca é eliminado. Não são incluídos prompts, respostas, dados
+de clientes, URLs ou exceções livres.
+
+Para ativar depois de existir um tópico SNS **Standard** privado, uma subscrição
+confirmada e autorização IAM limitada a esse tópico:
+
+```bash
+BLU_MONITORING_NOTIFICATIONS_ENABLED=true
+BLU_MONITORING_SNS_TOPIC_ARN=arn:aws:sns:eu-west-1:CONTA:blu-monitoring
+```
+
+Guardar estas chaves no `.env` local e reiniciar o Monitoring. A aplicação usa a
+role da sessão, nunca access keys. A role precisa apenas de:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "sns:Publish",
+    "Resource": "arn:aws:sns:eu-west-1:CONTA:blu-monitoring"
+  }]
+}
+```
+
+Os destinatários são administrados como subscrições do tópico e não ficam no
+repositório. Uma subscrição por email só recebe mensagens depois de ser confirmada.
+Consultar a documentação AWS sobre
+[notificações SNS por email](https://docs.aws.amazon.com/sns/latest/dg/sns-email-notifications.html).
 
 ## Libertação automática de espaço
 
@@ -176,7 +210,8 @@ incompletos após sete dias e requer aplicação administrativa na consola AWS.
   respostas, fontes, contactos, pedidos de clientes ou exceções detalhadas.
 - Erros internos do portal, subprocessos e dependências em eventos reduzidos.
 - Consumo de IA com chamadas, falhas, latência e tokens quando reportados.
-- Incidentes deduplicados e recuperações numa fila local; sem envio externo.
+- Incidentes deduplicados, recuperações e fila SNS persistente; envio externo
+  desativado até existir tópico, subscrição, IAM e ensaio autorizados.
 
 `monitoring/config.json` define intervalo (10–300 segundos), agente, backups, limpeza,
 limiares de alerta e idade máxima aceitável do warehouse. O valor preliminar de 168
