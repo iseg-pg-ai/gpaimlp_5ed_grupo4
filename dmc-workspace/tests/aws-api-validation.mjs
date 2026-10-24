@@ -102,6 +102,8 @@ for (const method of ["document", "link"])
       locale: "pt",
       method,
       recipient: "validation@example.com",
+      consent: true,
+      retentionDays: 7,
     });
     const data = await r.json();
     assert.equal(r.status, 201, JSON.stringify(data));

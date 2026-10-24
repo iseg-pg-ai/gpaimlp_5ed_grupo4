@@ -165,12 +165,14 @@ test("localized variants share a snapshot, retain bytes and isolate languages", 
 test("proposal shares retain their selected version, language, method and recipient", (t) => {
   const { store } = setup(t);
   store.save("trip-share", structuredClone(snapshot), "generated", null);
-  const share = store.createShare("trip-share", 1, "fr", "link", "client@example.com");
+  const share = store.createShare("trip-share", 1, "fr", "link", "client@example.com", 30);
   assert.match(share.token, /^[A-Za-z0-9_-]{32}$/);
   assert.equal(share.version, 1);
   assert.equal(share.locale, "fr");
   assert.equal(share.method, "link");
   assert.equal(share.recipient, "client@example.com");
+  assert.ok(share.consentAt);
+  assert.equal(Date.parse(share.expiresAt) - Date.parse(share.createdAt), 30 * 86400000);
   assert.equal(share.customerName, snapshot.brief.customerName);
 
   const changed = structuredClone(snapshot);
@@ -179,7 +181,39 @@ test("proposal shares retain their selected version, language, method and recipi
   const reopened = store.getShare(share.token);
   assert.equal(reopened.version, 1);
   assert.equal(reopened.customerName, snapshot.brief.customerName);
+  assert.equal(store.listShares("trip-share").length, 1);
+  assert.ok(store.revokeShare(share.token).revokedAt);
+  assert.throws(() => store.getShare(share.token), /não encontrada/);
   assert.throws(() => store.getShare("invalid"), /Partilha inválida/);
+});
+
+test("expired, legacy and trashed-version shares fail closed", (t) => {
+  const { store } = setup(t);
+  store.save("share-lifecycle", structuredClone(snapshot), "generated", null);
+  const expired = store.createShare("share-lifecycle", 1, "pt", "link", "client@example.com", 7);
+  store.db
+    .prepare("UPDATE proposal_shares SET expiresAt=? WHERE token=?")
+    .run("2020-01-01T00:00:00.000Z", expired.token);
+  assert.throws(() => store.getShare(expired.token), /não encontrada/);
+
+  const legacy = store.createShare("share-lifecycle", 1, "pt", "link", "legacy@example.com", 30);
+  store.db.prepare("UPDATE proposal_shares SET consentAt=NULL WHERE token=?").run(legacy.token);
+  assert.throws(() => store.getShare(legacy.token), /não encontrada/);
+
+  const active = store.createShare(
+    "share-lifecycle",
+    1,
+    "pt",
+    "document",
+    "active@example.com",
+    30,
+  );
+  store.trashVersion("share-lifecycle", 1);
+  assert.equal(
+    store.listShares("share-lifecycle").find((item) => item.token === active.token).revokedReason,
+    "version-trashed",
+  );
+  assert.throws(() => store.getShare(active.token), /não encontrada/);
 });
 
 test("trashed versions leave active history and restore with snapshots and PDFs intact", async (t) => {

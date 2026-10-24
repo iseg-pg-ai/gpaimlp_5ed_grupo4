@@ -175,10 +175,19 @@ Documento PDF abre diretamente o PDF imutável dessa versão e idioma. O email d
 cliente vem do briefing e pode ser alterado antes de preparar a mensagem.
 
 O portal abre o programa de email do computador com destinatário, assunto, texto e
-ligação preenchidos. O envio é confirmado nessa aplicação. As ligações ficam
-guardadas no histórico SQLite de exportações. Em instalações acessíveis fora do
-computador local, `BLU_PUBLIC_URL` deve conter a origem pública do portal, por
-exemplo `https://propostas.example.com`.
+ligação preenchidos. O envio é confirmado nessa aplicação. Antes de criar o
+acesso, o curador confirma a autorização do destinatário e escolhe uma validade
+de 7, 30 ou 90 dias. Sem consentimento ou prazo, incluindo partilhas antigas, o
+acesso falha fechado.
+
+As ligações ficam guardadas no histórico SQLite de exportações com versão,
+idioma, destinatário, instante de consentimento, validade e estado de revogação.
+A página **Histórico** permite consultar e revogar cada acesso. A expiração
+impede novas consultas; enviar a respetiva versão para o Lixo revoga a ligação de
+forma atómica e restaurar a versão não a reativa. Os metadados permanecem para
+auditoria até à eliminação definitiva da versão ou viagem. Em instalações
+acessíveis fora do computador local, `BLU_PUBLIC_URL` deve conter a origem pública
+do portal, por exemplo `https://propostas.example.com`.
 
 ## Planos ativos e Lixo
 
@@ -190,9 +199,10 @@ fim seja anterior ao dia atual.
 
 Cada versão no histórico tem uma ação própria para a enviar para o Lixo. Isto não
 remove a viagem nem uma atividade do roteiro. As versões removidas deixam de surgir
-no histórico ativo, mas os snapshots, PDFs e variantes linguísticas permanecem no
-SQLite e podem ser restaurados na página Lixo. A remoção de uma atividade continua
-a ser feita no cartão do respetivo dia e cria uma nova versão do roteiro.
+no histórico ativo e as respetivas partilhas são revogadas, mas os snapshots,
+PDFs e variantes linguísticas permanecem no SQLite e podem ser restaurados na
+página Lixo. A remoção de uma atividade continua a ser feita no cartão do
+respetivo dia e cria uma nova versão do roteiro.
 
 A limpeza definitiva é verificada uma vez a cada 24 horas, ao abrir o portal ou a
 página Lixo. Uma viagem ou versão no Lixo expira quando a data de fim guardada na
@@ -231,7 +241,7 @@ diretamente no PDF.
 
 ## TXT para Canva
 
-O contrato atual é `blu-roteiro-canva/1.1.0`; o plugin local 0.4.0 aceita também
+O contrato atual é `blu-roteiro-canva/1.1.0`; o plugin local 0.4.1 aceita também
 TXT 1.0.0. O idioma escolhido aplica-se ao TXT e aos PDFs.
 
 1. Rever o roteiro e escolher o idioma do cliente.
@@ -270,6 +280,13 @@ reconstruir/importar o pacote; anexar um novo TXT não atualiza a instalação.
 A interface suporta português, inglês, mandarim, espanhol, francês e alemão. Os
 textos livres dos PDFs são traduzidos localmente. Para mandarim, pode ser necessário
 configurar `BLU_PDF_CJK_FONT` e, para ficheiros TTC, `BLU_PDF_CJK_FACE`.
+
+Em 2026-10-24 foram renderizadas e inspecionadas a capa e uma página interior de
+PDFs sintéticos PT/EN/ES/FR/DE: margens, paginação, rodapé, títulos e linhas de
+voo permaneceram legíveis, sem corte ou sobreposição. Este ensaio confirma o
+layout, não a qualidade semântica de um fornecedor de tradução. O ambiente não
+tem uma fonte CJK; por isso, o PDF mandarim continua bloqueado até configurar
+`BLU_PDF_CJK_FONT` e fazer a inspeção visual correspondente.
 
 ## Arquitetura resumida
 

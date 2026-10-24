@@ -37,7 +37,11 @@ try {
   await page.route("**/api/shares", (route) => {
     shared = route.request().postDataJSON();
     return route.fulfill({
-      json: { shareUrl: "https://example.test/share/token", recipient: shared.recipient },
+      json: {
+        shareUrl: "https://example.test/share/token",
+        recipient: shared.recipient,
+        expiresAt: "2026-11-23T12:00:00Z",
+      },
     });
   });
   await page.goto(process.env.PORTAL_URL || "http://localhost:3001");
@@ -53,10 +57,11 @@ try {
     await dialog.getByLabel(/Email do destinatário/i).inputValue(),
     "cliente@example.com",
   );
-  await dialog.getByLabel(/Versão/i).selectOption("2");
+  await dialog.getByLabel(/^Versão/i).selectOption("2");
   await dialog.locator("summary").filter({ hasText: "English" }).click();
   await dialog.getByRole("button", { name: /Português/ }).click();
   await dialog.getByText("Documento PDF", { exact: true }).click();
+  await dialog.getByLabel(/Confirmo que o destinatário/i).check();
   await dialog.getByRole("button", { name: /Preparar email/i }).click();
   await dialog.getByRole("status").waitFor();
   assert.deepEqual(shared, {
@@ -65,6 +70,8 @@ try {
     locale: "pt",
     method: "document",
     recipient: "cliente@example.com",
+    retentionDays: 30,
+    consent: true,
   });
   console.log("Delivery: email, version, language, PDF sharing and success feedback OK");
 } finally {

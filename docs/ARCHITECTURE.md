@@ -168,8 +168,9 @@ factos para outras viagens. Ver o [guia do portal](PORTAL.md).
 O sistema produz propostas; não efetua reservas. O Monitoring tem autenticação
 local própria, mas o portal não tem identidade, papéis ou sincronização
 multiutilizador. A persistência S3 está implementada, mas hosting de produção e
-fotografias autorizadas nos PDFs DMC continuam pendentes. Partilha e retenção
-precisam de revisão antes de produção.
+fotografias autorizadas nos PDFs DMC continuam pendentes. As partilhas têm
+consentimento explícito, validade e revogação, mas a identidade central e a
+política global de dados pessoais continuam por decidir antes de produção.
 Acesso pelo Studio não torna a proposta pública para clientes externos.
 
 ## Fronteira atual do agente

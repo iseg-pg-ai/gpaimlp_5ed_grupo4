@@ -164,8 +164,27 @@ reserva e notas internas. Não altera o estado dos PDFs DMC. O Canva produz uma
 entrega independente sujeita à revisão do curador; atualizar o TXT não atualiza a
 instalação do plugin nem substitui automaticamente um PDF publicado.
 
+O pacote-fonte Canva 0.4.1 aceita os contratos TXT 1.1.0 e 1.0.0. A versão
+instalada deve ser confirmada no anfitrião antes de importar outro ZIP; uma
+atualização conserva o pacote anterior para rollback e só é aceite depois de uma
+proposta de teste completa. Rever o repositório não atualiza a instalação remota.
+
 Fotografias só podem integrar entregas depois de autorização, licença e créditos
 serem documentados.
+
+### Partilhas expiram e são revogáveis — 2026-10-24
+
+Uma nova partilha exige confirmação explícita da autorização do destinatário e
+uma validade de 7, 30 ou 90 dias. O registo conserva versão, idioma, método,
+destinatário, consentimento, validade e revogação para auditoria até à eliminação
+definitiva da versão. Partilhas antigas sem estes campos e ligações expiradas ou
+revogadas falham fechadas.
+
+Enviar uma versão para o Lixo revoga todas as respetivas ligações na mesma
+transação. Restaurar a versão não restaura acessos; o curador cria uma partilha
+nova se ainda existir autorização. A gestão manual fica no Histórico. Este
+controlo não substitui a identidade central e a política global de dados pessoais
+que permanecem na prioridade de operação multiutilizador.
 
 ## Observatório e apresentação
 

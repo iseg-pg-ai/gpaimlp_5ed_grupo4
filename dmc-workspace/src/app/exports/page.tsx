@@ -4,6 +4,7 @@ import Link from "next/link";
 import { languages } from "@/lib/locales";
 import { VersionStore } from "@/lib/version-store";
 import { Trash2 } from "lucide-react";
+import { ShareAccessManager } from "@/components/ShareAccessManager";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export default async function ExportHistory({
@@ -20,6 +21,7 @@ export default async function ExportHistory({
         : "";
   const store = new VersionStore();
   const versions = store.list();
+  const shares = store.listShares();
   store.close();
   return (
     <main className="portal-page min-h-full bg-[var(--portal-bg-f4f0e7)] text-[var(--portal-text-143f4b)]">
@@ -40,6 +42,7 @@ export default async function ExportHistory({
           <T text={actionError} source="pt" />
         </p>
       )}
+      <ShareAccessManager initialShares={shares} />
       {!versions.length && (
         <p>
           <T text="Ainda não existem versões guardadas." source="pt" />

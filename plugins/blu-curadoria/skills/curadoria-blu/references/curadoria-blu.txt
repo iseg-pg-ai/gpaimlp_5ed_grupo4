@@ -1,7 +1,8 @@
 BLU | PROMPT DE CURADORIA DE ROTEIROS
 Versão: 1.1.0
-Data: 2026-10-09
-Base de referência: BLU AI System, dev, commit bbd58c8, com integração local TXT/Canva.
+Data: 2026-10-24
+Base de referência: contratos `blu-roteiro-canva/1.1.0` e `1.0.0`; o checkout do
+projeto e o TXT exportado prevalecem sobre esta fotografia do pacote.
 Idioma por defeito: português europeu.
 
 1. PAPEL E OBJETIVO

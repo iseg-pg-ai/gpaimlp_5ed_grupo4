@@ -55,11 +55,19 @@ export type ProposalShare = {
   method: ShareMethod;
   recipient: string;
   createdAt: string;
+  consentAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  revokedReason: string | null;
   filename: string;
   customerName: string;
   destination: string;
   startDate: string;
   endDate: string;
+};
+export type ProposalShareRecord = Omit<ProposalShare, "consentAt" | "expiresAt"> & {
+  consentAt: string | null;
+  expiresAt: string | null;
 };
 export class VersionStore {
   db: DatabaseSync;
@@ -98,6 +106,17 @@ export class VersionStore {
       this.db.exec("ALTER TABLE versions ADD COLUMN trashedAt TEXT");
     if (!versionColumns.some((column) => column.name === "trashReason"))
       this.db.exec("ALTER TABLE versions ADD COLUMN trashReason TEXT");
+    const shareColumns = this.db
+      .prepare("PRAGMA table_info(proposal_shares)")
+      .all() as unknown as Array<{ name: string }>;
+    if (!shareColumns.some((column) => column.name === "consentAt"))
+      this.db.exec("ALTER TABLE proposal_shares ADD COLUMN consentAt TEXT");
+    if (!shareColumns.some((column) => column.name === "expiresAt"))
+      this.db.exec("ALTER TABLE proposal_shares ADD COLUMN expiresAt TEXT");
+    if (!shareColumns.some((column) => column.name === "revokedAt"))
+      this.db.exec("ALTER TABLE proposal_shares ADD COLUMN revokedAt TEXT");
+    if (!shareColumns.some((column) => column.name === "revokedReason"))
+      this.db.exec("ALTER TABLE proposal_shares ADD COLUMN revokedReason TEXT");
   }
   close() {
     this.db.close();
@@ -140,11 +159,23 @@ export class VersionStore {
   trashVersion(tripId: string, version: number) {
     this.get(tripId, version);
     const trashedAt = new Date().toISOString();
-    this.db
-      .prepare(
-        "UPDATE versions SET trashedAt=COALESCE(trashedAt,?), trashReason=COALESCE(trashReason,'manual') WHERE tripId=? AND version=?",
-      )
-      .run(trashedAt, tripId, version);
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      this.db
+        .prepare(
+          "UPDATE versions SET trashedAt=COALESCE(trashedAt,?), trashReason=COALESCE(trashReason,'manual') WHERE tripId=? AND version=?",
+        )
+        .run(trashedAt, tripId, version);
+      this.db
+        .prepare(
+          "UPDATE proposal_shares SET revokedAt=COALESCE(revokedAt,?), revokedReason=COALESCE(revokedReason,'version-trashed') WHERE tripId=? AND version=?",
+        )
+        .run(trashedAt, tripId, version);
+      this.db.exec("COMMIT");
+    } catch (error) {
+      this.db.exec("ROLLBACK");
+      throw error;
+    }
     return this.listTrash().find((item) => item.tripId === tripId && item.version === version)!;
   }
   restoreVersion(tripId: string, version: number) {
@@ -286,15 +317,19 @@ export class VersionStore {
     locale: Locale,
     method: ShareMethod,
     recipient: string,
+    retentionDays: 7 | 30 | 90,
   ): ProposalShare {
     const stored = this.get(tripId, version);
+    if (stored.trashedAt) throw new Error("Restaure a versão antes de a partilhar.");
     const token = randomBytes(24).toString("base64url");
     const createdAt = new Date().toISOString();
+    const consentAt = createdAt;
+    const expiresAt = new Date(Date.parse(createdAt) + retentionDays * 86400000).toISOString();
     this.db
       .prepare(
-        "INSERT INTO proposal_shares (token,tripId,version,locale,method,recipient,createdAt) VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO proposal_shares (token,tripId,version,locale,method,recipient,createdAt,consentAt,expiresAt) VALUES (?,?,?,?,?,?,?,?,?)",
       )
-      .run(token, tripId, version, locale, method, recipient, createdAt);
+      .run(token, tripId, version, locale, method, recipient, createdAt, consentAt, expiresAt);
     const snapshot = JSON.parse(stored.snapshot) as Snapshot;
     return {
       token,
@@ -304,6 +339,10 @@ export class VersionStore {
       method,
       recipient,
       createdAt,
+      consentAt,
+      expiresAt,
+      revokedAt: null,
+      revokedReason: null,
       filename: stored.filename.replace(/\.pdf$/, `_${locale.toUpperCase()}.pdf`),
       customerName: snapshot.brief.customerName,
       destination: snapshot.brief.destination,
@@ -311,7 +350,32 @@ export class VersionStore {
       endDate: snapshot.brief.endDate,
     };
   }
-  getShare(token: string): ProposalShare {
+  listShares(tripId?: string): ProposalShareRecord[] {
+    if (tripId) checkTripId(tripId);
+    const rows = this.db
+      .prepare(
+        `SELECT token FROM proposal_shares${tripId ? " WHERE tripId=?" : ""} ORDER BY createdAt DESC`,
+      )
+      .all(...(tripId ? [tripId] : [])) as unknown as Array<{ token: string }>;
+    return rows.flatMap((row) => {
+      try {
+        return [this.shareRecord(row.token)];
+      } catch {
+        return [];
+      }
+    });
+  }
+  revokeShare(token: string, reason = "manual"): ProposalShareRecord {
+    this.shareRecord(token);
+    const revokedAt = new Date().toISOString();
+    this.db
+      .prepare(
+        "UPDATE proposal_shares SET revokedAt=COALESCE(revokedAt,?), revokedReason=COALESCE(revokedReason,?) WHERE token=?",
+      )
+      .run(revokedAt, reason, token);
+    return this.shareRecord(token);
+  }
+  private shareRecord(token: string): ProposalShareRecord {
     if (!/^[A-Za-z0-9_-]{32}$/.test(token)) throw new Error("Partilha inválida.");
     const row = this.db.prepare("SELECT * FROM proposal_shares WHERE token=?").get(token) as
       | {
@@ -322,6 +386,10 @@ export class VersionStore {
           method: string;
           recipient: string;
           createdAt: string;
+          consentAt: string | null;
+          expiresAt: string | null;
+          revokedAt: string | null;
+          revokedReason: string | null;
         }
       | undefined;
     if (!row || !isLocale(row.locale) || !["document", "link"].includes(row.method))
@@ -339,6 +407,19 @@ export class VersionStore {
       startDate: snapshot.brief.startDate,
       endDate: snapshot.brief.endDate,
     };
+  }
+  getShare(token: string): ProposalShare {
+    const share = this.shareRecord(token);
+    const stored = this.get(share.tripId, share.version);
+    if (
+      stored.trashedAt ||
+      !share.consentAt ||
+      !share.expiresAt ||
+      share.revokedAt ||
+      share.expiresAt <= new Date().toISOString()
+    )
+      throw new Error("Partilha não encontrada.");
+    return { ...share, consentAt: share.consentAt, expiresAt: share.expiresAt };
   }
   save(
     tripId: string,

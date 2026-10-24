@@ -19,5 +19,5 @@ Para composição de uma versão DMC já guardada, usar roteiro-visual-canva com
 o TXT específico. A curadoria na conversa é revisão; a aplicação e gravação
 de alterações no DMC pertencem ao curador.
 
-O TXT incluído é uma fotografia da versão 1.1.0, de 2026-10-09. Alterações ao
+O TXT incluído é uma fotografia da versão 1.1.0, revista em 2026-10-24. Alterações ao
 ficheiro de origem no projeto exigem nova exportação e atualização do plugin.

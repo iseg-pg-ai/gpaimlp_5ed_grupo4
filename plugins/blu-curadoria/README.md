@@ -3,7 +3,7 @@
 Plugin privado com workflow de roteiro visual e dependência da ligação Canva.
 Recebe o TXT de uma versão guardada no DMC, sem acesso automático ao portal.
 
-Versão do pacote-fonte: 0.4.0. Compatível com `blu-roteiro-canva/1.1.0` e `1.0.0`.
+Versão do pacote-fonte: 0.4.1. Compatível com `blu-roteiro-canva/1.1.0` e `1.0.0`.
 
 ## Processo no DMC atualizado
 
@@ -47,8 +47,10 @@ os dados BLU e não substitui a revisão humana.
 
 ## Entrega
 
-A revisão do pacote local não atualiza automaticamente a instalação 0.2.0 já
-existente. Importar o novo ZIP num anfitrião compatível para adotar esta revisão.
+A revisão do pacote local não identifica nem atualiza automaticamente a versão
+instalada. Confirmar primeiro a versão no anfitrião e importar um novo ZIP apenas
+quando se pretender adotar esta revisão. Conservar o pacote anterior até validar
+uma proposta de teste e poder reverter a instalação.
 
 O ZIP é um pacote preparado para importação num anfitrião compatível.
 A ligação Canva é necessária para compor o documento. Este pacote não contém

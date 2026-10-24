@@ -37,15 +37,12 @@ Implementações e validações concluídas permanecem no histórico Git e em
 
 ## Prioridade 3 — Entrega ao cliente
 
-- [ ] Rever acesso, consentimento, retenção e revogação das partilhas e do Lixo.
-- [ ] Inspecionar visualmente os PDFs nos idiomas suportados e documentar as
-  fontes necessárias, incluindo CJK para mandarim.
-- [ ] Validar uma entrega real completa: TXT → cópia Canva → revisão humana →
-  PDF final.
-- [ ] Rever o pacote-fonte e o processo de atualização antes de alterar a
-  instalação do plugin Canva.
-- [ ] Decidir se os PDFs devem incluir fotografias; se forem aprovadas, registar
-  autorização, licença e créditos antes de as incorporar.
+- [ ] Instalar/configurar uma fonte CJK, inspecionar visualmente o PDF mandarim e
+  repetir a inspeção semântica com traduções reais. Os layouts PT/EN/ES/FR/DE já
+  foram inspecionados com conteúdo sintético; testes estruturais passam.
+- [ ] Numa sessão Canva autorizada, validar uma entrega real completa: TXT →
+  cópia Canva → revisão humana → PDF final. Registar a versão instalada antes de
+  importar o pacote-fonte 0.4.1 e conservar o pacote anterior para rollback.
 
 ## Prioridade 4 — Operação multiutilizador e cloud
 
