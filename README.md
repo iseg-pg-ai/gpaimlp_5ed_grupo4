@@ -87,6 +87,12 @@ O comando mantém serviços ativos, inicia os que estejam parados, confirma os
 cinco endpoints e abre as quatro interfaces. A porta técnica 8000 é validada,
 mas não abre um separador.
 
+Os URLs `/codeeditor/default/ports/PORTA/` exigem que as portas 3001, 3003, 3004
+e 8501 estejam registadas no painel **Ports** do Code Editor aberto no browser.
+Adicionar portas apenas numa sessão VS Code local/remota cria endereços
+`127.0.0.1` e não autoriza o proxy web do SageMaker. Num workspace novo, abrir o
+Code Editor pelo browser e adicionar uma vez as quatro portas nesse painel.
+
 Este arranque rápido não cria checkpoints, não recupera backups e não para
 processos ativos. Essas ações pertencem exclusivamente ao `just blu it`.
 

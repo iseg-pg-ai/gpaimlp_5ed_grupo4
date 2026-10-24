@@ -426,11 +426,12 @@ exportação real apresentou `BLU | ROTEIRO — PROMPT TXT`, versão de prompt 1
 o contrato `blu-roteiro-prompt/1.0.0`, sem associação a fornecedor ou modelo
 visual.
 
-Neste Code Editor, a porta 3001 apareceu no painel **Ports** como encaminhamento
-local `127.0.0.1:3001`. O portal funcionou nesse endereço; o URL externo construído
-com `/codeeditor/default/ports/3001/` devolveu `Not found`. Esta diferença de
-encaminhamento da sessão não invalida o serviço nem a exportação, mas confirma que
-um URL SageMaker calculado não deve ser apresentado como deployment permanente.
+Inicialmente, a porta 3001 foi adicionada no painel **Ports** de uma sessão VS Code
+local/remota. Esse painel criou apenas o túnel `127.0.0.1:3001`, pelo que o proxy
+web devolveu `Not found`. Depois de abrir o Code Editor diretamente no browser e
+registar aí a porta, o endereço
+`/codeeditor/default/ports/3001/` ficou acessível. O serviço e o URL configurado
+estavam corretos; faltava autorizar a porta na instância web do Code Editor.
 
 Esta instalação requer rede apenas durante a preparação. O runtime de tradução
 continua local e não envia textos de clientes para um fornecedor externo. A
@@ -450,7 +451,7 @@ cliente e não deve ser inferida apenas pelo arranque das interfaces.
 - [x] Acesso real ao Bedrock validado.
 - [x] Dados materializados sem cópia do primeiro workspace.
 - [x] Cinco serviços confirmados online.
-- [x] Quatro interfaces abertas; o portal foi validado no encaminhamento local
-  atribuído pelo segundo Code Editor.
+- [x] Quatro interfaces abertas; o portal foi validado também pelo URL AWS do
+  segundo Code Editor.
 - [x] Login do Monitoring e fluxo funcional verificados.
 - [x] Exportação Prompt TXT neutra validada através da interface.

@@ -60,6 +60,10 @@ substituem redundância entre regiões/contas, DNS, TLS, identidade ou regras de
 - O `just blu it` exige uma conta ativa do Monitoring com perfil `admin` e lê a
   palavra-passe apenas no terminal interativo. Automação, logs e agentes não devem
   receber, guardar ou contornar essa credencial.
+- Num workspace novo, os processos podem estar saudáveis sem que o proxy web do
+  SageMaker aceite os URLs `/ports/`. As portas 3001, 3003, 3004 e 8501 devem ser
+  adicionadas no painel **Ports** do Code Editor aberto no browser. O painel de
+  uma sessão VS Code local/remota cria apenas túneis `127.0.0.1`.
 - A execução de 23 de outubro confirmou checkpoint S3, paragem, recuperação e
   reinício até à tarefa 11. A causa da interrupção foi corrigida e os testes de
   navegador passaram isoladamente. A repetição integral exige decisão e login de
