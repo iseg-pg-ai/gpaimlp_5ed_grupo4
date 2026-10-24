@@ -38,7 +38,7 @@ try {
       const txtPromise = page.waitForEvent("download");
       await form.locator('button[value="prompt"]').click();
       const txt = await txtPromise;
-      assert.match(txt.suggestedFilename(), /_Canva_FR\.txt$/);
+      assert.match(txt.suggestedFilename(), /_Prompt_FR\.txt$/);
       const text = await readFile(await txt.path(), "utf8");
       assert.match(text, /"codigoIdioma": "fr"/);
       assert.doesNotMatch(text, /PRIVATE_NOTES/);

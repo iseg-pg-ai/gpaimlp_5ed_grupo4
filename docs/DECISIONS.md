@@ -181,17 +181,13 @@ fonte CJK configurada para PDF. Em 24 de outubro de 2026, Noto Sans CJK SC foi
 validada num segundo workspace com modelos reais, teste do renderer e exportação
 pela interface, preservando valores estruturados e sem falhas visuais observadas.
 
-### TXT/Canva deriva de uma versão guardada — 2026-10-19
+### Prompt TXT deriva de uma versão guardada — 2026-10-24
 
 A exportação TXT usa o snapshot selecionado e exclui contactos, referências de
-reserva e notas internas. Não altera o estado dos PDFs DMC. O Canva produz uma
-entrega independente sujeita à revisão do curador; atualizar o TXT não atualiza a
-instalação do plugin nem substitui automaticamente um PDF publicado.
-
-O pacote-fonte Canva 0.4.1 aceita os contratos TXT 1.1.0 e 1.0.0. A versão
-instalada deve ser confirmada no anfitrião antes de importar outro ZIP; uma
-atualização conserva o pacote anterior para rollback e só é aceite depois de uma
-proposta de teste completa. Rever o repositório não atualiza a instalação remota.
+reserva e notas internas. Não altera o estado dos PDFs DMC. O contrato
+`blu-roteiro-prompt/1.0.0` é neutro quanto à ferramenta de destino; qualquer
+documento derivado permanece sujeito à revisão do curador e não substitui
+automaticamente um PDF publicado.
 
 Fotografias só podem integrar entregas depois de autorização, licença e créditos
 serem documentados.

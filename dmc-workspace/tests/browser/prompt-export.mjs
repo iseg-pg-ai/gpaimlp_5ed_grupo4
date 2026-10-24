@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { initialConfirmation } from "../../src/lib/activity-confirmation.ts";
 
 const base = process.env.PORTAL_URL ?? "http://127.0.0.1:3001";
-const output = new URL("../../../.tools/canva-smoke/", import.meta.url);
+const output = new URL("../../../.tools/prompt-smoke/", import.meta.url);
 mkdirSync(output, { recursive: true });
 const browser = await launchBrowser();
 try {
@@ -26,7 +26,7 @@ try {
     reference: "PRIVATE_BOOKING",
     notes: "PRIVATE_NOTE",
   });
-  const tripId = `canva-smoke-${Date.now()}`;
+  const tripId = `prompt-smoke-${Date.now()}`;
   const save = async (content, baseVersion) => {
     const response = await context.request.post(`${base}/api/versions`, {
       data: { tripId, snapshot: content, reason: "generated", baseVersion },
@@ -41,9 +41,9 @@ try {
   assert.equal(firstResponse.status(), 200);
   assert.match(firstResponse.headers()["content-type"], /text\/plain; charset=utf-8/);
   assert.match(firstResponse.headers()["cache-control"], /no-store/);
-  assert.match(firstResponse.headers()["content-disposition"], /_Canva_FR\.txt/);
+  assert.match(firstResponse.headers()["content-disposition"], /_Prompt_FR\.txt/);
   const original = await firstResponse.text();
-  assert.match(original, /DAHDpPXVRsU/);
+  assert.match(original, /blu-roteiro-prompt\/1\.0\.0/);
   assert.doesNotMatch(original, /PRIVATE_/);
   assert.equal(await (await context.request.get(url(999))).status(), 404);
   assert.equal(await (await context.request.get(url(first.version, "invalid"))).status(), 400);
@@ -94,15 +94,16 @@ try {
       .locator("aside:visible button")
       .filter({ hasText: changed.brief.customerName })
       .click();
-    const button = page.getByTestId("export-canva-prompt");
+    const button = page.getByTestId("export-prompt-txt");
     await button.waitFor({ state: "visible" });
     const downloadPromise = page.waitForEvent("download");
     await button.click();
     const download = await downloadPromise;
-    assert.match(download.suggestedFilename(), /_Canva_FR\.txt$/);
+    assert.match(download.suggestedFilename(), /_Prompt_FR\.txt$/);
     const text = readFileSync(await download.path(), "utf8");
     const content = JSON.parse(text.slice(text.indexOf("\n\n{\n") + 2));
-    assert.equal(content.formato, "blu-roteiro-canva/1.1.0");
+    assert.equal(content.formato, "blu-roteiro-prompt/1.0.0");
+    assert.equal("modeloVisual" in content, false);
     assert.equal(content.dias[0].atividades[0].titulo, changed.itinerary[0].items[0].title);
     assert.equal(content.codigoIdioma, "fr");
     assert.equal(content.versao.numero, second.version);
@@ -110,7 +111,7 @@ try {
     assert.equal(await page.locator('[data-status="exported"]').count(), 0);
     await button.waitFor({ state: "visible" });
     await page.waitForFunction(
-      () => !document.querySelector('[data-testid="export-canva-prompt"]').disabled,
+      () => !document.querySelector('[data-testid="export-prompt-txt"]').disabled,
     );
     assert.equal(
       await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),

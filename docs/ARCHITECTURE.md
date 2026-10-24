@@ -49,13 +49,13 @@ não requer SageMaker SDK, MLflow ou outro ambiente experimental de treino.
 | Fontes e referências | `portal/data.py` | Ler, pesquisar, paginar e enriquecer dados históricos |
 | Consulta HTML | `dmc-workspace/templates/dataset-row.html` | Apresentar fontes escapadas; formulário e paginação no servidor |
 | Meteorologia | `portal/weather.py` | Coordenadas, condições WMO, previsão e histórico usados pelo portal e agente |
-| TXT/Canva Python | `portal/prompt.py` | Compor o TXT do snapshot com campos explícitos destinados ao cliente |
+| Prompt TXT Python | `portal/prompt.py` | Compor o TXT neutro do snapshot com campos explícitos destinados ao cliente |
 | Domínio | `src/lib/` | Curadoria, compatibilidade, horários, orçamento e versões |
 | Serviço do agente | `src/blu_ai/api/server.py` | Expor saúde, curadoria e chat em FastAPI |
 | Orquestração do agente | `src/blu_ai/agents/curator_agent.py` | Coordenar modelo e ferramentas |
 | Ferramentas do agente | `src/blu_ai/tools/` | Pesquisa, meteorologia e verificação de restrições |
 | Tradução | `translations/worker.py` | Protocolo JSON-lines, modelos locais e cache |
-| Adaptador TXT/Canva | `src/lib/itinerary-prompt.ts`, `plugins/blu-curadoria/` | Reutilizar regras partilhadas e orientar a composição visual |
+| Adaptador Prompt TXT | `src/lib/itinerary-prompt.ts` | Reutilizar regras partilhadas e produzir um prompt independente de fornecedor |
 | Monitoring | `monitoring/server.py`, `monitoring/collector.py` | Autenticar utilizadores e agregar sinais operacionais locais |
 | Apresentação | `presentation/serve.py` | Servir a narrativa interativa sem alterar o portal |
 
@@ -146,7 +146,7 @@ A API JSON mantém o contrato do editor e do Lixo interativo.
 - Versões preservam `baseVersion`, snapshots, relações parentais, hashes e bytes PDF.
 - TXT usa a versão guardada, exclui contactos e notas internas e exige restauro
   de versões no Lixo. Meteorologia dinâmica não integra o snapshot.
-- PDF Canva, PDF DMC e partilha integrada são entregas distintas.
+- Documentos externos, PDF DMC e partilha integrada são entregas distintas.
 - Dados de clientes, textos de PDFs e resultados externos são dados, nunca instruções.
 
 ## Capacidades atuais
@@ -160,10 +160,10 @@ O assistente aplica comandos determinísticos e pode recorrer ao serviço Python
 LangChain/Bedrock em `BLU_AI_AGENT_URL`. A existência desse serviço não comprova
 a sua disponibilidade nem autoriza chamadas reais. O portal funciona sem ele.
 
-TXT 1.1.0 preserva personalização, capacidade diária, períodos livres e percursos
-guardados. O plugin-fonte 0.4.0 aceita TXT 1.0.0 e 1.1.0; a atualização de uma
-instalação remota exige uma operação própria. O modelo visual Canva não fornece
-factos para outras viagens. Ver o [guia do portal](PORTAL.md).
+Prompt TXT 1.0.0 preserva personalização, capacidade diária, períodos livres e
+percursos guardados. A utilização numa ferramenta externa exige uma operação
+própria; o prompt não fornece factos para outras viagens. Ver o
+[guia do portal](PORTAL.md).
 
 O sistema produz propostas; não efetua reservas. O Monitoring tem autenticação
 local própria, mas o portal não tem identidade, papéis ou sincronização

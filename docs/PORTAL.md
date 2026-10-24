@@ -239,28 +239,21 @@ com autorização documentada. A introdução de fotografias fica dependente des
 materiais e respetivos créditos. A decoração geométrica da capa é desenhada
 diretamente no PDF.
 
-## TXT para Canva
+## Prompt TXT
 
-O contrato atual é `blu-roteiro-canva/1.1.0`; o plugin local 0.4.1 aceita também
-TXT 1.0.0. O idioma escolhido aplica-se ao TXT e aos PDFs.
+O contrato atual é `blu-roteiro-prompt/1.0.0`. O idioma escolhido aplica-se ao
+prompt e aos PDFs.
 
 1. Rever o roteiro e escolher o idioma do cliente.
-2. Clicar **Exportar TXT para Canva**. O portal guarda uma versão antes do download.
-   As versões anteriores também têm ligação TXT no histórico.
-3. Abrir [BLU | Roteiros no Canva](https://chatgpt.com/plugins/Plugin_600e0d208a74819191cafc6c69a90579)
-   e anexar o TXT. A ligação ao Canva deve estar autorizada.
-4. Rever a composição numa cópia do
-   [modelo BLU](https://canva.link/5u8zxudd1vkcbth), mantendo o original intacto.
-5. Aprovar a pré-visualização e exportar o PDF com as ferramentas disponíveis no
-   Canva; caso não exista exportação na integração, usar o editor Canva.
+2. Clicar **Exportar TXT**. O portal guarda uma versão antes do download.
+   As versões anteriores também disponibilizam o respetivo prompt.
+3. Rever o TXT antes de o usar numa ferramenta externa autorizada.
 
-O TXT contém instruções e dados JSON da versão guardada, não um PDF nem uma
-tradução já realizada. O plugin recebe a orientação do idioma e compõe o texto.
-Mantém preços, moedas, restrições e pendências; exclui contactos, referências de
-reserva e notas internas, mas inclui o nome do cliente. A partilha é manual.
-Descarregar TXT não altera os PDFs persistidos nem o estado de exportação PDF.
-O visual segue LISBON IN PERSPECTIVE (672 x 1056), com os PDFs atuais como base
-de estrutura. Os exemplos do modelo não são dados da nova proposta.
+O ficheiro contém instruções neutras e dados JSON da versão guardada. Não está
+associado a uma aplicação, integração ou modelo visual. Mantém preços, moedas,
+restrições e pendências; exclui contactos, referências de reserva e notas
+internas, mas inclui o nome do cliente. Descarregar o TXT não altera os PDFs
+persistidos nem o estado de exportação PDF.
 
 O histórico global de versões também oferece TXT por idioma. Versões no Lixo
 devem ser restauradas antes da exportação. O TXT inclui períodos livres,
@@ -268,12 +261,10 @@ personalização estruturada, capacidade diária e resumos de deslocações guar
 As rotas continuam estimativas sujeitas a revisão; a meteorologia consultada
 dinamicamente não pertence ao snapshot e não é incluída no TXT.
 
-A partilha integrada continua a entregar o PDF DMC da versão selecionada.
-O PDF Canva é uma entrega independente aprovada pelo curador; não substitui
-artefactos históricos, não atualiza ligações públicas e não marca a versão
-como PDF exportado no portal. Alterar o roteiro exige exportar a nova versão
-antes de adaptar a composição Canva. Atualizar instruções do plugin exige
-reconstruir/importar o pacote; anexar um novo TXT não atualiza a instalação.
+A partilha integrada continua a entregar o PDF DMC da versão selecionada. Um
+documento criado externamente a partir do prompt não substitui artefactos
+históricos, não atualiza ligações públicas e não marca a versão como PDF exportado
+no portal. Alterar o roteiro exige exportar novamente o prompt da versão correta.
 
 ## Idiomas
 
@@ -402,8 +393,8 @@ JavaScript. Após o POST, o histórico é recarregado; erros aparecem no própri
 histórico. Os formulários exigem origem válida. A API JSON e o restauro no Lixo
 interativo continuam disponíveis.
 
-Em `/exports`, escolher o idioma e carregar em **Descarregar PDFs** ou **TXT para
-Canva**. O formulário transmite versão, idioma e formato sem estado React e
+Em `/exports`, escolher o idioma e carregar em **Descarregar PDFs** ou **Exportar
+TXT**. O formulário transmite versão, idioma e formato sem estado React e
 funciona sem JavaScript. O ZIP preserva os PDFs da versão; o TXT continua a
 excluir notas internas e contactos. PDF traduzido requer os modelos locais.
 
@@ -415,8 +406,8 @@ filtros. O formulário, a paginação e os detalhes funcionam sem JavaScript.
 A tradução da interface continua disponível quando JavaScript está ativo.
 
 A pesquisa e o enriquecimento de fontes usam `portal/data.py`; a composição
-TXT/Canva usa `portal/prompt.py`. Ambos usam apenas a biblioteca
-padrão Python. O portal usa `BLU_PYTHON`, o ambiente `.venv` ou o Python do sistema,
+Prompt TXT usa `portal/prompt.py`. Estes módulos usam apenas a biblioteca padrão
+Python. O portal usa `BLU_PYTHON`, o ambiente `.venv` ou o Python do sistema,
 por esta ordem. Não é necessário iniciar o agente ou outro servidor. Os registos
 são renderizados pelo template `dmc-workspace/templates/dataset-row.html`, com
 escaping das fontes; valores vazios aparecem como «—».

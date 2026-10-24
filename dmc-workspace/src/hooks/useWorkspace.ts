@@ -250,7 +250,7 @@ export function useWorkspace() {
       link.href = url;
       link.download =
         response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ??
-        (format === "prompt" ? "roteiro-canva.txt" : "roteiro.zip");
+        (format === "prompt" ? "roteiro-prompt.txt" : "roteiro.zip");
       document.body.appendChild(link);
       link.click();
       link.remove();

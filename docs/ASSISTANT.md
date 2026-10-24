@@ -80,7 +80,7 @@ Não configurar segredos no Git. O portal chama o planeador por processo local.
 ## Exportação e validação
 
 PDF e TXT continuam a usar os snapshots e o histórico existentes. O TXT preserva
-o formato atual de instruções para o Canva, com indicação do idioma escolhido;
+o formato atual do Prompt TXT, com indicação do idioma escolhido;
 não foi transformado numa tradução integral do ficheiro.
 
 Testes locais usam mocks do fornecedor e viagens temporárias, sem chamadas pagas.

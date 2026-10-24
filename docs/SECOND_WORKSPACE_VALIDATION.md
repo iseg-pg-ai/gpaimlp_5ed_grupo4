@@ -411,6 +411,13 @@ fonte real, sem skips ou falhas. Esta evidência valida o renderer e a configura
 a inspeção visual e semântica de um PDF produzido pela interface continua
 necessária para concluir a prioridade de entrega.
 
+O Portal exportou também um TXT com formato de prompt 1.4.0 e o contrato então
+vigente. A validação local confirmou idioma `zh`, oito dias,
+versão e hash de snapshot válidos e ausência de chaves de contacto, email,
+telefone, morada, referência de reserva ou notas internas. O formato do prompt não
+identifica versões de ferramentas externas. A integração específica foi depois
+removida; o Portal conserva apenas o contrato neutro `blu-roteiro-prompt/1.0.0`.
+
 Esta instalação requer rede apenas durante a preparação. O runtime de tradução
 continua local e não envia textos de clientes para um fornecedor externo. A
 validação real dos modelos e do PDF mandarim pertence à prioridade de entrega ao

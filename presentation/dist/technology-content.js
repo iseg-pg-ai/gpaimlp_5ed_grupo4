@@ -65,7 +65,7 @@ window.BluTechnologyContent = [
     category: "SQLITE / DOCUMENTOS",
     title: "Quatro estados, quatro lugares.",
     technologies:
-      "SQLite · localStorage · SHA-256 · PDFKit ^0.20.2 · TXT/Canva",
+      "SQLite · localStorage · SHA-256 · PDFKit ^0.20.2 · Prompt TXT",
     role: "O catálogo operacional guarda revisões. O warehouse publica uma entrega. Rascunhos pertencem ao navegador. Versões e PDFs pertencem ao armazenamento do servidor.",
     example:
       "O pedido de gravação transporta baseVersion. Se a base estiver desatualizada, o servidor rejeita a escrita em vez de sobrescrever a versão atual.",
@@ -80,7 +80,7 @@ window.BluTechnologyContent = [
       ],
       [
         "Saídas",
-        "PDFKit compõe o PDF DMC; ZIP reúne documentos. O TXT parte do snapshot guardado e exclui contactos e notas internas; a composição Canva é independente.",
+        "PDFKit compõe o PDF DMC; ZIP reúne documentos. O Prompt TXT parte do snapshot guardado, exclui contactos e notas internas e é independente de fornecedor.",
       ],
       [
         "Fronteira operacional",

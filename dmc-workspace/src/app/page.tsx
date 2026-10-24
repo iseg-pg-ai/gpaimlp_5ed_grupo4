@@ -194,7 +194,7 @@ export default function WorkspacePage() {
                                 `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=prompt&locale=${active.clientLanguage ?? clientLanguage}`,
                               )}
                             >
-                              <T text="TXT para Canva" source="pt" />
+                              <T text="Exportar TXT" source="pt" />
                             </a>
                           </div>
                         ))}

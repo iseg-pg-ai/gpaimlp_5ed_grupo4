@@ -367,7 +367,7 @@ ranking sem revisão.
 O agente pode preparar:
 
 - resumo da proposta;
-- TXT para Canva;
+- Prompt TXT;
 - PDF e variantes linguísticas;
 - email ou texto de partilha;
 - lista de pendências antes da entrega.

@@ -1,4 +1,4 @@
-"""Exportação TXT/Canva do snapshot; apenas os campos destinados ao cliente."""
+"""Exportação Prompt TXT do snapshot; apenas campos destinados ao cliente."""
 import json
 
 
@@ -26,12 +26,10 @@ def render_prompt(payload: dict) -> str:
     snapshot, meta, budget = payload["snapshot"], payload["meta"], payload["budget"]
     brief = snapshot["brief"]
     proposal = {
-        "formato": "blu-roteiro-canva/1.1.0",
+        "formato": "blu-roteiro-prompt/1.0.0",
         "versao": pick(meta, {"viagem": "tripId", "numero": "version", "criadaEm": "createdAt", "hashSnapshot": "snapshotHash"}),
         "estado": "Proposta preliminar para revisão do curador",
         "idiomaSaida": payload["languageName"], "codigoIdioma": payload["locale"],
-        "modeloVisual": {"url": "https://canva.link/5u8zxudd1vkcbth", "designId": "DAHDpPXVRsU",
-                         "titulo": "LISBON IN PERSPECTIVE", "baseConteudo": "PDFs de proposta do DMC Workspace"},
         **pick(brief, {"cliente": "customerName", "destino": "destination"}),
         "datas": pick(brief, {"inicio": "startDate", "fim": "endDate"}),
         "participantes": pick(brief, {"adultos": "adults", "criancas": "children"}),

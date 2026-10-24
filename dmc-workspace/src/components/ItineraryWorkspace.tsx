@@ -416,7 +416,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               onClick={onExportPrompt}
               disabled={isExporting}
               className="min-h-11 text-sm"
-              data-testid="export-canva-prompt"
+              data-testid="export-prompt-txt"
               style={{ minHeight: 44 }}
             >
               <FileText aria-hidden="true" className="size-4" />

@@ -131,7 +131,7 @@ um levantamento de alternativas ou um benchmark, que não foi realizado aqui.
 | Análise | Streamlit e Plotly; Observatório nativo em React/SVG | Exploração da entrega publicada com interfaces distintas |
 | Agente opcional | FastAPI, LangChain/LangGraph, boto3 e AWS Bedrock | Serviço de assistência, modelo de linguagem e ferramentas de domínio |
 | Tradução opcional | Argos Translate e CTranslate2 | Tradução local de conteúdos exportados, com proteção de números |
-| Entregas | PDFKit e composição TXT/Canva | Produção de documentos e orientação de uma composição visual independente |
+| Entregas | PDFKit e Prompt TXT | Produção de documentos e exportação estruturada independente de fornecedor |
 | Verificação | unittest, node:test e Playwright | Testes de regras, persistência, integração e interface |
 | Apresentação independente | HTML, CSS, JavaScript e servidor Python padrão | Narrativa demonstrativa na porta 3003, sem dependências de execução do portal |
 
@@ -340,7 +340,7 @@ Demonstração sugerida, com um caso previamente preparado:
 3. **Revisão:** mostrar uma edição suportada ou uma atividade protegida,
    distinguindo comandos determinísticos de eventuais chamadas ao agente.
 4. **Entrega:** abrir uma versão de demonstração e o seu PDF, mostrando a ligação
-   entre snapshot e documento. Explicar TXT/Canva como composição independente.
+   entre snapshot e documento. Explicar o Prompt TXT como exportação independente.
 
 O Observatório nativo tem Panorama, Explorar oferta, Destinos, Preços, Histórico
 e Qualidade; escolher apenas as vistas relevantes para a história. A aplicação

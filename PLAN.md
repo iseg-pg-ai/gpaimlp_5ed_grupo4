@@ -27,12 +27,6 @@ Implementações e validações concluídas permanecem no histórico Git e em
   privacidade, conjunto de casos e limiares de aceitação. Os testes automáticos
   continuam a usar modelos simulados por defeito.
 
-## Prioridade 3 — Entrega ao cliente
-
-- [ ] Numa sessão Canva autorizada, validar uma entrega real completa: TXT →
-  cópia Canva → revisão humana → PDF final. Registar a versão instalada antes de
-  importar o pacote-fonte 0.4.1 e conservar o pacote anterior para rollback.
-
 ## Prioridade 4 — Operação multiutilizador e cloud
 
 - [ ] Definir o ambiente-alvo, utilizadores, identidade, papéis e permissões.

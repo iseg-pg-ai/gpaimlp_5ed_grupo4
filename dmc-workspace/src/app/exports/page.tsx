@@ -123,7 +123,7 @@ export default async function ExportHistory({
                 value="prompt"
                 className="underline cursor-pointer"
               >
-                <T text="TXT para Canva" source="pt" />
+                <T text="Exportar TXT" source="pt" />
               </button>
             </form>
             <a
