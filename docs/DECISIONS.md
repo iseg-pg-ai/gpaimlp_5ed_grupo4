@@ -189,6 +189,11 @@ reserva e notas internas. Não altera o estado dos PDFs DMC. O contrato
 documento derivado permanece sujeito à revisão do curador e não substitui
 automaticamente um PDF publicado.
 
+O percurso real foi validado no segundo workspace em 24 de outubro de 2026. O
+portal descarregou o prompt com a identificação e versão esperadas, instruções
+neutras e o bloco JSON da proposta, sem configuração de fornecedor ou modelo
+visual.
+
 Fotografias só podem integrar entregas depois de autorização, licença e créditos
 serem documentados.
 

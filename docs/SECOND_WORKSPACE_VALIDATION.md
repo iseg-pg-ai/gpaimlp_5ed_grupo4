@@ -418,6 +418,20 @@ telefone, morada, referência de reserva ou notas internas. O formato do prompt 
 identifica versões de ferramentas externas. A integração específica foi depois
 removida; o Portal conserva apenas o contrato neutro `blu-roteiro-prompt/1.0.0`.
 
+Depois dessa remoção, o ciclo integral voltou a atingir 100%. Uma operação da
+outbox já publicada no S3 tinha sido restaurada com timestamps de transporte
+diferentes; o reenvio passou a reconhecer o mesmo conteúdo operacional como
+idempotente, mantendo a recusa de payloads realmente diferentes. No portal, a
+exportação real apresentou `BLU | ROTEIRO — PROMPT TXT`, versão de prompt 1.0.0 e
+o contrato `blu-roteiro-prompt/1.0.0`, sem associação a fornecedor ou modelo
+visual.
+
+Neste Code Editor, a porta 3001 apareceu no painel **Ports** como encaminhamento
+local `127.0.0.1:3001`. O portal funcionou nesse endereço; o URL externo construído
+com `/codeeditor/default/ports/3001/` devolveu `Not found`. Esta diferença de
+encaminhamento da sessão não invalida o serviço nem a exportação, mas confirma que
+um URL SageMaker calculado não deve ser apresentado como deployment permanente.
+
 Esta instalação requer rede apenas durante a preparação. O runtime de tradução
 continua local e não envia textos de clientes para um fornecedor externo. A
 validação real dos modelos e do PDF mandarim pertence à prioridade de entrega ao
@@ -436,5 +450,7 @@ cliente e não deve ser inferida apenas pelo arranque das interfaces.
 - [x] Acesso real ao Bedrock validado.
 - [x] Dados materializados sem cópia do primeiro workspace.
 - [x] Cinco serviços confirmados online.
-- [x] Quatro interfaces abertas através dos URLs AWS.
+- [x] Quatro interfaces abertas; o portal foi validado no encaminhamento local
+  atribuído pelo segundo Code Editor.
 - [x] Login do Monitoring e fluxo funcional verificados.
+- [x] Exportação Prompt TXT neutra validada através da interface.
