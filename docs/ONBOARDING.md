@@ -26,9 +26,20 @@ Code Editor apenas a parte terminada em `/codeeditor/default`. Não incluir
 python3 -m pip install --user uv==0.12.19
 export PATH="$HOME/.local/bin:$PATH"
 uv sync --locked --all-groups
+.venv/bin/python translations/setup_models.py
 .venv/bin/python scripts/setup_workspace.py \
   --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
 ```
+
+Os modelos Argos são artefactos locais separados das dependências Python. O
+comando `translations/setup_models.py` exige rede durante a preparação, mas a
+tradução posterior é local. Se o Portal já estiver em execução quando os modelos forem instalados,
+reiniciar o serviço do Portal para substituir o worker anterior.
+
+PDFs em mandarim exigem ainda uma fonte CJK local. Configurar no `.env`
+`BLU_PDF_CJK_FONT` com um caminho absoluto e, para ficheiros TTC,
+`BLU_PDF_CJK_FACE`. Estes valores são carregados pelos launchers; a fonte e o
+`.env` permanecem fora do Git.
 
 O assistente:
 

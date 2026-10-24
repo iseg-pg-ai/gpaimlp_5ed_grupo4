@@ -177,7 +177,9 @@ fallback são identificadas como não otimizadas.
 A tradução opcional usa modelos locais e não envia conteúdo de clientes a um
 fornecedor externo. Números, preços, horários, moedas e identificadores são
 protegidos; uma alteração não recuperável falha explicitamente. Mandarim exige uma
-fonte CJK configurada para PDF.
+fonte CJK configurada para PDF. Em 24 de outubro de 2026, Noto Sans CJK SC foi
+validada num segundo workspace com modelos reais, teste do renderer e exportação
+pela interface, preservando valores estruturados e sem falhas visuais observadas.
 
 ### TXT/Canva deriva de uma versão guardada — 2026-10-19
 

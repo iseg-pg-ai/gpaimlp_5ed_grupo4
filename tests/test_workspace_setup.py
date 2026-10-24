@@ -11,6 +11,14 @@ from scripts import setup_workspace as setup
 
 
 class WorkspaceSetupTest(unittest.TestCase):
+    def test_launcher_loads_documented_pdf_font_configuration(self):
+        root = Path(__file__).resolve().parents[1]
+        launcher = (root / "scripts/just_blu_it.sh").read_text(encoding="utf-8")
+        example = (root / ".env.example").read_text(encoding="utf-8")
+        for name in ("BLU_PDF_FONT", "BLU_PDF_CJK_FONT", "BLU_PDF_CJK_FACE"):
+            self.assertIn(name, launcher)
+            self.assertIn(name, example)
+
     def test_check_only_does_not_require_materialized_data(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

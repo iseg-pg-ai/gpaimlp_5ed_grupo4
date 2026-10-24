@@ -29,9 +29,6 @@ Implementações e validações concluídas permanecem no histórico Git e em
 
 ## Prioridade 3 — Entrega ao cliente
 
-- [ ] Instalar/configurar uma fonte CJK, inspecionar visualmente o PDF mandarim e
-  repetir a inspeção semântica com traduções reais. Os layouts PT/EN/ES/FR/DE já
-  foram inspecionados com conteúdo sintético; testes estruturais passam.
 - [ ] Numa sessão Canva autorizada, validar uma entrega real completa: TXT →
   cópia Canva → revisão humana → PDF final. Registar a versão instalada antes de
   importar o pacote-fonte 0.4.1 e conservar o pacote anterior para rollback.

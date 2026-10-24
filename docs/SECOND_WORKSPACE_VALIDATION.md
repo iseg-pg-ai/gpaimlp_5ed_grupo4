@@ -368,6 +368,54 @@ No domínio próprio do segundo workspace foram confirmados:
 A porta 8000 permaneceu técnica e não foi aberta como interface. O ensaio funcional
 e o critério de onboarding ficaram concluídos com a exceção IAM formalizada.
 
+Ao testar posteriormente a exportação traduzida, o portal indicou que a tradução
+local estava indisponível. O grupo Python estava instalado, mas os modelos Argos,
+que são artefactos locais separados, ainda não tinham sido descarregados. Preparar
+esses modelos no workspace com:
+
+```bash
+.venv/bin/python translations/setup_models.py
+```
+
+Validar o protocolo com conteúdo sintético e com todos os campos obrigatórios:
+
+```bash
+printf '%s\n' \
+  '{"id":"smoke-pt-en","target":"en","items":[{"source":"pt","text":"Chegada ao hotel às 15:30."}]}' \
+  | .venv/bin/python translations/worker.py
+```
+
+Os seis modelos foram instalados. Um primeiro pedido de diagnóstico omitiu o campo
+obrigatório `id` e devolveu corretamente `TRANSLATION_FAILED`; esse resultado não
+foi uma falha do modelo. O pedido corrigido deve devolver o mesmo identificador e
+um elemento em `texts`, preservando `15:30`.
+
+O pedido corrigido devolveu `Arrival at the hotel 15:30.`, com o identificador
+esperado e o horário preservado. Dependências, modelos, protocolo e proteção
+numérica ficaram assim comprovados no segundo workspace. Falta confirmar a mesma
+operação através da interface do Portal.
+
+O Portal ainda conservava em memória um worker iniciado antes da instalação dos
+modelos. Depois de parar apenas o serviço da porta 3001 e executar `just blu up`,
+a tradução na interface ficou disponível. Um refresh do navegador, por si só, não
+reinicia processos do servidor.
+
+Para o PDF mandarim foi instalada localmente Noto Sans CJK. O ficheiro TTC inclui
+faces JP, KR, SC, TC, HK e respetivas variantes monoespaçadas; foi selecionada
+`NotoSansCJKsc-Regular`, correspondente ao chinês simplificado. A fonte permanece
+em `.tools/`, fora do Git, e deve ser configurada através de
+`BLU_PDF_CJK_FONT` e `BLU_PDF_CJK_FACE`.
+
+O teste dedicado `Mandarin uses the same layout with a CJK font` passou com a
+fonte real, sem skips ou falhas. Esta evidência valida o renderer e a configuração;
+a inspeção visual e semântica de um PDF produzido pela interface continua
+necessária para concluir a prioridade de entrega.
+
+Esta instalação requer rede apenas durante a preparação. O runtime de tradução
+continua local e não envia textos de clientes para um fornecedor externo. A
+validação real dos modelos e do PDF mandarim pertence à prioridade de entrega ao
+cliente e não deve ser inferida apenas pelo arranque das interfaces.
+
 ## Evidência
 
 - [x] Clone independente concluído.

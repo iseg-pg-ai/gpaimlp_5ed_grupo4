@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 if [ -f "$ROOT/.env" ]; then
     while IFS='=' read -r key value; do
         case "$key" in
-            BLU_BACKUP_DIR|BLU_BACKUP_S3_BUCKET|BLU_BACKUP_S3_PREFIX|BLU_BACKUP_S3_KMS_KEY_ID|BLU_DATA_S3_BUCKET|BLU_ENVIRONMENT|AWS_REGION|AWS_DEFAULT_REGION)
+            BLU_BACKUP_DIR|BLU_BACKUP_S3_BUCKET|BLU_BACKUP_S3_PREFIX|BLU_BACKUP_S3_KMS_KEY_ID|BLU_DATA_S3_BUCKET|BLU_ENVIRONMENT|BLU_PDF_FONT|BLU_PDF_CJK_FONT|BLU_PDF_CJK_FACE|AWS_REGION|AWS_DEFAULT_REGION)
                 if [ -z "${!key+x}" ]; then
                     export "$key=$value"
                 fi

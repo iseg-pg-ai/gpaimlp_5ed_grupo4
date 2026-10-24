@@ -282,11 +282,12 @@ textos livres dos PDFs são traduzidos localmente. Para mandarim, pode ser neces
 configurar `BLU_PDF_CJK_FONT` e, para ficheiros TTC, `BLU_PDF_CJK_FACE`.
 
 Em 2026-10-24 foram renderizadas e inspecionadas a capa e uma página interior de
-PDFs sintéticos PT/EN/ES/FR/DE: margens, paginação, rodapé, títulos e linhas de
-voo permaneceram legíveis, sem corte ou sobreposição. Este ensaio confirma o
-layout, não a qualidade semântica de um fornecedor de tradução. O ambiente não
-tem uma fonte CJK; por isso, o PDF mandarim continua bloqueado até configurar
-`BLU_PDF_CJK_FONT` e fazer a inspeção visual correspondente.
+PDFs PT/EN/ES/FR/DE: margens, paginação, rodapé, títulos e linhas de voo
+permaneceram legíveis, sem corte ou sobreposição. No segundo workspace foi também
+instalada Noto Sans CJK, selecionada a face `NotoSansCJKsc-Regular` e validado um
+PDF mandarim traduzido por modelos locais reais. Caracteres, valores estruturados,
+quebras, margens e paginação foram inspecionados sem anomalias. Cada workspace
+novo continua a ter de instalar os modelos e configurar a sua própria fonte CJK.
 
 ## Arquitetura resumida
 
