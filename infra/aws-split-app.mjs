@@ -432,14 +432,8 @@ class IntranetStack extends Stack {
     }
     const domainPrefix = process.env.INTRANET_AUTH_DOMAIN_PREFIX ?? `${projectName}-${environmentName}-intranet-${account.slice(-4)}`;
     if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(domainPrefix)) throw new Error('INTRANET_AUTH_DOMAIN_PREFIX must be lowercase letters, digits and hyphens');
-    const loginDomain = userPool.addDomain('IntranetLogin', { cognitoDomain: { domainPrefix } });
-    // Página de login do Cognito com as cores da intranet (a página por defeito é cinzenta e genérica).
-    const loginStyle = new cognito.CfnUserPoolUICustomizationAttachment(this, 'IntranetLoginStyle', {
-      userPoolId: userPool.userPoolId,
-      clientId: 'ALL',
-      css: '.background-customizable { background-color: #f6f1e8; } .banner-customizable { background-color: #163b45; padding: 18px 0px 18px 0px; } .label-customizable { color: #4b6670; font-weight: 400; } .textDescription-customizable { color: #163b45; font-size: 16px; } .inputField-customizable { border-color: #e2d9c9; border-radius: 6px; color: #163b45; } .inputField-customizable:focus { border-color: #b8893b; } .submitButton-customizable { background-color: #163b45; border-color: #163b45; border-radius: 6px; font-weight: 500; } .submitButton-customizable:hover { background-color: #102f38; border-color: #102f38; } .errorMessage-customizable { color: #a33a32; border-color: #e7bdb8; background-color: #fbf4e4; }',
-    });
-    loginStyle.node.addDependency(loginDomain);
+    // Login gerido (versão 2): permite logótipo e fundo da marca; o texto fica em inglês.
+    const loginDomain = userPool.addDomain('IntranetLogin', { cognitoDomain: { domainPrefix }, managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN });
     const authHost = `${domainPrefix}.auth.${region}.amazoncognito.com`;
 
     const siteBucket = new s3.Bucket(this, 'IntranetSite', {
@@ -490,6 +484,33 @@ class IntranetStack extends Stack {
       refreshTokenValidity: Duration.hours(12),
       preventUserExistenceErrors: true,
     });
+    // Imagens copiadas do site público (logótipo e fotografia do farol) e cores da intranet.
+    const loginAsset = (file, category, extension) => ({ category, extension, colorMode: 'LIGHT', bytes: readFileSync(path.join(infraDir, 'assets/login', file)).toString('base64') });
+    const branding = new cognito.CfnManagedLoginBranding(this, 'IntranetLoginBranding', {
+      userPoolId: userPool.userPoolId,
+      clientId: client.userPoolClientId,
+      returnMergedResources: false,
+      assets: [loginAsset('logo.png', 'FORM_LOGO', 'PNG'), loginAsset('background.jpg', 'PAGE_BACKGROUND', 'JPEG')],
+      settings: {
+        categories: { global: { colorSchemeMode: 'LIGHT' } },
+        components: {
+          pageBackground: { image: { enabled: true }, lightMode: { color: '163b45ff' } },
+          form: {
+            borderRadius: 10,
+            logo: { enabled: true, location: 'CENTER', position: 'TOP', formInclusion: 'IN' },
+            lightMode: { backgroundColor: 'fffdf9ff', borderColor: 'e2d9c9ff' },
+          },
+          primaryButton: {
+            lightMode: {
+              defaults: { backgroundColor: '163b45ff', textColor: 'ffffffff' },
+              hover: { backgroundColor: '102f38ff', textColor: 'ffffffff' },
+              active: { backgroundColor: '102f38ff', textColor: 'ffffffff' },
+            },
+          },
+        },
+      },
+    });
+    branding.node.addDependency(loginDomain);
 
     const fn = new lambda.Function(this, 'IntranetApiHandler', {
       runtime: lambda.Runtime.NODEJS_22_X,
