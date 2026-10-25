@@ -18,7 +18,7 @@ from blu_ai.planner import (
     AgentResponseError, SCHEMA, execute, failure_code, plan_actions,
     tool_schema, validate_plan,
 )
-from blu_ai.providers import OpenAIProvider, ProviderRequestError
+from blu_ai.providers import BedrockProvider, ProviderRequestError
 
 
 def proposal(language="pt"):
@@ -38,7 +38,8 @@ class PlannerTest(unittest.TestCase):
     def test_contract_is_itinerary_only_and_schema_copy_cannot_expand_authority(self):
         expected = {"add_catalog_item", "replace_item", "remove_item", "reschedule_item",
                     "reorder_day", "set_day_capacity", "add_free_period", "set_free_day",
-                    "move_item", "optimize_route", "regenerate_day"}
+                    "move_item", "optimize_route", "update_brief",
+                    "update_pending_confirmation", "regenerate_day"}
         self.assertEqual(set(SCHEMA["x-action-fields"]), expected)
         self.assertEqual(set(SCHEMA["properties"]), {"summary", "actions", "alternatives", "warnings", "requiresConfirmation"})
         before = copy.deepcopy(SCHEMA)
@@ -46,10 +47,13 @@ class PlannerTest(unittest.TestCase):
         schema["properties"]["actions"]["maxItems"] = 99
         self.assertEqual(SCHEMA, before)
         self.assertNotIn("ranking", json.dumps(SCHEMA))
-        self.assertNotIn("briefPatch", json.dumps(SCHEMA))
-        self.assertNotIn("confirmationPatch", json.dumps(SCHEMA))
+        confirmation_fields = set(
+            SCHEMA["properties"]["actions"]["items"]["properties"]
+            ["confirmationPatch"]["properties"]
+        )
+        self.assertEqual(confirmation_fields, {"time", "location", "price", "supplier"})
 
-    def test_all_eleven_actions_accept_exact_fields(self):
+    def test_all_thirteen_actions_accept_exact_fields(self):
         arguments = {
             "add_catalog_item": {"catalogId": "atracoes:new"},
             "replace_item": {"itemId": "atracoes:test", "catalogId": "atracoes:new"},
@@ -58,7 +62,12 @@ class PlannerTest(unittest.TestCase):
             "reorder_day": {"itemIds": ["atracoes:b", "atracoes:a"]},
             "set_day_capacity": {"capacity": 3}, "add_free_period": {"period": "morning"},
             "set_free_day": {}, "move_item": {"itemId": "atracoes:test", "targetDayNumber": 366},
-            "optimize_route": {}, "regenerate_day": {},
+            "optimize_route": {},
+            "update_brief": {"briefPatch": {"budget": 2500, "pace": "Balanced"}},
+            "update_pending_confirmation": {
+                "itemId": "atracoes:test", "confirmationPatch": {"time": "14:30"},
+            },
+            "regenerate_day": {},
         }
         for action, fields in arguments.items():
             with self.subTest(action=action):
@@ -70,8 +79,8 @@ class PlannerTest(unittest.TestCase):
             lambda p: p.update(requiresConfirmation=False),
             lambda p: p.update(language="en"), lambda p: p.update(ranking=[]),
             lambda p: p.update(chainOfThought="segredo"),
-            lambda p: p["actions"][0].update(type="update_brief", briefPatch={"budget": 1}),
-            lambda p: p["actions"][0].update(type="update_pending_confirmation", confirmationPatch={}),
+            lambda p: p["actions"][0].update(
+                type="update_pending_confirmation", confirmationPatch={"contact": "privado"}),
             lambda p: p["actions"][0].pop("itemId"),
             lambda p: p["actions"][0].update(catalogId="extra"),
             lambda p: p["actions"][0].update(dayNumber=True),
@@ -108,7 +117,10 @@ class PlannerTest(unittest.TestCase):
                 client = MagicMock()
                 plan = proposal(language)
                 client.converse.return_value = provider_response(plan)
-                result = plan_actions({"instruction": "Pedido de teste", "context": {"conversationLanguage": language}}, client)
+                result = plan_actions(
+                    {"instruction": "Pedido de teste", "context": {"conversationLanguage": language}},
+                    provider=BedrockProvider(client, "modelo-teste"),
+                )
                 self.assertEqual(result["plan"], plan)
                 self.assertEqual(result["inputTokens"], 12)
                 self.assertNotIn("MARCADOR_PRIVADO", json.dumps(result))
@@ -117,57 +129,88 @@ class PlannerTest(unittest.TestCase):
                 self.assertIn("DADOS NÃO FIÁVEIS", system)
                 self.assertIn("Write summary and warnings in English" if language == "en" else "Escreve summary e warnings em português europeu", system)
                 self.assertEqual(options["inferenceConfig"], {"temperature": 0, "maxTokens": 1800})
-                self.assertEqual(options["toolConfig"]["toolChoice"], {"tool": {"name": "propose_actions"}})
+                self.assertEqual(options["toolConfig"]["toolChoice"], {"auto": {}})
+                self.assertEqual(
+                    {tool["toolSpec"]["name"] for tool in options["toolConfig"]["tools"]},
+                    {"get_trip_context", "get_itinerary", "search_approved_catalog", "propose_actions"},
+                )
 
-    def test_openai_uses_same_contract_without_storing_or_parallel_calls(self):
-        class Response:
-            def raise_for_status(self):
-                return None
-
-            def json(self):
-                return {
-                    "output": [{
-                        "type": "function_call", "name": "propose_actions",
-                        "arguments": json.dumps(proposal()),
-                    }],
-                    "usage": {"input_tokens": 21, "output_tokens": 13},
-                }
-
+    def test_bedrock_reads_authoritative_day_before_proposing_and_sums_usage(self):
+        read = {
+            "stopReason": "tool_use",
+            "output": {"message": {"role": "assistant", "content": [{"toolUse": {
+                "toolUseId": "read-1", "name": "get_itinerary", "input": {"dayNumber": 2},
+            }}]}},
+            "usage": {"inputTokens": 5, "outputTokens": 3},
+        }
+        final = provider_response()
+        final["usage"] = {"inputTokens": 7, "outputTokens": 4}
         client = MagicMock()
-        client.post.return_value = Response()
-        provider = OpenAIProvider(client=client, model_id="modelo-teste")
+        client.converse.side_effect = [read, final]
+        context = {
+            "conversationLanguage": "pt",
+            "brief": {"destination": "Porto"},
+            "itinerary": [
+                {"dayNumber": 1, "items": [{"id": "fora"}]},
+                {"dayNumber": 2, "items": [{"id": "alvo"}]},
+            ],
+            "candidates": [{"dayNumber": 2, "id": "candidato"}],
+        }
         result = plan_actions(
-            {"instruction": "Teste", "context": {"conversationLanguage": "pt"}},
-            provider=provider,
+            {"instruction": "Altera o segundo dia", "context": context},
+            provider=BedrockProvider(client, "modelo-teste"),
         )
-        self.assertEqual(result["plan"], proposal())
-        self.assertEqual(result["provider"], "openai")
-        self.assertEqual(result["modelId"], "modelo-teste")
-        self.assertEqual((result["inputTokens"], result["outputTokens"]), (21, 13))
-        request = client.post.call_args.kwargs["json"]
-        self.assertFalse(request["store"])
-        self.assertFalse(request["parallel_tool_calls"])
-        self.assertEqual(request["tool_choice"], {"type": "function", "name": "propose_actions"})
-        self.assertEqual(request["tools"][0]["parameters"], tool_schema({}))
+        self.assertEqual((result["inputTokens"], result["outputTokens"]), (12, 7))
+        self.assertEqual(client.converse.call_count, 2)
+        first = client.converse.call_args_list[0].kwargs
+        self.assertNotIn("Porto", json.dumps(first["messages"]))
+        second = client.converse.call_args_list[1].kwargs
+        tool_result = second["messages"][-1]["content"][0]["toolResult"]
+        self.assertEqual(tool_result["toolUseId"], "read-1")
+        self.assertEqual(tool_result["content"][0]["json"], {
+            "dayNumber": 2,
+            "itinerary": [{"dayNumber": 2, "items": [{"id": "alvo"}]}],
+        })
+
+    def test_bedrock_can_read_only_sanitized_simulation_feedback(self):
+        read = {
+            "stopReason": "tool_use",
+            "output": {"message": {"role": "assistant", "content": [{"toolUse": {
+                "toolUseId": "feedback-1", "name": "get_trip_context", "input": {},
+            }}]}},
+            "usage": {},
+        }
+        client = MagicMock()
+        client.converse.side_effect = [read, provider_response()]
+        feedback = {"code": "CAPACITY_EXCEEDED", "instruction": "Reduz a carga do dia."}
+        plan_actions({
+            "instruction": "Revê o dia",
+            "context": {"conversationLanguage": "pt", "simulationFeedback": feedback},
+        }, provider=BedrockProvider(client, "modelo-teste"))
+        result = client.converse.call_args_list[1].kwargs["messages"][-1]["content"][0]
+        self.assertEqual(result["toolResult"]["content"][0]["json"], {
+            "simulationFeedback": feedback,
+        })
+
+    def test_bedrock_refuses_unknown_read_tool_and_out_of_range_day(self):
+        for name, arguments in [
+            ("write_database", {}),
+            ("get_itinerary", {"dayNumber": 0}),
+            ("search_approved_catalog", {"dayNumber": "2"}),
+        ]:
+            client = MagicMock()
+            client.converse.return_value = {
+                "stopReason": "tool_use",
+                "output": {"message": {"role": "assistant", "content": [{"toolUse": {
+                    "toolUseId": "bad-1", "name": name, "input": arguments,
+                }}]}},
+                "usage": {},
+            }
+            with self.assertRaises(AgentResponseError):
+                plan_actions({"instruction": "Teste", "context": {}}, client)
 
     def test_provider_selection_is_explicit_and_has_no_fallback(self):
         with patch.dict("os.environ", {"BLU_AGENT_PROVIDER": "unknown"}):
-            with self.assertRaises(AgentConfigurationError):
-                plan_actions({"instruction": "Teste", "context": {}})
-
-    def test_openai_operational_failure_is_normalized_without_provider_message(self):
-        import httpx
-
-        request = httpx.Request("POST", "https://api.openai.com/v1/responses")
-        response = httpx.Response(429, request=request, text="SEGREDO_FORNECEDOR")
-        client = MagicMock()
-        client.post.return_value = response
-        provider = OpenAIProvider(client=client, model_id="modelo-teste")
-        with self.assertRaises(ProviderRequestError) as caught:
-            plan_actions({"instruction": "Teste", "context": {}}, provider=provider)
-        self.assertEqual(failure_code(caught.exception), "AGENT_BUSY")
-        self.assertNotIn("SEGREDO", str(caught.exception))
-        with patch.dict("os.environ", {"BLU_AGENT_PROVIDER": "openai", "OPENAI_MODEL": "", "OPENAI_API_KEY": ""}):
             with self.assertRaises(AgentConfigurationError):
                 plan_actions({"instruction": "Teste", "context": {}})
 
@@ -176,6 +219,7 @@ class PlannerTest(unittest.TestCase):
         factory.return_value.converse.return_value = provider_response()
         with patch.dict("os.environ", {
             "BEDROCK_MODEL_ID": "eu.amazon.nova-pro-v1:0",
+            "BLU_AGENT_PROVIDER": "bedrock",
             "BLU_AGENT_MAX_OUTPUT_TOKENS": "2048",
             "BLU_AGENT_TIMEOUT_SECONDS": "47",
         }):

@@ -26,6 +26,7 @@ import {
   enforceAgentRuntimePolicy,
 } from "@/lib/agent-runtime-policy";
 import { proposalImpact } from "@/lib/assistant-impact";
+import { simulationFeedback } from "@/lib/agent-simulation-feedback";
 import { requestIntent, assertPlanIntent, IntentConflict } from "@/lib/assistant-intent";
 import { syncOperationalState } from "@/lib/operational-s3";
 import {
@@ -183,10 +184,6 @@ export async function POST(request: Request) {
         ? audit.pendingPlan(body.tripId, body.baseVersion, body.pendingRunId, ownerId)
         : undefined,
     };
-    enforceAgentRuntimePolicy(
-      audit,
-      Buffer.byteLength(JSON.stringify({ instruction: body.input, context }), "utf8"),
-    );
     type PlannerResult = {
       plan: AgentPlan;
       provider: string;
@@ -195,23 +192,54 @@ export async function POST(request: Request) {
       inputTokens: number;
       outputTokens: number;
     };
-    const result = await portalRequest<PlannerResult>("agent-plan", "", {
+    const requestBytes = Buffer.byteLength(
+      JSON.stringify({ instruction: body.input, context }),
+      "utf8",
+    );
+    // Reserva no máximo duas chamadas: proposta inicial e uma única correção
+    // após falha determinística sanitizada.
+    enforceAgentRuntimePolicy(audit, requestBytes, 2);
+    let result = await portalRequest<PlannerResult>("agent-plan", "", {
       instruction: body.input,
       context,
     });
-    validatePlan(result.plan);
-    assertPlanIntent(result.plan, intent);
-    if (
-      !["bedrock", "openai"].includes(result.provider) ||
-      typeof result.modelId !== "string" ||
-      !result.modelId ||
-      result.modelId.length > 250 ||
-      ![result.latencyMs, result.inputTokens, result.outputTokens].every(
-        (value) => typeof value === "number" && Number.isFinite(value) && value >= 0,
+    const validateResult = (value: PlannerResult) => {
+      validatePlan(value.plan);
+      assertPlanIntent(value.plan, intent);
+      if (
+        value.provider !== "bedrock" ||
+        typeof value.modelId !== "string" ||
+        !value.modelId ||
+        value.modelId.length > 250 ||
+        ![value.latencyMs, value.inputTokens, value.outputTokens].every(
+          (metric) => typeof metric === "number" && Number.isFinite(metric) && metric >= 0,
+        )
       )
-    )
-      throw new PortalPythonError("AGENT_INVALID_RESPONSE", "Resposta inválida do planeador.");
-    const preview = simulatePlan(snapshot, result.plan, catalog);
+        throw new PortalPythonError("AGENT_INVALID_RESPONSE", "Resposta inválida do planeador.");
+    };
+    validateResult(result);
+    let preview;
+    let alternatives;
+    try {
+      preview = simulatePlan(snapshot, result.plan, catalog);
+      alternatives = resolveAlternatives(snapshot, result.plan, catalog);
+    } catch (error) {
+      const corrected = await portalRequest<PlannerResult>("agent-plan", "", {
+        instruction: body.input,
+        context: { ...context, simulationFeedback: simulationFeedback(error) },
+      });
+      validateResult(corrected);
+      if (corrected.provider !== result.provider || corrected.modelId !== result.modelId)
+        throw new PortalPythonError("AGENT_INVALID_RESPONSE", "Fornecedor mudou durante o pedido.");
+      preview = simulatePlan(snapshot, corrected.plan, catalog);
+      alternatives = resolveAlternatives(snapshot, corrected.plan, catalog);
+      result = {
+        ...corrected,
+        latencyMs: result.latencyMs + corrected.latencyMs,
+        inputTokens: result.inputTokens + corrected.inputTokens,
+        outputTokens: result.outputTokens + corrected.outputTokens,
+      };
+    }
     if (result.plan.actions.some((action) => action.type === "optimize_route")) {
       const warning = message(
         language,
@@ -242,7 +270,6 @@ export async function POST(request: Request) {
         10,
       );
     }
-    const alternatives = resolveAlternatives(snapshot, result.plan, catalog);
     const metadata = {
       provider: result.provider,
       modelId: result.modelId,

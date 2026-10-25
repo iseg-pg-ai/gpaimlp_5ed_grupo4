@@ -39,7 +39,8 @@ def config(enabled=True):
 class NotificationTests(unittest.TestCase):
     def dispatcher(self, runtime: Path, client: FakeSNS, enabled=True):
         environment = {"BLU_MONITORING_SNS_TOPIC_ARN": TOPIC}
-        with patch.dict(os.environ, environment, clear=False):
+        with patch.dict(os.environ, environment, clear=False), patch.dict(
+                os.environ, {"BLU_MONITORING_NOTIFICATIONS_ENABLED": "true" if enabled else "false"}):
             return NotificationDispatcher(runtime, config(enabled), client, "test")
 
     def test_disabled_delivery_does_not_create_external_queue(self):

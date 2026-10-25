@@ -37,9 +37,7 @@ const dataBucketName = required("BLU_DATA_BUCKET_NAME");
 const backupBucketName = required("BLU_BACKUP_BUCKET_NAME");
 const notificationTopicArn = required("BLU_MONITORING_SNS_TOPIC_ARN");
 const agentProvider = process.env.BLU_AGENT_PROVIDER?.trim().toLowerCase() || "bedrock";
-const agentModel = required(
-  agentProvider === "openai" ? "OPENAI_MODEL" : "BEDROCK_MODEL_ID",
-);
+const agentModel = required("BEDROCK_MODEL_ID");
 const agentBudget = required("BLU_AGENT_MONTHLY_BUDGET_USD");
 const agentRates = required("BLU_AGENT_RATES_JSON");
 const agentTimeout = process.env.BLU_AGENT_TIMEOUT_SECONDS?.trim() || "35";
@@ -50,8 +48,8 @@ if (!/^(staging|production)$/.test(environment))
   throw new Error("DEPLOY_ENVIRONMENT must be staging or production");
 if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain))
   throw new Error("BLU_PUBLIC_DOMAIN is invalid");
-if (!["bedrock", "openai"].includes(agentProvider))
-  throw new Error("BLU_AGENT_PROVIDER must be bedrock or openai");
+if (agentProvider !== "bedrock")
+  throw new Error("BLU_AGENT_PROVIDER must be bedrock");
 if (!Number.isFinite(Number(agentBudget)) || Number(agentBudget) <= 0)
   throw new Error("BLU_AGENT_MONTHLY_BUDGET_USD must be positive");
 if (
@@ -242,9 +240,7 @@ class CurationWorkspaceStack extends Stack {
       BLU_MONITORING_NOTIFICATIONS_ENABLED: "true",
       BLU_MONITORING_SNS_TOPIC_ARN: notificationTopicArn,
       BLU_AGENT_PROVIDER: agentProvider,
-      ...(agentProvider === "openai"
-        ? { OPENAI_MODEL: agentModel, BLU_OPENAI_ENABLED: "true" }
-        : { BEDROCK_MODEL_ID: agentModel }),
+      BEDROCK_MODEL_ID: agentModel,
       BLU_AGENT_MONTHLY_BUDGET_USD: agentBudget,
       BLU_AGENT_RATES_JSON: agentRates,
       BLU_AGENT_TIMEOUT_SECONDS: agentTimeout,

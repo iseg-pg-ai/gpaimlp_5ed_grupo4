@@ -274,18 +274,17 @@ externa depende ainda de um endpoint estável fora da máquina observada.
 
 ## Configuração e dependências
 
-### Percurso único e fornecedores do agente — 2026-10-25
+### Percurso único do agente Nova Pro — 2026-10-25
 
 O portal, a fachada HTTP privada e a compatibilidade histórica usam agora o mesmo
 planeador transacional e o contrato de onze ações. A geração autónoma LangGraph
 foi descontinuada porque não tinha viagem, versão-base, pré-visualização nem
 aceitação explícita. O endpoint histórico correspondente responde `410`.
 
-Bedrock Converse e OpenAI Responses são adaptadores de uma interface comum.
-`BLU_AGENT_PROVIDER` escolhe exatamente um fornecedor e nunca existe fallback
-silencioso. O backend volta sempre a validar o `AgentPlan`; os fornecedores não
-recebem ferramentas de escrita. A configuração OpenAI requer modelo e chave no
-servidor e os testes usam um cliente simulado, sem chamadas pagas.
+Amazon Bedrock Converse com Nova Pro é o único fornecedor do agente. Não existe
+fallback silencioso. O backend volta sempre a validar o
+`AgentPlan`; o modelo não recebe ferramentas de escrita. Os testes automáticos
+usam um cliente Bedrock simulado, sem chamadas pagas.
 
 O contexto explícito passou a incluir locais, horas e números de voo de chegada e
 partida, além da ocasião especial. Nome, email, notas livres, contactos e
@@ -456,3 +455,17 @@ horas/mês, 20 GB de EFS e 10 GB de logs. A estimativa bruta de referência é
 121,27 USD/mês, excluindo consumos variáveis e impostos. O domínio ainda não foi
 adquirido; imagem ECR, subdomínio, certificado e DNS são execução da Etapa 3 e
 continuam sujeitos a autorização explícita antes de criarem recursos ou custos.
+
+### O agente usa Nova Pro com ferramentas limitadas — 2026-10-25
+
+O agente ativo permanece no Amazon Bedrock com Nova Pro. O backend fornece apenas
+leituras sobre o contexto autoritativo minimizado e uma operação final de proposta;
+o modelo não recebe acesso a SQL, S3, shell, reservas ou escrita no portal. O
+contrato passou a treze ações, acrescentando alterações permitidas do briefing e
+a preparação de confirmações ainda pendentes.
+
+As regras TypeScript simulam a proposta. Uma falha pode originar uma única nova
+chamada, contendo apenas um código sanitizado e uma instrução genérica. O texto
+bruto não regressa ao modelo, o orçamento reserva as duas chamadas possíveis e a
+segunda falha termina sem alterações. A qualidade semântica continua dependente
+de uma avaliação Nova Pro real, separada e explicitamente autorizada.

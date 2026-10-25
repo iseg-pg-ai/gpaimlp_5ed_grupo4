@@ -2278,5 +2278,85 @@
         }
       ]
     }
+  },
+  {
+    "name": "update_brief_pt",
+    "category": "edicao",
+    "operation": "update_brief",
+    "language": "pt",
+    "request": {
+      "instruction": "Aumenta o orçamento para 2500 EUR.",
+      "context": {
+        "brief": { "destination": "Lisboa", "budget": 2000, "currency": "EUR" },
+        "itinerary": [{ "dayNumber": 1, "items": [] }],
+        "candidates": [],
+        "conversation": [],
+        "conversationLanguage": "pt"
+      }
+    },
+    "expected": {
+      "actions": [{ "type": "update_brief", "dayNumber": 1, "briefPatch": { "budget": 2500 } }],
+      "alternatives": []
+    }
+  },
+  {
+    "name": "update_brief_en",
+    "category": "edicao",
+    "operation": "update_brief",
+    "language": "en",
+    "request": {
+      "instruction": "Increase the budget to EUR 2500.",
+      "context": {
+        "brief": { "destination": "Lisboa", "budget": 2000, "currency": "EUR" },
+        "itinerary": [{ "dayNumber": 1, "items": [] }],
+        "candidates": [],
+        "conversation": [],
+        "conversationLanguage": "en"
+      }
+    },
+    "expected": {
+      "actions": [{ "type": "update_brief", "dayNumber": 1, "briefPatch": { "budget": 2500 } }],
+      "alternatives": []
+    }
+  },
+  {
+    "name": "update_confirmation_pt",
+    "category": "edicao",
+    "operation": "update_pending_confirmation",
+    "language": "pt",
+    "request": {
+      "instruction": "Prepara o horário das 14:30 para a atividade A, sem confirmar a reserva.",
+      "context": {
+        "brief": { "destination": "Lisboa" },
+        "itinerary": [{ "dayNumber": 1, "items": [{ "id": "atracoes:a", "title": "A", "time": "09:30", "locked": false }] }],
+        "candidates": [],
+        "conversation": [],
+        "conversationLanguage": "pt"
+      }
+    },
+    "expected": {
+      "actions": [{ "type": "update_pending_confirmation", "dayNumber": 1, "itemId": "atracoes:a", "confirmationPatch": { "time": "14:30" } }],
+      "alternatives": []
+    }
+  },
+  {
+    "name": "update_confirmation_en",
+    "category": "edicao",
+    "operation": "update_pending_confirmation",
+    "language": "en",
+    "request": {
+      "instruction": "Prepare 14:30 for activity A without confirming the booking.",
+      "context": {
+        "brief": { "destination": "Lisboa" },
+        "itinerary": [{ "dayNumber": 1, "items": [{ "id": "atracoes:a", "title": "A", "time": "09:30", "locked": false }] }],
+        "candidates": [],
+        "conversation": [],
+        "conversationLanguage": "en"
+      }
+    },
+    "expected": {
+      "actions": [{ "type": "update_pending_confirmation", "dayNumber": 1, "itemId": "atracoes:a", "confirmationPatch": { "time": "14:30" } }],
+      "alternatives": []
+    }
   }
 ]

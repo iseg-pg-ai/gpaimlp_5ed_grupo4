@@ -15,6 +15,20 @@ import { AgentAuditStore } from "../src/lib/agent-audit-store.ts";
 import { VersionStore } from "../src/lib/version-store.ts";
 import { agentFailure } from "../src/lib/agent-errors.ts";
 import { proposalImpact } from "../src/lib/assistant-impact.ts";
+import { proposalDiagnostics } from "../src/lib/proposal-diagnostics.ts";
+import { simulationFeedback } from "../src/lib/agent-simulation-feedback.ts";
+
+test("feedback de simulação não devolve texto bruto nem dados do itinerário", () => {
+  const secret = "atividade privada 123";
+  assert.deepEqual(
+    simulationFeedback(new Error(`A proposta excede a capacidade diária: ${secret}`)),
+    {
+      code: "CAPACITY_EXCEEDED",
+      instruction: "Reduz a carga do dia ou pede esclarecimento.",
+    },
+  );
+  assert.ok(!JSON.stringify(simulationFeedback(new Error(secret))).includes(secret));
+});
 
 test("uma resposta inválida do modelo não é apresentada como indisponibilidade AWS", () => {
   assert.equal(agentFailure("AGENT_INVALID_RESPONSE").status, 422);
@@ -124,6 +138,23 @@ test("impacto sem edição não inventa alterações nem chama fornecedores", ()
   assert.deepEqual(proposalImpact(snapshot, structuredClone(snapshot)).changes, []);
 });
 
+test("diagnóstico pré-exportação distingue bloqueios de avisos sem alterar a proposta", () => {
+  const { c, s } = alternativesSetup();
+  const item = s.itinerary[0].items[0];
+  item.time = "Por agendar";
+  item.priceNote = "Por confirmar";
+  s.itinerary[0].dailyCapacity = 0;
+  s.pending = ["Reconfirmar acesso"];
+  const before = JSON.stringify(s);
+  const diagnostics = proposalDiagnostics(s, c);
+  assert.ok(diagnostics.some((value) => value.code === "CAPACITY" && value.severity === "blocker"));
+  assert.ok(diagnostics.some((value) => value.code === "TIME_UNKNOWN"));
+  assert.ok(diagnostics.some((value) => value.code === "CONFIRMATION_PENDING"));
+  assert.ok(diagnostics.some((value) => value.code === "PRICE_UNKNOWN"));
+  assert.ok(diagnostics.some((value) => value.code === "PENDING"));
+  assert.equal(JSON.stringify(s), before);
+});
+
 function alternativesSetup() {
   const brief = {
     ...fixture().brief,
@@ -217,6 +248,72 @@ test("alternativas são resolvidas no catálogo e não modificam o roteiro", () 
   assert.throws(() => resolveAlternatives(s, invalid, c));
   s.itinerary[0].items[0].isLocked = true;
   assert.throws(() => resolveAlternatives(s, p, c), /protegida|confirmada/);
+});
+
+test("Blu propõe campos permitidos do briefing sem alterar dados pessoais", () => {
+  const { c, s } = alternativesSetup();
+  const before = structuredClone(s);
+  const updated = simulatePlan(
+    s,
+    plan([{ type: "update_brief", dayNumber: 1, briefPatch: { budget: 1200 } }]),
+    c,
+  );
+  assert.equal(updated.brief.budget, 1200);
+  assert.equal(updated.brief.customerEmail, before.brief.customerEmail);
+  assert.deepEqual(updated.itinerary, before.itinerary);
+  assert.equal(s.brief.budget, before.brief.budget);
+  assert.throws(() =>
+    validatePlan(
+      plan([
+        {
+          type: "update_brief",
+          dayNumber: 1,
+          briefPatch: { customerEmail: "novo@example.com" },
+        },
+      ]),
+    ),
+  );
+});
+
+test("Blu prepara confirmação pendente sem confirmar nem aceitar campos sensíveis", () => {
+  const { c, s } = alternativesSetup();
+  const item = s.itinerary[0].items[0];
+  const updated = simulatePlan(
+    s,
+    plan([
+      {
+        type: "update_pending_confirmation",
+        dayNumber: 1,
+        itemId: item.id,
+        confirmationPatch: { time: "14:30", location: "Átrio principal" },
+      },
+    ]),
+    c,
+  );
+  const prepared = updated.itinerary[0].items[0];
+  assert.equal(prepared.confirmation.status, "pending");
+  assert.equal(prepared.confirmation.confirmedAt, null);
+  assert.equal(prepared.confirmation.time, "14:30");
+  assert.equal(prepared.confirmation.location, "Átrio principal");
+  assert.equal(prepared.lastModifiedBy, "assistant");
+  assert.equal(s.itinerary[0].items[0].confirmation, undefined);
+  item.isLocked = true;
+  assert.throws(
+    () =>
+      simulatePlan(
+        s,
+        plan([
+          {
+            type: "update_pending_confirmation",
+            dayNumber: 1,
+            itemId: item.id,
+            confirmationPatch: { supplier: "Fornecedor conhecido" },
+          },
+        ]),
+        c,
+      ),
+    /protegida|confirmada/,
+  );
 });
 
 test("o contexto não exclui os últimos dias quando o catálogo tem muitas opções", () => {
@@ -521,14 +618,18 @@ test("regeneração ampla preserva edição manual sem impedir uma remoção Blu
   assert.equal(explicit.itinerary[0].lastModifiedBy, "assistant");
 });
 
-test("schema recusa campos adicionais, funcionalidades adiadas, valores inválidos e mais de oito ações", () => {
+test("schema recusa campos adicionais, campos sensíveis, valores inválidos e mais de oito ações", () => {
   const action = { type: "remove_item", dayNumber: 1, itemId: "a" };
   for (const invalid of [
     { ...plan([]), requestText: "não deve entrar" },
     { ...plan([]), ranking: [] },
-    plan([{ type: "update_brief", dayNumber: 1, briefPatch: { budget: 1 } }]),
     plan([
-      { type: "update_pending_confirmation", dayNumber: 1, itemId: "a", confirmationPatch: {} },
+      {
+        type: "update_pending_confirmation",
+        dayNumber: 1,
+        itemId: "a",
+        confirmationPatch: { contact: "não autorizado" },
+      },
     ]),
     plan([{ ...action, dayNumber: 1.5 }]),
     plan([{ ...action, dayNumber: 0 }]),

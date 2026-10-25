@@ -62,8 +62,7 @@ npm --prefix infra run synth:curation
 Os valores de preço não têm predefinição porque mudam por fornecedor, modelo e
 região. Devem ser copiados da tabela oficial no momento da aprovação. A stack
 recusa orçamento não positivo, timeout fora de 5–120 segundos e uma tabela que
-não contenha o modelo selecionado. OpenAI exige ainda `OPENAI_MODEL`, segredo no
-gestor de segredos e `BLU_OPENAI_ENABLED=true`; não existe fallback automático.
+não contenha o modelo Bedrock selecionado. Não existe fallback automático.
 
 O domínio e certificado não são inventados pela stack. Antes de um deployment é
 necessário criar os registos DNS dos quatro hostnames para o ALB emitido e confirmar

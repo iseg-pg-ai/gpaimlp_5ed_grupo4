@@ -27,6 +27,8 @@
               "set_free_day",
               "move_item",
               "optimize_route",
+              "update_brief",
+              "update_pending_confirmation",
               "regenerate_day"
             ]
           },
@@ -75,6 +77,44 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 366
+          },
+          "briefPatch": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+              "budget": { "type": "integer", "minimum": 1, "maximum": 100000000 },
+              "pace": { "type": "string", "enum": ["Relaxed", "Balanced", "Active"] },
+              "morningPreference": { "type": "string", "maxLength": 100 },
+              "physicalEffort": { "type": "string", "maxLength": 100 },
+              "interests": {
+                "type": "array", "maxItems": 20,
+                "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+              },
+              "exclusions": {
+                "type": "array", "maxItems": 20,
+                "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+              },
+              "mobilityRestrictions": {
+                "type": "array", "maxItems": 20,
+                "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+              },
+              "dietaryRestrictions": {
+                "type": "array", "maxItems": 20,
+                "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+              }
+            }
+          },
+          "confirmationPatch": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+              "time": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+              "location": { "type": "string", "minLength": 1, "maxLength": 500 },
+              "price": { "type": "string", "minLength": 1, "maxLength": 500 },
+              "supplier": { "type": "string", "minLength": 1, "maxLength": 500 }
+            }
           }
         },
         "required": [
@@ -117,6 +157,25 @@
           "itemId",
           "catalogIds"
         ]
+      }
+    },
+    "ranking": {
+      "type": "array",
+      "description": "Ordenação de candidatos elegíveis para revisão. Nunca adiciona atividades.",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dayNumber": { "type": "integer", "minimum": 1, "maximum": 366 },
+          "catalogIds": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+          }
+        },
+        "required": ["dayNumber", "catalogIds"]
       }
     },
     "warnings": {
@@ -171,6 +230,13 @@
       "targetDayNumber"
     ],
     "optimize_route": [],
+    "update_brief": [
+      "briefPatch"
+    ],
+    "update_pending_confirmation": [
+      "itemId",
+      "confirmationPatch"
+    ],
     "regenerate_day": []
   }
 }

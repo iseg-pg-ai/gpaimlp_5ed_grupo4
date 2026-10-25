@@ -277,7 +277,7 @@ EFS por armazenamento e CloudWatch por ingestão/retenção. As páginas oficiai
 
 Cognito para cinco utilizadores fica dentro do patamar gratuito aplicável ao
 acesso direto, mas MFA por SMS pode ter custo próprio. S3, SNS, pedidos API,
-transferência, domínio, Bedrock/OpenAI, restaurações e crescimento acima das
+transferência, domínio, Bedrock, restaurações e crescimento acima das
 hipóteses não integram os 121,27 USD. A estimativa deve ser recalculada no AWS
 Pricing Calculator antes do deployment e comparada depois com Cost Explorer.
 

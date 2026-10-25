@@ -190,8 +190,8 @@ determinística, horários, edição, confirmações manuais, orçamento, versõ
 PDF/ZIP, tradução opcional, partilha e Lixo com restauro. Inclui rotas e
 meteorologia com fallback e uma interface em seis idiomas.
 
-O assistente usa um planeador Python transacional com adaptadores Bedrock ou
-OpenAI e devolve apenas propostas no contrato validado de onze ações. O portal
+O assistente usa um planeador Python transacional com Amazon Bedrock e Nova Pro e
+devolve apenas propostas no contrato validado de treze ações. O portal
 continua a ser a autoridade para simulação, proteções, aceitação e persistência;
 nenhum fornecedor escreve diretamente. Chamadas reais exigem configuração e
 aprovação próprias. O portal funciona sem o fornecedor, mantendo a edição manual.

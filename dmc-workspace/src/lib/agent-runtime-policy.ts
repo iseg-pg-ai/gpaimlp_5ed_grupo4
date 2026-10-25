@@ -14,15 +14,9 @@ const positive = (value: string | undefined, name: string) => {
 
 function runtimeModel() {
   const provider = (process.env.BLU_AGENT_PROVIDER ?? "bedrock").trim().toLowerCase();
-  if (!(["bedrock", "openai"] as string[]).includes(provider))
-    throw new AgentRuntimeConfigurationError("Fornecedor do agente inválido.");
-  if (provider === "openai" && process.env.BLU_OPENAI_ENABLED !== "true")
-    throw new AgentRuntimeConfigurationError("OpenAI não está aprovado para utilização real.");
-  const model = (
-    provider === "openai"
-      ? process.env.OPENAI_MODEL
-      : (process.env.BEDROCK_MODEL_ID ?? "eu.amazon.nova-pro-v1:0")
-  )?.trim();
+  if (provider !== "bedrock")
+    throw new AgentRuntimeConfigurationError("O agente suporta apenas Amazon Bedrock.");
+  const model = (process.env.BEDROCK_MODEL_ID ?? "eu.amazon.nova-pro-v1:0").trim();
   if (!model) throw new AgentRuntimeConfigurationError("Modelo do agente não configurado.");
   return { provider, model };
 }
@@ -51,11 +45,14 @@ function rates(): Record<string, Rate> {
 export function enforceAgentRuntimePolicy(
   audit: AgentAuditStore,
   serializedRequestBytes: number,
+  maximumCalls = 1,
   now = new Date(),
 ) {
   if (process.env.BLU_IDENTITY_MODE !== "alb-cognito") return null;
   if (!Number.isSafeInteger(serializedRequestBytes) || serializedRequestBytes < 1)
     throw new AgentRuntimeConfigurationError("Dimensão do pedido inválida.");
+  if (!Number.isSafeInteger(maximumCalls) || maximumCalls < 1 || maximumCalls > 2)
+    throw new AgentRuntimeConfigurationError("Número máximo de chamadas inválido.");
   const { provider, model } = runtimeModel();
   const monthlyBudgetUsd = positive(
     process.env.BLU_AGENT_MONTHLY_BUDGET_USD,
@@ -71,7 +68,8 @@ export function enforceAgentRuntimePolicy(
   // Dois bytes/token é deliberadamente conservador para idiomas e JSON diversos.
   const estimatedInputTokens = Math.ceil(serializedRequestBytes / 2);
   const reservedUsd =
-    (estimatedInputTokens * modelRate.input + maxOutputTokens * modelRate.output) / 1_000_000;
+    ((estimatedInputTokens * modelRate.input + maxOutputTokens * modelRate.output) / 1_000_000) *
+    maximumCalls;
   const spentUsd = audit.monthlySpendUsd(rates(), now);
   if (spentUsd + reservedUsd > monthlyBudgetUsd)
     throw new AgentBudgetExceeded("Orçamento mensal do agente esgotado.");

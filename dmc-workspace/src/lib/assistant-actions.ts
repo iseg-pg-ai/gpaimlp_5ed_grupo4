@@ -4,6 +4,13 @@ import { editWithAssistant, markEditOrigin, moveWithAssistant } from "./assistan
 import { generateItinerary, type Catalog } from "./curation.ts";
 import { canonicalSnapshot, validateSnapshot } from "./snapshot-validation.ts";
 import type { Snapshot } from "./itinerary-pdf";
+import {
+  applyConfirmation,
+  initialConfirmation,
+  validateConfirmation,
+} from "./activity-confirmation.ts";
+import { proposalBudget } from "./proposal-budget.ts";
+import { proposalDiagnostics } from "./proposal-diagnostics.ts";
 
 export type AgentAction = {
   type: string;
@@ -15,6 +22,13 @@ export type AgentAction = {
   capacity?: number;
   period?: string;
   targetDayNumber?: number;
+  briefPatch?: Partial<Snapshot["brief"]>;
+  confirmationPatch?: Partial<
+    Pick<
+      import("./activity-confirmation.ts").ActivityConfirmation,
+      "time" | "location" | "price" | "supplier"
+    >
+  >;
 };
 export type AgentPlan = {
   summary: string;
@@ -139,6 +153,71 @@ export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catal
     if (action.itemId && index < 0) throw new Error("A proposta refere uma atividade inexistente.");
     const n = day.dayNumber;
     const position = index + 1;
+    if (action.type === "update_brief") {
+      const patch = action.briefPatch ?? {};
+      if (!Object.keys(patch).length) throw new Error("O briefing não contém alterações.");
+      const previousItinerary = current.itinerary;
+      current.brief = { ...current.brief, ...patch };
+      validateSnapshot(current);
+      for (const existingDay of current.itinerary)
+        for (const item of existingDay.items.filter(
+          (candidate) => candidate.category !== "free_time",
+        )) {
+          const isolated: Catalog = {
+            ...catalog,
+            atracoes: [],
+            restaurantes: [],
+            experiencias: [],
+          };
+          for (const table of ["atracoes", "restaurantes", "experiencias"] as const)
+            isolated[table] = catalog[table].filter(
+              (row) =>
+                item.id ===
+                `${table}:${row._catalog_id ?? row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`,
+            );
+          const eligible = generateItinerary(
+            {
+              ...current.brief,
+              startDate: existingDay.date,
+              endDate: existingDay.date,
+              destination: existingDay.location,
+            },
+            isolated,
+          ).itinerary[0]?.items.some((candidate) => candidate.id === item.id);
+          if (!eligible)
+            throw new Error(
+              "O novo briefing é incompatível com uma atividade existente. Reveja primeiro essa atividade.",
+            );
+        }
+      const total = proposalBudget(current).totals[current.brief.currency];
+      if (
+        total &&
+        total.confirmed + total.estimated >
+          current.brief.budget * 100 * (1 + (current.brief.personalization?.budgetFlex ?? 0) / 100)
+      )
+        throw new Error("O novo orçamento é inferior aos custos conhecidos.");
+      current.itinerary = markEditOrigin(previousItinerary, current.itinerary, "assistant");
+      continue;
+    }
+    if (action.type === "update_pending_confirmation") {
+      const item = day.items[index];
+      if (protectedItem(item))
+        throw new Error("Uma atividade protegida ou confirmada não pode ser alterada pelo agente.");
+      const patch = action.confirmationPatch ?? {};
+      if (!Object.keys(patch).length)
+        throw new Error("A confirmação não contém campos para preparar.");
+      const previousItinerary = structuredClone(current.itinerary);
+      const confirmation = {
+        ...initialConfirmation(item),
+        ...patch,
+        status: "pending" as const,
+        confirmedAt: null,
+      };
+      validateConfirmation(item, confirmation);
+      day.items[index] = applyConfirmation(item, confirmation);
+      current.itinerary = markEditOrigin(previousItinerary, current.itinerary, "assistant");
+      continue;
+    }
     if (action.type === "regenerate_day") {
       // Uma regeneração ampla preserva trabalho manual sem o transformar num
       // bloqueio: ações explícitas continuam a poder alterar estes cartões.
@@ -445,6 +524,7 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
   }
   return {
     brief,
+    diagnostics: proposalDiagnostics(snapshot, catalog),
     itinerary: snapshot.itinerary.map((day) => ({
       dayNumber: day.dayNumber,
       date: day.date,

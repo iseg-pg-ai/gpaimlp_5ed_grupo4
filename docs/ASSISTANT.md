@@ -2,7 +2,8 @@
 
 ## Âmbito atual
 
-O modelo propõe alterações; o portal valida-as com as regras já existentes.
+O modelo consulta ferramentas de leitura limitadas, propõe alterações e o portal
+valida-as com as regras já existentes.
 O fluxo é pedido → proposta → validação → pré-visualização → aceitação explícita
 → versão. Escrever «ok» no chat não aplica alterações. Rejeitar não cria versões.
 Cada proposta refere uma viagem e uma versão guardada. Rascunhos por guardar,
@@ -10,8 +11,9 @@ versões ultrapassadas ou no Lixo exigem resolução antes de continuar.
 
 Operações: add_catalog_item, replace_item, remove_item, reschedule_item,
 reorder_day, set_day_capacity, add_free_period, set_free_day, move_item,
-optimize_route e regenerate_day. Até oito ações por proposta, sem campos extra
-ou ações duplicadas. Opções de substituição exigem uma escolha e nova revisão.
+optimize_route, regenerate_day, update_brief e update_pending_confirmation. Até
+oito ações por proposta, sem campos extra ou ações duplicadas. Opções de
+substituição exigem uma escolha e nova revisão.
 Não há ranking nem seleção automática de uma opção de adição. Os controlos
 manuais de adicionar/remover usam /api/itinerary/edit, sem invocar o modelo.
 
@@ -25,7 +27,10 @@ nunca é autoridade. O catálogo e a estrutura do itinerário são dados, nunca 
 Nomes de clientes, contactos e notas internas não fazem parte do contexto
 estruturado enviado ao modelo.
 
-O agente não altera briefing, catálogo, preços, confirmações nem reservas.
+O agente pode propor alterações a oito campos permitidos do briefing e preparar
+horário, local, preço ou fornecedor de uma confirmação ainda pendente. Não pode
+alterar dados pessoais, contactos, referências, notas, catálogo, reservas ou o
+estado confirmado.
 Atividades protegidas ou confirmadas são preservadas, inclusive contra efeitos
 indiretos. Ao mudar horários ou dias, dados de confirmação pendente permanecem
 intactos e o portal avisa que exigem revisão manual. A sequência geográfica é
@@ -41,13 +46,11 @@ alterá-las. O mesmo dia pode ser editado repetidamente pelo Blu.
 ## Próxima iteração: âmbito e aceitação
 
 A iteração atual substituiu os dois percursos Python por um único planeador
-transacional. Bedrock e OpenAI são adaptadores do mesmo contrato; nenhum
-fornecedor recebe autoridade adicional nem escreve diretamente no portal. A
-integração OpenAI seguirá function calling com schema estrito, mantendo validação
-dos argumentos no backend, como recomendado na
-[documentação oficial OpenAI](https://developers.openai.com/api/docs/guides/function-calling).
+transacional baseado no Amazon Bedrock com Nova Pro. O fornecedor não recebe
+autoridade adicional nem escreve diretamente no portal.
 
-O primeiro incremento conserva as onze ações atuais. Não acrescenta acesso à
+O contrato contém agora treze ações: as onze operações de itinerário anteriores,
+`update_brief` e `update_pending_confirmation`. Não acrescenta acesso à
 máquina, execução de código, browser autónomo, reservas, contactos a terceiros,
 IAM, backups ou deployment. As ferramentas de leitura e escrita supervisionada
 só entram depois de identidade e sessões servidor estarem ligadas ao portal.
@@ -57,7 +60,7 @@ só entram depois de identidade e sessões servidor estarem ligadas ao portal.
 Uma implementação só conclui esta iteração quando:
 
 1. existe um único ponto de entrada para contexto, fornecedor e contrato;
-2. Bedrock e OpenAI devolvem exatamente o mesmo `AgentPlan` validado;
+2. Nova Pro devolve um `AgentPlan` validado pelo contrato partilhado;
 3. fornecedor, modelo, timeout e limite de saída são configuração servidor;
 4. ausência de credenciais ou fornecedor indisponível não altera a viagem;
 5. contexto inclui chegada, partida, voos e ocasião especial, mas exclui nome,
@@ -67,7 +70,7 @@ Uma implementação só conclui esta iteração quando:
 8. qualquer escrita continua a exigir pré-visualização e aceitação explícita;
 9. conflitos, dupla aceitação e versões obsoletas continuam recusados;
 10. logs guardam métricas e hashes, nunca prompts, respostas ou dados de cliente;
-11. testes simulados cobrem ambos os fornecedores, falhas, injeção e autorização;
+11. testes simulados cobrem o fornecedor, falhas, injeção e autorização;
 12. uma avaliação real separada atinge o limiar aprovado antes da ativação.
 
 ### Conjunto mínimo de avaliação
@@ -92,8 +95,19 @@ ser revistos na fonte oficial antes de cada ativação ou mudança de modelo.
 ## Autoridade, persistência e falhas
 
 O esquema partilhado está em `src/blu_ai/schemas/action-plan.json`. O planeador
-Python usa Bedrock Converse, sem ferramentas de escrita. A autoridade de
+Python usa Bedrock Converse num ciclo máximo de seis rondas e oito chamadas. Pode
+ler o briefing minimizado, um dia do itinerário e os candidatos previamente
+considerados elegíveis para esse dia. Todas as leituras usam o snapshot que a rota
+já recuperou e validou; não consultam outra base nem aceitam identificadores livres.
+O contexto da viagem inclui ainda diagnósticos determinísticos de capacidade,
+horários, sobreposições, confirmações, catálogo, preços, moedas e orçamento.
+`propose_actions` termina o ciclo e não escreve. A autoridade de
 elegibilidade, horários, capacidade e proteções permanece no TypeScript.
+Se essa primeira simulação falhar, o portal converte a causa num código limitado
+e numa instrução genérica, sem devolver ao fornecedor a mensagem bruta ou dados
+do itinerário. O modelo pode corrigir o plano completo uma única vez. A política
+de custo reserva antecipadamente as duas chamadas possíveis; uma segunda falha
+termina o pedido sem escrita e sem outro ciclo.
 O servidor volta a simular ao aceitar e compara o resultado com a pré-visualização.
 Mudanças de versão, catálogo ou regras que afetem o resultado invalidam a proposta.
 As propostas expiram após 30 minutos. A aceitação cria a versão e atualiza a
@@ -143,16 +157,13 @@ Configuração do planeador:
 | Variável | Utilização |
 | --- | --- |
 | BLU_PYTHON | Python do ambiente com o grupo agent instalado |
-| BLU_AGENT_PROVIDER | `bedrock` por defeito ou `openai`; nunca há fallback automático |
+| BLU_AGENT_PROVIDER | apenas `bedrock` |
 | BEDROCK_MODEL_ID | Modelo Bedrock configurável; predefinido eu.amazon.nova-pro-v1:0 |
-| OPENAI_MODEL | Modelo obrigatório quando o fornecedor é `openai` |
-| OPENAI_API_KEY | Segredo obrigatório no servidor quando o fornecedor é `openai` |
 | AWS_REGION | Região Bedrock; alternativa AWS_DEFAULT_REGION, depois eu-west-1 |
 | BLU_AGENT_MAX_OUTPUT_TOKENS | Limite de saída, 1800 por defeito; 256 a 4096 |
 | BLU_AGENT_TIMEOUT_SECONDS | Timeout do fornecedor, 35 por defeito; 5 a 120 |
 | BLU_AGENT_MONTHLY_BUDGET_USD | Teto mensal obrigatório no modo cloud |
 | BLU_AGENT_RATES_JSON | Preços atuais por milhão de tokens de entrada e saída |
-| BLU_OPENAI_ENABLED | Aprovação explícita adicional para OpenAI em cloud |
 | BLU_EXPORT_DIR | Armazenamento de versões e auditoria |
 | PORTAL_PUBLIC_ORIGIN | Origem pública do proxy privado quando aplicável |
 
