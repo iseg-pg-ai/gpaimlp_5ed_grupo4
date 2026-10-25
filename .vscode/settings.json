@@ -15,6 +15,10 @@
       "label": "BLU Operations · Monitoring · AWS",
       "onAutoForward": "silent"
     },
+    "5173": {
+      "label": "BLU · Leads / Concierge · AWS",
+      "onAutoForward": "silent"
+    },
     "8501": {
       "label": "BLU Analytics · Observatório · AWS",
       "onAutoForward": "silent"

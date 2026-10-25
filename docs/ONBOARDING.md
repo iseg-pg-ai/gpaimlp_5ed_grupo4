@@ -76,20 +76,21 @@ Com os pré-requisitos resolvidos:
 Este comando autentica o administrador, cria e confirma um checkpoint remoto
 quando existe estado a preservar, para os serviços e materializa a cache a partir
 desse checkpoint ou das releases do bucket de dados. Depois prepara dependências,
-testa, constrói o Portal, inicia os quatro serviços e abre as quatro interfaces.
+testa, constrói o Portal e o frontend Vite, inicia os cinco serviços e abre as
+cinco interfaces.
 Nos arranques seguintes basta:
 
 ```bash
 just blu up
 ```
 
-As portas esperadas são 3001, 3003, 3004 e 8501. A configuração versionada em
+As portas esperadas são 3001, 3003, 3004, 5173 e 8501. A configuração versionada em
 `.vscode/settings.json` encaminha-as silenciosamente.
 
 O painel **Ports** do VS Code apresenta `localhost` na coluna de encaminhamento
 porque mostra o extremo local do túnel. Os nomes identificam agora as interfaces
 AWS. Para obter os endereços públicos SageMaker, executar **Tasks: Run Task →
-BLU: Mostrar URLs AWS**; **BLU: Abrir dashboards AWS** abre diretamente as quatro
+BLU: Mostrar URLs AWS**; **BLU: Abrir dashboards AWS** abre diretamente as cinco
 interfaces públicas configuradas em `config/studio.local.json`.
 
 ## Estado local e transferência
@@ -109,7 +110,7 @@ python3 scripts/check_project.py
 just blu up
 ```
 
-O ambiente está pronto quando os quatro endpoints aparecem `ONLINE`, as quatro
+O ambiente está pronto quando os cinco endpoints aparecem `ONLINE`, as cinco
 interfaces abrem e o Monitoring aceita a conta pessoal do colega.
 
 ## Ficheiros incluídos no repositório para desenvolvimento

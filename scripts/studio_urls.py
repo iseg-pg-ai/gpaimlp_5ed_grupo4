@@ -51,6 +51,7 @@ def main():
         print(dashboard_url(args.port, args.path))
     else:
         for name, port in [("Portal BLU", 3001),
+                           ("Leads / Concierge", 5173),
                            ("Apresentação interativa", 3003),
                            ("Monitoring privado", 3004),
                            ("Dashboard analítico", 8501)]:

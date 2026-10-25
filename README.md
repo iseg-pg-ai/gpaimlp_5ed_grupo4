@@ -13,6 +13,7 @@ itinerário. Neste contexto, DMC significa *Destination Management Company*.
 | --- | --- | --- |
 | ETL e `warehouse/` | Ingestão, validação e publicação atómica dos dados | — |
 | DMC Workspace | Portal Next.js de curadoria e entrega | 3001 |
+| Leads / Concierge | Frontend público Vite e qualificação inicial | 5173 |
 | Apresentação | Narrativa interativa independente | 3003 |
 | BLU Operations | Monitoring privado e gestão de utilizadores | 3004 |
 | Assistente BLU | Planeador transacional integrado no Portal com Amazon Bedrock | — |
@@ -47,8 +48,9 @@ uv sync --locked --all-groups
 
 Os grupos `dashboard`, `agent` e `translation` também podem ser instalados
 individualmente com `uv sync --locked --inexact --group NOME`. Depois de instalar
-`translation`, executar `python translations/setup_models.py`. O portal tem
-dependências próprias, instaladas com `npm ci` em `dmc-workspace/`.
+`translation`, executar `python translations/setup_models.py`. O portal e o
+frontend de leads têm dependências próprias, instaladas com `npm ci` em
+`dmc-workspace/` e `frontend/blu-cloud-site/`.
 
 O `pyproject.toml`, `uv.lock`, `package.json` e `package-lock.json` são as
 fontes das dependências. Os ficheiros `requirements.txt` são exports; consultar a
@@ -84,13 +86,13 @@ just blu up
 ```
 
 O comando mantém serviços ativos, inicia os que estejam parados, confirma os
-quatro endpoints e abre as quatro interfaces.
+cinco endpoints e abre as cinco interfaces.
 
-Os URLs `/codeeditor/default/ports/PORTA/` exigem que as portas 3001, 3003, 3004
-e 8501 estejam registadas no painel **Ports** do Code Editor aberto no browser.
+Os URLs `/codeeditor/default/ports/PORTA/` exigem que as portas 3001, 3003, 3004,
+5173 e 8501 estejam registadas no painel **Ports** do Code Editor aberto no browser.
 Adicionar portas apenas numa sessão VS Code local/remota cria endereços
 `127.0.0.1` e não autoriza o proxy web do SageMaker. Num workspace novo, abrir o
-Code Editor pelo browser e adicionar uma vez as quatro portas nesse painel.
+Code Editor pelo browser e adicionar uma vez as cinco portas nesse painel.
 
 Este arranque rápido não cria checkpoints, não recupera backups e não para
 processos ativos. Essas ações pertencem exclusivamente ao `just blu it`.

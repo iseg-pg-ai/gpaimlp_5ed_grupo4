@@ -165,6 +165,7 @@ stop_known_services() {
         kill "$(cat "$pid_file")" >> "$LOG" 2>&1 || true
     done
     pkill -TERM -f 'node .*start-aws.mjs -p 3001' >> "$LOG" 2>&1 || true
+    pkill -TERM -f 'vite .*--port 5173' >> "$LOG" 2>&1 || true
     pkill -TERM -f 'streamlit run .*dashboard/app.py.*8501' >> "$LOG" 2>&1 || true
     pkill -TERM -f 'presentation/serve.py --port 3003' >> "$LOG" 2>&1 || true
     pkill -TERM -f 'python .*monitoring.server' >> "$LOG" 2>&1 || true
@@ -178,12 +179,12 @@ port_is_open() {
 stop_all_services() {
     local attempt port open
     stop_known_services
-    for port in 3001 3003 3004 8501; do stop_port "$port"; done
+    for port in 3001 3003 3004 5173 8501; do stop_port "$port"; done
 
     # Aguardar até 15 segundos para garantir indisponibilidade antes da recuperação.
     for attempt in {1..30}; do
         open=0
-        for port in 3001 3003 3004 8501; do
+        for port in 3001 3003 3004 5173 8501; do
             if port_is_open "$port"; then open=1; fi
         done
         if [ "$open" -eq 0 ]; then
@@ -210,6 +211,9 @@ start_all_services() {
     start_service monitoring env PYTHONPATH=src \
         .venv/bin/python -B -m monitoring.server
     start_service portal bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
+    start_service leads env \
+        __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="${PORTAL_PUBLIC_ORIGIN#https://}" \
+        bash -c 'cd frontend/blu-cloud-site && exec npm run dev -- --host 127.0.0.1 --port 5173'
 }
 
 start_missing_service() {
@@ -227,6 +231,9 @@ start_missing_services() {
     start_missing_service monitoring 3004 env PYTHONPATH=src \
         .venv/bin/python -B -m monitoring.server
     start_missing_service portal 3001 bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
+    start_missing_service leads 5173 env \
+        __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="${PORTAL_PUBLIC_ORIGIN#https://}" \
+        bash -c 'cd frontend/blu-cloud-site && exec npm run dev -- --host 127.0.0.1 --port 5173'
 }
 
 verify_environment() {
@@ -243,6 +250,7 @@ confirm_services() {
     wait_http "Apresentação" "http://127.0.0.1:3003/"
     wait_http "Monitoring" "http://127.0.0.1:3004/health"
     wait_http "Observatório" "http://127.0.0.1:8501/_stcore/health"
+    wait_http "Leads / Concierge" "http://127.0.0.1:5173/"
     # Uma resposta HTTP pode vir de um processo antigo; confirmar também os novos PID.
     for pid_file in "$SERVICES"/*.pid; do
         kill -0 "$(cat "$pid_file")" 2>/dev/null || {
@@ -257,6 +265,7 @@ confirm_service_endpoints() {
     wait_http "Apresentação" "http://127.0.0.1:3003/"
     wait_http "Monitoring" "http://127.0.0.1:3004/health"
     wait_http "Observatório" "http://127.0.0.1:8501/_stcore/health"
+    wait_http "Leads / Concierge" "http://127.0.0.1:5173/"
 }
 
 service_line() {
@@ -277,6 +286,7 @@ quick_start_status() {
     service_line 2 "APRESENTAÇÃO" 3003 "http://127.0.0.1:3003/"
     service_line 3 "MONITORING" 3004 "http://127.0.0.1:3004/health"
     service_line 4 "CURATION STUDIO" 3001 "http://127.0.0.1:3001/catalog"
+    service_line 5 "LEADS / CONCIERGE" 5173 "http://127.0.0.1:5173/"
     printf '\n  NETWORK READINESS      %s━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s  100%%\n' "$GREEN" "$RESET"
 }
 
@@ -304,9 +314,9 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
     confirm_service_endpoints
     quick_start_status
     python3 -B scripts/open_dashboards.py --quiet
-    printf '\n  %s✓%s  4 serviços operacionais\n' "$GREEN" "$RESET"
-    printf '  %s✓%s  4 endpoints validados\n' "$GREEN" "$RESET"
-    printf '  %s✓%s  4 interfaces abertas\n' "$GREEN" "$RESET"
+    printf '\n  %s✓%s  5 serviços operacionais\n' "$GREEN" "$RESET"
+    printf '  %s✓%s  5 endpoints validados\n' "$GREEN" "$RESET"
+    printf '  %s✓%s  5 interfaces abertas\n' "$GREEN" "$RESET"
     printf '  %s↗%s  Portal AWS: %s\n' "$CYAN" "$RESET" \
         "$(python3 -B scripts/studio_urls.py --port 3001)"
     ui_footer "SYSTEM READY" "just blu up · completed"
@@ -363,6 +373,7 @@ fi
 rm -rf "$RECOVERED_ROOT"
 run_task "3. Preparar portal" bash -c '
     npm --prefix dmc-workspace ci
+    npm --prefix frontend/blu-cloud-site ci
     npm --prefix dmc-workspace exec playwright install chromium
     bash scripts/prepare_browser_runtime.sh
 '
@@ -387,7 +398,11 @@ run_task "6. Testar Python e monitoring" bash -c '
     .venv/bin/python -B -m unittest translations.test_worker -v
 '
 run_task "7. Testar e construir portal" npm --prefix dmc-workspace run check
-run_task "8. Construir entrega" npm --prefix dmc-workspace run build
+run_task "8. Construir entrega" bash -c '
+    npm --prefix dmc-workspace run build
+    npm --prefix frontend/blu-cloud-site run build
+    npm --prefix frontend/blu-cloud-site run test:sites
+'
 
 PORTAL_PUBLIC_ORIGIN="$(python3 -B scripts/studio_urls.py --origin)"
 export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="/codeeditor/default/ports/3001"
@@ -405,4 +420,4 @@ python3 -B scripts/studio_urls.py >> "$LOG"
 run_task "12. Sistema BLU recuperado" python3 -B scripts/open_dashboards.py --quiet
 printf '  %s↗%s  Portal AWS: %s\n' "$CYAN" "$RESET" \
     "$(python3 -B scripts/studio_urls.py --port 3001)"
-ui_footer "BLU SYSTEM RESTORED" "12 tarefas · 4 serviços · 4 interfaces"
+ui_footer "BLU SYSTEM RESTORED" "12 tarefas · 5 serviços · 5 interfaces"

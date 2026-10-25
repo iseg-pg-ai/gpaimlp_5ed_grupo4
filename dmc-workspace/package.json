@@ -33,6 +33,7 @@
     "test:theme": "node tests/browser/theme.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "3.1147.0",
     "aws-jwt-verify": "5.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

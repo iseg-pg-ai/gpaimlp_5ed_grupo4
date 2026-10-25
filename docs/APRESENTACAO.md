@@ -351,6 +351,10 @@ Preparar o cenário antes da sessão para não alterar catálogo, aprovações o
 propostas de clientes durante uma demonstração improvisada. O sistema produz
 propostas, não efetua reservas nem confirma automaticamente condições comerciais.
 
+Para demonstrar o percurso do concierge público até ao seguimento do curador,
+usar o guão [Demonstração de ponta a ponta](DEMO_E2E.md). O cenário distingue
+consentimento, qualificação e contacto humano de uma reserva ou venda concluída.
+
 ## 5. Linguagem visual e navegação
 
 Manter a identidade da mesa de curadoria: azul-petróleo, tipografia editorial,

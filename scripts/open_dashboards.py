@@ -1,4 +1,4 @@
-"""Abre as quatro interfaces BLU na sessão de navegador do Code Editor."""
+"""Abre as cinco interfaces BLU na sessão de navegador do Code Editor."""
 from __future__ import annotations
 
 import argparse
@@ -13,6 +13,7 @@ from studio_urls import dashboard_url
 
 DASHBOARDS = (
     ("Portal", 3001, "/"),
+    ("Leads / Concierge", 5173, "/"),
     ("Apresentação", 3003, "/"),
     ("Monitoring", 3004, "/"),
     ("Observatório", 8501, "/"),
