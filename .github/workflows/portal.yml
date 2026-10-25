@@ -1,0 +1,36 @@
+name: Portal
+
+# Valida o portal Next.js na nuvem do GitHub, sem depender do disco ou da memória
+# do portátil: lint, tipos, formato, testes unitários e build de produção.
+on:
+  push:
+    paths:
+      - "dmc-workspace/**"
+      - ".github/workflows/portal.yml"
+  pull_request:
+    paths:
+      - "dmc-workspace/**"
+      - ".github/workflows/portal.yml"
+  workflow_dispatch:
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dmc-workspace
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: dmc-workspace/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - name: Lint, tipos, formato e testes
+        run: npm run check
+      - name: Build de produção
+        run: npm run build
