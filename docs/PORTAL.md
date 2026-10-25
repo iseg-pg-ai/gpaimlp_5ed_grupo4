@@ -428,6 +428,10 @@ no SQLite e pode ser restaurado pelos backups do Monitoring.
 
 ## Resolução de problemas
 
+O percurso preparado para demonstrações, incluindo os campos do botão
+**Preencher exemplo**, os prompts do assistente e os resultados esperados, está
+no [guião de demonstração](DEMO_CHATBOT_SCRIPT.md).
+
 - **Warehouse indisponível:** executar o ETL a partir da raiz.
 - **Catálogo vazio na geração:** aprovar registos e atualizar o catálogo para os
   itinerários.

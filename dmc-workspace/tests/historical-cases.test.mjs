@@ -65,3 +65,49 @@ test("uma versão no Lixo deixa de ser recuperável pela memória", (t) => {
   versions.trashVersion("trip", version.version);
   assert.deepEqual(cases.search({ destination: "Lisboa / Sintra" }), []);
 });
+
+test("migra casos legados sem caseId e preserva a pesquisa", (t) => {
+  const root = mkdtempSync(path.join(tmpdir(), "blu-cases-legacy-"));
+  const versions = new VersionStore(root);
+  const snapshot = fixture();
+  const version = versions.save("legacy-trip", snapshot, "generated", null);
+  const feedback = new FeedbackStore(versions);
+  versions.db.exec(`CREATE TABLE historical_cases (
+    tripId TEXT NOT NULL, version INTEGER NOT NULL, profile TEXT NOT NULL,
+    items TEXT NOT NULL, searchText TEXT NOT NULL, approvedBy TEXT NOT NULL,
+    approvedAt TEXT NOT NULL, PRIMARY KEY(tripId,version));`);
+  const profile = {
+    destination: snapshot.brief.destination,
+    proposalTier: snapshot.brief.proposalTier,
+    pace: snapshot.brief.pace,
+    interests: snapshot.brief.interests,
+    adults: snapshot.brief.adults,
+    children: snapshot.brief.children,
+    days: snapshot.itinerary.length,
+    mobilityRestrictions: [],
+    dietaryRestrictions: [],
+  };
+  versions.db
+    .prepare("INSERT INTO historical_cases VALUES(?,?,?,?,?,?,?)")
+    .run(
+      "legacy-trip",
+      version.version,
+      JSON.stringify(profile),
+      "[]",
+      "legacy",
+      "cognito:lead-1",
+      "2026-10-25T00:00:00.000Z",
+    );
+  const cases = new HistoricalCaseStore(feedback);
+  const [found] = cases.search({ destination: snapshot.brief.destination });
+  assert.equal(found.caseId.length, 24);
+  assert.equal(found.profile.destination, snapshot.brief.destination);
+  assert.equal(
+    versions.db.prepare("SELECT COUNT(*) AS total FROM historical_cases").get().total,
+    1,
+  );
+  t.after(() => {
+    versions.close();
+    rmSync(root, { recursive: true, force: true });
+  });
+});

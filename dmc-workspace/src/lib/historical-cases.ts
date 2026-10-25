@@ -44,6 +44,29 @@ export class HistoricalCaseStore {
       profile TEXT NOT NULL, items TEXT NOT NULL, approvedAt TEXT NOT NULL,
       approvedBy TEXT NOT NULL, UNIQUE(tripId,version),
       FOREIGN KEY(tripId,version) REFERENCES trip_feedback(tripId,version) ON DELETE CASCADE);`);
+    const columns = feedback.store.db
+      .prepare("PRAGMA table_info(historical_cases)")
+      .all() as unknown as Array<{ name: string }>;
+    if (!columns.some((column) => column.name === "caseId")) {
+      // Compatibilidade com a primeira versão, cuja chave era (tripId, version).
+      // A migração apenas acrescenta o identificador anonimizado e preserva os casos.
+      feedback.store.db.exec("ALTER TABLE historical_cases ADD COLUMN caseId TEXT");
+      const rows = feedback.store.db
+        .prepare("SELECT tripId,version FROM historical_cases WHERE caseId IS NULL")
+        .all() as unknown as Array<{ tripId: string; version: number }>;
+      const update = feedback.store.db.prepare(
+        "UPDATE historical_cases SET caseId=? WHERE tripId=? AND version=?",
+      );
+      for (const row of rows)
+        update.run(
+          createHash("sha256").update(`${row.tripId}:${row.version}`).digest("hex").slice(0, 24),
+          row.tripId,
+          row.version,
+        );
+      feedback.store.db.exec(
+        "CREATE UNIQUE INDEX IF NOT EXISTS historical_cases_case_id ON historical_cases(caseId)",
+      );
+    }
   }
 
   approve(tripId: string, version: number, approvedBy: string): HistoricalCase {
@@ -91,7 +114,7 @@ export class HistoricalCaseStore {
     const approvedAt = new Date().toISOString();
     this.feedback.store.db
       .prepare(
-        "INSERT INTO historical_cases VALUES(?,?,?,?,?,?,?) ON CONFLICT(tripId,version) DO UPDATE SET profile=excluded.profile,items=excluded.items,approvedAt=excluded.approvedAt,approvedBy=excluded.approvedBy",
+        "INSERT INTO historical_cases (caseId,tripId,version,profile,items,approvedAt,approvedBy) VALUES(?,?,?,?,?,?,?) ON CONFLICT(tripId,version) DO UPDATE SET caseId=excluded.caseId,profile=excluded.profile,items=excluded.items,approvedAt=excluded.approvedAt,approvedBy=excluded.approvedBy",
       )
       .run(
         caseId,

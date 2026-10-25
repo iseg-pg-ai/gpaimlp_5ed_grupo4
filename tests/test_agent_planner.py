@@ -67,6 +67,101 @@ class PlannerTest(unittest.TestCase):
         self.assertEqual(result["plan"]["actions"], [])
         self.assertEqual(result["provider"], "deterministic")
 
+    def test_exact_unique_names_resolve_to_authoritative_identifiers(self):
+        context = {
+            "conversationLanguage": "pt",
+            "itinerary": [
+                {"dayNumber": 1, "items": [
+                    {"id": "atracoes:feira", "title": "Feira da Ladra"},
+                    {"id": "restaurantes:mercado", "title": "Time Out Market Lisboa"},
+                ]},
+                {"dayNumber": 2, "items": [
+                    {"id": "restaurantes:canalha", "title": "Canalha"},
+                ]},
+                {"dayNumber": 3, "items": [
+                    {"id": "atracoes:alcoa", "title": "Pastelaria Alcoa"},
+                ]},
+            ],
+            "candidates": [
+                {"dayNumber": 1, "id": "atracoes:castelo", "title": "Castelo de São Jorge"},
+            ],
+        }
+        requests = {
+            "Remove apenas Feira da Ladra do dia 1.": {
+                "type": "remove_item", "dayNumber": 1, "itemId": "atracoes:feira",
+            },
+            "Reagenda Canalha do dia 2 para as 13:00.": {
+                "type": "reschedule_item", "dayNumber": 2,
+                "itemId": "restaurantes:canalha", "time": "13:00",
+            },
+            "Move Pastelaria Alcoa do dia 3 para o dia 2.": {
+                "type": "move_item", "dayNumber": 3,
+                "itemId": "atracoes:alcoa", "targetDayNumber": 2,
+            },
+            "Adiciona a atividade Castelo de São Jorge ao dia 1.": {
+                "type": "add_catalog_item", "dayNumber": 1,
+                "catalogId": "atracoes:castelo",
+            },
+            "Substitui Feira da Ladra por Castelo de São Jorge no dia 1.": {
+                "type": "replace_item", "dayNumber": 1,
+                "itemId": "atracoes:feira", "catalogId": "atracoes:castelo",
+            },
+            "No dia 1 coloca Time Out Market Lisboa antes de Feira da Ladra.": {
+                "type": "reorder_day", "dayNumber": 1,
+                "itemIds": ["restaurantes:mercado", "atracoes:feira"],
+            },
+        }
+        for instruction, expected in requests.items():
+            with self.subTest(instruction=instruction):
+                result = compile_actions({"instruction": instruction, "context": context})
+                self.assertEqual(result["plan"]["actions"], [expected])
+
+    def test_duplicate_names_fail_closed_instead_of_guessing(self):
+        request = {
+            "instruction": "Remove Museu do dia 1.",
+            "context": {
+                "conversationLanguage": "pt",
+                "itinerary": [{"dayNumber": 1, "items": [
+                    {"id": "atracoes:museu-a", "title": "Museu"},
+                    {"id": "atracoes:museu-b", "title": "Museu"},
+                ]}],
+            },
+        }
+        result = compile_actions(request)
+        self.assertEqual(result["plan"]["actions"], [])
+        self.assertTrue(result["plan"]["warnings"])
+
+    def test_itinerary_explanation_is_read_only_and_uses_portal_diagnostics(self):
+        request = {
+            "instruction": (
+                "Explica-me o itinerário atual e identifica possíveis problemas, "
+                "sem fazer alterações."
+            ),
+            "context": {
+                "conversationLanguage": "pt",
+                "itinerary": [{
+                    "dayNumber": 1,
+                    "location": "Lisboa",
+                    "items": [{"id": "atracoes:feira", "title": "Feira da Ladra"}],
+                }],
+                "diagnostics": [{
+                    "code": "TIME_UNKNOWN",
+                    "severity": "warning",
+                    "message": "Horário ou duração por validar.",
+                    "dayNumber": 1,
+                    "itemId": "atracoes:feira",
+                }],
+            },
+        }
+        result = compile_actions(request)
+        self.assertEqual(result["provider"], "deterministic")
+        self.assertEqual(result["plan"]["actions"], [])
+        self.assertIn("Dia 1 — Lisboa: Feira da Ladra.", result["plan"]["summary"])
+        self.assertEqual(
+            result["plan"]["warnings"],
+            ["Dia 1 · Feira da Ladra: Horário ou duração por validar."],
+        )
+
     def test_contract_is_itinerary_only_and_schema_copy_cannot_expand_authority(self):
         expected = {"add_catalog_item", "replace_item", "remove_item", "reschedule_item",
                     "reorder_day", "set_day_capacity", "add_free_period", "set_free_day",
@@ -553,7 +648,7 @@ class PlannerTest(unittest.TestCase):
         cases = {case["name"]: case for case in json.loads(
             (Path(__file__).parent / "agent_cases.json").read_text(encoding="utf-8"))}
         for name, expected_provider in (("move_item_pt", "deterministic"),
-                                        ("injecao_pt", None)):
+                                        ("injecao_pt", "deterministic")):
             result = subprocess.run(
                 [sys.executable, "-X", "utf8", "-B", "-m", "blu_ai.planner",
                  "--compile-only"],

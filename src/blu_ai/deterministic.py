@@ -10,7 +10,6 @@ from typing import Any
 from blu_ai.providers import ProviderResult
 
 
-_IDENTIFIER = r"[\w.-]+:[\w.-]+"
 _NUMBER_WORDS = {
     "um": 1, "uma": 1, "dois": 2, "duas": 2, "tres": 3,
     "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
@@ -22,6 +21,11 @@ def _plain(value: str) -> str:
         character for character in unicodedata.normalize("NFKD", value.casefold())
         if not unicodedata.combining(character)
     )
+
+
+def _reference(value: str) -> str:
+    """Normalizar apenas pontuação de delimitação, nunca aproximar nomes."""
+    return value.strip().strip('"“”').rstrip(".,;:").strip()
 
 
 def _plan(language: str, action: dict[str, Any] | None, warning: str = "") -> dict:
@@ -49,7 +53,7 @@ def _item(context: dict, number: int, reference: str) -> dict | None:
     day = _day(context, number)
     if not day:
         return None
-    reference = reference.strip().rstrip(".,;:")
+    reference = _reference(reference)
     normalized = _plain(reference)
     matches = [item for item in day.get("items", []) if isinstance(item, dict) and (
         str(item.get("id", "")).casefold() == reference.casefold()
@@ -60,7 +64,7 @@ def _item(context: dict, number: int, reference: str) -> dict | None:
 
 def _located_item(context: dict, reference: str) -> tuple[int, dict] | None:
     matches = []
-    normalized = _plain(reference.strip().rstrip(".,;:"))
+    normalized = _plain(_reference(reference))
     for day in context.get("itinerary", []):
         if not isinstance(day, dict) or type(day.get("dayNumber")) is not int:
             continue
@@ -82,9 +86,14 @@ def _editable(item: dict | None) -> bool:
     return not (isinstance(confirmation, dict) and confirmation.get("status") == "confirmed")
 
 
-def _candidate(context: dict, number: int, identifier: str) -> bool:
-    return any(isinstance(row, dict) and row.get("dayNumber") == number
-               and row.get("id") == identifier for row in context.get("candidates", []))
+def _candidate_id(context: dict, number: int, reference: str) -> str | None:
+    reference = _reference(reference)
+    normalized = _plain(reference)
+    matches = [row for row in context.get("candidates", []) if isinstance(row, dict)
+               and row.get("dayNumber") == number
+               and (str(row.get("id", "")).casefold() == reference.casefold()
+                    or _plain(str(row.get("title", ""))) == normalized)]
+    return matches[0]["id"] if len(matches) == 1 and isinstance(matches[0].get("id"), str) else None
 
 
 def _blocked(language: str) -> dict:
@@ -92,6 +101,71 @@ def _blocked(language: str) -> dict:
                if language == "pt" else
                "The item is not on this day or is protected.")
     return _plan(language, None, warning)
+
+
+def _itinerary_overview(context: dict, language: str) -> dict:
+    """Explicar o estado autoritativo sem transformar uma leitura em edição."""
+    days = []
+    item_titles = {}
+    for day in context.get("itinerary", []):
+        if not isinstance(day, dict) or type(day.get("dayNumber")) is not int:
+            continue
+        titles = []
+        for item in day.get("items", []):
+            if not isinstance(item, dict):
+                continue
+            title = str(item.get("title", "")).strip()
+            if title:
+                titles.append(title)
+                if isinstance(item.get("id"), str):
+                    item_titles[item["id"]] = title
+        content = ", ".join(titles) if titles else (
+            "sem atividades" if language == "pt" else "no activities"
+        )
+        location = str(day.get("location", "")).strip()
+        label = f"Dia {day['dayNumber']}" if language == "pt" else f"Day {day['dayNumber']}"
+        days.append(f"{label}{f' — {location}' if location else ''}: {content}.")
+    introduction = (
+        "Itinerário atual: " if language == "pt" else "Current itinerary: "
+    )
+    summary = introduction + " ".join(days)
+    if not days:
+        summary = ("O itinerário atual não contém dias." if language == "pt"
+                   else "The current itinerary contains no days.")
+    warnings = []
+    seen = set()
+    for diagnostic in context.get("diagnostics", []):
+        if not isinstance(diagnostic, dict):
+            continue
+        message = str(diagnostic.get("message", "")).strip()
+        if not message:
+            continue
+        day_number = diagnostic.get("dayNumber")
+        title = item_titles.get(diagnostic.get("itemId"))
+        prefix = ((f"Dia {day_number}" if language == "pt" else f"Day {day_number}")
+                  if type(day_number) is int else "")
+        if title:
+            prefix += f" · {title}"
+        rendered = f"{prefix}: {message}" if prefix else message
+        if rendered not in seen:
+            seen.add(rendered)
+            warnings.append(rendered[:500])
+        if len(warnings) == 10:
+            break
+    if not warnings:
+        warnings = [
+            ("Não foram encontrados problemas determinísticos; disponibilidade, reservas e "
+             "dados ainda desconhecidos continuam sujeitos a confirmação humana.")
+            if language == "pt" else
+            ("No deterministic problems were found; availability, bookings and unknown data "
+             "still require human confirmation.")
+        ]
+    return {
+        "summary": summary[:1200],
+        "actions": [],
+        "warnings": warnings,
+        "requiresConfirmation": True,
+    }
 
 
 def compile_explicit(instruction: str, context: dict) -> ProviderResult | None:
@@ -103,9 +177,17 @@ def compile_explicit(instruction: str, context: dict) -> ProviderResult | None:
     started = time.monotonic()
     language = context.get("conversationLanguage", "pt")
     text = _plain(instruction.strip())
-    identifier = _IDENTIFIER
     match: re.Match[str] | None
     action: dict[str, Any] | None = None
+
+    read_only = (
+        ("itinerario" in text and ("explica" in text or "resume" in text)
+         and re.search(r"\bsem (?:fazer )?alteracoes\b", text))
+        or ("itinerary" in text and ("explain" in text or "summarize" in text)
+            and re.search(r"\bwithout (?:making )?changes\b", text))
+    )
+    if read_only:
+        return _result(_itinerary_overview(context, language), started)
 
     if text in {"qual e a segunda?", "which is the second one?"}:
         warning = ("Indique a lista ou a atividade a que se refere «a segunda»."
@@ -165,61 +247,61 @@ def compile_explicit(instruction: str, context: dict) -> ProviderResult | None:
         return _result(result, started)
 
     patterns = [
-        ("replace_item", rf"(?:substitui|replace)\s+({identifier})\s+(?:por|with)\s+({identifier})\s+(?:no|on)\s+(?:dia|day)\s*(\d+)\.?") ,
-        ("move_item", rf"move\s+({identifier})\s+(?:do|from)\s+(?:dia|day)\s*(\d+)\s+(?:para o|to)\s+(?:dia|day)\s*(\d+)\.?") ,
-        ("reschedule_item", rf"(?:reagenda|reschedule)\s+({identifier})\s+(?:do|on)\s+(?:dia|day)\s*(\d+)\s+(?:para as|to)\s+(\d{{2}}:\d{{2}})\.?") ,
-        ("remove_item", rf"remove(?: apenas| only)?\s+({identifier})(?:\s+(?:do|from)\s+(?:dia|day)\s*(\d+)|,?\s+(?:mesmo estando protegida|even though it is protected))\.?") ,
-        ("add_catalog_item", rf"(?:adiciona a atividade|add activity)\s+({identifier})\s+(?:ao|to)\s+(?:dia|day)\s*(\d+)\.?") ,
+        ("replace_item", r"(?:substitui|replace)\s+(.+?)\s+(?:por|with)\s+(.+?)\s+(?:no|on)\s+(?:dia|day)\s*(\d+)\.?"),
+        ("move_item", r"move\s+(.+?)\s+(?:do|from)\s+(?:dia|day)\s*(\d+)\s+(?:para o|to)\s+(?:dia|day)\s*(\d+)\.?"),
+        ("reschedule_item", r"(?:reagenda|reschedule)\s+(.+?)\s+(?:do|on)\s+(?:dia|day)\s*(\d+)\s+(?:para as|to)\s+(\d{2}:\d{2})\.?"),
+        ("remove_item", r"remove(?: apenas| only)?\s+(.+?)(?:\s+(?:do|from)\s+(?:dia|day)\s*(\d+)|,?\s+(?:mesmo estando protegida|even though it is protected))\.?"),
+        ("add_catalog_item", r"(?:adiciona a atividade|add activity)\s+(.+?)\s+(?:ao|to)\s+(?:dia|day)\s*(\d+)\.?"),
     ]
     for kind, pattern in patterns:
         match = re.fullmatch(pattern, text)
         if not match:
             continue
         if kind == "replace_item":
-            old_id, new_id, raw_day = match.groups()
+            old_reference, new_reference, raw_day = match.groups()
             day_number = int(raw_day)
-            item = _item(context, day_number, old_id)
-            if _editable(item) and _candidate(context, day_number, new_id):
+            item = _item(context, day_number, old_reference)
+            candidate_id = _candidate_id(context, day_number, new_reference)
+            if _editable(item) and candidate_id:
                 action = {"type": kind, "dayNumber": day_number,
-                          "itemId": item["id"], "catalogId": new_id}
+                          "itemId": item["id"], "catalogId": candidate_id}
         elif kind == "move_item":
-            item_id, raw_day, raw_target = match.groups()
+            item_reference, raw_day, raw_target = match.groups()
             day_number, target = int(raw_day), int(raw_target)
-            item = _item(context, day_number, item_id)
+            item = _item(context, day_number, item_reference)
             if _editable(item) and _day(context, target):
                 action = {"type": kind, "dayNumber": day_number,
                           "itemId": item["id"], "targetDayNumber": target}
         elif kind == "reschedule_item":
-            item_id, raw_day, new_time = match.groups()
+            item_reference, raw_day, new_time = match.groups()
             day_number = int(raw_day)
-            item = _item(context, day_number, item_id)
+            item = _item(context, day_number, item_reference)
             if _editable(item):
                 action = {"type": kind, "dayNumber": day_number,
                           "itemId": item["id"], "time": new_time}
         elif kind == "remove_item":
-            item_id, raw_day = match.groups()
+            item_reference, raw_day = match.groups()
             if raw_day is None:
-                located = [(day.get("dayNumber"), item) for day in context.get("itinerary", [])
-                           if isinstance(day, dict) for item in day.get("items", [])
-                           if isinstance(item, dict) and item.get("id") == item_id]
-                if len(located) != 1:
+                located = _located_item(context, item_reference)
+                if not located:
                     return _result(_blocked(language), started)
-                day_number = located[0][0]
+                day_number = located[0]
             else:
                 day_number = int(raw_day)
-            item = _item(context, day_number, item_id)
+            item = _item(context, day_number, item_reference)
             if _editable(item):
                 action = {"type": kind, "dayNumber": day_number, "itemId": item["id"]}
         else:
-            catalog_id, raw_day = match.groups()
+            candidate_reference, raw_day = match.groups()
             day_number = int(raw_day)
-            if _day(context, day_number) and _candidate(context, day_number, catalog_id):
+            catalog_id = _candidate_id(context, day_number, candidate_reference)
+            if _day(context, day_number) and catalog_id:
                 action = {"type": kind, "dayNumber": day_number, "catalogId": catalog_id}
         result = _plan(language, action) if action else _blocked(language)
         return _result(result, started)
 
     match = re.fullmatch(
-        rf"(?:no|on)\s+(?:dia|day)\s*(\d+)\s+(?:coloca|put)\s+({identifier})\s+(?:antes de|before)\s+({identifier})\.?",
+        r"(?:no|on)\s+(?:dia|day)\s*(\d+)\s+(?:coloca|put)\s+(.+?)\s+(?:antes de|before)\s+(.+?)\.?",
         text,
     )
     if match:

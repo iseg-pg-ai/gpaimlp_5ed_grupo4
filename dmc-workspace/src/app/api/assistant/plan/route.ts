@@ -446,6 +446,10 @@ export async function POST(request: Request) {
         { status: failure.status, headers: noStoreHeaders },
       );
     }
+    console.error(
+      "[assistant] AGENT_PLAN_VALIDATION_FAILED",
+      error instanceof Error ? `${error.name}: ${error.message}` : "Unknown error",
+    );
     return jsonError(
       message(
         language,
