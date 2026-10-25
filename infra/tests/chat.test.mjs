@@ -72,6 +72,15 @@ test('known journey details reach the reply prompt as data, and activities settl
   assert.match(extractionPrompt('2026-10-25'), /pace alone may follow from the activities/);
 });
 
+test('themes stay in scope, venues are not invented and dates read naturally', () => {
+  const prompt = systemPrompt('2026-10-25');
+  assert.match(prompt, /Interests and themes are never out of scope/);
+  assert.match(prompt, /Conímbriga, the Roman temple of Évora and Milreu/);
+  assert.match(prompt, /Name only places you are certain exist/);
+  assert.match(prompt, /never state opening seasons, hours or prices/);
+  assert.match(prompt, /"May 2027", never as codes like 2027-05/);
+});
+
 test('journey metadata is allowlisted, trimmed and merged over earlier answers', () => {
   const cleaned = cleanJourney({ destination: '  Lisbon   and Sintra ', budget: 'unknown', party: 'x'.repeat(300), role: 'admin' });
   assert.deepEqual(Object.keys(cleaned), ['destination', 'party']);
