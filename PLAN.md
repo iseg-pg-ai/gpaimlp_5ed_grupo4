@@ -52,9 +52,14 @@ histórico Git e em [Decisões](docs/DECISIONS.md).
 - [ ] Autorizar e executar uma avaliação com modelo real, incluindo custos,
   privacidade, os 38 casos sintéticos atuais e limiares de aceitação. Testes
   automáticos usam modelos simulados por defeito. A execução autorizada de
-  2026-10-25 obteve 25/38 (65,8%) e não atingiu os 90% exigidos: corrigir o
-  encerramento estruturado de recusas/ambiguidades e os casos de refinamento e
-  confirmação pendente antes de pedir autorização para uma nova execução paga.
+  2026-10-25 obteve 25/38 (65,8%) e não atingiu os 90% exigidos. O encerramento
+  estruturado de recusas/ambiguidades e as instruções de refinamento e confirmação
+  pendente foram corrigidos e validados com mocks. Uma segunda bateria chegou a
+  36/38 (94,7%), mas a bateria integral final caiu para 28/38 (73,7%): Nova Pro
+  não cumpre o contrato com estabilidade suficiente. A camada híbrida local já
+  compila corretamente 30/38 casos sem tokens nem chamadas AWS; os oito casos
+  interpretativos continuam no Nova Pro. Falta avaliar este conjunto híbrido numa
+  bateria real independente antes de o aprovar para utilização autónoma.
 
 A memória servidor e o ownership das propostas ficam ativos apenas quando o
 backend valida os JWT do ALB e Cognito. No SageMaker, onde não existe esse

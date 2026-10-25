@@ -567,3 +567,32 @@ grounding e proteção, bem como em refinamento, confirmação pendente e um cas
 regeneração. O resultado não satisfaz o mínimo de 90%; por isso, a avaliação
 permanece aberta e o agente não é promovido com base neste ensaio. Qualquer nova
 bateria real requer correções verificadas com mocks e nova autorização de custo.
+
+O adaptador foi posteriormente preparado para converter uma única terminação
+textual de recusa ou esclarecimento numa ronda final com `propose_actions`
+explicitamente selecionado, capacidade suportada por Amazon Nova no Bedrock.
+Uma segunda resposta fora do contrato falha fechado. Foram ainda clarificadas as
+regras de refinamento e confirmação pendente. Os testes locais passaram, mas esta
+correção não altera o resultado histórico nem autoriza outra bateria paga.
+
+Foram autorizadas novas execuções. Uma bateria completa atingiu 36/38 (94,7%),
+mas a confirmação integral posterior obteve apenas 28/38 (73,7%), mesmo depois de
+correções dirigidas e schema discriminado por ação. Casos aprovados isoladamente
+não se mantiveram estáveis no conjunto. O projeto não seleciona a melhor execução
+como evidência e interrompe novas chamadas para evitar otimização por repetição.
+Nova Pro continua não aprovado; a arquitetura ou o modelo devem ser revistos.
+
+### Pedidos explícitos são compilados localmente antes do Bedrock — 2026-10-25
+
+O planeador passa a ser híbrido. Uma camada determinística conservadora transforma
+as treze operações explícitas em `AgentPlan`, mas apenas quando dia,
+identificadores e restantes argumentos podem ser confirmados no contexto
+autoritativo. Itens protegidos ou fora do catálogo falham localmente. Pedidos
+incompletos, ambíguos, explicativos ou compostos continuam no Nova Pro.
+
+A rota executa a pré-compilação antes de reservar orçamento AWS. Os resultados
+locais ficam identificados como `deterministic`/`blu-explicit-intent-v1`, com zero
+tokens, e continuam sujeitos à mesma validação, simulação, pré-visualização e
+aceitação humana. Esta decisão reduz custo e variabilidade sem criar uma segunda
+fonte de verdade nem aumentar a autoridade do agente. A avaliação local cobre
+30/38 casos; a aprovação final continua dependente de um novo ensaio híbrido real.

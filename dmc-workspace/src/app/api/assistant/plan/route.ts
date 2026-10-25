@@ -255,18 +255,24 @@ export async function POST(request: Request) {
       JSON.stringify({ instruction: providerInput, context }),
       "utf8",
     );
-    // Reserva no máximo duas chamadas: proposta inicial e uma única correção
-    // após falha determinística sanitizada.
-    enforceAgentRuntimePolicy(audit, requestBytes, 2);
-    let result = await portalRequest<PlannerResult>("agent-plan", "", {
+    const plannerPayload = {
       instruction: providerInput,
       context,
-    });
+    };
+    // Comandos inequívocos são compilados localmente antes de reservar custo.
+    // Apenas linguagem que exige interpretação chega ao fornecedor externo.
+    let result = await portalRequest<PlannerResult | null>("agent-compile", "", plannerPayload);
+    if (!result) {
+      // Reserva no máximo duas chamadas: proposta inicial e uma única correção
+      // após falha determinística sanitizada.
+      enforceAgentRuntimePolicy(audit, requestBytes, 2);
+      result = await portalRequest<PlannerResult>("agent-plan", "", plannerPayload);
+    }
     const validateResult = (value: PlannerResult) => {
       validatePlan(value.plan);
       assertPlanIntent(value.plan, intent);
       if (
-        value.provider !== "bedrock" ||
+        !["bedrock", "deterministic"].includes(value.provider) ||
         typeof value.modelId !== "string" ||
         !value.modelId ||
         value.modelId.length > 250 ||

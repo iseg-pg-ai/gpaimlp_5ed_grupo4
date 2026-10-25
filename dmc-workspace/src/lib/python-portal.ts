@@ -44,8 +44,15 @@ export function portalRequest<T>(operation: string, root: string, params: object
   return new Promise((resolve, reject) => {
     const child = execFile(
       /* turbopackIgnore: true */ python,
-      operation === "agent-plan"
-        ? ["-X", "utf8", "-B", "-m", "blu_ai.planner"]
+      operation === "agent-plan" || operation === "agent-compile"
+        ? [
+            "-X",
+            "utf8",
+            "-B",
+            "-m",
+            "blu_ai.planner",
+            ...(operation === "agent-compile" ? ["--compile-only"] : []),
+          ]
         : ["-X", "utf8", "-B", "-m", "portal.data", operation, root],
       {
         cwd: repository,
@@ -71,13 +78,13 @@ export function portalRequest<T>(operation: string, root: string, params: object
           });
           return reject(
             new PortalPythonError(
-              operation === "agent-plan"
+              operation === "agent-plan" || operation === "agent-compile"
                 ? error.killed
                   ? "AGENT_TIMEOUT"
                   : "AGENT_PROCESS_UNAVAILABLE"
                 : "DATASET_UNAVAILABLE",
-              operation === "agent-plan"
-                ? "Planeador AWS indisponível. Verifique o grupo agent e as permissões IAM."
+              operation === "agent-plan" || operation === "agent-compile"
+                ? "Planeador indisponível. Verifique o grupo agent e a configuração do serviço."
                 : "Python do portal indisponível. Verifique BLU_PYTHON e a instalação Python.",
             ),
           );
@@ -111,7 +118,9 @@ export function portalRequest<T>(operation: string, root: string, params: object
           });
           reject(
             new PortalPythonError(
-              operation === "agent-plan" ? "AGENT_INVALID_RESPONSE" : "DATASET_UNAVAILABLE",
+              operation === "agent-plan" || operation === "agent-compile"
+                ? "AGENT_INVALID_RESPONSE"
+                : "DATASET_UNAVAILABLE",
               "Resposta inválida do Python do portal.",
             ),
           );

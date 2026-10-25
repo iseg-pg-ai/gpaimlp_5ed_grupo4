@@ -247,8 +247,10 @@ export class AgentAuditStore {
         const inputTokens = entries.reduce((n, m) => n + (Number(m.inputTokens) || 0), 0),
           outputTokens = entries.reduce((n, m) => n + (Number(m.outputTokens) || 0), 0);
         const rate = rates[modelId];
-        const costUsd =
-          rate && [rate.input, rate.output].every((n) => Number.isFinite(n) && n >= 0)
+        const localOnly = entries.every((meta) => meta.provider === "deterministic");
+        const costUsd = localOnly
+          ? 0
+          : rate && [rate.input, rate.output].every((n) => Number.isFinite(n) && n >= 0)
             ? (inputTokens * rate.input + outputTokens * rate.output) / 1e6
             : null;
         return {

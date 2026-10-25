@@ -162,6 +162,7 @@ class BedrockProvider:
             "conversationLanguage": context.get("conversationLanguage", "pt"),
         }, ensure_ascii=False)}]}]
         input_tokens = output_tokens = tool_calls = 0
+        force_proposal = False
         try:
             for _round in range(6):
                 response = self.client.converse(
@@ -169,7 +170,11 @@ class BedrockProvider:
                     system=[{"text": system}],
                     messages=messages,
                     inferenceConfig={"temperature": 0, "maxTokens": max_tokens},
-                    toolConfig={"tools": tools, "toolChoice": {"auto": {}}},
+                    toolConfig={
+                        "tools": tools,
+                        "toolChoice": ({"tool": {"name": "propose_actions"}}
+                                       if force_proposal else {"auto": {}}),
+                    },
                 )
                 usage = response.get("usage", {})
                 if isinstance(usage, dict):
@@ -179,6 +184,17 @@ class BedrockProvider:
                 blocks = message["content"]
                 calls = [block["toolUse"] for block in blocks
                          if isinstance(block, dict) and "toolUse" in block]
+                if response.get("stopReason") == "end_turn" and not calls and not force_proposal:
+                    # Nova pode responder em texto ao recusar ou pedir esclarecimento. Esse
+                    # texto nunca sai do adaptador: uma ronda final obriga o mesmo conteúdo
+                    # a cumprir o contrato tipado, normalmente com ``actions`` vazio.
+                    messages.append(message)
+                    messages.append({"role": "user", "content": [{"text":
+                        "Termina agora exclusivamente através de propose_actions. "
+                        "Se recusaste ou pediste esclarecimento, usa actions vazio e coloca "
+                        "a explicação em summary ou warnings."}]})
+                    force_proposal = True
+                    continue
                 if response.get("stopReason") != "tool_use" or not calls:
                     raise ProviderResponseError("Proposta estruturada incompleta.")
                 tool_calls += len(calls)
@@ -186,10 +202,37 @@ class BedrockProvider:
                     raise ProviderResponseError("Limite de ferramentas excedido.")
                 proposals = [call for call in calls if call.get("name") == "propose_actions"]
                 if proposals:
-                    if len(calls) != 1 or len(proposals) != 1:
+                    if len(proposals) != 1:
                         raise ProviderResponseError("Proposta misturada com outras ferramentas.")
-                    plan = proposals[0]["input"]
-                    break
+                    if len(calls) == 1:
+                        plan = proposals[0]["input"]
+                        break
+                    # Uma proposta emitida juntamente com leituras ainda não pode usar os
+                    # respetivos resultados. Descartá-la, responder às leituras e exigir
+                    # que a proposta revista venha sozinha preserva a fronteira de autoridade.
+                    messages.append(message)
+                    results = []
+                    for call in calls:
+                        tool_use_id = call.get("toolUseId")
+                        if not isinstance(tool_use_id, str) or not tool_use_id:
+                            raise ProviderResponseError("Identificador de ferramenta inválido.")
+                        if call.get("name") == "propose_actions":
+                            results.append({"toolResult": {
+                                "toolUseId": tool_use_id,
+                                "content": [{"text": "Proposta prematura: devolve-a novamente, isolada, após considerar as leituras."}],
+                                "status": "error",
+                            }})
+                        else:
+                            result = _read_context(call.get("name"), call.get("input"), context)
+                            results.append({"toolResult": {
+                                "toolUseId": tool_use_id,
+                                "content": [{"json": result}], "status": "success",
+                            }})
+                    messages.append({"role": "user", "content": results})
+                    force_proposal = True
+                    continue
+                if force_proposal:
+                    raise ProviderResponseError("Encerramento estruturado inválido.")
                 messages.append(message)
                 results = []
                 for call in calls:

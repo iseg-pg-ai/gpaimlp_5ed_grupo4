@@ -66,8 +66,10 @@ alterá-las. O mesmo dia pode ser editado repetidamente pelo Blu.
 ## Próxima iteração: âmbito e aceitação
 
 A iteração atual substituiu os dois percursos Python por um único planeador
-transacional baseado no Amazon Bedrock com Nova Pro. O fornecedor não recebe
-autoridade adicional nem escreve diretamente no portal.
+transacional híbrido. Um compilador local trata comandos inequívocos e o Amazon
+Bedrock com Nova Pro interpreta apenas pedidos ambíguos, explicações,
+recomendações e refinamentos compostos. Nenhum dos percursos recebe autoridade
+adicional nem escreve diretamente no portal.
 
 O contrato contém agora treze ações: as onze operações de itinerário anteriores,
 `update_brief` e `update_pending_confirmation`. Não acrescenta acesso à
@@ -122,6 +124,42 @@ no portal nem usou dados reais de clientes. Como o resultado ficou abaixo do
 limiar de 90%, o modelo não é considerado aprovado para ativação autónoma e uma
 nova execução paga exige correção local e nova autorização explícita.
 
+Após o ensaio, o adaptador passou a recuperar uma única resposta textual de
+recusa ou esclarecimento: mantém o texto dentro da conversa com o fornecedor e
+faz uma ronda final com `propose_actions` selecionado explicitamente. Se essa
+ronda não devolver uma única ferramenta válida, o pedido continua a falhar
+fechado. A seleção específica é suportada pelos modelos Amazon Nova segundo a
+[referência `ToolChoice` do Bedrock](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html).
+As instruções também distinguem a preparação de confirmação pendente de um mero
+reagendamento e explicitam que alternativas pedidas num refinamento não são
+ações aplicadas. A correção passou nos 159 testes Python locais; comprovar a
+melhoria semântica continua a exigir uma nova execução real autorizada.
+
+As execuções seguintes demonstraram variabilidade incompatível com aprovação. A
+segunda bateria completa atingiu 36/38 (94,7%), mas uma bateria integral posterior,
+já com schema discriminado e correções dirigidas validadas, obteve 28/38 (73,7%).
+Casos que passaram isoladamente voltaram a falhar na execução completa. Por isso,
+o melhor resultado não é usado seletivamente como prova de qualidade e Nova Pro
+permanece não aprovado para ativação autónoma. A próxima decisão deve comparar
+outro modelo compatível, reduzir a liberdade do planeamento ou deslocar intenções
+inequívocas para uma camada determinística antes de realizar novos ensaios pagos.
+
+Essa camada determinística foi implementada como
+`src/blu_ai/deterministic.py`. Reconhece apenas frases completas com argumentos
+inequívocos, resolve identificadores contra o snapshot e candidatos autorizados,
+recusa localmente itens protegidos ou exteriores ao catálogo e devolve o mesmo
+`AgentPlan` sujeito a simulação e confirmação humana. Não usa correspondência
+aproximada nem tenta adivinhar argumentos em falta. Quando não reconhece o pedido,
+devolve controlo ao Nova Pro.
+
+Nos 38 casos sintéticos atuais, 30 são agora concluídos localmente e todos passam
+o respetivo oráculo sem chamadas AWS. Os oito restantes são ambiguidades, pedidos
+incompletos, explicações e refinamentos compostos. A rota tenta `agent-compile`
+antes de reservar orçamento; resultados locais usam o fornecedor
+`deterministic`, modelo `blu-explicit-intent-v1`, zero tokens e custo zero. Apenas
+um resultado nulo ativa a política de orçamento e `agent-plan`. Esta cobertura é
+evidência local, não substitui a bateria híbrida real ainda pendente.
+
 Em cloud, o backend recusa a chamada antes do fornecedor quando faltam o teto
 mensal ou o preço do modelo. A reserva usa uma estimativa conservadora do pedido e
 do limite máximo de saída; o consumo confirmado vem dos tokens registados na
@@ -131,8 +169,9 @@ ser revistos na fonte oficial antes de cada ativação ou mudança de modelo.
 
 ## Autoridade, persistência e falhas
 
-O esquema partilhado está em `src/blu_ai/schemas/action-plan.json`. O planeador
-Python usa Bedrock Converse num ciclo máximo de seis rondas e oito chamadas. Pode
+O esquema partilhado está em `src/blu_ai/schemas/action-plan.json`. O compilador
+e o fornecedor validam o mesmo contrato. Quando necessário, o planeador Python
+usa Bedrock Converse num ciclo máximo de seis rondas e oito chamadas. Pode
 ler o briefing minimizado, um dia do itinerário, os candidatos previamente
 considerados elegíveis para esse dia, sinais agregados de qualidade, até cinco
 casos semelhantes aprovados, meteorologia já consultada pelo portal e percursos

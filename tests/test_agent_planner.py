@@ -16,7 +16,7 @@ from blu_ai.agents.curator_agent import extract_text_content
 from blu_ai.planner import (
     AgentConfigurationError, AgentContextError, AgentRequestError,
     AgentResponseError, SCHEMA, execute, failure_code, plan_actions,
-    tool_schema, validate_plan,
+    compile_actions, tool_schema, validate_plan,
 )
 from blu_ai.providers import BedrockProvider, ProviderRequestError
 
@@ -35,6 +35,36 @@ def provider_response(plan=None):
 
 
 class PlannerTest(unittest.TestCase):
+    def test_explicit_actions_are_compiled_without_provider(self):
+        cases = json.loads((Path(__file__).parent / "agent_cases.json").read_text(encoding="utf-8"))
+        explicit = [case for case in cases if case["operation"] != "none"
+                    and case["category"] != "refinamento"]
+        self.assertEqual(len(explicit), 26)
+        provider = MagicMock()
+        for case in explicit:
+            with self.subTest(case=case["name"]):
+                result = plan_actions(case["request"], provider=provider)
+                self.assertEqual(result["plan"]["actions"], case["expected"]["actions"])
+                self.assertEqual(result["provider"], "deterministic")
+                self.assertEqual(result["modelId"], "blu-explicit-intent-v1")
+                self.assertEqual((result["inputTokens"], result["outputTokens"]), (0, 0))
+        provider.propose.assert_not_called()
+
+    def test_local_compiler_fails_closed_for_protected_and_unknown_items(self):
+        cases = {case["name"]: case for case in json.loads(
+            (Path(__file__).parent / "agent_cases.json").read_text(encoding="utf-8"))}
+        for name in ("protecao_pt", "protecao_en", "grounding_pt", "grounding_en"):
+            with self.subTest(case=name):
+                result = compile_actions(cases[name]["request"])
+                self.assertIsNotNone(result)
+                self.assertEqual(result["plan"]["actions"], [])
+                self.assertTrue(result["plan"]["warnings"])
+                self.assertEqual(result["provider"], "deterministic")
+
+    def test_ambiguous_request_is_not_claimed_by_local_compiler(self):
+        payload = {"instruction": "Qual é a segunda?", "context": {"conversationLanguage": "pt"}}
+        self.assertIsNone(compile_actions(payload))
+
     def test_contract_is_itinerary_only_and_schema_copy_cannot_expand_authority(self):
         expected = {"add_catalog_item", "replace_item", "remove_item", "reschedule_item",
                     "reorder_day", "set_day_capacity", "add_free_period", "set_free_day",
@@ -58,6 +88,12 @@ class PlannerTest(unittest.TestCase):
             ["confirmationPatch"]["properties"]
         )
         self.assertEqual(confirmation_fields, {"time", "location", "price", "supplier"})
+        variants = tool_schema()["properties"]["actions"]["items"]["oneOf"]
+        move = next(value for value in variants
+                    if value["properties"]["type"]["enum"] == ["move_item"])
+        self.assertEqual(move["required"],
+                         ["type", "dayNumber", "itemId", "targetDayNumber"])
+        self.assertEqual(set(move["properties"]), set(move["required"]))
 
     def test_all_thirteen_actions_accept_exact_fields(self):
         arguments = {
@@ -156,6 +192,9 @@ class PlannerTest(unittest.TestCase):
                 options = client.converse.call_args.kwargs
                 system = options["system"][0]["text"]
                 self.assertIn("DADOS NÃO FIÁVEIS", system)
+                self.assertIn("targetDayNumber=2", system)
+                self.assertIn("itemId=atracoes:a", system)
+                self.assertIn("não acrescentes reorder_day", system)
                 self.assertIn("Write summary and warnings in English" if language == "en" else "Escreve summary e warnings em português europeu", system)
                 self.assertEqual(options["inferenceConfig"], {"temperature": 0, "maxTokens": 1800})
                 self.assertEqual(options["toolConfig"]["toolChoice"], {"auto": {}})
@@ -205,6 +244,32 @@ class PlannerTest(unittest.TestCase):
             "dayNumber": 2,
             "itinerary": [{"dayNumber": 2, "items": [{"id": "alvo"}]}],
         })
+
+    def test_text_refusal_is_forced_into_the_structured_closure_once(self):
+        text = {
+            "stopReason": "end_turn",
+            "output": {"message": {"role": "assistant", "content": [
+                {"text": "Preciso de esclarecimento."},
+            ]}},
+            "usage": {"inputTokens": 5, "outputTokens": 3},
+        }
+        client = MagicMock()
+        client.converse.side_effect = [text, provider_response({
+            "summary": "Indique a atividade pretendida.",
+            "actions": [], "warnings": [], "requiresConfirmation": True,
+        })]
+        result = plan_actions(
+            {"instruction": "Qual é a segunda?", "context": {"conversationLanguage": "pt"}},
+            provider=BedrockProvider(client, "modelo-teste"),
+        )
+        self.assertEqual(result["plan"]["actions"], [])
+        self.assertEqual(result["inputTokens"], 17)
+        forced = client.converse.call_args_list[1].kwargs
+        self.assertEqual(
+            forced["toolConfig"]["toolChoice"],
+            {"tool": {"name": "propose_actions"}},
+        )
+        self.assertNotIn("Preciso de esclarecimento.", json.dumps(result))
 
     def test_bedrock_can_read_only_sanitized_simulation_feedback(self):
         read = {
@@ -371,7 +436,7 @@ class PlannerTest(unittest.TestCase):
 
     def test_refuses_text_truncation_unknown_tool_multiple_calls_and_invalid_structure(self):
         good = provider_response()
-        responses = [None, {}, {"stopReason": "end_turn", "output": {"message": {"content": [{"text": "Feito"}]}}},
+        responses = [None, {},
                      {**good, "stopReason": "max_tokens"},
                      {"stopReason": "tool_use", "output": {"message": {"content": [
                          {"toolUse": {"name": "write_database", "input": proposal()}}]}}},
@@ -382,6 +447,16 @@ class PlannerTest(unittest.TestCase):
             client.converse.return_value = response
             with self.assertRaises(AgentResponseError):
                 plan_actions({"instruction": "Teste", "context": {}}, client)
+
+        client = MagicMock()
+        client.converse.return_value = {
+            "stopReason": "end_turn", "output": {"message": {
+                "role": "assistant", "content": [{"text": "Feito"}],
+            }}, "usage": {},
+        }
+        with self.assertRaises(AgentResponseError):
+            plan_actions({"instruction": "Teste", "context": {}}, client)
+        self.assertEqual(client.converse.call_count, 2)
 
     def test_failure_codes_never_publish_sdk_messages_or_retry_another_provider(self):
         for error, code in [
@@ -468,6 +543,29 @@ class PlannerTest(unittest.TestCase):
             self.assertFalse(response["ok"])
             self.assertEqual(response["code"], code)
             self.assertNotIn("Traceback", result.stderr.decode("utf-8"))
+
+    def test_compile_only_process_returns_local_plan_or_delegation_without_aws(self):
+        root = Path(__file__).resolve().parents[1]
+        environment = {**os.environ, "PYTHONPATH": str(root / "src"),
+                       "AWS_EC2_METADATA_DISABLED": "true"}
+        cases = {case["name"]: case for case in json.loads(
+            (Path(__file__).parent / "agent_cases.json").read_text(encoding="utf-8"))}
+        for name, expected_provider in (("move_item_pt", "deterministic"),
+                                        ("ambiguidade_pt", None)):
+            result = subprocess.run(
+                [sys.executable, "-X", "utf8", "-B", "-m", "blu_ai.planner",
+                 "--compile-only"],
+                input=json.dumps(cases[name]["request"]).encode(), capture_output=True,
+                timeout=20, cwd=root, env=environment,
+            )
+            self.assertEqual(result.returncode, 0)
+            response = json.loads(result.stdout)
+            self.assertTrue(response["ok"])
+            if expected_provider is None:
+                self.assertIsNone(response["data"])
+            else:
+                self.assertEqual(response["data"]["provider"], expected_provider)
+                self.assertEqual(response["data"]["inputTokens"], 0)
 
     @patch("blu_ai.planner.plan_actions")
     def test_legacy_chat_delegates_to_transactional_planner_with_public_context(self, planner):
