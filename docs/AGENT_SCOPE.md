@@ -98,10 +98,9 @@ mensagem bruta do erro. A segunda falha termina o pedido sem escrita.
 
 ## Capacidades em evolução
 
-O agente completo deverá ainda:
+O agente já pode consultar feedback aprovado, sinais agregados de qualidade e
+casos históricos anonimizados. Deverá ainda:
 
-- consultar feedback aprovado e sinais agregados de qualidade;
-- reutilizar casos históricos aprovados e sem dados pessoais;
 - preparar exportações PDF/TXT e variantes linguísticas;
 - preparar, mas não enviar, textos e partilhas;
 - explicar diferenças entre versões;

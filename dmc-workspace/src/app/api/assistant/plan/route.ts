@@ -30,6 +30,8 @@ import { proposalImpact } from "@/lib/assistant-impact";
 import { simulationFeedback } from "@/lib/agent-simulation-feedback";
 import { requestIntent, assertPlanIntent, IntentConflict } from "@/lib/assistant-intent";
 import { syncOperationalState } from "@/lib/operational-s3";
+import { FeedbackStore } from "@/lib/feedback-store";
+import { HistoricalCaseStore } from "@/lib/historical-cases";
 import {
   IdentityConfigurationError,
   IdentityDenied,
@@ -125,6 +127,8 @@ export async function POST(request: Request) {
   const store = new VersionStore();
   try {
     const audit = new AgentAuditStore(store);
+    const feedback = new FeedbackStore(store);
+    const historicalCases = new HistoricalCaseStore(feedback);
     const conversations = principal ? new AgentConversationStore(store) : null;
     const ownerId = principal?.id ?? null;
     if (body.runId) {
@@ -174,8 +178,24 @@ export async function POST(request: Request) {
     const catalog = await loadPublishedCatalog();
     const intent = requestIntent(body.input);
     const remembered = conversations?.get(ownerId!, body.tripId, body.baseVersion);
+    const relevantIds = new Set([
+      ...snapshot.itinerary.flatMap((day) => day.items.map((item) => item.id)),
+      ...plannerContext(snapshot, catalog).candidates.map((candidate) => candidate.id),
+    ]);
     const context = {
       ...plannerContext(snapshot, catalog),
+      qualitySignals: feedback
+        .qualitySignals()
+        .filter((signal) => relevantIds.has(signal.catalogId)),
+      historicalCases: historicalCases.search({
+        destination: snapshot.brief.destination,
+        proposalTier: snapshot.brief.proposalTier,
+        pace: snapshot.brief.pace,
+        adults: snapshot.brief.adults,
+        children: snapshot.brief.children,
+        interests: snapshot.brief.interests,
+        limit: 5,
+      }),
       requestIntent: intent,
       conversation: remembered?.turns ?? recentConversation(body.conversation),
       conversationSummary: remembered?.summary || undefined,

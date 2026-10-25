@@ -16,7 +16,7 @@ import { AgentAuditStore } from "../src/lib/agent-audit-store.ts";
 import { VersionStore } from "../src/lib/version-store.ts";
 import { agentFailure } from "../src/lib/agent-errors.ts";
 import { proposalImpact } from "../src/lib/assistant-impact.ts";
-import { proposalDiagnostics } from "../src/lib/proposal-diagnostics.ts";
+import { briefQualityDiagnostics, proposalDiagnostics } from "../src/lib/proposal-diagnostics.ts";
 import { simulationFeedback } from "../src/lib/agent-simulation-feedback.ts";
 
 test("feedback de simulação não devolve texto bruto nem dados do itinerário", () => {
@@ -154,6 +154,36 @@ test("diagnóstico pré-exportação distingue bloqueios de avisos sem alterar a
   assert.ok(diagnostics.some((value) => value.code === "PRICE_UNKNOWN"));
   assert.ok(diagnostics.some((value) => value.code === "PENDING"));
   assert.equal(JSON.stringify(s), before);
+});
+
+test("qualidade do briefing sinaliza lacunas e contradições sem inventar correções", () => {
+  const snapshot = fixture();
+  Object.assign(snapshot.brief, {
+    children: 1,
+    childrenAges: "",
+    arrivalLocation: "",
+    arrivalFlightNumber: "TP123",
+    arrivalTime: "",
+    departureLocation: "LIS",
+    departureFlightNumber: "TP456",
+    departureTime: "",
+    interests: ["Museus"],
+    exclusions: ["museus"],
+    mobilityRestrictions: ["Outra"],
+    dietaryRestrictions: ["Alergia"],
+  });
+  const before = structuredClone(snapshot);
+  const diagnostics = briefQualityDiagnostics(snapshot);
+  for (const code of [
+    "CHILD_AGES",
+    "ARRIVAL_INCOMPLETE",
+    "DEPARTURE_INCOMPLETE",
+    "INTEREST_EXCLUDED",
+    "MOBILITY_DETAIL",
+    "DIETARY_DETAIL",
+  ])
+    assert.ok(diagnostics.some((item) => item.code === code));
+  assert.deepEqual(snapshot, before);
 });
 
 function alternativesSetup() {

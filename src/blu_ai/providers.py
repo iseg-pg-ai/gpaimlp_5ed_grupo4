@@ -74,6 +74,14 @@ def _read_context(name: str, arguments: Any, context: dict) -> Any:
                 "simulationFeedback",
             ) if key in context
         }
+    if name in {"get_quality_signals", "search_historical_cases"}:
+        if arguments:
+            raise ProviderResponseError("Argumentos de ferramenta inválidos.")
+        source = "qualitySignals" if name == "get_quality_signals" else "historicalCases"
+        rows = context.get(source, [])
+        if not isinstance(rows, list):
+            raise ProviderResponseError("Contexto de ferramenta inválido.")
+        return {source: rows}
     if name in {"get_itinerary", "search_approved_catalog"}:
         if set(arguments) != {"dayNumber"} or type(arguments["dayNumber"]) is not int:
             raise ProviderResponseError("Argumentos de ferramenta inválidos.")
@@ -120,6 +128,12 @@ class BedrockProvider:
             _tool("search_approved_catalog",
                   "Ler candidatos já considerados elegíveis pelo portal para um dia.",
                   _DAY_QUERY),
+            _tool("get_quality_signals",
+                  "Ler agregados numéricos e etiquetas de qualidade, sem comentários.",
+                  _EMPTY_OBJECT),
+            _tool("search_historical_cases",
+                  "Ler casos semelhantes aprovados e anonimizados pelo portal.",
+                  _EMPTY_OBJECT),
             _tool("propose_actions",
                   "Devolver a proposta final para simulação e revisão humana; nunca escreve.",
                   schema),

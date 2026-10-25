@@ -5,6 +5,7 @@ import { languages } from "@/lib/locales";
 import { VersionStore } from "@/lib/version-store";
 import { Trash2 } from "lucide-react";
 import { ShareAccessManager } from "@/components/ShareAccessManager";
+import { FeedbackManager } from "@/components/FeedbackManager";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export default async function ExportHistory({
@@ -133,6 +134,9 @@ export default async function ExportHistory({
             >
               <T text="Consultar conteúdo guardado" source="pt" />
             </a>
+            <div>
+              <FeedbackManager tripId={v.tripId} version={v.version} />
+            </div>
           </div>
           <div className="flex shrink-0 items-center sm:border-l sm:border-[var(--portal-line-e6e1d5)] sm:pl-4">
             <form

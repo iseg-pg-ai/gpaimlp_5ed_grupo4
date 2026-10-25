@@ -134,7 +134,10 @@ class PlannerTest(unittest.TestCase):
                 self.assertEqual(options["toolConfig"]["toolChoice"], {"auto": {}})
                 self.assertEqual(
                     {tool["toolSpec"]["name"] for tool in options["toolConfig"]["tools"]},
-                    {"get_trip_context", "get_itinerary", "search_approved_catalog", "propose_actions"},
+                    {
+                        "get_trip_context", "get_itinerary", "search_approved_catalog",
+                        "get_quality_signals", "search_historical_cases", "propose_actions",
+                    },
                 )
 
     def test_bedrock_reads_authoritative_day_before_proposing_and_sums_usage(self):
@@ -193,6 +196,34 @@ class PlannerTest(unittest.TestCase):
         self.assertEqual(result["toolResult"]["content"][0]["json"], {
             "simulationFeedback": feedback,
         })
+
+    def test_bedrock_reads_quality_and_anonymous_cases_without_private_notes(self):
+        for tool, source in [
+            ("get_quality_signals", "qualitySignals"),
+            ("search_historical_cases", "historicalCases"),
+        ]:
+            with self.subTest(tool=tool):
+                client = MagicMock()
+                client.converse.side_effect = [{
+                    "stopReason": "tool_use",
+                    "output": {"message": {"role": "assistant", "content": [{"toolUse": {
+                        "toolUseId": "read-safe", "name": tool, "input": {},
+                    }}]}},
+                    "usage": {},
+                }, provider_response()]
+                context = {
+                    "conversationLanguage": "pt",
+                    source: [{"catalogId": "atracoes:1", "average": 4.5}],
+                    "privateNotes": "NUNCA_ENVIAR",
+                }
+                plan_actions(
+                    {"instruction": "Sugere uma opção", "context": context},
+                    provider=BedrockProvider(client, "modelo-teste"),
+                )
+                result = client.converse.call_args_list[1].kwargs["messages"][-1]
+                serialized = json.dumps(result)
+                self.assertIn("atracoes:1", serialized)
+                self.assertNotIn("NUNCA_ENVIAR", serialized)
 
     def test_bedrock_refuses_unknown_read_tool_and_out_of_range_day(self):
         for name, arguments in [

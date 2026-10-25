@@ -38,6 +38,16 @@ indiretos. Ao mudar horários ou dias, dados de confirmação pendente permanece
 intactos e o portal avisa que exigem revisão manual. A sequência geográfica é
 uma estimativa; não demonstra tempos reais ou disponibilidade.
 
+O histórico de versões permite identificar uma versão efetivamente realizada e
+recolher feedback para todos os cartões. A entrega é imutável e fica na mesma base
+operacional das versões. Comentários e notas permanecem internos. O agente só pode
+consultar agregados numéricos, etiquetas de problema e tendências de 30, 90 e 180
+dias. Um caso histórico exige todas as atividades realizadas, avaliação global
+mínima de quatro, ausência de incidentes e aprovação humana. O índice exclui nome,
+contactos, comentários, PDFs e versões no Lixo. Estes sinais podem explicar ou
+despriorizar uma sugestão, mas nunca alteram o catálogo nem demonstram
+disponibilidade atual.
+
 Uma edição e um bloqueio são estados distintos. O portal regista se a última
 alteração de cada dia ou atividade veio do utilizador ou do assistente, mas essa
 origem nunca ativa `isLocked`. Só a proteção explícita do curador e uma confirmação
@@ -98,11 +108,17 @@ ser revistos na fonte oficial antes de cada ativação ou mudança de modelo.
 
 O esquema partilhado está em `src/blu_ai/schemas/action-plan.json`. O planeador
 Python usa Bedrock Converse num ciclo máximo de seis rondas e oito chamadas. Pode
-ler o briefing minimizado, um dia do itinerário e os candidatos previamente
-considerados elegíveis para esse dia. Todas as leituras usam o snapshot que a rota
+ler o briefing minimizado, um dia do itinerário, os candidatos previamente
+considerados elegíveis para esse dia, sinais agregados de qualidade e até cinco
+casos semelhantes aprovados. Todas as leituras usam o snapshot que a rota
 já recuperou e validou; não consultam outra base nem aceitam identificadores livres.
 O contexto da viagem inclui ainda diagnósticos determinísticos de capacidade,
 horários, sobreposições, confirmações, catálogo, preços, moedas e orçamento.
+Também sinaliza idades em falta, logística de chegada ou partida incompleta,
+interesses contraditos por exclusões e restrições de mobilidade ou alimentação
+demasiado vagas. Custos desconhecidos impedem uma conclusão positiva sobre a
+adequação do orçamento. Estes diagnósticos pedem esclarecimento e nunca preenchem
+respostas automaticamente.
 `propose_actions` termina o ciclo e não escreve. A autoridade de
 elegibilidade, horários, capacidade e proteções permanece no TypeScript.
 Se essa primeira simulação falhar, o portal converte a causa num código limitado
@@ -151,7 +167,10 @@ continuam negadas por omissão.
 Reutiliza o arranque do portal no SageMaker Studio Code Editor e as credenciais
 IAM do ambiente. Não requer novas dependências, uma nova base de dados ou Lambda.
 O endpoint principal é POST /api/assistant/plan; /api/assistant delega no mesmo
-fluxo. Estes endpoints dependem do acesso privado do SageMaker e verificam a
+fluxo. `/api/assistant/feedback` gere a conclusão, o questionário e a aprovação
+do caso. Em cloud, feedback exige edição da viagem e a aprovação exige edição do
+catálogo; no modo local desativado ficam registados atores locais explícitos.
+Estes endpoints dependem do acesso privado do SageMaker e verificam a
 origem quando enviada. Não publicar o portal diretamente na Internet.
 
 Configuração do planeador:
@@ -185,7 +204,8 @@ não foi transformado numa tradução integral do ficheiro.
 Testes locais usam mocks do fornecedor e viagens temporárias, sem chamadas pagas.
 Executar npm run check e npm run build no portal e unittest discover em tests
 com PYTHONPATH=src no ambiente Python preparado. Os testes adicionais são
-tests/assistant-actions.test.mjs, tests/assistant-api.mjs e
+tests/assistant-actions.test.mjs, tests/feedback-store.test.mjs,
+tests/historical-cases.test.mjs, tests/feedback-route.test.mjs, tests/assistant-api.mjs e
 tests/browser/assistant.mjs no portal. Os scripts HTTP/navegador exigem um servidor
 local de testes e os seus parâmetros; consultar o cabeçalho de cada script.
 scripts/evaluate_agent.py --list lista casos sintéticos sem chamar o modelo;

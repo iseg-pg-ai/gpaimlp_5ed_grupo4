@@ -469,3 +469,16 @@ chamada, contendo apenas um código sanitizado e uma instrução genérica. O te
 bruto não regressa ao modelo, o orçamento reserva as duas chamadas possíveis e a
 segunda falha termina sem alterações. A qualidade semântica continua dependente
 de uma avaliação Nova Pro real, separada e explicitamente autorizada.
+
+### Feedback e memória histórica permanecem supervisionados — 2026-10-25
+
+O feedback pós-viagem fica associado a uma única versão realizada e cobre todos
+os cartões. A entrega é imutável. Comentários e notas são conservados para revisão
+interna, mas nunca entram nas ferramentas do modelo. O agente recebe apenas
+agregados, etiquetas e tendências de 30, 90 e 180 dias.
+
+Um caso histórico só entra na memória após feedback completo, avaliação global
+mínima de quatro em todas as atividades, ausência de incidentes e aprovação
+humana. O índice usa perfil reduzido, identificadores e revisões; exclui identidade
+do cliente, texto livre, PDFs e versões no Lixo. Feedback, alertas e precedentes
+nunca alteram o catálogo automaticamente nem provam disponibilidade atual.

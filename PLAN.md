@@ -24,10 +24,12 @@ histórico Git e em [Decisões](docs/DECISIONS.md).
 - [x] Integrar ranking explicável de candidatos elegíveis, sem transformar a
   ordenação numa alteração. A escolha humana prepara uma proposta de adição e
   só a aceitação posterior cria uma versão.
-- [ ] Integrar feedback card a card, sinais de qualidade e casos históricos
+- [x] Integrar feedback card a card, sinais de qualidade e casos históricos
   aprovados na base operacional atual; comentários livres e dados pessoais não
-  entram no contexto do modelo e nenhum alerta altera o catálogo sozinho.
-- [ ] Acrescentar verificação da qualidade do briefing: contradições, campos em
+  entram no contexto do modelo e nenhum alerta altera o catálogo sozinho. O
+  questionário fica no histórico de versões, os agregados incluem janelas de
+  30/90/180 dias e a memória só aceita casos completos com aprovação humana.
+- [x] Acrescentar verificação da qualidade do briefing: contradições, campos em
   falta, adequação do orçamento e restrições que exigem esclarecimento.
 - [ ] Permitir ao agente preparar exportações e partilhas com o diagnóstico
   preventivo atual. A criação e a partilha mantêm confirmação explícita e o

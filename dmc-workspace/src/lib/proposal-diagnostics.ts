@@ -20,9 +20,54 @@ const catalogIds = (catalog: Catalog) =>
     ),
   );
 
+const normalized = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .toLocaleLowerCase("pt-PT");
+
+/** Qualidade do questionário, sem inferir respostas nem aplicar correções. */
+export function briefQualityDiagnostics(snapshot: Snapshot): ProposalDiagnostic[] {
+  const diagnostics: ProposalDiagnostic[] = [];
+  const add = (code: string, message: string) =>
+    diagnostics.push({ code, severity: "warning", message });
+  const brief = snapshot.brief;
+  if (brief.children > 0 && !(brief.childrenAges ?? "").trim())
+    add("CHILD_AGES", "Faltam as idades das crianças.");
+  if (!brief.arrivalLocation.trim() || (brief.arrivalFlightNumber?.trim() && !brief.arrivalTime))
+    add(
+      "ARRIVAL_INCOMPLETE",
+      "Os dados de chegada estão incompletos; confirme local e, quando indicado, hora do voo.",
+    );
+  if (
+    !brief.departureLocation.trim() ||
+    (brief.departureFlightNumber?.trim() && !brief.departureTime)
+  )
+    add(
+      "DEPARTURE_INCOMPLETE",
+      "Os dados de partida estão incompletos; confirme local e, quando indicado, hora do voo.",
+    );
+  const exclusions = new Set(brief.exclusions.map(normalized).filter(Boolean));
+  const conflicts = brief.interests.map(normalized).filter((value) => exclusions.has(value));
+  if (conflicts.length)
+    add(
+      "INTEREST_EXCLUDED",
+      "O mesmo tema surge como interesse e exclusão; é necessária uma escolha explícita.",
+    );
+  const vague = new Set(["outro", "outra", "outros", "outras", "sim", "restricao", "alergia"]);
+  if (brief.mobilityRestrictions.some((value) => vague.has(normalized(value))))
+    add("MOBILITY_DETAIL", "Uma restrição de mobilidade precisa de detalhe operacional.");
+  if (brief.dietaryRestrictions.some((value) => vague.has(normalized(value))))
+    add("DIETARY_DETAIL", "Uma restrição alimentar precisa de detalhe operacional.");
+  if (brief.budget <= 0)
+    add("BUDGET_MISSING", "Indique um orçamento positivo antes de avaliar a adequação.");
+  return diagnostics;
+}
+
 /** Diagnóstico local e explicável; não consulta fornecedores nem altera o snapshot. */
 export function proposalDiagnostics(snapshot: Snapshot, catalog: Catalog): ProposalDiagnostic[] {
-  const diagnostics: ProposalDiagnostic[] = [];
+  const diagnostics: ProposalDiagnostic[] = briefQualityDiagnostics(snapshot);
   const add = (
     code: string,
     severity: ProposalDiagnostic["severity"],
@@ -30,8 +75,6 @@ export function proposalDiagnostics(snapshot: Snapshot, catalog: Catalog): Propo
     dayNumber?: number,
     itemId?: string,
   ) => diagnostics.push({ code, severity, message, dayNumber, itemId });
-  if (snapshot.brief.children > 0 && !(snapshot.brief.childrenAges ?? "").trim())
-    add("CHILD_AGES", "warning", "Faltam as idades das crianças.");
   const approved = catalogIds(catalog);
   for (const day of snapshot.itinerary) {
     const count = day.items.filter((item) => item.category !== "free_time").length;
@@ -86,7 +129,14 @@ export function proposalDiagnostics(snapshot: Snapshot, catalog: Catalog): Propo
     }
   }
   const budget = proposalBudget(snapshot);
-  if (budget.incomplete) add("PRICE_UNKNOWN", "warning", "Existem custos por confirmar.");
+  if (budget.incomplete) {
+    add("PRICE_UNKNOWN", "warning", "Existem custos por confirmar.");
+    add(
+      "BUDGET_UNASSESSED",
+      "warning",
+      "Não é possível concluir a adequação do orçamento enquanto existirem custos desconhecidos.",
+    );
+  }
   for (const [currency, total] of Object.entries(budget.totals)) {
     if (currency !== snapshot.brief.currency)
       add(
