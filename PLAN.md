@@ -16,7 +16,6 @@ caminhos temporários do workflow ETL e exclusões CDK/npm. Foram preservados o 
 completo de warehouse e a retenção de 14 dias. Evidência em
 [Decisões](docs/DECISIONS.md).
 
-- [ ] Validar a correção do workflow ETL numa execução GitHub Actions.
 - [ ] Após autorização de publicação, validar os limites da API e a recusa de
   origens externas nos serviços reais. A síntese local não comprova deployment.
 
@@ -38,9 +37,10 @@ completo de warehouse e a retenção de 14 dias. Evidência em
 Próximo passo técnico: obter evidência dos jobs `validate` e `container` de
 `.github/workflows/portal.yml` no GitHub Actions para a revisão a entregar.
 O workflow, o `Dockerfile.curation` e a stack `infra/curation-workspace.mjs`
-já existem; não é necessário recriá-los. No commit remoto `d415c54`, documentação
-passou, mas portal e ETL falharam sem iniciar jobs. As correções dos caminhos nos
-dois workflows estão locais e ainda precisam de execução remota.
+já existem; não é necessário recriá-los. No commit `d176a56`, documentação,
+ETL e o job `validate` do portal passaram no GitHub Actions. O job `container`
+falhou porque o PATH da imagem omitia `/usr/sbin`, impedindo `groupadd`.
+A correção do PATH precisa de confirmação numa nova construção em CI.
 
 A revisão local eliminou os sete avisos de tracing e restringiu o contexto Docker
 a código e recursos necessários. O build e os testes do portal passaram; a imagem

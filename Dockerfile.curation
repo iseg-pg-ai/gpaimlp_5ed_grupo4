@@ -28,7 +28,7 @@ ENV NODE_ENV=production \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app/src:/app \
-    PATH=/app/.venv/bin:/usr/local/bin:/usr/bin:/bin \
+    PATH=/app/.venv/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     BLU_BIND_HOST=0.0.0.0
 COPY --from=node-runtime /usr/local/ /usr/local/
 RUN apt-get update \
