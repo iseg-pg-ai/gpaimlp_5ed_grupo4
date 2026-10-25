@@ -1,4 +1,4 @@
-import { noStoreHeaders } from "@/lib/api-response";
+import { noStoreHeaders } from "@/lib/server-http";
 import { VersionStore } from "@/lib/version-store";
 
 export const runtime = "nodejs";

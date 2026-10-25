@@ -304,7 +304,7 @@
     "zh": "助理(经核实)"
   },
   "BLU Costa Travel Curation · Intake": {
-    "pt": "Curação de viagens BLU Costa · Intake",
+    "pt": "Curadoria BLU Costa · Briefing",
     "en": "BLU Costa Travel Curation · Intake",
     "es": "BLU Costa Curación de Viajes · Entrada",
     "fr": "BLU Costa Travel Curation · Entrée",
@@ -312,7 +312,7 @@
     "zh": "BLU 科斯塔旅行处罚"
   },
   "Plan a Considered Journey": {
-    "pt": "Planeje uma viagem considerada",
+    "pt": "Desenhe uma viagem à medida",
     "en": "Plan a Considered Journey",
     "es": "Planee un Viaje Considerado",
     "fr": "Planifiez un voyage réfléchi",
@@ -328,7 +328,7 @@
     "zh": "“旅行不是积累,而是解释。”"
   },
   "Load Sample Demo Brief": {
-    "pt": "Carregar resumo da demonstração da amostra",
+    "pt": "Preencher exemplo",
     "en": "Load Sample Demo Brief",
     "es": "Demo de muestra de carga",
     "fr": "Démonstration de l'échantillon de chargement",
@@ -1567,21 +1567,13 @@
     "de": "Kundensprache",
     "zh": "客户语言"
   },
-  "Exportar TXT para Canva": {
-    "pt": "Exportar TXT para Canva",
-    "en": "Export TXT for Canva",
-    "es": "Exportar TXT para Canva",
-    "fr": "Exporter TXT pour Canva",
-    "de": "TXT für Canva exportieren",
-    "zh": "导出 Canva TXT"
-  },
-  "TXT para Canva": {
-    "pt": "TXT para Canva",
-    "en": "TXT for Canva",
-    "es": "TXT para Canva",
-    "fr": "TXT pour Canva",
-    "de": "TXT für Canva",
-    "zh": "Canva TXT"
+  "Exportar TXT": {
+    "pt": "Exportar TXT",
+    "en": "Export TXT",
+    "es": "Exportar TXT",
+    "fr": "Exporter TXT",
+    "de": "TXT exportieren",
+    "zh": "导出 TXT"
   },
   "Inclui sempre a versão em português. Os dois PDFs são descarregados num ZIP.": {
     "pt": "Inclui sempre a versão em português. Os dois PDFs são descarregados num ZIP.",
@@ -3678,5 +3670,37 @@
     "fr": "Réserves et conditions",
     "de": "Vorbehalte und Bedingungen",
     "zh": "保留和条件"
+  },
+  "Arrival time": {
+    "pt": "Hora de chegada",
+    "en": "Arrival time",
+    "es": "Hora de llegada",
+    "fr": "Heure d’arrivée",
+    "de": "Ankunftszeit",
+    "zh": "抵达时间"
+  },
+  "Arrival flight number": {
+    "pt": "Número do voo de chegada",
+    "en": "Arrival flight number",
+    "es": "Número de vuelo de llegada",
+    "fr": "Numéro du vol d’arrivée",
+    "de": "Ankunftsflugnummer",
+    "zh": "抵达航班号"
+  },
+  "Departure time": {
+    "pt": "Hora de partida",
+    "en": "Departure time",
+    "es": "Hora de salida",
+    "fr": "Heure de départ",
+    "de": "Abflugzeit",
+    "zh": "出发时间"
+  },
+  "Departure flight number": {
+    "pt": "Número do voo de partida",
+    "en": "Departure flight number",
+    "es": "Número de vuelo de salida",
+    "fr": "Numéro du vol de départ",
+    "de": "Abflugnummer",
+    "zh": "出发航班号"
   }
 }

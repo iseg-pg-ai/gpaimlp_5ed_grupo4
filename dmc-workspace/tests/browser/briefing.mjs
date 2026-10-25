@@ -1,23 +1,11 @@
-import { chromium } from "playwright";
+import { launchBrowser, mockTranslation } from "./helpers.mjs";
 import assert from "node:assert/strict";
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
-});
+const browser = await launchBrowser();
 try {
   for (const width of [360, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     await page.addInitScript(() => localStorage.setItem("blu-portal-language", "pt"));
-    await page.route("**/api/translate", (r) =>
-      r.fulfill({
-        json: {
-          texts: r
-            .request()
-            .postDataJSON()
-            .items.map((i) => i.text),
-        },
-      }),
-    );
+    await mockTranslation(page);
     let submitted;
     await page.route("**/api/itineraries", (r) => {
       submitted = r.request().postDataJSON();
@@ -28,7 +16,40 @@ try {
       .locator("main button")
       .filter({ has: page.locator("svg.lucide-rotate-ccw") })
       .click();
+    const formIssues = await page.locator("main").evaluate((main) => {
+      const fields = [...main.querySelectorAll("input, select, textarea")];
+      return {
+        unidentified: fields
+          .filter((field) => !field.id && !field.name)
+          .map((field) => field.outerHTML),
+        unlabelled: fields
+          .filter(
+            (field) =>
+              !field.labels?.length &&
+              !field.getAttribute("aria-label") &&
+              !field.getAttribute("aria-labelledby"),
+          )
+          .map((field) => field.name),
+        orphanLabels: [...main.querySelectorAll("label")]
+          .filter((label) => !label.control)
+          .map((label) => label.textContent),
+        duplicateIds: fields
+          .filter((field) => field.id && document.querySelectorAll(`[id="${field.id}"]`).length > 1)
+          .map((field) => field.id),
+      };
+    });
+    assert.deepEqual(formIssues, {
+      unidentified: [],
+      unlabelled: [],
+      orphanLabels: [],
+      duplicateIds: [],
+    });
     const navigation = page.getByRole("navigation", { name: "Etapas do briefing" });
+    await navigation.getByRole("button").nth(1).click();
+    await page.locator('[name="arrivalTime"]').fill("10:35");
+    await page.locator('[name="arrivalFlightNumber"]').fill("TP 1363");
+    await page.locator('[name="departureTime"]').fill("17:20");
+    await page.locator('[name="departureFlightNumber"]').fill("TP 1931");
     await navigation.getByRole("button").nth(2).click();
     const personal = page.getByTestId("brief-personalization");
     await personal.locator("details summary").first().click();
@@ -55,6 +76,10 @@ try {
     assert.deepEqual(submitted.personalization.mustHave, ["Museu e galeria"]);
     assert.equal(submitted.personalization.guideLanguage, "");
     assert.equal(submitted.personalization.budgetFlex, 10);
+    assert.equal(submitted.arrivalTime, "10:35");
+    assert.equal(submitted.arrivalFlightNumber, "TP 1363");
+    assert.equal(submitted.departureTime, "17:20");
+    assert.equal(submitted.departureFlightNumber, "TP 1931");
     console.log(width, "briefing review, editing, conditional questions and payload OK");
     await page.close();
   }

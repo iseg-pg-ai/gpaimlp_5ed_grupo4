@@ -1,0 +1,2 @@
+window.BLU_CHAT_API = '';
+window.BLU_CONVERSATION_EVENTS_ENDPOINT = '';

@@ -5,7 +5,7 @@ import type { RefObject } from "react";
 import { T } from "@/components/LocaleProvider";
 import { CatalogCompatibility } from "@/components/CatalogCompatibility";
 import { emptyMatching } from "@/lib/catalog-matching";
-import { selectStyle } from "@/components/ui/select-style";
+import { selectStyle } from "@/components/ui/form-controls";
 import {
   categories,
   subcategories,
@@ -40,7 +40,7 @@ export function CatalogEditor({ editing, setEditing, busy, save, editorRef }: Pr
     <form
       ref={editorRef}
       data-testid="catalog-editor"
-      className="my-6 scroll-mt-4 rounded-2xl border border-[#9DB3B8] bg-white p-4 sm:p-6"
+      className="my-6 scroll-mt-4 rounded-2xl border border-[var(--portal-line-9db3b8)] bg-[var(--portal-white)] p-4 sm:p-6"
       onSubmit={(e) => {
         e.preventDefault();
         save(editing);
@@ -111,7 +111,7 @@ export function CatalogEditor({ editing, setEditing, busy, save, editorRef }: Pr
           return (
             <section
               key={group.title}
-              className="md:col-span-2 min-w-0 rounded-xl border border-[#D5D1C7] p-4"
+              className="md:col-span-2 min-w-0 rounded-xl border border-[var(--portal-line-d5d1c7)] p-4"
               data-testid="catalog-field-group"
             >
               <h3 className="font-semibold">
@@ -250,7 +250,7 @@ export function CatalogEditor({ editing, setEditing, busy, save, editorRef }: Pr
                       className={`min-w-0 text-sm ${key === "description" ? "md:col-span-2" : ""}`}
                     >
                       <T text={fieldLabels[key]} source="pt" />
-                      <span className="block text-xs text-[#52646A]">
+                      <span className="block text-xs text-[var(--portal-text-52646a)]">
                         <T
                           text={
                             key === "name"
@@ -459,7 +459,7 @@ export function CatalogEditor({ editing, setEditing, busy, save, editorRef }: Pr
       <div className="mt-5 flex flex-wrap gap-3">
         <button
           disabled={busy}
-          className={`${button} bg-[#143F4B] text-white hover:bg-[#205562]`}
+          className={`${button} bg-[var(--portal-bg-143f4b)] text-white hover:bg-[var(--portal-bg-205562)]`}
           type="submit"
         >
           <T text="Guardar registo" source="pt" />

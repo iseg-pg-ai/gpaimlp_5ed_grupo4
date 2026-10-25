@@ -1,0 +1,13 @@
+# Review ownership for the focused customer-channel addon.
+/frontend/website/ @GiselaInge
+/frontend/blu-cloud-site/ @GiselaInge
+/infra/aws-split-app.mjs @GiselaInge
+/infra/lambda/whatsapp-*/ @GiselaInge
+/infra/lambda/ingest/ @GiselaInge
+/infra/lambda/event-processor/ @GiselaInge
+/infra/tests/whatsapp.test.mjs @GiselaInge
+/infra/lambda/backoffice-rag/ @GiselaInge
+/infra/lambda/churn-evaluator/ @GiselaInge
+/scripts/deploy-aws.sh @GiselaInge
+/Makefile @GiselaInge
+/docs/ADDON_PROVENANCE.md @GiselaInge

@@ -1,14 +1,11 @@
-import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
+import { launchBrowser, readSnapshot, mockTranslation } from "./helpers.mjs";
+
 import assert from "node:assert/strict";
 
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
-});
+const browser = await launchBrowser();
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  const snapshot = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
+  const snapshot = readSnapshot();
   Object.assign(snapshot.brief, {
     customerEmail: "cliente@example.com",
     childrenAges: "",
@@ -24,16 +21,7 @@ try {
       JSON.stringify([{ ...trip, id: "delivery-browser", version: 3, messages: [] }]),
     );
   }, snapshot);
-  await page.route("**/api/translate", (route) =>
-    route.fulfill({
-      json: {
-        texts: route
-          .request()
-          .postDataJSON()
-          .items.map((item) => item.text),
-      },
-    }),
-  );
+  await mockTranslation(page);
   await page.route("**/api/trash/cleanup", (route) =>
     route.fulfill({ json: { deletedTripIds: [], deletedVersions: [] } }),
   );
@@ -49,7 +37,11 @@ try {
   await page.route("**/api/shares", (route) => {
     shared = route.request().postDataJSON();
     return route.fulfill({
-      json: { shareUrl: "https://example.test/share/token", recipient: shared.recipient },
+      json: {
+        shareUrl: "https://example.test/share/token",
+        recipient: shared.recipient,
+        expiresAt: "2026-11-23T12:00:00Z",
+      },
     });
   });
   await page.goto(process.env.PORTAL_URL || "http://localhost:3001");
@@ -65,10 +57,11 @@ try {
     await dialog.getByLabel(/Email do destinatário/i).inputValue(),
     "cliente@example.com",
   );
-  await dialog.getByLabel(/Versão/i).selectOption("2");
+  await dialog.getByLabel(/^Versão/i).selectOption("2");
   await dialog.locator("summary").filter({ hasText: "English" }).click();
   await dialog.getByRole("button", { name: /Português/ }).click();
   await dialog.getByText("Documento PDF", { exact: true }).click();
+  await dialog.getByLabel(/Confirmo que o destinatário/i).check();
   await dialog.getByRole("button", { name: /Preparar email/i }).click();
   await dialog.getByRole("status").waitFor();
   assert.deepEqual(shared, {
@@ -77,6 +70,8 @@ try {
     locale: "pt",
     method: "document",
     recipient: "cliente@example.com",
+    retentionDays: 30,
+    consent: true,
   });
   console.log("Delivery: email, version, language, PDF sharing and success feedback OK");
 } finally {

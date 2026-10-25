@@ -1,0 +1,213 @@
+/* Paleta partilhada: a primeira cor preserva o tema claro original. */
+:root {
+  color-scheme: light;
+  --portal-white: light-dark(#fff, #182a33);
+  --portal-bg-0a242b: light-dark(#0a242b, #326474);
+  --portal-bg-0e2d36: light-dark(#0e2d36, #254d59);
+  --portal-bg-102f38: light-dark(#102f38, #10242d);
+  --portal-bg-143f4b: light-dark(#143f4b, #254d59);
+  --portal-bg-1a1917: light-dark(#1a1917, #254d59);
+  --portal-bg-1a5c70: light-dark(#1a5c70, #254d59);
+  --portal-bg-1e4651: light-dark(#1e4651, #326474);
+  --portal-bg-205562: light-dark(#205562, #254d59);
+  --portal-bg-234750: light-dark(#234750, #254d59);
+  --portal-bg-254b55: light-dark(#254b55, #254d59);
+  --portal-bg-2d5b67: light-dark(#2d5b67, #254d59);
+  --portal-bg-c9c6bd: light-dark(#c9c6bd, #213640);
+  --portal-bg-d8e4e7: light-dark(#d8e4e7, #213640);
+  --portal-bg-e3dcd0: light-dark(#e3dcd0, #213640);
+  --portal-bg-e4eae4: light-dark(#e4eae4, #213640);
+  --portal-bg-e4eee6: light-dark(#e4eee6, #213640);
+  --portal-bg-e5f3f7: light-dark(#e5f3f7, #213640);
+  --portal-bg-e6ede1: light-dark(#e6ede1, #213640);
+  --portal-bg-e6eeea: light-dark(#e6eeea, #213640);
+  --portal-bg-e7eeef: light-dark(#e7eeef, #213640);
+  --portal-bg-e7eef0: light-dark(#e7eef0, #213640);
+  --portal-bg-eae4d7: light-dark(#eae4d7, #213640);
+  --portal-bg-eae6dd: light-dark(#eae6dd, #213640);
+  --portal-bg-eaf0f1: light-dark(#eaf0f1, #213640);
+  --portal-bg-eaf5ef: light-dark(#eaf5ef, #213640);
+  --portal-bg-ebe5da: light-dark(#ebe5da, #213640);
+  --portal-bg-ebf1f2: light-dark(#ebf1f2, #213640);
+  --portal-bg-ebf3f5: light-dark(#ebf3f5, #213640);
+  --portal-bg-ecefe9: light-dark(#ecefe9, #213640);
+  --portal-bg-edf1e9: light-dark(#edf1e9, #213640);
+  --portal-bg-edf2ee: light-dark(#edf2ee, #213640);
+  --portal-bg-edf3f4: light-dark(#edf3f4, #213640);
+  --portal-bg-f0f0f8: light-dark(#f0f0f8, #182a33);
+  --portal-bg-f0f4ec: light-dark(#f0f4ec, #213640);
+  --portal-bg-f0f5ee: light-dark(#f0f5ee, #213640);
+  --portal-bg-f1e4e1: light-dark(#f1e4e1, #213640);
+  --portal-bg-f1f5ee: light-dark(#f1f5ee, #213640);
+  --portal-bg-f2ece1: light-dark(#f2ece1, #213640);
+  --portal-bg-f4f0e7: light-dark(#f4f0e7, #101d24);
+  --portal-bg-f5ecd8: light-dark(#f5ecd8, #213640);
+  --portal-bg-f5f3ee: light-dark(#f5f3ee, #101d24);
+  --portal-bg-f5f8f8: light-dark(#f5f8f8, #182a33);
+  --portal-bg-f7e9e6: light-dark(#f7e9e6, #213640);
+  --portal-bg-f7f5ee: light-dark(#f7f5ee, #182a33);
+  --portal-bg-f8f6f1: light-dark(#f8f6f1, #182a33);
+  --portal-bg-f8faf5: light-dark(#f8faf5, #182a33);
+  --portal-bg-f9f7f2: light-dark(#f9f7f2, #182a33);
+  --portal-bg-faf5e9: light-dark(#faf5e9, #213640);
+  --portal-bg-faf8f3: light-dark(#faf8f3, #182a33);
+  --portal-bg-fafbf6: light-dark(#fafbf6, #182a33);
+  --portal-bg-fafbf7: light-dark(#fafbf7, #182a33);
+  --portal-bg-fbf4e8: light-dark(#fbf4e8, #213640);
+  --portal-bg-fbf7ed: light-dark(#fbf7ed, #182a33);
+  --portal-bg-fdf4f3: light-dark(#fdf4f3, #182a33);
+  --portal-bg-fff7ed: light-dark(#fff7ed, #182a33);
+  --portal-bg-fff8eb: light-dark(#fff8eb, #182a33);
+  --portal-bg-fffdf9: light-dark(#fffdf9, #182a33);
+  --portal-bg-fffef9: light-dark(#fffef9, #182a33);
+  --portal-bg-fffefa: light-dark(#fffefa, #182a33);
+  --portal-bg-fffefacb: light-dark(#fffefacb, #182a33cb);
+  --portal-bg-fffefaee: light-dark(#fffefaee, #182a33ee);
+  --portal-bg-fffefaf5: light-dark(#fffefaf5, #182a33f5);
+  --portal-bg-ffffff: light-dark(#fff, #182a33);
+  --portal-bg-ffffffa8: light-dark(#ffffffa8, #182a33a8);
+  --portal-bg-ffffffb3: light-dark(#ffffffb3, #182a33b3);
+  --portal-line-143f4b: light-dark(#143f4b, #6e9aab);
+  --portal-line-1a5c70: light-dark(#1a5c70, #6e9aab);
+  --portal-line-294b54: light-dark(#294b54, #6e9aab);
+  --portal-line-2d5b67: light-dark(#2d5b67, #6e9aab);
+  --portal-line-4a6c73: light-dark(#4a6c73, #6e9aab);
+  --portal-line-52717a: light-dark(#52717a, #6e9aab);
+  --portal-line-557e78: light-dark(#557e78, #6e9aab);
+  --portal-line-98bcaa: light-dark(#98bcaa, #39515c);
+  --portal-line-9db3b8: light-dark(#9db3b8, #39515c);
+  --portal-line-9e6e24: light-dark(#9e6e24, #6e9aab);
+  --portal-line-a7bdb3: light-dark(#a7bdb3, #39515c);
+  --portal-line-a8d3e0: light-dark(#a8d3e0, #39515c);
+  --portal-line-bbcbcd: light-dark(#bbcbcd, #39515c);
+  --portal-line-bcd0d4: light-dark(#bcd0d4, #39515c);
+  --portal-line-bcd4dc: light-dark(#bcd4dc, #39515c);
+  --portal-line-bda16c: light-dark(#bda16c, #39515c);
+  --portal-line-c3d7db: light-dark(#c3d7db, #39515c);
+  --portal-line-c5d4d8: light-dark(#c5d4d8, #39515c);
+  --portal-line-c7c9de: light-dark(#c7c9de, #39515c);
+  --portal-line-c8b38750: light-dark(#c8b38750, #39515c50);
+  --portal-line-c9c4b7: light-dark(#c9c4b7, #39515c);
+  --portal-line-c9c6bd: light-dark(#c9c6bd, #39515c);
+  --portal-line-cad8cf: light-dark(#cad8cf, #39515c);
+  --portal-line-cbd9d0: light-dark(#cbd9d0, #39515c);
+  --portal-line-ced9d2: light-dark(#ced9d2, #39515c);
+  --portal-line-cedbd3: light-dark(#cedbd3, #39515c);
+  --portal-line-d2dcd4: light-dark(#d2dcd4, #39515c);
+  --portal-line-d5d1c7: light-dark(#d5d1c7, #39515c);
+  --portal-line-d5dfd7: light-dark(#d5dfd7, #39515c);
+  --portal-line-d7dfda: light-dark(#d7dfda, #39515c);
+  --portal-line-d7e2d9: light-dark(#d7e2d9, #39515c);
+  --portal-line-d8a65c: light-dark(#d8a65c, #39515c);
+  --portal-line-dce3dc: light-dark(#dce3dc, #39515c);
+  --portal-line-dce3de: light-dark(#dce3de, #39515c);
+  --portal-line-dce4de: light-dark(#dce4de, #39515c);
+  --portal-line-ddd8ce: light-dark(#ddd8ce, #39515c);
+  --portal-line-dfd9ce: light-dark(#dfd9ce, #39515c);
+  --portal-line-e27151: light-dark(#e27151, #39515c);
+  --portal-line-e2ddd3: light-dark(#e2ddd3, #39515c);
+  --portal-line-e2ded5: light-dark(#e2ded5, #39515c);
+  --portal-line-e3dfd5: light-dark(#e3dfd5, #39515c);
+  --portal-line-e4d1ad: light-dark(#e4d1ad, #39515c);
+  --portal-line-e4e9df: light-dark(#e4e9df, #39515c);
+  --portal-line-e5d7d5: light-dark(#e5d7d5, #39515c);
+  --portal-line-e6e1d5: light-dark(#e6e1d5, #39515c);
+  --portal-line-e6e2d8: light-dark(#e6e2d8, #39515c);
+  --portal-line-e7ece5: light-dark(#e7ece5, #39515c);
+  --portal-line-e8d4b0: light-dark(#e8d4b0, #39515c);
+  --portal-line-eae6df: light-dark(#eae6df, #39515c);
+  --portal-line-ede8df: light-dark(#ede8df, #39515c);
+  --portal-line-f0ece4: light-dark(#f0ece4, #39515c);
+  --portal-line-fed7aa: light-dark(#fed7aa, #39515c);
+  --portal-text-143f4b: light-dark(#143f4b, #e3edf0);
+  --portal-text-1a1917: light-dark(#1a1917, #e3edf0);
+  --portal-text-1a5c70: light-dark(#1a5c70, #e3edf0);
+  --portal-text-1e4a56: light-dark(#1e4a56, #e3edf0);
+  --portal-text-214d59: light-dark(#214d59, #e3edf0);
+  --portal-text-245464: light-dark(#245464, #e3edf0);
+  --portal-text-245c49: light-dark(#245c49, #e3edf0);
+  --portal-text-2d4a52: light-dark(#2d4a52, #e3edf0);
+  --portal-text-2d5b67: light-dark(#2d5b67, #e3edf0);
+  --portal-text-334e57: light-dark(#334e57, #e3edf0);
+  --portal-text-3a535b: light-dark(#3a535b, #e3edf0);
+  --portal-text-454466: light-dark(#454466, #a9c2ca);
+  --portal-text-46666a: light-dark(#46666a, #a9c2ca);
+  --portal-text-4a636b: light-dark(#4a636b, #a9c2ca);
+  --portal-text-52646a: light-dark(#52646a, #a9c2ca);
+  --portal-text-546e6a: light-dark(#546e6a, #a9c2ca);
+  --portal-text-55716d: light-dark(#55716d, #a9c2ca);
+  --portal-text-55766e: light-dark(#55766e, #a9c2ca);
+  --portal-text-637b77: light-dark(#637b77, #a9c2ca);
+  --portal-text-687f7c: light-dark(#687f7c, #a9c2ca);
+  --portal-text-698288: light-dark(#698288, #a9c2ca);
+  --portal-text-6a8288: light-dark(#6a8288, #a9c2ca);
+  --portal-text-6b6861: light-dark(#6b6861, #a9c2ca);
+  --portal-text-70443e: light-dark(#70443e, #f4a49e);
+  --portal-text-735b30: light-dark(#735b30, #e4bc7b);
+  --portal-text-765218: light-dark(#765218, #e3edf0);
+  --portal-text-7c2d12: light-dark(#7c2d12, #e3edf0);
+  --portal-text-7d4a43: light-dark(#7d4a43, #e4bc7b);
+  --portal-text-855314: light-dark(#855314, #e4bc7b);
+  --portal-text-888888: light-dark(#888, #a9c2ca);
+  --portal-text-896225: light-dark(#896225, #e4bc7b);
+  --portal-text-8c877d: light-dark(#8c877d, #a9c2ca);
+  --portal-text-8f8b82: light-dark(#8f8b82, #a9c2ca);
+  --portal-text-943d36: light-dark(#943d36, #f4a49e);
+  --portal-text-9a3412: light-dark(#9a3412, #e4bc7b);
+  --portal-text-9e6e24: light-dark(#9e6e24, #e4bc7b);
+  --portal-text-a8a49c: light-dark(#a8a49c, #a9c2ca);
+  --portal-text-c2410c: light-dark(#c2410c, #ffc294);
+  --portal-text-c9c6bd: light-dark(#c9c6bd, #a9c2ca);
+  --portal-text-d8a65c: light-dark(#d8a65c, #e4bc7b);
+  --portal-text-d8c6a4: light-dark(#d8c6a4, #d8c6a4);
+  --portal-text-e27151: light-dark(#e27151, #ffae95);
+  --portal-text-ea580c: light-dark(#ea580c, #e4bc7b);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+@media print {
+  :root[data-theme] {
+    color-scheme: light;
+  }
+}
+
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 1px solid #52717a;
+  border-radius: 0.6rem;
+  background: transparent;
+  color: #edf2f1;
+  cursor: pointer;
+}
+.theme-toggle:hover {
+  background: #254b55;
+}
+:root[data-theme="dark"] .blu-studio :focus-visible {
+  outline-color: #a2d6e3;
+}
+:root[data-theme="dark"] :is(input, textarea)::placeholder {
+  color: #91aab4;
+}
+@media screen {
+  :root[data-theme="dark"] .obs-map-canvas > svg > rect {
+    fill: #162c37;
+  }
+  :root[data-theme="dark"] .obs-map-canvas > svg > path {
+    fill: #263f47;
+    stroke: #65847e;
+  }
+  :root[data-theme="dark"] .obs-map-canvas > svg > text {
+    fill: #e3edf0;
+    stroke: #182a33;
+  }
+}
+
+:root[data-theme="dark"] select {
+  background-image: none;
+  appearance: auto;
+}

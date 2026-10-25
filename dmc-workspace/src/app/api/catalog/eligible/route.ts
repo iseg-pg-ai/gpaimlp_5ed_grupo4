@@ -1,8 +1,7 @@
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+import { jsonError, noStoreHeaders } from "@/lib/server-http";
 import { editWithAssistant } from "@/lib/assistant-editing";
 import { validateBrief } from "@/lib/curation";
-import { CatalogStore } from "@/lib/catalog-store";
-import { loadPublishedCatalog } from "@/lib/published-catalog";
+import { CatalogStore, loadPublishedCatalog } from "@/lib/catalog-store";
 import type { ItineraryDay } from "@/types";
 
 export const runtime = "nodejs";
@@ -58,14 +57,10 @@ export async function POST(request: Request) {
     }
 
     const store = new CatalogStore();
-    try {
-      return Response.json(
-        store.list().filter((record) => eligibleIds.has(record.id)),
-        { headers: noStoreHeaders },
-      );
-    } finally {
-      store.close();
-    }
+    return Response.json(
+      (await store.list()).filter((record) => eligibleIds.has(record.id)),
+      { headers: noStoreHeaders },
+    );
   } catch (error) {
     console.error("Catalog eligibility failed", error);
     return jsonError("Não foi possível validar as opções compatíveis.", 422, noStoreHeaders);

@@ -13,6 +13,8 @@ import json
 import re
 import shutil
 import sqlite3
+import sys
+import time
 import unicodedata
 import uuid
 from collections import Counter
@@ -271,6 +273,7 @@ def _build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
 
     # Publish run metadata so consumers can verify data coverage and quality.
     manifest = {
+        "schema_version": 1,
         "pipeline": "blu-local-etl", "ran_at_utc": datetime.now(UTC).isoformat(),
         "input_directory": data_dir.as_posix(), "workbook": workbook.as_posix(), "source": source_manifest,
         "tables": {table: len(records) for table, records in tables.items()},
@@ -285,6 +288,22 @@ def _build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     return manifest
 
 
+
+def _rename_with_retry(source: Path, target: Path) -> None:
+    """Tolera bloqueios transitórios Windows, sem repetir a construção da entrega."""
+    # No máximo seis tentativas e 1,55 s de espera; erros persistentes propagam-se.
+    for delay in (0.05, 0.1, 0.2, 0.4, 0.8, None):
+        try:
+            source.rename(target)
+            return
+        except OSError as error:
+            if (
+                sys.platform != "win32"
+                or getattr(error, "winerror", None) not in (5, 32, 33)
+                or delay is None
+            ):
+                raise
+            time.sleep(delay)
 
 def run(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     """Read local raw data, validate a complete delivery, then publish with rollback."""
@@ -302,12 +321,12 @@ def run(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     try:
         manifest = _build(data_dir, stage)
         if target.exists():
-            target.rename(backup)
+            _rename_with_retry(target, backup)
         try:
-            stage.rename(target)
+            _rename_with_retry(stage, target)
         except Exception:
             if backup.exists():
-                backup.rename(target)
+                _rename_with_retry(backup, target)
             raise
         if backup.exists():
             shutil.rmtree(backup, ignore_errors=True)

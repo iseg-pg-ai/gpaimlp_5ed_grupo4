@@ -146,7 +146,10 @@ export function renderPdf(
       );
       text(`Orçamento indicado: ${b.budget} ${b.currency}. Limite do cliente; não é uma cotação.`);
       text(
-        `Chegada: ${b.arrivalLocation || "Por confirmar"} | Partida: ${b.departureLocation || "Por confirmar"}`,
+        `Chegada: ${b.arrivalLocation || "Por confirmar"} | Hora: ${b.arrivalTime || "Por confirmar"} | Voo: ${b.arrivalFlightNumber || "Por confirmar"}`,
+      );
+      text(
+        `Partida: ${b.departureLocation || "Por confirmar"} | Hora: ${b.departureTime || "Por confirmar"} | Voo: ${b.departureFlightNumber || "Por confirmar"}`,
       );
       text(`Ritmo: ${b.pace}; esforço: ${b.physicalEffort}; início: ${b.morningPreference}`);
       text(`Interesses: ${b.interests.join(", ") || "Não indicados"}`);

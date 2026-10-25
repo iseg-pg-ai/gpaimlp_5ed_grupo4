@@ -1,0 +1,14 @@
+# Fontes protegidas, dados operacionais e entregas geradas.
+/data/
+/warehouse/
+/exports/
+/reports/
+/monitoring/runtime/
+
+# Resultados do próprio grafo e ambientes locais.
+/graphify-out/
+/.venv/
+/.tools/
+**/node_modules/
+**/.next/
+**/__pycache__/

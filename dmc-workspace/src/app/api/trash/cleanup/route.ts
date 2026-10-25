@@ -1,5 +1,6 @@
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+import { jsonError, noStoreHeaders } from "@/lib/server-http";
 import { checkTripId, VersionStore } from "@/lib/version-store";
+import { syncOperationalState } from "@/lib/operational-s3";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,12 +39,16 @@ export async function POST(request: Request) {
 
   const store = new VersionStore();
   try {
-    return Response.json(
-      store.cleanupExpiredTrash(tripIds, todayInPortugal(), confirmedTripIds, confirmedVersions),
-      {
-        headers: noStoreHeaders,
-      },
+    const result = store.cleanupExpiredTrash(
+      tripIds,
+      todayInPortugal(),
+      confirmedTripIds,
+      confirmedVersions,
     );
+    await syncOperationalState();
+    return Response.json(result, {
+      headers: noStoreHeaders,
+    });
   } catch (error) {
     console.error("Trash cleanup failed", error);
     return jsonError("Não foi possível concluir a limpeza automática.", 500, noStoreHeaders);

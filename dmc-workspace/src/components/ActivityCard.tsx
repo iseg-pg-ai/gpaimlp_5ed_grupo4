@@ -81,10 +81,10 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   return (
     <article
       data-testid="activity-card"
-      className={`rounded-2xl border p-4 sm:p-5 bg-white ${activity.isLocked ? "border-[#9DB3B8]" : "border-[#DDD8CE]"}`}
+      className={`rounded-2xl border p-4 sm:p-5 bg-[var(--portal-white)] ${activity.isLocked ? "border-[var(--portal-line-9db3b8)]" : "border-[var(--portal-line-ddd8ce)]"}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[#4A636B]">
-        <span className="inline-flex items-center gap-2 font-semibold text-[#143F4B]">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--portal-text-4a636b)]">
+        <span className="inline-flex items-center gap-2 font-semibold text-[var(--portal-text-143f4b)]">
           <Clock aria-hidden="true" className="size-4" />
           <T text={activity.time} source="pt" />
         </span>
@@ -93,27 +93,27 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           <T text={config.label} />
         </span>
       </div>
-      <h3 className="mt-3 text-lg font-semibold leading-snug text-[#143F4B] break-words">
+      <h3 className="mt-3 text-lg font-semibold leading-snug text-[var(--portal-text-143f4b)] break-words">
         <T text={activity.title} source="pt" />
       </h3>
       {activity.location && (
-        <p className="mt-2 flex items-start gap-2 text-sm text-[#4A636B]">
+        <p className="mt-2 flex items-start gap-2 text-sm text-[var(--portal-text-4a636b)]">
           <MapPin aria-hidden="true" className="size-4 shrink-0 mt-0.5" />
           {activity.location}
         </p>
       )}
       {activity.description && (
-        <p className="mt-3 text-sm leading-7 text-[#3A535B]">
+        <p className="mt-3 text-sm leading-7 text-[var(--portal-text-3a535b)]">
           <T text={activity.description} source="pt" />
         </p>
       )}
       {activity.duration && (
-        <p className="mt-2 text-sm text-[#4A636B]">
+        <p className="mt-2 text-sm text-[var(--portal-text-4a636b)]">
           <T text="Duração" source="pt" />: <T text={activity.duration} source="pt" />
         </p>
       )}
       {activity.priceNote && (
-        <p className="mt-3 text-sm text-[#765218]">
+        <p className="mt-3 text-sm text-[var(--portal-text-765218)]">
           <T text={activity.priceNote} source="pt" />
         </p>
       )}
@@ -124,7 +124,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           />
           {activity.isLocked && <ProposalStatus state="protected" />}
           {activity.isRecentlyModified && (
-            <span className="text-sm text-[#4A636B]">
+            <span className="text-sm text-[var(--portal-text-4a636b)]">
               <T text="Updated by Assistant" />
             </span>
           )}
@@ -136,7 +136,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
               aria-label={lockLabel}
               aria-pressed={Boolean(activity.isLocked)}
               onClick={() => onToggleLock(activity.id)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#C5D4D8] px-3 py-2 text-sm text-[#143F4B] hover:bg-[#EDF3F4]"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--portal-line-c5d4d8)] px-3 py-2 text-sm text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-edf3f4)]"
             >
               {activity.isLocked ? (
                 <Unlock aria-hidden="true" className="size-4" />
@@ -152,7 +152,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
               aria-label="Remover atividade"
               onClick={() => onRemove(activity.id)}
               disabled={saving}
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[#E5D7D5] px-3 py-2 text-sm text-[#943D36] hover:bg-[#FDF4F3] transition-colors"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[var(--portal-line-e5d7d5)] px-3 py-2 text-sm text-[var(--portal-text-943d36)] hover:bg-[var(--portal-bg-fdf4f3)] transition-colors"
               title="Remover atividade do dia"
             >
               <Trash2 aria-hidden="true" className="size-4" />
@@ -176,8 +176,8 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         <ActivityConfirmationEditor activity={activity} onSave={onConfirm} disabled={saving} />
       )}
       {hasDetails && (
-        <details className="mt-4 border-t border-[#E6E2D8] pt-3 text-sm leading-6 text-[#4A636B]">
-          <summary className="cursor-pointer py-1 font-medium text-[#143F4B]">
+        <details className="mt-4 border-t border-[var(--portal-line-e6e2d8)] pt-3 text-sm leading-6 text-[var(--portal-text-4a636b)]">
+          <summary className="cursor-pointer py-1 font-medium text-[var(--portal-text-143f4b)]">
             <T text="Fontes e detalhes de curadoria" source="pt" />
           </summary>
           <div className="mt-3 space-y-3">
@@ -193,7 +193,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
               </p>
             ) : null}
             {pending.length ? (
-              <p className="text-[#765218]">
+              <p className="text-[var(--portal-text-765218)]">
                 <T text="Por confirmar:" source="pt" /> <T text={pending.join("; ")} source="pt" />
               </p>
             ) : null}

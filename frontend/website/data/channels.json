@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "brand": "BLU Costa",
+  "whatsappUrl": "https://wa.me/351915784212",
+  "chatEndpoint": "",
+  "conversationEventsEndpoint": "",
+  "defaultSource": "direct",
+  "supportedSources": [
+    "instagram",
+    "facebook",
+    "pinterest",
+    "linkedin",
+    "whatsapp",
+    "direct"
+  ]
+}

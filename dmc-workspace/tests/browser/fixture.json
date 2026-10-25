@@ -14,9 +14,7 @@
     "pace": "Relaxed",
     "physicalEffort": "Baixo (Low)",
     "morningPreference": "Late Start (10:30+)",
-    "interests": [
-      "Culture & Heritage"
-    ],
+    "interests": ["Culture & Heritage"],
     "mobilityRestrictions": [],
     "dietaryRestrictions": [],
     "exclusions": []
@@ -37,14 +35,10 @@
           "category": "activity",
           "source": "ATRACOES, linha 10",
           "priceNote": "Referência: €10; confirmar",
-          "pendingChecks": [
-            "Disponibilidade"
-          ]
+          "pendingChecks": ["Disponibilidade"]
         }
       ]
     }
   ],
-  "pending": [
-    "Disponibilidade e preços por confirmar."
-  ]
+  "pending": ["Disponibilidade e preços por confirmar."]
 }

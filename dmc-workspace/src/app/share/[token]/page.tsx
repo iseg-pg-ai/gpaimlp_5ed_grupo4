@@ -1,4 +1,4 @@
-import { portalUrl } from "@/lib/portal-url";
+import { portalUrl } from "@/lib/http-client";
 import { notFound } from "next/navigation";
 import { VersionStore } from "@/lib/version-store";
 
@@ -20,42 +20,51 @@ export default async function SharedProposalPage({
     store.close();
   }
   return (
-    <main className="min-h-full bg-[#F4F0E7] px-4 py-10 text-[#143F4B]">
-      <article className="mx-auto max-w-2xl rounded-2xl border border-[#D5D1C7] bg-white p-6 shadow-sm sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#896225]">
+    <main className="portal-page min-h-full bg-[var(--portal-bg-f4f0e7)] text-[var(--portal-text-143f4b)]">
+      <article className="mx-auto max-w-2xl rounded-2xl border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] p-6 shadow-sm sm:p-10">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--portal-text-896225)]">
           BLU Costa Travel
         </p>
         <h1 className="mt-4 font-serif-blu text-3xl">Proposta de viagem</h1>
         <p className="mt-2 text-lg">{share.customerName}</p>
-        <dl className="mt-8 grid gap-5 rounded-xl bg-[#FAF8F3] p-5 sm:grid-cols-2">
+        <dl className="mt-8 grid gap-5 rounded-xl bg-[var(--portal-bg-faf8f3)] p-5 sm:grid-cols-2">
           <div>
-            <dt className="text-xs uppercase tracking-wide text-[#6A8288]">Destino</dt>
+            <dt className="text-xs uppercase tracking-wide text-[var(--portal-text-6a8288)]">
+              Destino
+            </dt>
             <dd className="mt-1 font-semibold">{share.destination}</dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-[#6A8288]">Versão</dt>
+            <dt className="text-xs uppercase tracking-wide text-[var(--portal-text-6a8288)]">
+              Versão
+            </dt>
             <dd className="mt-1 font-semibold">v{String(share.version).padStart(3, "0")}</dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-[#6A8288]">Datas</dt>
+            <dt className="text-xs uppercase tracking-wide text-[var(--portal-text-6a8288)]">
+              Datas
+            </dt>
             <dd className="mt-1 font-semibold">
               {share.startDate} — {share.endDate}
             </dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-[#6A8288]">Idioma</dt>
+            <dt className="text-xs uppercase tracking-wide text-[var(--portal-text-6a8288)]">
+              Idioma
+            </dt>
             <dd className="mt-1 font-semibold">{share.locale.toUpperCase()}</dd>
           </div>
         </dl>
         <a
           href={portalUrl(`/api/shares/${share.token}/document`)}
-          className="mt-8 inline-flex min-h-11 items-center rounded-lg bg-[#143F4B] px-5 py-3 font-semibold text-white hover:bg-[#2D5B67]"
+          className="mt-8 inline-flex min-h-11 items-center rounded-lg bg-[var(--portal-bg-143f4b)] px-5 py-3 font-semibold text-white hover:bg-[var(--portal-bg-2d5b67)]"
         >
           Abrir proposta em PDF
         </a>
-        <p className="mt-6 text-sm leading-6 text-[#4A636B]">
+        <p className="mt-6 text-sm leading-6 text-[var(--portal-text-4a636b)]">
           Esta ligação apresenta a versão indicada acima. Alterações posteriores ao roteiro ou ao
-          catálogo não modificam este documento.
+          catálogo não modificam este documento. O acesso termina em{" "}
+          {new Date(share.expiresAt).toLocaleDateString()} e pode ser revogado antes dessa data.
         </p>
       </article>
     </main>

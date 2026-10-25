@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 import unittest
 import tempfile
@@ -12,13 +13,14 @@ class FullLocalEtlTest(unittest.TestCase):
     """Integration check for the complete workbook and PDF ingestion flow."""
 
     def test_covers_every_pdf_and_sheet(self):
+        data = Path(os.environ.get("BLU_DATA_DIR", "data")).resolve()
+        if not list(data.glob("*.xlsx")):
+            self.skipTest("As fontes ETL são materializadas do S3 no arranque.")
         # Isolated output: running tests never overwrites the operational warehouse.
-        tools = Path(".tools")
-        tools.mkdir(exist_ok=True)
-        temporary = tempfile.TemporaryDirectory(dir=tools)
+        temporary = tempfile.TemporaryDirectory(prefix="blu-etl-test-")
         self.addCleanup(temporary.cleanup)
         output = Path(temporary.name) / "warehouse"
-        manifest = run(Path("data"), output)
+        manifest = run(data, output)
 
         # Confirm source coverage and the two key workbook structures.
         self.assertEqual(manifest["source"]["type"], "local")
@@ -31,3 +33,7 @@ class FullLocalEtlTest(unittest.TestCase):
         self.assertEqual(json.loads((output / "manifest.json").read_text(encoding="utf-8"))["tables"], manifest["tables"])
         with closing(sqlite3.connect(output / "blu_etl.sqlite")) as connection:
             self.assertGreater(connection.execute("SELECT COUNT(*) FROM proposal_pages").fetchone()[0], 0)
+            catalog_count = sum(manifest['tables'][name] for name in ('atracoes', 'restaurantes', 'experiencias'))
+            self.assertEqual(connection.execute('SELECT COUNT(*) FROM model_observatory_catalog').fetchone()[0], catalog_count)
+            self.assertEqual(connection.execute('SELECT COUNT(*) FROM model_observatory_prices').fetchone()[0], manifest['tables']['precos'])
+            self.assertEqual(connection.execute('SELECT COUNT(*) FROM model_field_evidence').fetchone()[0], catalog_count * 7 + manifest['tables']['precos'])

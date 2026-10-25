@@ -1,10 +1,7 @@
-import { chromium } from "playwright";
+import { launchBrowser, mockTranslation } from "./helpers.mjs";
 import assert from "node:assert/strict";
 import { emptyFields, categories } from "../../src/lib/catalog-schema.ts";
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
-});
+const browser = await launchBrowser();
 try {
   for (const width of [320, 1440])
     for (const locale of ["pt", "en", "es", "fr", "de", "zh"]) {
@@ -56,16 +53,7 @@ try {
         const id = new URL(request.url()).searchParams.get("id");
         return route.fulfill({ json: id ? history.filter((r) => r.id === id).reverse() : records });
       });
-      await page.route("**/api/translate", (r) =>
-        r.fulfill({
-          json: {
-            texts: r
-              .request()
-              .postDataJSON()
-              .items.map((i) => i.text),
-          },
-        }),
-      );
+      await mockTranslation(page);
       await page.route("**/api/catalog/publish", (r) => {
         records.forEach((record) => {
           record.published = record.status === "approved";
@@ -73,6 +61,7 @@ try {
         return r.fulfill({ json: { ok: true } });
       });
       await page.goto(`${process.env.PORTAL_URL ?? "http://127.0.0.1:3001"}/catalog`);
+      await page.getByTestId("catalog-editor-view").click();
       await page.getByTestId("catalog-record").first().waitFor();
       await page.waitForFunction((l) => document.documentElement.lang.startsWith(l), locale);
       const filters = page.locator("#catalog-panel > div").first().locator("select");

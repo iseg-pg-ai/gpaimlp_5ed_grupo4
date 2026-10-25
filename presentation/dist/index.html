@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#091b23" />
+    <meta name="blu-portal-url" content="" />
+    <meta
+      name="description"
+      content="Uma experiência de curadoria BLU: do pedido ao território e à proposta. Protótipo com dados fictícios."
+    />
+    <base href="./" />
+    <title>BLU · Presentation</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="technical.css" />
+    <script src="technology-content.js" defer></script>
+    <script src="technical.js" defer></script>
+    <script src="app.js?v=20261019-title" defer></script>
+  </head>
+  <body>
+    <main id="experience">
+      <header class="show-header">
+        <a
+          href="./"
+          class="show-brand"
+          aria-label="BLU · Recomeçar apresentação"
+          >blu<span>.</span
+          ><small>COSTA TRAVEL<br />THE CURATION EXPERIENCE</small></a
+        >
+        <span class="show-demo"
+          ><span></span> DEMONSTRAÇÃO · CASO FICTÍCIO</span
+        >
+        <div class="show-header-actions">
+          <button
+            type="button"
+            id="fullscreen"
+            aria-label="Apresentar em ecrã inteiro"
+            title="Ecrã inteiro"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5" />
+            </svg></button
+          ><button
+            type="button"
+            id="motion-toggle"
+            aria-label="Pausar animações"
+            aria-pressed="false"
+            title="Pausar animações"
+          >
+            Ⅱ</button
+          ><a id="portal-link" target="_blank" rel="noopener"
+            >Abrir sistema <span aria-hidden="true">↗</span></a
+          >
+        </div>
+      </header>
+      <p
+        id="fullscreen-note"
+        class="show-fullscreen-note"
+        role="status"
+        hidden
+      ></p>
+      <nav class="show-parts" aria-label="Partes da apresentação"></nav>
+      <nav class="show-chapters" aria-label="Capítulos da apresentação"></nav>
+      <section class="show-stage" aria-labelledby="show-title">
+        <div class="show-scene-heading">
+          <p id="eyebrow" class="show-eyebrow"></p>
+          <h1 id="show-title" tabindex="-1"></h1>
+          <p id="intro" class="show-intro"></p>
+        </div>
+        <div id="scene"></div>
+      </section>
+      <footer class="show-footer">
+        <div class="show-footer-note">
+          <span id="counter"></span>
+          <p id="conclusion"></p>
+        </div>
+        <div class="show-controls">
+          <span class="show-keyboard" aria-hidden="true">← → PARA NAVEGAR</span
+          ><button type="button" id="previous" class="show-previous">
+            ← <span>Anterior</span></button
+          ><button type="button" id="next" class="show-primary"></button>
+        </div>
+      </footer>
+      <p class="show-bottom-note">
+        PROTÓTIPO INDEPENDENTE · sem geração por IA, reservas ou alterações a
+        dados reais
+      </p>
+      <noscript
+        >Ative JavaScript para explorar a apresentação interativa. O guião está
+        disponível em docs/APRESENTACAO.md no projeto.</noscript
+      >
+    </main>
+  </body>
+</html>

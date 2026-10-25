@@ -1,4 +1,4 @@
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch } from "@/lib/http-client";
 import {
   LAST_TRASH_CLEANUP_STORAGE,
   TRASH_CLEANUP_INTERVAL_MS,

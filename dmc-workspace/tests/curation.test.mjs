@@ -1,11 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import path from "node:path";
 import { generateItinerary, validateBrief, applyCommand } from "../src/lib/curation.ts";
+const warehouse = path.resolve(process.env.BLU_WAREHOUSE_DIR ?? "../warehouse");
 const catalog = Object.fromEntries(
   ["atracoes", "experiencias", "restaurantes", "curation_rules"].map((name) => [
     name,
-    readFileSync(new URL(`../../warehouse/${name}.jsonl`, import.meta.url), "utf8")
+    readFileSync(path.join(warehouse, `${name}.jsonl`), "utf8")
       .trim()
       .split(/\r?\n/)
       .map(JSON.parse),

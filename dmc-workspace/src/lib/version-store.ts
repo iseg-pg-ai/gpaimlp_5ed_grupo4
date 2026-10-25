@@ -5,17 +5,9 @@ import path from "node:path";
 import { renderLocalizedPdf } from "./localized-pdf.ts";
 import { isLocale, type Locale } from "./locales.ts";
 import { renderPdf, type Snapshot, type VersionMeta } from "./itinerary-pdf.ts";
+import { canonicalSnapshot as canonical } from "./snapshot-validation.ts";
 const hash = (s: string | Buffer) => createHash("sha256").update(s).digest("hex");
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (value && typeof value === "object")
-    return `{${Object.entries(value)
-      .filter(([, v]) => v !== undefined)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`)
-      .join(",")}}`;
-  return JSON.stringify(value);
-}
+export const snapshotFingerprint = (snapshot: Snapshot) => hash(canonical(snapshot));
 const slug = (s: string) =>
   s
     .normalize("NFKD")
@@ -63,11 +55,19 @@ export type ProposalShare = {
   method: ShareMethod;
   recipient: string;
   createdAt: string;
+  consentAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  revokedReason: string | null;
   filename: string;
   customerName: string;
   destination: string;
   startDate: string;
   endDate: string;
+};
+export type ProposalShareRecord = Omit<ProposalShare, "consentAt" | "expiresAt"> & {
+  consentAt: string | null;
+  expiresAt: string | null;
 };
 export class VersionStore {
   db: DatabaseSync;
@@ -94,7 +94,9 @@ export class VersionStore {
         token TEXT PRIMARY KEY, tripId TEXT NOT NULL, version INTEGER NOT NULL,
         locale TEXT NOT NULL, method TEXT NOT NULL, recipient TEXT NOT NULL,
         createdAt TEXT NOT NULL,
-        FOREIGN KEY(tripId,version) REFERENCES versions(tripId,version));`);
+        FOREIGN KEY(tripId,version) REFERENCES versions(tripId,version));
+      CREATE TABLE IF NOT EXISTS portal_operations (
+        id TEXT PRIMARY KEY, kind TEXT NOT NULL, result TEXT NOT NULL, createdAt TEXT NOT NULL);`);
     const versionColumns = this.db
       .prepare("PRAGMA table_info(versions)")
       .all() as unknown as Array<{
@@ -104,6 +106,19 @@ export class VersionStore {
       this.db.exec("ALTER TABLE versions ADD COLUMN trashedAt TEXT");
     if (!versionColumns.some((column) => column.name === "trashReason"))
       this.db.exec("ALTER TABLE versions ADD COLUMN trashReason TEXT");
+    const shareColumns = this.db
+      .prepare("PRAGMA table_info(proposal_shares)")
+      .all() as unknown as Array<{ name: string }>;
+    if (!shareColumns.some((column) => column.name === "consentAt"))
+      this.db.exec("ALTER TABLE proposal_shares ADD COLUMN consentAt TEXT");
+    if (!shareColumns.some((column) => column.name === "expiresAt"))
+      this.db.exec("ALTER TABLE proposal_shares ADD COLUMN expiresAt TEXT");
+    if (!shareColumns.some((column) => column.name === "revokedAt"))
+      this.db.exec("ALTER TABLE proposal_shares ADD COLUMN revokedAt TEXT");
+    if (!shareColumns.some((column) => column.name === "revokedReason"))
+      this.db.exec("ALTER TABLE proposal_shares ADD COLUMN revokedReason TEXT");
+    if (!shareColumns.some((column) => column.name === "legalHold"))
+      this.db.exec("ALTER TABLE proposal_shares ADD COLUMN legalHold INTEGER NOT NULL DEFAULT 0");
   }
   close() {
     this.db.close();
@@ -146,11 +161,23 @@ export class VersionStore {
   trashVersion(tripId: string, version: number) {
     this.get(tripId, version);
     const trashedAt = new Date().toISOString();
-    this.db
-      .prepare(
-        "UPDATE versions SET trashedAt=COALESCE(trashedAt,?), trashReason=COALESCE(trashReason,'manual') WHERE tripId=? AND version=?",
-      )
-      .run(trashedAt, tripId, version);
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      this.db
+        .prepare(
+          "UPDATE versions SET trashedAt=COALESCE(trashedAt,?), trashReason=COALESCE(trashReason,'manual') WHERE tripId=? AND version=?",
+        )
+        .run(trashedAt, tripId, version);
+      this.db
+        .prepare(
+          "UPDATE proposal_shares SET revokedAt=COALESCE(revokedAt,?), revokedReason=COALESCE(revokedReason,'version-trashed') WHERE tripId=? AND version=?",
+        )
+        .run(trashedAt, tripId, version);
+      this.db.exec("COMMIT");
+    } catch (error) {
+      this.db.exec("ROLLBACK");
+      throw error;
+    }
     return this.listTrash().find((item) => item.tripId === tripId && item.version === version)!;
   }
   restoreVersion(tripId: string, version: number) {
@@ -159,6 +186,16 @@ export class VersionStore {
       .prepare("UPDATE versions SET trashedAt=NULL, trashReason=NULL WHERE tripId=? AND version=?")
       .run(tripId, version);
     return this.list(tripId).find((item) => item.version === version)!;
+  }
+  cleanupExpiredShares(cutoff: Date): number {
+    if (Number.isNaN(cutoff.getTime())) throw new Error("Limite de retenção inválido.");
+    return Number(
+      this.db
+        .prepare(
+          "DELETE FROM proposal_shares WHERE expiresAt IS NOT NULL AND expiresAt<=? AND legalHold=0",
+        )
+        .run(cutoff.toISOString()).changes,
+    );
   }
   cleanupExpiredTrash(
     tripIds: string[],
@@ -292,15 +329,19 @@ export class VersionStore {
     locale: Locale,
     method: ShareMethod,
     recipient: string,
+    retentionDays: 7 | 30 | 90,
   ): ProposalShare {
     const stored = this.get(tripId, version);
+    if (stored.trashedAt) throw new Error("Restaure a versão antes de a partilhar.");
     const token = randomBytes(24).toString("base64url");
     const createdAt = new Date().toISOString();
+    const consentAt = createdAt;
+    const expiresAt = new Date(Date.parse(createdAt) + retentionDays * 86400000).toISOString();
     this.db
       .prepare(
-        "INSERT INTO proposal_shares (token,tripId,version,locale,method,recipient,createdAt) VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO proposal_shares (token,tripId,version,locale,method,recipient,createdAt,consentAt,expiresAt) VALUES (?,?,?,?,?,?,?,?,?)",
       )
-      .run(token, tripId, version, locale, method, recipient, createdAt);
+      .run(token, tripId, version, locale, method, recipient, createdAt, consentAt, expiresAt);
     const snapshot = JSON.parse(stored.snapshot) as Snapshot;
     return {
       token,
@@ -310,6 +351,10 @@ export class VersionStore {
       method,
       recipient,
       createdAt,
+      consentAt,
+      expiresAt,
+      revokedAt: null,
+      revokedReason: null,
       filename: stored.filename.replace(/\.pdf$/, `_${locale.toUpperCase()}.pdf`),
       customerName: snapshot.brief.customerName,
       destination: snapshot.brief.destination,
@@ -317,7 +362,32 @@ export class VersionStore {
       endDate: snapshot.brief.endDate,
     };
   }
-  getShare(token: string): ProposalShare {
+  listShares(tripId?: string): ProposalShareRecord[] {
+    if (tripId) checkTripId(tripId);
+    const rows = this.db
+      .prepare(
+        `SELECT token FROM proposal_shares${tripId ? " WHERE tripId=?" : ""} ORDER BY createdAt DESC`,
+      )
+      .all(...(tripId ? [tripId] : [])) as unknown as Array<{ token: string }>;
+    return rows.flatMap((row) => {
+      try {
+        return [this.shareRecord(row.token)];
+      } catch {
+        return [];
+      }
+    });
+  }
+  revokeShare(token: string, reason = "manual"): ProposalShareRecord {
+    this.shareRecord(token);
+    const revokedAt = new Date().toISOString();
+    this.db
+      .prepare(
+        "UPDATE proposal_shares SET revokedAt=COALESCE(revokedAt,?), revokedReason=COALESCE(revokedReason,?) WHERE token=?",
+      )
+      .run(revokedAt, reason, token);
+    return this.shareRecord(token);
+  }
+  private shareRecord(token: string): ProposalShareRecord {
     if (!/^[A-Za-z0-9_-]{32}$/.test(token)) throw new Error("Partilha inválida.");
     const row = this.db.prepare("SELECT * FROM proposal_shares WHERE token=?").get(token) as
       | {
@@ -328,6 +398,10 @@ export class VersionStore {
           method: string;
           recipient: string;
           createdAt: string;
+          consentAt: string | null;
+          expiresAt: string | null;
+          revokedAt: string | null;
+          revokedReason: string | null;
         }
       | undefined;
     if (!row || !isLocale(row.locale) || !["document", "link"].includes(row.method))
@@ -346,24 +420,61 @@ export class VersionStore {
       endDate: snapshot.brief.endDate,
     };
   }
+  getShare(token: string): ProposalShare {
+    const share = this.shareRecord(token);
+    const stored = this.get(share.tripId, share.version);
+    if (
+      stored.trashedAt ||
+      !share.consentAt ||
+      !share.expiresAt ||
+      share.revokedAt ||
+      share.expiresAt <= new Date().toISOString()
+    )
+      throw new Error("Partilha não encontrada.");
+    return { ...share, consentAt: share.consentAt, expiresAt: share.expiresAt };
+  }
   save(
     tripId: string,
     snapshot: Snapshot,
     reason: string,
     baseVersion: number | null,
+    onSaved?: (version: number) => void,
+    operationId?: string,
   ): VersionMeta {
     checkTripId(tripId);
+    if (operationId && !/^[a-f0-9]{64}$/.test(operationId))
+      throw new Error("Identificador da operação inválido.");
     const serialized = canonical(snapshot),
       snapshotHash = hash(serialized);
     this.db.exec("BEGIN IMMEDIATE");
     try {
+      if (operationId) {
+        const completed = this.db
+          .prepare("SELECT result FROM portal_operations WHERE id=? AND kind='version.save'")
+          .get(operationId) as unknown as { result: string } | undefined;
+        if (completed) {
+          this.db.exec("COMMIT");
+          return JSON.parse(completed.result) as VersionMeta;
+        }
+      }
       const previous = this.db
         .prepare("SELECT * FROM versions WHERE tripId=? ORDER BY version DESC LIMIT 1")
         .get(tripId) as unknown as Stored | undefined;
+      // A aceitação do agente não restaura o Lixo nem ignora concorrência por deduplicação.
+      if (onSaved && (previous?.trashedAt || previous?.version !== baseVersion))
+        throw new VersionConflict(
+          "A versão mudou ou está no Lixo. Reabra ou restaure antes de aceitar.",
+        );
       if (previous?.snapshotHash === snapshotHash) {
         if (previous.trashedAt) this.restoreVersion(tripId, previous.version);
+        onSaved?.(previous.version);
+        const result = this.list(tripId)[0];
+        if (operationId)
+          this.db
+            .prepare("INSERT INTO portal_operations VALUES (?, 'version.save', ?, ?)")
+            .run(operationId, JSON.stringify(result), new Date().toISOString());
         this.db.exec("COMMIT");
-        return this.list(tripId)[0];
+        return result;
       }
       if ((previous?.version ?? null) !== baseVersion)
         throw new VersionConflict(
@@ -390,8 +501,8 @@ export class VersionStore {
           previous?.version ?? null,
           serialized,
         );
-      this.db.exec("COMMIT");
-      return {
+      onSaved?.(version);
+      const result = {
         tripId,
         version,
         filename,
@@ -401,6 +512,12 @@ export class VersionStore {
         chainHash,
         parentVersion: previous?.version ?? null,
       };
+      if (operationId)
+        this.db
+          .prepare("INSERT INTO portal_operations VALUES (?, 'version.save', ?, ?)")
+          .run(operationId, JSON.stringify(result), createdAt);
+      this.db.exec("COMMIT");
+      return result;
     } catch (error) {
       this.db.exec("ROLLBACK");
       throw error;

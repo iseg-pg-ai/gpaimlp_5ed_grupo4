@@ -1,50 +1,28 @@
 [project]
 name = "gpaimlp_5ed_grupo4"
 version = "0.1.0"
-description = "BLU local ETL, dashboards and optional translation and SageMaker environments."
+description = "BLU ETL with optional dashboard, translation and Bedrock agent integration."
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "openpyxl==3.1.5",
     "pypdf==6.19.0",
     "pandas==2.3.3",
-    "plotly==6.5.2",
-    "streamlit==1.55.0",
 ]
 
 [dependency-groups]
-dev = ["pytest==9.1.1", "complexipy>=5.5.0"]
+dashboard = ["plotly==6.5.2", "streamlit==1.55.0"]
 translation = ["argostranslate==1.11.0", "ctranslate2>=4.0,<5"]
-sagemaker = [
-    "boto3>=1.41,<2",
-    "sagemaker==2.257.7",
-    "sagemaker-mlflow>=0.4,<1",
-    "ipython>=9.16.1",
-    "numpy==2.3.4",
-    "scikit-learn==1.7.2",
-    "joblib==1.5.2",
-]
 agent = [
-    "langchain>=0.3.0",
-    "langchain-core>=0.3.0",
-    "langchain-community>=0.3.0",
-    "langchain-aws>=0.2.0",
     "boto3>=1.35.0",
-    "pydantic>=2.7.0",
-    "fastapi>=0.115.0",
-    "uvicorn>=0.30.0",
-    "python-dotenv>=1.0.0",
-    "httpx>=0.27.0",
 ]
 
 [tool.uv]
 package = false
-default-groups = ["translation", "agent"]
+default-groups = []
 # Versões mínimas corrigidas para os alertas Dependabot de outubro de 2026.
 constraint-dependencies = [
     "gitpython>=3.1.60",
     "urllib3>=2.8.0",
-    "sqlparse>=0.6.0",
-    "cryptography>=50.0.0",
     "protobuf>=6.33.5,<7",
 ]
 # Argos 1.11.0 fixa Stanza 1.10.1, afetado por GHSA-v5jw-96jm-7h2c.

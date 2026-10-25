@@ -5,6 +5,8 @@ on:
     paths:
       - "data/**"
       - "etl/**"
+      - "portal/**"
+      - "dmc-workspace/templates/**"
       - "dashboard/**"
       - "tests/**"
       - "requirements.txt"
@@ -17,6 +19,8 @@ on:
     paths:
       - "data/**"
       - "etl/**"
+      - "portal/**"
+      - "dmc-workspace/templates/**"
       - "dashboard/**"
       - "tests/**"
       - "requirements.txt"
@@ -30,8 +34,11 @@ on:
 jobs:
   build-warehouse:
     runs-on: windows-latest
+    env:
+      CI_DATA_DIR: ${{ runner.temp }}/blu-data
+      CI_WAREHOUSE_DIR: ${{ runner.temp }}/blu-warehouse
     steps:
-      # Source data is versioned with the project, so one checkout is the full input.
+      # As fontes reais vivem no S3 e nunca são expostas ao CI de pull requests.
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -45,18 +52,19 @@ jobs:
           python scripts/export_requirements.py --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m pip install -r requirements.txt
+      - name: Create synthetic ETL sources
+        run: python scripts/create_ci_etl_fixture.py --output $env:CI_DATA_DIR
       - name: Run ETL and validation gate
-        run: python -m etl.pipeline --data-dir data --output-dir warehouse
+        run: python -m etl.pipeline --data-dir $env:CI_DATA_DIR --output-dir $env:CI_WAREHOUSE_DIR
       - name: Verify validation gate
-        shell: pwsh
-        run: |
-          $report = Get-Content warehouse/validation_report.json -Raw | ConvertFrom-Json
-          if ($report.status -ne 'passed') { throw "Validation status: $($report.status)" }
+        run: python scripts/check_warehouse_release.py --warehouse $env:CI_WAREHOUSE_DIR
       - name: Run regression tests
-        run: python -m unittest tests.test_local_source tests.test_structured_dataset tests.test_etl_pipeline -v
+        run: python -m unittest tests.test_local_source tests.test_structured_dataset tests.test_etl_pipeline tests.test_portal_catalog tests.test_portal_data tests.test_weather -v
       - name: Publish warehouse delivery
         uses: actions/upload-artifact@v4
         with:
-          name: blu-warehouse
-          path: warehouse/
+          name: blu-warehouse-ci-smoke
+          path: ${{ runner.temp }}/blu-warehouse/
           if-no-files-found: error
+          # Entrega sintética de diagnóstico, não uma release operacional.
+          retention-days: 14
