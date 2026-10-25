@@ -71,6 +71,11 @@ o contexto recente do navegador sem o tratar como autoridade.
 
 ## Etapa 3 — Deployment e operação cloud
 
+Próximo passo: validar o job `container` de `.github/workflows/portal.yml`
+no GitHub Actions e preparar a política de SBOM/assinatura e a promoção por
+digest. A revisão local confirmou que o job atual apenas constrói a imagem
+com `push: false`; não demonstra publicação, assinatura ou promoção.
+
 - [ ] Implementar a arquitetura aprovada da Etapa 1 com ambientes e dados
   isolados, identidade central e segredos fora do código.
 - [ ] Criar CI do portal e uma entrega identificada e reproduzível para todos os

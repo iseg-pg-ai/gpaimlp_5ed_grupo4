@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 if [ -f "$ROOT/.env" ]; then
     while IFS='=' read -r key value; do
         case "$key" in
-            BLU_BACKUP_DIR|BLU_BACKUP_S3_BUCKET|BLU_BACKUP_S3_PREFIX|BLU_BACKUP_S3_KMS_KEY_ID|BLU_DATA_S3_BUCKET|BLU_ENVIRONMENT|BLU_MONITORING_NOTIFICATIONS_ENABLED|BLU_MONITORING_SNS_TOPIC_ARN|BLU_PDF_FONT|BLU_PDF_CJK_FONT|BLU_PDF_CJK_FACE|AWS_REGION|AWS_DEFAULT_REGION)
+            BLU_BACKUP_DIR|BLU_BACKUP_S3_BUCKET|BLU_BACKUP_S3_PREFIX|BLU_BACKUP_S3_KMS_KEY_ID|BLU_DATA_S3_BUCKET|BLU_ENVIRONMENT|BLU_MONITORING_NOTIFICATIONS_ENABLED|BLU_MONITORING_SNS_TOPIC_ARN|BLU_PDF_FONT|BLU_PDF_CJK_FONT|BLU_PDF_CJK_FACE|BLU_CONVERSATION_TABLE|BLU_INTELLIGENCE_TABLE|AWS_REGION|AWS_DEFAULT_REGION)
                 if [ -z "${!key+x}" ]; then
                     export "$key=$value"
                 fi
@@ -212,6 +212,7 @@ start_all_services() {
         .venv/bin/python -B -m monitoring.server
     start_service portal bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
     start_service leads env \
+        BLU_SAGEMAKER_PROXY=1 \
         __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="${PORTAL_PUBLIC_ORIGIN#https://}" \
         bash -c 'cd frontend/blu-cloud-site && exec npm run dev -- --host 127.0.0.1 --port 5173'
 }
@@ -232,6 +233,7 @@ start_missing_services() {
         .venv/bin/python -B -m monitoring.server
     start_missing_service portal 3001 bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
     start_missing_service leads 5173 env \
+        BLU_SAGEMAKER_PROXY=1 \
         __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="${PORTAL_PUBLIC_ORIGIN#https://}" \
         bash -c 'cd frontend/blu-cloud-site && exec npm run dev -- --host 127.0.0.1 --port 5173'
 }

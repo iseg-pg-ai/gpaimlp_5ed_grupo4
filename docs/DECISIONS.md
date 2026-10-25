@@ -616,3 +616,22 @@ com `propose_actions`. As três leituras ocorreram na primeira ronda e a propost
 isolada na segunda, sem acesso externo ou escrita. O resultado português foi
 válido. O inglês repetiu um ranking e foi recusado pelo contrato, demonstrando o
 encerramento seguro. Esta evidência conclui a Etapa 2, sem iniciar deployment.
+
+### Acesso ao frontend pelo proxy do SageMaker — 2026-10-25
+
+O arranque de Leads / Concierge ativa `BLU_SAGEMAKER_PROXY=1`. Nesse modo,
+o Vite usa `/codeeditor/default/ports/5173/` e aceita o domínio Studio de
+`eu-west-1`; o middleware adapta pedidos cujo prefixo foi retirado pelo proxy.
+O endereço público usa a base já guardada na configuração local do Studio.
+A conversão do endereço interno apresentado em Ports pertence ao Code Editor;
+não foi alterado o código instalado do editor.
+
+Foram guardadas também as configurações existentes dos endpoints públicos de
+chat e eventos e a leitura das variáveis das tabelas no script de arranque.
+Validação local: build do frontend, quatro testes de empacotamento Sites,
+`bash -n` e resposta HTTP 200 no caminho com prefixo. Estes testes não validam
+os serviços AWS nem o acesso autenticado através do navegador.
+
+A próxima fase é a Etapa 3 do plano. A construção em CI, a política de
+SBOM/assinatura e a promoção por digest continuam abertas. A sonda externa e
+a validação operacional de alertas continuam dependentes do endpoint estável.
