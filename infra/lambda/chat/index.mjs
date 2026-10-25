@@ -1,4 +1,5 @@
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
+import { conversationMessages } from './conversation.mjs';
 
 const bedrock = new BedrockRuntimeClient({});
 const response = (statusCode, body) => ({ statusCode, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }, body: JSON.stringify(body) });
@@ -12,8 +13,7 @@ export async function handler(event) {
     const message = String(body.message || '').trim();
     if (!message || message.length > 2000) return response(400, { error: 'Enter a message up to 2000 characters' });
     if (attack.test(message)) return response(200, { reply: safeReply, security: 'intervened' });
-    const history = Array.isArray(body.messages) ? body.messages.slice(-10).filter(item => ['user', 'assistant'].includes(item.role) && typeof item.text === 'string').map(item => ({ role: item.role, content: [{ text: item.text.slice(0, 2000) }] })) : [];
-    history.push({ role: 'user', content: [{ text: message }] });
+    const history = conversationMessages(body.messages, message);
     const command = new ConverseCommand({
       modelId: process.env.MODEL_ID, system: [{ text: system }], messages: history,
       inferenceConfig: { maxTokens: 420, temperature: 0.55, topP: 0.9 },

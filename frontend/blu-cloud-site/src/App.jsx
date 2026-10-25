@@ -15,8 +15,20 @@ function localReply(history) {
   return missing ? missing[2] : "Please provide your email address or phone number so a curator can confirm availability and prepare a proposal shaped around what you are looking for.";
 }
 
+// The WhatsApp webhook joins messages carrying this reference to the same conversation.
+function journeyReference() {
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  return `BLU-${[...bytes].map(value => value.toString(16).padStart(2, "0")).join("").toUpperCase()}`;
+}
+
+function whatsappLink(reference) {
+  const base = window.BLU_WHATSAPP_URL || "https://wa.me/351915784212";
+  const note = `Hello BLU, I would like to continue my journey ${reference}`;
+  return `${base}${base.includes("?") ? "&" : "?"}text=${encodeURIComponent(note)}`;
+}
+
 export function App() {
-  const sessionId = useMemo(() => crypto.randomUUID(), []);
+  const sessionId = useMemo(journeyReference, []);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([opening]);
   const [text, setText] = useState("");
@@ -56,7 +68,9 @@ export function App() {
     try {
       let reply;
       if (window.BLU_CHAT_API) {
-        const response = await fetch(window.BLU_CHAT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId: sessionId, message: value, messages: messages.slice(-10), analyticsConsent }) });
+        // Only the real exchange: the greeting and local error notes are not model turns.
+        const history = messages.filter(message => message.id !== opening.id && !message.local).slice(-10).map(({ role, text }) => ({ role, text }));
+        const response = await fetch(window.BLU_CHAT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId: sessionId, message: value, messages: history, analyticsConsent }) });
         if (!response.ok) throw new Error(`Chat returned ${response.status}`);
         reply = (await response.json()).reply;
       } else {
@@ -67,7 +81,7 @@ export function App() {
       setMessages(current => [...current, assistantMessage]);
       await publish(assistantMessage);
     } catch {
-      setMessages(current => [...current, { id: crypto.randomUUID(), role: "assistant", text: "I cannot continue the conversation just now. You can reach the BLU team at hello@blucostatravel.com." }]);
+      setMessages(current => [...current, { id: crypto.randomUUID(), role: "assistant", local: true, text: "I cannot continue the conversation just now. You can continue on WhatsApp below or reach the BLU team at hello@blucostatravel.com." }]);
     } finally { setPending(false); }
   }
 
@@ -85,6 +99,7 @@ export function App() {
         <label className="analytics-choice"><input type="checkbox" checked={journeyConsent} onChange={changeJourneyConsent} /> Retain this conversation so a curator can follow up on my journey.</label>
         <label className="analytics-choice"><input type="checkbox" checked={analyticsConsent} onChange={event => setAnalyticsConsent(event.target.checked)} /> Also allow this conversation to be used for planning analytics.</label>
         <small className="concierge-privacy">Avoid sharing payment details. You may continue without saving the conversation.</small>
+        <a className="concierge-whatsapp" href={whatsappLink(sessionId)} target="_blank" rel="noopener noreferrer">Continue on WhatsApp <span>{sessionId}</span></a>
       </form>
     </section>
   </>;
