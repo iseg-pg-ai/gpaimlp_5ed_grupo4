@@ -145,10 +145,6 @@ await check("Version trash and restore", async () => {
     );
   }
 });
-await check("AI agent service", async () => {
-  const r = await fetch("http://127.0.0.1:8000/docs", { signal: AbortSignal.timeout(5000) });
-  assert.equal(r.status, 200);
-});
 process.exitCode = results.some((result) => !result.ok) ? 1 : 0;
 console.log(
   `Passed ${results.filter((r) => r.ok).length}/${results.length} real integration checks`,

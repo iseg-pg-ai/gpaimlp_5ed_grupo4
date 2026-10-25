@@ -1,7 +1,6 @@
 {
   "interval_seconds": 30,
   "warehouse_max_age_hours": 168,
-  "agent_enabled": false,
   "notifications": {
     "external_enabled": false,
     "channel": "sns",

@@ -37,7 +37,7 @@ def main():
                 services = [{"name": name, "state": state, "http_status": 200 if state == "up" else None,
                              "latency_ms": 12 if state != "disabled" else None}
                             for name, state in [("Portal BLU", "up"), ("Observatório analítico", "down"),
-                                                ("Apresentação", "up"), ("Agente IA", "disabled")]]
+                                                ("Apresentação", "up")]]
                 return {"snapshot": {"checked_at": now, "interval_seconds": 30, "services": services,
                                      "warehouse": {"state": "up", "published_at": now, "age_hours": 1,
                                                    "validation": "passed", "tables": 28, "records": 420,

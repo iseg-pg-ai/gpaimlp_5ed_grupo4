@@ -347,8 +347,6 @@ class OperationsTest(unittest.TestCase):
                      "latency_ms": 12, "http_status": 200},
                     {"name": "Apresentação", "state": "down",
                      "latency_ms": None, "http_status": 503},
-                    {"name": "Agente IA", "state": "up",
-                     "latency_ms": 8, "http_status": 200},
                 ]}) + "\n")
             result = query_logs(runtime, "portal", "ERROR", "catalog", "desc", 20)
             self.assertEqual(result["total"], 1)
@@ -365,7 +363,7 @@ class OperationsTest(unittest.TestCase):
             presentation = query_logs(runtime, "presentation", "ERRORS")
             self.assertEqual(presentation["total"], 1)
             self.assertEqual(presentation["entries"][0]["http_status"], 503)
-            self.assertEqual(query_logs(runtime, "ai")["entries"][0]["status"], "up")
+            self.assertEqual(query_logs(runtime, "ai")["entries"], [])
             ascending = query_logs(runtime, "portal", order="asc")
             self.assertEqual(ascending["entries"][0]["action"], "navigation")
             with self.assertRaises(ValueError):

@@ -11,7 +11,7 @@ Este documento separa o que está implementado das decisões ainda abertas.
 | Portal | Next.js/Node com subprocessos Python, porta 3001 | Catálogo e entregas |
 | Apresentação | Servidor estático Python, porta 3003 | Nenhum |
 | Monitoring | Servidor Python autenticado, porta 3004 | Contas, eventos, incidentes e backups locais/S3 |
-| Agente | FastAPI opcional, porta 8000 | Logs operacionais reduzidos |
+| Assistente BLU | Subprocesso Python iniciado pelo Portal | Auditoria e métricas no histórico operacional |
 | Observatório | Streamlit, porta 8501 | Lê o warehouse sem o alterar |
 | ETL | Processo invocado sob pedido | Publica o warehouse de forma atómica |
 
@@ -28,24 +28,24 @@ máquina, não consegue observar a indisponibilidade total do ambiente.
 ## Recuperação local
 
 `just blu up` é o arranque diário. Mantém processos ativos, inicia apenas os
-serviços parados, verifica os cinco endpoints e abre as quatro interfaces. Não
+serviços parados, verifica os quatro endpoints e abre as quatro interfaces. Não
 cria checkpoints, não para serviços e não executa recuperação.
 
 `just blu it` é a recuperação integral. Exige autenticação interativa de uma
 conta ativa com perfil `admin` do Monitoring e executa:
 
 1. criação e confirmação remota do checkpoint identificado da execução;
-2. paragem dos cinco serviços e confirmação das portas livres;
+2. paragem dos quatro serviços e confirmação das portas livres;
 3. recuperação do checkpoint identificado da execução ou fallback para as
    releases do bucket de dados;
 4. validação do ambiente e sincronização das dependências bloqueadas;
 5. testes Python, Monitoring e portal;
 6. build do portal;
-7. arranque e verificação dos cinco serviços;
+7. arranque e verificação dos quatro serviços;
 8. abertura das quatro interfaces.
 
-O agente na porta 8000 é validado sem abrir um separador. Dados válidos são
-preservados. O arranque exige as releases S3 de fontes e estado operacional ou
+O planeador do agente é validado pela bateria Python e pelas rotas do Portal, sem
+uma porta própria. Dados válidos são preservados. O arranque exige as releases S3 de fontes e estado operacional ou
 um checkpoint verificado; não existe um warehouse versionado como fallback. O log técnico fica em
 `monitoring/runtime/recovery/just-blu-it.log`.
 

@@ -168,7 +168,6 @@ stop_known_services() {
     pkill -TERM -f 'streamlit run .*dashboard/app.py.*8501' >> "$LOG" 2>&1 || true
     pkill -TERM -f 'presentation/serve.py --port 3003' >> "$LOG" 2>&1 || true
     pkill -TERM -f 'python .*monitoring.server' >> "$LOG" 2>&1 || true
-    pkill -TERM -f 'uvicorn blu_ai.api.server:app.*8000' >> "$LOG" 2>&1 || true
 }
 
 port_is_open() {
@@ -179,12 +178,12 @@ port_is_open() {
 stop_all_services() {
     local attempt port open
     stop_known_services
-    for port in 3001 3003 3004 8000 8501; do stop_port "$port"; done
+    for port in 3001 3003 3004 8501; do stop_port "$port"; done
 
     # Aguardar até 15 segundos para garantir indisponibilidade antes da recuperação.
     for attempt in {1..30}; do
         open=0
-        for port in 3001 3003 3004 8000 8501; do
+        for port in 3001 3003 3004 8501; do
             if port_is_open "$port"; then open=1; fi
         done
         if [ "$open" -eq 0 ]; then
@@ -206,10 +205,9 @@ start_service() {
 }
 
 start_all_services() {
-    start_service agent bash scripts/start_ai_agent.sh
     start_service observatory bash scripts/start_dashboard.sh
     start_service presentation .venv/bin/python -B presentation/serve.py --port 3003
-    start_service monitoring env PYTHONPATH=src BLU_MONITOR_AGENT_ENABLED=1 \
+    start_service monitoring env PYTHONPATH=src \
         .venv/bin/python -B -m monitoring.server
     start_service portal bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
 }
@@ -224,10 +222,9 @@ start_missing_service() {
 }
 
 start_missing_services() {
-    start_missing_service agent 8000 bash scripts/start_ai_agent.sh
     start_missing_service observatory 8501 bash scripts/start_dashboard.sh
     start_missing_service presentation 3003 .venv/bin/python -B presentation/serve.py --port 3003
-    start_missing_service monitoring 3004 env PYTHONPATH=src BLU_MONITOR_AGENT_ENABLED=1 \
+    start_missing_service monitoring 3004 env PYTHONPATH=src \
         .venv/bin/python -B -m monitoring.server
     start_missing_service portal 3001 bash -c 'cd dmc-workspace && exec node scripts/start-aws.mjs -p 3001'
 }
@@ -245,7 +242,6 @@ confirm_services() {
     wait_http "Portal" "http://127.0.0.1:3001/catalog"
     wait_http "Apresentação" "http://127.0.0.1:3003/"
     wait_http "Monitoring" "http://127.0.0.1:3004/health"
-    wait_http "Agente IA" "http://127.0.0.1:8000/api/health"
     wait_http "Observatório" "http://127.0.0.1:8501/_stcore/health"
     # Uma resposta HTTP pode vir de um processo antigo; confirmar também os novos PID.
     for pid_file in "$SERVICES"/*.pid; do
@@ -260,7 +256,6 @@ confirm_service_endpoints() {
     wait_http "Portal" "http://127.0.0.1:3001/catalog"
     wait_http "Apresentação" "http://127.0.0.1:3003/"
     wait_http "Monitoring" "http://127.0.0.1:3004/health"
-    wait_http "Agente IA" "http://127.0.0.1:8000/api/health"
     wait_http "Observatório" "http://127.0.0.1:8501/_stcore/health"
 }
 
@@ -278,11 +273,10 @@ service_line() {
 
 quick_start_status() {
     printf '  %s◈  INITIALIZING OPERATIONAL NETWORK%s\n\n' "$CYAN" "$RESET"
-    service_line 1 "AGENTE IA" 8000 "http://127.0.0.1:8000/api/health"
-    service_line 2 "OBSERVATÓRIO" 8501 "http://127.0.0.1:8501/_stcore/health"
-    service_line 3 "APRESENTAÇÃO" 3003 "http://127.0.0.1:3003/"
-    service_line 4 "MONITORING" 3004 "http://127.0.0.1:3004/health"
-    service_line 5 "CURATION STUDIO" 3001 "http://127.0.0.1:3001/catalog"
+    service_line 1 "OBSERVATÓRIO" 8501 "http://127.0.0.1:8501/_stcore/health"
+    service_line 2 "APRESENTAÇÃO" 3003 "http://127.0.0.1:3003/"
+    service_line 3 "MONITORING" 3004 "http://127.0.0.1:3004/health"
+    service_line 4 "CURATION STUDIO" 3001 "http://127.0.0.1:3001/catalog"
     printf '\n  NETWORK READINESS      %s━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s  100%%\n' "$GREEN" "$RESET"
 }
 
@@ -310,8 +304,8 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
     confirm_service_endpoints
     quick_start_status
     python3 -B scripts/open_dashboards.py --quiet
-    printf '\n  %s✓%s  5 serviços operacionais\n' "$GREEN" "$RESET"
-    printf '  %s✓%s  5 endpoints validados\n' "$GREEN" "$RESET"
+    printf '\n  %s✓%s  4 serviços operacionais\n' "$GREEN" "$RESET"
+    printf '  %s✓%s  4 endpoints validados\n' "$GREEN" "$RESET"
     printf '  %s✓%s  4 interfaces abertas\n' "$GREEN" "$RESET"
     printf '  %s↗%s  Portal AWS: %s\n' "$CYAN" "$RESET" \
         "$(python3 -B scripts/studio_urls.py --port 3001)"
@@ -411,4 +405,4 @@ python3 -B scripts/studio_urls.py >> "$LOG"
 run_task "12. Sistema BLU recuperado" python3 -B scripts/open_dashboards.py --quiet
 printf '  %s↗%s  Portal AWS: %s\n' "$CYAN" "$RESET" \
     "$(python3 -B scripts/studio_urls.py --port 3001)"
-ui_footer "BLU SYSTEM RESTORED" "12 tarefas · 5 serviços · 4 interfaces"
+ui_footer "BLU SYSTEM RESTORED" "12 tarefas · 4 serviços · 4 interfaces"

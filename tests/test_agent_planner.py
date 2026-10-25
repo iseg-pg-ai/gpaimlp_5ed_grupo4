@@ -12,7 +12,6 @@ from botocore.exceptions import (
     ClientError, EndpointConnectionError, NoCredentialsError, ReadTimeoutError,
 )
 
-from blu_ai.agents.curator_agent import extract_text_content
 from blu_ai.planner import (
     AgentConfigurationError, AgentContextError, AgentRequestError,
     AgentResponseError, SCHEMA, execute, failure_code, plan_actions,
@@ -635,13 +634,6 @@ class PlannerTest(unittest.TestCase):
                         main()
             call.assert_not_called()
 
-    def test_legacy_extraction_never_exposes_reasoning_or_tool_blocks(self):
-        self.assertEqual(extract_text_content([
-            {"type": "reasoning_content", "reasoning_content": {"text": "SEGREDO"}},
-            {"type": "text", "text": "Resposta pública"},
-            {"type": "tool_use", "text": "SEGREDO"}, {"text": "SEGREDO"},
-        ]), "Resposta pública")
-
     def test_process_protocol_rejects_invalid_and_oversized_input_before_aws(self):
         root = Path(__file__).resolve().parents[1]
         environment = {**os.environ, "PYTHONPATH": str(root / "src"), "AWS_EC2_METADATA_DISABLED": "true"}
@@ -683,29 +675,6 @@ class PlannerTest(unittest.TestCase):
             else:
                 self.assertEqual(response["data"]["provider"], expected_provider)
                 self.assertEqual(response["data"]["inputTokens"], 0)
-
-    @patch("blu_ai.planner.plan_actions")
-    def test_legacy_chat_delegates_to_transactional_planner_with_public_context(self, planner):
-        from blu_ai.agents.curator_agent import chat_copilot
-        planner.return_value = {"plan": proposal()}
-        chat_copilot(
-            "Explica o dia", brief={"customerName": "PRIVATE_NAME", "customerEmail": "PRIVATE_EMAIL", "notes": "PRIVATE_NOTES", "destination": "Lisboa"},
-            current_itinerary={"days": [{"dayNumber": 1, "notes": "PRIVATE_DAY", "items": [
-                {"id": "atracoes:a", "title": "Museu permitido", "time": "09:30", "locked": True,
-                 "notes": "PRIVATE_ITEM", "confirmation": {"status": "confirmed", "contact": "PRIVATE_CONTACT", "reference": "PRIVATE_REFERENCE"}}
-            ]}]},
-        )
-        sent = planner.call_args.args[0]
-        self.assertEqual(sent["instruction"], "Explica o dia")
-        self.assertIn("Museu permitido", json.dumps(sent))
-        self.assertIn("09:30", json.dumps(sent))
-        self.assertNotIn("PRIVATE_", json.dumps(sent))
-
-    def test_legacy_full_generation_is_explicitly_retired(self):
-        from blu_ai.agents.curator_agent import curate_itinerary
-        with self.assertRaisesRegex(RuntimeError, "descontinuada"):
-            curate_itinerary({})
-
 
 if __name__ == "__main__":
     unittest.main()

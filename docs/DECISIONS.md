@@ -156,10 +156,12 @@ proativas exigem uma iteração e critérios de aceitação próprios. Chamadas 
 modelos exigem autorização, orçamento e revisão de privacidade; testes usam modelos
 simulados por defeito.
 
-### O agente usa a API atual de LangChain — 2026-10-23
+### O agente usava a API atual de LangChain — 2026-10-23 (substituída)
 
 A fábrica usa `langchain.agents.create_agent`, ferramentas de domínio e o modelo
-Bedrock configurado. LangChain/LangGraph pertencem ao grupo Python opcional
+Esta decisão descreve a implementação anterior, removida em 25 de outubro de
+2026 a favor do planeador transacional invocado diretamente pelo Portal.
+LangChain/LangGraph pertenciam ao grupo Python opcional
 `agent`. Falta de credenciais ou indisponibilidade do fornecedor produz falha
 explícita, sem resposta fictícia ou fallback secreto para outro fornecedor.
 

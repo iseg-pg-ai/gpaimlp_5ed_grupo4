@@ -207,8 +207,6 @@ incompletos após sete dias e requer aplicação administrativa na consola AWS.
 ## Cobertura
 
 - Sondas a cada 30 segundos: portal `/catalog`, saúde Streamlit e apresentação.
-- Agente opcional desativado por defeito; ativar `agent_enabled` só se estiver
-  instalado e se se pretender verificar `/api/health`, sem chamar modelos.
 - Leitura dos agregados de `manifest.json` e `validation_report.json` publicados.
 - Espaço disponível, ocupação do disco e carga média do anfitrião.
 - Até 240 amostras e 100 alterações de estado em memória, reiniciadas no arranque.

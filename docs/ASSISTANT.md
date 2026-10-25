@@ -308,12 +308,10 @@ milhão de tokens de entrada, 3,68 USD por milhão de tokens de saída e um teto
 até duas chamadas por pedido. Os preços devem ser revistos na tabela oficial da
 AWS antes de cada deployment ou alteração de modelo.
 
-O serviço HTTP Python é apenas uma fachada opcional do mesmo planeador. A geração
-autónoma antiga em `/api/agent/curate` devolve `410`; não existe um segundo agente
-LangGraph com autoridade própria. Se a fachada for usada,
-exige BLU_AGENT_API_TOKEN; BLU_AGENT_ALLOWED_ORIGINS aceita apenas origens
-explícitas separadas por vírgulas, sem wildcard. /health é público no serviço.
-Não configurar segredos no Git. O portal chama o planeador por processo local.
+O portal chama o planeador Python por processo local, sem shell nem serviço HTTP
+adicional. A antiga fachada FastAPI e o agente LangGraph foram removidos para
+manter um único contrato e um único ponto de entrada. Não configurar segredos no
+Git.
 
 ## Exportação e validação
 

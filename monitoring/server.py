@@ -252,9 +252,6 @@ def main():
     if not credentials.exists():
         parser.error("Executar primeiro: python -B -m monitoring.setup")
     config = json.loads((ROOT / "monitoring/config.json").read_text())
-    # A recuperação ativa a sonda sem alterar a configuração persistente do ambiente.
-    if os.environ.get("BLU_MONITOR_AGENT_ENABLED") == "1":
-        config["agent_enabled"] = True
     public_url = os.environ.get("BLU_MONITORING_PUBLIC_URL", "").rstrip("/")
     if not public_url:
         public_url = f"{studio_base()}/ports/{args.port}"

@@ -15,7 +15,7 @@ itinerário. Neste contexto, DMC significa *Destination Management Company*.
 | DMC Workspace | Portal Next.js de curadoria e entrega | 3001 |
 | Apresentação | Narrativa interativa independente | 3003 |
 | BLU Operations | Monitoring privado e gestão de utilizadores | 3004 |
-| Agente de IA | API FastAPI opcional com integração Bedrock | 8000 |
+| Assistente BLU | Planeador transacional integrado no Portal com Amazon Bedrock | — |
 | Observatório | Dashboard analítico Streamlit, só de leitura | 8501 |
 
 As fontes, o catálogo editável, as versões, os PDFs e o warehouse vivem em
@@ -84,8 +84,7 @@ just blu up
 ```
 
 O comando mantém serviços ativos, inicia os que estejam parados, confirma os
-cinco endpoints e abre as quatro interfaces. A porta técnica 8000 é validada,
-mas não abre um separador.
+quatro endpoints e abre as quatro interfaces.
 
 Os URLs `/codeeditor/default/ports/PORTA/` exigem que as portas 3001, 3003, 3004
 e 8501 estejam registadas no painel **Ports** do Code Editor aberto no browser.
@@ -140,7 +139,7 @@ As exceções e confirmações manuais estão documentadas em
 [Retenção dos buckets S3](docs/S3_RETENTION.md#exceções-e-validações-manuais).
 
 O `just blu up` não executa recuperação nem para processos ativos. Inicia apenas
-os serviços parados, confirma os cinco endpoints e abre os quatro dashboards.
+os serviços parados, confirma os quatro endpoints e abre os quatro dashboards.
 
 Cada alteração confirmada do catálogo ou das versões gera também um evento numa
 outbox persistente. O Monitoring envia estes eventos de forma idempotente para

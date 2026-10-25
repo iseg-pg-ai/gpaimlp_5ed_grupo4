@@ -301,7 +301,6 @@ class CurationWorkspaceStack extends Stack {
         ],
       ],
       ["observatory", 8501, ["bash", "scripts/start_dashboard.sh"]],
-      ["agent", 8000, ["bash", "scripts/start_ai_agent.sh"]],
     ].map(([name, port, command]) => {
       const logGroup = new logs.LogGroup(this, `${name}Logs`, {
         retention:

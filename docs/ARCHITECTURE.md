@@ -51,9 +51,8 @@ não requer SageMaker SDK, MLflow ou outro ambiente experimental de treino.
 | Meteorologia | `portal/weather.py` | Coordenadas, condições WMO, previsão e histórico usados pelo portal e agente |
 | Prompt TXT Python | `portal/prompt.py` | Compor o TXT neutro do snapshot com campos explícitos destinados ao cliente |
 | Domínio | `src/lib/` | Curadoria, compatibilidade, horários, orçamento e versões |
-| Serviço do agente | `src/blu_ai/api/server.py` | Expor saúde, curadoria e chat em FastAPI |
-| Orquestração do agente | `src/blu_ai/agents/curator_agent.py` | Coordenar modelo e ferramentas |
-| Ferramentas do agente | `src/blu_ai/tools/` | Pesquisa, meteorologia e verificação de restrições |
+| Planeador do agente | `src/blu_ai/planner.py` | Compilar pedidos e propor ações pelo contrato transacional |
+| Fornecedor do agente | `src/blu_ai/providers.py` | Limitar leituras e integração Amazon Bedrock |
 | Tradução | `translations/worker.py` | Protocolo JSON-lines, modelos locais e cache |
 | Adaptador Prompt TXT | `src/lib/itinerary-prompt.ts` | Reutilizar regras partilhadas e produzir um prompt independente de fornecedor |
 | Monitoring | `monitoring/server.py`, `monitoring/collector.py` | Autenticar utilizadores e agregar sinais operacionais locais |
@@ -223,8 +222,8 @@ o portal volta a validá-las e o curador tem de as aceitar antes da criação de
 versão. As onze operações suportadas, proteções e limites estão em
 [Assistente BLU](ASSISTANT.md).
 
-O serviço HTTP na porta 8000 é opcional e não constitui outra autoridade sobre o
-itinerário. A próxima iteração deve concentrar-se em avaliar o modelo real,
+O agente não expõe um serviço HTTP independente: o Portal invoca o planeador por
+subprocesso local e mantém a única fronteira de escrita. A próxima iteração deve concentrar-se em avaliar o modelo real,
 custos, privacidade e degradação, mantendo contratos, confirmação humana,
 concorrência e histórico. Novas ferramentas devem reutilizar a pesquisa e as
 validações existentes, sem criar outro catálogo ou persistência.

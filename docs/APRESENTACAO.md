@@ -98,14 +98,13 @@ flowchart TB
     P <--> PY[Operações locais Python via JSON]
     P <--> R[Rascunhos no navegador]
     P --> V[Versões, snapshots e PDFs persistidos]
-    P <-.-> AG[Serviço de agente opcional]
-    AG --> M[Modelo de linguagem e ferramentas]
+    P --> AG[Planeador transacional Python]
+    AG --> M[Amazon Bedrock e leituras controladas]
 ```
 
 O diagrama é funcional: não representa todos os pedidos nem um deployment
-completo. As operações locais Python e o serviço HTTP do agente têm fronteiras
-distintas. O adaptador local usa processos sem shell e mensagens JSON; não exige
-um segundo servidor para essas operações.
+completo. As operações locais Python usam processos sem shell e mensagens JSON;
+o agente segue a mesma fronteira e não exige um segundo servidor.
 
 Quatro distinções essenciais:
 
@@ -129,7 +128,7 @@ um levantamento de alternativas ou um benchmark, que não foi realizado aqui.
 | Ingestão e transformação | Python, pandas, openpyxl, pypdf | Leitura de folhas e documentos, transformação e validação das fontes |
 | Dados | Amazon S3, SQLite, JSONL e ficheiros versionados | S3 como persistência permanente; cache transacional reconstruível para consulta e edição |
 | Análise | Streamlit e Plotly; Observatório nativo em React/SVG | Exploração da entrega publicada com interfaces distintas |
-| Agente opcional | FastAPI, LangChain/LangGraph, boto3 e AWS Bedrock | Serviço de assistência, modelo de linguagem e ferramentas de domínio |
+| Assistente BLU | Planeador Python, boto3 e AWS Bedrock | Propostas tipadas, leituras controladas e confirmação humana no Portal |
 | Tradução opcional | Argos Translate e CTranslate2 | Tradução local de conteúdos exportados, com proteção de números |
 | Entregas | PDFKit e Prompt TXT | Produção de documentos e exportação estruturada independente de fornecedor |
 | Verificação | unittest, node:test e Playwright | Testes de regras, persistência, integração e interface |
@@ -268,7 +267,7 @@ lógica de navegação para facilitar a complementação posterior.
 | Portal e integração | Versões declaradas, renderização e divisão cliente/servidor, JSON por stdin/stdout, execução sem shell, timeout de 15 s e buffer de 16 MiB | `package.json` e `python-portal.ts`; não é um teste de latência |
 | Ingestão e dados | Papel de pandas/openpyxl/pypdf, chaves, conflitos, entidades, manifest, SHA-256 e publicação temporária | Código ETL e contratos; não inventariar volumes sem uma entrega datada |
 | Persistência e entregas | Releases S3, cache SQLite, fila JSON, warehouse, snapshots, hashes e PDF/ZIP/TXT | Código de persistência e recuperação; não equivale a colaboração multi-instância |
-| Agente e ferramentas | FastAPI/Uvicorn, LangGraph/LangChain, boto3/Bedrock, ferramentas e configuração do modelo | Modelo/região efetivos por confirmar; temperatura 0,2 e 4096 tokens são defaults do código |
+| Agente e ferramentas | Planeador transacional, boto3/Bedrock e ferramentas de leitura tipadas | Modelo, limites e tarifas definidos na configuração operacional; ações continuam sujeitas a validação e confirmação |
 | Análise e tradução | Streamlit/Plotly, Observatório React/SVG em leitura, worker JSON-lines e modelos Argos/CTranslate2 | Grupos opcionais; não presumir disponibilidade por existir uma dependência |
 | Serviços externos | Open-Meteo e OSRM, timeout/aborto, previsão/histórico, cache e falhas explícitas | Comportamentos do código; sem chamadas reais nesta apresentação |
 | Ambiente e automação | `uv.lock`, `package-lock.json`, testes, CI de dados/documentação e acesso SageMaker | Não há workflow CI do portal neste checkout; sem certificação de produção |
@@ -438,4 +437,4 @@ data, fonte e distinção entre proposta, implementação e resultado observado.
 - [Adaptador local Python](../dmc-workspace/src/lib/python-portal.ts)
 - [Catálogo operacional](../etl/portal_catalog.py)
 - [Comandos determinísticos](../dmc-workspace/src/lib/assistant-editing.ts)
-- [Agente e ferramentas](../src/blu_ai/agents/curator_agent.py)
+- [Planeador e ferramentas](../src/blu_ai/planner.py)

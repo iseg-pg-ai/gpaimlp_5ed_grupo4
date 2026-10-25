@@ -130,9 +130,8 @@ class Collector:
     def collect(self):
         definitions = [("Portal BLU", "http://127.0.0.1:3001/catalog", True),
                        ("Observatório analítico", "http://127.0.0.1:8501/_stcore/health", True),
-                       ("Apresentação", "http://127.0.0.1:3003/", True),
-                       ("Agente IA", "http://127.0.0.1:8000/api/health", self.config["agent_enabled"])]
-        with ThreadPoolExecutor(max_workers=4) as pool:
+                       ("Apresentação", "http://127.0.0.1:3003/", True)]
+        with ThreadPoolExecutor(max_workers=3) as pool:
             services = list(pool.map(lambda args: probe(*args), definitions))
         now = datetime.now(timezone.utc).isoformat()
         warehouse = warehouse_status(self.root / "warehouse", self.config["warehouse_max_age_hours"])

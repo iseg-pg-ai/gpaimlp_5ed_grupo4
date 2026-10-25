@@ -61,7 +61,7 @@ test("stack do Curation Studio mantém uma escritora e persistência retida", (t
   assert.equal(ofType("AWS::ECS::Service").length, 1);
   assert.equal(ofType("AWS::ECS::Service")[0].Properties.DesiredCount, 1);
   const task = ofType("AWS::ECS::TaskDefinition")[0];
-  assert.equal(task.Properties.ContainerDefinitions.length, 5);
+  assert.equal(task.Properties.ContainerDefinitions.length, 4);
   assert.equal(task.Properties.NetworkMode, "awsvpc");
 
   const fileSystem = ofType("AWS::EFS::FileSystem")[0];

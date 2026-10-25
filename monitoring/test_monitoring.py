@@ -231,7 +231,7 @@ class CollectorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             collector = Collector(root, root / "logs", {"interval_seconds": 30,
-                                  "warehouse_max_age_hours": None, "agent_enabled": False})
+                                  "warehouse_max_age_hours": None})
             self.addCleanup(lambda: [handler.close() for handler in collector.logger.handlers])
             with patch("monitoring.collector.probe", side_effect=lambda name, url, enabled: {
                 "name": name, "state": "up" if enabled else "disabled", "latency_ms": 2,
@@ -240,7 +240,7 @@ class CollectorTests(unittest.TestCase):
                 collector.collect()
             data = collector.snapshot()
             self.assertEqual(len(data["history"]), 2)
-            self.assertEqual(len(data["events"]), 5)
+            self.assertEqual(len(data["events"]), 4)
             handler = collector.logger.handlers[0]
             self.assertEqual(handler.maxBytes, 1_000_000)
             self.assertEqual(handler.backupCount, 3)

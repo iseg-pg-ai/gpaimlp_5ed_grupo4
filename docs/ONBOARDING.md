@@ -76,16 +76,15 @@ Com os pré-requisitos resolvidos:
 Este comando autentica o administrador, cria e confirma um checkpoint remoto
 quando existe estado a preservar, para os serviços e materializa a cache a partir
 desse checkpoint ou das releases do bucket de dados. Depois prepara dependências,
-testa, constrói o Portal, inicia os cinco serviços e abre as quatro interfaces.
+testa, constrói o Portal, inicia os quatro serviços e abre as quatro interfaces.
 Nos arranques seguintes basta:
 
 ```bash
 just blu up
 ```
 
-As portas esperadas são 3001, 3003, 3004, 8000 e 8501. A configuração versionada
-em `.vscode/settings.json` encaminha-as silenciosamente; a porta 8000 é técnica e
-não abre um separador.
+As portas esperadas são 3001, 3003, 3004 e 8501. A configuração versionada em
+`.vscode/settings.json` encaminha-as silenciosamente.
 
 O painel **Ports** do VS Code apresenta `localhost` na coluna de encaminhamento
 porque mostra o extremo local do túnel. Os nomes identificam agora as interfaces
@@ -110,7 +109,7 @@ python3 scripts/check_project.py
 just blu up
 ```
 
-O ambiente está pronto quando os cinco endpoints aparecem `ONLINE`, as quatro
+O ambiente está pronto quando os quatro endpoints aparecem `ONLINE`, as quatro
 interfaces abrem e o Monitoring aceita a conta pessoal do colega.
 
 ## Ficheiros incluídos no repositório para desenvolvimento

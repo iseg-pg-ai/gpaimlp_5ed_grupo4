@@ -330,8 +330,8 @@ Abrir `https://DOMINIO-DO-TEU-STUDIO/codeeditor/default/ports/3001/`.
 Substituir o domínio pelo da própria instância. O script recompila com o prefixo
 antes de iniciar; um build criado sem esse prefixo não serve para este proxy.
 Requer Node 22.13 a 24.x; preserva uma versão compatível já selecionada.
-O serviço HTTP do agente Python é opcional. Para o iniciar com o portal, acrescentar
-`BLU_START_AGENT=1` ao comando, depois de preparar as dependências Python.
+O assistente usa o planeador Python diretamente por subprocesso; não requer nem
+expõe um serviço HTTP adicional.
 
 O arranque valida a origem (apenas HTTPS, sem caminho), a porta e o prefixo.
 Se a porta estiver ocupada, termina antes de recompilar: encerrar o processo

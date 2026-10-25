@@ -15,10 +15,6 @@
       "label": "BLU Operations · Monitoring · AWS",
       "onAutoForward": "silent"
     },
-    "8000": {
-      "label": "BLU · Agente IA · endpoint técnico",
-      "onAutoForward": "ignore"
-    },
     "8501": {
       "label": "BLU Analytics · Observatório · AWS",
       "onAutoForward": "silent"
