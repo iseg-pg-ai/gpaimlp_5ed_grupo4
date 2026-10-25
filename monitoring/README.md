@@ -153,6 +153,12 @@ repositório. Uma subscrição por email só recebe mensagens depois de ser conf
 Consultar a documentação AWS sobre
 [notificações SNS por email](https://docs.aws.amazon.com/sns/latest/dg/sns-email-notifications.html).
 
+Em 2026-10-25, o ambiente de desenvolvimento validou a publicação real pela role
+IAM: uma abertura e uma recuperação foram entregues, uma abertura repetida foi
+deduplicada e a fila terminou sem pendências. O teste de falha e repetição é feito
+com falha injetada, para não retirar permissões à infraestrutura real durante uma
+validação operacional.
+
 ## Libertação automática de espaço
 
 O monitoring executa uma limpeza conservadora quando a ocupação do disco atinge

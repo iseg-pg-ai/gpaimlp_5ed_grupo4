@@ -51,14 +51,13 @@ A comparação de alternativas e os limites atuais estão em
 
 O Monitoring continua incompleto para produção até concluir:
 
-- [ ] Criar o tópico SNS real, confirmar subscrições e responsáveis, conceder
-  `sns:Publish` apenas nesse ARN e validar abertura, deduplicação, repetição após
-  falha e recuperação. O transporte persistente e os testes locais já existem.
 - [ ] Executar uma sonda fora da máquina do BLU e associá-la a responsáveis reais.
 
-Envios reais e infraestrutura externa exigem autorização aplicável. Logs, sondas
-locais e incidentes no painel não encerram estas duas tarefas sem evidência de
-execução externa.
+O SNS real foi validado em 2026-10-25 com subscrição confirmada e IAM limitado ao
+tópico: abertura e recuperação foram entregues, a repetição foi deduplicada e não
+ficaram mensagens pendentes. A repetição após falha foi validada por injeção local,
+sem remover temporariamente permissões da infraestrutura. Logs, sondas locais e
+incidentes no painel não substituem a sonda externa ainda pendente.
 
 ## Contratos a preservar
 

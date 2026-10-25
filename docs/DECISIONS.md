@@ -253,21 +253,24 @@ Monitoring, conserva pelo menos cinco cópias completas e respeita idade e limia
 disco. Fontes, catálogo, warehouse, exports, credenciais, ambientes e dependências
 ficam fora do seu alcance.
 
-Notificações externas e uma sonda fora da máquina continuam abertas no
-[plano](../PLAN.md); logs e sondas locais não constituem monitoring de produção.
+A sonda fora da máquina continua aberta no [plano](../PLAN.md); logs e sondas
+locais não constituem monitoring de produção.
 
-### SNS é o transporte externo preparado para incidentes — 2026-10-24
+### SNS é o transporte externo validado para incidentes — 2026-10-25
 
-O Monitoring possui uma integração SNS opcional, desativada por defeito. Publica
+O Monitoring possui uma integração SNS opcional, desativada por defeito no
+repositório. Publica
 apenas a abertura e a recuperação de incidentes técnicos, através da role IAM do
 ambiente e de um tópico indicado por variável local. A fila e o estado de entrega
 são persistentes; falhas são repetidas com atraso exponencial e eventos entregues
 não são reenviados durante a operação normal.
 
-O código e os testes não equivalem a uma entrega externa validada. O tópico,
-subscrições confirmadas, responsáveis, permissão `sns:Publish` e ensaio real
-continuam pendentes. A sonda externa depende ainda de um endpoint estável fora da
-máquina observada.
+O tópico real, a subscrição confirmada e a permissão `sns:Publish` limitada ao ARN
+foram validados em `eu-west-1`. Um ensaio técnico entregou uma abertura e uma
+recuperação, deduplicou a repetição da abertura e terminou com duas entregas e zero
+pendências. A repetição após falha permanece validada por teste com falha injetada,
+evitando remover permissões reais apenas para provocar um incidente. A sonda
+externa depende ainda de um endpoint estável fora da máquina observada.
 
 ## Configuração e dependências
 
