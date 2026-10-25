@@ -1,5 +1,91 @@
 # Plano de evolução do BLU AI System
 
+## API de leads com autenticação própria — proposta de 2026-10-25
+
+Estado: **para revisão do grupo; nada implementado nem publicado.**
+
+Problema: a página de Leads (`dmc-workspace/src/lib/leads.ts`) lê o DynamoDB
+com as credenciais do ambiente. No Studio, isso é o papel partilhado
+`SageMakerTeachingExecutionRole`, usado por todos os perfis do domínio
+`trabalhos-finais`. Conceder-lhe acesso expõe os contactos BLU a outras equipas
+(o domínio não transmite a identidade do utilizador ao papel) e falhou de
+qualquer forma: as políticas inline do papel ocupam 9 980 de 10 240 bytes.
+O papel partilhado não foi alterado.
+
+Decisão proposta: o acesso pertence à pessoa autenticada, não à máquina. O
+portal chama uma API BLU com login próprio e funciona igual no Studio, num
+portátil ou alojado, sem tocar no papel nem no domínio do curso.
+
+```text
+Portal (servidor Next.js) ──login──▶ Cognito (só curadores BLU)
+        │ token JWT
+        ▼
+HTTP API + autorizador JWT ──▶ Lambda leads-api ──política mínima──▶ DynamoDB
+```
+
+### Módulo novo: stack `BluCostaLeadsApi`
+
+- Stack própria em `infra/aws-split-app.mjs`, ao lado de Data, Frontend e
+  Backoffice; publica-se e remove-se sem afetar as outras. Reutiliza as
+  tabelas existentes, sem nova persistência.
+- Cognito: user pool sem registo público, contas criadas pelo grupo, grupo
+  `curators`, MFA TOTP, tokens de 1 h. Login gerido pelo Cognito (código +
+  PKCE) com URLs de retorno configuráveis (localhost, Studio, alojado).
+- HTTP API com autorizador JWT e limitação de pedidos; sem CORS, porque só o
+  servidor do portal a chama.
+- Rotas: `GET /v1/leads?filter=open|contacted`, `GET /v1/leads/{id}`,
+  `POST /v1/leads/{id}/contacted`, `PUT /v1/leads/{id}/tags`.
+- Lambda Node 22 com a política já validada no Access Analyzer: só `Query`
+  nas duas tabelas e em `FollowUpIndex`; `UpdateItem` apenas nos campos de
+  seguimento (estado, contacto, etiquetas, nota); sem `Scan` nem `DeleteItem`.
+- Logs sem texto de mensagens nem contactos; registam utilizador, rota e id.
+- Saídas: URL da API, user pool, client id e domínio de login para o `.env`.
+
+### Portal: alteração pequena
+
+- `leads.ts` mantém as mesmas funções e erros exportados (`listLeads`,
+  `getLead`, `markContacted`, `tagLead`), passando a chamar a API com o token
+  da sessão. Páginas e componentes não mudam.
+- Uma única fonte de mapeamento: a Lambda é empacotada com o
+  `leads-model.ts` existente, em vez de duplicar `toLead`/`contactDetails`.
+- Sessão em cookie `httpOnly`, `secure` e `sameSite`; configuração por
+  `BLU_LEADS_API_URL` e variáveis do Cognito. Sem acesso direto ao DynamoDB.
+
+### Tarefas
+
+- [ ] Rever e aprovar esta proposta em grupo.
+- [ ] Stack `BluCostaLeadsApi` com Cognito, HTTP API, Lambda e política mínima.
+- [ ] Lambda com testes unitários e DynamoDB simulado (sucesso, 404, campos
+  recusados, paginação).
+- [ ] Teste de synth: a política não contém `Scan`, `DeleteItem` nem curingas.
+- [ ] Login/logout no portal e `leads.ts` como cliente da API, com testes de
+  fetch simulado (sem sessão, token expirado, API indisponível).
+- [ ] Cenário de navegador da página de Leads com API simulada.
+- [ ] Atualizar runbook, `docs/ARCHITECTURE.md` e registar a decisão em
+  `docs/DECISIONS.md` após aprovação.
+- [ ] Com autorização: deploy, criação das contas de curador pelo grupo e
+  verificação real (sem login 401, curador 200, campo não permitido recusado).
+
+### Fora de âmbito e riscos
+
+- Deploy, criação de contas e chamadas AWS exigem autorização na conversa.
+  O disco local está praticamente cheio; `cdk synth` não cabe sem libertar
+  espaço.
+- O URL do Studio muda por espaço; cada endereço tem de constar nas URLs de
+  retorno do Cognito.
+- `BackofficeAnalysisRole` confia em toda a conta (`AccountPrincipal`).
+  Antes de publicar o Backoffice, restringir a confiança a papéis BLU
+  explícitos, ou o papel partilhado poderá assumi-lo.
+- Custo esperado baixo (Cognito no escalão gratuito, HTTP API por pedido);
+  confirmar no orçamento antes do deploy.
+
+### Questões para o grupo
+
+1. Stack própria (proposta) ou rotas dentro de `BluCostaBackoffice`?
+2. Quem cria e gere as contas de curador; MFA obrigatório para todos?
+3. Manter um modo local com DynamoDB direto para desenvolvimento, ou apenas
+   a API (proposta: só a API, para haver uma implementação)?
+
 ## Integração de dev em TXT/Canva — 2026-10-21
 
 - [x] Integrar `origin/dev` preservando as melhorias de TXT e do plugin Canva.
