@@ -38,9 +38,11 @@ Próximo passo técnico: obter evidência dos jobs `validate` e `container` de
 `.github/workflows/portal.yml` no GitHub Actions para a revisão a entregar.
 O workflow, o `Dockerfile.curation` e a stack `infra/curation-workspace.mjs`
 já existem; não é necessário recriá-los. No commit `d176a56`, documentação,
-ETL e o job `validate` do portal passaram no GitHub Actions. O job `container`
-falhou porque o PATH da imagem omitia `/usr/sbin`, impedindo `groupadd`.
-A correção do PATH precisa de confirmação numa nova construção em CI.
+ETL e o job `validate` do portal passaram no GitHub Actions. A construção revelou
+um PATH sem `/usr/sbin` e a omissão das ferramentas Node de build devido a
+`NODE_ENV=production`. O PATH foi corrigido; `npm ci --include=dev` passa a
+instalar as ferramentas antes do build e `npm prune --omit=dev` remove-as depois.
+A construção completa continua por confirmar em CI.
 
 A revisão local eliminou os sete avisos de tracing e restringiu o contexto Docker
 a código e recursos necessários. O build e os testes do portal passaram; a imagem

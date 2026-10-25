@@ -13,7 +13,7 @@ RUN uv sync --locked --all-groups --no-install-project
 COPY dmc-workspace/package.json dmc-workspace/package-lock.json ./dmc-workspace/
 # A dependência local referenciada pelo lockfile tem de existir antes de npm ci.
 COPY dmc-workspace/tools ./dmc-workspace/tools
-RUN cd dmc-workspace && npm ci
+RUN cd dmc-workspace && npm ci --include=dev
 COPY . .
 RUN cd dmc-workspace \
     && npm run build \
