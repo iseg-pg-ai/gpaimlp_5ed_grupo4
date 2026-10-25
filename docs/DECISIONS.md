@@ -443,3 +443,16 @@ timeout é configurável entre 5 e 120 segundos. Configuração incompleta, orç
 esgotado, timeout ou indisponibilidade não alteram o roteiro e não acionam outro
 modelo. Os valores comerciais permanecem uma decisão operacional por aprovar e
 não são inventados no código ou na documentação.
+
+### Base operacional da curadoria aprovada — 2026-10-25
+
+A Etapa 1 foi aprovada com uma única tarefa escritora ECS, EFS cifrado e retido,
+releases S3, entrada HTTPS por ALB, identidade Cognito, quatro papéis internos e
+segredos fora da imagem. O Grupo 4 assume provisoriamente as responsabilidades
+operacional e de segurança durante a fase académica.
+
+O dimensionamento de staging considera cinco utilizadores, 2 vCPU, 4 GB, 730
+horas/mês, 20 GB de EFS e 10 GB de logs. A estimativa bruta de referência é
+121,27 USD/mês, excluindo consumos variáveis e impostos. O domínio ainda não foi
+adquirido; imagem ECR, subdomínio, certificado e DNS são execução da Etapa 3 e
+continuam sujeitos a autorização explícita antes de criarem recursos ou custos.

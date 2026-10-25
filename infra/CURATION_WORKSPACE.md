@@ -92,7 +92,8 @@ antes de executar `deploy:curation`.
 
 - O Dockerfile unificado existe, mas a imagem identificada ainda não foi publicada.
 - Os comandos dos containers precisam de smoke tests dentro dessa imagem.
-- Falta nomear responsáveis operacionais e de segurança.
-- Falta introduzir o domínio, certificado e registos DNS reais.
+- Na fase académica, o Grupo 4 responde pela operação e segurança; produção exige
+  responsáveis nominais e substitutos.
+- Falta criar o subdomínio, certificado e registos DNS reais aprovados na Etapa 1.
 - Falta aprovar fornecedor, modelo, teto mensal e preços atuais do agente.
 - A stack foi apenas sintetizada; não foi executado `cdk deploy`.

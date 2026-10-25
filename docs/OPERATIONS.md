@@ -1,6 +1,6 @@
 # Operações, monitoring e deployment
 
-Estado revisto em 23 de outubro de 2026. O sistema funciona localmente no
+Estado revisto em 25 de outubro de 2026. O sistema funciona localmente no
 SageMaker Code Editor; ainda não existe um deployment de produção aprovado.
 Este documento separa o que está implementado das decisões ainda abertas.
 
@@ -167,10 +167,10 @@ expõe entregas e pendências no painel. O tópico privado, a subscrição confi
 o `sns:Publish` limitado ao respetivo ARN e a entrega real foram validados em
 25 de outubro de 2026. A ativação continua a ser configuração local por ambiente.
 
-## Base operacional proposta
+## Base operacional aprovada
 
-Esta é a recomendação inicial da Etapa 1 do [plano](../PLAN.md), ainda sujeita a
-aprovação antes de criar infraestrutura ou custos. Mantém uma única instância
+Esta é a decisão da Etapa 1, aprovada em 25 de outubro de 2026. Não cria
+infraestrutura nem autoriza custos. Mantém uma única instância
 escritora, compatível com o SQLite atual, mas retira o ciclo de vida dos processos
 da persistência operacional.
 
@@ -208,7 +208,7 @@ podem ser desativadas sem apagar auditoria ou versões. A autenticação local d
 Monitoring permanece apenas durante a migração e deve ser retirada depois de o
 Cognito proteger portal e Monitoring.
 
-### Objetivos propostos para aprovação
+### Objetivos aprovados
 
 | Objetivo | Staging | Produção inicial |
 | --- | --- | --- |
@@ -239,17 +239,55 @@ flowchart LR
     CW --> SNS[SNS validado]
 ```
 
-Esta base não cria recursos nem fecha as decisões. A aprovação deve confirmar,
-no mínimo, papéis, rascunhos sincronizados, objetivos, retenção e aceitação de uma
-única tarefa escritora. Depois disso podem ser produzidos manifests e estimativa
-de custos sem alterar a operação atual.
+Papéis, rascunhos sincronizados, objetivos, retenção e a tarefa escritora única
+foram aprovados. Para esta fase académica, o Grupo 4 assume tanto a
+responsabilidade operacional como a responsabilidade de segurança. Antes de
+produção, estas responsabilidades devem ser atribuídas a pessoas ou equipas
+formais com contacto e substituto.
+
+### Dimensão e estimativa aprovadas
+
+A referência aprovada para staging é de cinco utilizadores internos, uma tarefa
+Fargate Linux/x86 com 2 vCPU e 4 GB durante 730 horas/mês, 20 GB em EFS e 10 GB
+de logs por mês. O domínio ainda não foi adquirido; a Etapa 3 deve criar um
+subdomínio BLU, certificado ACM e DNS antes da exposição do serviço.
+
+Estimativa bruta mensal para `eu-west-1`, sem descontos nem Free Tier:
+
+| Componente | Cálculo | USD/mês |
+| --- | --- | ---: |
+| Fargate | 2 vCPU + 4 GB, 730 h | 72,08 |
+| Application Load Balancer | 730 h | 18,40 |
+| Capacidade ALB | referência conservadora de 1 LCU, 730 h | 5,84 |
+| EFS Standard | 20 GB | 6,60 |
+| Backup EFS | 20 GB de armazenamento quente estimado | 1,00 |
+| CloudWatch Logs | 10 GB ingeridos e retidos por um mês | 6,00 |
+| IPv4 público | dois endereços do ALB e um da tarefa, 730 h | 10,95 |
+| Secrets Manager | um segredo | 0,40 |
+| **Total de referência** | antes de impostos e consumos variáveis | **121,27** |
+
+Os preços unitários foram obtidos em 25 de outubro de 2026 nos catálogos públicos
+AWS para `eu-west-1`. A AWS cobra Fargate por vCPU e memória, ALB por hora e LCU,
+EFS por armazenamento e CloudWatch por ingestão/retenção. As páginas oficiais de
+[Fargate](https://aws.amazon.com/fargate/pricing/),
+[Elastic Load Balancing](https://aws.amazon.com/elasticloadbalancing/pricing/),
+[EFS](https://aws.amazon.com/efs/pricing/),
+[CloudWatch](https://aws.amazon.com/cloudwatch/pricing/) e
+[IPv4 público](https://aws.amazon.com/vpc/pricing/) descrevem essas dimensões.
+
+Cognito para cinco utilizadores fica dentro do patamar gratuito aplicável ao
+acesso direto, mas MFA por SMS pode ter custo próprio. S3, SNS, pedidos API,
+transferência, domínio, Bedrock/OpenAI, restaurações e crescimento acima das
+hipóteses não integram os 121,27 USD. A estimativa deve ser recalculada no AWS
+Pricing Calculator antes do deployment e comparada depois com Cost Explorer.
 
 A stack independente em [infra/CURATION_WORKSPACE.md](../infra/CURATION_WORKSPACE.md)
 materializa esta base como CloudFormation: uma tarefa escritora, cinco containers,
 EFS retido e cifrado, Cognito, ALB HTTPS, Secrets Manager e permissões limitadas
 aos buckets e SNS existentes. A síntese e os testes locais não criam recursos.
-Faltam a imagem unificada, domínio, certificado, DNS, responsáveis e estimativa
-final antes de qualquer deployment.
+Faltam publicar a imagem unificada e criar domínio/subdomínio, certificado e DNS
+na Etapa 3. Os responsáveis académicos e a estimativa de referência estão
+registados; não constituem autorização para executar `cdk deploy`.
 
 ## Deployment ainda por decidir
 

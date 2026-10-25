@@ -4,18 +4,6 @@ Revisto em 25 de outubro de 2026. Este ficheiro contém apenas trabalho aberto,
 ordenado pelas dependências reais. Implementações concluídas permanecem no
 histórico Git e em [Decisões](docs/DECISIONS.md).
 
-## Etapa 1 — Base operacional e multiutilizador
-
-As decisões de base estão aprovadas e registadas em
-[Decisões](docs/DECISIONS.md). Antes do agente e do deployment falta:
-
-- [ ] Nomear os responsáveis operacionais e de segurança de staging e produção.
-- [ ] Introduzir domínio, certificado, imagem e volume de utilização reais, gerar
-  a estimativa no AWS Pricing Calculator e aprová-la antes do deployment.
-
-A comparação atual e os limites conhecidos estão em
-[Operações](docs/OPERATIONS.md).
-
 ## Etapa 2 — Agente de IA integrado
 
 - [ ] Aprovar fornecedor, modelo, teto mensal e preços atuais para utilização
