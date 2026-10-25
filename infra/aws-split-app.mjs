@@ -261,10 +261,13 @@ class FrontendStack extends Stack {
     });
     const whatsappNumber = process.env.WHATSAPP_PUBLIC_NUMBER ?? '351915784212';
     if (!/^\d{7,20}$/.test(whatsappNumber)) throw new Error('WHATSAPP_PUBLIC_NUMBER must contain international digits only');
+    // index.html and config.js are not content-hashed, so browsers must revalidate them
+    // (cheap 304s via ETag) or visitors keep a stale site for hours after a deploy.
     new s3deploy.BucketDeployment(this, 'DeployFrontend', {
       destinationBucket: siteBucket,
       distribution,
       distributionPaths: ['/*'],
+      cacheControl: [s3deploy.CacheControl.noCache()],
       sources: [
         s3deploy.Source.asset(siteAsset),
         s3deploy.Source.data('config.js', `window.BLU_CHAT_API=${JSON.stringify(`${api.apiEndpoint}/v1/chat`)};window.BLU_CONVERSATION_EVENTS_ENDPOINT=${JSON.stringify(`${api.apiEndpoint}/v1/conversation-events`)};window.BLU_WHATSAPP_URL=${JSON.stringify(`https://wa.me/${whatsappNumber}`)};`),
@@ -276,6 +279,7 @@ class FrontendStack extends Stack {
       distribution,
       distributionPaths: ['/connect/*'],
       prune: false,
+      cacheControl: [s3deploy.CacheControl.noCache()],
       sources: [
         s3deploy.Source.asset(socialBridgeAsset),
         s3deploy.Source.data('config.js', `window.BLU_CHAT_API=${JSON.stringify(`${api.apiEndpoint}/v1/chat`)};window.BLU_CONVERSATION_EVENTS_ENDPOINT=${JSON.stringify(`${api.apiEndpoint}/v1/conversation-events`)};window.BLU_WHATSAPP_URL=${JSON.stringify(`https://wa.me/${whatsappNumber}`)};`),
