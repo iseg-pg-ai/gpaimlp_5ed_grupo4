@@ -2,12 +2,39 @@ import {
   CONTACTED, NOTE_LIMIT, OPEN_STATUSES, QUESTION_LIMIT,
   cleanTags, contactDetails, groupsOf, metrics, toLead, toMessage, validLeadId,
 } from './model.mjs';
+import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, parseActivity, plan } from './schedule.mjs';
 
 // Rotas da intranet. Os acessos AWS chegam injetados em `deps` (index.mjs na AWS,
 // simulações nos testes), para que a autorização e a validação sejam testadas sem rede.
 export class NotFound extends Error {}
 
-const STAFF = ['curators', 'governance'];
+// Papéis (grupos Cognito) e o que cada um pode fazer. Um cofre único de acessos:
+// a identidade vive no Cognito, as credenciais de serviço no Secrets Manager.
+export const ROLES = {
+  founders: { label: 'Fundador(a)', can: ['read', 'leads', 'team-admin'] },
+  curators: { label: 'Curador(a)', can: ['read', 'leads'] },
+  governance: { label: 'Governança', can: ['read'] },
+  testers: { label: 'Testes', can: ['read'] },
+};
+const STAFF = Object.keys(ROLES);
+const allowed = (groups, permission) => groups.some(group => ROLES[group]?.can.includes(permission));
+const validEmail = email => typeof email === 'string' && email.length <= 254 && /^[^\s@<>()]+@[^\s@<>()]+\.[a-z]{2,}$/i.test(email);
+
+const str = (item, key) => item[key]?.S ?? '';
+const toActivity = item => ({
+  id: str(item, 'activityId'), kind: str(item, 'kind'), title: str(item, 'title'), place: str(item, 'place'),
+  date: str(item, 'date'), time: str(item, 'time'), repeatUntil: str(item, 'repeatUntil'), people: Number(str(item, 'people') || 0),
+  partnerId: str(item, 'partnerId'), travellerChannel: str(item, 'travellerChannel'), partnerChannel: str(item, 'partnerChannel'), notes: str(item, 'notes'), status: str(item, 'status'), createdBy: str(item, 'createdBy'),
+  createdAt: str(item, 'createdAt'), reminders: str(item, 'reminders').split(',').filter(Boolean),
+});
+// O número de destino não sai da API; só se indica se existe.
+const toNotification = item => ({
+  conversationId: str(item, 'conversationId'), recordKey: str(item, 'recordKey'), activityId: str(item, 'activityId'),
+  audience: str(item, 'audience'), kind: str(item, 'kind'), title: str(item, 'title'), sendAt: str(item, 'followUpAt'),
+  occurrenceAt: str(item, 'occurrenceAt'), status: str(item, 'followUpStatus'), reason: str(item, 'reason'),
+  hasNumber: Boolean(str(item, 'to')), text: str(item, 'text'), sentAt: str(item, 'sentAt'), channel: str(item, 'channel') || 'whatsapp',
+  place: str(item, 'place'), people: Number(str(item, 'people') || 0), partnerName: str(item, 'partnerName'),
+});
 
 const reply = (statusCode, body, cache = 'no-store') => ({
   statusCode,
@@ -104,9 +131,86 @@ export function createApp(deps) {
     'GET /v1/operations': async () => reply(200, await deps.operations(), 'private, max-age=30'),
 
     'GET /v1/governance': async () => reply(200, await deps.governance(), 'private, max-age=300'),
+
+    'GET /v1/access': async () => reply(200, {
+      roles: Object.entries(ROLES).map(([id, role]) => ({ id, ...role })),
+      identity: { provider: 'Amazon Cognito', mfa: 'Obrigatório (aplicação de autenticação)', passwordPolicy: 'Mínimo 12 caracteres, maiúsculas, minúsculas e números', selfSignUp: false, session: 'Token de 1 h; sessão máxima de 12 h' },
+      secrets: await deps.secrets(),
+    }),
+
+    'POST /v1/team/invite': async ({ body }) => {
+      const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+      const name = typeof body.name === 'string' ? body.name.trim().slice(0, 80) : '';
+      if (!validEmail(email)) return fail(400, 'Email inválido.');
+      if (!name) return fail(400, 'Indique o nome.');
+      if (!ROLES[body.role]) return fail(400, 'Papel inválido.');
+      const result = await deps.invite({ email, name, role: body.role });
+      return result.exists ? fail(409, 'Já existe uma conta com este email.') : reply(201, { username: result.username });
+    },
+
+    'POST /v1/team/{username}/role': async ({ user, body, event }) => {
+      const username = event.pathParameters.username;
+      if (!ROLES[body.role]) return fail(400, 'Papel inválido.');
+      if (username === user.username && body.role !== 'founders') return fail(400, 'Não pode retirar o seu próprio papel de fundador(a).');
+      await deps.setRole(username, body.role, STAFF);
+      return reply(204);
+    },
+
+    'POST /v1/team/{username}/status': async ({ user, body, event }) => {
+      const username = event.pathParameters.username;
+      if (typeof body.enabled !== 'boolean') return fail(400, 'Indique enabled.');
+      if (username === user.username && !body.enabled) return fail(400, 'Não pode desativar a sua própria conta.');
+      await deps.setEnabled(username, body.enabled);
+      return reply(204);
+    },
+
+    'GET /v1/partners': async () => reply(200, { partners: deps.partners, reminders: REMINDERS, kinds: KINDS, channels: CHANNELS }, 'private, max-age=300'),
+
+    'GET /v1/leads/{id}/activities': async ({ id }) => {
+      const [activities, notifications] = await Promise.all([deps.queryRecords(id, 'ACTIVITY#'), deps.queryRecords(id, 'NOTIFY#')]);
+      return reply(200, { activities: activities.map(toActivity), notifications: notifications.map(toNotification) });
+    },
+
+    'POST /v1/leads/{id}/activities': async ({ id, user, body }) => {
+      const parsed = parseActivity(body, deps.partners, now());
+      if (parsed.error) return fail(400, parsed.error);
+      const lead = await getLead(id);
+      const activityId = deps.newId();
+      const partner = deps.partners.find(item => item.id === parsed.activity.partnerId);
+      const notifications = plan(parsed.activity, { activityId, travellerPhone: digitsOnly(lead.phones[0]), travellerEmail: lead.emails[0] ?? '', partner, travellerConsent: Boolean(lead.consentAt), now: now() });
+      const at = now().toISOString();
+      await deps.putRecords(id, [
+        { recordKey: `ACTIVITY#${activityId}`, activityId, ...parsed.activity, reminders: parsed.activity.reminders.join(','), status: 'ACTIVE', createdBy: user.email, createdAt: at, notificationCount: String(notifications.length) },
+        ...notifications.map(notification => ({ ...notification, followUpStatus: NOTIFY.pending, followUpAt: notification.sendAt, kind: parsed.activity.kind, title: parsed.activity.title, place: parsed.activity.place, people: parsed.activity.people, partnerName: parsed.activity.partnerId === 'bolt' ? 'Bolt' : partner?.name ?? '', approvedBy: user.email, createdAt: at })),
+      ]);
+      const warnings = [];
+      if (notifications.some(n => n.audience === 'traveller' && !n.to)) warnings.push(`O viajante não deixou ${parsed.activity.travellerChannel === 'email' ? 'email' : 'telefone'}: os lembretes ficam preparados para envio manual.`);
+      if (partner && !partner.whatsapp && notifications.some(n => n.audience === 'partner')) warnings.push(`${partner.name} não tem número WhatsApp: os lembretes ao parceiro ficam preparados.`);
+      if (!lead.consentAt) warnings.push('Sem consentimento registado: não foram agendados lembretes ao viajante.');
+      return reply(201, { activityId, notifications: notifications.length, warnings });
+    },
+
+    'POST /v1/leads/{id}/activities/{activityId}/cancel': async ({ id, event }) => {
+      const activityId = event.pathParameters?.activityId ?? '';
+      if (!/^[A-Za-z0-9-]{8,64}$/.test(activityId)) return fail(400, 'Atividade inválida.');
+      const pending = (await deps.queryRecords(id, 'NOTIFY#')).filter(item => item.activityId?.S === activityId && item.followUpStatus?.S === NOTIFY.pending);
+      await deps.setRecord(id, `ACTIVITY#${activityId}`, { status: 'CANCELLED', cancelledAt: now().toISOString() });
+      await Promise.all(pending.map(item => deps.setRecord(id, item.recordKey.S, { followUpStatus: NOTIFY.cancelled }, NOTIFY.pending)));
+      return reply(204);
+    },
+
+    'GET /v1/agenda': async ({ event }) => {
+      const days = Math.min(Math.max(Number.parseInt(event.queryStringParameters?.days ?? '2', 10) || 2, 1), 14);
+      const start = new Date(now() - 864e5).toISOString();
+      const end = new Date(+now() + days * 864e5).toISOString();
+      const statuses = [NOTIFY.pending, NOTIFY.sent, NOTIFY.prepared, NOTIFY.failed, NOTIFY.missed];
+      const items = (await Promise.all(statuses.map(status => deps.queryAgenda(status, start, end)))).flat();
+      return reply(200, { notifications: items.map(toNotification).sort((a, b) => a.sendAt.localeCompare(b.sendAt)) });
+    },
   };
 
-  const writes = new Set(['POST /v1/leads/{id}/contacted', 'POST /v1/leads/{id}/assign', 'PUT /v1/leads/{id}/tags', 'POST /v1/leads/{id}/ask']);
+  const writes = new Set(['POST /v1/leads/{id}/contacted', 'POST /v1/leads/{id}/assign', 'PUT /v1/leads/{id}/tags', 'POST /v1/leads/{id}/ask', 'POST /v1/leads/{id}/activities', 'POST /v1/leads/{id}/activities/{activityId}/cancel']);
+  const admin = new Set(['POST /v1/team/invite', 'POST /v1/team/{username}/role', 'POST /v1/team/{username}/status']);
 
   return async function handler(event) {
     const route = routes[event.routeKey];
@@ -114,8 +218,10 @@ export function createApp(deps) {
     const claims = event.requestContext?.authorizer?.jwt?.claims ?? {};
     const groups = groupsOf(claims);
     if (!groups.some(group => STAFF.includes(group))) return fail(403, 'Sem acesso à intranet. Peça ao grupo para o adicionar.');
-    if (writes.has(event.routeKey) && !groups.includes('curators')) return fail(403, 'Esta ação é reservada a curadores.');
-    const user = { email: String(claims.email ?? ''), name: String(claims.name ?? claims.email ?? ''), groups };
+    if (writes.has(event.routeKey) && !allowed(groups, 'leads')) return fail(403, 'Esta ação é reservada a curadores e fundadores.');
+    if (admin.has(event.routeKey) && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores gerem acessos.');
+    const user = { email: String(claims.email ?? ''), name: String(claims.name ?? claims.email ?? ''), username: String(claims['cognito:username'] ?? claims.sub ?? ''), groups };
+    if (event.routeKey.includes('{username}') && !/^[\w.@+-]{1,128}$/.test(event.pathParameters?.username ?? '')) return fail(400, 'Utilizador inválido.');
     const id = event.pathParameters?.id;
     if (event.routeKey.includes('{id}') && !validLeadId(id)) return fail(400, 'Referência inválida.');
     const body = parse(event);

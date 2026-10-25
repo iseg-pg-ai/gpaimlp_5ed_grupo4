@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { evaluatePolicies } from './policy/checks.mjs';
 import {
   App,
   CfnOutput,
@@ -44,6 +45,10 @@ const siteAsset = path.resolve(infraDir, '../frontend/blu-cloud-site/dist/client
 const socialBridgeAsset = path.resolve(infraDir, '../frontend/website');
 const intranetAsset = path.resolve(infraDir, '../frontend/intranet');
 const governanceControls = JSON.parse(readFileSync(path.resolve(infraDir, '../config/governance-controls.json'), 'utf8'));
+const partnersConfig = JSON.parse(readFileSync(path.resolve(infraDir, '../config/partners.json'), 'utf8'));
+// Políticas como código: uma regra bloqueante em falha impede o synth e, portanto, o deploy.
+const policyReport = evaluatePolicies();
+if (policyReport.summary.blockingFailures.length) throw new Error(`Blocking policy failures: ${policyReport.summary.blockingFailures.join(', ')} (see config/policies.json)`);
 if (!/^[0-9]{12}$/.test(account ?? '')) throw new Error('TARGET_AWS_ACCOUNT_ID must be the twelve-digit destination AWS account');
 
 const app = new App({ outdir });
@@ -385,7 +390,10 @@ class BackofficeStack extends Stack {
       destinationKeyPrefix: 'controls/manifests',
       prune: false,
       // Fonte única: config/governance-controls.json, também apresentada na intranet.
-      sources: [s3deploy.Source.data('customer-intelligence-controls.json', JSON.stringify(governanceControls, null, 2))],
+      sources: [
+        s3deploy.Source.data('customer-intelligence-controls.json', JSON.stringify(governanceControls, null, 2)),
+        s3deploy.Source.data('policy-report.json', JSON.stringify(policyReport, null, 2)),
+      ],
     });
     new CfnOutput(this, 'ConversationTableForBackoffice', { value: props.data.messages.tableName });
     new CfnOutput(this, 'AnalysisExportBucket', { value: exportsBucket.bucketName });
@@ -395,6 +403,7 @@ class BackofficeStack extends Stack {
     new CfnOutput(this, 'BackofficeCrmQueueUrl', { value: props.data.crmEvents.queueUrl });
     new CfnOutput(this, 'WhatsAppOutboundFunctionArn', { value: whatsappOutbound.functionArn });
     this.rag = rag;
+    this.whatsappOutbound = whatsappOutbound;
     this.evidenceBucket = evidenceBucket;
   }
 }
@@ -418,7 +427,7 @@ class IntranetStack extends Stack {
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       removalPolicy: RemovalPolicy.RETAIN,
     });
-    for (const [group, description] of [['curators', 'Seguimento de leads e operações'], ['governance', 'Governança, evidências e aprovação de conhecimento']]) {
+    for (const [group, description] of [['founders', 'Fundadores: tudo, incluindo gestão de acessos'], ['curators', 'Seguimento de leads, agenda e parceiros'], ['governance', 'Governança e evidências (leitura)'], ['testers', 'Equipa de testes (leitura)']]) {
       new cognito.CfnUserPoolGroup(this, `Group-${group}`, { userPoolId: userPool.userPoolId, groupName: group, description });
     }
     const domainPrefix = process.env.INTRANET_AUTH_DOMAIN_PREFIX ?? `${projectName}-${environmentName}-intranet-${account.slice(-4)}`;
@@ -487,15 +496,18 @@ class IntranetStack extends Stack {
         EVIDENCE_BUCKET: backoffice.evidenceBucket.bucketName,
         RAG_FUNCTION_NAME: backoffice.rag.functionName,
         USER_POOL_ID: userPool.userPoolId,
+        PARTNERS_JSON: JSON.stringify({ partners: partnersConfig.partners }),
+        MANAGED_SECRETS: JSON.stringify([{ arn: data.whatsappSecret.secretArn, purpose: 'WhatsApp Business (envio de lembretes e mensagens)' }]),
       },
       code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
     });
-    // Permissões explícitas e mínimas: sem Scan, DeleteItem nem PutItem.
+    // Permissões explícitas e mínimas: sem Scan nem DeleteItem; PutItem só cria registos da agenda (com condição no código).
     fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:Query', 'dynamodb:GetItem'], resources: [data.messages.tableArn, data.intelligence.tableArn, `${data.intelligence.tableArn}/index/FollowUpIndex`] }));
-    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem'], resources: [data.intelligence.tableArn] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem', 'dynamodb:PutItem'], resources: [data.intelligence.tableArn] }));
     fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['sqs:GetQueueAttributes'], resources: [data.events.queueArn, data.crmEvents.queueArn, `arn:aws:sqs:${region}:${account}:BluCostaData-ConversationEventsDlq*`] }));
     fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['lambda:ListFunctions', 'cloudwatch:GetMetricData'], resources: ['*'] }));
-    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['cognito-idp:ListUsersInGroup'], resources: [userPool.userPoolArn] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['cognito-idp:ListUsersInGroup', 'cognito-idp:AdminCreateUser', 'cognito-idp:AdminAddUserToGroup', 'cognito-idp:AdminRemoveUserFromGroup', 'cognito-idp:AdminEnableUser', 'cognito-idp:AdminDisableUser'], resources: [userPool.userPoolArn] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['secretsmanager:DescribeSecret'], resources: [data.whatsappSecret.secretArn] }));
     backoffice.evidenceBucket.grantRead(fn, 'controls/*');
     backoffice.rag.grantInvoke(fn);
 
@@ -505,6 +517,8 @@ class IntranetStack extends Stack {
       ['GET', '/v1/me'], ['GET', '/v1/leads'], ['GET', '/v1/leads/{id}'],
       ['POST', '/v1/leads/{id}/contacted'], ['POST', '/v1/leads/{id}/assign'], ['PUT', '/v1/leads/{id}/tags'], ['POST', '/v1/leads/{id}/ask'],
       ['GET', '/v1/metrics'], ['GET', '/v1/team'], ['GET', '/v1/operations'], ['GET', '/v1/governance'],
+      ['GET', '/v1/access'], ['POST', '/v1/team/invite'], ['POST', '/v1/team/{username}/role'], ['POST', '/v1/team/{username}/status'],
+      ['GET', '/v1/partners'], ['GET', '/v1/agenda'], ['GET', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities/{activityId}/cancel'],
     ];
     for (const [method, routePath] of routes) {
       api.addRoutes({ path: routePath, methods: [apigatewayv2.HttpMethod[method]], integration, authorizer });
@@ -513,6 +527,39 @@ class IntranetStack extends Stack {
     const cfnApi = api.node.defaultChild;
     cfnApi.corsConfiguration = { allowOrigins: [`https://${distribution.distributionDomainName}`], allowHeaders: ['authorization', 'content-type'], allowMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], maxAge: 600 };
     api.defaultStage.node.defaultChild.defaultRouteSettings = { throttlingBurstLimit: 40, throttlingRateLimit: 20 };
+
+    // Lembretes agendados pelo curador: verificados a cada 5 minutos e enviados pelo
+    // WhatsAppOutbound do Backoffice; sem credenciais ficam marcados como preparados.
+    // Email (SES) e SMS (SNS) ficam desligados até haver remetente verificado e autorização de SMS.
+    const emailFrom = process.env.INTRANET_EMAIL_FROM ?? '';
+    if (emailFrom && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(emailFrom)) throw new Error('INTRANET_EMAIL_FROM must be a verified SES email address');
+    const smsEnabled = process.env.INTRANET_SMS_ENABLED === 'true';
+    const dispatcher = new lambda.Function(this, 'ScheduledNotifications', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'dispatch.handler',
+      timeout: Duration.seconds(60),
+      memorySize: 256,
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      environment: {
+        INTELLIGENCE_TABLE_NAME: data.intelligence.tableName,
+        WHATSAPP_FUNCTION_NAME: backoffice.whatsappOutbound.functionName,
+        EMAIL_FROM: emailFrom,
+        SMS_ENABLED: smsEnabled ? 'true' : 'false',
+        EVIDENCE_BUCKET: backoffice.evidenceBucket.bucketName,
+      },
+      code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
+    });
+    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:Query'], resources: [`${data.intelligence.tableArn}/index/FollowUpIndex`] }));
+    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem'], resources: [data.intelligence.tableArn] }));
+    backoffice.whatsappOutbound.grantInvoke(dispatcher);
+    if (emailFrom) dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['ses:SendEmail'], resources: [`arn:aws:ses:${region}:${account}:identity/${emailFrom.split('@')[1]}`, `arn:aws:ses:${region}:${account}:identity/${emailFrom}`] }));
+    if (smsEnabled) dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['sns:Publish'], notResources: ['arn:aws:sns:*:*:*'] }));
+    backoffice.evidenceBucket.grantPut(dispatcher, 'controls/scheduled-notifications/*');
+    new events.Rule(this, 'ScheduledNotificationsEvery5Minutes', {
+      description: 'Sends curator-approved pickup and excursion reminders that are due.',
+      schedule: events.Schedule.rate(Duration.minutes(5)),
+      targets: [new targets.LambdaFunction(dispatcher)],
+    });
 
     new s3deploy.BucketDeployment(this, 'DeployIntranet', {
       destinationBucket: siteBucket,

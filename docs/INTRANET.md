@@ -231,3 +231,32 @@ Na AWS, só com autorização e dados de teste:
    `admin-add-user-to-group`. No primeiro login define a palavra-passe e
    configura a aplicação de autenticação (MFA).
 4. Abrir a saída `IntranetUrl`.
+
+## Agenda, acessos e políticas (2026-10-25)
+
+- **Agenda:** no detalhe de um lead, o curador agenda recolhas ou excursões
+  (um dia ou todos os dias até 31 dias), com parceiro ou Bolt, e escolhe os
+  lembretes (véspera às 18:00, 1 h ou 2 h antes) e o canal: WhatsApp, SMS
+  (Amazon SNS) ou email (Amazon SES). Cada lembrete fica como registo `NOTIFY#`
+  no perfil, indexado em `FollowUpIndex` com estado `NOTIFY_*`. O despachante
+  `ScheduledNotifications` corre a cada 5 minutos, reserva cada lembrete antes
+  de enviar e grava evidência sem texto nem números em
+  `controls/scheduled-notifications/`. Sem consentimento não há lembretes ao
+  viajante; canais por configurar deixam a mensagem "preparada" para envio
+  manual. SMS e email ligam-se com `INTRANET_SMS_ENABLED=true` e
+  `INTRANET_EMAIL_FROM` (remetente verificado no SES).
+- **Parceiros:** `config/partners.json`. Parceiros reais precisam de licença
+  (RNAAT, TVDE ou alvará); o agendamento recusa os que não a têm.
+- **Equipa e acessos:** papéis `founders`, `curators`, `governance` e
+  `testers`. Só fundadores convidam, mudam papéis e desativam contas (o Cognito
+  envia o convite por email; MFA no primeiro login). A página mostra a matriz de
+  papéis e os metadados dos segredos geridos, nunca os valores.
+- **Primeira conta de fundador:** criada pelo grupo depois do deploy:
+  `aws cognito-idp admin-create-user --user-pool-id <IntranetUserPoolId> --username <email> --user-attributes Name=email,Value=<email> Name=email_verified,Value=true Name=name,Value=<nome>`
+  e `aws cognito-idp admin-add-user-to-group --user-pool-id <IntranetUserPoolId> --username <email> --group-name founders`.
+  As restantes pessoas são convidadas a partir da intranet.
+- **Políticas como código:** `config/policies.json` liga cada regra europeia ou
+  portuguesa à fonte legal; `infra/policy/checks.mjs` verifica-as nos ficheiros
+  do projeto. Uma regra bloqueante em falha impede o synth (e o deploy); o
+  relatório é publicado em `controls/manifests/policy-report.json` e aparece em
+  Governança. Mapeamento técnico; não substitui parecer jurídico.

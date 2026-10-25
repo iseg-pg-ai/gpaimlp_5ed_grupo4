@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const opening = { id: "opening", role: "assistant", text: "Tell me what you have in mind for Portugal. I can explore the possibilities with you, then pass the useful details to a curator." };
+const opening = { id: "opening", role: "assistant", text: "Hello, I'm BLU's AI travel assistant. Tell me what you have in mind for Portugal. I can explore the possibilities with you, then pass the useful details to a curator." };
 const prompts = [
   ["destination", /lisbon|sintra|porto|douro|alentejo|algarve|portugal/i, "Which part of Portugal would you like to explore?"],
   ["dates", /\b(20\d{2}|january|february|march|april|may|june|july|august|september|october|november|december|week|day)\b/i, "When are you travelling, and how flexible are your dates?"],

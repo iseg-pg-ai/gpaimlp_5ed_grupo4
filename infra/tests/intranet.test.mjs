@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { NotFound, createApp } from '../lambda/intranet/app.mjs';
 import { CONTACTED, LEAD_TAGS, OPEN_STATUSES, groupsOf, metrics, toLead } from '../lambda/intranet/model.mjs';
+import { createDispatcher } from '../lambda/intranet/dispatch-core.mjs';
+import { lisbonToUtc, outcome, parseActivity, plan } from '../lambda/intranet/schedule.mjs';
 import { challengeFor, claimsOf, expired, loginUrl, tokenRequest } from '../../frontend/intranet/auth.js';
 
 const infraDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -164,6 +166,118 @@ test('the web login uses PKCE S256 and keeps the exchange on the Cognito domain'
   assert.equal(expired({ exp: 1 }), true);
 });
 
+const partners = [{ id: 'tuk-alfama', name: 'Tuk-tuk Alfama', whatsapp: '351910000000', license: { type: 'RNAAT', number: '1-2020' } }, { id: 'tuk-belem', name: 'Tuk-tuk Belém', whatsapp: '' }];
+const morning = { kind: 'pickup', title: 'Recolha no hotel', place: 'Hotel Alfama', date: '2026-11-02', time: '09:30', people: '3', partnerId: 'tuk-alfama' };
+
+test('activity requests are validated before anything is scheduled', () => {
+  const now = new Date('2026-10-26T12:00:00Z');
+  assert.match(parseActivity({ ...morning, kind: 'helicopter' }, partners, now).error, /recolha ou excursão/);
+  assert.match(parseActivity({ ...morning, time: '25:00' }, partners, now).error, /data e hora/);
+  assert.match(parseActivity({ ...morning, repeatUntil: '2026-12-31' }, partners, now).error, /31 dias/);
+  assert.match(parseActivity({ ...morning, partnerId: 'nobody' }, partners, now).error, /Parceiro/);
+  assert.match(parseActivity({ ...morning, date: '2026-10-01' }, partners, now).error, /já passou/);
+  assert.equal(parseActivity({ ...morning, repeatUntil: '2026-11-04' }, partners, now).activity.days, 3);
+});
+
+test('Lisbon times convert to UTC in summer and winter time', () => {
+  assert.equal(lisbonToUtc('2026-07-01', '09:30').toISOString(), '2026-07-01T08:30:00.000Z');
+  assert.equal(lisbonToUtc('2026-12-01', '09:30').toISOString(), '2026-12-01T09:30:00.000Z');
+});
+
+test('daily pickups plan one reminder set per day for traveller and partner', () => {
+  const now = new Date('2026-10-26T12:00:00Z');
+  const { activity } = parseActivity({ ...morning, repeatUntil: '2026-11-03' }, partners, now);
+  const notifications = plan(activity, { activityId: 'act-12345678', travellerPhone: '351912345678', partner: partners[0], now });
+  assert.equal(notifications.length, 8);
+  const first = notifications.filter(n => n.occurrenceAt === '2026-11-02T09:30:00.000Z');
+  assert.deepEqual(first.map(n => n.sendAt).sort(), ['2026-11-01T18:00:00.000Z', '2026-11-01T18:00:00.000Z', '2026-11-02T07:30:00.000Z', '2026-11-02T08:30:00.000Z']);
+  assert.match(first.find(n => n.audience === 'partner').text, /Responda OK/);
+  assert.match(first.find(n => n.audience === 'traveller').text, /Tuk-tuk Alfama will meet you/);
+  assert.ok(notifications.every(n => n.recordKey.startsWith(`NOTIFY#${n.sendAt}#act-12345678#`)));
+});
+
+test('travellers can get reminders by email or SMS and never without consent', () => {
+  const now = new Date('2026-10-26T12:00:00Z');
+  const { activity } = parseActivity({ ...morning, travellerChannel: 'email', partnerChannel: 'sms' }, partners, now);
+  const notifications = plan(activity, { activityId: 'act-12345678', travellerPhone: '351912345678', travellerEmail: 'ana@example.com', partner: partners[0], now });
+  assert.deepEqual([...new Set(notifications.filter(n => n.audience === 'traveller').map(n => `${n.channel}:${n.to}`))], ['email:ana@example.com']);
+  assert.deepEqual([...new Set(notifications.filter(n => n.audience === 'partner').map(n => n.channel))], ['sms']);
+  assert.equal(parseActivity({ ...morning, travellerChannel: 'pigeon' }, partners, now).activity.travellerChannel, 'whatsapp');
+  const noConsent = plan(activity, { activityId: 'act-12345678', travellerEmail: 'ana@example.com', partner: partners[0], travellerConsent: false, now });
+  assert.ok(noConsent.every(n => n.audience === 'partner'));
+});
+
+test('real partners without a licence cannot be booked', () => {
+  const unlicensed = [{ id: 'tuk-real', name: 'Tuk real', whatsapp: '351910000001' }];
+  assert.match(parseActivity({ ...morning, partnerId: 'tuk-real' }, unlicensed, new Date('2026-10-26T12:00:00Z')).error, /licença/);
+});
+
+test('Bolt rides send the traveller a booking link and nothing to partners', () => {
+  const now = new Date('2026-10-26T12:00:00Z');
+  const { activity } = parseActivity({ ...morning, partnerId: 'bolt' }, partners, now);
+  const notifications = plan(activity, { activityId: 'act-12345678', travellerPhone: '', partner: undefined, now });
+  assert.deepEqual([...new Set(notifications.map(n => n.audience))], ['traveller']);
+  assert.match(notifications[0].text, /https:\/\/bolt\.eu\//);
+  assert.equal(notifications[0].to, '');
+});
+
+test('send outcomes: no number or no WhatsApp setup is prepared, stale reminders are skipped', () => {
+  assert.equal(outcome({ to: '', error: '' }).status, 'NOTIFY_PREPARED');
+  assert.equal(outcome({ to: '351', error: 'WhatsApp accessToken is not configured' }).status, 'NOTIFY_PREPARED');
+  assert.equal(outcome({ to: 'a@b.pt', error: 'Email channel is not configured' }).status, 'NOTIFY_PREPARED');
+  assert.equal(outcome({ to: '351', error: 'provider code 131047' }).status, 'NOTIFY_FAILED');
+  assert.equal(outcome({ to: '351', error: '', late: true }).status, 'NOTIFY_MISSED');
+  assert.equal(outcome({ to: '351', error: '' }).status, 'NOTIFY_SENT');
+});
+
+test('the dispatcher sends each due reminder once and records evidence without content', async () => {
+  const item = (key, extra = {}) => ({ conversationId: S('BLU-AAAAAAAA0001'), recordKey: S(key), followUpAt: S('2026-11-02T08:30:00.000Z'), to: S('351912345678'), text: S('Olá'), audience: S('traveller'), approvedBy: S('ana@blu.pt'), ...extra });
+  const sent = [];
+  const finished = [];
+  let evidence;
+  const dispatch = createDispatcher({
+    now: () => new Date('2026-11-02T08:31:00Z'),
+    queryDue: async () => [item('NOTIFY#a'), item('NOTIFY#b'), item('NOTIFY#c', { to: S('') })],
+    claim: async (id, key) => key !== 'NOTIFY#b',
+    send: async message => { sent.push(message); },
+    requestIdFor: key => `notify-${key.length}0000000`,
+    finish: async (id, key, set) => { finished.push([key, set.followUpStatus]); },
+    evidence: async (now, results) => { evidence = results; },
+  });
+  const summary = await dispatch();
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].approvedBy, 'ana@blu.pt');
+  assert.deepEqual(finished, [['NOTIFY#a', 'NOTIFY_SENT'], ['NOTIFY#c', 'NOTIFY_PREPARED']]);
+  assert.doesNotMatch(JSON.stringify(evidence), /351912345678|Olá/);
+  assert.equal(summary.sent, 1);
+});
+
+test('curators schedule and cancel activities; the API never returns phone numbers', async () => {
+  const records = [];
+  const updates = [];
+  const { deps } = fakeDeps({
+    partners,
+    newId: () => 'act-12345678',
+    putRecords: async (id, list) => { records.push(...list); },
+    queryRecords: async (id, prefix) => records.filter(r => r.recordKey.startsWith(prefix)).map(r => Object.fromEntries(Object.entries({ conversationId: id, ...r }).map(([k, v]) => [k, S(String(v))]))),
+    setRecord: async (...args) => { updates.push(args); },
+  });
+  const handler = createApp(deps);
+  const id = 'BLU-AAAAAAAA0001';
+  assert.equal((await handler(request('POST /v1/leads/{id}/activities', { id, groups: '[governance]', body: morning }))).statusCode, 403);
+  assert.equal((await handler(request('POST /v1/leads/{id}/activities', { id, body: { ...morning, title: '' } }))).statusCode, 400);
+  const created = await handler(request('POST /v1/leads/{id}/activities', { id, body: morning }));
+  assert.equal(created.statusCode, 201);
+  assert.equal(JSON.parse(created.body).notifications, 4);
+  assert.equal(records.find(r => r.recordKey.startsWith('NOTIFY#') && r.audience === 'traveller').to, '351912345678');
+  const listed = (await handler(request('GET /v1/leads/{id}/activities', { id }))).body;
+  assert.doesNotMatch(listed, /351912345678|351910000000/);
+  assert.equal(JSON.parse(listed).activities[0].title, 'Recolha no hotel');
+  const cancel = await handler({ ...request('POST /v1/leads/{id}/activities/{activityId}/cancel', { id }), pathParameters: { id, activityId: 'act-12345678' } });
+  assert.equal(cancel.statusCode, 204);
+  assert.equal(updates.filter(u => u[2].followUpStatus === 'NOTIFY_CANCELLED').length, 4);
+});
+
 const siteBuilt = existsSync(path.join(infraDir, '../frontend/blu-cloud-site/dist/client'));
 
 test('the intranet stack protects every route and grants no destructive data access', { skip: !siteBuilt && 'build frontend/blu-cloud-site first' }, async () => {
@@ -176,7 +290,7 @@ test('the intranet stack protects every route and grants no destructive data acc
     const template = JSON.parse(await readFile(path.join(outdir, 'BluCostaIntranet.template.json'), 'utf8'));
     const of = type => Object.values(template.Resources).filter(resource => resource.Type === type);
     const routes = of('AWS::ApiGatewayV2::Route');
-    assert.equal(routes.length, 11);
+    assert.equal(routes.length, 20);
     for (const route of routes) assert.equal(route.Properties.AuthorizationType, 'JWT', route.Properties.RouteKey);
     const [pool] = of('AWS::Cognito::UserPool');
     assert.equal(pool.Properties.MfaConfiguration, 'ON');
@@ -188,9 +302,9 @@ test('the intranet stack protects every route and grants no destructive data acc
     // A função de deploy do CDK escreve no bucket do próprio site; a API não pode apagar nem escrever dados.
     const apiPolicy = of('AWS::IAM::Policy').find(policy => JSON.stringify(policy.Properties.Roles).includes('IntranetApiHandler'));
     assert.ok(apiPolicy);
-    assert.doesNotMatch(JSON.stringify(apiPolicy.Properties.PolicyDocument), /dynamodb:(Scan|DeleteItem|PutItem|BatchWriteItem)|dynamodb:\*|s3:Delete|s3:Put/);
+    assert.doesNotMatch(JSON.stringify(apiPolicy.Properties.PolicyDocument), /dynamodb:(Scan|DeleteItem|BatchWriteItem)|dynamodb:\*|s3:Delete|s3:Put/);
     const groups = of('AWS::Cognito::UserPoolGroup').map(group => group.Properties.GroupName).sort();
-    assert.deepEqual(groups, ['curators', 'governance']);
+    assert.deepEqual(groups, ['curators', 'founders', 'governance', 'testers']);
   } finally {
     await rm(outdir, { recursive: true, force: true });
   }
