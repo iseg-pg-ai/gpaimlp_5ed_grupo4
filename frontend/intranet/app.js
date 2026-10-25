@@ -61,10 +61,13 @@ const loadTeam = async () => (teamCache ??= (await api('GET', '/v1/team')).membe
 async function api(method, path, body) {
   if (config?.mock) return window.BLU_INTRANET_MOCK(method, path, body);
   if (expired(session.claims)) return login();
+  // Sem rede ou servidor, o navegador só diz «Failed to fetch»; mostra-se uma mensagem útil.
   const response = await fetch(`${config.api}${path}`, {
     method,
     headers: { authorization: `Bearer ${session.idToken}`, ...(body ? { 'content-type': 'application/json' } : {}) },
     body: body ? JSON.stringify(body) : undefined,
+  }).catch(() => {
+    throw new Error('Sem ligação ao servidor da intranet. Verifique a ligação à internet e tente de novo.');
   });
   if (response.status === 401) return login();
   if (response.status === 204) return null;
