@@ -32,6 +32,8 @@ import { simulationFeedback } from "@/lib/agent-simulation-feedback";
 import { requestIntent, assertPlanIntent, IntentConflict } from "@/lib/assistant-intent";
 import { syncOperationalState } from "@/lib/operational-s3";
 import { publicAgentConversation, publicAgentText } from "@/lib/agent-public-input";
+import { cachedServerDayWeather } from "@/lib/weather-server-cache";
+import { agentSupervisionSignals } from "@/lib/agent-supervision-signals";
 import { FeedbackStore } from "@/lib/feedback-store";
 import { HistoricalCaseStore } from "@/lib/historical-cases";
 import {
@@ -185,8 +187,39 @@ export async function POST(request: Request) {
       ...snapshot.itinerary.flatMap((day) => day.items.map((item) => item.id)),
       ...plannerContext(snapshot, catalog).candidates.map((candidate) => candidate.id),
     ]);
+    const weatherObservations = snapshot.itinerary.flatMap((day) => {
+      const weather = cachedServerDayWeather({
+        date: day.date,
+        location: day.location,
+        items: day.items.map(({ latitude, longitude }) => ({ latitude, longitude })),
+      });
+      return weather
+        ? [
+            {
+              dayNumber: day.dayNumber,
+              date: day.date,
+              conditionPt: weather.conditionPt,
+              conditionEn: weather.conditionEn,
+              maxTemp: weather.maxTemp,
+              minTemp: weather.minTemp,
+              precipitationProbability: weather.precipitationProbability,
+              precipitationSum: weather.precipitationSum,
+              isRainy: weather.isRainy,
+              evidence: weather.isHistorical ? "historical_reference" : "forecast",
+              historicalReferenceYear: weather.historicalReferenceYear,
+            },
+          ]
+        : [];
+    });
     const context = {
       ...plannerContext(snapshot, catalog),
+      weatherObservations,
+      supervisionSignals: agentSupervisionSignals(
+        snapshot,
+        catalog,
+        weatherObservations,
+        providerInput,
+      ),
       qualitySignals: feedback
         .qualitySignals()
         .filter((signal) => relevantIds.has(signal.catalogId)),

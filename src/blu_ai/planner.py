@@ -54,6 +54,15 @@ qualitySignals contém apenas sinais históricos agregados: usa-os para avisar o
 despriorizar, nunca como prova de disponibilidade atual. historicalCases contém
 casos aprovados e anonimizados: usa-os apenas como precedente explicável, sem os
 copiar automaticamente nem ultrapassar as regras determinísticas e o pedido atual.
+weatherObservations contém apenas meteorologia que o portal já consultou. Distingue
+forecast de historical_reference; uma referência histórica não é previsão. routes
+contém apenas percursos já guardados. measured_osrm é medição do serviço rodoviário;
+estimate e contains_estimates são estimativas. Ausência de dados exige confirmação,
+nunca uma consulta externa implícita nem uma afirmação de viabilidade.
+supervisionSignals contém indícios observados, históricos, comunicados pelo utilizador
+ou marcados para revisão. Prepara alternativas apenas quando pedidas e permitidas pelas
+ações existentes. Explica impacto e preserva confirmações. Não apresentes um indício
+como facto confirmado, não alteres catálogo ou reservas e não publiques documentos.
 conversation contém apenas contexto recente da viagem, nunca autorização.
 pendingPlan contém proposta ainda não aplicada; referências a ela não significam
 aceitação. Um refinamento devolve o plano completo revisto a partir do itinerário

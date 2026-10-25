@@ -495,3 +495,33 @@ partilha abre o formulário manual, onde o curador introduz destinatário, confi
 consentimento e escolhe retenção. O modelo não cria links, não recebe contactos e
 não envia mensagens. Emails e números de telefone escritos no chat são removidos
 antes de qualquer instrução ou memória ser enviada ao fornecedor.
+
+### Meteorologia e percursos são leituras passivas do agente — 2026-10-25
+
+O agente pode ler a meteorologia que o portal já tenha consultado e mantenha na
+cache do servidor, bem como os troços que já estejam persistidos no itinerário. Pedir uma
+proposta ao agente não desencadeia chamadas a fornecedores de meteorologia ou de
+roteamento. A rota recupera a observação pela data, local e coordenadas do
+snapshot autoritativo e reduz os campos antes de os entregar ao modelo; não
+aceita observações fornecidas pelo navegador.
+
+A evidência distingue previsão de referência histórica e percurso medido pelo
+OSRM de estimativa. Dados ausentes, históricos ou estimados não são apresentados
+como condições atuais, disponibilidade ou confirmação. As ferramentas apenas
+leem o contexto minimizado; não escrevem no itinerário nem contornam a simulação
+e a aceitação explícita.
+
+### Perturbações e conteúdo produzem sinais, não confirmações — 2026-10-25
+
+O portal calcula sinais reduzidos para chuva, encerramentos conhecidos, atrasos,
+cancelamentos, mudanças de horário e possíveis problemas de conteúdo. Os sinais
+de catálogo abrangem campos em falta, datas antigas mencionadas em descrições,
+possíveis duplicados por nome e local e mistura linguística evidente. São indícios
+conservadores para revisão, não diagnósticos de disponibilidade ou qualidade.
+
+A ferramenta `get_supervision_signals` devolve apenas códigos, proveniência, dia
+e identificadores. Distingue observação, referência histórica, informação
+comunicada pelo utilizador e revisão necessária. O modelo pode explicar impacto
+ou preparar uma alternativa através das ações já autorizadas, mas não altera o
+catálogo, reservas, confirmações ou documentos e continua dependente de simulação
+e aceitação humana explícita.

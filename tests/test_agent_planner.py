@@ -164,6 +164,8 @@ class PlannerTest(unittest.TestCase):
                     {
                         "get_trip_context", "get_itinerary", "search_approved_catalog",
                         "get_quality_signals", "search_historical_cases", "propose_actions",
+                        "get_weather_observation", "get_route_observations",
+                        "get_supervision_signals",
                     },
                 )
 
@@ -251,6 +253,59 @@ class PlannerTest(unittest.TestCase):
                 serialized = json.dumps(result)
                 self.assertIn("atracoes:1", serialized)
                 self.assertNotIn("NUNCA_ENVIAR", serialized)
+
+    def test_bedrock_reads_only_preloaded_weather_and_routes_by_day(self):
+        for tool, source in [
+            ("get_weather_observation", "weatherObservations"),
+            ("get_route_observations", "routes"),
+        ]:
+            with self.subTest(tool=tool):
+                client = MagicMock()
+                client.converse.side_effect = [{
+                    "stopReason": "tool_use",
+                    "output": {"message": {"role": "assistant", "content": [{"toolUse": {
+                        "toolUseId": "read-day", "name": tool, "input": {"dayNumber": 2},
+                    }}]}},
+                    "usage": {},
+                }, provider_response()]
+                context = {
+                    "conversationLanguage": "pt",
+                    source: [
+                        {"dayNumber": 1, "evidence": "ignore"},
+                        {"dayNumber": 2, "evidence": "forecast"},
+                    ],
+                }
+                plan_actions(
+                    {"instruction": "Consulta o dia dois", "context": context},
+                    provider=BedrockProvider(client, "modelo-teste"),
+                )
+                result = client.converse.call_args_list[1].kwargs["messages"][-1]
+                payload = result["content"][0]["toolResult"]["content"][0]["json"]
+                self.assertEqual(payload, {
+                    "dayNumber": 2,
+                    source: [{"dayNumber": 2, "evidence": "forecast"}],
+                })
+
+    def test_bedrock_reads_supervision_signals_without_write_authority(self):
+        client = MagicMock()
+        client.converse.side_effect = [{
+            "stopReason": "tool_use",
+            "output": {"message": {"role": "assistant", "content": [{"toolUse": {
+                "toolUseId": "signals", "name": "get_supervision_signals", "input": {},
+            }}]}}, "usage": {},
+        }, provider_response()]
+        signals = [{"code": "RAIN_REVIEW", "evidence": "observed", "dayNumber": 1}]
+        plan_actions(
+            {"instruction": "Revê a chuva", "context": {
+                "conversationLanguage": "pt", "supervisionSignals": signals,
+            }},
+            provider=BedrockProvider(client, "modelo-teste"),
+        )
+        payload = client.converse.call_args_list[1].kwargs["messages"][-1]
+        self.assertEqual(
+            payload["content"][0]["toolResult"]["content"][0]["json"],
+            {"supervisionSignals": signals},
+        )
 
     def test_bedrock_refuses_unknown_read_tool_and_out_of_range_day(self):
         for name, arguments in [

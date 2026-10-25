@@ -99,12 +99,14 @@ mensagem bruta do erro. A segunda falha termina o pedido sem escrita.
 ## Capacidades em evolução
 
 O agente já pode consultar feedback aprovado, sinais agregados de qualidade,
-casos históricos anonimizados e preparar uma entrega PDF, Prompt TXT ou partilha.
+casos históricos anonimizados, meteorologia anteriormente consultada e percursos
+persistidos, bem como preparar uma entrega PDF, Prompt TXT ou partilha. A
+meteorologia indica se é previsão ou referência histórica; cada troço indica se
+foi medido pelo OSRM ou estimado. Estas leituras nunca iniciam consultas externas
+e a ausência de dados não é interpretada como confirmação.
 Deverá ainda:
 
 - explicar diferenças entre versões;
-- consultar meteorologia já solicitada explicitamente;
-- consultar percursos medidos ou estimados, mantendo essa distinção;
 - sugerir correções para chuva, acessibilidade, custo, qualidade e deslocações.
 
 ### Qualidade do briefing
@@ -143,11 +145,13 @@ ganho de relevância que justifique custo e complexidade.
 
 ### Perturbações e conteúdo
 
-O agente deverá poder preparar planos alternativos para chuva, encerramento, atraso
+O agente pode preparar planos alternativos para chuva, encerramento, atraso
 de voo, cancelamento de fornecedor ou mudança de horário, sempre mostrando impacto
-e preservando confirmações. Também poderá sinalizar descrições desatualizadas,
+e preservando confirmações. Também pode sinalizar descrições possivelmente desatualizadas,
 possíveis duplicados, campos em falta, inconsistências linguísticas e texto pouco
-adequado à entrega ao cliente. Não corrige nem publica esses elementos sozinho.
+adequado à entrega ao cliente. Os sinais distinguem factos observados, referências
+históricas, informação comunicada pelo utilizador e indícios que exigem revisão.
+Não corrige o catálogo, confirma reservas nem publica documentos sozinho.
 
 Previsão de aceitação, risco operacional, duração real e otimização multiobjetivo
 ficam adiadas até existir feedback estruturado suficiente e validado.

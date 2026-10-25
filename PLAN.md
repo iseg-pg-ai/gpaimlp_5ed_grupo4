@@ -36,10 +36,10 @@ histórico Git e em [Decisões](docs/DECISIONS.md).
   agente não envia mensagens nem confirma reservas. PDF, Prompt TXT, idioma e
   forma de partilha são validados; destinatário, consentimento e prazo permanecem
   exclusivamente no formulário manual.
-- [ ] Disponibilizar meteorologia já consultada e estimativas de percurso como
+- [x] Disponibilizar meteorologia já consultada e estimativas de percurso como
   leituras opcionais. Não efetuar consultas externas implícitas nem apresentar
   histórico, estimativas ou ausência de dados como confirmação.
-- [ ] Preparar respostas supervisionadas a perturbações e sinais de conteúdo:
+- [x] Preparar respostas supervisionadas a perturbações e sinais de conteúdo:
   chuva, encerramento, atraso, cancelamento, descrições antigas, duplicados,
   campos em falta e inconsistências linguísticas. Não alterar catálogo, reserva
   ou documento sem o fluxo de aprovação aplicável.

@@ -876,6 +876,38 @@ test("contexto omite dados pessoais também em campos futuros e texto das confir
     assert.ok(!context.includes(secret), secret);
 });
 
+test("contexto de percursos preserva a distinção entre OSRM medido e estimativa", () => {
+  const { c, s } = alternativesSetup();
+  s.itinerary[0].items.push({
+    ...structuredClone(s.itinerary[0].items[0]),
+    id: "atracoes:Segundo",
+    title: "Segundo",
+  });
+  s.itinerary[0].items[0].transitToNext = {
+    id: "leg-1",
+    fromLocation: "Museu",
+    toLocation: "Jardim",
+    mode: "walk",
+    duration: "12 min",
+    distance: "850 m",
+    bufferMinutes: 5,
+    isAlgorithmOptimized: true,
+  };
+  s.itinerary[0].items[1].transitToNext = {
+    id: "leg-2",
+    fromLocation: "Jardim",
+    toLocation: "Hotel",
+    mode: "chauffeur",
+    duration: "20 min",
+    distance: "3.2 km (estimado)",
+    isAlgorithmOptimized: false,
+  };
+  const routes = plannerContext(s, c).routes[0];
+  assert.equal(routes.legs[0].evidence, "measured_osrm");
+  assert.equal(routes.legs[1].evidence, "estimate");
+  assert.equal(routes.summary, undefined);
+});
+
 test("auditoria guarda hash do pedido, nunca texto integral, e recusa outra viagem", () => {
   const { c, s } = alternativesSetup();
   const temporary = mkdtempSync(path.join(tmpdir(), "blu-agent-audit-private-"));

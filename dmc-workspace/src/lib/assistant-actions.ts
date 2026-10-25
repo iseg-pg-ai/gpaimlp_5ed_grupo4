@@ -603,6 +603,34 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
         locked: Boolean(protectedItem(item)),
       })),
     })),
+    routes: snapshot.itinerary.map((day) => ({
+      dayNumber: day.dayNumber,
+      summary: day.routeSummary
+        ? {
+            totalTransitTime: day.routeSummary.totalTransitTime,
+            totalDistance: day.routeSummary.totalDistance,
+            legsCount: day.routeSummary.legsCount,
+            evidence: day.items.some((item) => item.transitToNext?.isAlgorithmOptimized === false)
+              ? "contains_estimates"
+              : "measured_or_empty",
+          }
+        : undefined,
+      legs: day.items.flatMap((item) =>
+        item.transitToNext
+          ? [
+              {
+                from: item.transitToNext.fromLocation,
+                to: item.transitToNext.toLocation,
+                mode: item.transitToNext.mode,
+                duration: item.transitToNext.duration,
+                distance: item.transitToNext.distance ?? "Por confirmar",
+                bufferMinutes: item.transitToNext.bufferMinutes,
+                evidence: item.transitToNext.isAlgorithmOptimized ? "measured_osrm" : "estimate",
+              },
+            ]
+          : [],
+      ),
+    })),
     candidates: selected,
     candidatesTruncated: candidates.length > 120,
   };

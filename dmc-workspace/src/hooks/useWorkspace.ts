@@ -484,7 +484,10 @@ export function useWorkspace() {
       const result = await responseJson<AgentProposal>(response);
       validateAgentProposal(result, active);
       setAgentProposal(
-        result.plan.actions.length || result.alternatives?.length || result.rankedCandidates?.length
+        result.plan.actions.length ||
+          result.alternatives?.length ||
+          result.rankedCandidates?.length ||
+          result.deliveryPreview
           ? result
           : null,
       );
@@ -508,10 +511,15 @@ export function useWorkspace() {
                     "Escolha uma alternativa para preparar a substituição. O roteiro permanece igual.",
                     "Choose an alternative to preview its replacement. The itinerary remains unchanged.",
                   )
-                : say(
-                    "Esta resposta não contém alterações para aceitar. O roteiro permanece igual.",
-                    "This response contains no changes to accept. The itinerary remains unchanged.",
-                  )),
+                : result.deliveryPreview
+                  ? say(
+                      "Reveja o diagnóstico e confirme a criação ou abra o formulário de partilha. Nada foi enviado.",
+                      "Review the diagnostics and confirm creation or open the sharing form. Nothing was sent.",
+                    )
+                  : say(
+                      "Esta resposta não contém alterações para aceitar. O roteiro permanece igual.",
+                      "This response contains no changes to accept. The itinerary remains unchanged.",
+                    )),
         language,
       );
       return true;

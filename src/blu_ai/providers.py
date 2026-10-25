@@ -74,21 +74,31 @@ def _read_context(name: str, arguments: Any, context: dict) -> Any:
                 "simulationFeedback",
             ) if key in context
         }
-    if name in {"get_quality_signals", "search_historical_cases"}:
+    if name in {"get_quality_signals", "search_historical_cases", "get_supervision_signals"}:
         if arguments:
             raise ProviderResponseError("Argumentos de ferramenta inválidos.")
-        source = "qualitySignals" if name == "get_quality_signals" else "historicalCases"
+        source = {
+            "get_quality_signals": "qualitySignals",
+            "search_historical_cases": "historicalCases",
+            "get_supervision_signals": "supervisionSignals",
+        }[name]
         rows = context.get(source, [])
         if not isinstance(rows, list):
             raise ProviderResponseError("Contexto de ferramenta inválido.")
         return {source: rows}
-    if name in {"get_itinerary", "search_approved_catalog"}:
+    if name in {"get_itinerary", "search_approved_catalog", "get_weather_observation",
+                "get_route_observations"}:
         if set(arguments) != {"dayNumber"} or type(arguments["dayNumber"]) is not int:
             raise ProviderResponseError("Argumentos de ferramenta inválidos.")
         day_number = arguments["dayNumber"]
         if not 1 <= day_number <= 366:
             raise ProviderResponseError("Dia fora do limite.")
-        source = "itinerary" if name == "get_itinerary" else "candidates"
+        source = {
+            "get_itinerary": "itinerary",
+            "search_approved_catalog": "candidates",
+            "get_weather_observation": "weatherObservations",
+            "get_route_observations": "routes",
+        }[name]
         rows = context.get(source, [])
         if not isinstance(rows, list):
             raise ProviderResponseError("Contexto de ferramenta inválido.")
@@ -133,6 +143,15 @@ class BedrockProvider:
                   _EMPTY_OBJECT),
             _tool("search_historical_cases",
                   "Ler casos semelhantes aprovados e anonimizados pelo portal.",
+                  _EMPTY_OBJECT),
+            _tool("get_weather_observation",
+                  "Ler meteorologia já consultada no portal para um dia; nunca consulta a rede.",
+                  _DAY_QUERY),
+            _tool("get_route_observations",
+                  "Ler percursos já guardados no itinerário, distinguindo medição de estimativa.",
+                  _DAY_QUERY),
+            _tool("get_supervision_signals",
+                  "Ler sinais determinísticos de perturbação ou conteúdo que exigem revisão.",
                   _EMPTY_OBJECT),
             _tool("propose_actions",
                   "Devolver a proposta final para simulação e revisão humana; nunca escreve.",

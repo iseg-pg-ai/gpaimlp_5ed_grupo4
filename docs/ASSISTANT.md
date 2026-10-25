@@ -117,9 +117,25 @@ ser revistos na fonte oficial antes de cada ativação ou mudança de modelo.
 O esquema partilhado está em `src/blu_ai/schemas/action-plan.json`. O planeador
 Python usa Bedrock Converse num ciclo máximo de seis rondas e oito chamadas. Pode
 ler o briefing minimizado, um dia do itinerário, os candidatos previamente
-considerados elegíveis para esse dia, sinais agregados de qualidade e até cinco
-casos semelhantes aprovados. Todas as leituras usam o snapshot que a rota
-já recuperou e validou; não consultam outra base nem aceitam identificadores livres.
+considerados elegíveis para esse dia, sinais agregados de qualidade, até cinco
+casos semelhantes aprovados, meteorologia já consultada pelo portal e percursos
+já guardados no itinerário. Todas as leituras usam o snapshot e o contexto que a
+rota já recuperou e validou; não consultam outra base, não fazem pedidos externos
+e não aceitam identificadores livres.
+
+`get_weather_observation` só devolve resultados ainda válidos da cache do
+servidor, usando a data, o local e as coordenadas do snapshot autoritativo. A
+evidência distingue previsão de referência histórica; ausência de observação
+significa apenas que não existem dados disponíveis para o agente.
+`get_route_observations` lê os troços persistidos em `transitToNext` e distingue
+um percurso medido pelo OSRM de uma estimativa. Nem uma referência histórica nem
+uma estimativa provam condições atuais, disponibilidade ou viabilidade.
+`get_supervision_signals` expõe apenas códigos, proveniência, dia e identificadores
+de catálogo. Abrange chuva, encerramentos conhecidos, atrasos, cancelamentos ou
+mudanças de horário comunicados pelo utilizador e indícios conservadores de campos
+em falta, datas antigas, duplicados e mistura linguística. `observed`,
+`historical_reference`, `user_reported` e `review_required` não são equivalentes:
+os três últimos exigem confirmação ou revisão antes de qualquer ação.
 O contexto da viagem inclui ainda diagnósticos determinísticos de capacidade,
 horários, sobreposições, confirmações, catálogo, preços, moedas e orçamento.
 Também sinaliza idades em falta, logística de chegada ou partida incompleta,
@@ -163,8 +179,9 @@ assinados nunca bastam. Esta implementação segue a
 aceitar, rejeitar ou selecionar alternativas. O `ownerId` fica na auditoria e
 impede decisões por outro utilizador.
 
-A superfície aprovada está tipada em `agent-tool-registry.ts`: leitura de viagem
-e catálogo, proposta, aceitação, rejeição e seleção de alternativa. A preparação
+A superfície aprovada está tipada em `agent-tool-registry.ts`: leitura de viagem,
+catálogo, meteorologia em cache e percursos persistidos, proposta, aceitação,
+rejeição e seleção de alternativa. A preparação
 de entrega continua dentro da proposta; reutiliza os endpoints manuais existentes
 e não acrescenta uma ferramenta de envio. Leituras não
 exigem confirmação, propostas produzem sempre pré-visualização e todas as
