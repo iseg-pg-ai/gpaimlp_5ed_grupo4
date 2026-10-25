@@ -1,6 +1,6 @@
 # BLU AI System — fundamentos, experiência e portal
 
-Guião revisto em 19 de outubro de 2026, no branch `apresentacao-tecnica`.
+Guião revisto em 20 de outubro de 2026.
 Público de referência: avaliação académica e responsáveis da operação.
 
 A apresentação passa a ter **três partes: explicar como o sistema foi construído,
@@ -127,7 +127,7 @@ um levantamento de alternativas ou um benchmark, que não foi realizado aqui.
 | --- | --- | --- |
 | Portal | Next.js, React, TypeScript, Tailwind CSS | Interface interativa, rotas de servidor e contratos do domínio |
 | Ingestão e transformação | Python, pandas, openpyxl, pypdf | Leitura de folhas e documentos, transformação e validação das fontes |
-| Dados | SQLite, JSONL e ficheiros versionados | Persistência local e entregas consultáveis; explicitar os limites para evolução colaborativa |
+| Dados | Amazon S3, SQLite, JSONL e ficheiros versionados | S3 como persistência permanente; cache transacional reconstruível para consulta e edição |
 | Análise | Streamlit e Plotly; Observatório nativo em React/SVG | Exploração da entrega publicada com interfaces distintas |
 | Agente opcional | FastAPI, LangChain/LangGraph, boto3 e AWS Bedrock | Serviço de assistência, modelo de linguagem e ferramentas de domínio |
 | Tradução opcional | Argos Translate e CTranslate2 | Tradução local de conteúdos exportados, com proteção de números |
@@ -174,8 +174,9 @@ Abordar estes aspetos com um exemplo por tema:
 - **Revisões:** aprovar, publicar e guardar uma proposta são operações distintas.
 - **Custos:** separar valores conhecidos, pendências e totais por moeda.
 
-Uma evolução para S3 ou persistência cloud deve aparecer como evolução,
-sem representar um adaptador ainda não implementado como operacional.
+O fluxo deve mostrar as releases imutáveis no S3, a cache temporária e o
+checkpoint remoto do `just blu it`. Isto comprova persistência e recuperação no
+ambiente atual; não equivale a deployment multi-instância de produção.
 
 ### 2.6. Papel da IA, ferramentas e controlo humano
 
@@ -229,13 +230,13 @@ Distinguir resultados de testes unitários, integração com dados temporários,
 interface com APIs simuladas e serviços externos reais. Uma bateria aprovada
 não prova, por si só, adequação comercial ou prontidão para produção.
 
-Se forem usados números, apresentar data, ambiente e âmbito da execução. Os
-registos locais anteriores estão no [plano](../PLAN.md) e em
-[testes e histórico](TESTING.md); esta revisão documental não executou de novo
-a bateria completa do sistema.
+Se forem usados números, apresentar data, ambiente e âmbito da execução. O
+[guia de testes](TESTING.md) explica o que cada bateria valida; resultados
+transitórios não devem ser apresentados como estado permanente.
 
-Fechar com os limites atuais: autenticação e papéis, sincronização
-multiutilizador, persistência cloud e revisão do acesso externo. Ganhos de
+Fechar com os limites atuais: o login local do Monitoring não autentica o portal;
+identidade, papéis, sincronização multiutilizador, hosting de produção e acesso
+externo continuam por definir. Ganhos de
 rapidez, consistência e qualidade devem ser avaliados com curadores; não
 atribuir percentagens sem medições.
 
@@ -266,7 +267,7 @@ lógica de navegação para facilitar a complementação posterior.
 | --- | --- | --- |
 | Portal e integração | Versões declaradas, renderização e divisão cliente/servidor, JSON por stdin/stdout, execução sem shell, timeout de 15 s e buffer de 16 MiB | `package.json` e `python-portal.ts`; não é um teste de latência |
 | Ingestão e dados | Papel de pandas/openpyxl/pypdf, chaves, conflitos, entidades, manifest, SHA-256 e publicação temporária | Código ETL e contratos; não inventariar volumes sem uma entrega datada |
-| Persistência e entregas | SQLite operacional, warehouse, localStorage, snapshots, `baseVersion`, `snapshotHash`, `chainHash`, `parentVersion`, PDF/ZIP/TXT | Código de versões e catálogo; não equivale a colaboração cloud completa |
+| Persistência e entregas | Releases S3, cache SQLite, fila JSON, warehouse, snapshots, hashes e PDF/ZIP/TXT | Código de persistência e recuperação; não equivale a colaboração multi-instância |
 | Agente e ferramentas | FastAPI/Uvicorn, LangGraph/LangChain, boto3/Bedrock, ferramentas e configuração do modelo | Modelo/região efetivos por confirmar; temperatura 0,2 e 4096 tokens são defaults do código |
 | Análise e tradução | Streamlit/Plotly, Observatório React/SVG em leitura, worker JSON-lines e modelos Argos/CTranslate2 | Grupos opcionais; não presumir disponibilidade por existir uma dependência |
 | Serviços externos | Open-Meteo e OSRM, timeout/aborto, previsão/histórico, cache e falhas explícitas | Comportamentos do código; sem chamadas reais nesta apresentação |
@@ -323,7 +324,7 @@ Frase de passagem para a parte III:
 O ecrã final mantém o botão **Explorar o Observatório real**, que abre um
 novo separador com o endereço indicado pelo utilizador:
 
-[Explorar o Observatório real](https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/catalog)
+[Explorar o Observatório real](https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/)
 
 O acesso depende da sessão SageMaker do visitante. O endereço não é um link
 público para clientes externos. Renovar o acesso antes da apresentação e manter
@@ -407,22 +408,7 @@ uma decisão importante. Referências detalhadas ficam disponíveis no guião.
 - Preparar capturas ou gravação de apoio, sem apresentar uma gravação como execução
   ao vivo se uma dependência falhar.
 
-## 8. Auditoria de redundâncias
-
-| Repetição encontrada | Alteração | Informação preservada ou acrescentada |
-| --- | --- | --- |
-| Dados/ETL explicados nas duas partes | Retirar a cena Os dados da experiência e o código/estilos exclusivos | Processo técnico mantém publicação, recuperação, origem e contexto temporal |
-| Arquitetura repetida depois da demonstração | Retirar Por dentro da experiência | Arquitetura fica na abertura e ganha um capítulo próprio de tecnologias |
-| Lista de tecnologias misturada com papéis dos componentes | Separar arquitetura de inventário técnico | Dependências, fronteiras, versões declaradas e exemplos de implementação |
-| Falha de publicação ilustrada em processos e repetida em validação | Manter a simulação no processo; usar números na tradução em validação | Cobertura nova do worker e distinção entre fidelidade numérica e fluência |
-| Revisão humana, mecanismo do agente e formatos repetidos em vários painéis | Reduzir os textos de apoio da experiência | A colaboração demonstra o efeito; a entrega reflete as escolhas; os mecanismos ficam na técnica |
-| Várias mensagens de fecho e acesso ao portal durante a proposta | Simplificar o encerramento e retirar o CTA intermédio | Manter o CTA final exato e o acesso global ao sistema |
-
-A repetição necessária para orientar o público mantém-se: requisitos e
-verificações usam o mesmo contrato com papéis diferentes; os avisos de simulação
-continuam visíveis para não confundir uma ilustração com dados ou serviços reais.
-
-## 9. Informação a complementar mais tarde
+## 8. Informação a complementar mais tarde
 
 Esta revisão não exige que a equipa responda já. A matriz identifica o que
 falta e onde integrar essa informação quando estiver disponível.
@@ -436,7 +422,7 @@ falta e onde integrar essa informação quando estiver disponível.
 | Avaliação da qualidade | Existem testes de contratos e interface | Casos avaliados, rubrica, respostas revistas e parecer de curadores | Validação |
 | Desempenho e custos | Há timeouts, limites e mecanismos de falha | Latência, número de chamadas, tokens/custos e condições de medição | Validação e dependências |
 | Processo de desenvolvimento | Git, lockfiles e workflows existentes | Etapas, divisão do trabalho e decisões tomadas pela equipa | Ambiente/automação |
-| Operação futura | Execução local/Studio e armazenamento local atuais | Backups, retenção, identidade, acessos e plano de deployment aprovados | Limites e evolução |
+| Operação futura | Execução Studio, S3 e checkpoints validados | Retenção administrativa, identidade, acessos e plano de deployment aprovados | Limites e evolução |
 
 Não preencher estas lacunas com benchmarks, ganhos percentuais, decisões de
 negócio ou funcionalidades presumidas. Quando houver informação nova, associar

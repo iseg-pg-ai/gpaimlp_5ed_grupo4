@@ -1,3 +1,4 @@
+import os
 import copy
 import unittest
 from pathlib import Path
@@ -7,13 +8,17 @@ from etl.pipeline import extract_workbook, records_from_section
 from etl.structured import integrate_structured
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "data/reference/structured_dataset.xlsx"
+DATA = Path(os.environ.get("BLU_DATA_DIR", ROOT / "data")).resolve()
+SOURCE = DATA / "reference/structured_dataset.xlsx"
 
 
 class StructuredDatasetTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.original = extract_workbook(next((ROOT / "data").glob("*.xlsx")))
+        workbooks = list(DATA.glob("*.xlsx"))
+        if not workbooks or not SOURCE.is_file():
+            raise unittest.SkipTest("As fontes ETL são materializadas do S3 no arranque.")
+        cls.original = extract_workbook(workbooks[0])
         cls.tables = copy.deepcopy(cls.original)
         cls.report = integrate_structured(SOURCE, cls.tables)
 

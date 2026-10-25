@@ -1,7 +1,217 @@
 # Decisões e questões abertas
 
+Este ficheiro preserva decisões por ordem de registo. Entradas antigas podem ter
+sido substituídas por decisões posteriores; para o estado operacional atual,
+consultar [Arquitetura](ARCHITECTURE.md) e [Plano](../PLAN.md).
+Nomes de documentos ou branches entretanto removidos permanecem apenas como
+evidência histórica da decisão registada.
+
+## S3 é a fonte permanente; SQLite é cache materializada — 2026-10-22
+
+Esta decisão substitui a afirmação transitória abaixo de que o SQL local é
+autoritativo. O bucket de dados guarda três domínios separados: fontes originais,
+releases validadas do warehouse e releases operacionais do portal. Uma release
+operacional inclui o catálogo, histórico de itinerários, partilhas, PDFs e
+operações pendentes; o manifesto ativo só muda depois de todos os objetos e
+hashes estarem confirmados.
+
+O SQLite não pode ser consultado diretamente no S3. Por isso, o portal usa uma
+cache SQLite temporária, reconstruída atomicamente a partir do manifesto ativo.
+Uma eliminação remove a entidade da release ativa e gera uma nova revisão; as
+releases anteriores continuam disponíveis. O bucket de backups é independente,
+imutável e usado pelo `just blu it` para recuperação explícita.
+
+A migração não elimina dados locais antes de publicar, descarregar e validar o
+estado completo. A remoção física posterior é uma operação destrutiva separada.
+
+Evidência de migração: a release operacional
+`20261022T231932.545515Z-4d53fb6a1c06` publicou as duas bases SQLite e dois PDFs.
+O download para uma cache temporária passou os hashes, a integridade SQLite e a
+comparação das contagens de todas as tabelas.
+
+## Recuperação por checkpoint e outbox de alterações — 2026-10-23
+
+`just blu it` executa a recuperação controlada. Cada execução cria um
+identificador usado diretamente no checkpoint, tenta a cópia remota, para os
+serviços e recupera essa versão específica. O bucket de dados é fallback apenas
+quando o checkpoint da execução não existe; a recuperação preenche ausências e
+preserva ficheiros locais atuais.
+
+`just blu up` mantém o contrato de arranque rápido: não cria checkpoints, não
+para serviços e não executa recuperação. Inicia apenas o que estiver parado,
+confirma os endpoints e abre as interfaces.
+
+Nesta implementação transitória, o SQL continuava autoritativo. Depois de um
+commit de catálogo ou versão, uma
+outbox local conserva a operação completa com a mesma chave idempotente. O
+Monitoring envia-a para o bucket de dados e só elimina o evento depois da
+confirmação por tamanho, encriptação e SHA-256. Uma falha remota não invalida o
+commit SQL e mantém a alteração pendente para repetição.
+
+## Bucket de dados separado do backup — 2026-10-22
+
+O bucket de dados usa releases imutáveis distintas para `sources` e `warehouse`.
+O manifesto com estado `complete` é enviado apenas depois dos ficheiros e cada
+objeto é confirmado por tamanho, AES-256 e SHA-256. A recuperação usa uma área
+nova ou vazia e não substitui automaticamente a entrega ativa.
+
+As fontes S3 são os Excel e PDF inventariados pelo contrato `LocalSource`. O
+catálogo `data/portal/catalog.sqlite` fica excluído porque é estado operacional,
+independente do ETL e protegido pelos checkpoints. O warehouse só é publicável
+após validação `passed`. Não existe eliminação no adaptador; retenção continua a
+ser uma decisão explícita do bucket.
+
+Evidência real de 22 de outubro de 2026: uma release de 54 fontes e
+954 741 843 bytes e uma release de 40 artefactos de warehouse e 9 826 948 bytes
+foram publicadas num bucket dedicado em `eu-west-1`. Ambas foram descarregadas
+para diretórios temporários, integralmente verificadas e removidas depois do
+ensaio, sem alterar `data/` ou `warehouse/` ativos.
+
+## Checkpoint S3 opcional — 2026-10-22
+
+O checkpoint local continua a ser a primeira cópia. Quando
+`BLU_BACKUP_S3_BUCKET` está configurado, o mesmo checkpoint é empacotado e
+publicado com chave imutável por ambiente e data, encriptação S3 AES-256 ou KMS
+existente e SHA-256 nos metadados. O SDK usa IAM e a aplicação não gere chaves.
+Sem backup local válido, o restauro tenta os objetos remotos por ordem recente e
+só publica localmente um arquivo cujo hash e manifesto sejam válidos.
+
+O Monitoring agrega o último resultado S3, disponibilidade das bases SQLite,
+operações JSON pendentes e último resultado de sincronização. Não foi criada uma
+base ou serviço AWS adicional. A política de retenção fica no bucket e não há
+eliminação automática no código até essa política ser aprovada. Evidência:
+restauro e falha de rede com cliente S3 simulado e, em 22 de outubro de 2026,
+upload real de 947 078 910 bytes para um bucket dedicado em `eu-west-1`, seguido
+de download temporário, validação do SHA-256 e manifesto e remoção apenas da
+cópia de ensaio. IAM limita listagem, leitura e escrita ao prefixo do ambiente;
+`DeleteObject` foi recusado como previsto.
+
+## Checkpoint externo integrado na recuperação — 2026-10-22
+
+`just blu it` valida o ambiente, recupera o checkpoint identificado da execução
+e sincroniza as filas JSON antes de iniciar serviços. O backup usa publicação
+atómica, identificador temporal e aleatório, manifesto de esquema 2 e inventário
+por recurso. Se a versão mais recente falhar a verificação, regista a rejeição e
+tenta a anterior.
+
+O procedimento para serviços, portas e processos conhecidos; não elimina as
+árvores persistentes. O diretório configurável `BLU_BACKUP_DIR` tem de ficar fora
+do projeto. Credenciais, sessões, tokens e estado privado do editor não entram no
+checkpoint. O restauro específico por identificador preserva ficheiros existentes.
+
+## Persistência das versões independente do ETL — 2026-10-22
+
+O `warehouse/blu_etl.sqlite` continua a ser uma entrega regenerável. O catálogo
+em `data/portal/catalog.sqlite` e o histórico em
+`exports/itineraries/history.sqlite` são bases operacionais e não são destruídos
+pela publicação do ETL. Mantém-se SQLite porque o deployment atual tem um único
+escritor, as transações e o backup já existem e uma migração para outra tecnologia
+não resolveria por si só a durabilidade do volume.
+
+As gravações de versões e revisões do catálogo usam uma fila JSON transitória em
+`exports/portal-persistence/` ou `BLU_OPERATIONAL_DIR`. A chave SHA-256 do pedido
+é confirmada na mesma transação da versão, permitindo repetir uma operação depois
+de uma falha sem duplicar dados. O ficheiro só é removido após confirmação SQL.
+O backup e o restauro incluem a fila e suportam uma cópia S3 cifrada. Produção
+continua a exigir volumes persistentes e validação do bucket, IAM e retenção; a
+fila não substitui esses controlos.
+
+Evidência: testes dos dois domínios com SQL disponível, SQL indisponível,
+sincronização posterior, repetição após commit e restauro da fila. Sem migração,
+alteração destrutiva, deployment ou dados reais.
+
+## Backups locais fora do projeto no launcher — 2026-10-22
+
+- `monitoring.checkpoint` guarda fontes, warehouse, exports e estado persistente
+  direto do Monitoring fora do projeto, com permissões privadas e SHA-256.
+- SQLite usa a API de backup; o arranque recupera apenas ficheiros ausentes,
+  preservando alterações atuais. O último backup tem de passar a verificação.
+- `just blu up` mantém serviços ativos. `just blu it` exige uma cópia verificada
+  antes da paragem e cria outra com serviços parados. Uma falha impede avançar.
+- Não há retenção automática nem cópia de rascunhos do navegador ou ambientes.
+  Cópias com serviços ativos não garantem atomicidade entre vários conjuntos.
+- Evidência: 39 testes de checkpoint, Monitoring e operações aprovados e primeira
+  cópia local real verificada em 22 de outubro. Sem executar paragem ou restauro
+  dos dados reais.
+
 Os registos históricos conservam as datas e a evidência original. O mapa atual
 está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
+
+## Preparação Windows antes do agente transacional — 2026-10-21
+
+O proprietário aprovou corrigir a base depois do diagnóstico, preservando o
+histórico e sem iniciar a integração do agente. A base é f280971, com evolução
+existente além de dev; não foi reiniciada noutro branch para evitar perdê-la.
+
+### Ligações SQLite e leitura do dashboard
+
+O contexto de uma ligação SQLite gere a transação mas não fecha a ligação.
+Os testes e duas funções do dashboard deixavam handles ativos no Windows.
+Usar `closing` externo ao contexto transacional garante commit/rollback antes
+do fecho, inclusive em erro. Preservam-se URI read-only, parâmetros e o `BEGIN`
+do snapshot. Regressões verificam fecho após sucesso/erro; smoke Streamlit e
+hash do warehouse confirmam o percurso de leitura sem reescrever a entrega.
+
+### Publicação ETL com bloqueio transitório Windows
+
+Um caso com o writer real e 100 mil linhas reproduziu o erro de rename em
+segundos, sem PDFs nem carga SQLite. A mesma pasta pôde ser renomeada depois
+de esperar, sem alterar conteúdo ou permissões. Os probes não demonstraram
+qual o processo externo responsável; não se atribui o erro a um antivírus.
+
+As renomeações de backup, publicação e restauro podem repetir apenas no
+Windows, perante códigos 5/32/33. São seis tentativas e cinco esperas de
+50/100/200/400/800 ms: até 1,55 s de espera por renomeação, não por execução
+completa. Erros persistentes propagam; outros sistemas e erros não repetem.
+Construção e validação não são repetidas, e preserva-se o rollback existente.
+Sete regressões exercitam publicação, backup, restauro e falhas persistentes.
+O caso real reduzido, ETL completo e catálogo/ETL passaram após a correção.
+
+### Referência reproduzível e limites
+
+Todos os grupos Python instalaram pelo lock em ambiente estável, sem mudar
+versões. Mantém-se o override Stanza de segurança documentado. O README foi
+alinhado com manifests, comandos e documentos presentes. `AIREADME.md` explica
+o processo ao proprietário. Testes de rotas passam a simular fetch sem rede.
+O verificador Markdown exclui os artefactos locais gerados em graphify-out,
+já ignorados pelo Git, preservando os relatórios e validando os documentos fonte.
+
+Evidência: 92 testes Python, 100 do portal, catálogo/ETL, cinco testes de
+tradução simulada, smoke Streamlit e verificações documentais aprovados.
+Build Next.js já aprovado na Fase 0; não repetido por alterações só de testes
+no portal. Não houve inferência real, modelos de tradução instalados,
+publicação ou certificação do SageMaker. A Fase 2 requer decisão separada.
+
+## Âmbito do grafo local Graphify — 2026-10-21
+
+O grafo indexa código, documentação e recursos visuais da aplicação. A deteção
+inicial incluiu PDFs de `data/`; o ficheiro `.graphifyignore` exclui agora fontes
+protegidas, dados operacionais, warehouse, exports e ambientes locais.
+Os resultados e caches de `graphify-out/` são artefactos locais ignorados pelo Git;
+os ficheiros já versionados mantêm-se no histórico e não são removidos nesta tarefa.
+A extração semântica usa a sessão do assistente, sem fornecedores externos.
+O grafo auxilia a navegação; o código e os contratos continuam a prevalecer.
+
+## Inicialização segura de um checkout sem estado operacional — 2026-10-20
+
+- Um checkout sem catálogo, itinerários ou backups é tratado como instalação nova.
+- `just blu it` cria atomicamente `data/portal/catalog.sqlite` a partir do warehouse
+  versionado e importa os registos com estado **Em revisão**; cria também
+  `exports/itineraries/` vazio.
+- A presença de estado parcial ou inválido impede o bootstrap e mantém a exigência
+  de um backup verificado, evitando substituir dados operacionais por engano.
+- Evidência: `monitoring/recovery.py` e `monitoring/test_operations.py`.
+
+## Cálculo rodoviário centralizado em Python — 2026-10-20
+
+- Consulta OSRM, validação dos parâmetros e fallback geométrico passam de
+  `src/lib/road-routing.ts` para `portal/routing.py`.
+- O adaptador TypeScript preserva o contrato assíncrono usado pelas APIs e pelo
+  editor. A ordenação interativa e os resumos permanecem temporariamente no
+  cliente até a próxima fatia da migração.
+- O fornecedor externo é substituível nos testes Python; falhas de rede continuam
+  a produzir estimativas identificadas como não otimizadas.
+- Evidência: `tests/test_routing.py` e `dmc-workspace/tests/road-routing.test.mjs`.
 
 ## Simplificação para a próxima iteração do agente — 2026-10-15
 
@@ -89,14 +299,17 @@ está em [arquitetura](ARCHITECTURE.md); as tarefas em [PLAN.md](../PLAN.md).
 - Evidência: check passou com 99 testes aprovados e um ignorado; build passou;
   sintaxe Bash e verificação do diff passaram. Sem publicação remota.
 
-Revisto em 2026-10-08. Decisões anteriores válidas preservadas; evidência atualizada
-contra o checkout atual de main, commit f090e53.
+O bloco seguinte foi importado da revisão de 8 de outubro de 2026. Conserva o
+contexto dessa data; decisões posteriores no mesmo ficheiro prevalecem quando o
+estado mudou.
 
 ## D-001 - Distinguir implementação e arquitetura futura
 
-- Estado: aceite; revisão em 2026-10-08; data original: 2026-09-29.
-- Decisão: ETL, warehouse, Streamlit e DMC Workspace são a base implementada.
-  S3, Bedrock, APIs externas e AWS são objetivos futuros.
+- Estado: parcialmente substituído por decisões posteriores; revisão original em
+  2026-10-08, com data inicial de 2026-09-29.
+- Decisão original: ETL, warehouse, Streamlit e DMC Workspace eram a base
+  implementada. O agente Bedrock e a execução no SageMaker foram acrescentados
+  depois como capacidades opcionais; deployment de produção continua futuro.
 - Razão: diagramas e experiências não demonstram integração funcional.
 - Evidência: etl/pipeline.py, dashboard/app.py e APIs do portal; scripts experimentais.
 - Âmbito: arquitetura e planeamento.
@@ -250,7 +463,8 @@ a dmc-workspace/src/components/.
 - O-002 - Definir Bedrock/OpenAI, contratos, avaliação e revisão antes de integrar.
 - O-003 - Escolher cenário e fornecedor, termos, custos, evidência e falhas.
   Rotas são hipótese, não decisão.
-- O-004 - Definir conteúdo S3, região, encriptação, retenção e fallback.
+- O-004 - Validar IAM/região/encriptação num bucket real e aprovar retenção. O
+  conteúdo, organização, integridade e fallback já estão implementados.
 - O-005 - Definir consentimento, minimização, acesso, logs e eliminação antes de
   partilha pública ou envio de briefs a fornecedores.
 - O-006 - Definir política de snapshot/artefacto CI do warehouse.
@@ -641,3 +855,227 @@ um ignorado; build, catálogo/ETL e estrutura documental aprovados. Navegador:
 TXT/Canva em 320/390/1440 px, incluindo histórico, Lixo/restauro, privacidade e
 estado do PDF inalterado; temas em 320/768/1440/2560 px. Armazenamento temporário
 e tradução simulada; sem validação real de fornecedores externos.
+
+## 2026-10-21 — Integrar dev no branch de orientações
+
+Integração de `origin/dev` (`9e03e62`) em `docs/code-agent-guidance`.
+Os conflitos add/add de `AGENTS.md` e `PLAN.md` conservam o conteúdo dos dois
+branches. As regras e o plano atuais de dev aparecem primeiro; o conteúdo antigo
+permanece identificado como histórico, sem reabrir tarefas ou apresentar estados
+antigos como capacidade atual. As orientações por área foram preservadas.
+
+O código funcional integrado coincide com dev. Não houve alterações manuais às
+fontes ou ao warehouse, publicação, acesso a fornecedores reais ou remoção dos
+ficheiros específicos deste branch. Os dados locais existentes foram preservados.
+
+Validação local: 83 testes Python; check do portal com 97 aprovados e um
+ignorado; build, catálogo/ETL, estrutura e Markdown aprovados. Os testes usam
+dados temporários e mocks. Não se repetiu a validação de navegador, porque o
+código funcional coincide com dev e a resolução é documental.
+
+## 2026-10-21 — Fase 2 limitada ao itinerário
+
+Decisão do proprietário: integrar o agente em incrementos com aprovação entre
+fases. Nova Pro configurável, falha explícita sem fallback; PT/EN no chat;
+apenas onze operações de itinerário. O servidor valida e persiste a aceitação
+atomicamente, sem texto integral dos pedidos. Conversa local por viagem.
+Dados de confirmação manual não são editados como efeito da alteração de
+horários. TXT mantém o formato atual para o Canva. Ranking, feedback, casos
+históricos e proatividade ficam para incrementos posteriores. Validação real
+do modelo e dos seis idiomas de exportação pertence à fase seguinte.
+
+## Monitoring independente no Studio — 2026-10-19
+
+A pedido do utilizador, a primeira implementação fica em `monitoring/`, porta
+3004, com login próprio e escuta apenas em loopback atrás do HTTPS Studio.
+Usa biblioteca padrão Python para não exigir os grupos opcionais do sistema.
+A interface e a API de estado exigem sessão; o CSS do login é público.
+
+Sondas de leitura e agregados do warehouse alimentam histórico em memória e
+logs com rotação, sem escrever nas aplicações, executar ETL ou chamar modelos.
+Não existe ainda tracing, instrumentação de todos os pedidos nem notificações
+externas. A cadência do warehouse é desconhecida até ser configurada.
+
+Credenciais derivadas, acesso inicial e logs ficam em `monitoring/runtime/`,
+excluído do Git e do contexto Docker. O servidor interno e as sessões em memória
+não constituem uma decisão de hosting de produção. Consultar os contratos e
+limites no [guia do monitoring](../monitoring/README.md).
+
+Evidência: dez testes Python de autenticação/sondas/HTTP e cenários de navegador
+em quatro larguras aprovados. Recolha local real dos serviços existentes
+confirmada; proxy HTTPS autenticado e fornecedores externos não validados.
+
+### Encaminhamento no Code Editor — 2026-10-19
+
+O proxy instalado rejeita com HTTP 400 portas ausentes da sua lista de
+encaminhamento; o login local disponível não comprova esse acesso. O arranque
+e o README passam a indicar a adição da porta no separador Ports do editor.
+
+O proxy também acrescenta o seu prefixo a cabeçalhos Location iniciados por
+`/`. Os redirects do monitoring passam a usar o URL público canónico completo
+para evitar duplicação. Dez testes Python e quatro larguras de navegador
+aprovados após a alteração; acesso AWS depende do encaminhamento no editor.
+
+## Gestão de contas no monitoring — 2026-10-19
+
+A administração de acessos fica no próprio monitoring, em `/users`. Perfis
+`admin` e `viewer` distinguem gestão de contas e consulta, com autorização
+no servidor e CSRF em todas as alterações. A conta legada conserva o hash e
+passa a administrador; o formato local com várias contas é guardado de forma
+atómica na primeira alteração. Não foi criada outra base do catálogo.
+
+Alterações de palavra-passe, perfil, estado e remoção revogam as sessões da
+conta. Não se pode remover/desativar a conta em uso nem retirar o último
+administrador ativo, incluindo em pedidos concorrentes. A recuperação CLI
+preserva outras contas e deve ser feita com o serviço parado.
+
+A exclusão de `monitoring/runtime/` estava comentada e os seus ficheiros
+tinham sido versionados. A regra foi reativada, os ficheiros foram retirados
+do índice sem eliminar as cópias locais e o verificador estrutural passa a
+rejeitar esses caminhos no Git. O histórico não foi reescrito; a credencial
+inicial deve ser alterada se ainda for usada.
+
+Evidência: 18 testes Python e cenários completos de gestão de contas em
+320/768/1440/2560 px aprovados, com inspeção visual. As quatro pendências
+de monitoring do plano continuam abertas.
+
+## 2026-10-19 — Telemetria operacional reduzida e privada
+
+O monitoring agrega eventos locais do portal e do agente sem guardar prompts,
+respostas, corpos de pedidos, dados de clientes ou exceções completas. Backups do
+catálogo, warehouse e itinerários incluem hashes e só contam como verificados após
+um restauro isolado e verificação de integridade SQLite. Incidentes são deduplicados
+numa fila local com eventos de abertura e recuperação. Integrações externas ficam
+desativadas até serem definidos canal, destinatários e gestão de credenciais.
+
+## 2026-10-19 — Limpeza automática conservadora
+
+O monitoring pode libertar caches regeneráveis e aplicar retenção aos seus próprios
+backups quando a ocupação do disco atingir 85%, com intervalo mínimo de 24 horas.
+Mantém pelo menos cinco backups completos e só remove excedentes com sete dias.
+Catálogo, fontes, warehouse, exports, credenciais, ambientes e dependências ficam
+fora do âmbito. A execução manual exige perfil administrador, origem válida e CSRF.
+
+## 2026-10-19 — Logs operacionais centralizados
+
+Reutilizar `monitoring/runtime/portal-events.jsonl` como fonte persistente dos logs do
+portal, mantendo rotação e compatibilidade com os sinais operacionais existentes. A
+instrumentação cliente regista navegação, interações e pedidos API; a instrumentação
+do servidor regista erros não tratados e os fluxos explícitos continuam a registar
+operações de domínio. Escritas no processo Node são serializadas e eventos idênticos
+da mesma interação são limitados no browser.
+
+O portal não dispõe de identidade própria. A tabela apresenta um identificador
+aleatório da sessão do separador, `server` ou `system`, sem atribuir a ação a uma
+pessoa. Valores de formulários, corpos HTTP, labels, prompts e respostas não são
+capturados. Mensagens e stacks são limitadas e redigidas antes da persistência. A
+consulta permanece protegida pelo login do Monitoring e os ficheiros não são servidos
+diretamente.
+
+## 2026-10-19 — Configuração individual do SageMaker Studio
+
+A 2026-10-19, a configuração pública do Studio passou de
+`config/studio.json` para `config/studio.local.json`, ignorado pelo Git. A decisão
+anterior de centralizar a base mantém-se; a localização passou a ser individual
+para impedir que o identificador de um espaço seja aplicado aos ambientes dos
+restantes colegas. `config/studio.example.json` documenta o contrato e
+`scripts/setup_workspace.py` valida e escreve o valor local.
+
+## 2026-10-20 — Consolidação da documentação ativa
+
+O README fica como entrada curta para preparação e arranque. Arquitetura, dados,
+portal, operações e testes mantêm uma responsabilidade própria e os READMEs dos
+componentes remetem para esses guias em vez de repetir procedimentos extensos.
+Resultados transitórios de testes saem do guia operacional; este ficheiro conserva
+o contexto histórico e o Git preserva versões anteriores.
+
+O lint Markdown ignora diretórios ocultos e extensões do ambiente SageMaker, que não
+pertencem ao repositório. A apresentação deixa de conter o identificador de um
+espaço Studio: o destino do portal deriva do URL atual, com fallback local.
+
+## 2026-10-20 — Preparação independente de clones de desenvolvimento
+
+O repo fornece os ficheiros necessários para inicializar uma sessão: fontes,
+warehouse publicado, lockfiles, launcher e exemplos de configuração. Acrescentado
+`.env.example` sem segredos e `--initialize-data` ao assistente para criar catálogo
+e itinerários locais através do contrato de recuperação existente. As contas são
+geradas por instalação, sem versionar credenciais ou duplicar persistência.
+
+A preparação seleciona Node e npm da mesma instalação suportada, verifica os
+artefactos mínimos e permite usar `./bin/just` quando o launcher global pertence
+a outro checkout. O guia inclui os comandos para instalar dependências antes da
+inicialização. Não existe publicação nem transferência de dados operacionais.
+
+Evidência: 16 testes de preparação/operações aprovados; ensaio com `git archive`
+num diretório e HOME temporários, sobrepondo apenas o assistente alterado e o
+exemplo de configuração. Sem catálogo, exports ou contas de origem, criou os três
+conjuntos necessários e preservou-os numa segunda execução. Reutilizaram-se Python,
+Node e dependências locais; não se validaram downloads, proxy Studio, outra
+identidade IAM ou Bedrock real. A validação num segundo espaço AWS mantém-se no plano.
+
+## 2026-10-22 — Integrar monitoring no branch de orientações e Fase 2
+
+Integração de `feat/monitoring-deployment` em `docs/code-agent-guidance`.
+Os conflitos de documentação preservam as orientações e o plano anterior como
+registo histórico, mantendo a Fase 2 transacional como estado ativo. A rota de
+compatibilidade `/api/assistant` continua a delegar no planeador atual, com
+pré-visualização e aceitação explícita; não foi reposta a edição implícita antiga.
+
+O endpoint de edição manual passa a importar o enriquecimento rodoviário de
+`road-routing-server`, conforme a fronteira Python integrada. Os testes de
+routing usam um fornecedor HTTP loopback, pois o mock de fetch do Node já não
+interceta os pedidos feitos em Python. A telemetria desses testes usa uma pasta
+temporária. Os testes de navegador do monitoring usam os controlos Todos/Apenas
+erros e o título dinâmico do evento que existem na interface atual.
+
+O estado operacional, as contas e as fontes foram preservados. Não houve
+publicação, criação de infraestrutura ou chamadas reais ao modelo. As pendências
+de monitoring para produção continuam abertas no plano: alertas externos,
+backups externos cifrados e sonda fora da máquina. A integração não autoriza
+a Fase 3 nem validação paga do modelo.
+
+Validação: 124 testes Python, 35 de monitoring/operações, build, catálogo/ETL,
+estrutura documental e Markdown aprovados. Navegador: assistente transacional
+PT/EN em 390/1600 px com APIs simuladas; login, contas e logs do monitoring em
+320/768/1440/2560 px com fixtures locais. Os dez testes de routing com fornecedor
+loopback passaram; o check completo do portal passou com 138 testes aprovados
+e um ignorado após essa adaptação.
+
+## 2026-10-23 — S3 como persistência permanente e cache efémera
+
+As releases S3 de fontes, estado operacional e warehouse passam a ser a fonte
+permanente. O `just blu it` cria primeiro um checkpoint remoto, para os serviços,
+recupera e republica o checkpoint como release operacional ativa ou usa
+`operational/current.json`, descarrega as fontes, executa o ETL e publica o
+warehouse validado. Portal e Observatório recebem apenas caminhos sob
+`/tmp/blu-runtime-<uid>`.
+
+Os Excel, PDF e artefactos de warehouse deixam de ser versionados. Os testes de
+integração usam `BLU_DATA_DIR` e `BLU_WAREHOUSE_DIR`; sem fontes materializadas,
+os testes dependentes de dados são ignorados explicitamente. O `just blu up`
+continua limitado ao arranque e recusa uma cache incompleta.
+
+Evidência real: checkpoint remoto de 947 079 052 bytes; materialização das
+releases operacional e de fontes; execução e publicação do warehouse; bases
+SQLite íntegras, contagens iguais e hashes dos dois PDFs operacionais iguais. Num
+ensaio adicional, `data/`, `warehouse/` e `exports/` foram retirados
+temporariamente do projeto e os quatro dashboards e a API do catálogo
+responderam a partir da cache. Passaram 133 testes Python, 143 testes Node com um
+ignorado, build Next.js, validação estrutural, Markdown e `git diff --check`.
+
+Uma medição posterior reconstruiu e publicou o warehouse em 63,291 segundos. A
+evidência passa a incluir `recovery_seconds`. O RPO de operações que receberam
+sucesso da API é zero porque a publicação operacional S3 é aguardada; alterações
+locais cuja publicação falha não são apresentadas como confirmadas. Os objetivos
+de serviço ainda precisam de aprovação operacional.
+
+## 2026-10-23 — API atual do agente e versão reprodutível do uv
+
+O agente usa `langchain.agents.create_agent`, com LangChain declarado no grupo
+opcional `agent`. Esta substituição elimina a API descontinuada
+`langgraph.prebuilt.create_react_agent` e mantém o grafo e as ferramentas já
+existentes. O projeto exige `uv 0.12.19`; o assistente de configuração rejeita
+outras versões para que o lockfile seja interpretado de forma reprodutível.
+
+Evidência: verificação completa do ambiente aprovada e seis testes do agente
+aprovados com um modelo simulado, sem chamadas a fornecedores externos.

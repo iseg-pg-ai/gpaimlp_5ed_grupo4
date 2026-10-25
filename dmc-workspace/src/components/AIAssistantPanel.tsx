@@ -4,6 +4,8 @@ import { T, useTranslated } from "@/components/LocaleProvider";
 import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Check, RotateCcw, Loader2, Copy, PanelRightClose } from "lucide-react";
 import { ChatMessage } from "@/types";
+import type { AgentProposal } from "@/lib/assistant-actions";
+import { canonicalSnapshot } from "@/lib/snapshot-validation";
 import {
   Conversation,
   ConversationContent,
@@ -31,6 +33,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface AIAssistantPanelProps {
+  language: "pt" | "en";
+  onLanguageChange: (language: "pt" | "en") => void;
+  proposal?: AgentProposal | null;
+  onDecideProposal: (decision: "accept" | "reject") => void;
+  onSelectAlternative: (dayNumber: number, itemId: string, catalogId: string) => void;
+  onDismissProposal: () => void;
   messages: ChatMessage[];
   onSendMessage: (text: string) => void;
   isProcessing: boolean;
@@ -38,15 +46,30 @@ interface AIAssistantPanelProps {
   onCollapse?: () => void;
 }
 
-const suggestionChips = [
-  "Ajuda",
-  "Recomenda alternativas para chuva",
-  "Sugerir restaurante sem glúten",
-  "Reagendar atividade 1 do dia 1 para 14:00",
-  "Otimizar rota do dia 1",
-];
+const suggestionChips = {
+  pt: [
+    "Ajuda",
+    "Adiciona uma atividade ao dia 1",
+    "Recomenda alternativas para chuva",
+    "Regenera apenas o dia 1 preservando as atividades confirmadas",
+    "Otimizar rota do dia 1",
+  ],
+  en: [
+    "Help",
+    "Add an activity to day 1",
+    "Suggest alternatives for rain",
+    "Regenerate only day 1 preserving confirmed activities",
+    "Optimize the route for day 1",
+  ],
+};
 
 export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
+  language,
+  onLanguageChange,
+  proposal,
+  onDecideProposal,
+  onSelectAlternative,
+  onDismissProposal,
   messages,
   onSendMessage,
   isProcessing,
@@ -54,7 +77,11 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   onCollapse,
 }) => {
   const collapseLabel = useTranslated("Recolher assistente", "pt");
-  const promptPlaceholder = useTranslated("Ask me to adapt anything…");
+  const conversationLanguageLabel = useTranslated("Idioma da conversa", "pt");
+  const promptPlaceholder =
+    language === "en"
+      ? "Describe a change to the itinerary…"
+      : "Descreva uma alteração ao roteiro…";
   const [inputText, setInputText] = useState("");
   const conversationContainerRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -107,7 +134,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             </h3>
           </div>
           <p className="text-xs text-[var(--portal-text-4a636b)] mt-0.5">
-            <T text="Agente de IA · LangChain & Bedrock" source="pt" />{" "}
+            <T text="Propostas com revisão humana · Bedrock" source="pt" />{" "}
           </p>
         </div>
 
@@ -143,7 +170,11 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             <ConversationEmptyState
               icon={<Sparkles className="size-8 text-[var(--portal-text-d8a65c)]" />}
               title="Curator Ready"
-              description="Use Edit Brief para alterar preferências; remova atividades através dos comandos sugeridos."
+              description={
+                language === "en"
+                  ? "Describe the change. Review the proposal before accepting it."
+                  : "Descreva a alteração. Reveja a proposta antes de a aceitar."
+              }
             />
           ) : (
             messages.map((message) => {
@@ -169,11 +200,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                     }
                   >
                     <MessageResponse>
-                      {message.sender === "assistant" ? (
-                        <T text={message.text} source="pt" />
-                      ) : (
-                        message.text
-                      )}
+                      <span lang={message.language ?? "pt"}>{message.text}</span>
                     </MessageResponse>
                   </MessageContent>
 
@@ -205,6 +232,183 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             })
           )}
 
+          {proposal && (
+            <section
+              aria-label="Pré-visualização da proposta"
+              data-testid="agent-preview"
+              className="rounded-lg border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)] p-3 text-sm text-[var(--portal-text-143f4b)] break-words"
+            >
+              <h4 className="font-semibold">
+                <T
+                  text={
+                    proposal.plan.actions.length
+                      ? "Rever alterações antes de aceitar"
+                      : "Escolher alternativa de substituição"
+                  }
+                  source="pt"
+                />
+              </h4>
+              <p className="mt-2 whitespace-pre-wrap">{proposal.plan.summary}</p>
+              {proposal.plan.warnings.map((warning, index) => (
+                <p className="mt-1" key={index}>
+                  {warning}
+                </p>
+              ))}
+              <p className="mt-2">
+                <T
+                  text="Preços, disponibilidade e reservas continuam sujeitos a confirmação humana."
+                  source="pt"
+                />
+              </p>
+              {proposal.impact && proposal.plan.actions.length > 0 && (
+                <details className="mt-3 border-t pt-2" data-testid="agent-impact">
+                  <summary className="cursor-pointer font-semibold">
+                    <T text="Resumo do impacto e custos conhecidos" source="pt" />
+                  </summary>
+                  <ul className="list-disc pl-4">
+                    {proposal.impact.changes.map((change, index) => (
+                      <li key={index}>
+                        <T text={change} source="pt" />
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2">
+                    <T
+                      text="Subtotais conhecidos (confirmados e estimados), sem conversão de moeda:"
+                      source="pt"
+                    />
+                  </p>
+                  {proposal.impact.costs.map((cost) => (
+                    <p key={cost.currency}>
+                      {cost.currency}: {(cost.beforeCents / 100).toFixed(2)} →{" "}
+                      {(cost.afterCents / 100).toFixed(2)} · <T text="Confirmados" source="pt" />:{" "}
+                      {(cost.beforeConfirmedCents / 100).toFixed(2)} →{" "}
+                      {(cost.afterConfirmedCents / 100).toFixed(2)}
+                    </p>
+                  ))}
+                  <p>
+                    <T text="Linhas com custo por confirmar" source="pt" />:{" "}
+                    {proposal.impact.pendingBefore} → {proposal.impact.pendingAfter}
+                  </p>
+                  {proposal.impact.incomplete && (
+                    <p>
+                      <T
+                        text="Custos incompletos: valores desconhecidos não são gratuitos. Os subtotais não representam o custo final da viagem."
+                        source="pt"
+                      />
+                    </p>
+                  )}
+                </details>
+              )}
+              {proposal.after
+                .filter(
+                  (day) =>
+                    canonicalSnapshot(day) !==
+                    canonicalSnapshot(
+                      proposal.before.find((before) => before.dayNumber === day.dayNumber),
+                    ),
+                )
+                .map((day) => (
+                  <div
+                    key={day.dayNumber}
+                    className="mt-3 border-t pt-2"
+                    data-testid="agent-day-change"
+                  >
+                    <h5 className="font-semibold">
+                      <T text="Dia" source="pt" /> {day.dayNumber}
+                    </h5>
+                    <p>
+                      <T text="Antes" source="pt" /> · <T text="Capacidade" source="pt" />:{" "}
+                      {proposal.before.find((before) => before.dayNumber === day.dayNumber)
+                        ?.dailyCapacity ?? "briefing"}
+                    </p>
+                    <ul className="list-disc pl-4">
+                      {proposal.before
+                        .find((before) => before.dayNumber === day.dayNumber)
+                        ?.items.map((item) => (
+                          <li key={item.id}>
+                            {item.time} · {item.title}
+                          </li>
+                        ))}
+                    </ul>
+                    <p className="mt-2">
+                      <T text="Depois" source="pt" /> · <T text="Capacidade" source="pt" />:{" "}
+                      {day.dailyCapacity ?? "briefing"}
+                    </p>
+                    <ul className="list-disc pl-4">
+                      {day.items.map((item) => (
+                        <li key={item.id}>
+                          {item.time} · {item.title} ·{" "}
+                          {item.priceNote ??
+                            (language === "en"
+                              ? "Price pending confirmation"
+                              : "Preço por confirmar")}
+                          {item.pendingChecks?.map((pending, index) => (
+                            <p key={index} className="text-xs">
+                              {pending}
+                            </p>
+                          ))}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              {proposal.alternatives?.map((group) => (
+                <div
+                  key={`${group.dayNumber}:${group.itemId}`}
+                  className="mt-3 border-t pt-2"
+                  data-testid="agent-alternatives"
+                >
+                  <h5 className="font-semibold">
+                    <T text="Alternativas" source="pt" /> · {group.itemTitle}
+                  </h5>
+                  {group.options.map((option) => (
+                    <div key={option.catalogId} className="mt-2 rounded border p-2">
+                      <p className="font-semibold">{option.title}</p>
+                      <p>
+                        {option.time} · {option.price}
+                      </p>
+                      {option.pendingChecks.map((pending, index) => (
+                        <p key={index}>{pending}</p>
+                      ))}
+                      <Button
+                        disabled={isProcessing}
+                        onClick={() =>
+                          onSelectAlternative(group.dayNumber, group.itemId, option.catalogId)
+                        }
+                      >
+                        <T text="Pré-visualizar esta substituição" source="pt" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              {proposal.plan.actions.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    data-testid="agent-accept"
+                    disabled={isProcessing}
+                    onClick={() => onDecideProposal("accept")}
+                  >
+                    <T text="Aceitar e guardar versão" source="pt" />
+                  </Button>
+                  <Button
+                    data-testid="agent-reject"
+                    variant="ghost"
+                    disabled={isProcessing}
+                    onClick={() => onDecideProposal("reject")}
+                  >
+                    <T text="Rejeitar" source="pt" />
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="ghost" disabled={isProcessing} onClick={onDismissProposal}>
+                  <T text="Fechar opções" source="pt" />
+                </Button>
+              )}
+            </section>
+          )}
+
           {/* Assistant Thinking State */}
           {isProcessing && (
             <Message from="assistant">
@@ -220,7 +424,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
               >
                 <Loader2 className="size-3.5 animate-spin text-[var(--portal-text-2d5b67)]" />
                 <span>
-                  <T text="Validating rules & updating proposal…" source="en" />
+                  <T text="A preparar e validar a proposta…" source="pt" />
                 </span>
               </MessageContent>
             </Message>
@@ -232,6 +436,20 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
 
       {/* 3. AI Elements PromptInput with Suggestion Tools */}
       <div className="p-3 border-t border-[var(--portal-line-d5d1c7)] bg-[var(--portal-white)]">
+        <label className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+          <T text="Idioma da conversa" source="pt" />
+          <select
+            data-testid="assistant-language"
+            aria-label={conversationLanguageLabel}
+            className="min-h-11 rounded border p-2"
+            value={language}
+            disabled={isProcessing}
+            onChange={(event) => onLanguageChange(event.target.value as "pt" | "en")}
+          >
+            <option value="pt">Português</option>
+            <option value="en">English</option>
+          </select>
+        </label>
         <PromptInput
           onSubmit={(e) => {
             e.preventDefault();
@@ -239,12 +457,12 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
           }}
         >
           {/* Suggestion Chips */}
-          <div className="px-2 pt-2 pb-1">
-            <span className="text-xs font-semibold text-[var(--portal-text-698288)] tracking-wider block mb-1.5">
+          <details className="px-2 pt-2 pb-1">
+            <summary className="cursor-pointer text-xs font-semibold text-[var(--portal-text-698288)] tracking-wider mb-1.5">
               <T text="Curator Suggestions" source="en" />{" "}
-            </span>
+            </summary>
             <PromptInputTools>
-              {suggestionChips.map((chip, idx) => (
+              {suggestionChips[language].map((chip, idx) => (
                 <button
                   key={idx}
                   type="button"
@@ -252,16 +470,17 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   onClick={() => handleChipClick(chip)}
                   className="text-xs px-2 py-0.5 rounded-md bg-[var(--portal-bg-faf8f3)] text-[var(--portal-text-143f4b)] border border-[var(--portal-line-d5d1c7)] hover:border-[var(--portal-line-2d5b67)] hover:bg-[var(--portal-bg-e7eef0)] transition-all cursor-pointer disabled:opacity-50 text-left"
                 >
-                  <T text={chip} source="pt" />
+                  <span lang={language}>{chip}</span>
                 </button>
               ))}
             </PromptInputTools>
-          </div>
+          </details>
 
           {/* Input text body */}
           <PromptInputBody>
             <PromptInputTextarea
               name="assistantMessage"
+              maxLength={4000}
               aria-label="Mensagem para o assistente"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -282,7 +501,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
               <T text="Press Enter to curate" source="en" />
             </span>
             <span>
-              <T text="Real-time itinerary sync" source="en" />
+              <T text="Alterações só após confirmação" source="pt" />
             </span>
           </PromptInputFooter>
         </PromptInput>

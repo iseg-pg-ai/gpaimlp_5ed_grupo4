@@ -39,12 +39,7 @@
     "Azóia (Sintra)": "Sintra",
     "Vila Nogueira de Azeitão": "Azeitão"
   },
-  "regions": [
-    "Douro",
-    "Alentejo",
-    "Bairrada",
-    "Região de Aveiro"
-  ],
+  "regions": ["Douro", "Alentejo", "Bairrada", "Região de Aveiro"],
   "unit_aliases": {
     "por pessoa": "pessoa",
     "por grupo": "grupo",

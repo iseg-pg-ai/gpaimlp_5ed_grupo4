@@ -5,17 +5,9 @@ import path from "node:path";
 import { renderLocalizedPdf } from "./localized-pdf.ts";
 import { isLocale, type Locale } from "./locales.ts";
 import { renderPdf, type Snapshot, type VersionMeta } from "./itinerary-pdf.ts";
+import { canonicalSnapshot as canonical } from "./snapshot-validation.ts";
 const hash = (s: string | Buffer) => createHash("sha256").update(s).digest("hex");
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (value && typeof value === "object")
-    return `{${Object.entries(value)
-      .filter(([, v]) => v !== undefined)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`)
-      .join(",")}}`;
-  return JSON.stringify(value);
-}
+export const snapshotFingerprint = (snapshot: Snapshot) => hash(canonical(snapshot));
 const slug = (s: string) =>
   s
     .normalize("NFKD")
@@ -94,7 +86,9 @@ export class VersionStore {
         token TEXT PRIMARY KEY, tripId TEXT NOT NULL, version INTEGER NOT NULL,
         locale TEXT NOT NULL, method TEXT NOT NULL, recipient TEXT NOT NULL,
         createdAt TEXT NOT NULL,
-        FOREIGN KEY(tripId,version) REFERENCES versions(tripId,version));`);
+        FOREIGN KEY(tripId,version) REFERENCES versions(tripId,version));
+      CREATE TABLE IF NOT EXISTS portal_operations (
+        id TEXT PRIMARY KEY, kind TEXT NOT NULL, result TEXT NOT NULL, createdAt TEXT NOT NULL);`);
     const versionColumns = this.db
       .prepare("PRAGMA table_info(versions)")
       .all() as unknown as Array<{
@@ -351,19 +345,43 @@ export class VersionStore {
     snapshot: Snapshot,
     reason: string,
     baseVersion: number | null,
+    onSaved?: (version: number) => void,
+    operationId?: string,
   ): VersionMeta {
     checkTripId(tripId);
+    if (operationId && !/^[a-f0-9]{64}$/.test(operationId))
+      throw new Error("Identificador da operação inválido.");
     const serialized = canonical(snapshot),
       snapshotHash = hash(serialized);
     this.db.exec("BEGIN IMMEDIATE");
     try {
+      if (operationId) {
+        const completed = this.db
+          .prepare("SELECT result FROM portal_operations WHERE id=? AND kind='version.save'")
+          .get(operationId) as unknown as { result: string } | undefined;
+        if (completed) {
+          this.db.exec("COMMIT");
+          return JSON.parse(completed.result) as VersionMeta;
+        }
+      }
       const previous = this.db
         .prepare("SELECT * FROM versions WHERE tripId=? ORDER BY version DESC LIMIT 1")
         .get(tripId) as unknown as Stored | undefined;
+      // A aceitação do agente não restaura o Lixo nem ignora concorrência por deduplicação.
+      if (onSaved && (previous?.trashedAt || previous?.version !== baseVersion))
+        throw new VersionConflict(
+          "A versão mudou ou está no Lixo. Reabra ou restaure antes de aceitar.",
+        );
       if (previous?.snapshotHash === snapshotHash) {
         if (previous.trashedAt) this.restoreVersion(tripId, previous.version);
+        onSaved?.(previous.version);
+        const result = this.list(tripId)[0];
+        if (operationId)
+          this.db
+            .prepare("INSERT INTO portal_operations VALUES (?, 'version.save', ?, ?)")
+            .run(operationId, JSON.stringify(result), new Date().toISOString());
         this.db.exec("COMMIT");
-        return this.list(tripId)[0];
+        return result;
       }
       if ((previous?.version ?? null) !== baseVersion)
         throw new VersionConflict(
@@ -390,8 +408,8 @@ export class VersionStore {
           previous?.version ?? null,
           serialized,
         );
-      this.db.exec("COMMIT");
-      return {
+      onSaved?.(version);
+      const result = {
         tripId,
         version,
         filename,
@@ -401,6 +419,12 @@ export class VersionStore {
         chainHash,
         parentVersion: previous?.version ?? null,
       };
+      if (operationId)
+        this.db
+          .prepare("INSERT INTO portal_operations VALUES (?, 'version.save', ?, ?)")
+          .run(operationId, JSON.stringify(result), createdAt);
+      this.db.exec("COMMIT");
+      return result;
     } catch (error) {
       this.db.exec("ROLLBACK");
       throw error;

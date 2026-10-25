@@ -20,6 +20,8 @@ def check_project():
     problems = []
     for name in files:
         source = ROOT / name
+        if name.is_relative_to(Path("monitoring/runtime")):
+            problems.append(f"Artefacto privado de monitoring versionado: {name}")
         if name.name in LOCAL_FILES or name in LOCAL_ROOT_FILES:
             problems.append(f"Artefacto local versionado: {name}")
         if not source.is_file() or name.suffix != ".md":

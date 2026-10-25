@@ -14,7 +14,8 @@ REPOSITORY_ROOT="$(dirname "$SCRIPT_DIR")"
 # Locate the project-local interpreter and its dashboard source.
 PYTHON="$REPOSITORY_ROOT/.venv/bin/python"
 APPLICATION="$REPOSITORY_ROOT/dashboard/app.py"
-WAREHOUSE="$REPOSITORY_ROOT/warehouse/blu_etl.sqlite"
+WAREHOUSE_ROOT="${BLU_WAREHOUSE_DIR:-$REPOSITORY_ROOT/warehouse}"
+WAREHOUSE="$WAREHOUSE_ROOT/blu_etl.sqlite"
 
 cd "$REPOSITORY_ROOT"
 

@@ -2,6 +2,7 @@ import { publicUrl, jsonError, noStoreHeaders } from "@/lib/server-http";
 import { isLocale } from "@/lib/locales";
 
 import { checkTripId, VersionStore, type ShareMethod } from "@/lib/version-store";
+import { syncOperationalState } from "@/lib/operational-s3";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
       body.method,
       body.recipient,
     );
+    await syncOperationalState();
     const path =
       share.method === "document" ? `/api/shares/${share.token}/document` : `/share/${share.token}`;
     return Response.json(

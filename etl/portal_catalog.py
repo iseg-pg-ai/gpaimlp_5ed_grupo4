@@ -1,6 +1,7 @@
 """Catálogo operacional e integração ETL, que lê a fonte sem a modificar."""
 import hashlib
 import json
+import re
 import sqlite3
 from contextlib import closing, contextmanager
 from pathlib import Path
@@ -126,7 +127,9 @@ class CatalogStore:
         self.db = sqlite3.connect(root / 'catalog.sqlite', timeout=5, isolation_level=None)
         self.db.executescript('''CREATE TABLE IF NOT EXISTS catalog_records (id TEXT PRIMARY KEY, snapshot TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS catalog_history (id TEXT NOT NULL, revision INTEGER NOT NULL,
-            snapshot TEXT NOT NULL, PRIMARY KEY(id,revision));''')
+            snapshot TEXT NOT NULL, PRIMARY KEY(id,revision));
+            CREATE TABLE IF NOT EXISTS portal_operations (id TEXT PRIMARY KEY,
+            kind TEXT NOT NULL, result TEXT NOT NULL, created_at TEXT NOT NULL);''')
 
     def close(self):
         self.db.close()
@@ -186,9 +189,17 @@ class CatalogStore:
     def _now():
         return datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
 
-    def save_validated(self, value):
+    def save_validated(self, value, operation_id=None):
         """Recebe dados validados e normalizados pelo contrato partilhado do editor/API."""
+        if operation_id is not None and not re.fullmatch(r'[a-f0-9]{64}', operation_id):
+            raise ValueError('Identificador da operação inválido.')
         with self.transaction():
+            if operation_id:
+                completed = self.db.execute(
+                    "SELECT result FROM portal_operations WHERE id=? AND kind='catalog.save'",
+                    (operation_id,)).fetchone()
+                if completed:
+                    return json.loads(completed[0])
             saved = self.db.execute('SELECT snapshot FROM catalog_records WHERE id=?', (value['id'],)).fetchone() if value.get('id') else None
             previous = json.loads(saved[0]) if saved else None
             if value.get('id') and (previous is None or previous['revision'] != value['baseRevision']):
@@ -206,6 +217,10 @@ class CatalogStore:
                 record['matching'] = {**value['matching'], 'food': 'yes'}
             record.update(raw=(previous or {}).get('raw') or {}, updatedAt=self._now(), reason=value['reason'])
             self._write(record)
+            if operation_id:
+                self.db.execute("INSERT INTO portal_operations VALUES (?, 'catalog.save', ?, ?)",
+                                (operation_id, json.dumps(record, ensure_ascii=False,
+                                                          separators=(',', ':')), self._now()))
             return record
 
     def published_flags(self, rows):

@@ -11,3 +11,4 @@ exports/itineraries/*
 data/portal/*.sqlite*
 data/portal/etl.lock
 *.log
+monitoring/runtime
