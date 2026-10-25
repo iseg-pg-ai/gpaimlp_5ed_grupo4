@@ -1,10 +1,35 @@
 # Plano de evolução do BLU AI System
 
-Revisto em 24 de outubro de 2026. Este ficheiro contém apenas trabalho aberto.
-Implementações e validações concluídas permanecem no histórico Git e em
-[Decisões](docs/DECISIONS.md).
+Revisto em 25 de outubro de 2026. Este ficheiro contém apenas trabalho aberto,
+ordenado pelas dependências reais. Implementações concluídas permanecem no
+histórico Git e em [Decisões](docs/DECISIONS.md).
 
-## Prioridade 2 — Agente de IA
+## Etapa 1 — Base operacional e multiutilizador
+
+Estas decisões são pré-requisitos para o agente, o deployment e a sonda externa.
+
+- [ ] Definir demonstração, staging e produção, incluindo região, exposição e
+  responsável operacional.
+- [ ] Definir identidade, tipos de utilizador, papéis, permissões, criação e
+  revogação de acesso; o login local do Monitoring não autentica o portal.
+- [ ] Decidir se os rascunhos permanecem privados no navegador ou são
+  sincronizados, com ownership, revisão e resolução de conflitos.
+- [ ] Aprovar objetivos de disponibilidade, perda máxima de dados (RPO) e tempo
+  máximo de recuperação (RTO).
+- [ ] Definir minimização, retenção e eliminação de dados pessoais, conversas,
+  auditoria, versões, partilhas e exports.
+- [ ] Escolher hosting, persistência, gestão de segredos, rede, staging e rollback.
+- [ ] Eliminar a janela entre o commit SQLite e a confirmação S3 ou aprovar um RPO
+  que aceite possível perda da outbox se a máquina desaparecer nesse intervalo.
+- [ ] Decidir se os checkpoints continuam integrais ou passam a conservar apenas
+  estado operacional; atualmente podem duplicar cerca de 1 GB por `just blu it`.
+- [ ] Aprovar a arquitetura antes de criar infraestrutura, publicar serviços ou
+  assumir custos recorrentes.
+
+A comparação atual e os limites conhecidos estão em
+[Operações](docs/OPERATIONS.md).
+
+## Etapa 2 — Agente de IA integrado
 
 - [ ] Definir o âmbito e os critérios de aceitação da próxima iteração do agente.
 - [ ] Consolidar `planner.py` e `curator_agent.py` num único percurso de execução,
@@ -16,48 +41,39 @@ Implementações e validações concluídas permanecem no histórico Git e em
 - [ ] Guardar contexto de conversa por utilizador, viagem e versão no servidor,
   com resumo, retenção e eliminação definidos, em vez de depender apenas das
   últimas oito mensagens do navegador.
-- [ ] Expor as funcionalidades aprovadas do portal como ferramentas tipadas de
+- [ ] Expor funcionalidades aprovadas do portal como ferramentas tipadas de
   leitura, proposta e escrita, reutilizando os serviços de domínio existentes.
-- [ ] Definir uma matriz de autorização: leituras automáticas, alterações com
+- [ ] Aplicar uma matriz de autorização: leituras automáticas, alterações com
   pré-visualização e aceitação, e operações destrutivas ou administrativas com
   confirmação reforçada.
 - [ ] Definir fornecedor, orçamento, privacidade, timeouts e comportamento de
   degradação para utilização real.
-- [ ] Autorizar e executar a avaliação com um modelo real, incluindo custos,
-  privacidade, conjunto de casos e limiares de aceitação. Os testes automáticos
-  continuam a usar modelos simulados por defeito.
+- [ ] Autorizar e executar uma avaliação com modelo real, incluindo custos,
+  privacidade, casos de teste e limiares de aceitação. Testes automáticos usam
+  modelos simulados por defeito.
 
-## Prioridade 4 — Operação multiutilizador e cloud
+## Etapa 3 — Deployment e operação cloud
 
-- [ ] Definir o ambiente-alvo, utilizadores, identidade, papéis e permissões.
-- [ ] Aprovar objetivos de disponibilidade, perda máxima de dados e tempo máximo
-  de recuperação.
-- [ ] Decidir se os rascunhos devem permanecer privados em cada navegador ou ser
-  sincronizados entre utilizadores. Catálogo e versões já foram validados com
-  processos SQLite independentes e recusam corretamente escritores obsoletos.
-- [ ] Eliminar a janela entre o commit SQLite e a confirmação S3, ou aprovar um RPO
-  que aceite a possível perda da outbox se a máquina desaparecer nesse intervalo.
-- [ ] Decidir se os checkpoints devem continuar integrais ou passar a conservar
-  apenas estado operacional. O contrato atual duplica fontes e warehouse já
-  existentes no bucket de dados e pode gerar cerca de 1 GB por `just blu it`.
-- [ ] Definir minimização, retenção e eliminação de dados pessoais.
-- [ ] Escolher hosting, persistência, gestão de segredos, região, staging e rollback.
-- [ ] Aprovar antes de criar infraestrutura, gerar custos ou publicar serviços.
+- [ ] Implementar a arquitetura aprovada da Etapa 1 com ambientes e dados
+  isolados, identidade central e segredos fora do código.
+- [ ] Criar CI do portal e uma entrega identificada e reproduzível para todos os
+  serviços, sem incluir dados operacionais na imagem.
+- [ ] Implementar staging, migrações, smoke tests, promoção e rollback compatível.
+- [ ] Validar concorrência, persistência e recuperação no ambiente-alvo, incluindo
+  indisponibilidade do SQL/S3 e reconstrução numa máquina nova.
+- [ ] Executar testes de segurança, privacidade, custos e carga adequados ao uso
+  aprovado.
+- [ ] Publicar apenas depois da aprovação operacional e registar o runbook final.
 
-A comparação de alternativas e os limites atuais estão em
-[Operações](docs/OPERATIONS.md).
+## Etapa 4 — Monitoring externo
 
-## Prioridade 6 — Monitoring
-
-O Monitoring continua incompleto para produção até concluir:
-
-- [ ] Executar uma sonda fora da máquina do BLU e associá-la a responsáveis reais.
+- [ ] Executar uma sonda fora da máquina do BLU contra o endpoint estável.
+- [ ] Associar a sonda a responsáveis reais e validar indisponibilidade,
+  deduplicação, escalamento e recuperação através do SNS já operacional.
 
 O SNS real foi validado em 2026-10-25 com subscrição confirmada e IAM limitado ao
-tópico: abertura e recuperação foram entregues, a repetição foi deduplicada e não
-ficaram mensagens pendentes. A repetição após falha foi validada por injeção local,
-sem remover temporariamente permissões da infraestrutura. Logs, sondas locais e
-incidentes no painel não substituem a sonda externa ainda pendente.
+tópico. A sonda externa depende do endpoint produzido pela Etapa 3; logs e sondas
+na própria máquina não detetam a indisponibilidade total do ambiente.
 
 ## Contratos a preservar
 

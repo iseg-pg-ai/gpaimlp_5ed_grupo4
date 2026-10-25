@@ -163,9 +163,86 @@ Um HTTP 200 não comprova um fluxo completo, acesso ao Bedrock ou validade dos
 dados. Os limiares locais são preliminares até existirem objetivos operacionais.
 Cada alerta de produção precisará de responsável, canal e ação de recuperação.
 O transporte SNS conserva uma fila local, repete falhas com atraso exponencial e
-expõe entregas e pendências no painel. Continua desativado até existir um tópico
-privado, subscrições confirmadas, `sns:Publish` limitado ao respetivo ARN e um
-ensaio real autorizado.
+expõe entregas e pendências no painel. O tópico privado, a subscrição confirmada,
+o `sns:Publish` limitado ao respetivo ARN e a entrega real foram validados em
+25 de outubro de 2026. A ativação continua a ser configuração local por ambiente.
+
+## Base operacional proposta
+
+Esta é a recomendação inicial da Etapa 1 do [plano](../PLAN.md), ainda sujeita a
+aprovação antes de criar infraestrutura ou custos. Mantém uma única instância
+escritora, compatível com o SQLite atual, mas retira o ciclo de vida dos processos
+da persistência operacional.
+
+| Decisão | Recomendação | Razão |
+| --- | --- | --- |
+| Região | `eu-west-1` | Mantém dados, buckets, Bedrock e operação na região atual |
+| Demonstração | SageMaker atual, sem garantia de disponibilidade | Preserva o ambiente de desenvolvimento já validado |
+| Staging e produção | Serviços ECS separados, cada um com uma tarefa ativa | Permite reinício gerido sem fingir que SQLite suporta várias réplicas |
+| Entrada web | Application Load Balancer com TLS e rotas por componente | Substitui o proxy temporário `/ports/` por endpoints estáveis |
+| Identidade | Um Amazon Cognito User Pool por ambiente | Evita contas distintas no portal e no Monitoring |
+| Papéis | `owner`, `admin`, `curator` e `viewer` | Separa infraestrutura, gestão, edição e consulta |
+| Segredos | AWS Secrets Manager, injetado apenas no serviço necessário | Evita `.env`, chaves e passwords dentro das imagens |
+| Estado operacional | EFS cifrado para SQLite, histórico, outbox e exports | Uma escrita confirmada sobrevive à substituição da tarefa antes do envio S3 |
+| Estado permanente | Releases imutáveis no S3 já existente | Conserva recuperação, integridade e histórico fora da tarefa |
+| Escala inicial | Uma tarefa escritora; sem escala horizontal automática | Respeita os limites concorrentes comprovados do SQLite |
+| Checkpoints | Apenas estado operacional | Fontes e warehouse já têm releases próprias e não devem ser duplicados |
+| Rascunhos | Privados por utilizador e viagem, sincronizados no servidor | Permite continuidade entre dispositivos sem misturar trabalho não publicado |
+
+### Identidade e autorização propostas
+
+| Papel | Capacidades principais |
+| --- | --- |
+| `owner` | Configuração do espaço, administradores, retenção e operações reforçadas |
+| `admin` | Utilizadores, catálogo, Monitoring e recuperação operacional |
+| `curator` | Briefings, rascunhos, propostas, versões, exports e partilhas autorizadas |
+| `viewer` | Consulta de viagens, versões e sinais expressamente partilhados |
+
+Clientes externos não recebem um papel interno. Continuam a usar partilhas
+revogáveis, limitadas no tempo e sem acesso ao workspace. O backend aplica o papel
+e o ownership; esconder botões no frontend não constitui autorização. O agente
+herda sempre o âmbito do utilizador e nunca eleva permissões.
+
+Contas são criadas por convite administrativo, exigem credencial individual e
+podem ser desativadas sem apagar auditoria ou versões. A autenticação local do
+Monitoring permanece apenas durante a migração e deve ser retirada depois de o
+Cognito proteger portal e Monitoring.
+
+### Objetivos propostos para aprovação
+
+| Objetivo | Staging | Produção inicial |
+| --- | --- | --- |
+| Disponibilidade mensal | Melhor esforço | 99,5% |
+| RPO de escritas confirmadas | 15 minutos | 5 minutos |
+| RTO | 4 horas | 60 minutos |
+| Retenção de conversa do agente | 30 dias | 30 dias |
+| Auditoria técnica e de alterações | 90 dias | 365 dias |
+| Partilhas expiradas | Remoção após 30 dias | Remoção após 30 dias |
+
+O EFS persistente reduz a janela SQLite → S3, mas não substitui releases e
+backups. O objetivo final é que uma escrita só seja apresentada como durável
+depois do commit no EFS e do registo idempotente na outbox persistente; a publicação
+S3 pode ser repetida após reinício. RPO zero só deve ser prometido depois de testes
+de falha reais e, se necessário, publicação S3 síncrona no percurso crítico.
+
+### Fluxo proposto
+
+```mermaid
+flowchart LR
+    U[Utilizador] --> ALB[ALB com TLS]
+    ALB --> AUTH[Cognito]
+    AUTH --> ECS[ECS · uma tarefa escritora]
+    ECS --> EFS[EFS cifrado · SQLite e outbox]
+    ECS --> S3[S3 · releases e backups]
+    ECS --> SM[Secrets Manager]
+    ECS --> CW[Logs e métricas]
+    CW --> SNS[SNS validado]
+```
+
+Esta base não cria recursos nem fecha as decisões. A aprovação deve confirmar,
+no mínimo, papéis, rascunhos sincronizados, objetivos, retenção e aceitação de uma
+única tarefa escritora. Depois disso podem ser produzidos manifests e estimativa
+de custos sem alterar a operação atual.
 
 ## Deployment ainda por decidir
 
@@ -233,7 +310,7 @@ A fonte de verdade das tarefas abertas é a secção
 faltam:
 
 - sonda executada fora da máquina;
-- notificações externas com canal, responsáveis, limiares e deduplicação;
+- limiares e escalamento finais associados aos responsáveis de produção;
 - decisão de hosting, identidade central, CI do portal, staging e rollback.
 
 Não considerar o monitoring completo nem o deployment pronto enquanto estes
