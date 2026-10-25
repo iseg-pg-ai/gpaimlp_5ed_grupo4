@@ -11,6 +11,7 @@ import { NotFound, createApp } from '../lambda/intranet/app.mjs';
 import { CONTACTED, LEAD_TAGS, OPEN_STATUSES, groupsOf, metrics, toLead } from '../lambda/intranet/model.mjs';
 import { createDispatcher } from '../lambda/intranet/dispatch-core.mjs';
 import { lisbonToUtc, outcome, parseActivity, plan } from '../lambda/intranet/schedule.mjs';
+import { addWorkingDays, deadlineState, parseCase, parseCaseUpdate, portugueseHolidays } from '../lambda/intranet/cases.mjs';
 import { challengeFor, claimsOf, expired, loginUrl, tokenRequest } from '../../frontend/intranet/auth.js';
 
 const infraDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -278,6 +279,53 @@ test('curators schedule and cancel activities; the API never returns phone numbe
   assert.equal(updates.filter(u => u[2].followUpStatus === 'NOTIFY_CANCELLED').length, 4);
 });
 
+test('working days skip weekends and Portuguese national holidays', () => {
+  assert.ok(portugueseHolidays(2026).has('2026-04-03'));
+  assert.ok(portugueseHolidays(2026).has('2026-06-04'));
+  assert.equal(addWorkingDays('2026-11-27', 1), '2026-11-30');
+  assert.equal(addWorkingDays('2026-11-30', 1), '2026-12-02');
+  assert.equal(addWorkingDays('2026-10-26', 15), '2026-11-16');
+});
+
+test('Livro de Reclamações cases keep the 15 working-day legal deadline', () => {
+  const staff = ['ana@blu.pt'];
+  const livro = parseCase({ type: 'livro', title: 'Reclamação 123', receivedOn: '2026-10-26', deadline: '2026-12-31' }, { staff, today: '2026-10-26' });
+  assert.equal(livro.record.deadline, '2026-11-16');
+  assert.match(parseCase({ type: 'legal', title: 'Processo' }, { staff, today: '2026-10-26' }).error, /prazo/);
+  assert.match(parseCase({ type: 'complaint', title: 'x', owner: 'stranger@x.pt' }, { staff, today: '2026-10-26' }).error, /equipa/);
+  assert.match(parseCase({ type: 'complaint', title: 'x', receivedOn: '2026-12-01' }, { staff, today: '2026-10-26' }).error, /futura/);
+  assert.match(parseCaseUpdate({ deadline: '2026-12-31' }, livro.record, { staff }).error, /não pode ser alargado/);
+  assert.match(parseCaseUpdate({ status: 'closed' }, livro.record, { staff }).error, /resolução/);
+  assert.equal(parseCaseUpdate({ status: 'closed', resolution: 'Reembolso parcial.' }, livro.record, { staff }).set.followUpStatus, 'CASE_CLOSED');
+  assert.equal(deadlineState({ caseStatus: 'new', deadline: '2026-10-20' }, '2026-10-26'), 'overdue');
+  assert.equal(deadlineState({ caseStatus: 'new', deadline: '2026-10-27' }, '2026-10-26'), 'due-soon');
+});
+
+test('cases are opened against a lead or unlinked, and testers cannot see them', async () => {
+  const stored = [];
+  const handler = createApp(fakeDeps({
+    newId: () => 'case-12345678',
+    putRecords: async (id, list) => { stored.push(...list.map(record => ({ id, ...record }))); },
+  }).deps);
+  assert.equal((await handler(request('GET /v1/cases', { groups: '[testers]' }))).statusCode, 403);
+  assert.equal((await handler(request('POST /v1/cases', { body: { type: 'complaint', title: 'x', leadId: 'BLU-MISSING00001' } }))).statusCode, 404);
+  const linked = await handler(request('POST /v1/cases', { body: { type: 'complaint', title: 'Atraso na recolha', leadId: 'BLU-AAAAAAAA0001', owner: 'ana@blu.pt' } }));
+  assert.equal(linked.statusCode, 201);
+  assert.equal(JSON.parse(linked.body).partition, 'BLU-AAAAAAAA0001');
+  const unlinked = await handler(request('POST /v1/cases', { groups: '[governance]', body: { type: 'livro', title: 'Livro 42' } }));
+  assert.equal(JSON.parse(unlinked.body).partition, 'CASES-UNLINKED');
+  assert.ok(stored.some(record => record.recordKey === 'CASE#case-12345678' && record.followUpStatus === 'CASE_OPEN'));
+  assert.ok(stored.some(record => record.recordKey.startsWith('CASELOG#case-12345678#')));
+});
+
+test('security overview is limited to founders and governance', async () => {
+  const handler = createApp(fakeDeps({ policyReport: async () => ({ summary: { pass: 10, fail: 2, manual: 3 } }) }).deps);
+  assert.equal((await handler(request('GET /v1/security'))).statusCode, 403);
+  const overview = JSON.parse((await handler(request('GET /v1/security', { groups: '[governance]' }))).body);
+  assert.match(overview.findings.map(item => item.text).join(' '), /fundador/);
+  assert.equal(overview.policies.fail, 2);
+});
+
 const siteBuilt = existsSync(path.join(infraDir, '../frontend/blu-cloud-site/dist/client'));
 
 test('the intranet stack protects every route and grants no destructive data access', { skip: !siteBuilt && 'build frontend/blu-cloud-site first' }, async () => {
@@ -290,7 +338,7 @@ test('the intranet stack protects every route and grants no destructive data acc
     const template = JSON.parse(await readFile(path.join(outdir, 'BluCostaIntranet.template.json'), 'utf8'));
     const of = type => Object.values(template.Resources).filter(resource => resource.Type === type);
     const routes = of('AWS::ApiGatewayV2::Route');
-    assert.equal(routes.length, 20);
+    assert.equal(routes.length, 26);
     for (const route of routes) assert.equal(route.Properties.AuthorizationType, 'JWT', route.Properties.RouteKey);
     const [pool] = of('AWS::Cognito::UserPool');
     assert.equal(pool.Properties.MfaConfiguration, 'ON');

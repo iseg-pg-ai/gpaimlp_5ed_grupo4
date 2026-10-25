@@ -3,6 +3,7 @@ import {
   cleanTags, contactDetails, groupsOf, metrics, toLead, toMessage, validLeadId,
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, parseActivity, plan } from './schedule.mjs';
+import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
 
 // Rotas da intranet. Os acessos AWS chegam injetados em `deps` (index.mjs na AWS,
 // simulações nos testes), para que a autorização e a validação sejam testadas sem rede.
@@ -11,9 +12,9 @@ export class NotFound extends Error {}
 // Papéis (grupos Cognito) e o que cada um pode fazer. Um cofre único de acessos:
 // a identidade vive no Cognito, as credenciais de serviço no Secrets Manager.
 export const ROLES = {
-  founders: { label: 'Fundador(a)', can: ['read', 'leads', 'team-admin'] },
-  curators: { label: 'Curador(a)', can: ['read', 'leads'] },
-  governance: { label: 'Governança', can: ['read'] },
+  founders: { label: 'Fundador(a)', can: ['read', 'leads', 'cases', 'security', 'team-admin'] },
+  curators: { label: 'Curador(a)', can: ['read', 'leads', 'cases'] },
+  governance: { label: 'Governança', can: ['read', 'cases', 'security'] },
   testers: { label: 'Testes', can: ['read'] },
 };
 const STAFF = Object.keys(ROLES);
@@ -21,6 +22,17 @@ const allowed = (groups, permission) => groups.some(group => ROLES[group]?.can.i
 const validEmail = email => typeof email === 'string' && email.length <= 254 && /^[^\s@<>()]+@[^\s@<>()]+\.[a-z]{2,}$/i.test(email);
 
 const str = (item, key) => item[key]?.S ?? '';
+const toCase = (item, today) => {
+  const record = {
+    id: str(item, 'caseId'), leadId: str(item, 'conversationId') === UNLINKED ? '' : str(item, 'conversationId'), partition: str(item, 'conversationId'),
+    type: str(item, 'type'), title: str(item, 'title'), description: str(item, 'description'), channel: str(item, 'channel'),
+    receivedOn: str(item, 'receivedOn'), deadline: str(item, 'deadline'), owner: str(item, 'owner'), priority: str(item, 'priority'),
+    caseStatus: str(item, 'caseStatus'), resolution: str(item, 'resolution'), reference: str(item, 'reference'),
+    createdBy: str(item, 'createdBy'), createdAt: str(item, 'createdAt'), updatedAt: str(item, 'updatedAt'),
+  };
+  return { ...record, deadlineState: deadlineState(record, today) };
+};
+const toCaseLog = item => ({ at: str(item, 'createdAt'), by: str(item, 'createdBy'), text: str(item, 'text') });
 const toActivity = item => ({
   id: str(item, 'activityId'), kind: str(item, 'kind'), title: str(item, 'title'), place: str(item, 'place'),
   date: str(item, 'date'), time: str(item, 'time'), repeatUntil: str(item, 'repeatUntil'), people: Number(str(item, 'people') || 0),
@@ -56,6 +68,7 @@ function parse(event) {
 
 export function createApp(deps) {
   const now = () => deps.now?.() ?? new Date();
+  const lisbonToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(now());
 
   async function listLeads(filter) {
     const statuses = filter === 'contacted' ? [CONTACTED] : filter === 'all' ? [...OPEN_STATUSES, CONTACTED] : OPEN_STATUSES;
@@ -164,6 +177,94 @@ export function createApp(deps) {
       return reply(204);
     },
 
+    'GET /v1/cases': async ({ event }) => {
+      const filter = event.queryStringParameters?.status ?? 'open';
+      if (!['open', 'closed'].includes(filter)) return fail(400, 'Estado inválido.');
+      const today = lisbonToday();
+      const items = await deps.queryStatus(filter === 'open' ? CASE_STATE.open : CASE_STATE.closed);
+      const cases = items.map(item => toCase(item, today)).sort((a, b) => (filter === 'open' ? a.deadline.localeCompare(b.deadline) : b.updatedAt.localeCompare(a.updatedAt)));
+      return reply(200, { cases, types: CASE_TYPES, statuses: CASE_STATUS, channels: CASE_CHANNELS, today });
+    },
+
+    'POST /v1/cases': async ({ user, body }) => {
+      const leadId = typeof body.leadId === 'string' ? body.leadId.trim() : '';
+      if (leadId && !validLeadId(leadId)) return fail(400, 'Referência de lead inválida.');
+      if (leadId) await getLead(leadId);
+      const staff = (await deps.listTeam()).map(member => member.email.toLowerCase());
+      const today = lisbonToday();
+      const parsed = parseCase(body, { staff, today });
+      if (parsed.error) return fail(400, parsed.error);
+      const caseId = deps.newId();
+      const at = now().toISOString();
+      const partition = leadId || UNLINKED;
+      await deps.putRecords(partition, [
+        { recordKey: `CASE#${caseId}`, caseId, ...parsed.record, followUpStatus: CASE_STATE.open, followUpAt: parsed.record.deadline, createdBy: user.email, createdAt: at, updatedAt: at },
+        { recordKey: `CASELOG#${caseId}#${at}`, caseId, text: `Caso aberto (${CASE_TYPES[parsed.record.type].label}); prazo ${parsed.record.deadline}.`, createdBy: user.email, createdAt: at },
+      ]);
+      return reply(201, { caseId, partition, deadline: parsed.record.deadline });
+    },
+
+    'GET /v1/leads/{id}/cases': async ({ id }) => {
+      const today = lisbonToday();
+      return reply(200, { cases: (await deps.queryRecords(id, 'CASE#')).map(item => toCase(item, today)) });
+    },
+
+    'GET /v1/leads/{id}/cases/{caseId}': async ({ id, event }) => {
+      const caseId = event.pathParameters.caseId;
+      const [records, log] = await Promise.all([deps.queryRecords(id, `CASE#${caseId}`), deps.queryRecords(id, `CASELOG#${caseId}#`)]);
+      if (!records.length) return fail(404, 'Caso não encontrado.');
+      return reply(200, { ...toCase(records[0], lisbonToday()), log: log.map(toCaseLog).sort((a, b) => b.at.localeCompare(a.at)) });
+    },
+
+    'POST /v1/leads/{id}/cases/{caseId}': async ({ id, user, body, event }) => {
+      const caseId = event.pathParameters.caseId;
+      const [record] = await deps.queryRecords(id, `CASE#${caseId}`);
+      if (!record) return fail(404, 'Caso não encontrado.');
+      const staff = (await deps.listTeam()).map(member => member.email.toLowerCase());
+      const current = toCase(record, lisbonToday());
+      const parsed = parseCaseUpdate(body, current, { staff });
+      if (parsed.error) return fail(400, parsed.error);
+      const at = now().toISOString();
+      const changes = [
+        parsed.set.caseStatus ? `estado: ${CASE_STATUS[parsed.set.caseStatus]}` : '',
+        parsed.set.owner !== undefined ? `responsável: ${parsed.set.owner || 'ninguém'}` : '',
+        parsed.set.deadline ? `prazo: ${parsed.set.deadline}` : '',
+        parsed.set.resolution !== undefined ? 'resolução atualizada' : '',
+      ].filter(Boolean);
+      if (Object.keys(parsed.set).length) await deps.setRecord(id, `CASE#${caseId}`, { ...parsed.set, updatedAt: at });
+      await deps.putRecords(id, [{ recordKey: `CASELOG#${caseId}#${at}`, caseId, text: [changes.length ? `Alterado — ${changes.join('; ')}.` : '', parsed.note].filter(Boolean).join(' '), createdBy: user.email, createdAt: at }]);
+      return reply(204);
+    },
+
+    'GET /v1/security': async () => {
+      const [members, report, openCases] = await Promise.all([deps.listTeam(), deps.policyReport().catch(() => null), deps.queryStatus(CASE_STATE.open)]);
+      const founders = members.filter(member => member.groups.includes('founders') && member.enabled);
+      const today = lisbonToday();
+      const overdueCases = openCases.map(item => toCase(item, today)).filter(item => item.deadlineState === 'overdue').length;
+      const findings = [
+        founders.length < 2 ? { level: 'warn', text: `Só ${founders.length} fundador(a) ativo(s): recomenda-se pelo menos 2 para não perder o acesso de gestão.` } : null,
+        ...members.filter(member => member.enabled && member.status !== 'CONFIRMED').map(member => ({ level: 'info', text: `${member.name} ainda não aceitou o convite (${member.status}).` })),
+        ...(report?.summary.fail ? [{ level: 'warn', text: `${report.summary.fail} política(s) em falta em Governança.` }] : []),
+        overdueCases ? { level: 'bad', text: `${overdueCases} caso(s) de reclamação ou litígio fora do prazo.` } : null,
+      ].filter(Boolean);
+      return reply(200, {
+        findings,
+        accounts: { total: members.length, active: members.filter(member => member.enabled).length, disabled: members.filter(member => !member.enabled).length, pendingInvites: members.filter(member => member.enabled && member.status !== 'CONFIRMED').length, founders: founders.length },
+        policies: report?.summary ?? null,
+        controls: [
+          { area: 'Identidade', control: 'Login Cognito com MFA obrigatório, sem registo público, sessões de 12 h no máximo', status: 'on' },
+          { area: 'Autorização', control: 'Cada rota exige token JWT; papéis verificados no servidor em cada pedido', status: 'on' },
+          { area: 'Rede', control: 'HTTPS obrigatório, CORS só do domínio da intranet, limite de 20 pedidos/s', status: 'on' },
+          { area: 'Navegador', control: 'Política de segurança de conteúdo estrita, sem scripts de terceiros, sem cookies de rastreio', status: 'on' },
+          { area: 'Dados', control: 'Tabelas e buckets cifrados, recuperação pontual e versões retidas; arquivo bruto expira em 90 dias', status: 'on' },
+          { area: 'Segredos', control: 'Credenciais de serviço no Secrets Manager; a intranet só vê metadados', status: 'on' },
+          { area: 'Registos', control: 'Logs sem texto de mensagens, contactos nem tokens; evidências versionadas', status: 'on' },
+          { area: 'Proteção web', control: 'AWS WAF à frente da intranet e da API', status: 'off' },
+          { area: 'Auditoria', control: 'AWS CloudTrail com alertas de acessos administrativos', status: 'off' },
+        ],
+      });
+    },
+
     'GET /v1/partners': async () => reply(200, { partners: deps.partners, reminders: REMINDERS, kinds: KINDS, channels: CHANNELS }, 'private, max-age=300'),
 
     'GET /v1/leads/{id}/activities': async ({ id }) => {
@@ -211,6 +312,7 @@ export function createApp(deps) {
 
   const writes = new Set(['POST /v1/leads/{id}/contacted', 'POST /v1/leads/{id}/assign', 'PUT /v1/leads/{id}/tags', 'POST /v1/leads/{id}/ask', 'POST /v1/leads/{id}/activities', 'POST /v1/leads/{id}/activities/{activityId}/cancel']);
   const admin = new Set(['POST /v1/team/invite', 'POST /v1/team/{username}/role', 'POST /v1/team/{username}/status']);
+  const caseRoutes = new Set(['GET /v1/cases', 'POST /v1/cases', 'GET /v1/leads/{id}/cases', 'GET /v1/leads/{id}/cases/{caseId}', 'POST /v1/leads/{id}/cases/{caseId}']);
 
   return async function handler(event) {
     const route = routes[event.routeKey];
@@ -220,6 +322,9 @@ export function createApp(deps) {
     if (!groups.some(group => STAFF.includes(group))) return fail(403, 'Sem acesso à intranet. Peça ao grupo para o adicionar.');
     if (writes.has(event.routeKey) && !allowed(groups, 'leads')) return fail(403, 'Esta ação é reservada a curadores e fundadores.');
     if (admin.has(event.routeKey) && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores gerem acessos.');
+    if (caseRoutes.has(event.routeKey) && !allowed(groups, 'cases')) return fail(403, 'Sem acesso a reclamações e litígios.');
+    if (event.routeKey === 'GET /v1/security' && !allowed(groups, 'security')) return fail(403, 'Só fundadores e governança veem a segurança.');
+    if (event.routeKey.includes('{caseId}') && !/^[A-Za-z0-9-]{8,64}$/.test(event.pathParameters?.caseId ?? '')) return fail(400, 'Caso inválido.');
     const user = { email: String(claims.email ?? ''), name: String(claims.name ?? claims.email ?? ''), username: String(claims['cognito:username'] ?? claims.sub ?? ''), groups };
     if (event.routeKey.includes('{username}') && !/^[\w.@+-]{1,128}$/.test(event.pathParameters?.username ?? '')) return fail(400, 'Utilizador inválido.');
     const id = event.pathParameters?.id;

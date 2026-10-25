@@ -13,6 +13,21 @@ const messages = [
 ];
 window.BLU_INTRANET_MOCK = async (method, path) => {
   await new Promise(resolve => setTimeout(resolve, 150));
+  const types = { feedback: { label: 'Feedback' }, complaint: { label: 'Reclamação' }, livro: { label: 'Livro de Reclamações' }, legal: { label: 'Litígio / contencioso' } };
+  const cases = [
+    { id: 'case-0001', partition: 'BLU-DEMO000000000001', leadId: 'BLU-DEMO000000000001', type: 'livro', title: 'Recolha atrasada 40 min', channel: 'livro', receivedOn: '2026-10-20', deadline: '2026-11-10', owner: 'fundadora@example.com', priority: 'high', caseStatus: 'in-progress', deadlineState: 'on-track', createdBy: 'fundadora@example.com', createdAt: hours(-120), resolution: '', reference: 'Folha 12345', description: 'O cliente esperou 40 minutos pelo tuk-tuk.' },
+    { id: 'case-0002', partition: 'CASES-UNLINKED', leadId: '', type: 'legal', title: 'Pedido de reembolso por via judicial', channel: 'lawyer', receivedOn: '2026-09-01', deadline: '2026-10-24', owner: '', priority: 'high', caseStatus: 'new', deadlineState: 'overdue', createdBy: 'fundadora@example.com', createdAt: hours(-500), resolution: '', reference: 'Proc. 123/26', description: '' },
+  ];
+  if (path.startsWith('/v1/cases') && method === 'GET') return { cases: path.includes('closed') ? [] : cases, types, statuses: { new: 'Novo', 'in-progress': 'Em curso', 'waiting-customer': 'À espera do cliente', resolved: 'Resolvido', closed: 'Fechado' }, channels: { email: 'Email', phone: 'Telefone', livro: 'Livro de Reclamações', lawyer: 'Advogado / tribunal', other: 'Outro' }, today: '2026-10-25' };
+  if (path === '/v1/cases') return { caseId: 'case-0003', partition: 'CASES-UNLINKED', deadline: '2026-11-13' };
+  if (path.includes('/cases/case-') && method === 'GET') return { ...cases.find(item => path.includes(item.id)), log: [{ at: hours(-100), by: 'fundadora@example.com', text: 'Caso aberto (Livro de Reclamações); prazo 2026-11-10.' }] };
+  if (path.includes('/cases/case-')) return null;
+  if (path.endsWith('/cases')) return { cases: cases.filter(item => path.includes(item.partition)) };
+  if (path === '/v1/security') return {
+    findings: [{ level: 'warn', text: 'Só 1 fundador(a) ativo(s): recomenda-se pelo menos 2 para não perder o acesso de gestão.' }, { level: 'bad', text: '1 caso(s) de reclamação ou litígio fora do prazo.' }],
+    accounts: { total: 2, active: 2, disabled: 0, pendingInvites: 1, founders: 1 }, policies: { pass: 10, fail: 2, manual: 3 },
+    controls: [{ area: 'Identidade', control: 'Login Cognito com MFA obrigatório', status: 'on' }, { area: 'Proteção web', control: 'AWS WAF à frente da intranet e da API', status: 'off' }],
+  };
   if (path === '/v1/partners') return {
     partners: [
       { id: 'tuk-alfama', name: 'Tuk-tuk Alfama (demo)', kind: 'tuk-tuk', area: 'Lisboa: Alfama, Baixa', seats: 6, whatsapp: '', demo: true },

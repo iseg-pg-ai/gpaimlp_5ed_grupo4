@@ -50,6 +50,13 @@ const isCurator = () => groupsNow().some(group => ['curators', 'founders'].inclu
 const isFounder = () => groupsNow().includes('founders');
 const ROLE_LABEL = { founders: 'Fundador(a)', curators: 'Curador(a)', governance: 'Governança', testers: 'Testes' };
 const CHANNEL = { whatsapp: 'WhatsApp', sms: 'SMS', email: 'Email' };
+// Espelha ROLES da API: só esconde o que o servidor recusaria de qualquer forma.
+const ROLE_PERMS = { founders: ['cases', 'security', 'team-admin'], curators: ['cases'], governance: ['cases', 'security'], testers: [] };
+const can = permission => groupsNow().some(group => ROLE_PERMS[group]?.includes(permission));
+const DEADLINE = { overdue: ['Fora do prazo', 'bad'], 'due-soon': ['Prazo próximo', 'warn'], 'on-track': ['No prazo', 'ok'], closed: ['Fechado', ''] };
+let casePrefill = {};
+let teamCache;
+const loadTeam = async () => (teamCache ??= (await api('GET', '/v1/team')).members);
 
 async function api(method, path, body) {
   if (config?.mock) return window.BLU_INTRANET_MOCK(method, path, body);
@@ -247,6 +254,141 @@ const views = {
     );
   },
 
+  async cases(view, state = { filter: 'open', selected: null }) {
+    const data = await api('GET', `/v1/cases?status=${state.filter}`);
+    const members = await loadTeam().catch(() => []);
+    const rerender = () => { view.replaceChildren(); views.cases(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
+    const detail = h('div', { class: 'panel' }, h('p', { class: 'muted' }, 'Escolha um caso para ver o histórico e atualizar.'));
+    const ownerSelect = (value = '') => h('select', {}, h('option', { value: '' }, 'Sem responsável'), members.map(member => h('option', { value: member.email, selected: member.email === value }, member.name)));
+    const status = h('p', { class: 'muted', role: 'status' }, state.flash ?? '');
+    delete state.flash;
+
+    const openCase = async item => {
+      state.selected = item;
+      for (const row of view.querySelectorAll('tr.clickable')) row.classList.toggle('selected', row.dataset.id === item.id);
+      detail.replaceChildren(h('p', { class: 'muted' }, 'A carregar…'));
+      try {
+        const full = await api('GET', `/v1/leads/${encodeURIComponent(item.partition)}/cases/${item.id}`);
+        const nextStatus = h('select', {}, Object.entries(data.statuses).map(([id, label]) => h('option', { value: id, selected: id === full.caseStatus }, label)));
+        const owner = ownerSelect(full.owner);
+        const deadline = h('input', { type: 'date', value: full.deadline });
+        const resolution = h('textarea', { rows: '3', maxlength: '2000', placeholder: 'Resolução (obrigatória para fechar)' });
+        resolution.value = full.resolution;
+        const note = h('textarea', { rows: '2', maxlength: '2000', placeholder: 'Nota para o histórico (opcional)' });
+        const form = h('form', { onsubmit: async event => {
+          event.preventDefault();
+          const body = { note: note.value };
+          if (nextStatus.value !== full.caseStatus) body.status = nextStatus.value;
+          if (owner.value !== full.owner) body.owner = owner.value;
+          if (deadline.value !== full.deadline) body.deadline = deadline.value;
+          if (resolution.value !== full.resolution) body.resolution = resolution.value;
+          try {
+            await api('POST', `/v1/leads/${encodeURIComponent(full.partition)}/cases/${full.id}`, body);
+            state.flash = 'Caso atualizado.';
+            rerender();
+          } catch (error) {
+            status.textContent = error.message;
+          }
+        } },
+        h('div', { class: 'form-grid' }, h('label', { class: 'field' }, h('span', {}, 'Estado'), nextStatus), h('label', { class: 'field' }, h('span', {}, 'Responsável'), owner), h('label', { class: 'field' }, h('span', {}, 'Prazo'), deadline)),
+        resolution, note,
+        h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary', disabled: !can('cases') }, 'Guardar')));
+        detail.replaceChildren(...[
+          h('h3', {}, full.title),
+          h('div', {}, pill(data.types[full.type]?.label ?? full.type), ' ', pill(...DEADLINE[full.deadlineState]), full.priority === 'high' ? [' ', pill('Prioridade alta', 'bad')] : null),
+          h('dl', { class: 'facts' },
+            h('dt', {}, 'Lead'), h('dd', {}, full.leadId || 'Sem lead associado'),
+            h('dt', {}, 'Canal'), h('dd', {}, data.channels[full.channel] ?? full.channel),
+            h('dt', {}, 'Recebido'), h('dd', {}, full.receivedOn),
+            h('dt', {}, 'Prazo'), h('dd', {}, full.deadline),
+            h('dt', {}, 'Referência'), h('dd', {}, full.reference || '—'),
+            h('dt', {}, 'Aberto por'), h('dd', {}, `${full.createdBy} (${when(full.createdAt)})`)),
+          full.description ? h('p', { class: 'message' }, full.description) : null,
+          form,
+          h('h3', { class: 'spaced' }, 'Histórico'),
+          h('ul', { class: 'reminders' }, full.log.map(entry => h('li', {}, h('div', {}, entry.text), h('div', { class: 'muted' }, `${entry.by} · ${when(entry.at)}`)))),
+        ].filter(Boolean));
+      } catch (error) {
+        detail.replaceChildren(h('p', { class: 'error' }, error.message));
+      }
+    };
+
+    const type = h('select', {}, Object.entries(data.types).map(([id, item]) => h('option', { value: id }, item.label)));
+    const title = h('input', { type: 'text', maxlength: '140', placeholder: 'Ex.: Atraso na recolha em Belém' });
+    const leadId = h('input', { type: 'text', maxlength: '80', placeholder: 'BLU-… (opcional)', value: casePrefill.leadId ?? '' });
+    const channel = h('select', {}, Object.entries(data.channels).map(([id, label]) => h('option', { value: id }, label)));
+    const receivedOn = h('input', { type: 'date', value: data.today });
+    const owner = ownerSelect(session.claims?.email);
+    const priority = h('select', {}, h('option', { value: 'normal' }, 'Normal'), h('option', { value: 'high' }, 'Alta'));
+    const deadline = h('input', { type: 'date' });
+    const reference = h('input', { type: 'text', maxlength: '80', placeholder: 'N.º da folha do Livro, processo, etc.' });
+    const description = h('textarea', { rows: '3', maxlength: '2000', placeholder: 'O que aconteceu, o que o cliente pede' });
+    casePrefill = {};
+    const create = h('form', { onsubmit: async event => {
+      event.preventDefault();
+      try {
+        const result = await api('POST', '/v1/cases', { type: type.value, title: title.value, leadId: leadId.value || undefined, channel: channel.value, receivedOn: receivedOn.value, owner: owner.value, priority: priority.value, deadline: deadline.value || undefined, reference: reference.value, description: description.value });
+        state.flash = `Caso aberto com prazo ${result.deadline}.`;
+        rerender();
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    } },
+    h('div', { class: 'form-grid' },
+      h('label', { class: 'field' }, h('span', {}, 'Tipo'), type), h('label', { class: 'field' }, h('span', {}, 'Título'), title), h('label', { class: 'field' }, h('span', {}, 'Lead'), leadId),
+      h('label', { class: 'field' }, h('span', {}, 'Canal'), channel), h('label', { class: 'field' }, h('span', {}, 'Recebido em'), receivedOn), h('label', { class: 'field' }, h('span', {}, 'Responsável'), owner),
+      h('label', { class: 'field' }, h('span', {}, 'Prioridade'), priority), h('label', { class: 'field' }, h('span', {}, 'Prazo (vazio = automático)'), deadline), h('label', { class: 'field' }, h('span', {}, 'Referência'), reference)),
+    description,
+    h('p', { class: 'muted' }, 'Prazos automáticos em dias úteis: feedback 5, reclamação 15, Livro de Reclamações 15 (prazo legal, não pode ser alargado). Litígios precisam de prazo indicado.'),
+    h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Abrir caso')));
+
+    const counts = key => data.cases.filter(item => item.deadlineState === key).length;
+    const filterButton = (key, label) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.filter === key), onclick: () => { state.filter = key; state.selected = null; rerender(); } }, label);
+    view.append(
+      h('h2', {}, 'Reclamações e litígios'),
+      h('p', { class: 'muted' }, 'Feedback, reclamações, Livro de Reclamações e contencioso num só registo, com responsável, prazo em dias úteis e histórico.'),
+      state.filter === 'open' ? h('div', { class: 'cards' },
+        h('div', { class: 'card' }, h('div', { class: 'value' }, data.cases.length), h('div', { class: 'label' }, 'Casos abertos')),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, counts('overdue')), h('div', { class: 'label' }, 'Fora do prazo')),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, counts('due-soon')), h('div', { class: 'label' }, 'Prazo nos próximos 3 dias úteis')),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, data.cases.filter(item => item.type === 'livro').length), h('div', { class: 'label' }, 'Livro de Reclamações')),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, data.cases.filter(item => item.type === 'legal').length), h('div', { class: 'label' }, 'Litígios'))) : null,
+      status,
+      h('details', { class: 'panel', open: Boolean(leadId.value) }, h('summary', {}, 'Abrir novo caso'), create),
+      h('div', { class: 'filters spaced' }, filterButton('open', 'Abertos'), filterButton('closed', 'Fechados')),
+      h('div', { class: 'split' },
+        h('div', { class: 'panel' }, data.cases.length ? h('table', {},
+          h('thead', {}, h('tr', {}, h('th', {}, 'Prazo'), h('th', {}, 'Caso'), h('th', {}, 'Responsável'), h('th', {}, 'Estado'))),
+          h('tbody', {}, data.cases.map(item => h('tr', { class: 'clickable', 'data-id': item.id, tabindex: '0', onclick: () => openCase(item), onkeydown: event => event.key === 'Enter' && openCase(item) },
+            h('td', {}, item.deadline, h('div', {}, pill(...DEADLINE[item.deadlineState]))),
+            h('td', {}, h('strong', {}, item.title), h('div', { class: 'muted' }, [data.types[item.type]?.label, item.leadId].filter(Boolean).join(' · '))),
+            h('td', {}, members.find(member => member.email === item.owner)?.name ?? (item.owner || h('span', { class: 'muted' }, '—'))),
+            h('td', {}, data.statuses[item.caseStatus] ?? item.caseStatus))))) : h('p', { class: 'muted' }, state.filter === 'open' ? 'Sem casos abertos.' : 'Sem casos fechados.')),
+        detail),
+    );
+  },
+
+  async security(view) {
+    const data = await api('GET', '/v1/security');
+    const tone = { bad: 'bad', warn: 'warn', info: '' };
+    view.append(
+      h('h2', {}, 'Segurança'),
+      h('p', { class: 'muted' }, 'Estado das proteções da intranet e do pipeline, e o que precisa de atenção.'),
+      h('div', { class: 'panel' }, h('h3', {}, 'Requer atenção'), data.findings.length
+        ? h('ul', { class: 'reminders' }, data.findings.map(item => h('li', {}, pill(item.level === 'bad' ? 'Urgente' : item.level === 'warn' ? 'Atenção' : 'Info', tone[item.level]), ' ', item.text)))
+        : h('p', { class: 'muted' }, 'Nada pendente.')),
+      h('div', { class: 'cards' },
+        h('div', { class: 'card' }, h('div', { class: 'value' }, data.accounts.active), h('div', { class: 'label' }, 'Contas ativas')),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, data.accounts.founders), h('div', { class: 'label' }, 'Fundadores ativos')),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, data.accounts.pendingInvites), h('div', { class: 'label' }, 'Convites por aceitar')),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, data.accounts.disabled), h('div', { class: 'label' }, 'Contas desativadas')),
+        data.policies ? h('div', { class: 'card' }, h('div', { class: 'value' }, `${data.policies.pass}/${data.policies.pass + data.policies.fail + data.policies.manual}`), h('div', { class: 'label' }, 'Políticas cumpridas')) : null),
+      h('div', { class: 'panel' }, h('h3', {}, 'Controlos'), h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'Área'), h('th', {}, 'Controlo'), h('th', {}, 'Estado'))),
+        h('tbody', {}, data.controls.map(item => h('tr', {}, h('td', {}, item.area), h('td', {}, item.control), h('td', {}, item.status === 'on' ? pill('Ativo', 'ok') : pill('Por ativar', 'warn'))))))),
+    );
+  },
+
   async operations(view) {
     const ops = await api('GET', '/v1/operations');
     const q = ops.queues;
@@ -343,6 +485,8 @@ async function showLead(panel, id, refreshList) {
     })),
     note,
     h('div', { class: 'actions' }, act('Guardar etiquetas e nota', () => api('PUT', `/v1/leads/${id}/tags`, { tags: [...chosen], note: note.value }))),
+    can('cases') ? h('h3', { class: 'spaced' }, 'Reclamações e litígios') : null,
+    can('cases') ? leadCases(id) : null,
     h('h3', { class: 'spaced' }, 'Agenda do viajante'),
     activityPanel(id, lead),
     h('h3', { class: 'spaced' }, 'Perguntar ao assistente interno'),
@@ -361,6 +505,15 @@ async function showLead(panel, id, refreshList) {
     } }, 'Perguntar')),
     answer,
   ].filter(Boolean));
+}
+
+function leadCases(id) {
+  const box = h('div', {}, h('p', { class: 'muted' }, 'A carregar…'));
+  api('GET', `/v1/leads/${id}/cases`).then(({ cases }) => box.replaceChildren(
+    ...(cases.length ? cases.map(item => h('div', { class: 'activity' }, h('strong', {}, item.title), h('div', { class: 'muted' }, `Prazo ${item.deadline}`), pill(...DEADLINE[item.deadlineState]))) : [h('p', { class: 'muted' }, 'Sem casos.')]),
+    h('button', { type: 'button', class: 'secondary', onclick: () => { casePrefill = { leadId: id }; show('cases'); } }, 'Abrir caso para este lead'),
+  )).catch(error => box.replaceChildren(h('p', { class: 'error' }, error.message)));
+  return box;
 }
 
 function activityPanel(id, lead) {
@@ -469,6 +622,7 @@ async function start() {
   }
   $('signin').hidden = true;
   $('view').hidden = false;
+  for (const button of $('tabs').querySelectorAll('[data-perm]')) button.hidden = !can(button.dataset.perm);
   $('tabs').hidden = false;
   $('who').hidden = false;
   const roles = groupsNow().map(group => ROLE_LABEL[group]).filter(Boolean).join(', ');

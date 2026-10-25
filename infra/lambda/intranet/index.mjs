@@ -255,6 +255,7 @@ const partners = JSON.parse(env.PARTNERS_JSON || '{"partners":[]}').partners;
 
 export const handler = createApp({
   partners,
+  policyReport: () => readJson(POLICY_REPORT_KEY),
   invite,
   setRole,
   setEnabled,

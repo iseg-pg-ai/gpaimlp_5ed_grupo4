@@ -260,3 +260,21 @@ Na AWS, só com autorização e dados de teste:
   do projeto. Uma regra bloqueante em falha impede o synth (e o deploy); o
   relatório é publicado em `controls/manifests/policy-report.json` e aparece em
   Governança. Mapeamento técnico; não substitui parecer jurídico.
+
+## Reclamações, litígios e segurança (2026-10-25)
+
+- **Reclamações e litígios:** registo único de feedback, reclamações, Livro de
+  Reclamações e contencioso. Cada caso tem tipo, canal, data de receção,
+  responsável (membro da equipa), prioridade, prazo, referência (folha do Livro,
+  processo) e histórico. Fica como registo `CASE#` no perfil do lead ou na
+  partição `CASES-UNLINKED`, listado por `FollowUpIndex` (`CASE_OPEN` e
+  `CASE_CLOSED`, prazo em `followUpAt`). Prazos automáticos em dias úteis, sem
+  fins de semana nem feriados nacionais: feedback 5, reclamação 15, Livro de
+  Reclamações 15 (prazo legal, não pode ser alargado; política
+  `complaints-deadline`). Litígios exigem prazo indicado. Fechar exige resolução.
+- **Acesso:** fundadores, curadores e governança veem e tratam casos; a equipa
+  de testes não os vê.
+- **Segurança:** só fundadores e governança. Mostra o que requer atenção (menos
+  de dois fundadores, convites por aceitar, políticas em falta, casos fora do
+  prazo), contas e os controlos ativos ou por ativar (AWS WAF e CloudTrail com
+  alertas ainda por ativar).

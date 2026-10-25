@@ -33,6 +33,10 @@ export const checks = {
     return result(!unlicensed.length && enforced, unlicensed.length ? `Sem licença: ${unlicensed.join(', ')}.` : `${partners.length} parceiro(s); o agendamento recusa parceiros reais sem licença.`);
   },
   complaintsBook: () => result(/livroreclamacoes\.pt/.test(read('frontend/blu-cloud-site/index.html')), 'Ligação ao Livro de Reclamações Eletrónico no rodapé.'),
+  complaintsDeadline: () => {
+    const cases = read('infra/lambda/intranet/cases.mjs');
+    return result(cases.includes('LIVRO_WORKING_DAYS = 15') && cases.includes("if (type === 'livro' && deadline > legalDeadline) deadline = legalDeadline;"), 'Prazo do Livro de Reclamações fixado em 15 dias úteis e sem alargamento.');
+  },
   noFinalPrices: () => result(/quote a final price/i.test(read('infra/lambda/chat/prompt.mjs')), 'O prompt do chat proíbe preços finais e disponibilidade.'),
   noTrackingCookies: () => {
     const sources = ['frontend/blu-cloud-site/index.html', 'frontend/blu-cloud-site/src/App.jsx', 'frontend/intranet/index.html', 'frontend/intranet/app.js'].map(read).join('\n');
