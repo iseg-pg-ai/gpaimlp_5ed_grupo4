@@ -1,0 +1,456 @@
+/* Cada capítulo ocupa o ecrã; o conteúdo excedente passa para o passo lateral. */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+#experience {
+  height: 100dvh;
+  min-height: 0;
+  padding: 0 clamp(12px, 2.5vw, 56px);
+}
+.show-header {
+  min-height: 48px;
+  padding-block: 6px;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.show-brand {
+  font-size: 2.4rem;
+}
+.show-header-actions {
+  gap: 6px;
+}
+.show-parts {
+  margin-top: 8px;
+  gap: 8px;
+}
+.show-parts > :is(button, a) {
+  min-height: 44px;
+  padding: 6px 10px;
+  gap: 3px 8px;
+}
+.show-parts small {
+  display: none;
+}
+.show-parts > :is(button, a) > span {
+  grid-row: auto;
+}
+.show-chapters {
+  margin-block: 6px;
+  gap: 8px;
+}
+.show-chapters button {
+  min-height: 44px;
+  padding-block: 6px;
+  font-size: 13px;
+}
+.show-stage {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-block: 8px;
+  gap: 8px;
+}
+.show-scene-heading {
+  margin: 0;
+  flex-shrink: 0;
+}
+.show-scene-heading .show-eyebrow {
+  margin: 0;
+}
+h1 {
+  font-size: clamp(24px, 3.2vw, 48px);
+  margin: 4px 0;
+}
+.show-intro {
+  font-size: 14px;
+  line-height: 1.45;
+  margin: 6px 0;
+  max-width: 1050px;
+}
+#scene-window {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+#scene {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: none;
+  gap: 20px;
+  align-items: start;
+}
+#scene::-webkit-scrollbar {
+  display: none;
+}
+#scene.is-paged {
+  display: block;
+  column-width: var(--frame-width);
+  column-gap: 24px;
+  column-fill: auto;
+  overflow-y: hidden;
+  touch-action: pan-x;
+}
+#scene.is-paged > * {
+  margin-bottom: 16px;
+}
+#scene.is-paged :is(h2, h3, .show-panel-title, .show-day-heading) {
+  break-after: avoid;
+}
+#scene.is-paged
+  :is(button, li, .show-message, .tech-boundary, .show-component-flow > div) {
+  break-inside: avoid;
+}
+#scene :is(.show-mission, .show-map) {
+  min-height: 0;
+  height: min(360px, var(--frame-height));
+  max-height: var(--frame-height);
+  break-inside: avoid;
+}
+#scene
+  :is(
+    .tech-detail,
+    .show-trust,
+    .show-project-context,
+    .show-conversation,
+    .show-document
+  ) {
+  padding: 16px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+#scene
+  :is(
+    .tech-detail,
+    .show-decision,
+    .show-assistant-actions,
+    .show-delivery-detail,
+    .tech-proof-list
+  )
+  h2 {
+  font-size: clamp(24px, 2.4vw, 36px);
+  margin-block: 8px;
+}
+#scene p {
+  font-size: 14px;
+  line-height: 1.55;
+}
+#scene .show-context {
+  font-size: 12px;
+  line-height: 1.5;
+  margin-block: 8px;
+}
+#scene .show-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+#scene
+  :is(
+    .tech-part-heading,
+    .show-project-context,
+    .show-trust,
+    .show-journey-modes
+  ) {
+  margin-block: 0 12px;
+  padding-bottom: 12px;
+}
+#scene .show-component-flow {
+  gap: 10px;
+}
+#scene .show-component-flow > div {
+  padding: 12px;
+}
+#scene .show-day {
+  margin-bottom: 12px;
+}
+#scene .show-day li {
+  padding-block: 10px;
+}
+#scene .show-finale {
+  padding-block: 8px;
+}
+#scene .show-final-symbol {
+  display: none;
+}
+#scene .show-project-conclusion {
+  margin-block: 12px;
+}
+#scene .show-final-summary {
+  margin-block: 8px;
+}
+#content-pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 36px;
+  flex-shrink: 0;
+}
+#content-pages button {
+  min-width: 44px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #14313a66;
+}
+#content-counter {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+#content-pages[data-active="false"] button {
+  visibility: hidden;
+}
+.show-footer {
+  padding-block: 6px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+.show-footer-note p,
+.show-keyboard,
+.show-bottom-note {
+  display: none;
+}
+.show-footer-note {
+  flex-shrink: 0;
+}
+.show-controls {
+  gap: 8px;
+}
+.show-primary {
+  min-height: 40px;
+  padding: 8px 12px;
+}
+.show-footer .show-primary {
+  max-width: 250px;
+}
+.show-footer .show-previous {
+  min-height: 40px;
+}
+@media (max-width: 900px) {
+  .show-brand small,
+  .show-demo {
+    display: none;
+  }
+  .show-parts strong {
+    font-size: 12px;
+  }
+  .show-chapters,
+  .show-chapters.show-technical-chapters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .show-chapters button {
+    font-size: 12px;
+    gap: 4px;
+    flex-direction: row;
+  }
+  .show-chapters button > span {
+    display: none;
+  }
+  .show-intro {
+    display: none;
+  }
+  .show-scene-heading h1 br {
+    display: none;
+  }
+  .show-scene-heading h1 {
+    font-size: clamp(22px, 3.5vw, 32px);
+  }
+  .show-scene-heading .show-eyebrow {
+    font-size: 9px;
+  }
+  .show-parts > :is(button, a) {
+    display: flex;
+    padding: 5px;
+  }
+  .show-parts > :is(button, a) > span {
+    display: none;
+  }
+  .show-footer-note {
+    display: none;
+  }
+  .show-footer .show-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .show-header-actions a {
+    font-size: 11px;
+  }
+}
+@media (max-height: 650px) {
+  .show-header {
+    min-height: 40px;
+  }
+  .show-brand {
+    font-size: 2rem;
+  }
+  .show-intro,
+  .show-brand small,
+  .show-demo {
+    display: none;
+  }
+  .show-scene-heading h1 {
+    font-size: 24px;
+  }
+  .show-scene-heading h1 br {
+    display: none;
+  }
+  .show-stage {
+    padding-block: 4px;
+    gap: 4px;
+  }
+  .show-parts,
+  .show-chapters {
+    margin-block: 3px;
+  }
+}
+.show-chapters {
+  padding-top: 0;
+}
+.show-scene-heading h1 {
+  font-size: clamp(24px, 2.6vw, 40px);
+}
+.show-scene-heading h1 br {
+  display: none;
+}
+.show-compact-navigation {
+  display: none;
+}
+.viewport-intro {
+  display: none;
+}
+#scene.is-paged .tech-node-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+#scene.is-paged .tech-node-grid button {
+  min-height: 64px;
+  padding: 10px;
+}
+#scene.is-paged .tech-wires {
+  overflow: hidden;
+}
+#scene.is-paged :is(.show-place-detail, .show-document) {
+  overflow: visible;
+}
+#scene.is-paged .show-document-days {
+  display: block;
+}
+#scene.is-paged .show-document-days > div {
+  margin-bottom: 12px;
+}
+#scene.is-paged .show-document-wrap {
+  display: block;
+}
+#scene.is-paged .show-document {
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+@media (max-width: 900px) {
+  .viewport-intro {
+    display: block;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+  #scene.is-paged .tech-node-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-height: 700px) {
+  .show-parts,
+  .show-chapters {
+    display: none;
+  }
+  .show-compact-navigation {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    min-height: 44px;
+    flex-shrink: 0;
+  }
+  .show-compact-navigation select {
+    flex: 1;
+    min-width: 0;
+    min-height: 40px;
+    padding: 6px;
+    color: inherit;
+    background: #102832;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 14px;
+  }
+  .show-intro {
+    display: none;
+  }
+  .viewport-intro {
+    display: block;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+  .show-scene-heading h1 {
+    font-size: 24px;
+  }
+  .show-scene-heading .show-eyebrow {
+    display: none;
+  }
+  .show-stage {
+    padding-block: 4px;
+    gap: 4px;
+  }
+}
+@media print {
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+  }
+  #experience {
+    height: auto;
+    overflow: visible;
+  }
+  #scene-window,
+  #scene {
+    height: auto;
+    overflow: visible;
+  }
+  #scene.is-paged {
+    columns: auto;
+    display: block;
+  }
+  #content-pages,
+  .show-compact-navigation {
+    display: none;
+  }
+}
+#scene.is-paged.is-short-frame .tech-node-grid {
+  display: block;
+}
+#scene.is-paged.is-short-frame .tech-node-grid > button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  margin-bottom: 8px;
+}
+#scene.is-paged.is-short-frame .tech-wires {
+  display: none;
+}
+#scene p {
+  orphans: 2;
+  widows: 2;
+}
+#scene {
+  --reading-size: clamp(14px, 1.05vw, 18px);
+}
+#scene :is(p, .tech-boundary, .show-choice-summary dd) {
+  font-size: var(--reading-size);
+}
+#scene .show-context {
+  font-size: 12px;
+}

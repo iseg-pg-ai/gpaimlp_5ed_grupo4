@@ -40,7 +40,8 @@ A navegação abre um separador separado e depende da sessão SageMaker do visit
 
 ## Controlos
 
-- Anterior/Seguinte ou setas esquerda/direita: mudar de capítulo.
+- Anterior/Seguinte: mudar de capítulo. As setas esquerda/direita percorrem os
+  passos laterais; nos extremos passam para o capítulo anterior ou seguinte.
 - Partes no topo: aceder aos fundamentos, à experiência ou ao portal real.
 - Capítulos: acesso direto às cenas da parte selecionada.
 - Pausar/Ativar animações: desligar ou ligar o movimento sem perder o estado.
@@ -110,3 +111,40 @@ A experiência tem pedido, território, proposta, colaboração, entrega e
 encerramento. Os capítulos repetidos de dados e arquitetura foram retirados,
 com o código e estilos específicos. A auditoria e as lacunas estão registadas
 no [guião](../docs/APRESENTACAO.md).
+
+## Conteúdo incorporado do PowerPoint — 21 de outubro de 2026
+
+A apresentação integra informação do ficheiro local
+`PG 5_edicao - GPAIDMP - Trabalho de Grupo - Apresentação - FDC - v2026-10-30.pptx`:
+contexto académico P6, parceria BLU, objetivo de apoio ao curador, percurso entre
+fontes, portal e entrega, abordagens Soft/Classic/Signature, equipa e visão futura.
+A data de 30 de outubro é apresentada como prevista, conforme o documento.
+
+No capítulo **A proposta**, as três abordagens têm seleção interativa, com Classic
+predefinido. A seleção explica a profundidade da experiência e acompanha o resumo
+da entrega; não recalcula o roteiro fictício nem inventa preços.
+
+As páginas de trabalho do PPT não comprovam funcionalidades. Google Forms foi
+substituído pelo briefing do portal; o Prompt TXT inclui JSON da versão e permanece
+independente do PDF DMC. O portal tem seis idiomas e o Observatório nativo seis áreas. HPO,
+Model Registry, Endpoint e Model Monitor não são apresentados como serviços
+operacionais, nem os resultados históricos do PPT como medições atuais.
+
+## Enquadramento adaptável ao ecrã
+
+Cada capítulo ocupa a largura e a altura da janela, sem deslocação vertical.
+Títulos, navegação e controlos de avanço mantêm-se visíveis. A composição normal
+é usada quando o conteúdo cabe; o conteúdo mais denso é dividido em passos
+laterais, mantendo o tamanho de leitura, o estado e as interações. Os controlos
+**Passo anterior/seguinte**, o indicador e o gesto horizontal permitem percorrê-lo.
+Ao selecionar um requisito, camada ou mecanismo, o respetivo detalhe é revelado.
+
+Em janelas baixas, o índice passa para **Escolher capítulo**. O enquadramento
+recalcula os passos ao redimensionar, abrir detalhes ou atualizar conteúdo.
+O texto introdutório continua disponível nos passos dos layouts compactos.
+O modo de impressão volta a apresentar o conteúdo em fluxo contínuo.
+
+Para verificar todos os capítulos e passos em sete tamanhos de janela, com a
+apresentação iniciada, executar `node presentation/test-viewport.mjs`. O teste
+verifica limites do ecrã, ausência de cortes, texto de leitura com pelo menos
+14 px, preservação de estado ao redimensionar e navegação por teclado.

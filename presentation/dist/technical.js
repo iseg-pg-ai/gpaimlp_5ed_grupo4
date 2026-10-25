@@ -65,7 +65,7 @@ window.BluTechnical = (() => {
     return `<span class="show-eyebrow">${item.code} / DO PEDIDO AO CONTRATO</span><h2>${item.title}</h2><p class="tech-quote">«${item.task}»</p><div class="tech-contract"><span>REQUISITO</span><p>${item.rule}</p><i aria-hidden="true">↓</i><span>COMPORTAMENTO OBSERVÁVEL</span><strong>${item.effect}</strong></div>${source(item.source)}`;
   }
   function requirementsScene() {
-    return `<div class="tech-requirement-list"><div class="tech-part-heading"><span>I</span><p>Construir o sistema<br><strong>começa por definir o contrato.</strong></p></div><div role="group" aria-label="Requisitos do sistema">${requirements.map((item, i) => `<button type="button" data-tech-requirement="${i}" aria-pressed="${state.requirement === i}"><span>0${i + 1}</span><strong>${item.label}</strong><small>${item.code}</small><i aria-hidden="true">→</i></button>`).join("")}</div><p class="show-context">Funcionalidade, qualidade e âmbito têm critérios distintos. Selecione um para explorar.</p></div><div id="tech-requirement-detail" class="tech-detail" aria-live="polite" aria-atomic="true">${requirementDetail()}</div>`;
+    return `<div class="tech-requirement-list"><div class="show-project-context"><span class="show-eyebrow">ISEG · 5.ª EDIÇÃO · PROJETO P6</span><h3>IA aplicada à curadoria de viagens.</h3><p>Em parceria com a BLU Costa Travel Curation: apoiar o curador na preparação de itinerários personalizados, preservando a sua revisão final.</p><p>Orientação: Prof. Miguel Ribeiro · Grupo 4</p></div><div class="tech-part-heading"><span>I</span><p>Construir o sistema<br><strong>começa por definir o contrato.</strong></p></div><div role="group" aria-label="Requisitos do sistema">${requirements.map((item, i) => `<button type="button" data-tech-requirement="${i}" aria-pressed="${state.requirement === i}"><span>0${i + 1}</span><strong>${item.label}</strong><small>${item.code}</small><i aria-hidden="true">→</i></button>`).join("")}</div><p class="show-context">Funcionalidade, qualidade e âmbito têm critérios distintos. Selecione um para explorar.</p></div><div id="tech-requirement-detail" class="tech-detail" aria-live="polite" aria-atomic="true">${requirementDetail()}</div>`;
   }
   const nodes = [
     {
@@ -111,7 +111,7 @@ window.BluTechnical = (() => {
     return `<span class="show-eyebrow">CAMADA 0${state.node + 1} / RESPONSABILIDADE</span><h2>${node.title}</h2><p>${node.text}</p><div class="tech-boundary">${mark}<span>${node.boundary}</span></div>${source(node.source)}`;
   }
   function architectureScene() {
-    return `<div class="tech-architecture"><svg class="tech-wires" aria-hidden="true"></svg><div class="tech-node-grid" role="group" aria-label="Camadas e tecnologias">${nodes.map((node, i) => `<button type="button" data-tech-node="${i}" aria-pressed="${state.node === i}" class="${i === 4 ? "tech-optional" : ""}"><span>0${i + 1}</span><strong>${node.title}</strong></button>`).join("")}</div><p class="show-context">Ligações de responsabilidade ilustradas. Não representam tráfego de rede ou serviços em execução.</p></div><div id="tech-node-detail" class="tech-detail" aria-live="polite" aria-atomic="true">${nodeDetail()}</div>`;
+    return `<div class="show-component-flow" aria-label="Três componentes da solução"><div><span>01 / FONTES</span><strong>Preparar conhecimento</strong><p>Excel, PDFs e catálogo revisto → warehouse validado.</p></div><div><span>02 / PORTAL</span><strong>Apoiar a decisão</strong><p>Briefing, curadoria, revisão e versões guardadas.</p></div><div><span>03 / ENTREGA</span><strong>Comunicar a proposta</strong><p>PDF DMC e Prompt TXT derivados da versão revista.</p></div></div><div class="tech-architecture"><svg class="tech-wires" aria-hidden="true"></svg><div class="tech-node-grid" role="group" aria-label="Camadas e tecnologias">${nodes.map((node, i) => `<button type="button" data-tech-node="${i}" aria-pressed="${state.node === i}" class="${i === 4 ? "tech-optional" : ""}"><span>0${i + 1}</span><strong>${node.title}</strong></button>`).join("")}</div><p class="show-context">Ligações de responsabilidade ilustradas. Não representam tráfego de rede ou serviços em execução.</p></div><div id="tech-node-detail" class="tech-detail" aria-live="polite" aria-atomic="true">${nodeDetail()}</div>`;
   }
   const escapeText = (value) =>
     String(value).replace(
@@ -251,7 +251,7 @@ window.BluTechnical = (() => {
         "Antes da tecnologia,<br><em>o contrato que temos de cumprir.</em>",
       eyebrow: "PARTE I / FUNDAMENTOS TÉCNICOS",
       intro:
-        "Quem usa o sistema? O que precisa de fazer? E o que tem de continuar verdadeiro em cada decisão?",
+        "O curador cruza perfil, datas, interesses e restrições com horários, encerramentos, tempos de visita, deslocações e custos conhecidos. O objetivo é uma proposta coerente, revista antes da entrega.",
       note: "Uma necessidade torna-se um comportamento verificável.",
       next: "Revelar a arquitetura",
       render: requirementsScene,

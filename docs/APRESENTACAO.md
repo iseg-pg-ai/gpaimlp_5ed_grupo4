@@ -386,11 +386,11 @@ uma decisão importante. Referências detalhadas ficam disponíveis no guião.
 | Porque separam catálogo e warehouse? | Revisão operacional e entrega publicada têm responsabilidades e ciclos próprios |
 | Porque usam Python e TypeScript? | Explicar os papéis que têm no código e a fronteira JSON, sem alegar um benchmark inexistente |
 | O que acontece se a publicação falhar? | Preparação temporária, validação e conservação ou recuperação da entrega anterior |
-| Onde está a IA? | Distinguir agente opcional, comandos determinísticos e tradução local |
-| Como avaliam respostas ou propostas? | Testes de contratos e uma avaliação com curadores a definir; distinguir qualidade técnica de comercial |
+| Onde está a IA? | Distinguir o planeador híbrido integrado, comandos determinísticos, Nova Pro e tradução local |
+| Como avaliam respostas ou propostas? | Testes de contratos e bateria real datada; a validação comercial com curadores continua separada |
 | Como evitam factos inventados? | Catálogo conhecido, fontes, validações, pendências e revisão humana; não prometer ausência total de erros |
 | Como resolvem alterações concorrentes? | Revisões e conflitos; isso não equivale a sincronização colaborativa completa |
-| O que falta para produção? | Identidade, papéis, persistência e operação cloud, acesso externo e avaliação no contexto de uso |
+| O que falta para produção? | Identidade central, papéis, deployment cloud, acesso externo e avaliação no contexto de uso |
 
 ## 7. Preparação e próximos passos
 
@@ -413,7 +413,7 @@ falta e onde integrar essa informação quando estiver disponível.
 | --- | --- | --- | --- |
 | Requisitos acordados com utilizadores | Existem campos, regras e fluxos implementados | Prioridades, critérios de aceitação e validação com curadores | Requisitos |
 | Escolhas de arquitetura e tecnologias | Dependências e responsabilidades são verificáveis | Alternativas consideradas, razões e compromissos da equipa | Tecnologias e notas do apresentador |
-| Modelo e região usados | Configuração por ambiente e caminho Bedrock | Modelo efetivo, parâmetros da sessão, permissões e motivo da seleção | Agente e ferramentas |
+| Modelo e região usados | Nova Pro pelo perfil EU do Bedrock, com IAM e limites configurados | Motivo da seleção e eventual comparação aprovada com alternativas | Agente e ferramentas |
 | Caracterização do dataset | Fontes, entidades e contratos estão identificados | Volumes com data, cobertura, origem/licença e limites da amostra | Ingestão e dados |
 | Avaliação da qualidade | Existem testes de contratos e interface | Casos avaliados, rubrica, respostas revistas e parecer de curadores | Validação |
 | Desempenho e custos | Há timeouts, limites e mecanismos de falha | Latência, número de chamadas, tokens/custos e condições de medição | Validação e dependências |
@@ -423,6 +423,24 @@ falta e onde integrar essa informação quando estiver disponível.
 Não preencher estas lacunas com benchmarks, ganhos percentuais, decisões de
 negócio ou funcionalidades presumidas. Quando houver informação nova, associar
 data, fonte e distinção entre proposta, implementação e resultado observado.
+
+## 9. Conteúdo do PowerPoint e adaptação ao ecrã
+
+O ficheiro `PG 5_edicao - GPAIDMP - Trabalho de Grupo - Apresentação - FDC -
+v2026-10-30.pptx` é conservado como fonte editorial. A apresentação interativa
+incorpora o contexto académico P6, a parceria BLU, o objetivo de apoio ao curador,
+as abordagens Soft/Classic/Signature, a equipa e a visão futura. Notas de trabalho,
+contagens históricas e serviços não comprovados no código não são apresentados
+como estado operacional.
+
+Cada capítulo ocupa a janela disponível. Quando o conteúdo não cabe, passa para
+passos laterais dentro do mesmo capítulo, preservando título, navegação, tamanho
+de leitura e estado interativo. Em janelas baixas, o índice é substituído por um
+seletor compacto. O teste `presentation/test-viewport.mjs` percorre os doze
+capítulos e respetivos passos em sete dimensões de ecrã.
+
+A exportação visual atualmente documentada é o Prompt TXT independente de
+fornecedor. Não existe integração Canva no portal nem na apresentação.
 
 ## Fontes internas
 
