@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { conversationMessages } from '../lambda/chat/conversation.mjs';
 import { lisbonDate, systemPrompt } from '../lambda/chat/prompt.mjs';
+import { cleanJourney, journeyStage, journeyTool, mergeJourney, missingDetails, toolInput } from '../lambda/chat/journey.mjs';
 
 test('the system prompt carries today and the date, scope and budget rules', () => {
   const prompt = systemPrompt('2026-10-25');
@@ -51,4 +52,36 @@ test('only the last ten history items are sent', () => {
   assert.ok(messages.length <= 11);
   assert.equal(messages[0].role, 'user');
   assert.equal(messages[0].content[0].text, 'turn 20');
+});
+
+test('the prompt keeps replies short, plain and free of false promises', () => {
+  const prompt = systemPrompt('2026-10-25');
+  assert.match(prompt, /plain text only/);
+  assert.match(prompt, /at most 70 words/);
+  assert.match(prompt, /Accept partial answers/);
+  assert.match(prompt, /Never say details were sent/);
+});
+
+test('journey metadata is allowlisted, trimmed and merged over earlier answers', () => {
+  const cleaned = cleanJourney({ destination: '  Lisbon   and Sintra ', budget: 'unknown', party: 'x'.repeat(300), role: 'admin' });
+  assert.deepEqual(Object.keys(cleaned), ['destination', 'party']);
+  assert.equal(cleaned.destination, 'Lisbon and Sintra');
+  assert.equal(cleaned.party.length, 120);
+  assert.deepEqual(mergeJourney({ destination: 'Porto', party: '2 adults' }, { destination: 'Douro Valley', budget: '' }), { destination: 'Douro Valley', party: '2 adults' });
+  assert.deepEqual(cleanJourney(['Lisbon']), {});
+});
+
+test('journey stage and missing details follow the qualifying fields', () => {
+  assert.equal(journeyStage({}), 'exploring');
+  assert.equal(journeyStage({ interests: 'food' }), 'qualifying');
+  const ready = { destination: 'Lisbon', timeframe: 'May 2027', party: '2 adults', budget: '6000 EUR' };
+  assert.equal(journeyStage(ready), 'ready-for-curator');
+  assert.deepEqual(missingDetails({ destination: 'Lisbon' }), ['timeframe', 'party', 'budget']);
+});
+
+test('the extraction tool input is read from the Converse tool call', () => {
+  assert.deepEqual(journeyTool.toolSpec.inputSchema.json.additionalProperties, false);
+  const result = { output: { message: { content: [{ text: 'ok' }, { toolUse: { name: 'record_journey', input: { destination: 'Sintra' } } }] } } };
+  assert.deepEqual(toolInput(result), { destination: 'Sintra' });
+  assert.equal(toolInput({}), undefined);
 });

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { messageItem } from '../lambda/event-processor/item.mjs';
+import { messageItem, profileUpdate } from '../lambda/event-processor/item.mjs';
 
 const record = (extra = {}) => ({
   conversationId: 'BLU-AC2EE15506850505', source: 'blu-cloud-site', schemaVersion: 2, analyticsConsent: false,
@@ -21,4 +21,20 @@ test('known leads, consent events and context are kept', () => {
   assert.deepEqual(item.eventType, { S: 'lead.consent.granted' });
   assert.equal(JSON.parse(item.contextJson.S).journeyReference, 'BLU-AC2EE15506850505');
   assert.deepEqual(item.journeyConsent, { BOOL: true });
+});
+
+test('profile updates count only real messages and keep the latest journey snapshot', () => {
+  const message = profileUpdate(record({ occurredAt: '2026-10-25T14:00:00.000Z' }));
+  assert.match(message.UpdateExpression, /ADD messageCount :one$/);
+  assert.equal(message.ExpressionAttributeValues[':due'].S, '2026-10-28T14:00:00.000Z');
+  const journey = profileUpdate(record({ occurredAt: '2026-10-25T14:00:00.000Z', eventType: 'journey.details.updated', context: { destination: 'Lisbon', stage: 'qualifying' } }));
+  assert.doesNotMatch(journey.UpdateExpression, /messageCount/);
+  assert.equal(JSON.parse(journey.ExpressionAttributeValues[':journey'].S).destination, 'Lisbon');
+  assert.equal(journey.ExpressionAttributeValues[':stage'].S, 'qualifying');
+  const consent = profileUpdate(record({ occurredAt: '2026-10-25T14:00:00.000Z', eventType: 'lead.consent.granted' }));
+  assert.match(consent.UpdateExpression, /consentAt=:at, journeyStage=:consented/);
+  for (const update of [message, journey, consent]) {
+    const used = new Set(update.UpdateExpression.match(/:[a-z]+/g));
+    assert.deepEqual([...used].sort(), Object.keys(update.ExpressionAttributeValues).sort());
+  }
 });

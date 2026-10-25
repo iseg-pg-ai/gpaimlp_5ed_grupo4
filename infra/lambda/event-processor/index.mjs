@@ -1,7 +1,7 @@
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
-import { messageItem } from './item.mjs';
+import { messageItem, profileUpdate } from './item.mjs';
 
 const db = new DynamoDBClient({});
 const s3 = new S3Client({});
@@ -14,17 +14,7 @@ export async function handler(event) {
       const record = JSON.parse(sqsRecord.body);
       const occurredAtId = `${record.occurredAt}#${record.id}`;
       await db.send(new PutItemCommand({ TableName: process.env.TABLE_NAME, Item: messageItem(record, occurredAtId) }));
-      const followUpAt = new Date(Date.parse(record.occurredAt) + 3 * 86400000).toISOString();
-      await db.send(new UpdateItemCommand({
-        TableName: process.env.INTELLIGENCE_TABLE_NAME,
-        Key: { conversationId: { S: record.conversationId }, recordKey: { S: 'PROFILE' } },
-        UpdateExpression: 'SET lastActivityAt=:at, followUpAt=:due, followUpStatus=:pending, lastChannel=:channel, lastEventType=:type, analyticsConsent=:analytics, synthetic=:synthetic, updatedAt=:at ADD messageCount :one',
-        ExpressionAttributeValues: {
-          ':at': { S: record.occurredAt }, ':due': { S: followUpAt }, ':pending': { S: 'PENDING' },
-          ':channel': { S: record.message.channel }, ':type': { S: record.eventType || 'conversation.message.recorded' },
-          ':analytics': { BOOL: record.analyticsConsent === true }, ':synthetic': { BOOL: record.synthetic === true }, ':one': { N: '1' },
-        },
-      }));
+      await db.send(new UpdateItemCommand({ TableName: process.env.INTELLIGENCE_TABLE_NAME, ...profileUpdate(record) }));
       if (record.eventType !== 'conversation.message.recorded' || record.context) {
         await db.send(new PutItemCommand({ TableName: process.env.INTELLIGENCE_TABLE_NAME, Item: {
           conversationId: { S: record.conversationId }, recordKey: { S: `EVENT#${occurredAtId}` },
