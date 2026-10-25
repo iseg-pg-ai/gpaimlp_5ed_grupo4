@@ -351,6 +351,9 @@ test('the intranet stack protects every route and grants no destructive data acc
     const apiPolicy = of('AWS::IAM::Policy').find(policy => JSON.stringify(policy.Properties.Roles).includes('IntranetApiHandler'));
     assert.ok(apiPolicy);
     assert.doesNotMatch(JSON.stringify(apiPolicy.Properties.PolicyDocument), /dynamodb:(Scan|DeleteItem|BatchWriteItem)|dynamodb:\*|s3:Delete|s3:Put/);
+    // Sem ciclo API → distribuição → cabeçalhos → API (o CloudFormation recusaria o deploy).
+    const [headers] = of('AWS::CloudFront::ResponseHeadersPolicy');
+    assert.doesNotMatch(JSON.stringify(headers.Properties), /IntranetApi/);
     const groups = of('AWS::Cognito::UserPoolGroup').map(group => group.Properties.GroupName).sort();
     assert.deepEqual(groups, ['curators', 'founders', 'governance', 'testers']);
   } finally {

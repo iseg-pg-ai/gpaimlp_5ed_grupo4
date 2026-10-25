@@ -450,10 +450,12 @@ class IntranetStack extends Stack {
         origin: origins.S3BucketOrigin.withOriginAccessControl(siteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         compress: true,
+        // A CSP não referencia o endereço exato da API: a API já depende do domínio
+        // da distribuição (CORS), e a referência inversa criaria um ciclo no CloudFormation.
         responseHeadersPolicy: new cloudfront.ResponseHeadersPolicy(this, 'IntranetHeaders', {
           securityHeadersBehavior: {
             contentSecurityPolicy: {
-              contentSecurityPolicy: `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ${api.apiEndpoint} https://${authHost}; form-action 'self' https://${authHost}; frame-ancestors 'none'; base-uri 'none'; object-src 'none'`,
+              contentSecurityPolicy: `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.execute-api.${region}.amazonaws.com https://${authHost}; form-action 'self' https://${authHost}; frame-ancestors 'none'; base-uri 'none'; object-src 'none'`,
               override: true,
             },
             contentTypeOptions: { override: true },
