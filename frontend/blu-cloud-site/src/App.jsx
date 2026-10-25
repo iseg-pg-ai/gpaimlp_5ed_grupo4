@@ -38,6 +38,9 @@ function acquisition() {
   return Object.fromEntries(Object.entries(fields).map(([key, param]) => [key, (params.get(param) || "").slice(0, 120)]).filter(([, value]) => value));
 }
 
+// Demo mode (?demo=1) is for presentations: a reset button, and every event marked synthetic.
+const demoMode = new URLSearchParams(window.location.search).get("demo") === "1";
+
 const contactShared = /[^\s@]+@[^\s@]+\.[^\s@]+|\+?\d[\d\s().-]{7,}\d/;
 const contactRequested = /\b(e-?mail|phone|contact detail|best way to reach)/i;
 
@@ -48,7 +51,7 @@ function whatsappLink(reference) {
 }
 
 export function App() {
-  const sessionId = useMemo(journeyReference, []);
+  const [sessionId, setSessionId] = useState(journeyReference);
   const source = useMemo(acquisition, []);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([opening]);
@@ -66,6 +69,8 @@ export function App() {
   const messagesRef = useRef(messages);
   const journeyRef = useRef(journey);
   const consentRef = useRef(false);
+  // Bumped on reset so a reply still in flight is not shown in the new conversation.
+  const generation = useRef(0);
 
   useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" }); }, [messages, busy, consentPrompt]);
 
@@ -82,7 +87,7 @@ export function App() {
     publishedIds.current.add(message.id);
     const actor = message.role === "user" ? "customer" : message.role === "system" ? "system" : "assistant";
     try {
-      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ journeyConsent: true, analyticsConsent: allowAnalytics, conversationId: sessionId, synthetic: false, source: "blu-cloud-site", ...(message.eventType ? { eventType: message.eventType, context: message.context } : {}), message: { actor, channel: "website", text: message.text } }) });
+      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ journeyConsent: true, analyticsConsent: allowAnalytics, conversationId: sessionId, synthetic: demoMode, source: "blu-cloud-site", ...(message.eventType ? { eventType: message.eventType, context: message.context } : {}), message: { actor, channel: "website", text: message.text } }) });
       if (!response.ok) publishedIds.current.delete(message.id);
     } catch (error) {
       publishedIds.current.delete(message.id);
@@ -132,6 +137,7 @@ export function App() {
     if (!queued.length) return;
     inFlight.current = true;
     setBusy(true);
+    const turn = generation.current;
     const firstQueued = all.indexOf(queued[0]);
     try {
       let reply;
@@ -148,6 +154,7 @@ export function App() {
         await new Promise(resolve => setTimeout(resolve, 420));
         reply = localReply(messagesRef.current);
       }
+      if (turn !== generation.current) return;
       queued.forEach(message => answeredIds.current.add(message.id));
       const assistantMessage = { id: crypto.randomUUID(), role: "assistant", text: reply };
       append(assistantMessage);
@@ -157,13 +164,31 @@ export function App() {
       await publish(assistantMessage);
       if (changed) await publishJourney(update);
     } catch {
+      if (turn !== generation.current) return;
       queued.forEach(message => answeredIds.current.add(message.id));
       append({ id: crypto.randomUUID(), role: "assistant", local: true, text: "I cannot continue the conversation just now. You can continue on WhatsApp below or reach the BLU team at hello@blucostatravel.com." });
     } finally {
-      inFlight.current = false;
-      setBusy(false);
+      if (turn === generation.current) { inFlight.current = false; setBusy(false); }
     }
-    void pump();
+    if (turn === generation.current) void pump();
+  }
+
+  function resetDemo() {
+    generation.current += 1;
+    inFlight.current = false;
+    publishedIds.current = new Set();
+    answeredIds.current = new Set();
+    consentRef.current = false;
+    messagesRef.current = [opening];
+    journeyRef.current = { details: {}, stage: "exploring", missing: [] };
+    setMessages(messagesRef.current);
+    setJourney(journeyRef.current);
+    setJourneyConsent(false);
+    setAnalyticsConsent(false);
+    setConsentPrompt("hidden");
+    setBusy(false);
+    setText("");
+    setSessionId(journeyReference());
   }
 
   function send(value) {
@@ -189,7 +214,7 @@ export function App() {
   return <>
     <button className="concierge-launcher" type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-controls="blu-concierge">Talk to BLU</button>
     <section id="blu-concierge" className={`concierge-panel ${open ? "is-open" : ""}`} aria-hidden={!open} aria-label="BLU travel concierge">
-      <header className="concierge-header"><div><span>BLU Costa</span><strong>Travel concierge</strong></div><button type="button" onClick={() => setOpen(false)} aria-label="Close concierge">Close</button></header>
+      <header className="concierge-header"><div><span>BLU Costa{demoMode ? " · demo" : ""}</span><strong>Travel concierge</strong></div>{demoMode && <button type="button" className="demo-reset" onClick={resetDemo} aria-label="Start a new demo conversation">New conversation</button>}<button type="button" onClick={() => setOpen(false)} aria-label="Close concierge">Close</button></header>
       <div className="concierge-messages" ref={listRef} aria-live="polite">
         {messages.map(message => <p key={message.id} className={`concierge-message ${message.role}`}>{message.text}</p>)}
         {busy && <p className="concierge-message assistant pending">BLU is writing…</p>}
