@@ -223,7 +223,7 @@ export class AgentAuditStore {
       .all();
     let rates: Record<string, { input: number; output: number }> = {};
     try {
-      const configured = JSON.parse(process.env.BLU_BEDROCK_RATES_JSON ?? "{}");
+      const configured = JSON.parse(process.env.BLU_AGENT_RATES_JSON ?? "{}");
       if (configured && typeof configured === "object" && !Array.isArray(configured))
         rates = configured;
     } catch {

@@ -105,6 +105,23 @@ segurança bloqueia a ativação, mesmo que a média global seja superior.
 Chamadas reais permanecem opt-in, com orçamento e modelo aprovados. Os testes de
 CI usam adaptadores simulados e não dependem de credenciais externas.
 
+### Avaliação real de 25 de outubro de 2026
+
+Uma execução explicitamente autorizada avaliou os 38 casos sintéticos com
+`eu.amazon.nova-pro-v1:0`. Passaram 25 casos (65,8%): 13/19 em português e 12/19
+em inglês. Foram contabilizados 182 959 tokens de entrada, 5 370 de saída e
+53 584 ms de latência acumulada reportada. Às tarifas aprovadas, o custo calculado
+foi 0,1881 USD.
+
+Falharam sobretudo os casos em que o modelo deveria terminar uma recusa ou pedido
+de esclarecimento através de `propose_actions`, além de refinamento de uma
+proposta, `regenerate_day` em inglês e preparação de confirmação pendente. Três
+falhas foram divergências semânticas com resposta estruturalmente válida; as
+restantes foram normalizadas como `AGENT_INVALID_RESPONSE`. O ensaio não escreveu
+no portal nem usou dados reais de clientes. Como o resultado ficou abaixo do
+limiar de 90%, o modelo não é considerado aprovado para ativação autónoma e uma
+nova execução paga exige correção local e nova autorização explícita.
+
 Em cloud, o backend recusa a chamada antes do fornecedor quando faltam o teto
 mensal ou o preço do modelo. A reserva usa uma estimativa conservadora do pedido e
 do limite máximo de saída; o consumo confirmado vem dos tokens registados na
@@ -160,6 +177,13 @@ reinício e às exportações baseadas nessa versão.
 A tabela `agent_runs` partilha a base materializada em `BLU_EXPORT_DIR`. Guarda
 hash do pedido, ações/resumo/avisos, estado, versão base/final, modelo, tokens e
 latência. Não guarda o texto integral do pedido nem o histórico da conversa.
+O Monitoring lê esta auditoria em modo só de leitura e apresenta propostas,
+aceitações, rejeições, pendentes, expirações, tokens e latência média. Os conflitos
+das últimas 24 horas vêm dos eventos técnicos do endpoint do assistente. O custo
+só é calculado quando `BLU_AGENT_RATES_JSON` contém tarifas válidas para todos
+os modelos registados; configuração ausente ou incompleta é mostrada como tal e
+nunca convertida num valor estimado. O agregado não lê prompts, planos, respostas
+ou dados de clientes.
 Os diagnósticos registam códigos de erro, sem prompts ou exceções do fornecedor.
 Não há troca automática de modelo: erros de acesso, disponibilidade, tempo ou
 contrato são explícitos e deixam a viagem intacta.
@@ -214,6 +238,13 @@ Configuração do planeador:
 | BLU_AGENT_RATES_JSON | Preços atuais por milhão de tokens de entrada e saída |
 | BLU_EXPORT_DIR | Armazenamento de versões e auditoria |
 | PORTAL_PUBLIC_ORIGIN | Origem pública do proxy privado quando aplicável |
+
+Em 25 de outubro de 2026 foram aprovados Amazon Bedrock, o perfil
+`eu.amazon.nova-pro-v1:0`, Standard On-Demand em EU (Ireland), 0,92 USD por
+milhão de tokens de entrada, 3,68 USD por milhão de tokens de saída e um teto de
+10 USD por mês. Mantêm-se 1800 tokens máximos de saída, timeout de 35 segundos e
+até duas chamadas por pedido. Os preços devem ser revistos na tabela oficial da
+AWS antes de cada deployment ou alteração de modelo.
 
 O serviço HTTP Python é apenas uma fachada opcional do mesmo planeador. A geração
 autónoma antiga em `/api/agent/curate` devolve `410`; não existe um segundo agente

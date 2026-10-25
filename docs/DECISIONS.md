@@ -525,3 +525,45 @@ comunicada pelo utilizador e revisão necessária. O modelo pode explicar impact
 ou preparar uma alternativa através das ações já autorizadas, mas não altera o
 catálogo, reservas, confirmações ou documentos e continua dependente de simulação
 e aceitação humana explícita.
+
+### As métricas do agente reutilizam a auditoria operacional — 2026-10-25
+
+O Monitoring agrega `agent_runs` diretamente da base de histórico em modo só de
+leitura. Apresenta propostas, respostas sem alteração, aceitações, rejeições,
+pendentes, expirações, tokens, latência média e modelos. Os conflitos são contados
+nos eventos técnicos do endpoint do assistente e têm uma janela explícita de 24
+horas. Não foi criada uma segunda fonte de telemetria.
+
+Custos só são apresentados quando `BLU_AGENT_RATES_JSON` contém tarifas de
+entrada e saída válidas para todos os modelos registados. Na ausência de preços,
+o painel mostra «Por configurar» em vez de inferir um custo. O agregado exclui
+instruções, planos, respostas, motivos livres e dados de clientes; edições
+posteriores permanecem uma contagem separada e não são atribuídas causalmente ao
+agente.
+
+### Nova Pro e um teto mensal de 10 USD são aprovados — 2026-10-25
+
+Foi aprovado Amazon Bedrock como fornecedor único e o perfil
+`eu.amazon.nova-pro-v1:0` em Standard On-Demand, sem fallback. Para EU (Ireland),
+as tarifas aprovadas em 25 de outubro de 2026 são 0,92 USD por milhão de tokens
+de entrada e 3,68 USD por milhão de tokens de saída. O teto operacional é 10 USD
+por mês, com 1800 tokens máximos de saída, timeout de 35 segundos e no máximo duas
+chamadas por pedido.
+
+O backend reserva conservadoramente o custo máximo antes da chamada quando a
+identidade cloud está ativa e falha sem alteração ao atingir o teto. IAM fornece
+a autenticação e não existem chaves estáticas. Tarifas e modelo têm de ser
+revalidados na fonte oficial da AWS antes de cada deployment ou mudança.
+
+### A primeira avaliação real de Nova Pro não atinge o limiar — 2026-10-25
+
+A bateria autorizada de 38 casos sintéticos obteve 25 aprovações (65,8%), com
+13/19 em português e 12/19 em inglês. Consumiu 182 959 tokens de entrada e 5 370
+de saída, correspondentes a aproximadamente 0,1881 USD às tarifas aprovadas. Não
+foram usados dados de clientes nem efetuadas escritas no portal.
+
+As falhas concentram-se no encerramento estruturado de recusas, ambiguidades,
+grounding e proteção, bem como em refinamento, confirmação pendente e um caso de
+regeneração. O resultado não satisfaz o mínimo de 90%; por isso, a avaliação
+permanece aberta e o agente não é promovido com base neste ensaio. Qualquer nova
+bateria real requer correções verificadas com mocks e nova autorização de custo.

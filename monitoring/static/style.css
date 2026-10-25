@@ -1313,6 +1313,37 @@ a.subtle {
   line-height: 1.5;
   color: var(--muted);
 }
+.agent-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--line);
+}
+.agent-metrics > div {
+  min-width: 0;
+  padding: 12px;
+  background: #0a1d22;
+}
+.agent-metrics span,
+.agent-metrics strong {
+  display: block;
+}
+.agent-metrics span {
+  color: var(--muted);
+  font: 0.54rem/1.35 monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.agent-metrics strong {
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+  color: var(--cream);
+  font: 0.78rem/1.2 monospace;
+}
 .ops-footer {
   display: flex;
   justify-content: space-between;
@@ -1460,6 +1491,9 @@ a.subtle {
 @media (max-width: 520px) {
   .ops-grid {
     grid-template-columns: 1fr;
+  }
+  .agent-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .ops-footer {
     flex-direction: column;

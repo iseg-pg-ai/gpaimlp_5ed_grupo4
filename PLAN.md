@@ -43,15 +43,18 @@ histórico Git e em [Decisões](docs/DECISIONS.md).
   chuva, encerramento, atraso, cancelamento, descrições antigas, duplicados,
   campos em falta e inconsistências linguísticas. Não alterar catálogo, reserva
   ou documento sem o fluxo de aprovação aplicável.
-- [ ] Consolidar métricas de propostas, decisões, conflitos, expirações, tokens,
+- [x] Consolidar métricas de propostas, decisões, conflitos, expirações, tokens,
   latência e custos configurados. Não inferir causalidade de edições posteriores
   nem ajustar automaticamente prompts ou ranking.
-- [ ] Aprovar fornecedor, modelo, teto mensal e preços atuais para utilização
+- [x] Aprovar fornecedor, modelo, teto mensal e preços atuais para utilização
   real. O código já impõe timeout, limite de saída, orçamento, ausência de
   fallback e falha sem alteração; Bedrock permanece a opção local atual.
 - [ ] Autorizar e executar uma avaliação com modelo real, incluindo custos,
   privacidade, os 38 casos sintéticos atuais e limiares de aceitação. Testes
-  automáticos usam modelos simulados por defeito.
+  automáticos usam modelos simulados por defeito. A execução autorizada de
+  2026-10-25 obteve 25/38 (65,8%) e não atingiu os 90% exigidos: corrigir o
+  encerramento estruturado de recusas/ambiguidades e os casos de refinamento e
+  confirmação pendente antes de pedir autorização para uma nova execução paga.
 
 A memória servidor e o ownership das propostas ficam ativos apenas quando o
 backend valida os JWT do ALB e Cognito. No SageMaker, onde não existe esse

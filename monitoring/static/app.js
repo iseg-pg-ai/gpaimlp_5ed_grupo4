@@ -310,6 +310,21 @@ function render(data) {
         ? `${ops.ai.tokens_reported.toLocaleString("pt-PT")} tokens reportados`
         : `${ops.ai.failures_24h} falhas · tokens ainda sem dados`,
     );
+    const agent = ops.agent_metrics;
+    if (agent) {
+      text("agent-proposals", agent.state === "up" ? agent.proposals.toLocaleString("pt-PT") : "—");
+      text("agent-decisions", agent.state === "up" ? `${agent.accepted} / ${agent.rejected}` : "—");
+      text("agent-conflicts", agent.conflicts_24h.toLocaleString("pt-PT"));
+      text("agent-expired", agent.state === "up" ? agent.expired.toLocaleString("pt-PT") : "—");
+      text(
+        "agent-tokens",
+        agent.state === "up"
+          ? `${agent.input_tokens.toLocaleString("pt-PT")} / ${agent.output_tokens.toLocaleString("pt-PT")}`
+          : "—",
+      );
+      text("agent-latency", agent.average_latency_ms === null ? "—" : `${agent.average_latency_ms} ms`);
+      text("agent-cost", agent.cost_state === "configured" ? `$${agent.cost_usd.toFixed(4)}` : "Por configurar");
+    }
     text(
       "backup-artifacts",
       ops.backup.artifacts === null
