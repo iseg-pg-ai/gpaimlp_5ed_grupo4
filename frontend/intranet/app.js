@@ -103,7 +103,7 @@ async function finishLogin() {
 
 const views = {
   async dashboard(view) {
-    const m = await api('GET', '/v1/metrics');
+    const [m, { alerts }] = await Promise.all([api('GET', '/v1/metrics'), api('GET', '/v1/alerts').catch(() => ({ alerts: [] }))]);
     const card = (value, label) => h('div', { class: 'card' }, h('div', { class: 'value' }, value ?? '—'), h('div', { class: 'label' }, label));
     const breakdown = (title, counts, labels = {}) => {
       const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
@@ -113,6 +113,11 @@ const views = {
     };
     view.append(
       h('h2', {}, 'Painel de seguimento'),
+      h('div', { class: 'panel alerts' }, h('h3', {}, 'Alertas'), alerts.length
+        ? h('ul', { class: 'reminders' }, alerts.map(alert => h('li', {},
+          pill(alert.level === 'bad' ? 'Urgente' : 'Atenção', alert.level === 'bad' ? 'bad' : 'warn'), ' ', alert.text, ' ',
+          h('button', { type: 'button', class: 'link', onclick: () => show(alert.tab) }, 'Abrir'))))
+        : h('p', { class: 'muted' }, 'Tudo em ordem no pipeline.')),
       h('p', { class: 'muted' }, `Conversas com consentimento. ${m.synthetic} registo(s) de demonstração excluídos dos indicadores.`),
       h('div', { class: 'cards' },
         card(m.open, 'Leads em aberto'), card(m.overdue, 'Em atraso'), card(m.unassigned, 'Sem responsável'),

@@ -13,6 +13,7 @@ const messages = [
 ];
 window.BLU_INTRANET_MOCK = async (method, path) => {
   await new Promise(resolve => setTimeout(resolve, 150));
+  if (path === '/v1/alerts') return { alerts: [{ level: 'bad', text: '2 evento(s) do chat falharam e estão na fila de erros: verificar o processamento.', tab: 'operations' }, { level: 'warn', text: 'Nenhum lead das redes sociais nos últimos 7 dias: verificar as ligações das campanhas e a ponte /connect.', tab: 'operations' }, { level: 'warn', text: '1 lembrete(s) preparado(s) para enviar à mão.', tab: 'agenda' }] };
   const types = { feedback: { label: 'Feedback' }, complaint: { label: 'Reclamação' }, livro: { label: 'Livro de Reclamações' }, legal: { label: 'Litígio / contencioso' } };
   const cases = [
     { id: 'case-0001', partition: 'BLU-DEMO000000000001', leadId: 'BLU-DEMO000000000001', type: 'livro', title: 'Recolha atrasada 40 min', channel: 'livro', receivedOn: '2026-10-20', deadline: '2026-11-10', owner: 'fundadora@example.com', priority: 'high', caseStatus: 'in-progress', deadlineState: 'on-track', createdBy: 'fundadora@example.com', createdAt: hours(-120), resolution: '', reference: 'Folha 12345', description: 'O cliente esperou 40 minutos pelo tuk-tuk.' },

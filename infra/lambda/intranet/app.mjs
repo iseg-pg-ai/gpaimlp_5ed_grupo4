@@ -236,6 +236,41 @@ export function createApp(deps) {
       return reply(204);
     },
 
+    // Alertas que ligam cada problema ao ecrã onde se resolve (campo tab).
+    'GET /v1/alerts': async ({ user }) => {
+      const at = now();
+      const settle = promise => promise.then(value => value, () => null);
+      const [ops, report, prepared, failed, missed, leads, openCases] = await Promise.all([
+        settle(deps.operations()),
+        settle(deps.policyReport()),
+        settle(deps.queryAgenda(NOTIFY.prepared, new Date(at - 864e5).toISOString(), at.toISOString())),
+        settle(deps.queryAgenda(NOTIFY.failed, new Date(at - 864e5).toISOString(), at.toISOString())),
+        settle(deps.queryAgenda(NOTIFY.missed, new Date(at - 864e5).toISOString(), at.toISOString())),
+        settle(listLeads('all')),
+        allowed(user.groups, 'cases') ? settle(deps.queryStatus(CASE_STATE.open)) : Promise.resolve(null),
+      ]);
+      const alerts = [];
+      const add = (level, text, tab) => alerts.push({ level, text, tab });
+      if (!ops) add('warn', 'Não foi possível ler o estado do pipeline.', 'operations');
+      if (ops?.queues.failedEvents.waiting) add('bad', `${ops.queues.failedEvents.waiting} evento(s) do chat falharam e estão na fila de erros: verificar o processamento.`, 'operations');
+      if (ops?.queues.conversationEvents.waiting > 50) add('warn', `${ops.queues.conversationEvents.waiting} eventos à espera de processamento.`, 'operations');
+      for (const worker of ops?.workers.filter(item => item.errors24h) ?? []) add('bad', `${worker.name.replace(/^BluCosta\w+-/, '')} teve ${worker.errors24h} erro(s) nas últimas 24 h.`, 'operations');
+      if (ops && (!ops.churnReview || at - new Date(ops.churnReview.evaluatedAt) > 36 * 36e5)) add('warn', 'A revisão diária de leads não corre há mais de 36 h.', 'operations');
+      const social = leads?.filter(lead => lead.journey.socialSource && at - new Date(lead.lastActivityAt) < 7 * 864e5).length ?? null;
+      if (social === 0) add('warn', 'Nenhum lead das redes sociais nos últimos 7 dias: verificar as ligações das campanhas e a ponte /connect.', 'operations');
+      if (prepared?.length) add('warn', `${prepared.length} lembrete(s) preparado(s) para enviar à mão.`, 'agenda');
+      if ((failed?.length ?? 0) + (missed?.length ?? 0)) add('bad', `${(failed?.length ?? 0) + (missed?.length ?? 0)} lembrete(s) falharam ou não foram enviados a tempo.`, 'agenda');
+      const today = lisbonToday();
+      const cases = openCases?.map(item => toCase(item, today)) ?? [];
+      if (cases.some(item => item.deadlineState === 'overdue')) add('bad', `${cases.filter(item => item.deadlineState === 'overdue').length} caso(s) de reclamação ou litígio fora do prazo.`, 'cases');
+      if (cases.some(item => item.deadlineState === 'due-soon')) add('warn', `${cases.filter(item => item.deadlineState === 'due-soon').length} caso(s) com prazo nos próximos 3 dias úteis.`, 'cases');
+      if (report?.summary.fail) add('warn', `${report.summary.fail} política(s) legal(is) em falta.`, 'governance');
+      const overdueLeads = leads?.filter(lead => !lead.synthetic && lead.status === 'QUEUED_FOR_REVIEW').length ?? 0;
+      if (overdueLeads) add('warn', `${overdueLeads} lead(s) em atraso à espera de contacto.`, 'leads');
+      const order = { bad: 0, warn: 1 };
+      return reply(200, { alerts: alerts.sort((a, b) => order[a.level] - order[b.level]), checkedAt: at.toISOString() }, 'private, max-age=60');
+    },
+
     'GET /v1/security': async () => {
       const [members, report, openCases] = await Promise.all([deps.listTeam(), deps.policyReport().catch(() => null), deps.queryStatus(CASE_STATE.open)]);
       const founders = members.filter(member => member.groups.includes('founders') && member.enabled);

@@ -318,6 +318,24 @@ test('cases are opened against a lead or unlinked, and testers cannot see them',
   assert.ok(stored.some(record => record.recordKey.startsWith('CASELOG#case-12345678#')));
 });
 
+test('alerts point each problem to the screen that fixes it', async () => {
+  const handler = createApp(fakeDeps({
+    operations: async () => ({ queues: { failedEvents: { waiting: 2 }, conversationEvents: { waiting: 0 }, curatorTasks: { waiting: 0 } }, workers: [{ name: 'BluCostaFrontend-BedrockChat', errors24h: 3 }], churnReview: null }),
+    policyReport: async () => ({ summary: { fail: 2 } }),
+    queryAgenda: async status => (status === 'NOTIFY_PREPARED' ? [{}] : []),
+  }).deps);
+  const { alerts } = JSON.parse((await handler(request('GET /v1/alerts', { groups: '[testers]' }))).body);
+  const tabs = Object.fromEntries(alerts.map(alert => [alert.text.split(' ')[1], alert.tab]));
+  assert.equal(alerts[0].level, 'bad');
+  assert.ok(alerts.some(alert => alert.tab === 'operations' && /fila de erros/.test(alert.text)));
+  assert.ok(alerts.some(alert => alert.tab === 'operations' && /BedrockChat/.test(alert.text)));
+  assert.ok(alerts.some(alert => alert.tab === 'operations' && /redes sociais/.test(alert.text)));
+  assert.ok(alerts.some(alert => alert.tab === 'agenda'));
+  assert.ok(alerts.some(alert => alert.tab === 'governance'));
+  assert.ok(!alerts.some(alert => alert.tab === 'cases'));
+  assert.ok(tabs);
+});
+
 test('security overview is limited to founders and governance', async () => {
   const handler = createApp(fakeDeps({ policyReport: async () => ({ summary: { pass: 10, fail: 2, manual: 3 } }) }).deps);
   assert.equal((await handler(request('GET /v1/security'))).statusCode, 403);
@@ -338,7 +356,7 @@ test('the intranet stack protects every route and grants no destructive data acc
     const template = JSON.parse(await readFile(path.join(outdir, 'BluCostaIntranet.template.json'), 'utf8'));
     const of = type => Object.values(template.Resources).filter(resource => resource.Type === type);
     const routes = of('AWS::ApiGatewayV2::Route');
-    assert.equal(routes.length, 26);
+    assert.equal(routes.length, 27);
     for (const route of routes) assert.equal(route.Properties.AuthorizationType, 'JWT', route.Properties.RouteKey);
     const [pool] = of('AWS::Cognito::UserPool');
     assert.equal(pool.Properties.MfaConfiguration, 'ON');
