@@ -274,6 +274,25 @@ externa depende ainda de um endpoint estável fora da máquina observada.
 
 ## Configuração e dependências
 
+### Percurso único e fornecedores do agente — 2026-10-25
+
+O portal, a fachada HTTP privada e a compatibilidade histórica usam agora o mesmo
+planeador transacional e o contrato de onze ações. A geração autónoma LangGraph
+foi descontinuada porque não tinha viagem, versão-base, pré-visualização nem
+aceitação explícita. O endpoint histórico correspondente responde `410`.
+
+Bedrock Converse e OpenAI Responses são adaptadores de uma interface comum.
+`BLU_AGENT_PROVIDER` escolhe exatamente um fornecedor e nunca existe fallback
+silencioso. O backend volta sempre a validar o `AgentPlan`; os fornecedores não
+recebem ferramentas de escrita. A configuração OpenAI requer modelo e chave no
+servidor e os testes usam um cliente simulado, sem chamadas pagas.
+
+O contexto explícito passou a incluir locais, horas e números de voo de chegada e
+partida, além da ocasião especial. Nome, email, notas livres, contactos e
+referências de reserva continuam excluídos. A memória por utilizador aguarda uma
+identidade autenticada no backend; aceitar um `ownerId` enviado pelo browser
+violaria o contrato de autorização já aprovado.
+
 ### Base cloud e multiutilizador aprovada — 2026-10-25
 
 Foi aprovada como arquitetura-alvo inicial uma implantação em `eu-west-1`, com
@@ -301,6 +320,43 @@ de produção.
 
 A aprovação autoriza preparar código, contratos e infraestrutura como código. Não
 autoriza por si só criar recursos, publicar endpoints ou assumir custos AWS.
+
+### Retenção é central, executável e conserva versões — 2026-10-25
+
+Os prazos ficam em `config/retention_policy.json`, validados antes da execução.
+Rascunhos inativos expiram após 90 dias, auditoria do agente após 365 dias e
+metadados de partilhas 30 dias depois do fim do acesso. Conversas futuras terão 30
+dias. Preservação legal impede qualquer destas eliminações.
+
+A limpeza não elimina versões autoritativas nem PDFs; estes continuam dependentes
+do Lixo, das confirmações e do ciclo de vida da versão. Os testes executam apenas
+em diretórios temporários e confirmam que uma limpeza não quebra versões, exports
+ou registos sob preservação.
+
+### Write-ahead fecha a janela de processo SQLite → S3 — 2026-10-25
+
+Catálogo e versões guardam a operação validada antes do commit SQLite. Só removem
+esse write-ahead depois de criar a outbox S3. Se o processo parar entre estes dois
+passos, a repetição reconhece a chave idempotente já confirmada em SQL, cria a
+outbox e não duplica a revisão.
+
+O comportamento foi validado bloqueando deliberadamente a criação da outbox após
+o commit. Catálogo e versões recuperaram no reinício, conservaram uma única revisão
+e voltaram a produzir o evento S3. A perda da máquina inteira continua limitada
+pelo RPO aprovado até `BLU_OPERATIONAL_DIR` residir no EFS da arquitetura-alvo.
+
+### Infraestrutura do Curation Studio tem stack isolada — 2026-10-25
+
+O Curation Studio não reutiliza a stack do site público e WhatsApp existente em
+`infra/aws-split-app.mjs`. A sua entrada independente é
+`infra/curation-workspace.mjs`, para evitar ownership, dados e ciclos de deployment
+misturados.
+
+A síntese local confirmou uma única tarefa Fargate com cinco containers, EFS
+cifrado e retido, ALB apenas em HTTPS, Cognito com os quatro papéis, Secrets Manager
+e ausência de NAT Gateway. A stack exige uma imagem ECR identificada, certificado,
+domínio, buckets e SNS como parâmetros. Não foi executado deployment nem criado
+qualquer recurso.
 
 ### A configuração Studio é individual — 2026-10-19
 

@@ -38,12 +38,18 @@ if ! "$PYTHON" -c 'import streamlit, plotly' >/dev/null 2>&1; then
 fi
 
 # Endereço público configurado; a porta local continua independente do proxy.
-DASHBOARD_ORIGIN="$("$PYTHON" -B scripts/studio_urls.py --origin)"
-DASHBOARD_URL="$("$PYTHON" -B scripts/studio_urls.py --port "$PORT")"
+DASHBOARD_URL="${BLU_DASHBOARD_PUBLIC_URL:-}"
+if [[ -z "$DASHBOARD_URL" ]]; then
+    DASHBOARD_ORIGIN="$("$PYTHON" -B scripts/studio_urls.py --origin)"
+    DASHBOARD_URL="$("$PYTHON" -B scripts/studio_urls.py --port "$PORT")"
+else
+    DASHBOARD_ORIGIN="${DASHBOARD_URL%/}"
+fi
 printf 'Dashboard analítico: %s\n' "$DASHBOARD_URL"
 
 # Start Streamlit in the foreground so the operator sees logs and can stop it with Ctrl+C.
 exec "$PYTHON" -m streamlit run "$APPLICATION" \
     --server.headless true \
+    --server.address "${BLU_BIND_HOST:-127.0.0.1}" \
     --server.port "$PORT" \
     --browser.serverAddress "${DASHBOARD_ORIGIN#https://}"

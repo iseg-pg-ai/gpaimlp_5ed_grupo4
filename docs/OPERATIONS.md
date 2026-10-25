@@ -244,6 +244,13 @@ no mínimo, papéis, rascunhos sincronizados, objetivos, retenção e aceitaçã
 única tarefa escritora. Depois disso podem ser produzidos manifests e estimativa
 de custos sem alterar a operação atual.
 
+A stack independente em [infra/CURATION_WORKSPACE.md](../infra/CURATION_WORKSPACE.md)
+materializa esta base como CloudFormation: uma tarefa escritora, cinco containers,
+EFS retido e cifrado, Cognito, ALB HTTPS, Secrets Manager e permissões limitadas
+aos buckets e SNS existentes. A síntese e os testes locais não criam recursos.
+Faltam a imagem unificada, domínio, certificado, DNS, responsáveis e estimativa
+final antes de qualquer deployment.
+
 ## Deployment ainda por decidir
 
 Antes de escolher plataforma, definir:

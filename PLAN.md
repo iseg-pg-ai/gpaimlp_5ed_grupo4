@@ -10,25 +10,14 @@ As decisões de base estão aprovadas e registadas em
 [Decisões](docs/DECISIONS.md). Antes do agente e do deployment falta:
 
 - [ ] Nomear os responsáveis operacionais e de segurança de staging e produção.
-- [ ] Transformar as retenções aprovadas em regras executáveis e testar eliminação
-  sem quebrar versões, auditoria ou pedidos legais de preservação.
-- [ ] Eliminar a janela entre o commit SQLite e a confirmação S3 ou aprovar um RPO
-  que aceite possível perda da outbox se a máquina desaparecer nesse intervalo.
-- [ ] Preparar a infraestrutura como código e uma estimativa de custos, sem criar
-  recursos até existir autorização explícita de deployment.
+- [ ] Introduzir domínio, certificado, imagem e volume de utilização reais, gerar
+  a estimativa no AWS Pricing Calculator e aprová-la antes do deployment.
 
 A comparação atual e os limites conhecidos estão em
 [Operações](docs/OPERATIONS.md).
 
 ## Etapa 2 — Agente de IA integrado
 
-- [ ] Definir o âmbito e os critérios de aceitação da próxima iteração do agente.
-- [ ] Consolidar `planner.py` e `curator_agent.py` num único percurso de execução,
-  mantendo uma só autoridade para contexto, fornecedor e ferramentas.
-- [ ] Criar uma interface de fornecedor que preserve o contrato transacional atual
-  e permita escolher Bedrock ou OpenAI sem alterar as regras de domínio.
-- [ ] Acrescentar ao contexto autorizado os campos de chegada, partida, voos e
-  ocasião especial; manter contactos e notas internas excluídos por defeito.
 - [ ] Guardar contexto de conversa por utilizador, viagem e versão no servidor,
   com resumo, retenção e eliminação definidos, em vez de depender apenas das
   últimas oito mensagens do navegador.
@@ -42,6 +31,11 @@ A comparação atual e os limites conhecidos estão em
 - [ ] Autorizar e executar uma avaliação com modelo real, incluindo custos,
   privacidade, casos de teste e limiares de aceitação. Testes automáticos usam
   modelos simulados por defeito.
+
+A memória por utilizador e a matriz de autorização dependem de uma identidade
+autenticada no backend. O contrato de papéis já existe, mas o portal SageMaker
+atual ainda não fornece um principal fiável; não se deve usar um identificador
+enviado pelo frontend como autoridade provisória.
 
 ## Etapa 3 — Deployment e operação cloud
 

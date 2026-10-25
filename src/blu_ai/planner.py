@@ -6,13 +6,16 @@ import os
 from pathlib import Path
 import re
 import sys
-import time
 
 import boto3
 from botocore.config import Config
 from botocore.exceptions import (
     ClientError, ConnectTimeoutError, EndpointConnectionError,
     NoCredentialsError, PartialCredentialsError, ReadTimeoutError,
+)
+from blu_ai.providers import (
+    ActionPlanProvider, BedrockProvider, OpenAIProvider,
+    ProviderConfigurationError, ProviderRequestError, ProviderResponseError,
 )
 
 SCHEMA = json.loads((Path(__file__).parent / "schemas/action-plan.json").read_text(encoding="utf-8"))
@@ -168,53 +171,47 @@ def _output_limit():
     return value
 
 
-def _metric(value):
-    return value if type(value) is int and value >= 0 else 0
+def _provider(client=None, provider_name=None):
+    """Escolher um único fornecedor explícito, sem fallback silencioso."""
+    name = (provider_name or os.getenv("BLU_AGENT_PROVIDER", "bedrock")).strip().lower()
+    if name == "bedrock":
+        region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "eu-west-1"
+        model = os.getenv("BEDROCK_MODEL_ID", "eu.amazon.nova-pro-v1:0")
+        if client is None:
+            client = boto3.client(
+                "bedrock-runtime", region_name=region,
+                config=Config(connect_timeout=3, read_timeout=35, retries={"total_max_attempts": 1}),
+            )
+        return BedrockProvider(client, model)
+    if name == "openai":
+        return OpenAIProvider(client=client)
+    raise AgentConfigurationError("Fornecedor de IA inválido.")
 
 
-def plan_actions(payload, client=None):
-    """Uma chamada limitada, com IAM normal e sem fallback de fornecedor."""
+def plan_actions(payload, client=None, provider: ActionPlanProvider | None = None,
+                 provider_name=None):
+    """Uma chamada limitada ao fornecedor selecionado e sem fallback."""
     serialized = _validate_payload(payload)
-    region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "eu-west-1"
-    model = os.getenv("BEDROCK_MODEL_ID", "eu.amazon.nova-pro-v1:0")
     max_tokens = _output_limit()
-    if not model.strip():
-        raise AgentConfigurationError("Modelo não configurado.")
-    if client is None:
-        client = boto3.client(
-            "bedrock-runtime", region_name=region,
-            config=Config(connect_timeout=3, read_timeout=35, retries={"total_max_attempts": 1}),
-        )
-    started = time.monotonic()
-    response = client.converse(
-        modelId=model,
-        system=[{"text": SYSTEM + "\n" + LANGUAGE_INSTRUCTIONS[_language(payload["context"])]}],
-        messages=[{"role": "user", "content": [{"text": serialized}]}],
-        inferenceConfig={"temperature": 0, "maxTokens": max_tokens},
-        toolConfig={
-            "tools": [{"toolSpec": {
-                "name": "propose_actions",
-                "description": "Propor ações para revisão humana; nunca executa alterações.",
-                "inputSchema": {"json": tool_schema(payload["context"])},
-            }}],
-            "toolChoice": {"tool": {"name": "propose_actions"}},
-        },
-    )
     try:
-        blocks = response["output"]["message"]["content"]
-        calls = [block["toolUse"] for block in blocks if isinstance(block, dict) and "toolUse" in block]
-        if response.get("stopReason") != "tool_use" or len(calls) != 1 or calls[0].get("name") != "propose_actions":
-            raise AgentResponseError("Proposta estruturada incompleta.")
-        plan = validate_plan(calls[0]["input"])
-    except (ValueError, KeyError, TypeError, AttributeError) as error:
+        selected = provider or _provider(client, provider_name)
+        result = selected.propose(
+            serialized,
+            SYSTEM + "\n" + LANGUAGE_INSTRUCTIONS[_language(payload["context"])],
+            tool_schema(payload["context"]),
+            max_tokens,
+        )
+        plan = validate_plan(result.plan)
+    except ProviderConfigurationError as error:
+        raise AgentConfigurationError("Fornecedor não configurado.") from error
+    except AgentConfigurationError:
+        raise
+    except (ProviderResponseError, ValueError, KeyError, TypeError, AttributeError) as error:
         raise AgentResponseError("Resposta fora do contrato.") from error
-    usage = response.get("usage", {})
-    if not isinstance(usage, dict):
-        usage = {}
     return {
-        "plan": plan, "provider": "bedrock", "modelId": model,
-        "latencyMs": round((time.monotonic() - started) * 1000),
-        "inputTokens": _metric(usage.get("inputTokens")), "outputTokens": _metric(usage.get("outputTokens")),
+        "plan": plan, "provider": result.provider, "modelId": result.model_id,
+        "latencyMs": result.latency_ms,
+        "inputTokens": result.input_tokens, "outputTokens": result.output_tokens,
     }
 
 
@@ -228,6 +225,8 @@ def failure_code(error):
         return "AGENT_INVALID_REQUEST"
     if isinstance(error, AgentConfigurationError):
         return "AGENT_CONFIGURATION_ERROR"
+    if isinstance(error, ProviderRequestError):
+        return error.code
     if isinstance(error, (NoCredentialsError, PartialCredentialsError)):
         return "AGENT_ACCESS_DENIED"
     if isinstance(error, (ConnectTimeoutError, ReadTimeoutError)):

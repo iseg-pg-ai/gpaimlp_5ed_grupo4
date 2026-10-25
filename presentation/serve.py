@@ -6,6 +6,7 @@ from io import BytesIO
 import re
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import os
 import sys
 from urllib.parse import urlsplit
 
@@ -24,7 +25,9 @@ def main():
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("A porta deve estar entre 1 e 65535.")
-    prefix = f"/codeeditor/default/ports/{args.port}"
+    prefix = os.environ.get(
+        "BLU_PRESENTATION_BASE_PATH", f"/codeeditor/default/ports/{args.port}"
+    ).rstrip("/")
 
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *values, **kwargs):
@@ -41,10 +44,12 @@ def main():
                     f'<base href="{prefix}/">',
                     (DIST / "index.html").read_text(),
                 )
-                try:
-                    portal_url = dashboard_url(3001)
-                except ValueError:
-                    portal_url = ""
+                portal_url = os.environ.get("BLU_PORTAL_PUBLIC_URL", "")
+                if not portal_url:
+                    try:
+                        portal_url = dashboard_url(3001)
+                    except ValueError:
+                        portal_url = ""
                 document = re.sub(
                     r'(<meta\s+name="blu-portal-url"\s+content=")[^"]*("\s*/?>)',
                     rf"\g<1>{portal_url}\g<2>",

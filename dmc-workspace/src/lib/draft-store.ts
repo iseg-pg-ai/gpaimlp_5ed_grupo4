@@ -4,6 +4,7 @@ import path from "node:path";
 import { checkTripId } from "./version-store.ts";
 import { canonicalSnapshot, validateSnapshot } from "./snapshot-validation.ts";
 import type { Snapshot } from "./itinerary-pdf.ts";
+import { loadRetentionPolicy } from "./retention-policy.ts";
 
 const DAY = 86_400_000;
 const OWNER = /^[A-Za-z0-9:_-]{1,128}$/;
@@ -49,7 +50,7 @@ export class DraftStore {
   constructor(
     root = process.env.BLU_OPERATIONAL_DIR ??
       path.resolve(process.cwd(), "../exports/portal-persistence"),
-    retentionDays = 90,
+    retentionDays = loadRetentionPolicy().draft_inactivity_days,
     clock = () => new Date(),
   ) {
     if (!Number.isSafeInteger(retentionDays) || retentionDays < 1 || retentionDays > 365)

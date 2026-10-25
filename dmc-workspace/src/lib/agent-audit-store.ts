@@ -31,6 +31,11 @@ export class AgentAuditStore {
       previewHash TEXT NOT NULL, metadata TEXT NOT NULL, createdAt TEXT NOT NULL,
       completedAt TEXT, executedVersion INTEGER,
       FOREIGN KEY(tripId,baseVersion) REFERENCES versions(tripId,version) ON DELETE CASCADE)`);
+    const columns = store.db.prepare("PRAGMA table_info(agent_runs)").all() as unknown as Array<{
+      name: string;
+    }>;
+    if (!columns.some((column) => column.name === "legalHold"))
+      store.db.exec("ALTER TABLE agent_runs ADD COLUMN legalHold INTEGER NOT NULL DEFAULT 0");
   }
   base(tripId: string, version: number): Snapshot {
     if (this.store.list(tripId)[0]?.version !== version)
@@ -209,6 +214,14 @@ export class AgentAuditStore {
           )
           .get()?.n ?? 0,
     };
+  }
+  cleanupExpired(cutoff: Date): number {
+    if (Number.isNaN(cutoff.getTime())) throw new Error("Limite de retenção inválido.");
+    return Number(
+      this.store.db
+        .prepare("DELETE FROM agent_runs WHERE createdAt<=? AND legalHold=0")
+        .run(cutoff.toISOString()).changes,
+    );
   }
   decide(
     id: string,

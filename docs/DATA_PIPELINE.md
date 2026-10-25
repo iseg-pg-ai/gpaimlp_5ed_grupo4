@@ -139,11 +139,14 @@ administra Versioning, Default Encryption, Block Public Access ou lifecycle. Um
 permissões administrativas ao ETL. As exceções e o procedimento manual estão em
 [Retenção dos buckets S3](S3_RETENTION.md#exceções-e-validações-manuais).
 
-Alterações confirmadas no catálogo e nas versões são registadas em
-`BLU_OPERATIONAL_DIR/data-s3-outbox/`. O evento contém a operação completa
-necessária à recuperação, com identificador idempotente. O ciclo do Monitoring e
-o arranque enviam-no para `operational-changes/`; o ficheiro local só é removido
-depois de `PutObject` e `HeadObject` confirmarem tamanho, AES-256 e SHA-256.
+Antes de uma alteração no catálogo ou nas versões chegar ao commit SQLite, é
+criado um write-ahead validado em `BLU_OPERATIONAL_DIR/pending-*`. Depois do
+commit, esse registo origina o evento em `data-s3-outbox/` e só então é removido.
+Assim, uma interrupção entre o commit e a outbox é retomada sem duplicar a revisão.
+O evento contém a operação completa necessária à recuperação, com identificador
+idempotente. O ciclo do Monitoring e o arranque enviam-no para
+`operational-changes/`; o ficheiro local só é removido depois de `PutObject` e
+`HeadObject` confirmarem tamanho, AES-256 e SHA-256.
 
 ### Estado operacional do portal
 
@@ -167,11 +170,17 @@ A materialização valida manifesto, tamanho, SHA-256 e integridade SQLite antes
 de trocar atomicamente a cache. O launcher exporta os caminhos da cache para
 todos os consumidores.
 
-Uma operação confirmada do catálogo ou das versões escreve primeiro numa
-transação SQLite da cache, regista uma chave idempotente e publica uma nova
-snapshot operacional. Se SQLite estiver indisponível, a operação validada fica
-em JSON sob `BLU_OPERATIONAL_DIR`; se o S3 falhar depois do commit, fica na outbox.
-A sincronização respeita a ordem e só remove o JSON após confirmação.
+Uma operação do catálogo ou das versões protege primeiro o pedido no write-ahead,
+confirma a transação SQLite da cache, cria a outbox idempotente e publica uma nova
+snapshot operacional. Se SQLite estiver indisponível, o pedido permanece pendente;
+se o processo parar depois do commit, a repetição reconhece a operação SQL e
+completa a outbox. Se o S3 falhar, o evento permanece na outbox. A sincronização
+respeita a ordem e só remove cada registo depois da confirmação seguinte.
+
+Esta garantia cobre falhas do processo e reinícios enquanto
+`BLU_OPERATIONAL_DIR` sobreviver. No SageMaker atual, a perda total da cache antes
+da publicação S3 continua abrangida pelo RPO aprovado de cinco minutos. No alvo de
+produção, SQLite, write-ahead e outbox ficam no EFS persistente.
 
 Enviar uma versão para o Lixo conserva-a na release ativa com `trashedAt`.
 Uma eliminação permanente retira-a apenas da release ativa seguinte; releases e

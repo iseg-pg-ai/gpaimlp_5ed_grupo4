@@ -1,4 +1,4 @@
-"""Servidor privado do monitoring: apenas loopback, atrás do proxy HTTPS Studio."""
+"""Servidor privado do monitoring, protegido por proxy HTTPS autenticado."""
 from __future__ import annotations
 
 import argparse
@@ -23,7 +23,8 @@ ROOT = Path(__file__).resolve().parents[1]
 STATIC = Path(__file__).resolve().parent / "static"
 
 
-def make_server(port, security, collector, public_url, insecure_local=False):
+def make_server(port, security, collector, public_url, insecure_local=False,
+                host="127.0.0.1"):
     public = urlsplit(public_url)
     origin = f"{public.scheme}://{public.netloc}"
     prefix = public.path.rstrip("/")
@@ -231,7 +232,7 @@ def make_server(port, security, collector, public_url, insecure_local=False):
                 return self.redirect("/login", self.cookie("", 0))
             return self.reply(404, "Não encontrado.")
 
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    server = ThreadingHTTPServer((host, port), Handler)
     server.daemon_threads = True
     return server
 
@@ -239,11 +240,14 @@ def make_server(port, security, collector, public_url, insecure_local=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=3004)
+    parser.add_argument("--host", choices=("127.0.0.1", "0.0.0.0"),
+                        default=os.environ.get("BLU_BIND_HOST", "127.0.0.1"))
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("Porta inválida.")
     os.umask(0o077)
-    runtime = ROOT / "monitoring/runtime"
+    runtime = Path(os.environ.get(
+        "BLU_MONITORING_RUNTIME", ROOT / "monitoring/runtime")).resolve()
     credentials = runtime / "credentials.json"
     if not credentials.exists():
         parser.error("Executar primeiro: python -B -m monitoring.setup")
@@ -251,17 +255,20 @@ def main():
     # A recuperação ativa a sonda sem alterar a configuração persistente do ambiente.
     if os.environ.get("BLU_MONITOR_AGENT_ENABLED") == "1":
         config["agent_enabled"] = True
-    base = studio_base()
-    public_url = f"{base}/ports/{args.port}"
+    public_url = os.environ.get("BLU_MONITORING_PUBLIC_URL", "").rstrip("/")
+    if not public_url:
+        public_url = f"{studio_base()}/ports/{args.port}"
     collector = Collector(ROOT, runtime, config)
     security = Security(credentials)
-    with make_server(args.port, security, collector, public_url) as server:
+    with make_server(args.port, security, collector, public_url,
+                     host=args.host) as server:
         thread = threading.Thread(target=collector.run, daemon=True)
         thread.start()
         print(f"Monitoring privado: {public_url}/", flush=True)
-        print(f"Endereço local: http://127.0.0.1:{args.port}/", flush=True)
-        print(f"No Code Editor, encaminhar a porta {args.port} no separador Ports/Portas.", flush=True)
-        print("Acesso por login próprio. Escuta apenas em 127.0.0.1.", flush=True)
+        print(f"Endereço de escuta: http://{args.host}:{args.port}/", flush=True)
+        if args.host == "127.0.0.1":
+            print(f"No Code Editor, encaminhar a porta {args.port} no separador Ports/Portas.", flush=True)
+        print("Acesso por autenticação. A exposição de rede pertence ao proxy HTTPS.", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

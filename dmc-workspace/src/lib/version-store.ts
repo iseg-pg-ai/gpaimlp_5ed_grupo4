@@ -117,6 +117,8 @@ export class VersionStore {
       this.db.exec("ALTER TABLE proposal_shares ADD COLUMN revokedAt TEXT");
     if (!shareColumns.some((column) => column.name === "revokedReason"))
       this.db.exec("ALTER TABLE proposal_shares ADD COLUMN revokedReason TEXT");
+    if (!shareColumns.some((column) => column.name === "legalHold"))
+      this.db.exec("ALTER TABLE proposal_shares ADD COLUMN legalHold INTEGER NOT NULL DEFAULT 0");
   }
   close() {
     this.db.close();
@@ -184,6 +186,16 @@ export class VersionStore {
       .prepare("UPDATE versions SET trashedAt=NULL, trashReason=NULL WHERE tripId=? AND version=?")
       .run(tripId, version);
     return this.list(tripId).find((item) => item.version === version)!;
+  }
+  cleanupExpiredShares(cutoff: Date): number {
+    if (Number.isNaN(cutoff.getTime())) throw new Error("Limite de retenção inválido.");
+    return Number(
+      this.db
+        .prepare(
+          "DELETE FROM proposal_shares WHERE expiresAt IS NOT NULL AND expiresAt<=? AND legalHold=0",
+        )
+        .run(cutoff.toISOString()).changes,
+    );
   }
   cleanupExpiredTrash(
     tripIds: string[],

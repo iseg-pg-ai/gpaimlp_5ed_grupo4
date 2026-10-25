@@ -356,6 +356,12 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
         "childrenAges",
         "startDate",
         "endDate",
+        "arrivalLocation",
+        "arrivalTime",
+        "arrivalFlightNumber",
+        "departureLocation",
+        "departureTime",
+        "departureFlightNumber",
         "budget",
         "currency",
         "interests",
@@ -368,6 +374,7 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
         "diningPace",
         "morningPreference",
         "exclusions",
+        "specialOccasion",
       ] as const
     ).map((key) => [key, snapshot.brief[key]]),
   );

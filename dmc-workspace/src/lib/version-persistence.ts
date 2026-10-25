@@ -159,9 +159,12 @@ export function persistVersion(
     ...input,
   };
   let store: VersionStore | undefined;
+  let pendingFile: string | undefined;
   try {
     store = new VersionStore(options.versionRoot ?? versionRoot());
     const synchronized = syncPendingVersions(store, options.operationalRoot);
+    // O write-ahead existe antes do commit; um reinício completa a outbox S3.
+    pendingFile = queuePendingVersion(item, options.operationalRoot);
     const record = store.save(
       input.tripId,
       input.snapshot,
@@ -177,9 +180,13 @@ export function persistVersion(
       item,
       options.operationalRoot ?? operationalRoot(),
     );
+    unlinkSync(pendingFile);
     return { queued: false, record, synchronized: synchronized.synchronized };
   } catch (error) {
-    if (error instanceof VersionConflict) throw error;
+    if (error instanceof VersionConflict) {
+      if (pendingFile && existsSync(pendingFile)) unlinkSync(pendingFile);
+      throw error;
+    }
     queuePendingVersion(item, options.operationalRoot);
     return {
       queued: true,

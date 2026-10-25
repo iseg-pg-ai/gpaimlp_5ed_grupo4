@@ -154,7 +154,7 @@ export async function POST(request: Request) {
     validatePlan(result.plan);
     assertPlanIntent(result.plan, intent);
     if (
-      result.provider !== "bedrock" ||
+      !["bedrock", "openai"].includes(result.provider) ||
       typeof result.modelId !== "string" ||
       !result.modelId ||
       result.modelId.length > 250 ||

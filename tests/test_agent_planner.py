@@ -18,6 +18,7 @@ from blu_ai.planner import (
     AgentResponseError, SCHEMA, execute, failure_code, plan_actions,
     tool_schema, validate_plan,
 )
+from blu_ai.providers import OpenAIProvider, ProviderRequestError
 
 
 def proposal(language="pt"):
@@ -117,6 +118,58 @@ class PlannerTest(unittest.TestCase):
                 self.assertIn("Write summary and warnings in English" if language == "en" else "Escreve summary e warnings em português europeu", system)
                 self.assertEqual(options["inferenceConfig"], {"temperature": 0, "maxTokens": 1800})
                 self.assertEqual(options["toolConfig"]["toolChoice"], {"tool": {"name": "propose_actions"}})
+
+    def test_openai_uses_same_contract_without_storing_or_parallel_calls(self):
+        class Response:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {
+                    "output": [{
+                        "type": "function_call", "name": "propose_actions",
+                        "arguments": json.dumps(proposal()),
+                    }],
+                    "usage": {"input_tokens": 21, "output_tokens": 13},
+                }
+
+        client = MagicMock()
+        client.post.return_value = Response()
+        provider = OpenAIProvider(client=client, model_id="modelo-teste")
+        result = plan_actions(
+            {"instruction": "Teste", "context": {"conversationLanguage": "pt"}},
+            provider=provider,
+        )
+        self.assertEqual(result["plan"], proposal())
+        self.assertEqual(result["provider"], "openai")
+        self.assertEqual(result["modelId"], "modelo-teste")
+        self.assertEqual((result["inputTokens"], result["outputTokens"]), (21, 13))
+        request = client.post.call_args.kwargs["json"]
+        self.assertFalse(request["store"])
+        self.assertFalse(request["parallel_tool_calls"])
+        self.assertEqual(request["tool_choice"], {"type": "function", "name": "propose_actions"})
+        self.assertEqual(request["tools"][0]["parameters"], tool_schema({}))
+
+    def test_provider_selection_is_explicit_and_has_no_fallback(self):
+        with patch.dict("os.environ", {"BLU_AGENT_PROVIDER": "unknown"}):
+            with self.assertRaises(AgentConfigurationError):
+                plan_actions({"instruction": "Teste", "context": {}})
+
+    def test_openai_operational_failure_is_normalized_without_provider_message(self):
+        import httpx
+
+        request = httpx.Request("POST", "https://api.openai.com/v1/responses")
+        response = httpx.Response(429, request=request, text="SEGREDO_FORNECEDOR")
+        client = MagicMock()
+        client.post.return_value = response
+        provider = OpenAIProvider(client=client, model_id="modelo-teste")
+        with self.assertRaises(ProviderRequestError) as caught:
+            plan_actions({"instruction": "Teste", "context": {}}, provider=provider)
+        self.assertEqual(failure_code(caught.exception), "AGENT_BUSY")
+        self.assertNotIn("SEGREDO", str(caught.exception))
+        with patch.dict("os.environ", {"BLU_AGENT_PROVIDER": "openai", "OPENAI_MODEL": "", "OPENAI_API_KEY": ""}):
+            with self.assertRaises(AgentConfigurationError):
+                plan_actions({"instruction": "Teste", "context": {}})
 
     @patch("blu_ai.planner.boto3.client")
     def test_iam_client_uses_bounded_timeouts_and_no_fixed_credentials(self, factory):
@@ -249,12 +302,10 @@ class PlannerTest(unittest.TestCase):
             self.assertEqual(response["code"], code)
             self.assertNotIn("Traceback", result.stderr.decode("utf-8"))
 
-    @patch("blu_ai.agents.curator_agent.build_curator_agent")
-    def test_legacy_chat_projects_context_without_customer_or_confirmation_details(self, build):
-        from types import SimpleNamespace
+    @patch("blu_ai.planner.plan_actions")
+    def test_legacy_chat_delegates_to_transactional_planner_with_public_context(self, planner):
         from blu_ai.agents.curator_agent import chat_copilot
-        graph = build.return_value
-        graph.invoke.return_value = {"messages": [SimpleNamespace(content="Resposta pública")]}
+        planner.return_value = {"plan": proposal()}
         chat_copilot(
             "Explica o dia", brief={"customerName": "PRIVATE_NAME", "customerEmail": "PRIVATE_EMAIL", "notes": "PRIVATE_NOTES", "destination": "Lisboa"},
             current_itinerary={"days": [{"dayNumber": 1, "notes": "PRIVATE_DAY", "items": [
@@ -262,37 +313,16 @@ class PlannerTest(unittest.TestCase):
                  "notes": "PRIVATE_ITEM", "confirmation": {"status": "confirmed", "contact": "PRIVATE_CONTACT", "reference": "PRIVATE_REFERENCE"}}
             ]}]},
         )
-        prompt = graph.invoke.call_args.args[0]["messages"][0].content
-        self.assertIn("Museu permitido", prompt)
-        self.assertIn("09:30", prompt)
-        self.assertNotIn("PRIVATE_", prompt)
+        sent = planner.call_args.args[0]
+        self.assertEqual(sent["instruction"], "Explica o dia")
+        self.assertIn("Museu permitido", json.dumps(sent))
+        self.assertIn("09:30", json.dumps(sent))
+        self.assertNotIn("PRIVATE_", json.dumps(sent))
 
-    @patch("blu_ai.agents.curator_agent.build_curator_agent")
-    def test_legacy_curation_does_not_send_customer_identity_in_prompt(self, build):
-        from types import SimpleNamespace
+    def test_legacy_full_generation_is_explicitly_retired(self):
         from blu_ai.agents.curator_agent import curate_itinerary
-        from blu_ai.schemas.brief import CustomerBrief
-        build.return_value.invoke.return_value = {"messages": [SimpleNamespace(content="Resposta pública")]}
-        brief = CustomerBrief(customerName="PRIVATE_NAME", customerEmail="PRIVATE_EMAIL", notes="PRIVATE_NOTES",
-                              destination="Lisboa", startDate="2027-06-01", endDate="2027-06-03")
-        curate_itinerary(brief)
-        prompt = build.return_value.invoke.call_args.args[0]["messages"][0].content
-        self.assertIn("Lisboa", prompt)
-        self.assertNotIn("PRIVATE_", prompt)
-
-    @patch("blu_ai.agents.curator_agent.build_curator_agent")
-    def test_legacy_refuses_reasoning_only_response_instead_of_empty_success(self, build):
-        from types import SimpleNamespace
-        from blu_ai.agents.curator_agent import chat_copilot, curate_itinerary
-        from blu_ai.schemas.brief import CustomerBrief
-        build.return_value.invoke.return_value = {"messages": [SimpleNamespace(content=[
-            {"type": "reasoning_content", "reasoning_content": {"text": "SEGREDO"}}
-        ])]}
-        with self.assertRaisesRegex(RuntimeError, "Resposta do agente inválida"):
-            chat_copilot("Teste")
-        brief = CustomerBrief(customerName="Sintético", destination="Lisboa", startDate="2027-06-01", endDate="2027-06-03")
-        with self.assertRaisesRegex(RuntimeError, "Resposta do agente inválida"):
-            curate_itinerary(brief)
+        with self.assertRaisesRegex(RuntimeError, "descontinuada"):
+            curate_itinerary({})
 
 
 if __name__ == "__main__":

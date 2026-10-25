@@ -1,4 +1,4 @@
-"""Serviço legado privado; o fluxo transacional usa o planeador do portal."""
+"""Fachada HTTP privada do mesmo planeador transacional usado pelo portal."""
 
 from __future__ import annotations
 
@@ -13,8 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from blu_ai.agents.curator_agent import chat_copilot, curate_itinerary
-from blu_ai.schemas.brief import CustomerBrief
+from blu_ai.agents.curator_agent import chat_copilot
 from blu_ai.tools.catalog_tools import search_blu_catalog
 from blu_ai.tools.weather_tools import get_weather_forecast
 
@@ -59,19 +58,23 @@ def create_app():
 
     @application.get("/api/health")
     def health_check():
-        return {"status": "healthy", "service": "blu_ai_agent", "agentic_engine": "LangChain + LangGraph"}
+        return {"status": "healthy", "service": "blu_ai_agent", "agentic_engine": "BLU transactional planner"}
 
     @application.post("/api/agent/curate")
-    def api_curate_itinerary(brief: CustomerBrief):
-        try:
-            return curate_itinerary(brief)
-        except Exception:
-            raise HTTPException(status_code=503, detail="Agente indisponível.") from None
+    def api_curate_itinerary():
+        raise HTTPException(
+            status_code=410,
+            detail="Use o planeador transacional com uma viagem e versão guardadas.",
+        )
 
     @application.post("/api/agent/chat")
     def api_chat_copilot(req: ChatCopilotRequest):
         try:
-            return chat_copilot(user_instruction=req.instruction, current_itinerary=req.currentItinerary, brief=req.brief)
+            return chat_copilot(
+                user_instruction=req.instruction,
+                current_itinerary=req.currentItinerary,
+                context=req.context,
+            )
         except Exception:
             raise HTTPException(status_code=503, detail="Agente indisponível.") from None
 
@@ -103,6 +106,7 @@ class ChatCopilotRequest(BaseModel):
     instruction: str = Field(min_length=1, max_length=4000)
     currentItinerary: Optional[Any] = None
     brief: Optional[Any] = None
+    context: Optional[dict[str, Any]] = None
 
 
 app = create_app()

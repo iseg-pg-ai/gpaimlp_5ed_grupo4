@@ -47,6 +47,8 @@ dist/
 # Generated infrastructure assemblies
 cdk.out/
 cdk.aws.out/
+.cdk/
+infra/cdk.context.json
 
 # Segredos e configuração local
 .env

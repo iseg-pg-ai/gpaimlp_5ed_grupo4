@@ -312,13 +312,30 @@ test("simulação composta é atómica, preserva a entrada e recusa itens proteg
 
 test("contexto omite nomes, contactos, notas e referências de confirmação", () => {
   const s = fixture();
+  Object.assign(s.brief, {
+    arrivalLocation: "Aeroporto de Lisboa",
+    arrivalTime: "10:35",
+    arrivalFlightNumber: "TP 1363",
+    departureLocation: "Aeroporto do Porto",
+    departureTime: "17:20",
+    departureFlightNumber: "TP 1931",
+    specialOccasion: "Aniversário",
+  });
   s.brief.futureInternalField = "privado-futuro";
   s.itinerary[0].items[0].confirmation = {
     status: "pending",
     bookingReference: "SEGREDO",
     contact: "PRIVADO",
   };
-  const context = JSON.stringify(plannerContext(s, catalog));
+  const projected = plannerContext(s, catalog);
+  const context = JSON.stringify(projected);
+  assert.equal(projected.brief.arrivalLocation, "Aeroporto de Lisboa");
+  assert.equal(projected.brief.arrivalTime, "10:35");
+  assert.equal(projected.brief.arrivalFlightNumber, "TP 1363");
+  assert.equal(projected.brief.departureLocation, "Aeroporto do Porto");
+  assert.equal(projected.brief.departureTime, "17:20");
+  assert.equal(projected.brief.departureFlightNumber, "TP 1931");
+  assert.equal(projected.brief.specialOccasion, "Aniversário");
   assert.ok(!context.includes(s.brief.customerName));
   assert.ok(!context.includes("privado"));
   assert.ok(!context.includes("SEGREDO"));

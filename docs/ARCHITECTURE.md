@@ -165,6 +165,13 @@ snapshot das versões. Conversas do agente não integram este payload. A API e a
 substituição do `localStorage` só serão ativadas depois de pedidos autenticados
 fornecerem um `ownerId` confiável; até lá, o store não fica exposto por HTTP.
 
+`config/retention_policy.json` é a fonte única dos prazos executáveis. A limpeza
+central remove rascunhos inativos após 90 dias, auditoria do agente após 365 dias
+e registos de partilha 30 dias depois da expiração. Uma preservação legal prevalece
+sempre. Versões autoritativas e respetivos exports nunca entram nesta limpeza; só
+seguem o fluxo explícito de Lixo e confirmação já existente. A futura persistência
+de conversas usará o prazo declarado de 30 dias quando for criada na Etapa 2.
+
 - Apenas oferta aprovada e compatível com a revisão publicada é elegível.
 - Curadoria e alterações respeitam atividades protegidas, restrições e exclusões.
 - Desconhecido não significa compatível, disponível ou preço zero.
@@ -183,9 +190,11 @@ determinística, horários, edição, confirmações manuais, orçamento, versõ
 PDF/ZIP, tradução opcional, partilha e Lixo com restauro. Inclui rotas e
 meteorologia com fallback e uma interface em seis idiomas.
 
-O assistente aplica comandos determinísticos e pode recorrer ao serviço Python
-LangChain/Bedrock em `BLU_AI_AGENT_URL`. A existência desse serviço não comprova
-a sua disponibilidade nem autoriza chamadas reais. O portal funciona sem ele.
+O assistente usa um planeador Python transacional com adaptadores Bedrock ou
+OpenAI e devolve apenas propostas no contrato validado de onze ações. O portal
+continua a ser a autoridade para simulação, proteções, aceitação e persistência;
+nenhum fornecedor escreve diretamente. Chamadas reais exigem configuração e
+aprovação próprias. O portal funciona sem o fornecedor, mantendo a edição manual.
 
 Prompt TXT 1.0.0 preserva personalização, capacidade diária, períodos livres e
 percursos guardados. A utilização numa ferramenta externa exige uma operação
@@ -193,12 +202,19 @@ própria; o prompt não fornece factos para outras viagens. Ver o
 [guia do portal](PORTAL.md).
 
 O sistema produz propostas; não efetua reservas. O Monitoring tem autenticação
-local própria, mas o portal não tem identidade, papéis ou sincronização
-multiutilizador. A persistência S3 está implementada, mas hosting de produção e
+local própria. O contrato de papéis do portal existe, mas a autenticação central
+e a aplicação dessas permissões aos pedidos ainda dependem do deployment. A
+persistência S3 está implementada, mas hosting de produção e
 fotografias autorizadas nos PDFs DMC continuam pendentes. As partilhas têm
 consentimento explícito, validade e revogação, mas a identidade central e a
-política global de dados pessoais continuam por decidir antes de produção.
+execução integral da política de dados pessoais continuam pendentes antes de produção.
 Acesso pelo Studio não torna a proposta pública para clientes externos.
+
+A memória temporária do agente usa a SQLite operacional, não uma segunda fonte
+de verdade. Está modelada por utilizador, viagem e versão e sujeita à política de
+retenção central, mas só será ligada às rotas quando a identidade autenticada do
+backend estiver disponível. Até lá, o histórico recente do browser continua a
+ser contexto não autoritativo e limitado.
 
 ## Fronteira atual do agente
 
