@@ -9,6 +9,7 @@ import {
   plannerContext,
   resolveAlternatives,
   resolveRanking,
+  resolveDelivery,
 } from "../src/lib/assistant-actions.ts";
 import { recentConversation } from "../src/lib/assistant-conversation.ts";
 import { generateItinerary } from "../src/lib/curation.ts";
@@ -307,6 +308,34 @@ test("ranking ordena apenas candidatos elegíveis e não altera o roteiro", () =
       ...plan([]),
       ranking: [{ dayNumber: 1, catalogIds: ["atracoes:Museu", "atracoes:Museu"] }],
     }),
+  );
+});
+
+test("entrega é apenas preparada e fica bloqueada por diagnósticos impeditivos", () => {
+  const { c, s } = alternativesSetup();
+  const valid = {
+    ...plan([]),
+    delivery: { kind: "export_pdf", locale: "en" },
+  };
+  const before = structuredClone(s);
+  const preview = resolveDelivery(s, valid, c);
+  assert.equal(preview.kind, "export_pdf");
+  assert.equal(preview.locale, "en");
+  assert.deepEqual(s, before);
+
+  s.itinerary[0].dailyCapacity = 0;
+  assert.ok(resolveDelivery(s, valid, c).blockers.some((item) => item.code === "CAPACITY"));
+  assert.throws(
+    () =>
+      validatePlan({
+        ...valid,
+        actions: [{ type: "set_free_day", dayNumber: 1 }],
+      }),
+    /Guarde primeiro/,
+  );
+  assert.throws(
+    () => validatePlan({ ...plan([]), delivery: { kind: "share", locale: "pt" } }),
+    /Forma de entrega/,
   );
 });
 

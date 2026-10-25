@@ -11,6 +11,7 @@ import {
 } from "./activity-confirmation.ts";
 import { proposalBudget } from "./proposal-budget.ts";
 import { proposalDiagnostics } from "./proposal-diagnostics.ts";
+import { isLocale, type Locale } from "./locales.ts";
 
 export type AgentAction = {
   type: string;
@@ -37,6 +38,11 @@ export type AgentPlan = {
   requiresConfirmation: true;
   alternatives?: Array<{ dayNumber: number; itemId: string; catalogIds: string[] }>;
   ranking?: Array<{ dayNumber: number; catalogIds: string[] }>;
+  delivery?: {
+    kind: "export_pdf" | "export_prompt" | "share";
+    locale: Locale;
+    method?: "link" | "document";
+  };
 };
 export type AgentAlternatives = {
   dayNumber: number;
@@ -62,6 +68,7 @@ export type AgentProposal = {
   modelId: string;
   alternatives?: AgentAlternatives[];
   rankedCandidates?: ReturnType<typeof resolveRanking>;
+  deliveryPreview?: ReturnType<typeof resolveDelivery>;
 };
 type Schema = {
   type: string;
@@ -149,6 +156,26 @@ export function validatePlan(value: unknown): asserts value is AgentPlan {
       throw new Error("Ranking duplicado.");
     rankingDays.add(group.dayNumber);
   }
+  const plan = value as AgentPlan;
+  if (plan.delivery) {
+    if (!isLocale(plan.delivery.locale)) throw new Error("Idioma de entrega inválido.");
+    if (plan.delivery.kind === "share" ? !plan.delivery.method : plan.delivery.method !== undefined)
+      throw new Error("Forma de entrega inválida.");
+    if (plan.actions.length || (plan.alternatives?.length ?? 0) || (plan.ranking?.length ?? 0))
+      throw new Error("Guarde primeiro as alterações antes de preparar a entrega.");
+  }
+}
+
+/** Resolve a intenção de entrega sem gerar ficheiros, links ou mensagens. */
+export function resolveDelivery(snapshot: Snapshot, plan: AgentPlan, catalog: Catalog) {
+  validatePlan(plan);
+  if (!plan.delivery) return undefined;
+  const diagnostics = proposalDiagnostics(snapshot, catalog);
+  return {
+    ...plan.delivery,
+    blockers: diagnostics.filter((item) => item.severity === "blocker"),
+    warnings: diagnostics.filter((item) => item.severity === "warning"),
+  };
 }
 const protectedItem = (item: Snapshot["itinerary"][number]["items"][number]) =>
   item.isLocked || item.confirmation?.status === "confirmed";

@@ -16,6 +16,7 @@ export function ShareProposalModal({
   versions,
   defaultLocale,
   defaultEmail,
+  defaultMethod = "link",
   customerName,
   destination,
   onClose,
@@ -25,6 +26,7 @@ export function ShareProposalModal({
   versions: Array<{ version: number; createdAt: string }>;
   defaultLocale: Locale;
   defaultEmail?: string;
+  defaultMethod?: "document" | "link";
   customerName: string;
   destination: string;
   onClose: () => void;
@@ -36,7 +38,7 @@ export function ShareProposalModal({
   ].sort((a, b) => b.version - a.version);
   const [version, setVersion] = useState(currentVersion);
   const [locale, setLocale] = useState<Locale>(defaultLocale);
-  const [method, setMethod] = useState<"document" | "link">("link");
+  const [method, setMethod] = useState<"document" | "link">(defaultMethod);
   const [recipient, setRecipient] = useState(defaultEmail ?? "");
   const [retentionDays, setRetentionDays] = useState<7 | 30 | 90>(30);
   const [consent, setConsent] = useState(false);

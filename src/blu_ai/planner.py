@@ -35,6 +35,11 @@ Pedidos ambíguos ou inviáveis exigem actions vazio e esclarecimento ou explica
 diagnostics com códigos de briefing exigem uma pergunta específica; não inventes
 idades, logística, restrições, preferências ou orçamento para os resolver.
 Não aplicar silenciosamente parte de um pedido nem substituir a intenção do utilizador.
+Para pedidos de exportação ou partilha, usa delivery com actions vazio. Exportar
+PDF usa export_pdf; exportar o prompt TXT usa export_prompt; partilhar usa share
+com method link ou document. Nunca peças nem repitas email, contacto, consentimento
+ou destinatário: esses dados pertencem ao formulário manual. delivery apenas prepara
+a revisão; não cria ficheiros, links, mensagens ou envios.
 ADICIONAR e SUBSTITUIR são intenções diferentes. Acrescentar nunca autoriza remover
 ou substituir. Se faltar a atividade concreta a adicionar, pedir esclarecimento.
 Para pedidos de recomendação ou adição sem item escolhido, ranking pode ordenar
@@ -148,6 +153,15 @@ def validate_plan(plan):
         if day_number in seen_days or len(set(group["catalogIds"])) != len(group["catalogIds"]):
             raise ValueError("Ranking repetido.")
         seen_days.add(day_number)
+    delivery = plan.get("delivery")
+    if delivery:
+        if delivery["kind"] == "share":
+            if "method" not in delivery:
+                raise ValueError("Forma de entrega em falta.")
+        elif "method" in delivery:
+            raise ValueError("Forma de entrega inesperada.")
+        if plan["actions"] or plan.get("alternatives") or plan.get("ranking"):
+            raise ValueError("Guarde primeiro as alterações antes de preparar a entrega.")
     return plan
 
 

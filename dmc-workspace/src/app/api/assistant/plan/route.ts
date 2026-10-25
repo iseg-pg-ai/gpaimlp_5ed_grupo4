@@ -5,6 +5,7 @@ import {
   validatePlan,
   resolveAlternatives,
   resolveRanking,
+  resolveDelivery,
   type AgentPlan,
 } from "@/lib/assistant-actions";
 import { AgentAuditStore } from "@/lib/agent-audit-store";
@@ -30,6 +31,7 @@ import { proposalImpact } from "@/lib/assistant-impact";
 import { simulationFeedback } from "@/lib/agent-simulation-feedback";
 import { requestIntent, assertPlanIntent, IntentConflict } from "@/lib/assistant-intent";
 import { syncOperationalState } from "@/lib/operational-s3";
+import { publicAgentConversation, publicAgentText } from "@/lib/agent-public-input";
 import { FeedbackStore } from "@/lib/feedback-store";
 import { HistoricalCaseStore } from "@/lib/historical-cases";
 import {
@@ -176,7 +178,8 @@ export async function POST(request: Request) {
         "Há alterações locais por guardar. Guarde ou reabra a versão antes de pedir uma proposta.",
       );
     const catalog = await loadPublishedCatalog();
-    const intent = requestIntent(body.input);
+    const providerInput = publicAgentText(body.input);
+    const intent = requestIntent(providerInput);
     const remembered = conversations?.get(ownerId!, body.tripId, body.baseVersion);
     const relevantIds = new Set([
       ...snapshot.itinerary.flatMap((day) => day.items.map((item) => item.id)),
@@ -197,7 +200,9 @@ export async function POST(request: Request) {
         limit: 5,
       }),
       requestIntent: intent,
-      conversation: remembered?.turns ?? recentConversation(body.conversation),
+      conversation: publicAgentConversation(
+        remembered?.turns ?? recentConversation(body.conversation),
+      ),
       conversationSummary: remembered?.summary || undefined,
       conversationLanguage: language,
       currentView: "itinerary",
@@ -214,14 +219,14 @@ export async function POST(request: Request) {
       outputTokens: number;
     };
     const requestBytes = Buffer.byteLength(
-      JSON.stringify({ instruction: body.input, context }),
+      JSON.stringify({ instruction: providerInput, context }),
       "utf8",
     );
     // Reserva no máximo duas chamadas: proposta inicial e uma única correção
     // após falha determinística sanitizada.
     enforceAgentRuntimePolicy(audit, requestBytes, 2);
     let result = await portalRequest<PlannerResult>("agent-plan", "", {
-      instruction: body.input,
+      instruction: providerInput,
       context,
     });
     const validateResult = (value: PlannerResult) => {
@@ -242,13 +247,15 @@ export async function POST(request: Request) {
     let preview;
     let alternatives;
     let rankedCandidates;
+    let deliveryPreview;
     try {
       preview = simulatePlan(snapshot, result.plan, catalog);
       alternatives = resolveAlternatives(snapshot, result.plan, catalog);
       rankedCandidates = resolveRanking(snapshot, result.plan, catalog);
+      deliveryPreview = resolveDelivery(snapshot, result.plan, catalog);
     } catch (error) {
       const corrected = await portalRequest<PlannerResult>("agent-plan", "", {
-        instruction: body.input,
+        instruction: providerInput,
         context: { ...context, simulationFeedback: simulationFeedback(error) },
       });
       validateResult(corrected);
@@ -257,6 +264,7 @@ export async function POST(request: Request) {
       preview = simulatePlan(snapshot, corrected.plan, catalog);
       alternatives = resolveAlternatives(snapshot, corrected.plan, catalog);
       rankedCandidates = resolveRanking(snapshot, corrected.plan, catalog);
+      deliveryPreview = resolveDelivery(snapshot, corrected.plan, catalog);
       result = {
         ...corrected,
         latencyMs: result.latencyMs + corrected.latencyMs,
@@ -334,6 +342,7 @@ export async function POST(request: Request) {
         plan: result.plan,
         alternatives,
         rankedCandidates,
+        deliveryPreview,
         before: snapshot.itinerary,
         after: preview.itinerary,
         impact: proposalImpact(snapshot, preview),

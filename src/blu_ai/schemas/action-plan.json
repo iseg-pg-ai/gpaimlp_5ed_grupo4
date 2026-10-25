@@ -178,6 +178,26 @@
         "required": ["dayNumber", "catalogIds"]
       }
     },
+    "delivery": {
+      "type": "object",
+      "description": "Preparação de uma entrega. Não cria ficheiros, ligações nem envia mensagens.",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["export_pdf", "export_prompt", "share"]
+        },
+        "locale": {
+          "type": "string",
+          "enum": ["pt", "en", "es", "fr", "de", "zh"]
+        },
+        "method": {
+          "type": "string",
+          "enum": ["link", "document"]
+        }
+      },
+      "required": ["kind", "locale"]
+    },
     "warnings": {
       "type": "array",
       "maxItems": 10,

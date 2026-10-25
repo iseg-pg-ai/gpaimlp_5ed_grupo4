@@ -233,7 +233,7 @@ export function useWorkspace() {
       setSaving(false);
     }
   };
-  const exportProposal = async (format: "bundle" | "prompt") => {
+  const exportProposal = async (format: "bundle" | "prompt", selectedLocale?: Locale) => {
     if (!active || operation.current) return;
     operation.current = true;
     setExporting(true);
@@ -242,7 +242,7 @@ export function useWorkspace() {
       const saved = await saveVersion(active, "export");
       setTrips((prev) => prev.map((t) => (t.id === saved.id ? saved : t)));
       const response = await portalFetch(
-        `/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=${format}&locale=${active.clientLanguage ?? clientLanguage}`,
+        `/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=${format}&locale=${selectedLocale ?? active.clientLanguage ?? clientLanguage}`,
       );
       if (!response.ok) await responseJson(response);
       const url = URL.createObjectURL(await response.blob());
@@ -266,6 +266,8 @@ export function useWorkspace() {
   };
   const exportPdf = () => exportProposal("bundle");
   const exportPrompt = () => exportProposal("prompt");
+  const exportPrepared = (format: "bundle" | "prompt", locale: Locale) =>
+    exportProposal(format, locale);
   const reopenLatest = async () => {
     const latest = history.id === activeId ? history.versions[0] : undefined;
     if (!latest || !active || operation.current) return;
@@ -867,6 +869,7 @@ export function useWorkspace() {
     update,
     exportPdf,
     exportPrompt,
+    exportPrepared,
     reopenLatest,
     trashVersion,
     generate,

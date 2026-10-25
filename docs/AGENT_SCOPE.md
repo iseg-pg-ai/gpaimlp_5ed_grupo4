@@ -98,11 +98,10 @@ mensagem bruta do erro. A segunda falha termina o pedido sem escrita.
 
 ## Capacidades em evolução
 
-O agente já pode consultar feedback aprovado, sinais agregados de qualidade e
-casos históricos anonimizados. Deverá ainda:
+O agente já pode consultar feedback aprovado, sinais agregados de qualidade,
+casos históricos anonimizados e preparar uma entrega PDF, Prompt TXT ou partilha.
+Deverá ainda:
 
-- preparar exportações PDF/TXT e variantes linguísticas;
-- preparar, mas não enviar, textos e partilhas;
 - explicar diferenças entre versões;
 - consultar meteorologia já solicitada explicitamente;
 - consultar percursos medidos ou estimados, mantendo essa distinção;

@@ -39,6 +39,7 @@ interface AIAssistantPanelProps {
   onDecideProposal: (decision: "accept" | "reject") => void;
   onSelectAlternative: (dayNumber: number, itemId: string, catalogId: string) => void;
   onDismissProposal: () => void;
+  onPrepareDelivery: (delivery: NonNullable<AgentProposal["plan"]["delivery"]>) => void;
   messages: ChatMessage[];
   onSendMessage: (text: string) => void;
   isProcessing: boolean;
@@ -70,6 +71,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   onDecideProposal,
   onSelectAlternative,
   onDismissProposal,
+  onPrepareDelivery,
   messages,
   onSendMessage,
   isProcessing,
@@ -243,7 +245,9 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   text={
                     proposal.plan.actions.length
                       ? "Rever alterações antes de aceitar"
-                      : "Escolher alternativa de substituição"
+                      : proposal.deliveryPreview
+                        ? "Rever entrega antes de continuar"
+                        : "Escolher alternativa de substituição"
                   }
                   source="pt"
                 />
@@ -420,6 +424,48 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   ))}
                 </div>
               ))}
+              {proposal.deliveryPreview && (
+                <div className="mt-3 border-t pt-3" data-testid="agent-delivery-preview">
+                  <h5 className="font-semibold">
+                    {proposal.deliveryPreview.kind === "export_pdf"
+                      ? "Exportar PDF"
+                      : proposal.deliveryPreview.kind === "export_prompt"
+                        ? "Exportar Prompt TXT"
+                        : "Preparar partilha"}
+                    {` · ${proposal.deliveryPreview.locale.toUpperCase()}`}
+                  </h5>
+                  {proposal.deliveryPreview.blockers.map((item) => (
+                    <p
+                      key={`${item.code}:${item.dayNumber ?? "trip"}`}
+                      className="mt-1 text-red-800"
+                    >
+                      {item.message}
+                    </p>
+                  ))}
+                  {proposal.deliveryPreview.warnings.map((item) => (
+                    <p
+                      key={`${item.code}:${item.dayNumber ?? "trip"}`}
+                      className="mt-1 text-amber-800"
+                    >
+                      {item.message}
+                    </p>
+                  ))}
+                  <p className="mt-2 text-xs text-[var(--portal-text-4a636b)]">
+                    {proposal.deliveryPreview.kind === "share"
+                      ? "O destinatário, o consentimento e o prazo são preenchidos apenas no formulário manual. O agente não envia mensagens."
+                      : "O ficheiro só será criado depois de confirmar este botão."}
+                  </p>
+                  <Button
+                    className="mt-3"
+                    disabled={isProcessing || proposal.deliveryPreview.blockers.length > 0}
+                    onClick={() => onPrepareDelivery(proposal.plan.delivery!)}
+                  >
+                    {proposal.deliveryPreview.kind === "share"
+                      ? "Abrir formulário de partilha"
+                      : "Criar e descarregar"}
+                  </Button>
+                </div>
+              )}
               {proposal.plan.actions.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button

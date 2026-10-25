@@ -19,6 +19,14 @@ roteiro. A escolha humana prepara uma proposta de adição, volta a passar pela
 simulação e só cria uma versão depois de nova aceitação explícita. Os controlos
 manuais de adicionar/remover usam /api/itinerary/edit, sem invocar o modelo.
 
+O campo opcional `delivery` prepara PDF, Prompt TXT ou partilha num dos seis
+idiomas suportados. Não pode ser combinado com alterações, alternativas ou
+ranking: primeiro guarda-se a versão, depois prepara-se a entrega. O backend
+recalcula o diagnóstico e bloqueia o botão quando existem impedimentos. Um clique
+explícito cria o ficheiro; para partilha, abre apenas o modal existente. Email,
+consentimento e prazo nunca entram no plano do modelo. Contactos escritos no chat
+são removidos antes de o pedido ou a memória chegarem ao fornecedor.
+
 Pedidos e esclarecimentos em português ou inglês. No modo cloud, a memória
 servidor fica ligada ao principal validado do ALB/Cognito. Usa um store privado na
 mesma SQLite operacional, isolado por utilizador, viagem e versão, com oito turnos
@@ -156,7 +164,9 @@ aceitar, rejeitar ou selecionar alternativas. O `ownerId` fica na auditoria e
 impede decisões por outro utilizador.
 
 A superfície aprovada está tipada em `agent-tool-registry.ts`: leitura de viagem
-e catálogo, proposta, aceitação, rejeição e seleção de alternativa. Leituras não
+e catálogo, proposta, aceitação, rejeição e seleção de alternativa. A preparação
+de entrega continua dentro da proposta; reutiliza os endpoints manuais existentes
+e não acrescenta uma ferramenta de envio. Leituras não
 exigem confirmação, propostas produzem sempre pré-visualização e todas as
 escritas exigem uma decisão explícita. Ferramentas administrativas, destrutivas,
 de infraestrutura, reservas ou contactos externos não fazem parte do registo e

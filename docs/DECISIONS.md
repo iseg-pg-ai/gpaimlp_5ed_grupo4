@@ -482,3 +482,16 @@ mínima de quatro em todas as atividades, ausência de incidentes e aprovação
 humana. O índice usa perfil reduzido, identificadores e revisões; exclui identidade
 do cliente, texto livre, PDFs e versões no Lixo. Feedback, alertas e precedentes
 nunca alteram o catálogo automaticamente nem provam disponibilidade atual.
+
+### O agente prepara entregas, mas não as executa autonomamente — 2026-10-25
+
+O plano pode identificar PDF, Prompt TXT ou partilha, idioma e, nesta última,
+ligação ou documento. Esta intenção não pode ser combinada com alterações ao
+itinerário: a versão deve ser guardada primeiro. O servidor recalcula os
+diagnósticos e bloqueia a continuação quando existem impedimentos.
+
+A geração exige um clique explícito e reutiliza a exportação existente. Uma
+partilha abre o formulário manual, onde o curador introduz destinatário, confirma
+consentimento e escolhe retenção. O modelo não cria links, não recebe contactos e
+não envia mensagens. Emails e números de telefone escritos no chat são removidos
+antes de qualquer instrução ou memória ser enviada ao fornecedor.

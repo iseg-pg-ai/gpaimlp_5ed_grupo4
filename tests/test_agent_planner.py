@@ -41,7 +41,13 @@ class PlannerTest(unittest.TestCase):
                     "move_item", "optimize_route", "update_brief",
                     "update_pending_confirmation", "regenerate_day"}
         self.assertEqual(set(SCHEMA["x-action-fields"]), expected)
-        self.assertEqual(set(SCHEMA["properties"]), {"summary", "actions", "alternatives", "ranking", "warnings", "requiresConfirmation"})
+        self.assertEqual(
+            set(SCHEMA["properties"]),
+            {
+                "summary", "actions", "alternatives", "ranking", "delivery",
+                "warnings", "requiresConfirmation",
+            },
+        )
         before = copy.deepcopy(SCHEMA)
         schema = tool_schema({"requestIntent": {"kind": "rank", "dayNumber": 1}})
         schema["properties"]["actions"]["maxItems"] = 99
@@ -112,6 +118,27 @@ class PlannerTest(unittest.TestCase):
         plan["alternatives"][0]["price"] = "Inventado"
         with self.assertRaises(ValueError):
             validate_plan(plan)
+
+    def test_delivery_prepares_only_format_locale_and_share_method(self):
+        for delivery in [
+            {"kind": "export_pdf", "locale": "pt"},
+            {"kind": "export_prompt", "locale": "en"},
+            {"kind": "share", "locale": "fr", "method": "link"},
+        ]:
+            plan = {**proposal(), "actions": [], "delivery": delivery}
+            self.assertEqual(validate_plan(plan), plan)
+        for delivery in [
+            {"kind": "share", "locale": "pt"},
+            {"kind": "export_pdf", "locale": "pt", "method": "document"},
+        ]:
+            with self.assertRaises(ValueError):
+                validate_plan({**proposal(), "actions": [], "delivery": delivery})
+        with self.assertRaises(ValueError):
+            validate_plan({
+                **proposal(),
+                "actions": [{"type": "set_free_day", "dayNumber": 1}],
+                "delivery": {"kind": "export_pdf", "locale": "pt"},
+            })
 
     def test_bedrock_receives_language_and_only_public_tool_input_is_returned(self):
         for language in ("pt", "en"):

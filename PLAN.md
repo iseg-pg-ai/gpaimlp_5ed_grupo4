@@ -31,9 +31,11 @@ histórico Git e em [Decisões](docs/DECISIONS.md).
   30/90/180 dias e a memória só aceita casos completos com aprovação humana.
 - [x] Acrescentar verificação da qualidade do briefing: contradições, campos em
   falta, adequação do orçamento e restrições que exigem esclarecimento.
-- [ ] Permitir ao agente preparar exportações e partilhas com o diagnóstico
+- [x] Permitir ao agente preparar exportações e partilhas com o diagnóstico
   preventivo atual. A criação e a partilha mantêm confirmação explícita e o
-  agente não envia mensagens nem confirma reservas.
+  agente não envia mensagens nem confirma reservas. PDF, Prompt TXT, idioma e
+  forma de partilha são validados; destinatário, consentimento e prazo permanecem
+  exclusivamente no formulário manual.
 - [ ] Disponibilizar meteorologia já consultada e estimativas de percurso como
   leituras opcionais. Não efetuar consultas externas implícitas nem apresentar
   histórico, estimativas ou ausência de dados como confirmação.

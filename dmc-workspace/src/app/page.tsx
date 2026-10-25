@@ -21,6 +21,10 @@ export default function WorkspacePage() {
   const [desktopAssistantCollapsed, setDesktopAssistantCollapsed] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shareDefaults, setShareDefaults] = useState<{
+    locale: import("@/lib/locales").Locale;
+    method: "link" | "document";
+  } | null>(null);
   const assistantLabel = useTranslated("Curation Assistant");
   const assistantButton = useRef<HTMLButtonElement>(null);
   const {
@@ -42,6 +46,7 @@ export default function WorkspacePage() {
     update,
     exportPdf,
     exportPrompt,
+    exportPrepared,
     reopenLatest,
     trashVersion,
     generate,
@@ -266,11 +271,15 @@ export default function WorkspacePage() {
                     tripId={active.id}
                     currentVersion={active.version}
                     versions={history.id === active.id ? history.versions : []}
-                    defaultLocale={active.clientLanguage ?? clientLanguage}
+                    defaultLocale={shareDefaults?.locale ?? active.clientLanguage ?? clientLanguage}
+                    defaultMethod={shareDefaults?.method ?? "link"}
                     defaultEmail={active.brief.customerEmail}
                     customerName={active.brief.customerName}
                     destination={active.brief.destination}
-                    onClose={() => setShareOpen(false)}
+                    onClose={() => {
+                      setShareOpen(false);
+                      setShareDefaults(null);
+                    }}
                   />
                 )}
                 <section
@@ -330,6 +339,17 @@ export default function WorkspacePage() {
                       onDecideProposal={decideAgentProposal}
                       onSelectAlternative={selectAgentAlternative}
                       onDismissProposal={dismissAgentProposal}
+                      onPrepareDelivery={(delivery) => {
+                        if (delivery.kind === "share") {
+                          setShareDefaults({ locale: delivery.locale, method: delivery.method! });
+                          setShareOpen(true);
+                        } else {
+                          void exportPrepared(
+                            delivery.kind === "export_pdf" ? "bundle" : "prompt",
+                            delivery.locale,
+                          );
+                        }
+                      }}
                       messages={active.messages}
                       onSendMessage={send}
                       isProcessing={assistantBusy}
