@@ -274,6 +274,34 @@ externa depende ainda de um endpoint estável fora da máquina observada.
 
 ## Configuração e dependências
 
+### Base cloud e multiutilizador aprovada — 2026-10-25
+
+Foi aprovada como arquitetura-alvo inicial uma implantação em `eu-west-1`, com
+demonstração no SageMaker e staging/produção isolados. A entrada pública usará um
+Application Load Balancer com TLS; a identidade será centralizada em Amazon
+Cognito e os segredos em AWS Secrets Manager.
+
+Os papéis internos são `owner`, `admin`, `curator` e `viewer`. Clientes externos
+continuam limitados a partilhas revogáveis e não recebem acesso ao workspace. O
+backend aplica papel e ownership; o agente herda sempre o âmbito do utilizador.
+
+Para preservar os contratos atuais, cada ambiente começa com uma única tarefa
+escritora em ECS. SQLite, outbox, histórico e exports ficam num EFS cifrado; o S3
+continua a conservar releases e backups. Não se ativa escala horizontal enquanto
+o estado operacional depender de SQLite. Rascunhos passam a ser privados por
+utilizador e viagem, mas sincronizados no servidor para continuidade entre
+dispositivos.
+
+Os checkpoints futuros conservam apenas estado operacional, porque fontes e
+warehouse já têm releases próprias. Os objetivos iniciais aprovados para produção
+são 99,5% de disponibilidade mensal, RPO de cinco minutos e RTO de sessenta
+minutos. Conversas do agente conservam-se por 30 dias, auditoria por 365 dias e
+partilhas expiradas por mais 30 dias, sujeitos a execução e revisão jurídica antes
+de produção.
+
+A aprovação autoriza preparar código, contratos e infraestrutura como código. Não
+autoriza por si só criar recursos, publicar endpoints ou assumir custos AWS.
+
 ### A configuração Studio é individual — 2026-10-19
 
 Cada instalação guarda a origem pública em `config/studio.local.json`, ignorado

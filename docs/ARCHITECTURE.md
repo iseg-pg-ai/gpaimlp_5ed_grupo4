@@ -138,6 +138,19 @@ A API JSON mantém o contrato do editor e do Lixo interativo.
 
 ## Contratos a preservar
 
+### Identidade e autorização
+
+`config/identity_policy.json` é o contrato comum de papéis e permissões para o
+portal, Monitoring e agente. A ordem de privilégio é `viewer`, `curator`, `admin`
+e `owner`; permissões desconhecidas, papéis desconhecidos e qualquer tentativa de
+reduzir garantias obrigatórias são recusados. `portal.identity_policy` valida o
+contrato sem depender de Cognito, permitindo testar as regras antes do deployment.
+
+Este contrato ainda não autentica pedidos. A identidade chegará do fornecedor
+aprovado na Etapa 3 e o backend aplicará papel, ownership e confirmação. O frontend
+não é autoridade, o agente não eleva permissões e clientes externos continuam a
+usar partilhas revogáveis em vez de papéis internos.
+
 - Apenas oferta aprovada e compatível com a revisão publicada é elegível.
 - Curadoria e alterações respeitam atividades protegidas, restrições e exclusões.
 - Desconhecido não significa compatível, disponível ou preço zero.

@@ -3,16 +3,22 @@
 from pathlib import Path
 import re
 import subprocess
+import sys
 from urllib.parse import unquote, urlsplit
 
-
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from portal.identity_policy import load_identity_policy  # noqa: E402
+
+
 LOCAL_FILES = {".DS_Store", ".bash_history", ".bashrc", ".wget-hsts"}
 LOCAL_ROOT_FILES = {Path("package-lock.json"), Path("user-default-efs")}
 LINK = re.compile(r'\]\(([^\s)]+)(?:\s+"[^"]*")?\)')
 
 
 def check_project():
+    load_identity_policy(ROOT / "config" / "identity_policy.json")
     names = subprocess.check_output(
         ["git", "ls-files", "-z"], cwd=ROOT
     ).decode("utf-8").split("\0")

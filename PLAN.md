@@ -6,25 +6,18 @@ histórico Git e em [Decisões](docs/DECISIONS.md).
 
 ## Etapa 1 — Base operacional e multiutilizador
 
-Estas decisões são pré-requisitos para o agente, o deployment e a sonda externa.
+As decisões de base estão aprovadas e registadas em
+[Decisões](docs/DECISIONS.md). Antes do agente e do deployment falta:
 
-- [ ] Definir demonstração, staging e produção, incluindo região, exposição e
-  responsável operacional.
-- [ ] Definir identidade, tipos de utilizador, papéis, permissões, criação e
-  revogação de acesso; o login local do Monitoring não autentica o portal.
-- [ ] Decidir se os rascunhos permanecem privados no navegador ou são
-  sincronizados, com ownership, revisão e resolução de conflitos.
-- [ ] Aprovar objetivos de disponibilidade, perda máxima de dados (RPO) e tempo
-  máximo de recuperação (RTO).
-- [ ] Definir minimização, retenção e eliminação de dados pessoais, conversas,
-  auditoria, versões, partilhas e exports.
-- [ ] Escolher hosting, persistência, gestão de segredos, rede, staging e rollback.
+- [ ] Nomear os responsáveis operacionais e de segurança de staging e produção.
+- [ ] Definir o contrato de rascunhos privados sincronizados, incluindo ownership,
+  revisão, expiração e resolução de conflitos.
+- [ ] Transformar as retenções aprovadas em regras executáveis e testar eliminação
+  sem quebrar versões, auditoria ou pedidos legais de preservação.
 - [ ] Eliminar a janela entre o commit SQLite e a confirmação S3 ou aprovar um RPO
   que aceite possível perda da outbox se a máquina desaparecer nesse intervalo.
-- [ ] Decidir se os checkpoints continuam integrais ou passam a conservar apenas
-  estado operacional; atualmente podem duplicar cerca de 1 GB por `just blu it`.
-- [ ] Aprovar a arquitetura antes de criar infraestrutura, publicar serviços ou
-  assumir custos recorrentes.
+- [ ] Preparar a infraestrutura como código e uma estimativa de custos, sem criar
+  recursos até existir autorização explícita de deployment.
 
 A comparação atual e os limites conhecidos estão em
 [Operações](docs/OPERATIONS.md).
