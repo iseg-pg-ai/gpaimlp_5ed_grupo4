@@ -184,7 +184,8 @@ export function persistVersion(
     return { queued: false, record, synchronized: synchronized.synchronized };
   } catch (error) {
     if (error instanceof VersionConflict) {
-      if (pendingFile && existsSync(pendingFile)) unlinkSync(pendingFile);
+      if (pendingFile && existsSync(/* turbopackIgnore: true */ pendingFile))
+        unlinkSync(pendingFile);
       throw error;
     }
     queuePendingVersion(item, options.operationalRoot);

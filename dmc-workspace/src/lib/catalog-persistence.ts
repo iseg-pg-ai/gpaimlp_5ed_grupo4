@@ -144,7 +144,8 @@ export async function persistCatalog(
       error instanceof CatalogConflict ||
       (error instanceof PortalPythonError && error.code === "CATALOG_INVALID")
     ) {
-      if (pendingFile && existsSync(pendingFile)) unlinkSync(pendingFile);
+      if (pendingFile && existsSync(/* turbopackIgnore: true */ pendingFile))
+        unlinkSync(pendingFile);
       throw error;
     }
     enqueue(item, queueRoot);

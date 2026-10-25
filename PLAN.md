@@ -38,15 +38,18 @@ completo de warehouse e a retenção de 14 dias. Evidência em
 Próximo passo técnico: obter evidência dos jobs `validate` e `container` de
 `.github/workflows/portal.yml` no GitHub Actions para a revisão a entregar.
 O workflow, o `Dockerfile.curation` e a stack `infra/curation-workspace.mjs`
-já existem; não é necessário recriá-los. A execução remota não foi verificada
-nesta revisão local.
+já existem; não é necessário recriá-los. No commit remoto `d415c54`, documentação
+passou, mas portal e ETL falharam sem iniciar jobs. As correções dos caminhos nos
+dois workflows estão locais e ainda precisam de execução remota.
+
+A revisão local eliminou os sete avisos de tracing e restringiu o contexto Docker
+a código e recursos necessários. O build e os testes do portal passaram; a imagem
+continua por construir em CI. A dependência local `dmc-workspace/tools` passa a
+ser copiada antes de `npm ci`. Evidência em [Decisões](docs/DECISIONS.md).
 
 - [ ] Validar em CI o check/build do portal, o ciclo catálogo/ETL e a construção
   da imagem unificada, corrigindo eventuais falhas. O job `container` atual usa
   `push: false` e não comprova publicação no ECR.
-- [ ] Rever os sete avisos de tracing de filesystem do build do portal,
-  delimitando os ficheiros incluídos antes de publicar a imagem, para evitar
-  incorporar dados operacionais ou artefactos alheios à entrega.
 - [ ] Definir e implementar geração de SBOM, assinatura e verificação da imagem.
 - [ ] Preparar publicação identificada no ECR e promoção por digest imutável.
   Adaptar a stack, que atualmente recebe uma imagem por tag, e testar a recusa

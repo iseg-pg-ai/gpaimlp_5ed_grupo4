@@ -4,10 +4,14 @@ import { portalRequest, PortalPythonError } from "./python-portal.ts";
 import { emptyFields, validateCatalogInput, type CatalogRecord } from "./catalog-schema.ts";
 
 export const projectRoot = () => path.resolve(process.cwd(), "..");
-export const dataRoot = () => path.resolve(projectRoot(), process.env.BLU_DATA_DIR ?? "data");
+export const dataRoot = () =>
+  path.resolve(/* turbopackIgnore: true */ projectRoot(), process.env.BLU_DATA_DIR ?? "data");
 export const catalogRoot = () => path.join(dataRoot(), "portal");
 export const warehouseRoot = () =>
-  path.resolve(projectRoot(), process.env.BLU_WAREHOUSE_DIR ?? "warehouse");
+  path.resolve(
+    /* turbopackIgnore: true */ projectRoot(),
+    process.env.BLU_WAREHOUSE_DIR ?? "warehouse",
+  );
 export class CatalogConflict extends Error {}
 
 // As ligações SQLite pertencem ao processo Python e fecham no fim de cada operação.

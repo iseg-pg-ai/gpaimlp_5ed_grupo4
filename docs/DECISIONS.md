@@ -200,6 +200,20 @@ do portal passou 206 testes, com um ignorado, usando o warehouse preparado em
 cache. O YAML ETL foi verificado localmente, preservando gate e retenção; a execução
 GitHub Actions e a validação dos serviços reais permanecem pendentes.
 
+### Dados de runtime ficam fora da descoberta automática do build — 2026-10-25
+
+Caminhos operacionais e executáveis fornecidos pelo ambiente são excluídos do
+tracing Turbopack nesses acessos. Os valores e o comportamento em runtime mantêm-se;
+a imagem disponibiliza explicitamente o código Python e as políticas necessárias.
+O contexto Docker admite apenas os diretórios da aplicação, excluindo dados,
+runtimes, caches e configuração privada. A dependência local do portal é copiada
+antes da instalação pelo lockfile.
+
+Evidência local: build sem os sete avisos de tracing, verificação de 1410 caminhos
+únicos dos manifests `.nft.json` sem referências aos diretórios privados verificados,
+e check do portal com 206 testes aprovados e um ignorado. A construção da imagem
+continua dependente do CI autorizado; não foi executada localmente.
+
 ### CI usa dados sintéticos e contratos versionados — 2026-10-24
 
 CI não usa fontes comerciais. O gate de publicação verifica versão de schema,

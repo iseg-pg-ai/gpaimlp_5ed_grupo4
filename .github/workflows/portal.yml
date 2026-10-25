@@ -30,10 +30,11 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    env:
-      CI_DATA_DIR: ${{ runner.temp }}/blu-data
-      BLU_WAREHOUSE_DIR: ${{ runner.temp }}/blu-warehouse
     steps:
+      - name: Set CI paths
+        run: |
+          echo "CI_DATA_DIR=$RUNNER_TEMP/blu-data" >> "$GITHUB_ENV"
+          echo "BLU_WAREHOUSE_DIR=$RUNNER_TEMP/blu-warehouse" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
