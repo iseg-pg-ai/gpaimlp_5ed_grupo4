@@ -152,13 +152,28 @@ recusa localmente itens protegidos ou exteriores ao catálogo e devolve o mesmo
 aproximada nem tenta adivinhar argumentos em falta. Quando não reconhece o pedido,
 devolve controlo ao Nova Pro.
 
-Nos 38 casos sintéticos atuais, 30 são agora concluídos localmente e todos passam
-o respetivo oráculo sem chamadas AWS. Os oito restantes são ambiguidades, pedidos
-incompletos, explicações e refinamentos compostos. A rota tenta `agent-compile`
+Nos 38 casos sintéticos atuais, 36 são agora concluídos localmente e todos passam
+o respetivo oráculo sem chamadas AWS. Apenas duas explicações livres permanecem
+no Nova Pro. A rota tenta `agent-compile`
 antes de reservar orçamento; resultados locais usam o fornecedor
 `deterministic`, modelo `blu-explicit-intent-v1`, zero tokens e custo zero. Apenas
-um resultado nulo ativa a política de orçamento e `agent-plan`. Esta cobertura é
-evidência local, não substitui a bateria híbrida real ainda pendente.
+um resultado nulo ativa a política de orçamento e `agent-plan`.
+
+### Avaliação híbrida final de 25 de outubro de 2026
+
+O primeiro ensaio híbrido obteve 34/38 (89,5%) e expôs três encerramentos
+incompletos e um refinamento indevido no Nova Pro. Depois de mover esses contratos
+inequívocos para o compilador e os validar localmente, uma bateria integral
+independente obteve 37/38 (97,4%). Todas as treze operações ficaram a 100%; o
+grupo `none`, que agrega recusas e leituras, ficou em 9/10 (90%). Português obteve
+18/19 e inglês 19/19. Proteções mantiveram 100% e não houve escritas.
+
+Só as duas explicações livres consultaram o Nova Pro. O ensaio contabilizou
+15 161 tokens de entrada, 340 de saída e 3 119 ms de latência acumulada, com custo
+estimado de 0,0152 USD às tarifas aprovadas. A explicação em português falhou
+fechada porque a resposta estruturada omitiu campos obrigatórios: o portal não
+recebeu plano nem alteração. O fluxo híbrido atinge o limiar aprovado, mas essa
+falha continua a ser uma limitação de disponibilidade observável, não um sucesso.
 
 Em cloud, o backend recusa a chamada antes do fornecedor quando faltam o teto
 mensal ou o preço do modelo. A reserva usa uma estimativa conservadora do pedido e

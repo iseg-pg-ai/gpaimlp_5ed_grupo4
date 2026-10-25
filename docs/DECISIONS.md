@@ -595,4 +595,13 @@ locais ficam identificados como `deterministic`/`blu-explicit-intent-v1`, com ze
 tokens, e continuam sujeitos à mesma validação, simulação, pré-visualização e
 aceitação humana. Esta decisão reduz custo e variabilidade sem criar uma segunda
 fonte de verdade nem aumentar a autoridade do agente. A avaliação local cobre
-30/38 casos; a aprovação final continua dependente de um novo ensaio híbrido real.
+36/38 casos. Uma bateria híbrida real posterior passou 37/38 (97,4%): todas as
+operações atingiram pelo menos 90%, as proteções ficaram a 100% e não houve
+escritas. Foram reportados 15 161 tokens de entrada, 340 de saída, 3 119 ms e
+cerca de 0,0152 USD.
+
+Uma explicação em português recebeu resposta incompleta do Nova Pro e falhou
+fechada. A arquitetura híbrida fica aprovada segundo o limiar definido, mantendo
+esta indisponibilidade residual explícita no monitoring. A aprovação não autoriza
+execução autónoma: simulação, pré-visualização e confirmação humana permanecem
+obrigatórias.

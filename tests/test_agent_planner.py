@@ -61,9 +61,11 @@ class PlannerTest(unittest.TestCase):
                 self.assertTrue(result["plan"]["warnings"])
                 self.assertEqual(result["provider"], "deterministic")
 
-    def test_ambiguous_request_is_not_claimed_by_local_compiler(self):
+    def test_known_ambiguity_is_closed_locally_without_provider(self):
         payload = {"instruction": "Qual é a segunda?", "context": {"conversationLanguage": "pt"}}
-        self.assertIsNone(compile_actions(payload))
+        result = compile_actions(payload)
+        self.assertEqual(result["plan"]["actions"], [])
+        self.assertEqual(result["provider"], "deterministic")
 
     def test_contract_is_itinerary_only_and_schema_copy_cannot_expand_authority(self):
         expected = {"add_catalog_item", "replace_item", "remove_item", "reschedule_item",
@@ -259,7 +261,7 @@ class PlannerTest(unittest.TestCase):
             "actions": [], "warnings": [], "requiresConfirmation": True,
         })]
         result = plan_actions(
-            {"instruction": "Qual é a segunda?", "context": {"conversationLanguage": "pt"}},
+            {"instruction": "Preciso de ajuda.", "context": {"conversationLanguage": "pt"}},
             provider=BedrockProvider(client, "modelo-teste"),
         )
         self.assertEqual(result["plan"]["actions"], [])
@@ -551,7 +553,7 @@ class PlannerTest(unittest.TestCase):
         cases = {case["name"]: case for case in json.loads(
             (Path(__file__).parent / "agent_cases.json").read_text(encoding="utf-8"))}
         for name, expected_provider in (("move_item_pt", "deterministic"),
-                                        ("ambiguidade_pt", None)):
+                                        ("injecao_pt", None)):
             result = subprocess.run(
                 [sys.executable, "-X", "utf8", "-B", "-m", "blu_ai.planner",
                  "--compile-only"],

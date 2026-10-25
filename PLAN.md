@@ -49,17 +49,18 @@ histórico Git e em [Decisões](docs/DECISIONS.md).
 - [x] Aprovar fornecedor, modelo, teto mensal e preços atuais para utilização
   real. O código já impõe timeout, limite de saída, orçamento, ausência de
   fallback e falha sem alteração; Bedrock permanece a opção local atual.
-- [ ] Autorizar e executar uma avaliação com modelo real, incluindo custos,
+- [x] Autorizar e executar uma avaliação com modelo real, incluindo custos,
   privacidade, os 38 casos sintéticos atuais e limiares de aceitação. Testes
   automáticos usam modelos simulados por defeito. A execução autorizada de
   2026-10-25 obteve 25/38 (65,8%) e não atingiu os 90% exigidos. O encerramento
   estruturado de recusas/ambiguidades e as instruções de refinamento e confirmação
   pendente foram corrigidos e validados com mocks. Uma segunda bateria chegou a
   36/38 (94,7%), mas a bateria integral final caiu para 28/38 (73,7%): Nova Pro
-  não cumpre o contrato com estabilidade suficiente. A camada híbrida local já
-  compila corretamente 30/38 casos sem tokens nem chamadas AWS; os oito casos
-  interpretativos continuam no Nova Pro. Falta avaliar este conjunto híbrido numa
-  bateria real independente antes de o aprovar para utilização autónoma.
+  não cumpriu o contrato sozinho com estabilidade suficiente. A camada híbrida
+  compila 36/38 casos sem tokens nem chamadas AWS. A bateria real final passou
+  37/38 (97,4%), com todas as operações em pelo menos 90%, 100% das proteções e
+  nenhuma escrita. Uma explicação PT falhou fechada por resposta incompleta; esta
+  limitação de disponibilidade permanece documentada e monitorizada.
 
 A memória servidor e o ownership das propostas ficam ativos apenas quando o
 backend valida os JWT do ALB e Cognito. No SageMaker, onde não existe esse

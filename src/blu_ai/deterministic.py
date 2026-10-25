@@ -58,6 +58,23 @@ def _item(context: dict, number: int, reference: str) -> dict | None:
     return matches[0] if len(matches) == 1 else None
 
 
+def _located_item(context: dict, reference: str) -> tuple[int, dict] | None:
+    matches = []
+    normalized = _plain(reference.strip().rstrip(".,;:"))
+    for day in context.get("itinerary", []):
+        if not isinstance(day, dict) or type(day.get("dayNumber")) is not int:
+            continue
+        item = _item(context, day["dayNumber"], reference)
+        if item:
+            matches.append((day["dayNumber"], item))
+            continue
+        suffix = [row for row in day.get("items", []) if isinstance(row, dict)
+                  and _plain(str(row.get("title", ""))).endswith(" " + normalized)]
+        if len(suffix) == 1:
+            matches.append((day["dayNumber"], suffix[0]))
+    return matches[0] if len(matches) == 1 else None
+
+
 def _editable(item: dict | None) -> bool:
     if not item or item.get("locked") is True:
         return False
@@ -89,6 +106,50 @@ def compile_explicit(instruction: str, context: dict) -> ProviderResult | None:
     identifier = _IDENTIFIER
     match: re.Match[str] | None
     action: dict[str, Any] | None = None
+
+    if text in {"qual e a segunda?", "which is the second one?"}:
+        warning = ("Indique a lista ou a atividade a que se refere «a segunda»."
+                   if language == "pt" else
+                   "Specify the list or activity meant by ‘the second one’.")
+        return _result(_plan(language, None, warning), started)
+    if text in {"aumenta o orcamento do briefing.", "increase the briefing budget."}:
+        warning = ("Indique o novo valor do orçamento."
+                   if language == "pt" else "Specify the new budget amount.")
+        return _result(_plan(language, None, warning), started)
+
+    refinement_patterns = (
+        r"em vez de remover (.+?), remove (.+?) e mostra duas alternativas para (.+?) sem aplicar nenhuma\.?",
+        r"instead of removing (.+?), remove (.+?) and show two alternatives for (.+?) without applying either\.?",
+    )
+    for pattern in refinement_patterns:
+        match = re.fullmatch(pattern, text)
+        if not match:
+            continue
+        previous, replacement, alternatives_for = match.groups()
+        old = _located_item(context, previous)
+        new = _located_item(context, replacement)
+        target = _located_item(context, alternatives_for)
+        pending = context.get("pendingPlan")
+        pending_actions = pending.get("actions", []) if isinstance(pending, dict) else []
+        pending_matches = bool(old and any(
+            isinstance(row, dict) and row.get("type") == "remove_item"
+            and row.get("dayNumber") == old[0] and row.get("itemId") == old[1].get("id")
+            for row in pending_actions
+        ))
+        if (old and new and target and old == target and pending_matches
+                and old[0] == new[0] and _editable(new[1])):
+            candidates = [row.get("id") for row in context.get("candidates", [])
+                          if isinstance(row, dict) and row.get("dayNumber") == old[0]
+                          and isinstance(row.get("id"), str)][:2]
+            if len(candidates) == 2 and len(set(candidates)) == 2:
+                plan = _plan(language, {
+                    "type": "remove_item", "dayNumber": new[0], "itemId": new[1]["id"],
+                })
+                plan["alternatives"] = [{
+                    "dayNumber": old[0], "itemId": old[1]["id"], "catalogIds": candidates,
+                }]
+                return _result(plan, started)
+        return _result(_blocked(language), started)
 
     # Preparar uma confirmação é deliberadamente distinto de reagendar.
     match = re.fullmatch(
