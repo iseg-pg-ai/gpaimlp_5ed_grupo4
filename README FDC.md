@@ -3,13 +3,13 @@
 > Projeto do Grupo 4 da 5.ª edição da Pós-Graduação em Artificial Intelligence &
 Machine Learning do ISEG.
 
-
 ## Introdução
-O BLU AI System é composto ´por 3 componentes:
+
+O BLU AI System é composto por 3 componentes:
+
 - **ETL** - transforma fontes de informação BLU locais, arquivando-as num catálogo no warehouse;
 - **Portal DMC (Destination Management Company)** - usa esse catálogo para explorar as ofertas e criar, rever, versionar e exportar propostas de itinerário;
 - **Canva (OpenAI)** - importa e formata visualmente em estilo BLU a proposta de itinerário. Após revisão humana e exporta para pdf.
-
 
 ## Componentes
 
@@ -31,7 +31,7 @@ runtimes e dados operacionais não são partilhados pelo Git.
 - Python 3.12 ou 3.13;
 - git
 - uv 0.12.19;
-- `pyproject.toml`, `uv.lock`, `package.json`, `package-lock.json` e 
+- `pyproject.toml`, `uv.lock`, `package.json`, `package-lock.json` e
 `requirements.txt` - consultar o [guia de dependências Python](docs/DEPENDABOT_PYTHON.md) antes de os usar ou
 regenerar.
 - PowerShell/bash para os scripts destinados a Windows / Linux&Mac.
@@ -42,20 +42,24 @@ regenerar.
 ## Preparar o ambiente
 
 Via terminal, criar `<pasta-de-projecto>` e entrar na mesma.
+
 ```bash
 mkdir <pasta-de-projecto>
 cd <pasta-de-projecto>
 ```
+
 Repor código git:
+
 ```bash
 git pull https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4.git .
 ```
 
-
 ## Instalação
 
 ### Bibliotecas
+
 Na pasta de projecto, executar:
+
 ```bash
 pip install uv==0.12.19
 
@@ -66,49 +70,57 @@ nvm install 24
 node -v # Verificação - mostra v.24.xx.x
 
 # python -m uv sync --locked
-```
+
+
 #FDC è necessário 2x o sync --locked ??
 
 Instalação de bibliotecas para as componente dashboard, agent e translation:
+
 ```bash
 uv sync --locked --all-groups
 ```
 
 Alternativa: instalação individual por componente:
+
 > - uv sync --locked --inexact --group dashboard
 > - uv sync --locked --inexact --group agent
 > - uv sync --locked --inexact --group translation
 > - uv run python translations/setup_models.py
 
-
-### Activar ambiente uv:
+### Activar ambiente uv
 
 - linux
+
   ```bash
   source .venv/bin/activate
   ```
+
 - ou windows
+
   ```powershell
   .\.venv\Scripts\Activate.ps1 
   ```
 
+### Preparar o lançamento do portal
 
-### Preparar o lançamento do portal:
 Identificar previamente o `<studio-id>` associado ao Code Editor.
 <br>
 Exemplo: `<studio-id>`=ekg16an0qsybxru
 
 Substituir <studio-id> no comando abaixo e executar num terminal novo:
+
 ```bash
 uv run python3 scripts/setup_workspace.py \
   --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
 ```
+
 ```bash
 uv run python3 scripts/setup_workspace.py \
   --studio-url "https://ekg16an0qsybxru.studio.eu-west-1.sagemaker.aws/codeeditor/default"
 ```
 
-> Nota: 
+> Nota:
+>
 > - Num clone de sistema sem dados locais, o [guia de onboarding](docs/ONBOARDING.md) descreve a preparação do ambiente e o `./bin/just blu it` materializa as releases S3 autorizadas.
 > - A configuração partilhável do agente está em `.env.example`.
 > - Também é possível usar `./bin/just blu it` sem instalar o launcher no `PATH`.
@@ -119,20 +131,24 @@ uv run python3 scripts/setup_workspace.py \
 
 <br>
 
-## Lançar o "Sistema" 
+## Lançar o "Sistema"
+
 Exitem 2 opções:
+
 - Uso diário: Quando a informação já existe carregada em catálogo;
 - Inicialização ou recuperação/reset do Catálogo.
 
-### Para o uso diário:
+### Para o uso diário
 
 Executar:
+
 ```bash
 ./bin/just blu up
 ```
 
 Notas:
-  - O comando mantém serviços ativos, inicia os que estejam parados, confirma os
+
+- O comando mantém serviços ativos, inicia os que estejam parados, confirma os
 cinco endpoints e abre as quatro interfaces;
 - A porta técnica 8000 é validada,
 mas não abre um separador.
@@ -143,8 +159,9 @@ processos ativos. Essas ações pertencem exclusivamente ao `just blu it`;
 executar o ficheiro como código;
 - Valores já exportados no terminal prevalecem;
 
-#FDC - Esta infor deve passar para secção recuperação
-```
+(#FDC - Esta infor deve passar para secção recuperação)
+
+```bash
 O bucket de dados é separado dos checkpoints. Releases validadas podem ser
 publicadas e recuperadas com `python3 -B -m etl.s3_transport`; os contratos e
 comandos estão em [Dados e operações](docs/DATA_PIPELINE.md#origem-etl-em-s3).
@@ -161,14 +178,17 @@ permissões mínimas e recuperação manual estão no
 [guia de operações](docs/OPERATIONS.md#recuperação-local).
 ```
 
-### Para inicialização ou recuperação integral:
+### Para inicialização ou recuperação integral
 
 Executar:
+
 ```bash
 just blu it
 ```
-#FDC deveria estar no Onboarding.md
-```
+
+FDC deveria estar no Onboarding.md
+
+```bash
 Detalhe do funcionamento:
   - Caso não tenha sido feito, criar conta de admin;
   - Depois de validar uma conta `admin` do Monitoring, o comando pára os serviços,
@@ -204,15 +224,17 @@ conseguem renovar tokens externos expirados.
 
 ## Operações individuais
 
-#FDC - Incluir contexto . O termo Operações é adequado ?
+(#FDC - Incluir contexto . O termo Operações é adequado ?)
+
 - ETL e warehouse: [dados e operações](docs/DATA_PIPELINE.md).
 - Portal: [guia do DMC Workspace](docs/PORTAL.md).
 - Observatório: [contratos analíticos](docs/OBSERVATORY.md).
 - Monitoring e recuperação: [BLU Operations](monitoring/README.md).
 - Apresentação: [execução e controlos](presentation/README.md).
 
-#FDC este comentário deveria estar em Observatory.md
-```
+(#FDC este comentário deveria estar em Observatory.md)
+
+```bash
 O Observatório permite explorar a oferta, destinos, preços, histórico e qualidade
 da entrega publicada. É uma ferramenta de consulta para a curadoria; não edita o
 warehouse nem confirma disponibilidade, reservas ou preços.
@@ -240,17 +262,19 @@ testes de navegador estão em [docs/TESTING.md](docs/TESTING.md).
 - [Plano ativo](PLAN.md)
 - [Decisões históricas](docs/DECISIONS.md)
 
-
 ## Limites atuais do Portal DMC
-#FDC Proponho retirar daqui e passar para a ppt ??
+
+(#FDC Proponho retirar daqui e passar para a ppt ??)
+
 - O portal produz propostas e documentos;
 - Não efetua reservas nem confirma automaticamente preços, disponibilidade, acessibilidade ou condições alimentares;
 - Sem autenticação própria e sem sincronização multiutilizador;
 - O login do Monitoring protege apenas o painel operacional.
 
-
 ## Assistente transacional
-#FDC ??
+
+(#FDC ??)
+
 - O fluxo **proposta → pré-visualização → aceitação explícita** usa os contratos
 atuais de [docs/ASSISTANT.md](docs/ASSISTANT.md);
 - A rota anterior de assistência
