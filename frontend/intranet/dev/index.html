@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Intranet BLU (pré-visualização)</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <script src="mock-config.js"></script>
+    <script type="module" src="../app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="mark">BC</span><span>Intranet BLU</span></div>
+      <nav id="tabs" class="tabs" aria-label="Secções" hidden>
+        <button type="button" data-tab="dashboard" aria-current="page">Painel</button>
+        <button type="button" data-tab="leads">Seguimento</button>
+        <button type="button" data-tab="team">Equipa</button>
+        <button type="button" data-tab="operations">Operações</button>
+        <button type="button" data-tab="governance">Governança</button>
+      </nav>
+      <div id="who" class="who" hidden>
+        <span id="who-name"></span>
+        <button type="button" id="logout" class="link">Sair</button>
+      </div>
+    </header>
+    <main id="main">
+      <section id="signin" class="signin">
+        <h1>Intranet da equipa BLU</h1>
+        <p>Acesso reservado à equipa, com autenticação de dois fatores.</p>
+        <button type="button" id="login" class="primary">Entrar</button>
+        <p id="signin-error" class="error" role="alert"></p>
+      </section>
+      <section id="view" hidden></section>
+    </main>
+  </body>
+</html>

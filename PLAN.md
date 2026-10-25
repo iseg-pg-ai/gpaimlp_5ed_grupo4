@@ -1,22 +1,22 @@
 # Plano de evolução do BLU AI System
 
-## Intranet BLU — proposta de 2026-10-25
+## Intranet BLU — 2026-10-25
 
-Estado: **para revisão do grupo; nada implementado nem publicado.**
-Especificação em [intranet BLU](docs/INTRANET.md): uma stack
-`BluCostaIntranet` com login Cognito, painéis, acompanhamento da equipa, wiki
-de conhecimento aprovado, governança com mapeamento ISO proposto (sem
-afirmar certificação) e estado das operações. A API de leads abaixo passaria
-a ser o seu primeiro módulo.
+Especificação em [intranet BLU](docs/INTRANET.md): stack `BluCostaIntranet`
+com login Cognito (MFA), seguimento de leads com a conversa do chatbot,
+painel, equipa, operações e governança com mapeamento ISO proposto (sem
+afirmar certificação). A API de leads abaixo foi absorvida por esta stack.
 
-- [ ] Rever a especificação e responder às questões em grupo.
-- [ ] Publicar `BluCostaBackoffice` (pré-requisito), após `cdk diff` aprovado.
-- [ ] F0: stack, login com MFA e estrutura da SPA em `frontend/intranet/`.
-- [ ] F1: acompanhamento (leads, tarefas do avaliador diário, responsável).
-- [ ] F2: painéis sem dados sintéticos.
-- [ ] F3: governança e ISO; manifesto movido para `config/`.
-- [ ] F4–F6: wiki (leitura, RAG, aprovação) e operações.
-- [ ] Registar a decisão em `docs/DECISIONS.md` após aprovação.
+- [x] Publicar `BluCostaBackoffice` (2026-10-25, papel de análise só para o SSO de administração).
+- [x] Integrar `origin/dev` em `inge/addon`.
+- [x] F0: stack, login com MFA e página estática em `frontend/intranet/`.
+- [x] F1: seguimento (leads, conversa, responsável, etiquetas, pergunta ao RAG).
+- [x] F2: painel sem dados sintéticos; equipa e operações.
+- [x] F3: governança só de leitura; manifesto em `config/governance-controls.json`.
+- [ ] Deploy de `BluCostaBackoffice` e `BluCostaIntranet` após `cdk diff` aprovado.
+- [ ] Criar as contas da equipa e validar o login com MFA na AWS.
+- [ ] F4–F5: wiki (leitura, rascunhos e aprovação).
+- [ ] Registar a decisão em `docs/DECISIONS.md`.
 
 ## API de leads com autenticação própria — proposta de 2026-10-25
 

@@ -1,8 +1,9 @@
 # Especificação da intranet BLU
 
-Estado: **proposta para revisão do grupo, 2026-10-25.** Nada implementado nem
-publicado. Complementa a [especificação da API de leads](LEADS_API.md) e o
-[plano](../PLAN.md).
+Estado em 2026-10-25: **F0, F1, F2, operações, equipa e governança (só
+leitura) implementados em `BluCostaIntranet`; ainda sem deploy.** A wiki
+(F4–F5) continua por fazer. Complementa a
+[especificação da API de leads](LEADS_API.md) e o [plano](../PLAN.md).
 
 ## Objetivo
 
@@ -30,7 +31,7 @@ Não-objetivos:
 
 ```text
 Equipa ──▶ CloudFront (intranet) ──▶ S3 privado (SPA estática)
-   │ login                               │ chamadas com access token
+   │ login                               │ chamadas com ID token
    ▼                                     ▼
 Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só da intranet)
                                          │
@@ -45,9 +46,14 @@ Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só d
   módulo e o site estático. A API de leads de [LEADS_API.md](LEADS_API.md)
   passa a ser o primeiro módulo desta API, em vez de uma stack separada; o
   portal local continua a chamá-la pelo servidor.
-- **SPA em React e Vite**, como `frontend/blu-cloud-site`, em
-  `frontend/intranet/`. É uma entrada nova porque a fronteira cliente/servidor
-  é diferente do portal Next.js.
+- **Página estática em HTML e JavaScript sem build** em `frontend/intranet/`
+  (sem dependências novas). É uma entrada nova porque a fronteira
+  cliente/servidor é diferente do portal Next.js. `frontend/intranet/dev/`
+  é uma pré-visualização local com dados fictícios, excluída do deploy.
+- **Uma Lambda, `infra/lambda/intranet/`**: `app.mjs` (rotas, autorização e
+  validação, testadas sem AWS), `model.mjs` (espelho de
+  `dmc-workspace/src/lib/leads-model.ts`, com teste de paridade) e
+  `index.mjs` (acessos AWS).
 - Cada Lambda tem só as permissões do seu módulo; nenhuma tem `Scan`,
   `DeleteItem` nem curingas de recurso fora do Bedrock.
 
@@ -60,8 +66,9 @@ Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só d
 | `governance` | Aprovar páginas da wiki; ver evidências completas |
 
 - Sem registo público; contas criadas pelo grupo. MFA TOTP obrigatório.
-- Login gerido do Cognito com código e PKCE. Access token de 1 h, só em
-  memória no navegador (nunca `localStorage`, URL ou logs).
+- Login gerido do Cognito com código e PKCE. O ID token (1 h, com email e
+  grupos) fica só em memória no navegador (nunca `localStorage`, URL ou
+  logs); o verificador PKCE fica em `sessionStorage` apenas até ao regresso.
 - Política de segurança de conteúdo estrita, sem scripts de terceiros; CORS da
   API limitado ao domínio da intranet.
 - Cada pedido é autorizado na Lambda pelos grupos do token, não só na SPA.
@@ -135,21 +142,24 @@ Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só d
 
 ## Contrato HTTP
 
-Base: saída `IntranetApiUrl`. Todas as rotas exigem access token; respostas
-JSON com `Cache-Control: no-store`, exceto os indicadores.
+Base: saída `IntranetApiUrl`. Todas as rotas exigem o ID token Cognito
+(autorizador JWT da HTTP API) e um dos grupos `curators` ou `governance`;
+as ações sobre leads exigem `curators`. Respostas JSON com
+`Cache-Control: no-store`, exceto indicadores, operações e governança.
 
 | Rota | Grupo | Resposta |
 | --- | --- | --- |
-| `GET /v1/leads?status=` e `GET /v1/leads/{id}` | `curators` | Como em LEADS_API.md |
+| `GET /v1/me` | equipa | Email, nome e grupos |
+| `GET /v1/leads?status=` (`open`, `contacted`, `all`) e `GET /v1/leads/{id}` | equipa | Lista; detalhe com a conversa do chatbot, email e telefone |
 | `POST /v1/leads/{id}/contacted`, `PUT /v1/leads/{id}/tags` | `curators` | `204` |
-| `POST /v1/leads/{id}/assign` | `curators` | `204`; grava `assignedTo` e `assignedAt` |
+| `POST /v1/leads/{id}/assign` (`{ "release": true }` liberta) | `curators` | `204`; grava `assignedTo` e `assignedAt` |
 | `POST /v1/leads/{id}/ask` | `curators` | `200 { "answer", "sourceIds", "requiresHumanApproval" }` via Backoffice RAG |
-| `GET /v1/metrics?from=&to=` | `curators` | `200` com contagens agregadas |
-| `GET /v1/wiki` e `GET /v1/wiki/{slug}` | `curators` | Índice e página aprovada |
-| `PUT /v1/wiki/drafts/{slug}` | `knowledge-editors` | `204` |
-| `POST /v1/wiki/drafts/{slug}/approve` | `governance` | `204` |
-| `GET /v1/governance/controls` e `/evidence` | `curators` | Manifesto e lista de evidências |
-| `GET /v1/operations` | `curators` | Filas, última avaliação e erros |
+| `GET /v1/metrics` | equipa | Contagens agregadas sem sintéticos |
+| `GET /v1/team` | equipa | Membros dos grupos, estado da conta e leads em aberto por responsável |
+| `GET /v1/operations` | equipa | Filas (eventos, falhados, tarefas), workers `BluCosta*` nas últimas 24 h e última revisão diária |
+| `GET /v1/governance` | equipa | Manifesto de `config/governance-controls.json` e evidências recentes |
+
+As rotas da wiki (`/v1/wiki`) ficam para F4–F5.
 
 Erros como em LEADS_API.md (`400`, `401`, `403`, `404`, `429`, `500`), com
 mensagens em português.
@@ -206,3 +216,18 @@ Na AWS, só com autorização e dados de teste:
   Lambda por pedido. Confirmar no orçamento antes do deploy.
 - `cdk destroy BluCostaIntranet` remove site, API e Lambdas; o user pool e o
   bucket do site ficam retidos. Dados de `BluCostaData` não são afetados.
+
+## Publicação e contas
+
+1. `cdk diff --exclusively BluCostaBackoffice BluCostaIntranet`. O Backoffice
+   muda apenas o manifesto de controlos e exporta o RAG e o bucket de
+   evidências para a intranet.
+2. `cdk deploy --exclusively BluCostaBackoffice BluCostaIntranet`, com
+   `TARGET_AWS_ACCOUNT_ID`, `TARGET_AWS_REGION`, `BEDROCK_MODEL_ID` e
+   `BACKOFFICE_TRUSTED_PRINCIPAL_ARNS` iguais aos do deploy anterior.
+3. Contas: cada pessoa da equipa é criada pelo grupo com
+   `aws cognito-idp admin-create-user` (email como nome de utilizador) e
+   adicionada a `curators` e, se for o caso, a `governance` com
+   `admin-add-user-to-group`. No primeiro login define a palavra-passe e
+   configura a aplicação de autenticação (MFA).
+4. Abrir a saída `IntranetUrl`.

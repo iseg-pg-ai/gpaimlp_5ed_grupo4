@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -22,6 +23,8 @@ import {
   aws_logs as logs,
   aws_s3 as s3,
   aws_s3_deployment as s3deploy,
+  aws_apigatewayv2_authorizers as authorizers,
+  aws_cognito as cognito,
   aws_secretsmanager as secretsmanager,
   aws_sqs as sqs,
 } from 'aws-cdk-lib';
@@ -39,6 +42,8 @@ const infraDir = path.dirname(fileURLToPath(import.meta.url));
 // available under /connect for campaign and WhatsApp hand-offs.
 const siteAsset = path.resolve(infraDir, '../frontend/blu-cloud-site/dist/client');
 const socialBridgeAsset = path.resolve(infraDir, '../frontend/website');
+const intranetAsset = path.resolve(infraDir, '../frontend/intranet');
+const governanceControls = JSON.parse(readFileSync(path.resolve(infraDir, '../config/governance-controls.json'), 'utf8'));
 if (!/^[0-9]{12}$/.test(account ?? '')) throw new Error('TARGET_AWS_ACCOUNT_ID must be the twelve-digit destination AWS account');
 
 const app = new App({ outdir });
@@ -379,20 +384,8 @@ class BackofficeStack extends Stack {
       destinationBucket: evidenceBucket,
       destinationKeyPrefix: 'controls/manifests',
       prune: false,
-      sources: [s3deploy.Source.data('customer-intelligence-controls.json', JSON.stringify({
-        schemaVersion: 1,
-        scope: ['conversation-ingestion', 'customer-intelligence', 'backoffice-rag', 'churn-followups', 'feedback'],
-        controls: {
-          humanApprovalRequired: true,
-          automaticCustomerContact: false,
-          rawTranscriptsExcludedFromKnowledgeBase: true,
-          iamProtectedBackofficeInvocation: true,
-          evidenceVersioning: true,
-          syntheticExcludedFromBusinessKpis: true,
-        },
-        reviewCadence: 'quarterly',
-        note: 'Audit evidence and control mapping; not a claim of ISO certification.',
-      }, null, 2))],
+      // Fonte única: config/governance-controls.json, também apresentada na intranet.
+      sources: [s3deploy.Source.data('customer-intelligence-controls.json', JSON.stringify(governanceControls, null, 2))],
     });
     new CfnOutput(this, 'ConversationTableForBackoffice', { value: props.data.messages.tableName });
     new CfnOutput(this, 'AnalysisExportBucket', { value: exportsBucket.bucketName });
@@ -401,10 +394,147 @@ class BackofficeStack extends Stack {
     new CfnOutput(this, 'ChurnEvaluatorFunctionArn', { value: churnEvaluator.functionArn });
     new CfnOutput(this, 'BackofficeCrmQueueUrl', { value: props.data.crmEvents.queueUrl });
     new CfnOutput(this, 'WhatsAppOutboundFunctionArn', { value: whatsappOutbound.functionArn });
+    this.rag = rag;
+    this.evidenceBucket = evidenceBucket;
+  }
+}
+
+// Intranet da equipa: login Cognito com MFA, API protegida por JWT e site estático privado.
+// Só lê e atualiza os registos PROFILE já existentes; não cria tabelas nem contacta clientes.
+class IntranetStack extends Stack {
+  constructor(scope, id, props) {
+    super(scope, id, props);
+    tag(this);
+    const { data, backoffice } = props;
+
+    const userPool = new cognito.UserPool(this, 'IntranetUsers', {
+      userPoolName: `${projectName}-${environmentName}-intranet`,
+      selfSignUpEnabled: false,
+      signInAliases: { email: true },
+      standardAttributes: { email: { required: true, mutable: true }, fullname: { required: false, mutable: true } },
+      mfa: cognito.Mfa.REQUIRED,
+      mfaSecondFactor: { otp: true, sms: false },
+      passwordPolicy: { minLength: 12, requireLowercase: true, requireUppercase: true, requireDigits: true, requireSymbols: false },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    for (const [group, description] of [['curators', 'Seguimento de leads e operações'], ['governance', 'Governança, evidências e aprovação de conhecimento']]) {
+      new cognito.CfnUserPoolGroup(this, `Group-${group}`, { userPoolId: userPool.userPoolId, groupName: group, description });
+    }
+    const domainPrefix = process.env.INTRANET_AUTH_DOMAIN_PREFIX ?? `${projectName}-${environmentName}-intranet-${account.slice(-4)}`;
+    if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(domainPrefix)) throw new Error('INTRANET_AUTH_DOMAIN_PREFIX must be lowercase letters, digits and hyphens');
+    const loginDomain = userPool.addDomain('IntranetLogin', { cognitoDomain: { domainPrefix } });
+    const authHost = `${domainPrefix}.auth.${region}.amazoncognito.com`;
+
+    const siteBucket = new s3.Bucket(this, 'IntranetSite', {
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: RemovalPolicy.RETAIN,
+      autoDeleteObjects: false,
+    });
+
+    const api = new apigatewayv2.HttpApi(this, 'IntranetApi', { description: 'BLU staff intranet API (Cognito JWT)' });
+    const distribution = new cloudfront.Distribution(this, 'IntranetDistribution', {
+      defaultRootObject: 'index.html',
+      defaultBehavior: {
+        origin: origins.S3BucketOrigin.withOriginAccessControl(siteBucket),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        compress: true,
+        responseHeadersPolicy: new cloudfront.ResponseHeadersPolicy(this, 'IntranetHeaders', {
+          securityHeadersBehavior: {
+            contentSecurityPolicy: {
+              contentSecurityPolicy: `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ${api.apiEndpoint} https://${authHost}; form-action 'self' https://${authHost}; frame-ancestors 'none'; base-uri 'none'; object-src 'none'`,
+              override: true,
+            },
+            contentTypeOptions: { override: true },
+            frameOptions: { frameOption: cloudfront.HeadersFrameOption.DENY, override: true },
+            referrerPolicy: { referrerPolicy: cloudfront.HeadersReferrerPolicy.NO_REFERRER, override: true },
+            strictTransportSecurity: { accessControlMaxAge: Duration.days(365), includeSubdomains: true, override: true },
+          },
+        }),
+      },
+    });
+    const siteUrl = `https://${distribution.distributionDomainName}/`;
+    const extraCallbacks = (process.env.INTRANET_CALLBACK_URLS ?? '').split(',').map(url => url.trim()).filter(Boolean);
+    const client = userPool.addClient('IntranetWeb', {
+      generateSecret: false,
+      authFlows: {},
+      oAuth: {
+        flows: { authorizationCodeGrant: true },
+        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
+        callbackUrls: [siteUrl, ...extraCallbacks],
+        logoutUrls: [siteUrl, ...extraCallbacks],
+      },
+      supportedIdentityProviders: [cognito.UserPoolClientIdentityProvider.COGNITO],
+      idTokenValidity: Duration.hours(1),
+      accessTokenValidity: Duration.hours(1),
+      refreshTokenValidity: Duration.hours(12),
+      preventUserExistenceErrors: true,
+    });
+
+    const fn = new lambda.Function(this, 'IntranetApiHandler', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'index.handler',
+      timeout: Duration.seconds(29),
+      memorySize: 512,
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      environment: {
+        MESSAGE_TABLE_NAME: data.messages.tableName,
+        INTELLIGENCE_TABLE_NAME: data.intelligence.tableName,
+        EVENTS_QUEUE_URL: data.events.queueUrl,
+        CRM_QUEUE_URL: data.crmEvents.queueUrl,
+        EVIDENCE_BUCKET: backoffice.evidenceBucket.bucketName,
+        RAG_FUNCTION_NAME: backoffice.rag.functionName,
+        USER_POOL_ID: userPool.userPoolId,
+      },
+      code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
+    });
+    // Permissões explícitas e mínimas: sem Scan, DeleteItem nem PutItem.
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:Query', 'dynamodb:GetItem'], resources: [data.messages.tableArn, data.intelligence.tableArn, `${data.intelligence.tableArn}/index/FollowUpIndex`] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem'], resources: [data.intelligence.tableArn] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['sqs:GetQueueAttributes'], resources: [data.events.queueArn, data.crmEvents.queueArn, `arn:aws:sqs:${region}:${account}:BluCostaData-ConversationEventsDlq*`] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['lambda:ListFunctions', 'cloudwatch:GetMetricData'], resources: ['*'] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['cognito-idp:ListUsersInGroup'], resources: [userPool.userPoolArn] }));
+    backoffice.evidenceBucket.grantRead(fn, 'controls/*');
+    backoffice.rag.grantInvoke(fn);
+
+    const authorizer = new authorizers.HttpJwtAuthorizer('IntranetJwt', `https://cognito-idp.${region}.amazonaws.com/${userPool.userPoolId}`, { jwtAudience: [client.userPoolClientId] });
+    const integration = new integrations.HttpLambdaIntegration('IntranetIntegration', fn);
+    const routes = [
+      ['GET', '/v1/me'], ['GET', '/v1/leads'], ['GET', '/v1/leads/{id}'],
+      ['POST', '/v1/leads/{id}/contacted'], ['POST', '/v1/leads/{id}/assign'], ['PUT', '/v1/leads/{id}/tags'], ['POST', '/v1/leads/{id}/ask'],
+      ['GET', '/v1/metrics'], ['GET', '/v1/team'], ['GET', '/v1/operations'], ['GET', '/v1/governance'],
+    ];
+    for (const [method, routePath] of routes) {
+      api.addRoutes({ path: routePath, methods: [apigatewayv2.HttpMethod[method]], integration, authorizer });
+    }
+    // CORS só do domínio da intranet; limite de pedidos para conter abusos com um token roubado.
+    const cfnApi = api.node.defaultChild;
+    cfnApi.corsConfiguration = { allowOrigins: [`https://${distribution.distributionDomainName}`], allowHeaders: ['authorization', 'content-type'], allowMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], maxAge: 600 };
+    api.defaultStage.node.defaultChild.defaultRouteSettings = { throttlingBurstLimit: 40, throttlingRateLimit: 20 };
+
+    new s3deploy.BucketDeployment(this, 'DeployIntranet', {
+      destinationBucket: siteBucket,
+      distribution,
+      distributionPaths: ['/*'],
+      cacheControl: [s3deploy.CacheControl.noCache()],
+      sources: [
+        s3deploy.Source.asset(intranetAsset, { exclude: ['config.js', 'dev', 'package.json', '*.test.js'] }),
+        s3deploy.Source.data('config.js', `window.BLU_INTRANET=${JSON.stringify({ api: api.apiEndpoint, authDomain: `https://${authHost}`, clientId: client.userPoolClientId, redirectUri: siteUrl })};`),
+      ],
+    });
+
+    new CfnOutput(this, 'IntranetUrl', { value: siteUrl });
+    new CfnOutput(this, 'IntranetApiUrl', { value: api.apiEndpoint });
+    new CfnOutput(this, 'IntranetUserPoolId', { value: userPool.userPoolId });
+    new CfnOutput(this, 'IntranetClientId', { value: client.userPoolClientId });
+    new CfnOutput(this, 'IntranetAuthDomain', { value: loginDomain.baseUrl() });
   }
 }
 
 const data = new DataStack(app, 'BluCostaData', { env, description: 'Shared low-cost conversation event data plane' });
 new FrontendStack(app, 'BluCostaFrontend', { env, data, description: 'Public chatbot ingestion API; no backoffice routes' });
-new BackofficeStack(app, 'BluCostaBackoffice', { env, data, description: 'Curator/backoffice read and analysis resources' });
+const backoffice = new BackofficeStack(app, 'BluCostaBackoffice', { env, data, description: 'Curator/backoffice read and analysis resources' });
+new IntranetStack(app, 'BluCostaIntranet', { env, data, backoffice, description: 'Staff intranet: Cognito login, follow-up, metrics, team, operations and governance' });
 app.synth();
