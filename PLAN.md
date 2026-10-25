@@ -3,6 +3,8 @@
 ## API de leads com autenticação própria — proposta de 2026-10-25
 
 Estado: **para revisão do grupo; nada implementado nem publicado.**
+Contrato, segurança, testes e publicação em
+[especificação da API de leads](docs/LEADS_API.md).
 
 Problema: a página de Leads (`dmc-workspace/src/lib/leads.ts`) lê o DynamoDB
 com as credenciais do ambiente. No Studio, isso é o papel partilhado
@@ -33,7 +35,7 @@ HTTP API + autorizador JWT ──▶ Lambda leads-api ──política mínima─
   PKCE) com URLs de retorno configuráveis (localhost, Studio, alojado).
 - HTTP API com autorizador JWT e limitação de pedidos; sem CORS, porque só o
   servidor do portal a chama.
-- Rotas: `GET /v1/leads?filter=open|contacted`, `GET /v1/leads/{id}`,
+- Rotas: `GET /v1/leads?status=open|contacted`, `GET /v1/leads/{id}`,
   `POST /v1/leads/{id}/contacted`, `PUT /v1/leads/{id}/tags`.
 - Lambda Node 22 com a política já validada no Access Analyzer: só `Query`
   nas duas tabelas e em `FollowUpIndex`; `UpdateItem` apenas nos campos de
@@ -46,8 +48,9 @@ HTTP API + autorizador JWT ──▶ Lambda leads-api ──política mínima─
 - `leads.ts` mantém as mesmas funções e erros exportados (`listLeads`,
   `getLead`, `markContacted`, `tagLead`), passando a chamar a API com o token
   da sessão. Páginas e componentes não mudam.
-- Uma única fonte de mapeamento: a Lambda é empacotada com o
-  `leads-model.ts` existente, em vez de duplicar `toLead`/`contactDetails`.
+- Uma única fonte de mapeamento: a Lambda devolve itens DynamoDB e o
+  `leads-model.ts` existente continua a fazer `toLead`/`contactDetails`, sem
+  empacotador novo em `infra/`.
 - Sessão em cookie `httpOnly`, `secure` e `sameSite`; configuração por
   `BLU_LEADS_API_URL` e variáveis do Cognito. Sem acesso direto ao DynamoDB.
 
