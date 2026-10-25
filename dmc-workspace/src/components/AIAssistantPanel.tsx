@@ -383,6 +383,43 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   ))}
                 </div>
               ))}
+              {proposal.rankedCandidates?.map((group) => (
+                <div
+                  key={group.dayNumber}
+                  className="mt-3 border-t pt-2"
+                  data-testid="agent-ranking"
+                >
+                  <h5 className="font-semibold">
+                    <T text="Candidatos recomendados" source="pt" /> · <T text="Dia" source="pt" />{" "}
+                    {group.dayNumber}
+                  </h5>
+                  {group.options.map((option) => (
+                    <div key={option.id} className="mt-2 rounded border p-2">
+                      <p className="font-semibold">{option.title}</p>
+                      <p>
+                        {option.time} ·{" "}
+                        {option.price ??
+                          (language === "en" ? "Price pending" : "Preço por confirmar")}
+                      </p>
+                      <p className="text-xs">
+                        <T text="Posição na seleção determinística" source="pt" />:{" "}
+                        {option.baselinePosition}
+                      </p>
+                      {option.reasons.map((reason, index) => (
+                        <p className="text-xs" key={index}>
+                          {reason}
+                        </p>
+                      ))}
+                      <Button
+                        disabled={isProcessing}
+                        onClick={() => onSelectAlternative(group.dayNumber, "", option.id)}
+                      >
+                        <T text="Pré-visualizar adição" source="pt" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ))}
               {proposal.plan.actions.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button

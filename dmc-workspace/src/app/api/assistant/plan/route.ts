@@ -4,6 +4,7 @@ import {
   simulatePlan,
   validatePlan,
   resolveAlternatives,
+  resolveRanking,
   type AgentPlan,
 } from "@/lib/assistant-actions";
 import { AgentAuditStore } from "@/lib/agent-audit-store";
@@ -220,9 +221,11 @@ export async function POST(request: Request) {
     validateResult(result);
     let preview;
     let alternatives;
+    let rankedCandidates;
     try {
       preview = simulatePlan(snapshot, result.plan, catalog);
       alternatives = resolveAlternatives(snapshot, result.plan, catalog);
+      rankedCandidates = resolveRanking(snapshot, result.plan, catalog);
     } catch (error) {
       const corrected = await portalRequest<PlannerResult>("agent-plan", "", {
         instruction: body.input,
@@ -233,6 +236,7 @@ export async function POST(request: Request) {
         throw new PortalPythonError("AGENT_INVALID_RESPONSE", "Fornecedor mudou durante o pedido.");
       preview = simulatePlan(snapshot, corrected.plan, catalog);
       alternatives = resolveAlternatives(snapshot, corrected.plan, catalog);
+      rankedCandidates = resolveRanking(snapshot, corrected.plan, catalog);
       result = {
         ...corrected,
         latencyMs: result.latencyMs + corrected.latencyMs,
@@ -309,6 +313,7 @@ export async function POST(request: Request) {
         baseVersion: body.baseVersion,
         plan: result.plan,
         alternatives,
+        rankedCandidates,
         before: snapshot.itinerary,
         after: preview.itinerary,
         impact: proposalImpact(snapshot, preview),

@@ -36,6 +36,7 @@ export type AgentPlan = {
   warnings: string[];
   requiresConfirmation: true;
   alternatives?: Array<{ dayNumber: number; itemId: string; catalogIds: string[] }>;
+  ranking?: Array<{ dayNumber: number; catalogIds: string[] }>;
 };
 export type AgentAlternatives = {
   dayNumber: number;
@@ -60,6 +61,7 @@ export type AgentProposal = {
   provider: string;
   modelId: string;
   alternatives?: AgentAlternatives[];
+  rankedCandidates?: ReturnType<typeof resolveRanking>;
 };
 type Schema = {
   type: string;
@@ -137,6 +139,15 @@ export function validatePlan(value: unknown): asserts value is AgentPlan {
       expected.some((key) => !Object.hasOwn(action, key))
     )
       throw new Error("Argumentos da ação inválidos.");
+  }
+  const rankingDays = new Set<number>();
+  for (const group of (value as AgentPlan).ranking ?? []) {
+    if (
+      rankingDays.has(group.dayNumber) ||
+      new Set(group.catalogIds).size !== group.catalogIds.length
+    )
+      throw new Error("Ranking duplicado.");
+    rankingDays.add(group.dayNumber);
   }
 }
 const protectedItem = (item: Snapshot["itinerary"][number]["items"][number]) =>
@@ -420,6 +431,33 @@ export function resolveAlternatives(
       itemId: group.itemId,
       itemTitle: day.items[index].title,
       options,
+    };
+  });
+}
+
+/** Resolve apenas IDs já elegíveis; não altera nem volta a gerar o itinerário. */
+export function resolveRanking(snapshot: Snapshot, plan: AgentPlan, catalog: Catalog) {
+  validatePlan(plan);
+  const context = plan.ranking?.length ? plannerContext(snapshot, catalog) : undefined;
+  const seen = new Set<number>();
+  return (plan.ranking ?? []).map((group) => {
+    if (seen.has(group.dayNumber) || new Set(group.catalogIds).size !== group.catalogIds.length)
+      throw new Error("Ranking duplicado.");
+    seen.add(group.dayNumber);
+    return {
+      dayNumber: group.dayNumber,
+      options: group.catalogIds.map((id) => {
+        const dayCandidates = context!.candidates.filter(
+          (candidate) => candidate.dayNumber === group.dayNumber,
+        );
+        const candidate = dayCandidates.find((item) => item.id === id);
+        if (!candidate)
+          throw new Error("O ranking contém uma oferta fora dos candidatos elegíveis.");
+        return {
+          ...candidate,
+          baselinePosition: dayCandidates.findIndex((item) => item.id === id) + 1,
+        };
+      }),
     };
   });
 }

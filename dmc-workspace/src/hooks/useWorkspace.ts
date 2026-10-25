@@ -481,7 +481,11 @@ export function useWorkspace() {
       });
       const result = await responseJson<AgentProposal>(response);
       validateAgentProposal(result, active);
-      setAgentProposal(result.plan.actions.length || result.alternatives?.length ? result : null);
+      setAgentProposal(
+        result.plan.actions.length || result.alternatives?.length || result.rankedCandidates?.length
+          ? result
+          : null,
+      );
       appendAssistantMessage(
         active.id,
         result.plan.summary +
@@ -492,15 +496,20 @@ export function useWorkspace() {
                 "Reveja a pré-visualização e escolha aceitar ou rejeitar. O roteiro ainda não foi alterado.",
                 "Review the preview and choose accept or reject. The itinerary has not changed yet.",
               )
-            : result.alternatives?.length
+            : result.rankedCandidates?.length
               ? say(
-                  "Escolha uma alternativa para preparar a substituição. O roteiro permanece igual.",
-                  "Choose an alternative to preview its replacement. The itinerary remains unchanged.",
+                  "Escolha um candidato para pré-visualizar a adição. O roteiro permanece igual.",
+                  "Choose a candidate to preview the addition. The itinerary remains unchanged.",
                 )
-              : say(
-                  "Esta resposta não contém alterações para aceitar. O roteiro permanece igual.",
-                  "This response contains no changes to accept. The itinerary remains unchanged.",
-                )),
+              : result.alternatives?.length
+                ? say(
+                    "Escolha uma alternativa para preparar a substituição. O roteiro permanece igual.",
+                    "Choose an alternative to preview its replacement. The itinerary remains unchanged.",
+                  )
+                : say(
+                    "Esta resposta não contém alterações para aceitar. O roteiro permanece igual.",
+                    "This response contains no changes to accept. The itinerary remains unchanged.",
+                  )),
         language,
       );
       return true;

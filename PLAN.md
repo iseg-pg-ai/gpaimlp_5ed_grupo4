@@ -21,8 +21,9 @@ histórico Git e em [Decisões](docs/DECISIONS.md).
   é reduzida a um de nove códigos sem texto bruto e permite uma única correção do
   plano completo. O orçamento reserva as duas chamadas possíveis; a segunda
   simulação volta a falhar fechada e nunca executa a proposta.
-- [ ] Integrar ranking explicável de candidatos elegíveis, sem transformar a
-  ordenação numa alteração e exigindo nova pré-visualização para adicionar.
+- [x] Integrar ranking explicável de candidatos elegíveis, sem transformar a
+  ordenação numa alteração. A escolha humana prepara uma proposta de adição e
+  só a aceitação posterior cria uma versão.
 - [ ] Integrar feedback card a card, sinais de qualidade e casos históricos
   aprovados na base operacional atual; comentários livres e dados pessoais não
   entram no contexto do modelo e nenhum alerta altera o catálogo sozinho.

@@ -14,7 +14,9 @@ reorder_day, set_day_capacity, add_free_period, set_free_day, move_item,
 optimize_route, regenerate_day, update_brief e update_pending_confirmation. Até
 oito ações por proposta, sem campos extra ou ações duplicadas. Opções de
 substituição exigem uma escolha e nova revisão.
-Não há ranking nem seleção automática de uma opção de adição. Os controlos
+O ranking ordena até cinco candidatos já elegíveis por dia e não altera o
+roteiro. A escolha humana prepara uma proposta de adição, volta a passar pela
+simulação e só cria uma versão depois de nova aceitação explícita. Os controlos
 manuais de adicionar/remover usam /api/itinerary/edit, sem invocar o modelo.
 
 Pedidos e esclarecimentos em português ou inglês. No modo cloud, a memória

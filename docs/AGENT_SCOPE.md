@@ -100,7 +100,6 @@ mensagem bruta do erro. A segunda falha termina o pedido sem escrita.
 
 O agente completo deverá ainda:
 
-- ordenar candidatos elegíveis com razões explicáveis, sem os adicionar sozinho;
 - consultar feedback aprovado e sinais agregados de qualidade;
 - reutilizar casos históricos aprovados e sem dados pessoais;
 - preparar exportações PDF/TXT e variantes linguísticas;

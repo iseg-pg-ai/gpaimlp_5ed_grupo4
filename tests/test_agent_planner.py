@@ -41,12 +41,12 @@ class PlannerTest(unittest.TestCase):
                     "move_item", "optimize_route", "update_brief",
                     "update_pending_confirmation", "regenerate_day"}
         self.assertEqual(set(SCHEMA["x-action-fields"]), expected)
-        self.assertEqual(set(SCHEMA["properties"]), {"summary", "actions", "alternatives", "warnings", "requiresConfirmation"})
+        self.assertEqual(set(SCHEMA["properties"]), {"summary", "actions", "alternatives", "ranking", "warnings", "requiresConfirmation"})
         before = copy.deepcopy(SCHEMA)
         schema = tool_schema({"requestIntent": {"kind": "rank", "dayNumber": 1}})
         schema["properties"]["actions"]["maxItems"] = 99
         self.assertEqual(SCHEMA, before)
-        self.assertNotIn("ranking", json.dumps(SCHEMA))
+        self.assertEqual(SCHEMA["properties"]["ranking"]["maxItems"], 3)
         confirmation_fields = set(
             SCHEMA["properties"]["actions"]["items"]["properties"]
             ["confirmationPatch"]["properties"]
@@ -77,7 +77,7 @@ class PlannerTest(unittest.TestCase):
     def test_strict_contract_rejects_extra_missing_and_out_of_scope_fields(self):
         mutations = [
             lambda p: p.update(requiresConfirmation=False),
-            lambda p: p.update(language="en"), lambda p: p.update(ranking=[]),
+            lambda p: p.update(language="en"),
             lambda p: p.update(chainOfThought="segredo"),
             lambda p: p["actions"][0].update(
                 type="update_pending_confirmation", confirmationPatch={"contact": "privado"}),
@@ -100,6 +100,8 @@ class PlannerTest(unittest.TestCase):
             {**proposal(), "actions": [{"type": "reorder_day", "dayNumber": 1, "itemIds": ["a", "a"]}]},
             {**proposal(), "alternatives": [{"dayNumber": 1, "itemId": "a", "catalogIds": ["b", "b"]}]},
             {**proposal(), "alternatives": [{"dayNumber": 1, "itemId": "a", "catalogIds": ["b"]}] * 2},
+            {**proposal(), "ranking": [{"dayNumber": 1, "catalogIds": ["a", "a"]}]},
+            {**proposal(), "ranking": [{"dayNumber": 1, "catalogIds": ["a"]}] * 2},
         ]:
             with self.assertRaises(ValueError):
                 validate_plan(plan)

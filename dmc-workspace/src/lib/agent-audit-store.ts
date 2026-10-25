@@ -4,6 +4,7 @@ import {
   simulatePlan,
   validatePlan,
   resolveAlternatives,
+  resolveRanking,
   type AgentPlan,
 } from "./assistant-actions.ts";
 import type { Snapshot } from "./itinerary-pdf";
@@ -123,6 +124,51 @@ export class AgentAuditStore {
     const sourceIntent = JSON.parse(String(sourceMetadata.metadata)).requestIntent as
       | RequestIntent
       | undefined;
+    if (itemId === "") {
+      const ranked = resolveRanking(before, JSON.parse(run.plan), catalog);
+      const group = ranked.find((candidate) => candidate.dayNumber === dayNumber);
+      const option = group?.options.find((candidate) => candidate.id === catalogId);
+      if (!option)
+        throw new VersionConflict("Escolha um dos candidatos apresentados para este dia.");
+      const plan: AgentPlan = {
+        summary:
+          language === "en"
+            ? `Add ${option.title} to day ${dayNumber}.`
+            : `Adicionar ${option.title} ao dia ${dayNumber}.`,
+        actions: [{ type: "add_catalog_item", dayNumber, catalogId }],
+        warnings: [],
+        requiresConfirmation: true,
+      };
+      const after = simulatePlan(before, plan, catalog);
+      const runId = this.propose(
+        tripId,
+        run.baseVersion,
+        `Selecionar candidato ${catalogId}`,
+        plan,
+        after,
+        {
+          provider: "catalog",
+          modelId: "human-selection",
+          parentRunId: id,
+          conversationLanguage: language,
+          requestIntent: sourceIntent,
+        },
+        ownerId,
+      );
+      return {
+        runId,
+        tripId,
+        baseVersion: run.baseVersion,
+        plan,
+        before: before.itinerary,
+        after: after.itinerary,
+        impact: proposalImpact(before, after),
+        alternatives: [],
+        rankedCandidates: [],
+        provider: "catalog",
+        modelId: "human-selection",
+      };
+    }
     if (sourceIntent?.kind === "add")
       throw new IntentConflict(
         "Este pedido não autoriza uma substituição. Escolha uma opção de adição.",

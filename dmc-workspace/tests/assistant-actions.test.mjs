@@ -8,6 +8,7 @@ import {
   simulatePlan,
   plannerContext,
   resolveAlternatives,
+  resolveRanking,
 } from "../src/lib/assistant-actions.ts";
 import { recentConversation } from "../src/lib/assistant-conversation.ts";
 import { generateItinerary } from "../src/lib/curation.ts";
@@ -250,6 +251,35 @@ test("alternativas são resolvidas no catálogo e não modificam o roteiro", () 
   assert.throws(() => resolveAlternatives(s, p, c), /protegida|confirmada/);
 });
 
+test("ranking ordena apenas candidatos elegíveis e não altera o roteiro", () => {
+  const { c, s } = alternativesSetup();
+  const before = JSON.stringify(s);
+  const ranked = resolveRanking(
+    s,
+    { ...plan([]), ranking: [{ dayNumber: 1, catalogIds: ["atracoes:Jardim", "atracoes:Museu"] }] },
+    c,
+  );
+  assert.deepEqual(
+    ranked[0].options.map((item) => item.id),
+    ["atracoes:Jardim", "atracoes:Museu"],
+  );
+  assert.ok(ranked[0].options.every((item) => item.baselinePosition > 0));
+  assert.equal(JSON.stringify(s), before);
+  assert.throws(() =>
+    resolveRanking(
+      s,
+      { ...plan([]), ranking: [{ dayNumber: 1, catalogIds: ["atracoes:fora"] }] },
+      c,
+    ),
+  );
+  assert.throws(() =>
+    validatePlan({
+      ...plan([]),
+      ranking: [{ dayNumber: 1, catalogIds: ["atracoes:Museu", "atracoes:Museu"] }],
+    }),
+  );
+});
+
 test("Blu propõe campos permitidos do briefing sem alterar dados pessoais", () => {
   const { c, s } = alternativesSetup();
   const before = structuredClone(s);
@@ -363,6 +393,33 @@ test("escolher uma alternativa cria outra pré-visualização e só a aceitaçã
       () => audit.selectAlternative(id, "options", 1, group.itemId, "atracoes:Jardim", c),
       /mudou/,
     );
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("escolher um candidato ranqueado prepara uma adição e só depois permite aceitar", () => {
+  const { c, s } = alternativesSetup();
+  const root = mkdtempSync(path.join(tmpdir(), "blu-agent-ranking-"));
+  const store = new VersionStore(root);
+  try {
+    store.save("ranking", s, "generated", null);
+    const audit = new AgentAuditStore(store);
+    const rankingPlan = {
+      ...plan([]),
+      ranking: [{ dayNumber: 1, catalogIds: ["atracoes:Museu", "atracoes:Jardim"] }],
+    };
+    const id = audit.propose("ranking", 1, "recomenda", rankingPlan, s, {
+      requestIntent: { kind: "add", dayNumber: 1, generic: true },
+    });
+    assert.throws(() => audit.selectAlternative(id, "ranking", 1, "", "atracoes:fora", c));
+    const proposal = audit.selectAlternative(id, "ranking", 1, "", "atracoes:Museu", c);
+    assert.equal(store.list("ranking").length, 1);
+    assert.equal(proposal.plan.actions[0].type, "add_catalog_item");
+    assert.ok(proposal.after[0].items.some((item) => item.id === "atracoes:Museu"));
+    const accepted = audit.decide(proposal.runId, "ranking", "accept", c);
+    assert.equal(accepted.version, 2);
   } finally {
     store.close();
     rmSync(root, { recursive: true, force: true });
@@ -622,7 +679,6 @@ test("schema recusa campos adicionais, campos sensíveis, valores inválidos e m
   const action = { type: "remove_item", dayNumber: 1, itemId: "a" };
   for (const invalid of [
     { ...plan([]), requestText: "não deve entrar" },
-    { ...plan([]), ranking: [] },
     plan([
       {
         type: "update_pending_confirmation",
