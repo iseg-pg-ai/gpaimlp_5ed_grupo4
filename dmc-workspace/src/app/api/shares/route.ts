@@ -1,4 +1,4 @@
-import { publicUrl, jsonError, noStoreHeaders } from "@/lib/server-http";
+import { publicUrl, jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";
 import { isLocale } from "@/lib/locales";
 
 import { checkTripId, VersionStore, type ShareMethod } from "@/lib/version-store";
@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
   let body: {
     tripId: string;
     version: number;

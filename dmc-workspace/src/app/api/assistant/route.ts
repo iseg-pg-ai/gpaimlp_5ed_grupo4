@@ -1,11 +1,13 @@
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { loadPublishedCatalog } from "@/lib/catalog-store";
 import { editWithAssistant } from "@/lib/assistant-editing";
-import { jsonError } from "@/lib/server-http";
+import { jsonError, rejectForeignOrigin } from "@/lib/server-http";
 import { enrichItineraryWithRoadRouting } from "@/lib/road-routing";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
   let body;
   try {
     body = await request.json();

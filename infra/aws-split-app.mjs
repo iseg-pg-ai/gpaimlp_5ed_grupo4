@@ -238,6 +238,14 @@ class FrontendStack extends Stack {
     api.addRoutes({ path: '/v1/conversation-events', methods: [apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('ConversationIngestIntegration', ingest) });
     api.addRoutes({ path: '/v1/chat', methods: [apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('BedrockChatIntegration', chat) });
     api.addRoutes({ path: '/v1/channels/whatsapp', methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('WhatsAppWebhookIntegration', whatsappWebhook) });
+    // The routes are public, so cap request rates on the existing default stage
+    // (updated in place). Chat is tighter because every call is a paid Bedrock invocation.
+    const defaultStage = api.defaultStage.node.defaultChild;
+    defaultStage.defaultRouteSettings = { throttlingRateLimit: 10, throttlingBurstLimit: 20 };
+    defaultStage.routeSettings = {
+      // routeSettings is untyped JSON, so CloudFormation property casing is required here.
+      'POST /v1/chat': { ThrottlingRateLimit: 2, ThrottlingBurstLimit: 5 },
+    };
 
     const siteBucket = new s3.Bucket(this, 'FrontendSite', {
       encryption: s3.BucketEncryption.S3_MANAGED,

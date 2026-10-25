@@ -1,4 +1,4 @@
-import { jsonError, noStoreHeaders } from "@/lib/server-http";
+import { jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";
 import { checkTripId, VersionStore } from "@/lib/version-store";
 
 export const runtime = "nodejs";
@@ -9,6 +9,8 @@ function todayInPortugal() {
 }
 
 export async function POST(request: Request) {
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
   let tripIds: string[];
   let confirmedTripIds: string[];
   let confirmedVersions: Array<{ tripId: string; version: number }>;

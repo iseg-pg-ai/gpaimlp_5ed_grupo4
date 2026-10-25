@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+import os
 import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -26,14 +28,23 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Enable CORS for DMC Workspace (running on port 3000 / 3001)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+logger = logging.getLogger(__name__)
+
+# O portal chama este serviço a partir do servidor Next.js, pelo que o CORS só
+# é ativado para origens indicadas explicitamente em BLU_AI_CORS_ORIGINS.
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv("BLU_AI_CORS_ORIGINS", "").split(",")
+    if origin.strip()
+]
+if cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+    )
 
 
 class ChatCopilotRequest(BaseModel):
@@ -57,8 +68,9 @@ def api_curate_itinerary(brief: CustomerBrief):
     try:
         result = curate_itinerary(brief)
         return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro na execução do agente: {str(e)}")
+    except Exception:
+        logger.exception("Falha na execução do agente de curadoria")
+        raise HTTPException(status_code=500, detail="Erro na execução do agente.")
 
 
 @app.post("/api/agent/chat")
@@ -71,8 +83,9 @@ def api_chat_copilot(req: ChatCopilotRequest):
             brief=req.brief,
         )
         return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro no Co-Pilot: {str(e)}")
+    except Exception:
+        logger.exception("Falha no Co-Pilot")
+        raise HTTPException(status_code=500, detail="Erro no Co-Pilot.")
 
 
 @app.get("/api/tools/catalog")
@@ -92,4 +105,9 @@ def api_weather(city: str, date: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("blu_ai.api.server:app", host="0.0.0.0", port=8000, reload=True)
+    # Escuta apenas localmente, como os scripts start_ai_agent; BLU_AI_HOST permite outra interface.
+    uvicorn.run(
+        "blu_ai.api.server:app",
+        host=os.getenv("BLU_AI_HOST", "127.0.0.1"),
+        port=int(os.getenv("BLU_AI_PORT", "8000")),
+    )

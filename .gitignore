@@ -23,6 +23,9 @@ dist/
 # Generated infrastructure assemblies
 cdk.out/
 cdk.aws.out/
+cdk.split.out/
+# Lookups locais do CDK (IDs de conta e zonas); regenerados no synth
+cdk.context.json
 
 # Environment
 .env
@@ -70,6 +73,7 @@ Taskfile.yaml
 .code-editor-server/
 .local/
 .npm/
+.npm-cache-local/
 .nvm/
 sagemaker-code-editor-server-data/
 .sagemaker_remoteAccess_do_not_delete
