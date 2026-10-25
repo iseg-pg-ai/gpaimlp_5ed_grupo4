@@ -218,7 +218,11 @@ def compile_explicit(instruction: str, context: dict) -> ProviderResult | None:
             and row.get("dayNumber") == old[0] and row.get("itemId") == old[1].get("id")
             for row in pending_actions
         ))
-        if (old and new and target and old == target and pending_matches
+        # A instrução contém por si só a substituição completa. Se a interface já
+        # não conservar uma proposta anterior, continua a ser segura e inequívoca.
+        # Quando existe um plano pendente, este tem de corresponder à referência.
+        pending_compatible = not pending_actions or pending_matches
+        if (old and new and target and old == target and pending_compatible
                 and old[0] == new[0] and _editable(new[1])):
             candidates = [row.get("id") for row in context.get("candidates", [])
                           if isinstance(row, dict) and row.get("dayNumber") == old[0]

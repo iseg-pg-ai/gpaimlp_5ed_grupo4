@@ -43,6 +43,11 @@ gratuito.
 
 ## Guião falado e prompts
 
+Em cada passo, **Prompt** identifica texto para escrever no assistente e
+**Adicionar manualmente** identifica uma ação nos controlos do portal. Uma ação
+manual nunca deve ser escrita no chatbot nem apresentada como decisão autónoma
+do agente.
+
 ### 1. Explicar a origem do itinerário
 
 **Dizer:** «Começamos por transformar o briefing num primeiro roteiro. O modelo
@@ -54,9 +59,9 @@ não inventa o catálogo: trabalha sobre opções aprovadas e mantém as incerte
 Explica-me o itinerário atual e identifica possíveis problemas, sem fazer alterações.
 ```
 
-**Mostrar:** a resposta é apenas leitura. Não deve surgir uma proposta aplicada.
-Se o Nova Pro devolver uma resposta incompleta, o portal falha sem alterar nada;
-essa é uma limitação conhecida e monitorizada.
+**Mostrar:** a resposta é apenas leitura, produzida a partir do itinerário e dos
+diagnósticos do portal. Não deve surgir uma proposta para aceitar nem uma
+alteração aplicada.
 
 ### 2. Ajustar a capacidade de um dia
 
@@ -83,9 +88,9 @@ tomar a decisão.»
 Com base no briefing, no itinerário atual e no catálogo aprovado, recomenda e ordena opções para acrescentar ao dia 2, sem aplicar alterações.
 ```
 
-**Mostrar:** candidatos ordenados e respetivas razões. Escolher uma opção apenas
-se for útil à narrativa; a escolha prepara outra proposta e continua a exigir
-aceitação.
+**Mostrar:** candidatos ordenados e respetivas razões. Nesta sequência, não
+escolher nem aceitar um candidato, para o dia 2 continuar com espaço para o
+movimento demonstrado no passo 6.
 
 ### 4. Reagendar uma atividade existente
 
@@ -123,6 +128,12 @@ Move Pastelaria Alcoa do dia 3 para o dia 2.
 uma remoção e adição independentes. Aceitar apenas se a pré-visualização respeitar
 a capacidade definida no passo 2.
 
+**Adicionar manualmente:** se tiver sido aceite um candidato no passo 3 e o dia
+2 já estiver cheio, não forçar o movimento. Usar o controlo de substituição do
+dia 2 para trocar esse candidato por **Pastelaria Alcoa**, rever a
+pré-visualização e guardar. Para a demonstração principal, é preferível não
+aceitar o candidato no passo 3 e deixar o agente executar o movimento.
+
 ### 7. Refinar uma proposta ainda não aplicada
 
 Primeiro preparar, sem aceitar:
@@ -131,7 +142,7 @@ Primeiro preparar, sem aceitar:
 Remove apenas Feira da Ladra do dia 1.
 ```
 
-Depois escrever:
+Depois, sem aceitar a primeira proposta, escrever:
 
 ```text
 Em vez de remover Feira da Ladra, remove Time Out Market Lisboa e mostra duas alternativas para Feira da Ladra sem aplicar nenhuma.
@@ -141,6 +152,12 @@ Em vez de remover Feira da Ladra, remove Time Out Market Lisboa e mostra duas al
 Market Lisboa e apresenta alternativas informativas para Feira da Ladra. As
 alternativas não entram no itinerário até existir uma escolha humana.
 
+Aceitar apenas a remoção preparada. Não selecionar nenhuma das alternativas.
+
+**Adicionar manualmente:** no dia 1, usar o controlo de tempo livre para
+acrescentar a **tarde livre** e guardar a alteração. Explicar que esta decisão é
+do curador e não foi inferida pelo agente.
+
 ### 8. Demonstrar uma proteção
 
 No portal, proteger explicitamente Feira da Ladra e depois usar:
@@ -149,8 +166,9 @@ No portal, proteger explicitamente Feira da Ladra e depois usar:
 Remove Feira da Ladra, mesmo estando protegida.
 ```
 
-**Mostrar:** plano vazio e aviso. A origem da última edição nunca substitui o
-bloqueio explícito do curador.
+**Mostrar:** o pedido não pode ser preparado porque Feira da Ladra está
+explicitamente protegida. Não deve aparecer uma alteração para aceitar e o
+roteiro permanece igual.
 
 ### 9. Atualizar o briefing
 

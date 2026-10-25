@@ -162,6 +162,26 @@ class PlannerTest(unittest.TestCase):
             ["Dia 1 · Feira da Ladra: Horário ou duração por validar."],
         )
 
+    def test_refinement_is_standalone_but_rejects_an_incompatible_pending_plan(self):
+        cases = {case["name"]: case for case in json.loads(
+            (Path(__file__).parent / "agent_cases.json").read_text(encoding="utf-8"))}
+        request = copy.deepcopy(cases["refinamento_pt"]["request"])
+        expected = cases["refinamento_pt"]["expected"]
+        request["context"].pop("pendingPlan")
+        standalone = compile_actions(request)
+        self.assertEqual(standalone["plan"]["actions"], expected["actions"])
+        self.assertEqual(standalone["plan"]["alternatives"], expected["alternatives"])
+
+        request["context"]["pendingPlan"] = {
+            "summary": "Outra proposta",
+            "actions": [{"type": "remove_item", "dayNumber": 1, "itemId": "atracoes:b"}],
+            "warnings": [],
+            "requiresConfirmation": True,
+        }
+        incompatible = compile_actions(request)
+        self.assertEqual(incompatible["plan"]["actions"], [])
+        self.assertTrue(incompatible["plan"]["warnings"])
+
     def test_contract_is_itinerary_only_and_schema_copy_cannot_expand_authority(self):
         expected = {"add_catalog_item", "replace_item", "remove_item", "reschedule_item",
                     "reorder_day", "set_day_capacity", "add_free_period", "set_free_day",
