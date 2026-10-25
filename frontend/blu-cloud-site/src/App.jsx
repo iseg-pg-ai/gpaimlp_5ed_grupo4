@@ -21,6 +21,9 @@ function journeyReference() {
   return `BLU-${[...bytes].map(value => value.toString(16).padStart(2, "0")).join("").toUpperCase()}`;
 }
 
+const contactShared = /[^\s@]+@[^\s@]+\.[^\s@]+|\+?\d[\d\s().-]{7,}\d/;
+const contactRequested = /\b(e-?mail|phone|contact detail|best way to reach)/i;
+
 function whatsappLink(reference) {
   const base = window.BLU_WHATSAPP_URL || "https://wa.me/351915784212";
   const note = `Hello BLU, I would like to continue my journey ${reference}`;
@@ -35,26 +38,47 @@ export function App() {
   const [pending, setPending] = useState(false);
   const [journeyConsent, setJourneyConsent] = useState(false);
   const [analyticsConsent, setAnalyticsConsent] = useState(false);
+  // "hidden" until contact details come up, then "asking" until the visitor answers once.
+  const [consentPrompt, setConsentPrompt] = useState("hidden");
   const listRef = useRef(null);
   const publishedIds = useRef(new Set());
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
-  useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" }); }, [messages, pending]);
+  useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" }); }, [messages, pending, consentPrompt]);
 
   async function publish(message, consent = {}) {
     const endpoint = window.BLU_CONVERSATION_EVENTS_ENDPOINT;
     const retainJourney = consent.journeyConsent ?? journeyConsent;
     const allowAnalytics = consent.analyticsConsent ?? analyticsConsent;
-    if (!endpoint || !retainJourney || publishedIds.current.has(message.id)) return;
+    if (!endpoint || !retainJourney || message.local || publishedIds.current.has(message.id)) return;
+    const actor = message.role === "user" ? "customer" : message.role === "system" ? "system" : "assistant";
     try {
-      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ journeyConsent: true, analyticsConsent: allowAnalytics, conversationId: sessionId, synthetic: false, source: "blu-cloud-site", message: { actor: message.role === "user" ? "customer" : "assistant", channel: "website", text: message.text } }) });
+      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ journeyConsent: true, analyticsConsent: allowAnalytics, conversationId: sessionId, synthetic: false, source: "blu-cloud-site", ...(message.eventType ? { eventType: message.eventType, context: message.context } : {}), message: { actor, channel: "website", text: message.text } }) });
       if (response.ok) publishedIds.current.add(message.id);
     } catch (error) { console.warn("Conversation analytics unavailable", error); }
   }
 
+  function askForConsentWhen(condition) {
+    if (condition && !journeyConsent) setConsentPrompt(current => (current === "hidden" ? "asking" : current));
+  }
+
+  // Saves everything said so far, then records the consent itself so curators can find the lead.
+  async function grantConsent() {
+    setJourneyConsent(true);
+    setConsentPrompt("answered");
+    for (const message of messagesRef.current) await publish(message, { journeyConsent: true });
+    await publish({ id: `consent-${sessionId}`, role: "system", eventType: "lead.consent.granted", context: { journeyReference: sessionId, stage: "curator-follow-up" }, text: "The visitor agreed that a BLU curator may contact them about this journey." }, { journeyConsent: true });
+  }
+
+  function declineConsent() {
+    setConsentPrompt("answered");
+    setMessages(current => [...current, { id: crypto.randomUUID(), role: "assistant", local: true, text: "No problem: nothing from this conversation is saved. You can still continue on WhatsApp below whenever you like." }]);
+  }
+
   async function changeJourneyConsent(event) {
-    const enabled = event.target.checked;
-    setJourneyConsent(enabled);
-    if (enabled) await Promise.all(messages.map(message => publish(message, { journeyConsent: true })));
+    if (event.target.checked) await grantConsent();
+    else setJourneyConsent(false);
   }
 
   async function submit(event) {
@@ -64,6 +88,7 @@ export function App() {
     const userMessage = { id: crypto.randomUUID(), role: "user", text: value };
     const nextHistory = [...messages, userMessage];
     setMessages(nextHistory); setText(""); setPending(true);
+    askForConsentWhen(contactShared.test(value));
     await publish(userMessage);
     try {
       let reply;
@@ -79,6 +104,7 @@ export function App() {
       }
       const assistantMessage = { id: crypto.randomUUID(), role: "assistant", text: reply };
       setMessages(current => [...current, assistantMessage]);
+      askForConsentWhen(contactRequested.test(reply));
       await publish(assistantMessage);
     } catch {
       setMessages(current => [...current, { id: crypto.randomUUID(), role: "assistant", local: true, text: "I cannot continue the conversation just now. You can continue on WhatsApp below or reach the BLU team at hello@blucostatravel.com." }]);
@@ -92,6 +118,11 @@ export function App() {
       <div className="concierge-messages" ref={listRef} aria-live="polite">
         {messages.map(message => <p key={message.id} className={`concierge-message ${message.role}`}>{message.text}</p>)}
         {pending && <p className="concierge-message assistant pending">Considering your answer…</p>}
+        {consentPrompt === "asking" && !journeyConsent && <div className="concierge-consent" role="group" aria-label="Curator follow-up consent">
+          <p>May a BLU curator contact you about this journey? We will keep this conversation so they can follow up.</p>
+          <div><button type="button" onClick={grantConsent}>Yes, save and follow up</button><button type="button" onClick={declineConsent}>Not now</button></div>
+        </div>}
+        {journeyConsent && consentPrompt === "answered" && <p className="concierge-message assistant consent-confirmed">Thank you. A curator can now follow up on reference {sessionId}.</p>}
       </div>
       <form className="concierge-form" onSubmit={submit}>
         <label htmlFor="concierge-input">Your message</label>
