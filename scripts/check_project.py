@@ -15,6 +15,16 @@ from portal.identity_policy import load_identity_policy  # noqa: E402
 LOCAL_FILES = {".DS_Store", ".bash_history", ".bashrc", ".wget-hsts"}
 LOCAL_ROOT_FILES = {Path("package-lock.json"), Path("user-default-efs")}
 LINK = re.compile(r'\]\(([^\s)]+)(?:\s+"[^"]*")?\)')
+RETIRED_DOCUMENTATION_TOKENS = (
+    "scripts/start_ai_agent",
+    "blu_ai.api.server",
+    "BLU_START_AGENT",
+    "BLU_MONITOR_AGENT_ENABLED",
+    "/ports/8000",
+    "localhost:8000",
+    "127.0.0.1:8000",
+)
+HISTORICAL_DOCUMENTS = {Path("docs/DECISIONS.md")}
 
 
 def check_project():
@@ -40,6 +50,12 @@ def check_project():
                 relative = unquote(target.split("#", 1)[0])
                 if not (source.parent / relative).exists():
                     problems.append(f"{name}:{number}: ligação local inexistente: {target}")
+            if name not in HISTORICAL_DOCUMENTS:
+                for token in RETIRED_DOCUMENTATION_TOKENS:
+                    if token in line:
+                        problems.append(
+                            f"{name}:{number}: referência ao agente retirado: {token}"
+                        )
     return files, problems
 
 

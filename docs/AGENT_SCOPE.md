@@ -104,7 +104,7 @@ persistidos, bem como preparar uma entrega PDF, Prompt TXT ou partilha. A
 meteorologia indica se é previsão ou referência histórica; cada troço indica se
 foi medido pelo OSRM ou estimado. Estas leituras nunca iniciam consultas externas
 e a ausência de dados não é interpretada como confirmação.
-Deverá ainda:
+Também consegue, dentro do fluxo supervisionado:
 
 - explicar diferenças entre versões;
 - sugerir correções para chuva, acessibilidade, custo, qualidade e deslocações.

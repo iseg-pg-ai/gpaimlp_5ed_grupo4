@@ -12,8 +12,9 @@ Para a bateria Python completa:
 uv sync --locked --all-groups
 ```
 
-O grupo `agent` é necessário para os testes do serviço de IA e o grupo
-`translation` para `translations.test_worker`. Os testes devem usar diretórios
+O grupo `agent` é necessário para os testes do planeador e do adaptador
+Bedrock; não inicia um serviço HTTP. O grupo `translation` é necessário para
+`translations.test_worker`. Os testes devem usar diretórios
 temporários, mocks para fornecedores externos e nunca alterar o catálogo,
 warehouse ou exports operacionais.
 

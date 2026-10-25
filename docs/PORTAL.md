@@ -420,11 +420,13 @@ escaping das fontes; valores vazios aparecem como «—».
 mesmos caminhos, permitindo testar edição e ETL sem tocar nas pastas reais.
 Para versões e PDFs temporários, definir também `BLU_EXPORT_DIR`. As fontes
 necessárias devem existir no diretório de dados escolhido.
-`BLU_OPERATIONAL_DIR` pode colocar a fila temporária de versões noutro volume;
-sem configuração, usa `exports/portal-persistence/`. Em produção, estes três
-diretórios operacionais devem ser montados fora do filesystem efémero do
-container. O JSON pendente é removido apenas depois de a operação ficar registada
-no SQLite e pode ser restaurado pelos backups do Monitoring.
+`BLU_OPERATIONAL_DIR` pode colocar a fila temporária de versões noutra pasta;
+sem configuração, usa `exports/portal-persistence/`. No SageMaker atual, estes
+caminhos apontam para a cache reconstruível em `/tmp`; releases operacionais e
+checkpoints S3 constituem a persistência permanente. No futuro deployment cloud,
+o EFS previsto reduz a janela entre uma escrita local e a publicação S3. O JSON
+pendente é removido apenas depois de a operação ficar registada no SQLite e pode
+ser restaurado pelos backups do Monitoring.
 
 ## Resolução de problemas
 

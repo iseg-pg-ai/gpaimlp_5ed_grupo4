@@ -63,7 +63,7 @@ concluída impedem novas alterações. Uma regeneração ampla preserva atividad
 editadas manualmente; uma ação explícita e revista pelo curador pode voltar a
 alterá-las. O mesmo dia pode ser editado repetidamente pelo Blu.
 
-## Próxima iteração: âmbito e aceitação
+## Implementação atual e aceitação
 
 A iteração atual substituiu os dois percursos Python por um único planeador
 transacional híbrido. Um compilador local trata comandos inequívocos e o Amazon
@@ -75,7 +75,9 @@ O contrato contém agora treze ações: as onze operações de itinerário anter
 `update_brief` e `update_pending_confirmation`. Não acrescenta acesso à
 máquina, execução de código, browser autónomo, reservas, contactos a terceiros,
 IAM, backups ou deployment. As ferramentas de leitura e escrita supervisionada
-só entram depois de identidade e sessões servidor estarem ligadas ao portal.
+usam sempre o contexto da viagem. A identidade servidor e o isolamento
+multiutilizador só ficam ativos quando o backend valida o principal ALB/Cognito;
+no SageMaker continuam desativados de forma explícita.
 
 ### Critérios obrigatórios
 
@@ -97,7 +99,7 @@ Uma implementação só conclui esta iteração quando:
 
 ### Conjunto mínimo de avaliação
 
-O conjunto de avaliação terá pelo menos um caso válido e um caso de recusa por
+O conjunto de avaliação tem pelo menos um caso válido e um caso de recusa por
 ação, em português e inglês, além de pedidos compostos, ambíguos, adversariais,
 versões obsoletas, atividades protegidas e indisponibilidade do fornecedor. Cada
 operação precisa de pelo menos 90% de propostas semanticamente corretas, 100% de

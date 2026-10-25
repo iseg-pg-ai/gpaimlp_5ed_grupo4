@@ -1,7 +1,7 @@
 [project]
 name = "gpaimlp_5ed_grupo4"
 version = "0.1.0"
-description = "BLU local ETL with optional dashboard, translation and agent services."
+description = "BLU ETL with optional dashboard, translation and Bedrock agent integration."
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "openpyxl==3.1.5",

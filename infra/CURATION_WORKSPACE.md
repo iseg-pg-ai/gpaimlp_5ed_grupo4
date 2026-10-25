@@ -10,20 +10,21 @@ A stack cria, por ambiente:
 
 - uma VPC sem NAT Gateway e duas sub-redes públicas;
 - um cluster ECS e uma única tarefa Fargate escritora;
-- cinco containers para portal, Monitoring, apresentação, Observatório e agente;
+- quatro containers para portal, Monitoring, apresentação e Observatório;
 - EFS cifrado, com backups automáticos e `RemovalPolicy.RETAIN`;
 - ALB HTTPS com autenticação Cognito e uma interface por hostname;
 - grupos Cognito `owner`, `admin`, `curator` e `viewer`;
 - segredo de sessão no Secrets Manager;
 - logs separados e permissões limitadas aos buckets e tópico SNS existentes.
 
-O agente não tem rota pública. Os cinco containers partilham a rede da tarefa e o
+O agente é invocado pelo portal através do planeador Python integrado e não tem
+container nem rota pública. Os quatro containers partilham a rede da tarefa e o
 volume EFS.
 
 ## Entrega executável
 
 `Dockerfile.curation` produz a imagem única referenciada pela task ECS. A mesma
-imagem contém os cinco processos, mas cada container recebe um comando distinto
+imagem contém os quatro processos, mas cada container recebe um comando distinto
 na task definition. O build fixa Python, Node e `uv`, usa os locks do projeto e
 não inclui `data/`, `warehouse/`, `exports/`, backups, runtimes ou segredos.
 
@@ -77,7 +78,7 @@ A estimativa no AWS Pricing Calculator deve usar, por ambiente:
 | Fargate Linux/ARM ou x86  | 2 vCPU, 4 GB, uma tarefa, 730 horas/mês                  |
 | Application Load Balancer | 730 horas e LCUs medidas ou estimadas                    |
 | EFS Standard/IA           | volume operacional real e pedidos de leitura/escrita     |
-| CloudWatch Logs           | ingestão dos cinco containers e retenção de 30/365 dias  |
+| CloudWatch Logs           | ingestão dos quatro containers e retenção de 30/365 dias |
 | Cognito                   | utilizadores ativos mensais e MFA aplicável              |
 | Secrets Manager           | um segredo e chamadas de leitura por arranque            |
 | Transferência             | saída para utilizadores, S3 e Bedrock conforme o tráfego |
@@ -94,5 +95,6 @@ antes de executar `deploy:curation`.
 - Na fase académica, o Grupo 4 responde pela operação e segurança; produção exige
   responsáveis nominais e substitutos.
 - Falta criar o subdomínio, certificado e registos DNS reais aprovados na Etapa 1.
-- Falta aprovar fornecedor, modelo, teto mensal e preços atuais do agente.
+- A configuração aprovada do agente deve ser novamente confirmada antes de cada
+  promoção, porque preços e limites operacionais podem mudar.
 - A stack foi apenas sintetizada; não foi executado `cdk deploy`.
