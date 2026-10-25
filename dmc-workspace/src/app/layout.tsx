@@ -5,9 +5,9 @@ import { LocaleProvider } from "@/components/LocaleProvider";
 
 export const metadata: Metadata = {
   icons: {
-    icon: `${process.env.PORTAL_ASSET_PREFIX ?? (process.env.SAGEMAKER_APP_TYPE === "CodeEditor" ? "/codeeditor/default/ports/3001" : "")}/favicon.ico`,
+    icon: `${process.env.PORTAL_ASSET_PREFIX ?? (process.env.SAGEMAKER_APP_TYPE === "CodeEditor" ? "/codeeditor/default/ports/3001" : "")}/favicon.svg`,
   },
-  title: "BLU Costa — AI Travel Curation Studio",
+  title: "BLU · Curation Studio",
   description:
     "Private journeys through Portugal, practiced as curation. AI workspace for BLU Costa travel curators.",
 };

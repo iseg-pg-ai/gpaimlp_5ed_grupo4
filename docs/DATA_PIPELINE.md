@@ -1,28 +1,22 @@
-# ETL local: `data` → `warehouse`
+# ETL: S3 → cache temporária → S3
 
-O diretório `data/` é a origem local que representa o futuro bucket S3. A pipeline
-descobre ficheiros Excel e PDF recursivamente, valida os dados e publica um
-warehouse completo. A origem nunca é alterada.
+O bucket de dados é a origem permanente. O `just blu it` descarrega a release
+`sources` para uma área temporária, descobre os Excel e PDF, valida os dados e
+publica um warehouse completo na cache e numa nova release S3. A origem nunca é
+alterada.
 
-## Execução
+## Gerar ou atualizar o warehouse
 
-Na raiz do repositório:
+Para uma execução manual, na raiz do repositório:
 
-```powershell
-.\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse
+```bash
+python -B -m etl.cloud_runtime --destination /tmp/blu-runtime-manual
 ```
 
-Ou executar o fluxo completo, incluindo instalação e testes:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1
-```
-
-Para um ambiente já preparado:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_full_pipeline.ps1 -SkipInstall
-```
+No Windows também pode ser usado
+`.\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse`.
+O fluxo com instalação, validação e testes está em
+[Automação e operações](#automação-e-operações).
 
 ## Contrato de entrada
 
@@ -57,7 +51,8 @@ Principais artefactos:
 | `analytical_models.json` | Definições dos modelos analíticos. |
 | `model_*.jsonl` | Scores explicáveis, destinos/unidades harmonizados e evidência por campo. |
 
-O `warehouse/` é uma entrega gerada. Não deve ser editado manualmente.
+O `BLU_WAREHOUSE_DIR` é uma entrega gerada na cache. Não deve ser editado
+manualmente nem versionado.
 
 ## Dataset estruturado complementar
 
@@ -72,10 +67,17 @@ reservas, disponibilidade ou tarifas atuais. Consulte a
 
 ## Catálogo editável
 
-O portal guarda alterações em `data/portal/catalog.sqlite`. Durante a execução, o
+O portal guarda alterações em `BLU_DATA_DIR/portal/catalog.sqlite`. Durante a execução, o
 ETL incorpora apenas revisões aprovadas, preservando IDs e histórico. O portal lê
 sempre a oferta publicada no warehouse para gerar itinerários. Consulte o
 [contrato do catálogo local](../data/portal/README.md).
+
+Esta base e `BLU_EXPORT_DIR/history.sqlite` são operacionais e não pertencem ao
+ciclo de vida do ETL. Recriar o warehouse não as remove. O deployment guarda o
+estado permanente em releases S3 e reconstrói uma cache SQLite temporária. Se uma
+base SQLite operacional estiver temporariamente indisponível,
+as novas versões ou revisões ficam em JSON sob `BLU_OPERATIONAL_DIR` e são
+sincronizadas de forma idempotente quando a base regressa.
 
 ## Validação e testes
 
@@ -89,19 +91,95 @@ sempre a oferta publicada no warehouse para gerar itinerários. Consulte o
 
 Os testes usam diretórios temporários e não reescrevem o warehouse operacional.
 
-## Evolução para S3
+## Origem ETL em S3
 
-O adaptador S3 ainda não está implementado. A futura camada de origem deverá
-listar e descarregar objetos para uma área local controlada e entregá-los à mesma
-pipeline. A transformação e a validação não devem depender do transporte.
+O transporte S3 dos checkpoints operacionais permanece independente do ETL. O
+bucket de dados recebe releases imutáveis de `sources` e `warehouse`, separadas
+por ambiente, tipo e data. Cada ficheiro tem SHA-256 e o manifesto da release é
+publicado por último; a ausência desse manifesto significa que a publicação não
+está completa.
+
+As fontes incluem apenas Excel e PDF inventariados por `LocalSource`. Excluem
+explicitamente `data/portal/catalog.sqlite`, que é estado operacional protegido
+pelos checkpoints. O warehouse só pode ser publicado quando
+`validation_report.json` e `manifest.json` confirmam `passed`.
+
+```bash
+python3 -B -m etl.s3_transport publish sources --path data
+python3 -B -m etl.s3_transport publish warehouse --path warehouse
+```
+
+Uma recuperação descarrega para um diretório novo ou vazio e confirma manifesto,
+tamanho e hash de todos os objetos antes de publicar a pasta local:
+
+```bash
+python3 -B -m etl.s3_transport fetch-latest sources --path /tmp/blu-sources
+python3 -B -m etl.s3_transport fetch-latest warehouse --path /tmp/blu-warehouse
+```
+
+O adaptador usa `BLU_DATA_S3_BUCKET`, `BLU_ENVIRONMENT` e o IAM do ambiente. Não
+guarda credenciais nem elimina objetos. A transformação e a validação continuam
+independentes do transporte.
+
+A role da aplicação valida objetos dentro dos prefixos autorizados, mas não
+administra Versioning, Default Encryption, Block Public Access ou lifecycle. Um
+`AccessDenied` nesses controlos é esperado e não deve ser contornado dando
+permissões administrativas ao ETL. As exceções e o procedimento manual estão em
+[Retenção dos buckets S3](S3_RETENTION.md#exceções-e-validações-manuais).
+
+Alterações confirmadas no catálogo e nas versões são registadas em
+`BLU_OPERATIONAL_DIR/data-s3-outbox/`. O evento contém a operação completa
+necessária à recuperação, com identificador idempotente. O ciclo do Monitoring e
+o arranque enviam-no para `operational-changes/`; o ficheiro local só é removido
+depois de `PutObject` e `HeadObject` confirmarem tamanho, AES-256 e SHA-256.
+
+### Estado operacional do portal
+
+O destino final usa o bucket de dados como persistência permanente. Como o S3
+não executa SQLite, `etl.operational_s3` publica snapshots consistentes do
+catálogo e do histórico, juntamente com propostas PDF e filas pendentes. Os
+objetos da release são imutáveis; `operational/current.json` identifica a release
+ativa e o versionamento do bucket conserva as revisões anteriores.
+
+```bash
+python3 -B -m etl.operational_s3 publish \
+  --catalog data/portal/catalog.sqlite \
+  --exports exports/itineraries \
+  --pending exports/portal-persistence
+
+python3 -B -m etl.operational_s3 materialize \
+  --destination /tmp/blu-runtime
+```
+
+A materialização valida manifesto, tamanho, SHA-256 e integridade SQLite antes
+de trocar atomicamente a cache. O launcher exporta os caminhos da cache para
+todos os consumidores.
+
+Uma operação confirmada do catálogo ou das versões escreve primeiro numa
+transação SQLite da cache, regista uma chave idempotente e publica uma nova
+snapshot operacional. Se SQLite estiver indisponível, a operação validada fica
+em JSON sob `BLU_OPERATIONAL_DIR`; se o S3 falhar depois do commit, fica na outbox.
+A sincronização respeita a ordem e só remove o JSON após confirmação.
+
+Enviar uma versão para o Lixo conserva-a na release ativa com `trashedAt`.
+Uma eliminação permanente retira-a apenas da release ativa seguinte; releases e
+checkpoints anteriores não são apagados automaticamente.
 
 ## Documentação relacionada
 
-- [Automação e operações](DATA_PIPELINE.md)
+- [Operações e recuperação](OPERATIONS.md)
+- [Retenção dos buckets S3](S3_RETENTION.md)
 - [Modelo de dados](../reports/data_model_report.md)
 - [DMC Workspace](PORTAL.md)
 
 ## Automação e operações
+
+O CI não descarrega fontes reais do S3 nem recebe credenciais AWS. Em Windows,
+`scripts/create_ci_etl_fixture.py` cria um catálogo exclusivamente sintético num
+diretório temporário e o workflow executa sobre ele o ETL, o gate de validação e
+os testes de regressão. O artefacto `blu-warehouse-ci-smoke` comprova o percurso
+técnico, mas não é uma entrega de dados BLU e nunca deve ser publicado como
+warehouse operacional.
 
 ### Fluxo local completo
 
@@ -176,10 +254,15 @@ depois de serem definidos a cadência, a origem e o processo de aprovação.
 
 ### Cópias de segurança
 
-- Fazer backup de `exports/itineraries/` para preservar versões e PDFs.
-- Fazer backup de `data/portal/catalog.sqlite` com o portal e o ETL parados.
-- Não guardar segredos, credenciais ou ficheiros `.env` no Git.
-- Não tratar `warehouse/` como fonte editável.
+No SageMaker, usar `just blu it`: o launcher cria um checkpoint consistente do
+catálogo, histórico, PDFs e operações pendentes, valida-o e confirma a cópia no
+bucket de backups antes de parar os serviços. O bucket de dados conserva as
+releases autoritativas de fontes, warehouse e estado operacional.
 
-Consulte também [o contrato do ETL](DATA_PIPELINE.md) e o
-[guia do portal](PORTAL.md).
+`monitoring.checkpoint` permite criar, verificar ou restaurar uma versão
+identificada manualmente. Não copiar bases SQLite enquanto os serviços escrevem,
+não guardar segredos no Git e não tratar `warehouse/` como fonte editável. Ver o
+[procedimento de recuperação](OPERATIONS.md#recuperação-local).
+
+Consulte também o [guia do portal](PORTAL.md) e o
+[plano de operações](OPERATIONS.md).

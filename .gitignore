@@ -1,19 +1,43 @@
-# Artefactos locais do sistema e do shell
+# Sistema operativo, shell e editor
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
 /.bash_history
 /.bashrc
+/.profile
+/.gitconfig
 /.wget-hsts
-/package-lock.json
 /user-default-efs
+/sagemaker-code-editor-server-data/
+/.sagemaker_remoteAccess_do_not_delete/
 
-# Python
+# Diretórios pessoais do ambiente SageMaker
+/.agent/
+/.aws/
+/.cache/
+/.claude/
+/.code-editor-server/
+/.codex/
+/.config/
+/.copilot/
+/.dotnet/
+/.kiro/
+/.local/
+/.npm/
+/.nvm/
+/.tools/
+/.vscode-server/
+
+# Python, testes e notebooks
 __pycache__/
 *.py[cod]
-
-# Jupyter Notebooks
+/.venv/
+.pytest_cache/
+.coverage
+htmlcov/
 .ipynb_checkpoints/
-
-# Distribution / packaging
 .eggs/
 *.egg-info/
 *.egg
@@ -27,37 +51,39 @@ cdk.split.out/
 # Lookups locais do CDK (IDs de conta e zonas); regenerados no synth
 cdk.context.json
 
-# Environment
+# Segredos e configuração local
 .env
 .env.*
-.env.local
 !.env.example
-.venv
+/config/studio.local.json
 
-# Sagemaker
+# Estado local do Streamlit, MLflow e relatórios transitórios
+/.streamlit/machine_id_v4
 mlflow.db
 mlruns/
+*.log
+/playwright-report/
+/test-results/
 
-# Others
-.codex/
-.git/
-.tools/
-exemplo/
-reports/*
-Taskfile.yaml
+# Dependências geridas apenas dentro do portal
+/package-lock.json
 
-# Local immutable itinerary versions and exported PDFs
+# Dados operacionais locais, exports e credenciais de monitoring
 /exports/
+/data/**/*.xlsx
+/data/**/*.pdf
 
-# Local chatbot runtime state and visual captures
+# Estado local do chatbot e capturas visuais
 /backend_chatbot/.data/
 /backend_chatbot/.workspace*.log
 /frontend/frontend_chatbot/source-captures/
 
-# Local editable catalog and its transactional history (back up separately)
+# Catálogo editável local e respetivo histórico transacional
 /data/portal/*.sqlite*
 /data/portal/etl.lock
-
+/warehouse/*
+!/warehouse/AGENTS.md
+/monitoring/runtime/
 
 # FDC
 .agent/
@@ -79,6 +105,11 @@ sagemaker-code-editor-server-data/
 .sagemaker_remoteAccess_do_not_delete
 
 # Estado privado da sessão
+/graphify-out/
 /.streamlit/machine_id_v4
 /config/studio.local.json
 /monitoring/runtime/
+
+# Entradas locais antigas que não pertencem ao projeto
+/exemplo/
+/Taskfile.yaml

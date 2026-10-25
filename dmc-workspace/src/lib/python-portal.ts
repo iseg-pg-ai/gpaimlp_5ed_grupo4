@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { recordOperationalEvent } from "./operational-telemetry.ts";
 
 export type Dataset = {
   tables: string[];
@@ -19,6 +20,7 @@ export class PortalPythonError extends Error {
 
 // Processo local sem shell, serviço HTTP adicional ou dependências do agente.
 export function portalRequest<T>(operation: string, root: string, params: object): Promise<T> {
+  const started = performance.now();
   const repository = path.resolve(process.cwd(), "..");
   const localPython = path.join(
     repository,
@@ -35,29 +37,76 @@ export function portalRequest<T>(operation: string, root: string, params: object
   return new Promise((resolve, reject) => {
     const child = execFile(
       /* turbopackIgnore: true */ python,
-      ["-X", "utf8", "-B", "-m", "portal.data", operation, root],
+      operation === "agent-plan"
+        ? ["-X", "utf8", "-B", "-m", "blu_ai.planner"]
+        : ["-X", "utf8", "-B", "-m", "portal.data", operation, root],
       {
         cwd: repository,
-        timeout: 15000,
+        timeout: operation === "agent-plan" ? 55000 : 15000,
+        env: {
+          ...process.env,
+          PYTHONPATH: [path.join(repository, "src"), process.env.PYTHONPATH]
+            .filter(Boolean)
+            .join(path.delimiter),
+        },
         maxBuffer: 16 * 1024 * 1024,
         windowsHide: true,
         encoding: "utf8",
       },
       (error, stdout) => {
-        if (error)
+        if (error) {
+          void recordOperationalEvent({
+            component: "portal-python",
+            operation,
+            outcome: "failed",
+            durationMs: performance.now() - started,
+            errorCode: "DATASET_UNAVAILABLE",
+          });
           return reject(
             new PortalPythonError(
-              "DATASET_UNAVAILABLE",
-              "Python do portal indisponível. Verifique BLU_PYTHON e a instalação Python.",
+              operation === "agent-plan"
+                ? error.killed
+                  ? "AGENT_TIMEOUT"
+                  : "AGENT_PROCESS_UNAVAILABLE"
+                : "DATASET_UNAVAILABLE",
+              operation === "agent-plan"
+                ? "Planeador AWS indisponível. Verifique o grupo agent e as permissões IAM."
+                : "Python do portal indisponível. Verifique BLU_PYTHON e a instalação Python.",
             ),
           );
+        }
         try {
           const response = JSON.parse(stdout);
-          if (!response.ok) return reject(new PortalPythonError(response.code, response.error));
+          if (!response.ok) {
+            void recordOperationalEvent({
+              component: "portal-python",
+              operation,
+              outcome: "failed",
+              durationMs: performance.now() - started,
+              errorCode: response.code,
+            });
+            return reject(new PortalPythonError(response.code, response.error));
+          }
+          void recordOperationalEvent({
+            component: "portal-python",
+            operation,
+            outcome: "success",
+            durationMs: performance.now() - started,
+          });
           resolve(response.data);
         } catch {
+          void recordOperationalEvent({
+            component: "portal-python",
+            operation,
+            outcome: "failed",
+            durationMs: performance.now() - started,
+            errorCode: "INVALID_PYTHON_RESPONSE",
+          });
           reject(
-            new PortalPythonError("DATASET_UNAVAILABLE", "Resposta inválida do Python do portal."),
+            new PortalPythonError(
+              operation === "agent-plan" ? "AGENT_INVALID_RESPONSE" : "DATASET_UNAVAILABLE",
+              "Resposta inválida do Python do portal.",
+            ),
           );
         }
       },

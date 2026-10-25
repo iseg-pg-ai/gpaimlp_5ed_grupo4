@@ -129,7 +129,7 @@ test("rejectForeignOrigin recusa apenas pedidos de outro site", async () => {
 });
 
 test("rotas que alteram dados ou geram custos verificam a origem antes de ler o pedido", () => {
-  for (const route of ["versions", "shares", "trash/cleanup", "assistant", "translate"]) {
+  for (const route of ["versions", "shares", "trash/cleanup", "translate"]) {
     const source = readFileSync(
       new URL(`../src/app/api/${route}/route.ts`, import.meta.url),
       "utf8",
@@ -141,6 +141,11 @@ test("rotas que alteram dados ou geram custos verificam a origem antes de ler o 
       route,
     );
   }
+  // O endpoint antigo do assistente delega no planeador, que tem verificação própria.
+  const read = (route) =>
+    readFileSync(new URL(`../src/app/api/${route}/route.ts`, import.meta.url), "utf8");
+  assert.match(read("assistant"), /import \{ POST as plan \} from "\.\/plan\/route";/);
+  assert.match(read("assistant/plan"), /origin && origin !== publicOrigin\(request\.url\)/);
 });
 
 const require = createRequire(import.meta.url);

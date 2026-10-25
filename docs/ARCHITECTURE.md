@@ -1,27 +1,34 @@
 # Arquitetura e âmbito do BLU AI System
 
-Revisto em 2026-10-15; migração incremental em `refactor/html-python`,
-a partir de `chore/project-cleanup` em `da8de67`.
-Este documento concentra o mapa do projeto, as capacidades e as fronteiras para
-a próxima iteração do agente. Os comandos estão no [README](../README.md),
+Revisto em 20 de outubro de 2026. Este documento concentra o mapa do projeto,
+as capacidades atuais e as fronteiras entre componentes. Os comandos estão no [README](../README.md),
 as tarefas no [plano](../PLAN.md) e o histórico em [decisões](DECISIONS.md).
 
 ## Fluxo dos dados
 
 ```text
-data/ — Excel, suplementos e PDFs de origem
-data/portal/catalog.sqlite — catálogo editável, revisões e aprovações
+S3 sources — Excel, suplementos e PDFs de origem
+S3 operational/current.json — catálogo, histórico, PDFs e filas
+  -> /tmp/blu-runtime-<uid>/ — cache efémera validada
   -> etl.pipeline — ingestão, validação e publicação atómica
-  -> warehouse/ — entrega gerada: JSONL, relatórios e SQLite
+  -> cache/warehouse/ — entrega gerada: JSONL, relatórios e SQLite
      -> dashboard/app.py — análise Streamlit
      -> dmc-workspace/ — portal operacional
         -> localStorage — rascunhos e preferências
-        -> exports/itineraries/ — versões, hashes e PDFs históricos
+        -> cache/exports/itineraries/ — versões, hashes e PDFs históricos
+        -> cache/exports/portal-persistence/ — escritas pendentes
+     -> monitoring/ — saúde, eventos, incidentes e backups locais/S3
+     -> presentation/ — apresentação estática independente
 ```
 
-O catálogo operacional e o histórico estão fora do Git e precisam de backup.
+O catálogo operacional, o histórico, as fontes e o warehouse estão fora do Git.
 O portal não reescreve o warehouse; o ETL não modifica as fontes. Uma alteração
 no catálogo não altera uma proposta já guardada.
+
+O ciclo de vida do ETL abrange apenas o warehouse da cache. O `just blu it`
+materializa SQLite, PDFs e filas a partir do S3, aponta `BLU_DATA_DIR`,
+`BLU_WAREHOUSE_DIR`, `BLU_EXPORT_DIR` e `BLU_OPERATIONAL_DIR` para essa cache e
+publica novamente no S3 apenas depois da validação.
 
 ## Pontos de entrada e responsabilidades
 
@@ -48,6 +55,8 @@ não requer SageMaker SDK, MLflow ou outro ambiente experimental de treino.
 | Ferramentas do agente | `src/blu_ai/tools/` | Pesquisa, meteorologia e verificação de restrições |
 | Tradução | `translations/worker.py` | Protocolo JSON-lines, modelos locais e cache |
 | Adaptador TXT/Canva | `src/lib/itinerary-prompt.ts`, `plugins/blu-curadoria/` | Reutilizar regras partilhadas e orientar a composição visual |
+| Monitoring | `monitoring/server.py`, `monitoring/collector.py` | Autenticar utilizadores e agregar sinais operacionais locais |
+| Apresentação | `presentation/serve.py` | Servir a narrativa interativa sem alterar o portal |
 
 Na tabela, `src/` pertence a `dmc-workspace/`, exceto os caminhos `src/blu_ai/`,
 que são relativos à raiz. As APIs e páginas do Next.js são entradas do framework;
@@ -83,6 +92,12 @@ POST aceita coordenadas dos itens do dia. As respostas disponíveis têm cache d
 implementação e distingue histórico de previsão, sem inventar um clima favorável
 quando a consulta falha. Não foram acrescentadas dependências Python.
 
+O cálculo de cada troço rodoviário pertence a `portal/routing.py`. O módulo valida
+coordenadas, modos, margens e timeout, consulta a origem OSRM configurada e aplica
+o fallback geométrico local. `src/lib/road-routing.ts` conserva temporariamente a
+ordenação interativa e a composição dos resumos, chamando Python para cada troço;
+assim existe uma única implementação do cálculo externo e das suas estimativas.
+
 A persistência do catálogo pertence agora ao Python em `etl/portal_catalog.py`,
 com o mesmo esquema `catalog_records`/`catalog_history` e transações
 `BEGIN IMMEDIATE`. O adaptador `src/lib/catalog-store.ts` valida e normaliza as
@@ -99,6 +114,19 @@ Para testes isolados, `BLU_DATA_DIR` e `BLU_WAREHOUSE_DIR` substituem os diretó
 padrão, incluindo no endpoint de publicação. Caminhos relativos resolvem a partir
 da raiz do projeto. A base operacional fica em `BLU_DATA_DIR/portal/catalog.sqlite`.
 `BLU_EXPORT_DIR` continua a controlar apenas o histórico de versões e PDFs.
+
+As novas versões e revisões do catálogo usam `version-persistence.ts` e
+`catalog-persistence.ts`. Uma gravação tenta primeiro o SQLite transacional da
+cache. A release operacional S3 continua a ser a fonte permanente. Se a
+base estiver indisponível, guarda uma operação validada em
+`BLU_OPERATIONAL_DIR/pending-versions/` ou `pending-catalog/`. Fora do launcher,
+o fallback é `exports/portal-persistence/`; no SageMaker, o caminho pertence à
+cache temporária. Cada operação tem uma chave SHA-256 determinística,
+registada na mesma transação SQL em `portal_operations`. A sincronização é tentada
+automaticamente antes de novas gravações e leituras. Uma repetição depois de um
+commit devolve o resultado já confirmado e não cria outra versão ou revisão. O
+JSON só é removido depois dessa confirmação; nunca se torna uma segunda fonte de
+verdade permanente.
 
 O painel meteorológico usa `popover`, `popovertarget` e fecho HTML nativo, sem
 estado React de abertura nem listeners globais. O histórico usa formulário GET
@@ -132,29 +160,29 @@ LangChain/Bedrock em `BLU_AI_AGENT_URL`. A existência desse serviço não compr
 a sua disponibilidade nem autoriza chamadas reais. O portal funciona sem ele.
 
 TXT 1.1.0 preserva personalização, capacidade diária, períodos livres e percursos
-guardados. O plugin-fonte 0.3.0 aceita TXT 1.0.0 e 1.1.0; a atualização de uma
+guardados. O plugin-fonte 0.4.0 aceita TXT 1.0.0 e 1.1.0; a atualização de uma
 instalação remota exige uma operação própria. O modelo visual Canva não fornece
 factos para outras viagens. Ver o [guia do portal](PORTAL.md).
 
-O sistema produz propostas; não efetua reservas. Autenticação, papéis,
-sincronização multiutilizador, persistência cloud e fotografias autorizadas nos
-PDFs DMC continuam pendentes. Partilha e retenção precisam de revisão antes de
-produção. Acesso pelo Studio não torna a proposta pública para clientes externos.
+O sistema produz propostas; não efetua reservas. O Monitoring tem autenticação
+local própria, mas o portal não tem identidade, papéis ou sincronização
+multiutilizador. A persistência S3 está implementada, mas hosting de produção e
+fotografias autorizadas nos PDFs DMC continuam pendentes. Partilha e retenção
+precisam de revisão antes de produção.
+Acesso pelo Studio não torna a proposta pública para clientes externos.
 
-## Fronteira para a próxima iteração do agente
+## Fronteira atual do agente
 
-O agente existente é um serviço opcional separado do portal. A evolução deve
-partir dessa fronteira e dos contratos de domínio, em vez de criar outro fluxo
-paralelo de catálogo, planeamento ou persistência.
+O fluxo transacional está integrado: o planeador produz propostas estruturadas,
+o portal volta a validá-las e o curador tem de as aceitar antes da criação de uma
+versão. As onze operações suportadas, proteções e limites estão em
+[Assistente BLU](ASSISTANT.md).
 
-1. Definir as operações permitidas e os seus esquemas de entrada e saída.
-2. Reutilizar a pesquisa e as validações de domínio; centralizar as regras antes
-   de acrescentar ferramentas que as repitam.
-3. Converter respostas do modelo em propostas de ações validadas pelo servidor.
-4. Preservar confirmação humana, concorrência e histórico antes de aplicar ações.
-5. Testar com mocks, snapshots e diretórios temporários antes de usar fornecedores.
-
-Esta limpeza não implementa essa iteração nem muda os contratos atuais.
+O serviço HTTP na porta 8000 é opcional e não constitui outra autoridade sobre o
+itinerário. A próxima iteração deve concentrar-se em avaliar o modelo real,
+custos, privacidade e degradação, mantendo contratos, confirmação humana,
+concorrência e histórico. Novas ferramentas devem reutilizar a pesquisa e as
+validações existentes, sem criar outro catálogo ou persistência.
 
 ## Verificação e manutenção
 
@@ -172,6 +200,6 @@ enquanto os componentes estão instalados ou em execução.
 - CI de dados: verifica dependências, ETL e entrega; CI documental: Markdown.
 - Não há CI do portal neste checkout; executar `npm run check` e `npm run build`.
 
-Manter um guia por responsabilidade: [dados e operações](DATA_PIPELINE.md),
-[portal](PORTAL.md), [deployment AWS](AWS_PORTAL_TESTING.md),
-[testes e histórico](TESTING.md) e [dependências Python](DEPENDABOT_PYTHON.md).
+Manter um guia por responsabilidade: [dados e ETL](DATA_PIPELINE.md),
+[portal](PORTAL.md), [operações](OPERATIONS.md), [testes](TESTING.md) e
+[dependências Python](DEPENDABOT_PYTHON.md).

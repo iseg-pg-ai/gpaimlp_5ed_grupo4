@@ -25,7 +25,7 @@ export class CatalogStore {
   importWarehouse(warehouse = warehouseRoot()) {
     return portalRequest<void>("catalog-import", this.root, { warehouse });
   }
-  async save(input: unknown): Promise<CatalogRecord> {
+  async save(input: unknown, operationId?: string): Promise<CatalogRecord> {
     validateCatalogInput(input);
     const allowed = emptyFields();
     const normalized = {
@@ -38,7 +38,10 @@ export class CatalogStore {
       ),
     };
     try {
-      return await portalRequest<CatalogRecord>("catalog-save", this.root, { input: normalized });
+      return await portalRequest<CatalogRecord>("catalog-save", this.root, {
+        input: normalized,
+        operationId,
+      });
     } catch (error) {
       if (error instanceof PortalPythonError && error.code === "CATALOG_CONFLICT")
         throw new CatalogConflict(error.message);

@@ -8,24 +8,20 @@ from dotenv import load_dotenv
 
 # Base paths
 ROOT_DIR = Path(__file__).resolve().parents[2]
-WAREHOUSE_DIR = ROOT_DIR / "warehouse"
-DATABASE_PATH = WAREHOUSE_DIR / "blu_etl.sqlite"
 
 # Load root .env
 load_dotenv(ROOT_DIR / ".env")
+WAREHOUSE_DIR = Path(os.getenv("BLU_WAREHOUSE_DIR", ROOT_DIR / "warehouse")).resolve()
+DATABASE_PATH = WAREHOUSE_DIR / "blu_etl.sqlite"
 
 # AWS Bedrock configuration
-AWS_REGION = os.getenv("AWS_REGION", "eu-north-1")
+AWS_REGION = os.getenv("AWS_REGION", "eu-west-1")
 
 # Modelo Bedrock configurável.
 BEDROCK_MODEL_ID = os.getenv(
     "BEDROCK_MODEL_ID",
-    "eu.amazon.nova-lite-v1:0"
+    "eu.amazon.nova-pro-v1:0"
 )
-
-# Optional OpenAI key if available
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL_ID = os.getenv("OPENAI_MODEL_ID", "gpt-4o-mini")
 
 # Agent settings
 TEMPERATURE = float(os.getenv("AGENT_TEMPERATURE", "0.2"))

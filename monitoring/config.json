@@ -1,0 +1,28 @@
+{
+  "interval_seconds": 30,
+  "warehouse_max_age_hours": 168,
+  "agent_enabled": false,
+  "notifications": {
+    "mode": "local",
+    "external_enabled": false,
+    "channel": null,
+    "recipients": []
+  },
+  "cleanup": {
+    "enabled": true,
+    "trigger_disk_pct": 85,
+    "minimum_interval_hours": 24,
+    "backup_retention_count": 5,
+    "backup_min_age_hours": 168
+  },
+  "backup": {
+    "enabled": true,
+    "interval_hours": 24,
+    "external_destination": null
+  },
+  "alert_thresholds": {
+    "service_consecutive_failures": 2,
+    "portal_errors_24h": 5,
+    "ai_failures_24h": 3
+  }
+}

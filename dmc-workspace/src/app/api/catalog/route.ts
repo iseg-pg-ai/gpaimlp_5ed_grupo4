@@ -1,11 +1,14 @@
 import { portalRequest, PortalPythonError } from "@/lib/python-portal";
 import { publicOrigin, jsonError, noStoreHeaders } from "@/lib/server-http";
 import { CatalogStore, CatalogConflict, catalogRoot, warehouseRoot } from "@/lib/catalog-store";
+import { persistCatalog, syncPendingCatalog } from "@/lib/catalog-persistence";
+import { syncOperationalState } from "@/lib/operational-s3";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
+    await syncPendingCatalog(new CatalogStore());
     const id = new URL(request.url).searchParams.get("id");
     const records = await portalRequest("catalog-query", catalogRoot(), {
       id,
@@ -30,9 +33,11 @@ export async function POST(request: Request) {
   } catch (e) {
     return jsonError(e instanceof Error ? e.message : "Registo inválido.", 400);
   }
-  const store = new CatalogStore();
   try {
-    return Response.json(await store.save(input), { headers: noStoreHeaders });
+    const result = await persistCatalog(input);
+    await syncOperationalState();
+    if (result.queued) return Response.json(result, { status: 202, headers: noStoreHeaders });
+    return Response.json(result.record, { headers: noStoreHeaders });
   } catch (e) {
     return jsonError(
       e instanceof Error ? e.message : "Não foi possível guardar.",
