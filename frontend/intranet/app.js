@@ -112,7 +112,7 @@ const views = {
       const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
       const max = Math.max(1, ...entries.map(([, n]) => n));
       return h('div', { class: 'panel' }, h('h3', {}, title), entries.length ? h('table', {}, h('tbody', {}, entries.map(([key, n]) =>
-        h('tr', {}, h('td', {}, labels[key]?.[0] ?? labels[key] ?? key), h('td', { style: { width: '45%' } }, h('div', { class: 'bar', style: { width: `${(n / max) * 100}%` } })), h('td', {}, n))))) : h('p', { class: 'muted' }, 'Sem dados.'));
+        h('tr', {}, h('td', {}, (Array.isArray(labels[key]) ? labels[key][0] : labels[key]) ?? key), h('td', { style: { width: '45%' } }, h('div', { class: 'bar', style: { width: `${(n / max) * 100}%` } })), h('td', {}, n))))) : h('p', { class: 'muted' }, 'Sem dados.'));
     };
     view.append(
       h('h2', {}, 'Painel de seguimento'),
