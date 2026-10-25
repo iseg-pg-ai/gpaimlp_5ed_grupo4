@@ -351,6 +351,9 @@ Preparar o cenário antes da sessão para não alterar catálogo, aprovações o
 propostas de clientes durante uma demonstração improvisada. O sistema produz
 propostas, não efetua reservas nem confirma automaticamente condições comerciais.
 
+Para o percurso do concierge até ao seguimento do curador, seguir o guião
+[Demonstração de ponta a ponta](DEMO_E2E.md).
+
 ## 5. Linguagem visual e navegação
 
 Manter a identidade da mesa de curadoria: azul-petróleo, tipografia editorial,
