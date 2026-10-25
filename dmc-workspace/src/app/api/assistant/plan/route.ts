@@ -18,9 +18,23 @@ import { jsonError, noStoreHeaders, publicOrigin } from "@/lib/server-http";
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { agentFailure } from "@/lib/agent-errors";
 import { recentConversation } from "@/lib/assistant-conversation";
+import { AgentConversationStore } from "@/lib/agent-conversation-store";
+import { authorizeAgentTool, type AgentToolName } from "@/lib/agent-tool-registry";
+import {
+  AgentBudgetExceeded,
+  AgentRuntimeConfigurationError,
+  enforceAgentRuntimePolicy,
+} from "@/lib/agent-runtime-policy";
 import { proposalImpact } from "@/lib/assistant-impact";
 import { requestIntent, assertPlanIntent, IntentConflict } from "@/lib/assistant-intent";
 import { syncOperationalState } from "@/lib/operational-s3";
+import {
+  IdentityConfigurationError,
+  IdentityDenied,
+  IdentityRequired,
+  type AuthenticatedPrincipal,
+  requestPrincipal,
+} from "@/lib/server-principal";
 
 export const runtime = "nodejs";
 type Language = "pt" | "en";
@@ -29,6 +43,7 @@ const message = (language: Language, pt: string, en: string) => (language === "e
 export async function POST(request: Request) {
   let body;
   let language: Language = "pt";
+  let principal: AuthenticatedPrincipal | null = null;
   try {
     const origin = request.headers.get("origin");
     if (origin && origin !== publicOrigin(request.url))
@@ -65,13 +80,20 @@ export async function POST(request: Request) {
     )
       throw new Error();
     if (!body.runId) validateSnapshot(body.snapshot);
-    recentConversation(body.conversation);
     if (
       body.pendingRunId !== undefined &&
       (typeof body.pendingRunId !== "string" || body.pendingRunId.length > 80)
     )
       throw new Error();
-  } catch {
+    principal = await requestPrincipal(request);
+    if (!principal) recentConversation(body.conversation);
+  } catch (error) {
+    if (error instanceof IdentityRequired)
+      return jsonError("Autenticação necessária. / Authentication required.", 401, noStoreHeaders);
+    if (error instanceof IdentityDenied)
+      return jsonError("Identidade inválida. / Invalid identity.", 403, noStoreHeaders);
+    if (error instanceof IdentityConfigurationError)
+      return jsonError("Identidade indisponível. / Identity unavailable.", 503, noStoreHeaders);
     return jsonError(
       message(
         language,
@@ -82,9 +104,27 @@ export async function POST(request: Request) {
       noStoreHeaders,
     );
   }
+  try {
+    if (principal) {
+      const tool: AgentToolName = !body.runId
+        ? "itinerary.propose"
+        : body.decision === "select"
+          ? "itinerary.select_alternative"
+          : body.decision === "reject"
+            ? "itinerary.reject"
+            : "itinerary.accept";
+      authorizeAgentTool(principal, tool, Boolean(body.runId));
+    }
+  } catch (error) {
+    if (error instanceof IdentityDenied)
+      return jsonError("Permissão insuficiente. / Insufficient permission.", 403, noStoreHeaders);
+    throw error;
+  }
   const store = new VersionStore();
   try {
     const audit = new AgentAuditStore(store);
+    const conversations = principal ? new AgentConversationStore(store) : null;
+    const ownerId = principal?.id ?? null;
     if (body.runId) {
       // A versão enviada não é autoridade; a base é sempre recuperada do registo do servidor.
       const catalog =
@@ -101,6 +141,7 @@ export async function POST(request: Request) {
             body.catalogId,
             catalog,
             language,
+            ownerId,
           ),
           { headers: noStoreHeaders },
         );
@@ -111,6 +152,7 @@ export async function POST(request: Request) {
           body.decision,
           catalog,
           body.rejectionReason ?? "",
+          ownerId,
         ) ?? { rejected: true },
         { headers: noStoreHeaders },
       );
@@ -129,16 +171,22 @@ export async function POST(request: Request) {
       );
     const catalog = await loadPublishedCatalog();
     const intent = requestIntent(body.input);
+    const remembered = conversations?.get(ownerId!, body.tripId, body.baseVersion);
     const context = {
       ...plannerContext(snapshot, catalog),
       requestIntent: intent,
-      conversation: recentConversation(body.conversation),
+      conversation: remembered?.turns ?? recentConversation(body.conversation),
+      conversationSummary: remembered?.summary || undefined,
       conversationLanguage: language,
       currentView: "itinerary",
       pendingPlan: body.pendingRunId
-        ? audit.pendingPlan(body.tripId, body.baseVersion, body.pendingRunId)
+        ? audit.pendingPlan(body.tripId, body.baseVersion, body.pendingRunId, ownerId)
         : undefined,
     };
+    enforceAgentRuntimePolicy(
+      audit,
+      Buffer.byteLength(JSON.stringify({ instruction: body.input, context }), "utf8"),
+    );
     type PlannerResult = {
       plan: AgentPlan;
       provider: string;
@@ -211,7 +259,22 @@ export async function POST(request: Request) {
       result.plan,
       preview,
       metadata,
+      ownerId,
     );
+    if (conversations) {
+      try {
+        conversations.append(ownerId!, body.tripId, body.baseVersion, "user", body.input);
+        conversations.append(
+          ownerId!,
+          body.tripId,
+          body.baseVersion,
+          "assistant",
+          result.plan.summary,
+        );
+      } catch {
+        console.warn("[assistant] AGENT_MEMORY_UNAVAILABLE");
+      }
+    }
     return Response.json(
       {
         runId,
@@ -228,6 +291,26 @@ export async function POST(request: Request) {
       { headers: noStoreHeaders },
     );
   } catch (error) {
+    if (error instanceof AgentBudgetExceeded)
+      return jsonError(
+        message(
+          language,
+          "O orçamento mensal do assistente foi atingido. Nada foi alterado.",
+          "The assistant monthly budget has been reached. Nothing was changed.",
+        ),
+        429,
+        noStoreHeaders,
+      );
+    if (error instanceof AgentRuntimeConfigurationError)
+      return jsonError(
+        message(
+          language,
+          "A política operacional do assistente está incompleta. Nada foi alterado.",
+          "The assistant operational policy is incomplete. Nothing was changed.",
+        ),
+        503,
+        noStoreHeaders,
+      );
     if (error instanceof IntentConflict)
       return jsonError(
         message(

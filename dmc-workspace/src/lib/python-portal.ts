@@ -18,6 +18,13 @@ export class PortalPythonError extends Error {
   }
 }
 
+function agentProcessTimeoutMs() {
+  const seconds = Number(process.env.BLU_AGENT_TIMEOUT_SECONDS ?? "35");
+  return Number.isFinite(seconds) && seconds >= 5 && seconds <= 120
+    ? (seconds + 20) * 1000
+    : 55_000;
+}
+
 // Processo local sem shell, serviço HTTP adicional ou dependências do agente.
 export function portalRequest<T>(operation: string, root: string, params: object): Promise<T> {
   const started = performance.now();
@@ -42,7 +49,7 @@ export function portalRequest<T>(operation: string, root: string, params: object
         : ["-X", "utf8", "-B", "-m", "portal.data", operation, root],
       {
         cwd: repository,
-        timeout: operation === "agent-plan" ? 55000 : 15000,
+        timeout: operation === "agent-plan" ? agentProcessTimeoutMs() : 15_000,
         env: {
           ...process.env,
           PYTHONPATH: [path.join(repository, "src"), process.env.PYTHONPATH]

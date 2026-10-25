@@ -10,6 +10,8 @@ on:
       - "requirements.txt"
       - "pyproject.toml"
       - "uv.lock"
+      - "Dockerfile.curation"
+      - ".dockerignore"
       - ".github/workflows/portal.yml"
   pull_request:
     paths:
@@ -20,6 +22,8 @@ on:
       - "requirements.txt"
       - "pyproject.toml"
       - "uv.lock"
+      - "Dockerfile.curation"
+      - ".dockerignore"
       - ".github/workflows/portal.yml"
   workflow_dispatch:
 
@@ -58,3 +62,19 @@ jobs:
       - name: Validate isolated catalogue lifecycle
         working-directory: dmc-workspace
         run: npm run test:catalog-etl
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build unified delivery without publishing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.curation
+          push: false
+          tags: blu-curation:${{ github.sha }}
+          build-args: SOURCE_REVISION=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

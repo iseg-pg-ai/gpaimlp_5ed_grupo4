@@ -287,7 +287,8 @@ privado ou criar sincronização autenticada com ownership, revisão e resoluç�
 conflitos; não se deve transformar o catálogo ou o S3 numa segunda fonte de
 rascunhos por acidente.
 
-O `Dockerfile.portal` cobre apenas o portal Node. Não inclui a materialização S3,
+O `Dockerfile.curation` prepara a entrega unificada dos cinco processos e exclui
+dados operacionais. Não executa por si só a materialização S3,
 ETL, Observatório, Monitoring, apresentação ou agente. Uma futura arquitetura com
 load balancer ou CDN terá de encaminhar as rotas dinâmicas e `/_next/static/*`
 para o mesmo build, validar APIs e assets e definir health checks, cache, TLS,

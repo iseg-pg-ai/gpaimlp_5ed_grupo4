@@ -171,20 +171,35 @@ def _output_limit():
     return value
 
 
+def _timeout_seconds():
+    try:
+        value = float(os.getenv("BLU_AGENT_TIMEOUT_SECONDS", "35"))
+    except ValueError as error:
+        raise AgentConfigurationError("Timeout do agente inválido.") from error
+    if not 5 <= value <= 120:
+        raise AgentConfigurationError("Timeout do agente inválido.")
+    return value
+
+
 def _provider(client=None, provider_name=None):
     """Escolher um único fornecedor explícito, sem fallback silencioso."""
     name = (provider_name or os.getenv("BLU_AGENT_PROVIDER", "bedrock")).strip().lower()
+    timeout = _timeout_seconds()
     if name == "bedrock":
         region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "eu-west-1"
         model = os.getenv("BEDROCK_MODEL_ID", "eu.amazon.nova-pro-v1:0")
         if client is None:
             client = boto3.client(
                 "bedrock-runtime", region_name=region,
-                config=Config(connect_timeout=3, read_timeout=35, retries={"total_max_attempts": 1}),
+                config=Config(
+                    connect_timeout=min(3, timeout),
+                    read_timeout=timeout,
+                    retries={"total_max_attempts": 1},
+                ),
             )
         return BedrockProvider(client, model)
     if name == "openai":
-        return OpenAIProvider(client=client)
+        return OpenAIProvider(client=client, timeout=timeout)
     raise AgentConfigurationError("Fornecedor de IA inválido.")
 
 

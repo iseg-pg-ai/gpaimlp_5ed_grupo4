@@ -34,11 +34,12 @@
     "test:theme": "node tests/browser/theme.mjs"
   },
   "dependencies": {
+    "aws-jwt-verify": "5.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fflate": "^0.8.3",
     "lucide-react": "^1.48.0",
-    "next": "^16.4.0",
+    "next": "16.4.3",
     "pdfkit": "^0.20.2",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -57,7 +58,7 @@
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "^16.4.1",
+    "eslint-config-next": "16.4.3",
     "playwright": "^1.63.0",
     "prettier": "3.6.2",
     "tailwindcss": "^4",

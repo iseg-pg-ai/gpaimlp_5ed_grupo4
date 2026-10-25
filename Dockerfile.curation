@@ -1,0 +1,44 @@
+# syntax=docker/dockerfile:1.7
+FROM node:24.11.1-bookworm-slim AS node-runtime
+FROM ghcr.io/astral-sh/uv:0.12.19 AS uv-runtime
+FROM python:3.13.9-slim-bookworm AS build
+
+ARG SOURCE_REVISION=unknown
+ENV UV_LINK_MODE=copy UV_COMPILE_BYTECODE=1 NODE_ENV=production
+WORKDIR /app
+COPY --from=node-runtime /usr/local/ /usr/local/
+COPY --from=uv-runtime /uv /uvx /usr/local/bin/
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --all-groups --no-install-project
+COPY dmc-workspace/package.json dmc-workspace/package-lock.json ./dmc-workspace/
+RUN cd dmc-workspace && npm ci
+COPY . .
+RUN cd dmc-workspace \
+    && npm run build \
+    && npm prune --omit=dev \
+    && python -m compileall -q /app/src /app/portal /app/etl /app/monitoring
+
+FROM python:3.13.9-slim-bookworm AS runtime
+ARG SOURCE_REVISION=unknown
+LABEL org.opencontainers.image.title="BLU Curation Workspace" \
+      org.opencontainers.image.revision="${SOURCE_REVISION}"
+ENV NODE_ENV=production \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app/src:/app \
+    PATH=/app/.venv/bin:/usr/local/bin:/usr/bin:/bin \
+    BLU_BIND_HOST=0.0.0.0
+COPY --from=node-runtime /usr/local/ /usr/local/
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl fontconfig libgomp1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 1000 blu \
+    && useradd --uid 1000 --gid 1000 --create-home --shell /usr/sbin/nologin blu
+WORKDIR /app
+COPY --from=build --chown=blu:blu /app /app
+RUN mkdir -p /var/lib/blu/runtime /var/lib/blu/operational /var/lib/blu/exports/itineraries /var/lib/blu/monitoring \
+    && chown -R blu:blu /var/lib/blu
+USER blu
+EXPOSE 3001 3003 3004 8000 8501
+# O ECS substitui este comando por serviço; o valor por defeito facilita um smoke local.
+CMD ["npm", "--prefix", "dmc-workspace", "run", "start", "--", "--hostname", "0.0.0.0", "--port", "3001"]

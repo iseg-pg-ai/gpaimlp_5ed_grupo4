@@ -20,6 +20,7 @@ type Run = {
   previewHash: string;
   createdAt: string;
   executedVersion: number | null;
+  ownerId: string | null;
 };
 export class AgentAuditStore {
   readonly store: VersionStore;
@@ -29,13 +30,15 @@ export class AgentAuditStore {
       id TEXT PRIMARY KEY, tripId TEXT NOT NULL, baseVersion INTEGER NOT NULL,
       instructionHash TEXT NOT NULL, plan TEXT NOT NULL, status TEXT NOT NULL,
       previewHash TEXT NOT NULL, metadata TEXT NOT NULL, createdAt TEXT NOT NULL,
-      completedAt TEXT, executedVersion INTEGER,
+      completedAt TEXT, executedVersion INTEGER, ownerId TEXT,
       FOREIGN KEY(tripId,baseVersion) REFERENCES versions(tripId,version) ON DELETE CASCADE)`);
     const columns = store.db.prepare("PRAGMA table_info(agent_runs)").all() as unknown as Array<{
       name: string;
     }>;
     if (!columns.some((column) => column.name === "legalHold"))
       store.db.exec("ALTER TABLE agent_runs ADD COLUMN legalHold INTEGER NOT NULL DEFAULT 0");
+    if (!columns.some((column) => column.name === "ownerId"))
+      store.db.exec("ALTER TABLE agent_runs ADD COLUMN ownerId TEXT");
   }
   base(tripId: string, version: number): Snapshot {
     if (this.store.list(tripId)[0]?.version !== version)
@@ -53,13 +56,14 @@ export class AgentAuditStore {
     plan: AgentPlan,
     preview: Snapshot,
     metadata: object,
+    ownerId: string | null = null,
   ) {
     this.base(tripId, baseVersion);
     validatePlan(plan);
     const id = randomUUID();
     this.store.db
       .prepare(
-        "INSERT INTO agent_runs (id,tripId,baseVersion,instructionHash,plan,status,previewHash,metadata,createdAt) VALUES (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO agent_runs (id,tripId,baseVersion,instructionHash,plan,status,previewHash,metadata,createdAt,ownerId) VALUES (?,?,?,?,?,?,?,?,?,?)",
       )
       .run(
         id,
@@ -71,16 +75,23 @@ export class AgentAuditStore {
         snapshotFingerprint(preview),
         JSON.stringify(metadata),
         new Date().toISOString(),
+        ownerId,
       );
     return id;
   }
-  pendingPlan(tripId: string, baseVersion: number, id: string): AgentPlan | undefined {
+  pendingPlan(
+    tripId: string,
+    baseVersion: number,
+    id: string,
+    ownerId: string | null = null,
+  ): AgentPlan | undefined {
     const row = this.store.db
       .prepare(
         "SELECT * FROM agent_runs WHERE id=? AND tripId=? AND baseVersion=? AND status IN ('proposed','answered')",
       )
       .get(id, tripId, baseVersion) as unknown as Run | undefined;
-    if (!row || Date.now() - Date.parse(row.createdAt) > 30 * 60 * 1000) return undefined;
+    if (!row || row.ownerId !== ownerId || Date.now() - Date.parse(row.createdAt) > 30 * 60 * 1000)
+      return undefined;
     const plan = JSON.parse(row.plan);
     validatePlan(plan);
     return plan;
@@ -93,12 +104,14 @@ export class AgentAuditStore {
     catalogId: string,
     catalog: Catalog,
     language: "pt" | "en" = "pt",
+    ownerId: string | null = null,
   ) {
     const run = this.store.db
       .prepare("SELECT * FROM agent_runs WHERE id=? AND tripId=?")
       .get(id, tripId) as unknown as Run | undefined;
     if (
       !run ||
+      run.ownerId !== ownerId ||
       !["proposed", "answered"].includes(run.status) ||
       Date.now() - Date.parse(run.createdAt) > 30 * 60 * 1000
     )
@@ -141,6 +154,7 @@ export class AgentAuditStore {
         parentRunId: id,
         conversationLanguage: language,
       },
+      ownerId,
     );
     return {
       runId,
@@ -215,6 +229,27 @@ export class AgentAuditStore {
           .get()?.n ?? 0,
     };
   }
+  monthlySpendUsd(
+    rates: Record<string, { input: number; output: number }>,
+    now = new Date(),
+  ): number {
+    if (Number.isNaN(now.getTime())) throw new Error("Data de custos inválida.");
+    const month = now.toISOString().slice(0, 7);
+    const rows = this.store.db
+      .prepare("SELECT metadata FROM agent_runs WHERE substr(createdAt,1,7)=?")
+      .all(month) as unknown as Array<{ metadata: string }>;
+    return rows.reduce((total, row) => {
+      const metadata = JSON.parse(String(row.metadata));
+      const rate = rates[String(metadata.modelId ?? "")];
+      if (!rate) return total;
+      return (
+        total +
+        ((Number(metadata.inputTokens) || 0) * rate.input +
+          (Number(metadata.outputTokens) || 0) * rate.output) /
+          1_000_000
+      );
+    }, 0);
+  }
   cleanupExpired(cutoff: Date): number {
     if (Number.isNaN(cutoff.getTime())) throw new Error("Limite de retenção inválido.");
     return Number(
@@ -229,11 +264,12 @@ export class AgentAuditStore {
     decision: "accept" | "reject",
     catalog: Catalog,
     rejectionReason = "",
+    ownerId: string | null = null,
   ) {
     const run = this.store.db
       .prepare("SELECT * FROM agent_runs WHERE id=? AND tripId=?")
       .get(id, tripId) as unknown as Run | undefined;
-    if (!run) throw new VersionConflict("Proposta não encontrada.");
+    if (!run || run.ownerId !== ownerId) throw new VersionConflict("Proposta não encontrada.");
     if (run.status !== "proposed")
       throw new VersionConflict(
         "Esta proposta já foi decidida. Reabra o histórico antes de continuar.",

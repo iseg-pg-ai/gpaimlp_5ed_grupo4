@@ -212,9 +212,9 @@ Acesso pelo Studio não torna a proposta pública para clientes externos.
 
 A memória temporária do agente usa a SQLite operacional, não uma segunda fonte
 de verdade. Está modelada por utilizador, viagem e versão e sujeita à política de
-retenção central, mas só será ligada às rotas quando a identidade autenticada do
-backend estiver disponível. Até lá, o histórico recente do browser continua a
-ser contexto não autoritativo e limitado.
+retenção central. É ligada às rotas apenas no modo cloud, depois de o backend
+validar criptograficamente os tokens ALB/Cognito. No SageMaker, o histórico
+recente do browser continua a ser contexto não autoritativo e limitado.
 
 ## Fronteira atual do agente
 

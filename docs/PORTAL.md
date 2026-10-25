@@ -359,7 +359,8 @@ O script instala as dependências, cria um build limpo, confirma que
 Para reutilizar uma instalação ou build já validado, podem ser definidos
 `SKIP_INSTALL=true` e `SKIP_BUILD=true`.
 
-O `Dockerfile.portal` cobre apenas este processo Node. A materialização S3 e os
+O `Dockerfile.curation` contém este processo Node e os restantes serviços da task
+ECS, sem dados operacionais. A materialização S3 e os
 restantes serviços pertencem a uma futura arquitetura de deployment, descrita em
 [Operações](OPERATIONS.md#deployment-ainda-por-decidir).
 

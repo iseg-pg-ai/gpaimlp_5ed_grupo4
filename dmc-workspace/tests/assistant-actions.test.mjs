@@ -682,6 +682,29 @@ test("auditoria guarda hash do pedido, nunca texto integral, e recusa outra viag
   }
 });
 
+test("propostas autenticadas pertencem ao utilizador que as criou", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "blu-agent-owner-"));
+  const store = new VersionStore(root);
+  try {
+    const s = fixture();
+    store.save("owned-trip", s, "generated", null);
+    const audit = new AgentAuditStore(store);
+    const p = plan([{ type: "remove_item", dayNumber: 1, itemId: s.itinerary[0].items.at(-1).id }]);
+    const after = simulatePlan(s, p, catalog);
+    const id = audit.propose("owned-trip", 1, "Explica o dia", p, after, {}, "cognito:owner-a");
+    assert.deepEqual(audit.pendingPlan("owned-trip", 1, id, "cognito:owner-a"), p);
+    assert.equal(audit.pendingPlan("owned-trip", 1, id, "cognito:owner-b"), undefined);
+    assert.throws(
+      () => audit.decide(id, "owned-trip", "reject", catalog, "", "cognito:owner-b"),
+      /não encontrada/,
+    );
+    assert.equal(audit.decide(id, "owned-trip", "reject", catalog, "", "cognito:owner-a"), null);
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("versão no Lixo é recusada pelo assistente sem restauro implícito", () => {
   const { c, s } = alternativesSetup();
   const temporary = mkdtempSync(path.join(tmpdir(), "blu-agent-trash-"));

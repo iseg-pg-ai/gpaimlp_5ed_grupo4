@@ -174,13 +174,17 @@ class PlannerTest(unittest.TestCase):
     @patch("blu_ai.planner.boto3.client")
     def test_iam_client_uses_bounded_timeouts_and_no_fixed_credentials(self, factory):
         factory.return_value.converse.return_value = provider_response()
-        with patch.dict("os.environ", {"BEDROCK_MODEL_ID": "eu.amazon.nova-pro-v1:0", "BLU_AGENT_MAX_OUTPUT_TOKENS": "2048"}):
+        with patch.dict("os.environ", {
+            "BEDROCK_MODEL_ID": "eu.amazon.nova-pro-v1:0",
+            "BLU_AGENT_MAX_OUTPUT_TOKENS": "2048",
+            "BLU_AGENT_TIMEOUT_SECONDS": "47",
+        }):
             result = plan_actions({"instruction": "Teste", "context": {"conversationLanguage": "en"}})
         self.assertEqual(result["modelId"], "eu.amazon.nova-pro-v1:0")
         kwargs = factory.call_args.kwargs
         self.assertNotIn("aws_access_key_id", kwargs)
         self.assertEqual(kwargs["config"].connect_timeout, 3)
-        self.assertEqual(kwargs["config"].read_timeout, 35)
+        self.assertEqual(kwargs["config"].read_timeout, 47)
         self.assertEqual(kwargs["config"].retries["total_max_attempts"], 1)
         self.assertEqual(factory.return_value.converse.call_args.kwargs["inferenceConfig"]["maxTokens"], 2048)
 
@@ -198,6 +202,10 @@ class PlannerTest(unittest.TestCase):
             plan_actions({"instruction": "x", "context": {"text": "a" * 180001}}, client)
         for limit in ("0", "4097", "bad"):
             with patch.dict("os.environ", {"BLU_AGENT_MAX_OUTPUT_TOKENS": limit}):
+                with self.assertRaises(AgentConfigurationError):
+                    plan_actions({"instruction": "x", "context": {}}, client)
+        for timeout in ("0", "121", "bad"):
+            with patch.dict("os.environ", {"BLU_AGENT_TIMEOUT_SECONDS": timeout}):
                 with self.assertRaises(AgentConfigurationError):
                     plan_actions({"instruction": "x", "context": {}}, client)
         client.converse.assert_not_called()

@@ -21,6 +21,12 @@ const environment = {
   BLU_BACKUP_BUCKET_NAME: "blu-dmc-backups-650557269385-eu-west-1",
   BLU_MONITORING_SNS_TOPIC_ARN:
     "arn:aws:sns:eu-west-1:650557269385:blu-monitoring-development",
+  BLU_AGENT_PROVIDER: "bedrock",
+  BEDROCK_MODEL_ID: "eu.amazon.nova-pro-v1:0",
+  BLU_AGENT_MONTHLY_BUDGET_USD: "25",
+  BLU_AGENT_RATES_JSON: JSON.stringify({
+    "eu.amazon.nova-pro-v1:0": { input: 1, output: 2 },
+  }),
 };
 
 function synth(t) {
@@ -100,6 +106,17 @@ test("stack protege interfaces com TLS, Cognito e grupos aprovados", (t) => {
     publicIngress.map((rule) => rule.FromPort),
     [443],
   );
+  const portal = resources
+    .find((resource) => resource.Type === "AWS::ECS::TaskDefinition")
+    .Properties.ContainerDefinitions.find((container) => container.Name === "portal");
+  const variables = Object.fromEntries(portal.Environment.map(({ Name, Value }) => [Name, Value]));
+  assert.equal(variables.BLU_IDENTITY_MODE, "alb-cognito");
+  assert.ok(variables.BLU_ALB_ARN);
+  assert.ok(variables.BLU_COGNITO_USER_POOL_ID);
+  assert.ok(variables.BLU_COGNITO_CLIENT_ID);
+  assert.equal(variables.BLU_AGENT_PROVIDER, "bedrock");
+  assert.equal(variables.BEDROCK_MODEL_ID, "eu.amazon.nova-pro-v1:0");
+  assert.equal(variables.BLU_AGENT_MONTHLY_BUDGET_USD, "25");
 });
 
 test("configuração recusa imagem fora do ECR da conta e região alvo", () => {

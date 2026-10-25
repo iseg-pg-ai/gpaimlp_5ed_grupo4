@@ -293,6 +293,26 @@ referências de reserva continuam excluídos. A memória por utilizador aguarda 
 identidade autenticada no backend; aceitar um `ownerId` enviado pelo browser
 violaria o contrato de autorização já aprovado.
 
+### Identidade do agente validada no backend — 2026-10-25
+
+O modo cloud valida o JWT de claims assinado pelo ALB e o access token assinado
+pelo Cognito através da biblioteca oficial `aws-jwt-verify`. O backend confirma
+ARN do ALB, issuer, client ID, expiração e igualdade do `sub`; não usa
+`x-amzn-oidc-identity` como prova. Grupos desconhecidos não concedem permissões e
+a ausência de grupo aplica `viewer`.
+
+As propostas passam a guardar ownership. Apenas o mesmo principal com
+`agent.approve` pode aceitar, rejeitar ou selecionar alternativas. A memória
+servidor é ativada pelo mesmo principal e fica isolada por utilizador, viagem e
+versão. `BLU_IDENTITY_MODE=disabled` preserva o funcionamento SageMaker, mas não
+simula multiutilizador nem ativa memória autoritativa.
+
+A matriz de ferramentas do agente é fechada e tipada. Inclui apenas leitura de
+viagem/catálogo e o ciclo transacional já existente de propor, aceitar, rejeitar
+e escolher alternativas. A permissão do papel é verificada no backend e as
+operações de escrita exigem a decisão explícita recebida pela rota. Capacidades
+administrativas, destrutivas e de infraestrutura não são expostas ao agente.
+
 ### Base cloud e multiutilizador aprovada — 2026-10-25
 
 Foi aprovada como arquitetura-alvo inicial uma implantação em `eu-west-1`, com
@@ -410,3 +430,16 @@ Rascunhos continuam privados ao navegador e não têm concorrência distribuída
 SQLite não é apresentado como base multi-réplica: uma futura execução horizontal
 exige outra persistência operacional ou um único serviço escritor, identidade e
 ownership explícitos e testes entre máquinas.
+
+### O agente cloud falha fechado por identidade, custo e fornecedor — 2026-10-25
+
+O modo cloud valida a identidade assinada pelo ALB e Cognito, associa memória e
+propostas ao utilizador e autoriza apenas ferramentas tipadas do itinerário. Cada
+escrita continua sujeita a pré-visualização e confirmação explícita.
+
+Antes de chamar o fornecedor, o backend exige modelo, teto mensal e preço por
+milhão de tokens, reservando conservadoramente o custo máximo da resposta. O
+timeout é configurável entre 5 e 120 segundos. Configuração incompleta, orçamento
+esgotado, timeout ou indisponibilidade não alteram o roteiro e não acionam outro
+modelo. Os valores comerciais permanecem uma decisão operacional por aprovar e
+não são inventados no código ou na documentação.

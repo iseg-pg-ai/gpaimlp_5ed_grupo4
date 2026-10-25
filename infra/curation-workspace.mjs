@@ -36,6 +36,13 @@ const certificateArn = required("BLU_CERTIFICATE_ARN");
 const dataBucketName = required("BLU_DATA_BUCKET_NAME");
 const backupBucketName = required("BLU_BACKUP_BUCKET_NAME");
 const notificationTopicArn = required("BLU_MONITORING_SNS_TOPIC_ARN");
+const agentProvider = process.env.BLU_AGENT_PROVIDER?.trim().toLowerCase() || "bedrock";
+const agentModel = required(
+  agentProvider === "openai" ? "OPENAI_MODEL" : "BEDROCK_MODEL_ID",
+);
+const agentBudget = required("BLU_AGENT_MONTHLY_BUDGET_USD");
+const agentRates = required("BLU_AGENT_RATES_JSON");
+const agentTimeout = process.env.BLU_AGENT_TIMEOUT_SECONDS?.trim() || "35";
 
 if (!/^\d{12}$/.test(account))
   throw new Error("TARGET_AWS_ACCOUNT_ID must contain 12 digits");
@@ -43,6 +50,31 @@ if (!/^(staging|production)$/.test(environment))
   throw new Error("DEPLOY_ENVIRONMENT must be staging or production");
 if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain))
   throw new Error("BLU_PUBLIC_DOMAIN is invalid");
+if (!["bedrock", "openai"].includes(agentProvider))
+  throw new Error("BLU_AGENT_PROVIDER must be bedrock or openai");
+if (!Number.isFinite(Number(agentBudget)) || Number(agentBudget) <= 0)
+  throw new Error("BLU_AGENT_MONTHLY_BUDGET_USD must be positive");
+if (
+  !Number.isFinite(Number(agentTimeout)) ||
+  Number(agentTimeout) < 5 ||
+  Number(agentTimeout) > 120
+)
+  throw new Error("BLU_AGENT_TIMEOUT_SECONDS must be between 5 and 120");
+let parsedAgentRates;
+try {
+  parsedAgentRates = JSON.parse(agentRates);
+} catch {
+  throw new Error("BLU_AGENT_RATES_JSON must be valid JSON");
+}
+const selectedRate = parsedAgentRates?.[agentModel];
+if (
+  !selectedRate ||
+  !Number.isFinite(selectedRate.input) ||
+  selectedRate.input < 0 ||
+  !Number.isFinite(selectedRate.output) ||
+  selectedRate.output < 0
+)
+  throw new Error("BLU_AGENT_RATES_JSON must include non-negative rates for the selected model");
 if (!/^arn:aws(-[^:]+)?:acm:[^:]+:\d{12}:certificate\/.+/.test(certificateArn))
   throw new Error("BLU_CERTIFICATE_ARN is invalid");
 const imageMatch = imageUri.match(
@@ -209,6 +241,13 @@ class CurationWorkspaceStack extends Stack {
       BLU_BACKUP_S3_PREFIX: "blu-backups",
       BLU_MONITORING_NOTIFICATIONS_ENABLED: "true",
       BLU_MONITORING_SNS_TOPIC_ARN: notificationTopicArn,
+      BLU_AGENT_PROVIDER: agentProvider,
+      ...(agentProvider === "openai"
+        ? { OPENAI_MODEL: agentModel, BLU_OPENAI_ENABLED: "true" }
+        : { BEDROCK_MODEL_ID: agentModel }),
+      BLU_AGENT_MONTHLY_BUDGET_USD: agentBudget,
+      BLU_AGENT_RATES_JSON: agentRates,
+      BLU_AGENT_TIMEOUT_SECONDS: agentTimeout,
       BLU_RUNTIME_ROOT: "/var/lib/blu/runtime",
       BLU_DATA_DIR: "/var/lib/blu/runtime/data",
       BLU_WAREHOUSE_DIR: "/var/lib/blu/runtime/warehouse",
@@ -216,6 +255,10 @@ class CurationWorkspaceStack extends Stack {
       BLU_OPERATIONAL_DIR: "/var/lib/blu/operational",
       BLU_MONITORING_RUNTIME: "/var/lib/blu/monitoring",
       BLU_BIND_HOST: "0.0.0.0",
+      BLU_IDENTITY_MODE: "alb-cognito",
+      BLU_COGNITO_USER_POOL_ID: userPool.userPoolId,
+      BLU_COGNITO_CLIENT_ID: client.userPoolClientId,
+      BLU_COGNITO_ISSUER: `https://cognito-idp.${region}.amazonaws.com/${userPool.userPoolId}`,
     };
     const repository = ecr.Repository.fromRepositoryName(
       this,
@@ -356,6 +399,10 @@ class CurationWorkspaceStack extends Stack {
         internetFacing: true,
         securityGroup: loadBalancerSecurityGroup,
       },
+    );
+    containers.find(({ name }) => name === "portal").container.addEnvironment(
+      "BLU_ALB_ARN",
+      loadBalancer.loadBalancerArn,
     );
     const listener = loadBalancer.addListener("Https", {
       port: 443,

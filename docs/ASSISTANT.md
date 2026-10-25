@@ -15,13 +15,13 @@ ou ações duplicadas. Opções de substituição exigem uma escolha e nova revi
 Não há ranking nem seleção automática de uma opção de adição. Os controlos
 manuais de adicionar/remover usam /api/itinerary/edit, sem invocar o modelo.
 
-Pedidos e esclarecimentos em português ou inglês. O fluxo SageMaker atual ainda
-envia apenas o contexto recente guardado no navegador. A memória servidor já tem
-um store privado na mesma SQLite operacional, isolado por utilizador, viagem e
-versão, com oito turnos recentes, resumo limitado, eliminação explícita, retenção
-de 30 dias e legal hold. Esse store permanece desligado do endpoint até existir
-um principal autenticado no backend; um identificador fornecido pelo browser não
-é autoridade. O catálogo e a estrutura do itinerário são dados, nunca instruções.
+Pedidos e esclarecimentos em português ou inglês. No modo cloud, a memória
+servidor fica ligada ao principal validado do ALB/Cognito. Usa um store privado na
+mesma SQLite operacional, isolado por utilizador, viagem e versão, com oito turnos
+recentes, resumo limitado, eliminação explícita, retenção de 30 dias e legal hold.
+No SageMaker, sem um principal autenticado, o portal mantém o contexto recente do
+navegador e não o trata como identidade. Um identificador fornecido pelo browser
+nunca é autoridade. O catálogo e a estrutura do itinerário são dados, nunca instruções.
 Nomes de clientes, contactos e notas internas não fazem parte do contexto
 estruturado enviado ao modelo.
 
@@ -82,6 +82,13 @@ segurança bloqueia a ativação, mesmo que a média global seja superior.
 Chamadas reais permanecem opt-in, com orçamento e modelo aprovados. Os testes de
 CI usam adaptadores simulados e não dependem de credenciais externas.
 
+Em cloud, o backend recusa a chamada antes do fornecedor quando faltam o teto
+mensal ou o preço do modelo. A reserva usa uma estimativa conservadora do pedido e
+do limite máximo de saída; o consumo confirmado vem dos tokens registados na
+auditoria. Atingir o teto devolve erro controlado, não muda a viagem e não troca de
+modelo. Os preços são configuração operacional por milhão de tokens e precisam de
+ser revistos na fonte oficial antes de cada ativação ou mudança de modelo.
+
 ## Autoridade, persistência e falhas
 
 O esquema partilhado está em `src/blu_ai/schemas/action-plan.json`. O planeador
@@ -107,6 +114,22 @@ conter texto da conversa. Não são logs. A política central elimina sessões
 expiradas e respetivos turnos, salvo preservação legal; versões autoritativas e
 exports não são eliminados por esta limpeza.
 
+No modo `alb-cognito`, o backend valida tanto `x-amzn-oidc-data`, assinado pelo
+ALB, como o access token Cognito, confirma o mesmo `sub`, o ARN do ALB, issuer e
+client ID e deriva o papel apenas de grupos conhecidos. Headers legacy não
+assinados nunca bastam. Esta implementação segue a
+[verificação de claims documentada pela AWS](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html#user-claims-encoding).
+`agent.propose` é obrigatório para pedir uma proposta e `agent.approve` para
+aceitar, rejeitar ou selecionar alternativas. O `ownerId` fica na auditoria e
+impede decisões por outro utilizador.
+
+A superfície aprovada está tipada em `agent-tool-registry.ts`: leitura de viagem
+e catálogo, proposta, aceitação, rejeição e seleção de alternativa. Leituras não
+exigem confirmação, propostas produzem sempre pré-visualização e todas as
+escritas exigem uma decisão explícita. Ferramentas administrativas, destrutivas,
+de infraestrutura, reservas ou contactos externos não fazem parte do registo e
+continuam negadas por omissão.
+
 ## Execução privada
 
 Reutiliza o arranque do portal no SageMaker Studio Code Editor e as credenciais
@@ -126,6 +149,10 @@ Configuração do planeador:
 | OPENAI_API_KEY | Segredo obrigatório no servidor quando o fornecedor é `openai` |
 | AWS_REGION | Região Bedrock; alternativa AWS_DEFAULT_REGION, depois eu-west-1 |
 | BLU_AGENT_MAX_OUTPUT_TOKENS | Limite de saída, 1800 por defeito; 256 a 4096 |
+| BLU_AGENT_TIMEOUT_SECONDS | Timeout do fornecedor, 35 por defeito; 5 a 120 |
+| BLU_AGENT_MONTHLY_BUDGET_USD | Teto mensal obrigatório no modo cloud |
+| BLU_AGENT_RATES_JSON | Preços atuais por milhão de tokens de entrada e saída |
+| BLU_OPENAI_ENABLED | Aprovação explícita adicional para OpenAI em cloud |
 | BLU_EXPORT_DIR | Armazenamento de versões e auditoria |
 | PORTAL_PUBLIC_ORIGIN | Origem pública do proxy privado quando aplicável |
 

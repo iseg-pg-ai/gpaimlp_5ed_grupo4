@@ -18,24 +18,17 @@ A comparação atual e os limites conhecidos estão em
 
 ## Etapa 2 — Agente de IA integrado
 
-- [ ] Guardar contexto de conversa por utilizador, viagem e versão no servidor,
-  com resumo, retenção e eliminação definidos, em vez de depender apenas das
-  últimas oito mensagens do navegador.
-- [ ] Expor funcionalidades aprovadas do portal como ferramentas tipadas de
-  leitura, proposta e escrita, reutilizando os serviços de domínio existentes.
-- [ ] Aplicar uma matriz de autorização: leituras automáticas, alterações com
-  pré-visualização e aceitação, e operações destrutivas ou administrativas com
-  confirmação reforçada.
-- [ ] Definir fornecedor, orçamento, privacidade, timeouts e comportamento de
-  degradação para utilização real.
+- [ ] Aprovar fornecedor, modelo, teto mensal e preços atuais para utilização
+  real. O código já impõe timeout, limite de saída, orçamento, ausência de
+  fallback e falha sem alteração; Bedrock permanece a opção local atual.
 - [ ] Autorizar e executar uma avaliação com modelo real, incluindo custos,
   privacidade, casos de teste e limiares de aceitação. Testes automáticos usam
   modelos simulados por defeito.
 
-A memória por utilizador e a matriz de autorização dependem de uma identidade
-autenticada no backend. O contrato de papéis já existe, mas o portal SageMaker
-atual ainda não fornece um principal fiável; não se deve usar um identificador
-enviado pelo frontend como autoridade provisória.
+A memória servidor e o ownership das propostas ficam ativos apenas quando o
+backend valida os JWT do ALB e Cognito. No SageMaker, onde não existe esse
+principal, o modo de identidade permanece desativado e o portal continua a usar
+o contexto recente do navegador sem o tratar como autoridade.
 
 ## Etapa 3 — Deployment e operação cloud
 
@@ -49,6 +42,12 @@ enviado pelo frontend como autoridade provisória.
 - [ ] Executar testes de segurança, privacidade, custos e carga adequados ao uso
   aprovado.
 - [ ] Publicar apenas depois da aprovação operacional e registar o runbook final.
+
+A imagem unificada e o job de build sem publicação já estão preparados. Esta
+tarefa permanece aberta até o build passar no GitHub Actions, existir uma política
+de SBOM/assinatura e a promoção usar o digest imutável do ECR.
+O daemon deste SageMaker bloqueia o build local por política `ImageBuild`; não é
+uma autorização para contornar a restrição.
 
 ## Etapa 4 — Monitoring externo
 
