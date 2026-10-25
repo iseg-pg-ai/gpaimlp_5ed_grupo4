@@ -16,6 +16,9 @@ export type Lead = {
   messageCount: number;
   synthetic: boolean;
   contactedAt?: string;
+  stage?: string;
+  consentAt?: string;
+  journey: Record<string, string>;
 };
 
 export type LeadMessage = {
@@ -28,12 +31,45 @@ export type LeadMessage = {
 
 export type LeadDetail = Lead & {
   messages: LeadMessage[];
-  consentAt?: string;
   emails: string[];
   phones: string[];
 };
 
 const s = (item: Item, key: string) => item[key]?.S ?? "";
+
+// journeyJson guarda o último contexto enviado pelo chat (destino, datas, campanha, etapa).
+function journeyOf(item: Item): Record<string, string> {
+  try {
+    const value = JSON.parse(s(item, "journeyJson") || "{}") as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key, text]) => typeof text === "string" && key !== "journeyReference")
+        .map(([key, text]) => [key, text as string]),
+    );
+  } catch {
+    return {};
+  }
+}
+
+export const journeyLabels: Record<string, string> = {
+  destination: "Destino",
+  timeframe: "Datas",
+  party: "Viajantes",
+  budget: "Orçamento",
+  interests: "Interesses",
+  pace: "Ritmo",
+  socialSource: "Origem",
+  campaign: "Campanha",
+  medium: "Meio",
+  content: "Conteúdo",
+};
+
+export const stageText: Record<string, string> = {
+  exploring: "A explorar",
+  qualifying: "A qualificar",
+  "ready-for-curator": "Pronto para curador",
+  "curator-follow-up": "Consentiu seguimento",
+};
 
 export function toLead(item: Item): Lead {
   return {
@@ -45,6 +81,9 @@ export function toLead(item: Item): Lead {
     messageCount: Number(item.messageCount?.N ?? 0),
     synthetic: item.synthetic?.BOOL === true,
     ...(s(item, "contactedAt") ? { contactedAt: s(item, "contactedAt") } : {}),
+    ...(s(item, "journeyStage") ? { stage: s(item, "journeyStage") } : {}),
+    ...(s(item, "consentAt") ? { consentAt: s(item, "consentAt") } : {}),
+    journey: journeyOf(item),
   };
 }
 

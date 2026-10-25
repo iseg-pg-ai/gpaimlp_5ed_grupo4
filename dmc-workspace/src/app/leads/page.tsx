@@ -5,7 +5,14 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Mail, MessageCircle, RefreshCw } from "lucide-react";
 import { T, useLocale } from "@/components/LocaleProvider";
-import { isOverdue, type Lead, type LeadDetail, type LeadFilter } from "@/lib/leads-model";
+import {
+  isOverdue,
+  journeyLabels,
+  stageText,
+  type Lead,
+  type LeadDetail,
+  type LeadFilter,
+} from "@/lib/leads-model";
 
 async function readJson<Value>(response: Response): Promise<Value> {
   const result = (await response.json()) as Value | { error?: string };
@@ -176,6 +183,14 @@ export default function LeadsPage() {
                       {when(lead.status === "CONTACTED" ? lead.contactedAt : lead.followUpAt)}
                       {lead.synthetic && " · teste"}
                     </span>
+                    {(lead.stage || lead.journey.destination || lead.journey.budget) && (
+                      <span className="mt-1 block text-xs">
+                        {lead.stage && <T text={stageText[lead.stage] ?? lead.stage} source="pt" />}
+                        {[lead.journey.destination, lead.journey.timeframe, lead.journey.budget]
+                          .filter(Boolean)
+                          .map((value) => ` · ${value}`)}
+                      </span>
+                    )}
                   </button>
                 </li>
               );
@@ -217,6 +232,21 @@ export default function LeadsPage() {
                   />
                 </button>
               </header>
+
+              {Object.keys(selected.journey).length > 0 && (
+                <dl className="mt-3 grid gap-x-4 gap-y-1 rounded-lg bg-[var(--portal-bg-e3dcd0)] p-3 text-sm sm:grid-cols-[auto_1fr]">
+                  {Object.entries(selected.journey)
+                    .filter(([key]) => key !== "stage")
+                    .map(([key, value]) => (
+                      <div key={key} className="contents">
+                        <dt className="font-semibold">
+                          <T text={journeyLabels[key] ?? key} source="pt" />
+                        </dt>
+                        <dd className="break-words">{value}</dd>
+                      </div>
+                    ))}
+                </dl>
+              )}
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {selected.emails.map((email) => (

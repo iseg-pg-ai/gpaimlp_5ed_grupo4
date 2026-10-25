@@ -85,7 +85,7 @@ export async function getLead(id: string): Promise<LeadDetail> {
   return {
     ...toLead(profile),
     messages: ordered,
-    ...(consent?.occurredAt?.S ? { consentAt: consent.occurredAt.S } : {}),
+    ...(!profile.consentAt?.S && consent?.occurredAt?.S ? { consentAt: consent.occurredAt.S } : {}),
     ...contactDetails(ordered),
   };
 }

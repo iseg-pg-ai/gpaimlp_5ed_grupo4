@@ -27,6 +27,7 @@ test("perfil DynamoDB converte-se num contacto com estado e contagem", () => {
     channel: "website",
     messageCount: 6,
     synthetic: false,
+    journey: {},
   });
   assert.equal(isOverdue(lead, new Date("2026-10-27T00:00:00Z")), false);
   assert.equal(isOverdue(lead, new Date("2026-10-29T00:00:00Z")), true);
@@ -68,4 +69,24 @@ test("referências aceites seguem o formato do conversationId da ingestão", () 
   assert.equal(validLeadId("BLU-AC2EE15506850505"), true);
   assert.equal(validLeadId("../etc/passwd"), false);
   assert.equal(validLeadId("short"), false);
+});
+
+test("perfil inclui a etapa, o consentimento e o último contexto da viagem", () => {
+  const lead = toLead({
+    conversationId: { S: "BLU-BA23A1CDB0BC48F0" },
+    journeyStage: { S: "curator-follow-up" },
+    consentAt: { S: "2026-10-25T16:00:00.000Z" },
+    journeyJson: {
+      S: JSON.stringify({
+        journeyReference: "BLU-BA23A1CDB0BC48F0",
+        destination: "Lisbon and Sintra",
+        campaign: "autumn-test",
+        rating: 5,
+      }),
+    },
+  });
+  assert.equal(lead.stage, "curator-follow-up");
+  assert.equal(lead.consentAt, "2026-10-25T16:00:00.000Z");
+  assert.deepEqual(lead.journey, { destination: "Lisbon and Sintra", campaign: "autumn-test" });
+  assert.deepEqual(toLead({ journeyJson: { S: "{broken" } }).journey, {});
 });
