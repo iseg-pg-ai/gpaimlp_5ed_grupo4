@@ -175,6 +175,14 @@ fechada porque a resposta estruturada omitiu campos obrigatórios: o portal não
 recebeu plano nem alteração. O fluxo híbrido atinge o limiar aprovado, mas essa
 falha continua a ser uma limitação de disponibilidade observável, não um sucesso.
 
+Uma validação real separada confirmou o ciclo de leitura nos dois idiomas. Nova
+Pro pediu `get_trip_context`, `get_itinerary` e `search_approved_catalog` em
+paralelo na primeira ronda e terminou isoladamente com `propose_actions` na
+segunda. Em português produziu um ranking válido. Em inglês repetiu o grupo do
+mesmo dia; o contrato detetou `Ranking repetido`, devolveu
+`AGENT_INVALID_RESPONSE` e não criou proposta nem alteração. Assim, a integração
+das ferramentas fica validada sem converter variabilidade do modelo em sucesso.
+
 Em cloud, o backend recusa a chamada antes do fornecedor quando faltam o teto
 mensal ou o preço do modelo. A reserva usa uma estimativa conservadora do pedido e
 do limite máximo de saída; o consumo confirmado vem dos tokens registados na

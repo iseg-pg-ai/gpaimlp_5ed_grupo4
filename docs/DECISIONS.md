@@ -605,3 +605,12 @@ fechada. A arquitetura híbrida fica aprovada segundo o limiar definido, mantend
 esta indisponibilidade residual explícita no monitoring. A aprovação não autoriza
 execução autónoma: simulação, pré-visualização e confirmação humana permanecem
 obrigatórias.
+
+### O ciclo real de ferramentas de leitura fica validado — 2026-10-25
+
+Um ensaio sintético PT/EN confirmou que Nova Pro solicita
+`get_trip_context`, `get_itinerary` e `search_approved_catalog` antes de terminar
+com `propose_actions`. As três leituras ocorreram na primeira ronda e a proposta
+isolada na segunda, sem acesso externo ou escrita. O resultado português foi
+válido. O inglês repetiu um ranking e foi recusado pelo contrato, demonstrando o
+encerramento seguro. Esta evidência conclui a Etapa 2, sem iniciar deployment.

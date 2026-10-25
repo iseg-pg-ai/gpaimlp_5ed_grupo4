@@ -13,10 +13,12 @@ histórico Git e em [Decisões](docs/DECISIONS.md).
 - [x] Acrescentar diagnóstico determinístico e sem fornecedores externos ao
   contexto: capacidade, horários, sobreposições, confirmações, catálogo, preços,
   moedas, orçamento e pendências.
-- [ ] Validar com Nova Pro o ciclo limitado de ferramentas de leitura
+- [x] Validar com Nova Pro o ciclo limitado de ferramentas de leitura
   (`get_trip_context`, `get_itinerary` e `search_approved_catalog`) antes de
   `propose_actions`. A implementação usa apenas o snapshot autoritativo já
-  minimizado e mantém a simulação e escrita no portal.
+  minimizado e mantém a simulação e escrita no portal. O ensaio real PT/EN
+  confirmou as três leituras na primeira ronda e a proposta na segunda. O plano
+  PT foi válido; o plano EN repetiu um ranking e foi recusado sem alteração.
 - [x] Acrescentar feedback de simulação ao ciclo: a primeira falha determinística
   é reduzida a um de nove códigos sem texto bruto e permite uma única correção do
   plano completo. O orçamento reserva as duas chamadas possíveis; a segunda
