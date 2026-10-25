@@ -1,4 +1,4 @@
-import { publicUrl, jsonError, noStoreHeaders, publicOrigin } from "@/lib/server-http";
+import { publicUrl, jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";
 import { isLocale } from "@/lib/locales";
 
 import { checkTripId, VersionStore, type ShareMethod } from "@/lib/version-store";
@@ -10,6 +10,8 @@ export const dynamic = "force-dynamic";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
   let body: {
     tripId: string;
     version: number;
@@ -20,9 +22,6 @@ export async function POST(request: Request) {
     retentionDays: 7 | 30 | 90;
   };
   try {
-    const origin = request.headers.get("origin");
-    if (origin && origin !== publicOrigin(request.url))
-      return jsonError("Origem inválida.", 403, noStoreHeaders);
     const raw = await request.text();
     if (raw.length > 10000) return jsonError("Pedido demasiado grande.", 413);
     body = JSON.parse(raw);
@@ -81,9 +80,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== publicOrigin(request.url))
-    return jsonError("Origem inválida.", 403, noStoreHeaders);
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
   try {
     const raw = await request.text();
     if (raw.length > 1000) return jsonError("Pedido demasiado grande.", 413, noStoreHeaders);

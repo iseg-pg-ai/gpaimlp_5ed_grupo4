@@ -180,6 +180,26 @@ a papéis partilhados do ambiente académico.
 Evidência local: síntese CDK em `infra/tests/backoffice.test.mjs`. Não comprova
 atualização dos papéis já publicados; essa validação permanece no plano.
 
+### Origem e limites reduzem a exposição das APIs — 2026-10-25
+
+Os POST de versões, tradução, limpeza do Lixo e partilhas recusam uma origem
+externa antes de processar o corpo; a revogação de partilhas usa o mesmo helper.
+O planeador conserva a verificação de origem existente. A origem pública
+configurada prevalece sobre a interna do proxy SageMaker. Pedidos sem `Origin`
+continuam permitidos; este controlo não substitui identidade e permissões.
+
+O stage da API pública limita o tráfego agregado a 10 pedidos/s, com pico de 20;
+o chat tem limite de 2/s, com pico de 5. Estes limites não são um orçamento por
+utilizador nem comprovam proteção integral contra abuso. A síntese local testa
+os valores no template; a aplicação em serviços reais depende de deployment.
+
+Evidência: `dmc-workspace/tests/infrastructure.test.mjs` e
+`infra/tests/throttling.test.mjs`. Na validação local, passaram 31 testes de
+infraestrutura, lint, tipos, formatação e build do portal com Node 22.13. A bateria
+do portal passou 206 testes, com um ignorado, usando o warehouse preparado em
+cache. O YAML ETL foi verificado localmente, preservando gate e retenção; a execução
+GitHub Actions e a validação dos serviços reais permanecem pendentes.
+
 ### CI usa dados sintéticos e contratos versionados — 2026-10-24
 
 CI não usa fontes comerciais. O gate de publicação verifica versão de schema,

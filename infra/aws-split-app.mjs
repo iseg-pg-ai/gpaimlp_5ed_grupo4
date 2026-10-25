@@ -239,6 +239,14 @@ class FrontendStack extends Stack {
     api.addRoutes({ path: '/v1/chat', methods: [apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('BedrockChatIntegration', chat) });
     api.addRoutes({ path: '/v1/channels/whatsapp', methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('WhatsAppWebhookIntegration', whatsappWebhook) });
 
+    // Limites agregados no stage existente; o chat tem um limite inferior por custo.
+    const defaultStage = api.defaultStage.node.defaultChild;
+    defaultStage.defaultRouteSettings = { throttlingRateLimit: 10, throttlingBurstLimit: 20 };
+    // RouteSettings usa JSON CloudFormation, com propriedades em PascalCase.
+    defaultStage.routeSettings = {
+      'POST /v1/chat': { ThrottlingRateLimit: 2, ThrottlingBurstLimit: 5 },
+    };
+
     const siteBucket = new s3.Bucket(this, 'FrontendSite', {
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,

@@ -15,6 +15,14 @@ export function publicOrigin(requestUrl: string): string {
 
 export const noStoreHeaders = { "Cache-Control": "no-store" } as const;
 
+/** Recusa origens externas; pedidos sem Origin continuam permitidos. */
+export function rejectForeignOrigin(request: Request): Response | null {
+  const origin = request.headers.get("origin");
+  return origin && origin !== publicOrigin(request.url)
+    ? jsonError("Origem inválida.", 403, noStoreHeaders)
+    : null;
+}
+
 export function jsonError(message: string, status: number, headers?: HeadersInit) {
   return Response.json({ error: message }, { status, headers });
 }

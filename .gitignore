@@ -47,6 +47,9 @@ dist/
 # Generated infrastructure assemblies
 cdk.out/
 cdk.aws.out/
+cdk.split.out/
+# Contexto local de lookups CDK, regenerado na síntese
+cdk.context.json
 .cdk/
 infra/cdk.context.json
 
@@ -98,6 +101,7 @@ mlruns/
 .code-editor-server/
 .local/
 .npm/
+.npm-cache-local/
 .nvm/
 sagemaker-code-editor-server-data/
 .sagemaker_remoteAccess_do_not_delete
