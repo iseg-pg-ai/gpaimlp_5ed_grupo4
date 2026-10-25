@@ -34,10 +34,13 @@ on:
 jobs:
   build-warehouse:
     runs-on: windows-latest
-    env:
-      CI_DATA_DIR: ${{ runner.temp }}/blu-data
-      CI_WAREHOUSE_DIR: ${{ runner.temp }}/blu-warehouse
     steps:
+      # O contexto runner não existe no env do job; os caminhos são definidos num passo.
+      - name: Set CI paths
+        shell: pwsh
+        run: |
+          "CI_DATA_DIR=$env:RUNNER_TEMP\blu-data" >> $env:GITHUB_ENV
+          "CI_WAREHOUSE_DIR=$env:RUNNER_TEMP\blu-warehouse" >> $env:GITHUB_ENV
       # As fontes reais vivem no S3 e nunca são expostas ao CI de pull requests.
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
