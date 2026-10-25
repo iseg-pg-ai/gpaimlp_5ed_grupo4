@@ -570,7 +570,8 @@ class IntranetStack extends Stack {
       distributionPaths: ['/*'],
       cacheControl: [s3deploy.CacheControl.noCache()],
       sources: [
-        s3deploy.Source.asset(intranetAsset, { exclude: ['config.js', 'dev', 'package.json', '*.test.js'] }),
+        // A pasta não contém config.js nem a pré-visualização: as exclusões não se aplicam sem staging de assets.
+        s3deploy.Source.asset(intranetAsset, { exclude: ['package.json'] }),
         s3deploy.Source.data('config.js', `window.BLU_INTRANET=${JSON.stringify({ api: api.apiEndpoint, authDomain: `https://${authHost}`, clientId: client.userPoolClientId, redirectUri: siteUrl })};`),
       ],
     });

@@ -80,8 +80,8 @@ window.BLU_INTRANET_MOCK = async (method, path) => {
     { name: 'BluCostaBackoffice-ChurnFollowUpEvaluator', stack: 'BluCostaBackoffice', invocations24h: 1, errors24h: 0, throttles24h: 0, lastModified: hours(-2) },
   ] };
   if (path === '/v1/governance') {
-    const manifest = await fetch('../../../config/governance-controls.json').then(response => response.json()).catch(() => ({ controls: {}, mapping: [] }));
-    const registry = await fetch('../../../config/policies.json').then(response => response.json()).catch(() => ({ note: 'Pré-visualização sem acesso a config/policies.json.', policies: [] }));
+    const manifest = await fetch('../../config/governance-controls.json').then(response => response.json()).catch(() => ({ controls: {}, mapping: [] }));
+    const registry = await fetch('../../config/policies.json').then(response => response.json()).catch(() => ({ note: 'Pré-visualização sem acesso a config/policies.json.', policies: [] }));
     const result = policy => (policy.enforcement === 'manual' ? { status: 'manual', detail: 'Controlo manual.' } : ['rnavt-registration', 'adr-information'].includes(policy.id) ? { status: 'fail', detail: 'Por preencher em config/policies.json.' } : { status: 'pass', detail: 'Verificado no deploy.' });
     const policies = { evaluatedAt: hours(0), note: registry.note, summary: { pass: 9, fail: 2, manual: 3 }, policies: registry.policies.map(policy => ({ ...policy, result: result(policy) })) };
     return { manifest, policies, evidence: [{ key: 'controls/churn-followups/2026-10-25/run.json', size: 76, lastModified: hours(-3), etag: 'abc123def4567890' }] };
