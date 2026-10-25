@@ -181,13 +181,15 @@ Sem estas variáveis, a página continua a responder `503` com instruções
 
 ## Correção associada: confiança do Backoffice
 
-`BackofficeAnalysisRole` em `infra/aws-split-app.mjs` confia hoje em toda a
+Implementada em 2026-10-25 (`af957b7`), ainda sem deploy.
+`BackofficeAnalysisRole` em `infra/aws-split-app.mjs` confiava em toda a
 conta (`AccountPrincipal`), pelo que outros papéis da conta, incluindo o papel
 partilhado do Studio se tiver permissão `sts:AssumeRole`, poderiam assumi-lo.
-A correção: confiar apenas nos ARNs de `BACKOFFICE_TRUSTED_PRINCIPAL_ARNS`
-(separados por vírgulas). Sem essa variável, o papel não é criado e as
-restantes funções do Backoffice continuam a ser publicadas. Um teste de synth
-confirma a ausência de `AccountPrincipal`.
+Agora confia apenas nos ARNs de `BACKOFFICE_TRUSTED_PRINCIPAL_ARNS`
+(separados por vírgulas) e recusa a raiz da conta, curingas e outras contas.
+Sem essa variável, o papel não é criado e as restantes funções do Backoffice
+continuam a ser publicadas. `infra/tests/backoffice.test.mjs` cobre os três
+casos com synth real.
 
 ## Testes e critérios de aceitação
 
@@ -231,11 +233,3 @@ API, a página de Leads mostra a mensagem de configuração em falta.
 Custo esperado: Cognito dentro do escalão gratuito de utilizadores ativos
 (confirmar o plano de funcionalidades do login gerido), HTTP API e Lambda
 cobrados por pedido. Confirmar no orçamento antes do deploy.
-
-## Questões em aberto
-
-1. Stack própria (proposta) ou rotas dentro de `BluCostaBackoffice`?
-2. Quem cria e gere as contas de curador; MFA obrigatório para todos
-   (proposta: sim)?
-3. Apenas a API (proposta) ou também um modo local com DynamoDB direto?
-4. Validade do refresh token: 12 h (proposta) ou mais longa?

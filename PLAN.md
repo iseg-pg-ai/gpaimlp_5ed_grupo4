@@ -1,5 +1,23 @@
 # Plano de evolução do BLU AI System
 
+## Intranet BLU — proposta de 2026-10-25
+
+Estado: **para revisão do grupo; nada implementado nem publicado.**
+Especificação em [intranet BLU](docs/INTRANET.md): uma stack
+`BluCostaIntranet` com login Cognito, painéis, acompanhamento da equipa, wiki
+de conhecimento aprovado, governança com mapeamento ISO proposto (sem
+afirmar certificação) e estado das operações. A API de leads abaixo passaria
+a ser o seu primeiro módulo.
+
+- [ ] Rever a especificação e responder às questões em grupo.
+- [ ] Publicar `BluCostaBackoffice` (pré-requisito), após `cdk diff` aprovado.
+- [ ] F0: stack, login com MFA e estrutura da SPA em `frontend/intranet/`.
+- [ ] F1: acompanhamento (leads, tarefas do avaliador diário, responsável).
+- [ ] F2: painéis sem dados sintéticos.
+- [ ] F3: governança e ISO; manifesto movido para `config/`.
+- [ ] F4–F6: wiki (leitura, RAG, aprovação) e operações.
+- [ ] Registar a decisão em `docs/DECISIONS.md` após aprovação.
+
 ## API de leads com autenticação própria — proposta de 2026-10-25
 
 Estado: **para revisão do grupo; nada implementado nem publicado.**
@@ -76,18 +94,10 @@ HTTP API + autorizador JWT ──▶ Lambda leads-api ──política mínima─
   espaço.
 - O URL do Studio muda por espaço; cada endereço tem de constar nas URLs de
   retorno do Cognito.
-- `BackofficeAnalysisRole` confia em toda a conta (`AccountPrincipal`).
-  Antes de publicar o Backoffice, restringir a confiança a papéis BLU
-  explícitos, ou o papel partilhado poderá assumi-lo.
+- Resolvido em `af957b7`: `BackofficeAnalysisRole` deixou de confiar em toda
+  a conta e só confia nos ARNs de `BACKOFFICE_TRUSTED_PRINCIPAL_ARNS`.
 - Custo esperado baixo (Cognito no escalão gratuito, HTTP API por pedido);
   confirmar no orçamento antes do deploy.
-
-### Questões para o grupo
-
-1. Stack própria (proposta) ou rotas dentro de `BluCostaBackoffice`?
-2. Quem cria e gere as contas de curador; MFA obrigatório para todos?
-3. Manter um modo local com DynamoDB direto para desenvolvimento, ou apenas
-   a API (proposta: só a API, para haver uma implementação)?
 
 ## Integração de dev em TXT/Canva — 2026-10-21
 
