@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  cleanTags,
   contactDetails,
   isOverdue,
   toLead,
@@ -28,6 +29,7 @@ test("perfil DynamoDB converte-se num contacto com estado e contagem", () => {
     messageCount: 6,
     synthetic: false,
     journey: {},
+    tags: [],
   });
   assert.equal(isOverdue(lead, new Date("2026-10-27T00:00:00Z")), false);
   assert.equal(isOverdue(lead, new Date("2026-10-29T00:00:00Z")), true);
@@ -89,4 +91,21 @@ test("perfil inclui a etapa, o consentimento e o último contexto da viagem", ()
   assert.equal(lead.consentAt, "2026-10-25T16:00:00.000Z");
   assert.deepEqual(lead.journey, { destination: "Lisbon and Sintra", campaign: "autumn-test" });
   assert.deepEqual(toLead({ journeyJson: { S: "{broken" } }).journey, {});
+});
+
+test("etiquetas aceitam só a lista fixa, sem duplicados, e a nota chega ao contacto", () => {
+  assert.deepEqual(cleanTags(["hot", "hot", "admin", 3, "proposal-next"]), [
+    "hot",
+    "proposal-next",
+  ]);
+  assert.deepEqual(cleanTags("hot"), []);
+  const lead = toLead({
+    conversationId: { S: "BLU-BA23A1CDB0BC48F0" },
+    tags: { SS: ["vip", "unknown"] },
+    curatorNote: { S: "Ligar depois das 18h." },
+    taggedAt: { S: "2026-10-25T17:00:00.000Z" },
+  });
+  assert.deepEqual(lead.tags, ["vip"]);
+  assert.equal(lead.curatorNote, "Ligar depois das 18h.");
+  assert.equal(lead.taggedAt, "2026-10-25T17:00:00.000Z");
 });

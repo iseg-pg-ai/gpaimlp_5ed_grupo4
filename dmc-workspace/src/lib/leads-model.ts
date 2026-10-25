@@ -4,7 +4,7 @@ export const OPEN_STATUSES = ["PENDING", "QUEUED_FOR_REVIEW"] as const;
 export const CONTACTED = "CONTACTED";
 export type LeadFilter = "open" | "contacted";
 
-type Attribute = { S?: string; N?: string; BOOL?: boolean };
+type Attribute = { S?: string; N?: string; BOOL?: boolean; SS?: string[] };
 export type Item = Record<string, Attribute | undefined>;
 
 export type Lead = {
@@ -19,6 +19,9 @@ export type Lead = {
   stage?: string;
   consentAt?: string;
   journey: Record<string, string>;
+  tags: string[];
+  curatorNote?: string;
+  taggedAt?: string;
 };
 
 export type LeadMessage = {
@@ -71,6 +74,28 @@ export const stageText: Record<string, string> = {
   "curator-follow-up": "Consentiu seguimento",
 };
 
+// Etiquetas fixas para que CRM, churn e relatórios contem as mesmas categorias.
+export const LEAD_TAGS: Record<string, string> = {
+  hot: "Muito interessado",
+  "proposal-next": "Preparar proposta",
+  "needs-info": "Falta informação",
+  vip: "VIP",
+  "at-risk": "Risco de perda",
+  "not-a-fit": "Fora do âmbito",
+};
+export const NOTE_LIMIT = 1000;
+
+export const cleanTags = (values: unknown) =>
+  Array.isArray(values)
+    ? [
+        ...new Set(
+          values.filter(
+            (value): value is string => typeof value === "string" && value in LEAD_TAGS,
+          ),
+        ),
+      ]
+    : [];
+
 export function toLead(item: Item): Lead {
   return {
     id: s(item, "conversationId"),
@@ -84,6 +109,9 @@ export function toLead(item: Item): Lead {
     ...(s(item, "journeyStage") ? { stage: s(item, "journeyStage") } : {}),
     ...(s(item, "consentAt") ? { consentAt: s(item, "consentAt") } : {}),
     journey: journeyOf(item),
+    tags: cleanTags(item.tags?.SS ?? []),
+    ...(s(item, "curatorNote") ? { curatorNote: s(item, "curatorNote") } : {}),
+    ...(s(item, "taggedAt") ? { taggedAt: s(item, "taggedAt") } : {}),
   };
 }
 

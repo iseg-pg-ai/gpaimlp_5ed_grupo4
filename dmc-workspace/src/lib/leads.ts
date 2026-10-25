@@ -6,7 +6,9 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import {
   CONTACTED,
+  NOTE_LIMIT,
   OPEN_STATUSES,
+  cleanTags,
   contactDetails,
   toLead,
   toMessage,
@@ -101,6 +103,44 @@ export async function markContacted(id: string, now = new Date().toISOString()) 
         ConditionExpression: "attribute_exists(conversationId)",
         UpdateExpression: "SET followUpStatus = :contacted, contactedAt = :now, updatedAt = :now",
         ExpressionAttributeValues: { ":contacted": { S: CONTACTED }, ":now": { S: now } },
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ConditionalCheckFailedException)
+      throw new LeadNotFound("Contacto não encontrado.");
+    throw error;
+  }
+}
+
+/** Etiquetas e nota do curador ficam no perfil do contacto (CRM); vazias são removidas. */
+export async function tagLead(
+  id: string,
+  tags: unknown,
+  note: unknown,
+  now = new Date().toISOString(),
+) {
+  const { intelligence } = tables();
+  const chosen = cleanTags(tags);
+  const text = typeof note === "string" ? note.trim().slice(0, NOTE_LIMIT) : "";
+  const set = ["taggedAt = :now", "updatedAt = :now"];
+  const remove: string[] = [];
+  const values: Record<string, { S: string } | { SS: string[] }> = { ":now": { S: now } };
+  if (chosen.length) {
+    set.push("tags = :tags");
+    values[":tags"] = { SS: chosen };
+  } else remove.push("tags");
+  if (text) {
+    set.push("curatorNote = :note");
+    values[":note"] = { S: text };
+  } else remove.push("curatorNote");
+  try {
+    await db().send(
+      new UpdateItemCommand({
+        TableName: intelligence,
+        Key: { conversationId: { S: id }, recordKey: { S: "PROFILE" } },
+        ConditionExpression: "attribute_exists(conversationId)",
+        UpdateExpression: `SET ${set.join(", ")}${remove.length ? ` REMOVE ${remove.join(", ")}` : ""}`,
+        ExpressionAttributeValues: values,
       }),
     );
   } catch (error) {

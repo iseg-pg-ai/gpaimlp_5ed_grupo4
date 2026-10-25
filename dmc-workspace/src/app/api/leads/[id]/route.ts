@@ -1,4 +1,4 @@
-import { LeadNotFound, LeadsNotConfigured, getLead, markContacted } from "@/lib/leads";
+import { LeadNotFound, LeadsNotConfigured, getLead, markContacted, tagLead } from "@/lib/leads";
 import { validLeadId } from "@/lib/leads-model";
 import { jsonError, noStoreHeaders, publicOrigin } from "@/lib/server-http";
 
@@ -33,9 +33,14 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const { id } = await context.params;
   if (!validLeadId(id)) return jsonError("Referência inválida.", 400, noStoreHeaders);
   try {
-    const body = (await request.json().catch(() => ({}))) as { action?: string };
-    if (body.action !== "contacted") return jsonError("Ação desconhecida.", 400, noStoreHeaders);
-    await markContacted(id);
+    const body = (await request.json().catch(() => ({}))) as {
+      action?: string;
+      tags?: unknown;
+      note?: unknown;
+    };
+    if (body.action === "contacted") await markContacted(id);
+    else if (body.action === "tag") await tagLead(id, body.tags, body.note);
+    else return jsonError("Ação desconhecida.", 400, noStoreHeaders);
     return Response.json(await getLead(id), { headers: noStoreHeaders });
   } catch (error) {
     return failure(error);

@@ -3,11 +3,13 @@ import { portalFetch } from "@/lib/http-client";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Mail, MessageCircle, RefreshCw } from "lucide-react";
+import { CheckCircle2, Mail, MessageCircle, RefreshCw, Save, Tag } from "lucide-react";
 import { T, useLocale } from "@/components/LocaleProvider";
 import {
   isOverdue,
   journeyLabels,
+  LEAD_TAGS,
+  NOTE_LIMIT,
   stageText,
   type Lead,
   type LeadDetail,
@@ -34,6 +36,13 @@ export default function LeadsPage() {
   const [selected, setSelected] = useState<LeadDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [draftTags, setDraftTags] = useState<string[]>([]);
+  const [draftNote, setDraftNote] = useState("");
+  const show = (detail: LeadDetail) => {
+    setSelected(detail);
+    setDraftTags(detail.tags);
+    setDraftNote(detail.curatorNote ?? "");
+  };
   const [error, setError] = useState("");
   const when = (value?: string) =>
     value
@@ -67,7 +76,7 @@ export default function LeadsPage() {
       const response = await portalFetch(`/api/leads/${encodeURIComponent(id)}`, {
         cache: "no-store",
       });
-      setSelected(await readJson<LeadDetail>(response));
+      show(await readJson<LeadDetail>(response));
     } catch (openError) {
       setError(openError instanceof Error ? openError.message : "Erro ao abrir o contacto.");
     }
@@ -83,7 +92,7 @@ export default function LeadsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "contacted" }),
       });
-      setSelected(await readJson<LeadDetail>(response));
+      show(await readJson<LeadDetail>(response));
       await load(filter);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Erro ao guardar.");
@@ -91,6 +100,30 @@ export default function LeadsPage() {
       setSaving(false);
     }
   };
+
+  const saveTags = async () => {
+    if (!selected) return;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await portalFetch(`/api/leads/${encodeURIComponent(selected.id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "tag", tags: draftTags, note: draftNote }),
+      });
+      show(await readJson<LeadDetail>(response));
+      await load(filter);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Erro ao guardar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  const tagsChanged =
+    !!selected &&
+    (draftNote.trim() !== (selected.curatorNote ?? "") ||
+      draftTags.length !== selected.tags.length ||
+      draftTags.some((tag) => !selected.tags.includes(tag)));
 
   return (
     <main className="portal-page min-h-full bg-[var(--portal-bg-f4f0e7)] text-[var(--portal-text-143f4b)]">
@@ -183,6 +216,18 @@ export default function LeadsPage() {
                       {when(lead.status === "CONTACTED" ? lead.contactedAt : lead.followUpAt)}
                       {lead.synthetic && " · teste"}
                     </span>
+                    {lead.tags.length > 0 && (
+                      <span className="mt-1 flex flex-wrap gap-1">
+                        {lead.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded bg-[var(--portal-bg-143f4b)] px-1.5 py-0.5 text-[11px] text-white"
+                          >
+                            <T text={LEAD_TAGS[tag] ?? tag} source="pt" />
+                          </span>
+                        ))}
+                      </span>
+                    )}
                     {(lead.stage || lead.journey.destination || lead.journey.budget) && (
                       <span className="mt-1 block text-xs">
                         {lead.stage && <T text={stageText[lead.stage] ?? lead.stage} source="pt" />}
@@ -247,6 +292,65 @@ export default function LeadsPage() {
                     ))}
                 </dl>
               )}
+
+              <section
+                aria-label="Etiquetas do curador"
+                className="mt-3 rounded-lg border border-[var(--portal-line-d5d1c7)] p-3"
+              >
+                <h3 className="flex items-center gap-2 text-sm font-semibold">
+                  <Tag aria-hidden="true" className="size-4" />
+                  <T text="Etiquetas e nota do curador" source="pt" />
+                </h3>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {Object.entries(LEAD_TAGS).map(([tag, label]) => {
+                    const on = draftTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() =>
+                          setDraftTags((current) =>
+                            on ? current.filter((value) => value !== tag) : [...current, tag],
+                          )
+                        }
+                        className={`min-h-9 rounded-full border px-3 text-xs ${on ? "border-[var(--portal-text-143f4b)] bg-[var(--portal-bg-143f4b)] text-white" : "border-[var(--portal-line-d5d1c7)]"}`}
+                      >
+                        <T text={label} source="pt" />
+                      </button>
+                    );
+                  })}
+                </div>
+                <label className="mt-3 block text-xs" htmlFor="curator-note">
+                  <T text="Nota interna (não é enviada ao cliente)" source="pt" />
+                </label>
+                <textarea
+                  id="curator-note"
+                  value={draftNote}
+                  maxLength={NOTE_LIMIT}
+                  onChange={(event) => setDraftNote(event.target.value)}
+                  rows={3}
+                  className="mt-1 w-full rounded-lg border border-[var(--portal-line-d5d1c7)] bg-transparent p-2 text-sm"
+                />
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs opacity-80">
+                  <span>
+                    {selected.taggedAt && (
+                      <>
+                        <T text="Atualizado" source="pt" /> {when(selected.taggedAt)}
+                      </>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={saving || !tagsChanged}
+                    onClick={() => void saveTags()}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[var(--portal-bg-143f4b)] px-3 text-sm text-white disabled:opacity-50"
+                  >
+                    <Save aria-hidden="true" className="size-4" />
+                    <T text="Guardar" source="pt" />
+                  </button>
+                </div>
+              </section>
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {selected.emails.map((email) => (
