@@ -222,7 +222,6 @@ export function App() {
           <span>May a BLU curator contact you about this journey?</span>
           <button type="button" onClick={grantConsent}>Yes</button><button type="button" onClick={declineConsent}>Not now</button>
         </div>}
-        {journeyConsent && consentPrompt === "answered" && <p className="concierge-message assistant consent-confirmed">Thank you. A curator can follow up on reference {sessionId}.</p>}
       </div>
       {chips.length > 0 && <div className="concierge-chips" aria-label="Suggested answers">
         {chips.map(chip => <button key={chip} type="button" onClick={() => send(chip)}>{chip}</button>)}
