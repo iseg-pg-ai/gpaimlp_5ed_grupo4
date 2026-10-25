@@ -10,8 +10,6 @@ As decisões de base estão aprovadas e registadas em
 [Decisões](docs/DECISIONS.md). Antes do agente e do deployment falta:
 
 - [ ] Nomear os responsáveis operacionais e de segurança de staging e produção.
-- [ ] Definir o contrato de rascunhos privados sincronizados, incluindo ownership,
-  revisão, expiração e resolução de conflitos.
 - [ ] Transformar as retenções aprovadas em regras executáveis e testar eliminação
   sem quebrar versões, auditoria ou pedidos legais de preservação.
 - [ ] Eliminar a janela entre o commit SQLite e a confirmação S3 ou aprovar um RPO

@@ -151,6 +151,20 @@ aprovado na Etapa 3 e o backend aplicará papel, ownership e confirmação. O fr
 não é autoridade, o agente não eleva permissões e clientes externos continuam a
 usar partilhas revogáveis em vez de papéis internos.
 
+`src/lib/draft-store.ts` define o contrato servidor dos futuros rascunhos
+sincronizados. A chave é `ownerId + tripId`; leituras, escritas e eliminações
+exigem sempre o owner. Cada alteração usa uma revisão-base dentro de
+`BEGIN IMMEDIATE`, pelo que um segundo dispositivo com estado obsoleto recebe um
+conflito em vez de substituir trabalho mais recente. Repetir os mesmos dados não
+cria uma revisão artificial.
+
+O store fica em `BLU_OPERATIONAL_DIR/drafts.sqlite`, separado das versões
+autoritativas. A retenção inicial é de 90 dias desde a última escrita; preservação
+legal impede limpeza e eliminação. O conteúdo é validado pelo mesmo contrato de
+snapshot das versões. Conversas do agente não integram este payload. A API e a
+substituição do `localStorage` só serão ativadas depois de pedidos autenticados
+fornecerem um `ownerId` confiável; até lá, o store não fica exposto por HTTP.
+
 - Apenas oferta aprovada e compatível com a revisão publicada é elegível.
 - Curadoria e alterações respeitam atividades protegidas, restrições e exclusões.
 - Desconhecido não significa compatível, disponível ou preço zero.
