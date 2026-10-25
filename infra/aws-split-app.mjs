@@ -302,11 +302,6 @@ class BackofficeStack extends Stack {
     tag(this);
     const exportsBucket = new s3.Bucket(this, 'AnalysisExports', { encryption: s3.BucketEncryption.S3_MANAGED, blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, enforceSSL: true, versioned: true, removalPolicy: RemovalPolicy.RETAIN, autoDeleteObjects: false });
     const evidenceBucket = new s3.Bucket(this, 'GovernanceEvidence', { encryption: s3.BucketEncryption.S3_MANAGED, blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, enforceSSL: true, versioned: true, removalPolicy: RemovalPolicy.RETAIN, autoDeleteObjects: false });
-    const analysisRole = new iam.Role(this, 'BackofficeAnalysisRole', { assumedBy: new iam.AccountPrincipal(account), description: 'Backoffice conversation analysis and explicitly approved channel dispatch' });
-    props.data.messages.grantReadData(analysisRole);
-    props.data.intelligence.grantReadWriteData(analysisRole);
-    props.data.archive.grantRead(analysisRole, 'sessions/*', 'curated/*');
-    props.data.crmEvents.grantConsumeMessages(analysisRole);
     const whatsappOutbound = new lambda.Function(this, 'WhatsAppOutbound', {
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'index.handler',
@@ -321,7 +316,6 @@ class BackofficeStack extends Stack {
     });
     props.data.whatsappSecret.grantRead(whatsappOutbound);
     props.data.events.grantSendMessages(whatsappOutbound);
-    whatsappOutbound.grantInvoke(analysisRole);
 
     const rag = new lambda.Function(this, 'BackofficeRag', {
       runtime: lambda.Runtime.NODEJS_22_X,
@@ -341,7 +335,23 @@ class BackofficeStack extends Stack {
     props.data.intelligence.grantReadData(rag);
     props.data.archive.grantRead(rag, 'curated/approved/*');
     rag.addToRolePolicy(new iam.PolicyStatement({ actions: ['bedrock:InvokeModel'], resources: ['*'] }));
-    rag.grantInvoke(analysisRole);
+
+    // Apenas identidades BLU explícitas podem assumir o papel de análise; confiar
+    // na conta inteira admitiria também papéis partilhados do curso.
+    const trustedPrincipals = (process.env.BACKOFFICE_TRUSTED_PRINCIPAL_ARNS ?? '').split(',').map(arn => arn.trim()).filter(Boolean);
+    const principalPattern = new RegExp(`^arn:aws:iam::${account}:(role|user)/[\\w+=,.@/-]+$`);
+    const invalidPrincipal = trustedPrincipals.find(arn => !principalPattern.test(arn));
+    if (invalidPrincipal) throw new Error(`BACKOFFICE_TRUSTED_PRINCIPAL_ARNS must list role or user ARNs in account ${account}, not ${invalidPrincipal}`);
+    if (trustedPrincipals.length) {
+      const analysisRole = new iam.Role(this, 'BackofficeAnalysisRole', { assumedBy: new iam.CompositePrincipal(...trustedPrincipals.map(arn => new iam.ArnPrincipal(arn))), description: 'Backoffice conversation analysis and explicitly approved channel dispatch' });
+      props.data.messages.grantReadData(analysisRole);
+      props.data.intelligence.grantReadWriteData(analysisRole);
+      props.data.archive.grantRead(analysisRole, 'sessions/*', 'curated/*');
+      props.data.crmEvents.grantConsumeMessages(analysisRole);
+      whatsappOutbound.grantInvoke(analysisRole);
+      rag.grantInvoke(analysisRole);
+      new CfnOutput(this, 'BackofficeAnalysisRoleArn', { value: analysisRole.roleArn });
+    }
 
     const churnEvaluator = new lambda.Function(this, 'ChurnFollowUpEvaluator', {
       runtime: lambda.Runtime.NODEJS_22_X,

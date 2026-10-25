@@ -24,7 +24,7 @@ export async function handler(event) {
     // The reply and the metadata extraction run in parallel, so tracking adds no wait.
     const [answer, extraction] = await Promise.allSettled([
       bedrock.send(new ConverseCommand({
-        modelId: process.env.MODEL_ID, system: [{ text: systemPrompt(today) }], messages: history,
+        modelId: process.env.MODEL_ID, system: [{ text: systemPrompt(today, previous) }], messages: history,
         inferenceConfig: { maxTokens: 260, temperature: 0.5, topP: 0.9 },
         guardrailConfig: { guardrailIdentifier: process.env.GUARDRAIL_ID, guardrailVersion: process.env.GUARDRAIL_VERSION, trace: 'enabled' },
       })),
