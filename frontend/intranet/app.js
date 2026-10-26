@@ -51,7 +51,7 @@ const isFounder = () => groupsNow().includes('founders');
 const ROLE_LABEL = { founders: 'Fundador(a)', curators: 'Curador(a)', governance: 'Governança', testers: 'Testes' };
 const CHANNEL = { whatsapp: 'WhatsApp', sms: 'SMS', email: 'Email' };
 // Espelha ROLES da API: só esconde o que o servidor recusaria de qualquer forma.
-const ROLE_PERMS = { founders: ['cases', 'security', 'team-admin'], curators: ['cases'], governance: ['cases', 'security'], testers: [] };
+const ROLE_PERMS = { founders: ['tasks', 'cases', 'security', 'team-admin'], curators: ['tasks', 'cases'], governance: ['tasks', 'cases', 'security'], testers: [] };
 const can = permission => groupsNow().some(group => ROLE_PERMS[group]?.includes(permission));
 const DEADLINE = { overdue: ['Fora do prazo', 'bad'], 'due-soon': ['Prazo próximo', 'warn'], 'on-track': ['No prazo', 'ok'], closed: ['Fechado', ''] };
 let casePrefill = {};
@@ -59,6 +59,14 @@ let casePrefill = {};
 const leadsState = { filter: 'open', selected: '' };
 let teamCache;
 const loadTeam = async () => (teamCache ??= (await api('GET', '/v1/team')).members);
+// «Bloqueado» já aparece no estado da tarefa; a urgência só o usa para ordenar e colorir.
+const URGENCY = { risk: ['Risco de desistência', 'bad'], overdue: ['Em atraso', 'bad'], soon: ['Prazo próximo', 'warn'] };
+const WORK_KIND = { task: 'Tarefa', lead: 'Lead', reminder: 'Lembrete', case: 'Caso' };
+const TASK_TONE = { todo: '', doing: 'ok', blocked: 'warn', done: 'ok' };
+// Um toque avança a tarefa: o botão principal é o passo seguinte.
+const NEXT_STEP = { todo: ['doing', 'Começar'], doing: ['done', 'Feito'], blocked: ['doing', 'Desbloquear'], done: ['todo', 'Reabrir'] };
+const workState = { board: 'open', flash: '' };
+let taskPrefill = {};
 
 async function api(method, path, body) {
   if (config?.mock) return window.BLU_INTRANET_MOCK(method, path, body);
@@ -125,8 +133,138 @@ function renew() {
 // ---------- Secções ----------
 
 const views = {
+  async work(view, state = workState) {
+    const [{ items, statuses }, { tasks }, { feed }, members] = await Promise.all([
+      api('GET', '/v1/work'), api('GET', `/v1/tasks?status=${state.board}`),
+      api('GET', '/v1/feed').catch(() => ({ feed: [] })), loadTeam().catch(() => []),
+    ]);
+    const rerender = () => { view.replaceChildren(); views.work(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
+    const status = h('p', { class: 'muted', role: 'status' }, state.flash);
+    state.flash = '';
+    const nameOf = email => members.find(member => member.email.toLowerCase() === email)?.name ?? email;
+    const save = async (task, body, done) => {
+      try {
+        await api('POST', `/v1/leads/${encodeURIComponent(task.partition)}/tasks/${task.id}`, body);
+        state.flash = done;
+        teamCache = undefined;
+        rerender();
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    };
+
+    // Ações da tarefa: passo seguinte num toque, bloquear com motivo, detalhe com histórico.
+    const taskBlock = task => {
+      const [next, label] = NEXT_STEP[task.status] ?? NEXT_STEP.todo;
+      const reason = h('input', { type: 'text', maxlength: '280', placeholder: 'O que está a bloquear? Ex.: à espera do parceiro', 'aria-label': 'Motivo do bloqueio' });
+      const blockForm = h('form', { class: 'actions', hidden: true, onsubmit: event => { event.preventDefault(); save(task, { status: 'blocked', blockedReason: reason.value }, `«${task.title}» bloqueada.`); } },
+        reason, h('button', { type: 'submit', class: 'primary' }, 'Bloquear'));
+      const history = h('div', {}, h('p', { class: 'muted' }, 'A carregar…'));
+      const owner = h('select', { 'aria-label': 'Responsável' }, members.map(member => h('option', { value: member.email.toLowerCase(), selected: member.email.toLowerCase() === task.owner }, member.name)));
+      const due = h('input', { type: 'date', value: task.due, 'aria-label': 'Prazo' });
+      const note = h('input', { type: 'text', maxlength: '1000', placeholder: 'Nota para o histórico (opcional)', 'aria-label': 'Nota' });
+      const edit = h('form', { onsubmit: event => {
+        event.preventDefault();
+        const body = {};
+        if (owner.value && owner.value !== task.owner) body.owner = owner.value;
+        if (due.value !== task.due) body.due = due.value;
+        if (note.value.trim()) body.note = note.value;
+        save(task, body, 'Tarefa atualizada.');
+      } }, h('div', { class: 'form-grid' }, h('label', { class: 'field' }, h('span', {}, 'Responsável'), owner), h('label', { class: 'field' }, h('span', {}, 'Prazo'), due)), note,
+      h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'secondary', disabled: !can('tasks') }, 'Guardar')));
+      const details = h('details', { ontoggle: async event => {
+        if (!event.target.open || history.dataset.loaded) return;
+        history.dataset.loaded = '1';
+        try {
+          const full = await api('GET', `/v1/leads/${encodeURIComponent(task.partition)}/tasks/${task.id}`);
+          history.replaceChildren(h('ul', { class: 'reminders' }, full.log.map(entry => h('li', {}, h('div', {}, entry.text), h('div', { class: 'muted' }, `${nameOf(entry.by)} · ${when(entry.at)}`)))));
+        } catch (error) {
+          history.replaceChildren(h('p', { class: 'error' }, error.message));
+        }
+      } }, h('summary', { class: 'muted' }, 'Detalhe e histórico'), task.note ? h('p', { class: 'message' }, task.note) : null, can('tasks') ? edit : null, history);
+      return [
+        h('div', { class: 'muted' }, [nameOf(task.owner), task.due ? `prazo ${task.due}` : 'sem prazo', task.leadLabel || task.leadId, task.caseTitle ? `caso: ${task.caseTitle}` : ''].filter(Boolean).join(' · ')),
+        task.status === 'blocked' ? h('div', { class: 'error' }, `Bloqueada: ${task.blockedReason}`) : null,
+        can('tasks') ? h('div', { class: 'actions task-actions' },
+          h('button', { type: 'button', class: 'primary', onclick: () => save(task, { status: next }, `«${task.title}»: ${statuses[next]}.`) }, label),
+          task.status === 'doing' || task.status === 'todo' ? h('button', { type: 'button', class: 'secondary', onclick: () => { blockForm.hidden = false; reason.focus(); } }, 'Bloquear') : null,
+          task.status === 'todo' ? h('button', { type: 'button', class: 'secondary', onclick: () => save(task, { status: 'done' }, `«${task.title}»: Feito.`) }, 'Feito') : null) : null,
+        blockForm,
+        details,
+      ];
+    };
+    const urgencyPill = urgency => (URGENCY[urgency] ? pill(...URGENCY[urgency]) : null);
+    const open = item => {
+      if (item.kind === 'lead') { leadsState.filter = 'open'; leadsState.selected = item.id; show('leads'); }
+      if (item.kind === 'case') show('cases');
+      if (item.kind === 'reminder') show('agenda');
+    };
+    const workItem = item => h('li', { class: `work-item ${item.urgency}` },
+      h('div', {}, pill(WORK_KIND[item.kind] ?? item.kind), ' ', urgencyPill(item.urgency), item.task ? [' ', pill(statuses[item.task.status] ?? item.task.status, TASK_TONE[item.task.status])] : null),
+      h('strong', {}, item.title),
+      ...(item.task ? taskBlock(item.task) : [
+        h('div', { class: 'muted' }, [item.detail, item.due ? `até ${item.due}` : ''].filter(Boolean).join(' · ')),
+        h('div', { class: 'actions task-actions' }, h('button', { type: 'button', class: 'secondary', onclick: () => open(item) }, 'Abrir')),
+      ]));
+
+    // Nova tarefa: para mim ou para um colega, ligada a um lead se fizer sentido.
+    const title = h('input', { type: 'text', maxlength: '140', placeholder: 'Ex.: Confirmar tuk-tuk para Algarve e Açores', 'aria-label': 'Tarefa', value: taskPrefill.title ?? '' });
+    const owner = h('select', { 'aria-label': 'Responsável' }, members.map(member => h('option', { value: member.email.toLowerCase(), selected: member.email.toLowerCase() === session.claims?.email?.toLowerCase() }, member.name)));
+    const due = h('input', { type: 'date', 'aria-label': 'Prazo' });
+    const leadId = h('input', { type: 'text', maxlength: '80', placeholder: 'BLU-… (opcional)', 'aria-label': 'Lead', value: taskPrefill.leadId ?? '' });
+    const note = h('input', { type: 'text', maxlength: '1000', placeholder: 'Nota (opcional)', 'aria-label': 'Nota' });
+    const prefilled = Boolean(taskPrefill.leadId);
+    taskPrefill = {};
+    const create = h('form', { onsubmit: async event => {
+      event.preventDefault();
+      try {
+        await api('POST', '/v1/tasks', { title: title.value, owner: owner.value || undefined, due: due.value || undefined, leadId: leadId.value.trim() || undefined, note: note.value });
+        state.flash = `Tarefa criada: «${title.value.trim()}».`;
+        teamCache = undefined;
+        rerender();
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    } },
+    h('div', { class: 'form-grid' }, h('label', { class: 'field' }, h('span', {}, 'O que há a fazer'), title), h('label', { class: 'field' }, h('span', {}, 'Para'), owner), h('label', { class: 'field' }, h('span', {}, 'Prazo'), due), h('label', { class: 'field' }, h('span', {}, 'Lead'), leadId)),
+    note, h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Criar tarefa')));
+
+    const mine = items.filter(item => item.kind === 'task');
+    const boardButton = (key, label) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.board === key), onclick: () => { state.board = key; rerender(); } }, label);
+    const card = (value, label) => h('div', { class: 'card' }, h('div', { class: 'value' }, value), h('div', { class: 'label' }, label));
+    view.append(
+      h('h2', {}, 'O meu trabalho'),
+      h('p', { class: 'muted' }, 'Tudo o que é seu, por ordem de urgência. Cada alteração aparece no feed da equipa; nada é apagado e nenhum cliente é contactado automaticamente.'),
+      h('div', { class: 'cards' },
+        card(items.length, 'Na minha lista'), card(items.filter(item => ['risk', 'overdue'].includes(item.urgency)).length, 'Urgentes ou em atraso'),
+        card(mine.filter(item => item.task.status === 'blocked').length, 'Tarefas bloqueadas'), card(items.filter(item => item.kind === 'lead').length, 'Leads que assumi')),
+      status,
+      can('tasks') ? h('details', { class: 'panel', open: prefilled }, h('summary', {}, 'Nova tarefa'), create) : h('p', { class: 'muted' }, 'Pode ver as tarefas e o feed; só curadores, governança e fundadores as alteram.'),
+      h('div', { class: 'split spaced' },
+        h('div', {},
+          h('div', { class: 'panel' }, h('h3', {}, 'A minha lista'), items.length
+            ? h('ul', { class: 'work-list' }, items.map(workItem))
+            : h('p', { class: 'muted' }, 'Nada pendente. Assuma um lead em Seguimento ou crie uma tarefa.')),
+          h('div', { class: 'panel spaced' }, h('h3', {}, 'Tarefas da equipa'),
+            h('div', { class: 'filters' }, boardButton('open', 'Em aberto'), boardButton('done', 'Feitas (arquivo)')),
+            tasks.length
+              ? h('ul', { class: 'work-list' }, tasks.map(task => h('li', { class: `work-item ${task.urgency ?? ''}` },
+                h('div', {}, pill(statuses[task.status] ?? task.status, TASK_TONE[task.status]), ' ', urgencyPill(task.urgency)),
+                h('strong', {}, task.title), ...taskBlock(task))))
+              : h('p', { class: 'muted' }, state.board === 'open' ? 'Sem tarefas em aberto.' : 'Sem tarefas feitas.'))),
+        h('div', { class: 'panel' }, h('h3', {}, 'O que se passa'),
+          h('p', { class: 'muted' }, 'Últimos 7 dias. Atualiza ao voltar ao separador ou em «Atualizar».'),
+          feed.length
+            ? h('ul', { class: 'feed' }, feed.map(entry => h('li', {}, h('strong', {}, entry.byName || entry.by), ` ${entry.text}`, h('time', {}, when(entry.at)))))
+            : h('p', { class: 'muted' }, 'Ainda sem movimento.'))),
+    );
+  },
+
   async dashboard(view) {
-    const [m, { alerts }] = await Promise.all([api('GET', '/v1/metrics'), api('GET', '/v1/alerts').catch(() => ({ alerts: [] }))]);
+    const [m, { alerts }, { members }] = await Promise.all([api('GET', '/v1/metrics'), api('GET', '/v1/alerts').catch(() => ({ alerts: [] })), api('GET', '/v1/team').catch(() => ({ members: [] }))]);
+    // Carga por pessoa: quem tem atrasos ou bloqueios precisa de ajuda primeiro.
+    const load = members.filter(member => member.enabled).sort((a, b) => (b.overdueTasks + b.blockedTasks) - (a.overdueTasks + a.blockedTasks) || (b.openTasks + b.openLeads) - (a.openTasks + a.openLeads));
+    const countCell = (n, tone) => h('td', {}, n ? pill(String(n), tone) : h('span', { class: 'muted' }, '0'));
     const card = (value, label) => h('div', { class: 'card' }, h('div', { class: 'value' }, value ?? '—'), h('div', { class: 'label' }, label));
     const breakdown = (title, counts, labels = {}) => {
       const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
@@ -145,7 +283,10 @@ const views = {
       h('div', { class: 'cards' },
         card(m.open, 'Leads em aberto'), card(m.overdue, 'Em atraso'), card(m.unassigned, 'Sem responsável'),
         card(m.contacted, 'Contactados'), card(m.medianHoursToContact === null ? '—' : `${m.medianHoursToContact} h`, 'Mediana até ao contacto')),
-      h('div', { class: 'grid2' }, breakdown('Por estado', m.byStatus, STATUS), breakdown('Por etapa do percurso', m.byStage, STAGES), breakdown('Por origem', m.bySource)),
+      load.length ? h('div', { class: 'panel' }, h('h3', {}, 'Carga da equipa'), h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'Pessoa'), h('th', {}, 'Tarefas'), h('th', {}, 'Em atraso'), h('th', {}, 'Bloqueadas'), h('th', {}, 'Leads'))),
+        h('tbody', {}, load.map(member => h('tr', {}, h('td', {}, member.name), h('td', {}, member.openTasks ?? 0), countCell(member.overdueTasks ?? 0, 'bad'), countCell(member.blockedTasks ?? 0, 'warn'), h('td', {}, member.openLeads)))))) : null,
+      h('div', { class: 'grid2 spaced' }, breakdown('Por estado', m.byStatus, STATUS), breakdown('Por etapa do percurso', m.byStage, STAGES), breakdown('Por origem', m.bySource)),
     );
   },
 
@@ -507,7 +648,8 @@ async function showLead(panel, id, refreshList) {
       h('dt', {}, 'Responsável'), h('dd', {}, lead.assignedTo ? `${lead.assignedTo} (${when(lead.assignedAt)})` : '—')),
     h('div', { class: 'actions' },
       mine ? act('Libertar', () => api('POST', `/v1/leads/${id}/assign`, { release: true })) : act('Assumir', () => api('POST', `/v1/leads/${id}/assign`, {}), 'primary'),
-      lead.status === 'CONTACTED' ? null : act('Marcar contactado', () => api('POST', `/v1/leads/${id}/contacted`))),
+      lead.status === 'CONTACTED' ? null : act('Marcar contactado', () => api('POST', `/v1/leads/${id}/contacted`)),
+      can('tasks') ? h('button', { type: 'button', class: 'secondary', onclick: () => { taskPrefill = { leadId: id }; show('work'); } }, 'Criar tarefa') : null),
     isCurator() ? null : h('p', { class: 'muted' }, 'Só curadores e fundadores podem alterar leads.'),
     status,
     h('h3', {}, 'Conversa com o chatbot'),
@@ -624,7 +766,7 @@ function activityPanel(id, lead) {
   return h('div', {}, list, h('details', { class: 'spaced' }, h('summary', {}, 'Agendar recolha ou excursão'), form), status);
 }
 
-let current = 'dashboard';
+let current = 'work';
 async function show(tab) {
   current = tab;
   for (const button of $('tabs').querySelectorAll('button')) {
@@ -684,7 +826,7 @@ async function start() {
     if (document.hidden) hiddenAt = Date.now();
     else if (hiddenAt && Date.now() - hiddenAt > 60_000) show(current);
   });
-  show('dashboard');
+  show('work');
 }
 
 start();

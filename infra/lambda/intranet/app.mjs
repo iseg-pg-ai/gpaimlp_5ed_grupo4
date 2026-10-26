@@ -1,9 +1,10 @@
 import {
   CONTACTED, NOTE_LIMIT, OPEN_STATUSES, QUESTION_LIMIT,
-  atRisk, cleanTags, contactDetails, groupsOf, metrics, toLead, toMessage, validLeadId,
+  atRisk, cleanTags, contactDetails, groupsOf, isOverdue, metrics, toLead, toMessage, validLeadId,
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, parseActivity, plan } from './schedule.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
+import { FEED, NO_DUE, TASK_STATE, TASK_STATUS, UNLINKED_TASKS, describeChange, dueState, indexFields, parseTask, parseTaskUpdate, validRecordId } from './tasks.mjs';
 
 // Rotas da intranet. Os acessos AWS chegam injetados em `deps` (index.mjs na AWS,
 // simulações nos testes), para que a autorização e a validação sejam testadas sem rede.
@@ -12,9 +13,9 @@ export class NotFound extends Error {}
 // Papéis (grupos Cognito) e o que cada um pode fazer. Um cofre único de acessos:
 // a identidade vive no Cognito, as credenciais de serviço no Secrets Manager.
 export const ROLES = {
-  founders: { label: 'Fundador(a)', can: ['read', 'leads', 'cases', 'security', 'team-admin'] },
-  curators: { label: 'Curador(a)', can: ['read', 'leads', 'cases'] },
-  governance: { label: 'Governança', can: ['read', 'cases', 'security'] },
+  founders: { label: 'Fundador(a)', can: ['read', 'leads', 'tasks', 'cases', 'security', 'team-admin'] },
+  curators: { label: 'Curador(a)', can: ['read', 'leads', 'tasks', 'cases'] },
+  governance: { label: 'Governança', can: ['read', 'tasks', 'cases', 'security'] },
   testers: { label: 'Testes', can: ['read'] },
 };
 const STAFF = Object.keys(ROLES);
@@ -47,6 +48,21 @@ const toNotification = item => ({
   hasNumber: Boolean(str(item, 'to')), text: str(item, 'text'), sentAt: str(item, 'sentAt'), channel: str(item, 'channel') || 'whatsapp',
   place: str(item, 'place'), people: Number(str(item, 'people') || 0), partnerName: str(item, 'partnerName'),
 });
+const toTask = (item, today) => {
+  const partition = str(item, 'conversationId');
+  const record = {
+    id: str(item, 'taskId'), partition, leadId: partition === UNLINKED_TASKS ? '' : partition, leadLabel: str(item, 'leadLabel'),
+    title: str(item, 'title'), note: str(item, 'note'), owner: str(item, 'owner'), due: str(item, 'due'), status: str(item, 'taskStatus'),
+    blockedReason: str(item, 'blockedReason'), caseId: str(item, 'caseId'), casePartition: str(item, 'casePartition'), caseTitle: str(item, 'caseTitle'),
+    createdBy: str(item, 'createdBy'), createdAt: str(item, 'createdAt'), updatedBy: str(item, 'updatedBy'), updatedAt: str(item, 'updatedAt'),
+  };
+  return { ...record, dueState: dueState(record, today) };
+};
+const toFeed = item => ({ at: str(item, 'followUpAt'), by: str(item, 'by'), byName: str(item, 'byName'), text: str(item, 'text'), scope: str(item, 'scope'), taskId: str(item, 'taskId'), partition: str(item, 'taskPartition') });
+// Ordem de «O meu trabalho»: risco de desistência, atraso, bloqueio, prazo próximo, resto.
+const URGENCY = { risk: 0, overdue: 1, blocked: 2, soon: 3, normal: 4 };
+const taskUrgency = task => (task.status === 'blocked' ? 'blocked' : task.dueState === 'overdue' ? 'overdue' : ['today', 'soon'].includes(task.dueState) ? 'soon' : 'normal');
+const byUrgency = (a, b) => URGENCY[a.urgency] - URGENCY[b.urgency] || (a.due || NO_DUE).localeCompare(b.due || NO_DUE);
 
 const reply = (statusCode, body, cache = 'no-store') => ({
   statusCode,
@@ -89,6 +105,19 @@ export function createApp(deps) {
     return { ...lead, atRisk: atRisk(lead), messages, ...contactDetails(messages) };
   }
 
+  const staffEmails = async () => (await deps.listTeam()).map(member => member.email.toLowerCase());
+  const namesOf = members => Object.fromEntries(members.map(member => [member.email.toLowerCase(), member.name]));
+
+  // Entrada no feed da equipa. Falhar aqui não desfaz a ação: só fica registado o erro.
+  async function announce(user, text, extra = {}) {
+    const at = now().toISOString();
+    try {
+      await deps.putRecords(FEED.partition, [{ recordKey: `FEED#${at}#${deps.newId()}`, followUpStatus: FEED.status, followUpAt: at, text, by: user.email, byName: user.name, ...extra }]);
+    } catch (error) {
+      console.error(JSON.stringify({ feed: 'not-recorded', error: error?.name ?? 'Error' }));
+    }
+  }
+
   const routes = {
     'GET /v1/me': async ({ user }) => reply(200, user),
 
@@ -103,6 +132,7 @@ export function createApp(deps) {
     'POST /v1/leads/{id}/contacted': async ({ id, user }) => {
       const at = now().toISOString();
       await deps.updateProfile(id, { followUpStatus: CONTACTED, contactedAt: at, contactedBy: user.email, updatedAt: at });
+      await announce(user, `marcou o lead ${id} como contactado`);
       return reply(204);
     },
 
@@ -110,6 +140,7 @@ export function createApp(deps) {
       const at = now().toISOString();
       if (body.release === true) await deps.updateProfile(id, { updatedAt: at }, ['assignedTo', 'assignedAt']);
       else await deps.updateProfile(id, { assignedTo: user.email, assignedAt: at, updatedAt: at });
+      await announce(user, body.release === true ? `libertou o lead ${id}` : `assumiu o lead ${id}`);
       return reply(204);
     },
 
@@ -134,13 +165,20 @@ export function createApp(deps) {
 
     'GET /v1/metrics': async () => reply(200, metrics(await listLeads('all'), now()), 'private, max-age=60'),
 
+    // Carga por pessoa (leads e tarefas), para o Painel mostrar quem está sobrecarregado.
     'GET /v1/team': async () => {
-      const [members, leads] = await Promise.all([deps.listTeam(), listLeads('open')]);
+      const today = lisbonToday();
+      const [members, leads, taskItems] = await Promise.all([deps.listTeam(), listLeads('open'), deps.queryStatus(TASK_STATE.open)]);
       const owned = leads.reduce((totals, lead) => {
         if (lead.assignedTo) totals[lead.assignedTo] = (totals[lead.assignedTo] ?? 0) + 1;
         return totals;
       }, {});
-      return reply(200, { members: members.map(member => ({ ...member, openLeads: owned[member.email] ?? 0 })) });
+      const tasks = taskItems.map(item => toTask(item, today));
+      const ownTasks = email => tasks.filter(task => task.owner === email.toLowerCase());
+      return reply(200, { members: members.map(member => ({
+        ...member, openLeads: owned[member.email] ?? 0, openTasks: ownTasks(member.email).length,
+        overdueTasks: ownTasks(member.email).filter(task => task.dueState === 'overdue').length, blockedTasks: ownTasks(member.email).filter(task => task.status === 'blocked').length,
+      })) });
     },
 
     'GET /v1/operations': async () => reply(200, await deps.operations(), 'private, max-age=30'),
@@ -203,6 +241,7 @@ export function createApp(deps) {
         { recordKey: `CASE#${caseId}`, caseId, ...parsed.record, followUpStatus: CASE_STATE.open, followUpAt: parsed.record.deadline, createdBy: user.email, createdAt: at, updatedAt: at },
         { recordKey: `CASELOG#${caseId}#${at}`, caseId, text: `Caso aberto (${CASE_TYPES[parsed.record.type].label}); prazo ${parsed.record.deadline}.`, createdBy: user.email, createdAt: at },
       ]);
+      await announce(user, `abriu o caso «${parsed.record.title}» (prazo ${parsed.record.deadline})`, { scope: 'cases' });
       return reply(201, { caseId, partition, deadline: parsed.record.deadline });
     },
 
@@ -235,7 +274,112 @@ export function createApp(deps) {
       ].filter(Boolean);
       if (Object.keys(parsed.set).length) await deps.setRecord(id, `CASE#${caseId}`, { ...parsed.set, updatedAt: at });
       await deps.putRecords(id, [{ recordKey: `CASELOG#${caseId}#${at}`, caseId, text: [changes.length ? `Alterado — ${changes.join('; ')}.` : '', parsed.note].filter(Boolean).join(' '), createdBy: user.email, createdAt: at }]);
+      await announce(user, `atualizou o caso «${current.title}»${changes.length ? ` (${changes.join('; ')})` : ': nova nota'}`, { scope: 'cases' });
       return reply(204);
+    },
+
+    // Tudo o que é da pessoa num só sítio: tarefas, leads assumidos, lembretes para enviar
+    // à mão e casos de que é responsável, por ordem de urgência.
+    'GET /v1/work': async ({ user }) => {
+      const me = user.email.toLowerCase();
+      const at = now();
+      const today = lisbonToday();
+      const [taskItems, leads, prepared, openCases] = await Promise.all([
+        deps.queryStatus(TASK_STATE.open),
+        listLeads('open'),
+        deps.queryAgenda(NOTIFY.prepared, new Date(at - 7 * 864e5).toISOString(), at.toISOString()),
+        allowed(user.groups, 'cases') ? deps.queryStatus(CASE_STATE.open) : Promise.resolve([]),
+      ]);
+      const myLeads = leads.filter(lead => lead.assignedTo?.toLowerCase() === me);
+      const myLeadIds = new Set(myLeads.map(lead => lead.id));
+      const items = [
+        ...taskItems.map(item => toTask(item, today)).filter(task => task.owner === me)
+          .map(task => ({ kind: 'task', id: task.id, partition: task.partition, title: task.title, due: task.due, urgency: taskUrgency(task), task })),
+        ...myLeads.map(lead => ({
+          kind: 'lead', id: lead.id, partition: lead.id, title: lead.journey.destination || lead.id, due: lead.followUpAt.slice(0, 10),
+          detail: [lead.journey.timeframe, lead.journey.party].filter(Boolean).join(' · '), urgency: lead.atRisk ? 'risk' : isOverdue(lead, at) ? 'overdue' : 'normal',
+        })),
+        ...prepared.filter(item => str(item, 'approvedBy').toLowerCase() === me || myLeadIds.has(str(item, 'conversationId'))).map(toNotification)
+          .map(item => ({ kind: 'reminder', id: item.recordKey, partition: item.conversationId, title: item.title, due: item.sendAt.slice(0, 10), detail: `${item.reason || 'Preparado: enviar à mão'}`, urgency: 'overdue' })),
+        ...(openCases ?? []).map(item => toCase(item, today)).filter(item => item.owner === me)
+          .map(item => ({ kind: 'case', id: item.id, partition: item.partition, title: item.title, due: item.deadline, detail: CASE_TYPES[item.type]?.label ?? item.type, urgency: item.deadlineState === 'overdue' ? 'overdue' : item.deadlineState === 'due-soon' ? 'soon' : 'normal' })),
+      ].sort(byUrgency);
+      return reply(200, { items, statuses: TASK_STATUS, today });
+    },
+
+    'GET /v1/tasks': async ({ event }) => {
+      const filter = event.queryStringParameters?.status ?? 'open';
+      if (!['open', 'done'].includes(filter)) return fail(400, 'Estado inválido.');
+      const today = lisbonToday();
+      const tasks = (await deps.queryStatus(filter === 'open' ? TASK_STATE.open : TASK_STATE.done)).map(item => toTask(item, today));
+      return reply(200, {
+        tasks: filter === 'open'
+          ? tasks.map(task => ({ ...task, urgency: taskUrgency(task) })).sort(byUrgency)
+          : tasks.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, FEED.limit),
+        statuses: TASK_STATUS, today,
+      });
+    },
+
+    'POST /v1/tasks': async ({ user, body }) => {
+      const leadId = typeof body.leadId === 'string' ? body.leadId.trim() : '';
+      if (leadId && !validLeadId(leadId)) return fail(400, 'Referência de lead inválida.');
+      const lead = leadId ? await getLead(leadId) : null;
+      const members = await deps.listTeam();
+      const parsed = parseTask(body, { staff: members.map(member => member.email.toLowerCase()), user });
+      if (parsed.error) return fail(400, parsed.error);
+      const { record } = parsed;
+      const casePartition = record.caseId ? leadId || UNLINKED : '';
+      let caseTitle = '';
+      if (record.caseId) {
+        if (!allowed(user.groups, 'cases')) return fail(403, 'Sem acesso a reclamações e litígios.');
+        const [found] = await deps.queryRecords(casePartition, `CASE#${record.caseId}`);
+        if (!found) return fail(404, 'Caso não encontrado.');
+        caseTitle = str(found, 'title');
+      }
+      const taskId = deps.newId();
+      const at = now().toISOString();
+      const partition = leadId || UNLINKED_TASKS;
+      const names = namesOf(members);
+      await deps.putRecords(partition, [
+        { recordKey: `TASK#${taskId}`, taskId, ...record, leadLabel: lead ? lead.journey.destination || lead.id : '', casePartition, caseTitle, ...indexFields('todo', record.due, at), createdBy: user.email, createdAt: at, updatedBy: user.email, updatedAt: at },
+        { recordKey: `TASKLOG#${taskId}#${at}`, taskId, text: `Tarefa criada para ${names[record.owner] ?? record.owner}${record.due ? `; prazo ${record.due}` : ''}.${record.note ? ` ${record.note}` : ''}`, createdBy: user.email, createdAt: at },
+      ]);
+      await announce(user, record.owner === user.email.toLowerCase() ? `criou «${record.title}»` : `criou «${record.title}» para ${names[record.owner] ?? record.owner}`, { taskId, taskPartition: partition });
+      return reply(201, { taskId, partition });
+    },
+
+    'GET /v1/leads/{id}/tasks/{taskId}': async ({ id, event }) => {
+      const taskId = event.pathParameters.taskId;
+      const [records, log] = await Promise.all([deps.queryRecords(id, `TASK#${taskId}`), deps.queryRecords(id, `TASKLOG#${taskId}#`)]);
+      if (!records.length) return fail(404, 'Tarefa não encontrada.');
+      return reply(200, { ...toTask(records[0], lisbonToday()), log: log.map(toCaseLog).sort((a, b) => b.at.localeCompare(a.at)) });
+    },
+
+    'POST /v1/leads/{id}/tasks/{taskId}': async ({ id, user, body, event }) => {
+      const taskId = event.pathParameters.taskId;
+      const [record] = await deps.queryRecords(id, `TASK#${taskId}`);
+      if (!record) return fail(404, 'Tarefa não encontrada.');
+      const members = await deps.listTeam();
+      const current = toTask(record, lisbonToday());
+      const parsed = parseTaskUpdate(body, current, { staff: members.map(member => member.email.toLowerCase()) });
+      if (parsed.error) return fail(400, parsed.error);
+      const at = now().toISOString();
+      const set = { ...parsed.set };
+      if (set.taskStatus || set.due !== undefined) Object.assign(set, indexFields(set.taskStatus ?? current.status, set.due ?? current.due, at));
+      if (Object.keys(set).length) await deps.setRecord(id, `TASK#${taskId}`, { ...set, updatedBy: user.email, updatedAt: at });
+      const change = Object.keys(parsed.set).length ? describeChange(parsed.set, current, namesOf(members)) : `comentou «${current.title}»`;
+      await deps.putRecords(id, [{ recordKey: `TASKLOG#${taskId}#${at}`, taskId, text: [`${user.name} ${change}.`, parsed.note].filter(Boolean).join(' '), createdBy: user.email, createdAt: at }]);
+      await announce(user, parsed.note && !Object.keys(parsed.set).length ? `${change}: ${parsed.note}` : change, { taskId, taskPartition: id });
+      return reply(204);
+    },
+
+    // Feed «O que se passa»: últimos 7 dias, mais recente primeiro; casos só para quem os vê.
+    'GET /v1/feed': async ({ user }) => {
+      const at = now();
+      const items = await deps.queryAgenda(FEED.status, new Date(at - FEED.days * 864e5).toISOString(), at.toISOString());
+      const seeCases = allowed(user.groups, 'cases');
+      const feed = items.map(toFeed).filter(entry => seeCases || entry.scope !== 'cases').sort((a, b) => b.at.localeCompare(a.at)).slice(0, FEED.limit);
+      return reply(200, { feed, checkedAt: at.toISOString() }, 'no-store');
     },
 
     // Alertas que ligam cada problema ao ecrã onde se resolve (campo tab).
@@ -352,6 +496,7 @@ export function createApp(deps) {
   const writes = new Set(['POST /v1/leads/{id}/contacted', 'POST /v1/leads/{id}/assign', 'PUT /v1/leads/{id}/tags', 'POST /v1/leads/{id}/ask', 'POST /v1/leads/{id}/activities', 'POST /v1/leads/{id}/activities/{activityId}/cancel']);
   const admin = new Set(['POST /v1/team/invite', 'POST /v1/team/{username}/role', 'POST /v1/team/{username}/status']);
   const caseRoutes = new Set(['GET /v1/cases', 'POST /v1/cases', 'GET /v1/leads/{id}/cases', 'GET /v1/leads/{id}/cases/{caseId}', 'POST /v1/leads/{id}/cases/{caseId}']);
+  const taskWrites = new Set(['POST /v1/tasks', 'POST /v1/leads/{id}/tasks/{taskId}']);
 
   return async function handler(event) {
     const route = routes[event.routeKey];
@@ -362,6 +507,8 @@ export function createApp(deps) {
     if (writes.has(event.routeKey) && !allowed(groups, 'leads')) return fail(403, 'Esta ação é reservada a curadores e fundadores.');
     if (admin.has(event.routeKey) && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores gerem acessos.');
     if (caseRoutes.has(event.routeKey) && !allowed(groups, 'cases')) return fail(403, 'Sem acesso a reclamações e litígios.');
+    if (taskWrites.has(event.routeKey) && !allowed(groups, 'tasks')) return fail(403, 'Só curadores, governança e fundadores alteram tarefas.');
+    if (event.routeKey.includes('{taskId}') && !validRecordId(event.pathParameters?.taskId)) return fail(400, 'Tarefa inválida.');
     if (event.routeKey === 'GET /v1/security' && !allowed(groups, 'security')) return fail(403, 'Só fundadores e governança veem a segurança.');
     if (event.routeKey.includes('{caseId}') && !/^[A-Za-z0-9-]{8,64}$/.test(event.pathParameters?.caseId ?? '')) return fail(400, 'Caso inválido.');
     const user = { email: String(claims.email ?? ''), name: String(claims.name ?? claims.email ?? ''), username: String(claims['cognito:username'] ?? claims.sub ?? ''), groups };
