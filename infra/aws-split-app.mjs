@@ -868,7 +868,8 @@ class PortalStack extends Stack {
     releases.grantPut(build, 'releases/*');
     // Cada deploy com código novo lança um build; o servidor ativa-o sozinho quando termina.
     const sourceVersion = Object.values(sources).map(asset => asset.assetHash).join('-');
-    const startBuild = { service: 'CodeBuild', action: 'startBuild', parameters: { projectName: build.projectName, environmentVariablesOverride: [{ name: 'SOURCE_VERSION', value: sourceVersion, type: 'PLAINTEXT' }] }, physicalResourceId: cr.PhysicalResourceId.of(`portal-build-${sourceVersion}`) };
+    // Só o id volta ao CloudFormation: a resposta completa do startBuild excede o limite de 4 KB.
+    const startBuild = { service: 'CodeBuild', action: 'startBuild', parameters: { projectName: build.projectName, environmentVariablesOverride: [{ name: 'SOURCE_VERSION', value: sourceVersion, type: 'PLAINTEXT' }] }, outputPaths: ['build.id'], physicalResourceId: cr.PhysicalResourceId.of(`portal-build-${sourceVersion}`) };
     new cr.AwsCustomResource(this, 'PortalBuildTrigger', {
       onCreate: startBuild,
       onUpdate: startBuild,
