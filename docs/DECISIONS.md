@@ -1085,7 +1085,9 @@ aprovados com um modelo simulado, sem chamadas a fornecedores externos.
 Decisão de piloto para a alternativa "VM dedicada" de
 [Operações](OPERATIONS.md#deployment-do-portal-piloto): o portal corre numa
 instância `t4g.small` numa sub-rede isolada, sem IP público, NAT nem internet,
-alcançada só por uma VPC origin do CloudFront. Um portão Node
+alcançada só por uma VPC origin do CloudFront. Usa a VPC de `BluCostaData`,
+porque a conta partilhada atingiu o limite de 7 VPCs (primeira publicação
+recusada); o internet gateway exigido pela VPC origin fica ligado sem rotas. Um portão Node
 (`infra/portal/gate.mjs`) valida o ID token Cognito da intranet e só admite
 fundadores e curadores; a troca PKCE acontece no navegador e as chaves públicas
 seguem com o build, porque o servidor não alcança o Cognito. O build corre no

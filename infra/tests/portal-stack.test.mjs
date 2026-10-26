@@ -30,18 +30,20 @@ test('o portal fica num servidor privado, só alcançável pelo CloudFront e com
   const of = type => Object.values(template.Resources).filter(resource => resource.Type === type);
   const json = value => JSON.stringify(value);
 
-  // Servidor sem IP público, numa sub-rede sem rota para a internet, com IMDSv2 e discos cifrados.
+  // Servidor sem IP público, na sub-rede isolada da VPC de dados, com IMDSv2 e discos cifrados.
   const [server] = of('AWS::EC2::Instance');
   const [nic] = server.Properties.NetworkInterfaces;
-  assert.match(json(nic.SubnetId), /PortalVpcportalSubnet/);
+  assert.match(json(nic.SubnetId), /BluCostaData.*CloudUniverseVpcbackofficeisolatedSubnet1/);
   assert.equal(nic.AssociatePublicIpAddress, false);
   assert.equal(server.Properties.BlockDeviceMappings[0].Ebs.Encrypted, true);
   const [launchTemplate] = of('AWS::EC2::LaunchTemplate');
   assert.equal(launchTemplate.Properties.LaunchTemplateData.MetadataOptions.HttpTokens, 'required');
+  // O internet gateway só existe para a VPC origin: nenhuma rota nem NAT o usa.
+  assert.equal(of('AWS::EC2::VPCGatewayAttachment').length, 1);
+  assert.equal(of('AWS::EC2::Route').length, 0);
   assert.equal(of('AWS::EC2::NatGateway').length, 0);
-  const isolatedRoutes = of('AWS::EC2::Route').filter(route => /portalSubnet/.test(json(route.Properties.RouteTableId)));
-  assert.equal(isolatedRoutes.length, 0);
   assert.deepEqual(of('AWS::EC2::VPCEndpoint').map(endpoint => endpoint.Properties.VpcEndpointType ?? 'Gateway'), ['Gateway', 'Gateway']);
+  assert.ok(of('AWS::CloudFront::Distribution')[0].DependsOn.includes('PortalOriginGatewayAttachment'));
 
   // Só o CloudFront entra (porta do portão); só o S3 e o DynamoDB saem.
   const ingress = of('AWS::EC2::SecurityGroupIngress');

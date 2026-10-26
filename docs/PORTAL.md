@@ -359,9 +359,10 @@ restantes serviços pertencem a uma futura arquitetura de deployment, descrita e
 A stack `BluCostaPortal` (`infra/aws-split-app.mjs`) publica o portal com
 endereço próprio (saída `PortalUrl`):
 
-- **Rede:** instância `t4g.small` numa sub-rede isolada, sem IP público nem NAT;
-  o CloudFront chega-lhe por uma VPC origin na porta 8080. A saída só alcança o
-  S3 e o DynamoDB, por gateway endpoints.
+- **Rede:** instância `t4g.small` numa sub-rede isolada da VPC de `BluCostaData`
+  (a conta está no limite de VPCs), sem IP público nem NAT; o CloudFront chega-lhe
+  por uma VPC origin na porta 8080. A VPC origin exige um internet gateway ligado,
+  que não tem rotas. A saída só alcança o S3 e o DynamoDB, por gateway endpoints.
 - **Login:** `infra/portal/gate.mjs` serve `/auth/*`, valida o ID token Cognito do
   grupo da intranet e guarda-o num cookie `HttpOnly`. Só fundadores e curadores
   entram; o Next.js escuta apenas em `127.0.0.1:3001`.

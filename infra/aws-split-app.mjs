@@ -683,23 +683,16 @@ class PortalStack extends Stack {
     const prefixLists = PORTAL_PREFIX_LISTS[region];
     if (!prefixLists || !PORTAL_AMI[region]) throw new Error(`The portal stack is only configured for ${Object.keys(PORTAL_AMI).join(', ')}`);
 
-    // Rede própria: a VPC origin exige um internet gateway, mas o servidor fica numa sub-rede
-    // isolada (sem IP público nem NAT) e chega ao S3 e ao DynamoDB por gateway endpoints gratuitos.
-    const vpc = new ec2.Vpc(this, 'PortalVpc', {
-      ipAddresses: ec2.IpAddresses.cidr('10.20.0.0/24'),
-      maxAzs: 1,
-      natGateways: 0,
-      restrictDefaultSecurityGroup: true,
-      subnetConfiguration: [
-        { name: 'edge', subnetType: ec2.SubnetType.PUBLIC, cidrMask: 28 },
-        { name: 'portal', subnetType: ec2.SubnetType.PRIVATE_ISOLATED, cidrMask: 26 },
-      ],
-      gatewayEndpoints: {
-        S3: { service: ec2.GatewayVpcEndpointAwsService.S3 },
-        DynamoDB: { service: ec2.GatewayVpcEndpointAwsService.DYNAMODB },
-      },
-    });
+    // Usa a VPC isolada da stack de dados (a conta está no limite de VPCs). A VPC origin exige um
+    // internet gateway ligado, mas sem rotas para ele: as sub-redes continuam sem internet. O S3 e
+    // o DynamoDB chegam por gateway endpoints gratuitos.
+    const vpc = data.vpc;
     const subnet = vpc.isolatedSubnets[0];
+    const gateway = new ec2.CfnInternetGateway(this, 'PortalOriginGateway', { tags: [{ key: 'Name', value: 'blu-portal-vpc-origin (no routes)' }] });
+    const gatewayAttachment = new ec2.CfnVPCGatewayAttachment(this, 'PortalOriginGatewayAttachment', { vpcId: vpc.vpcId, internetGatewayId: gateway.ref });
+    for (const [name, service] of [['PortalS3Endpoint', ec2.GatewayVpcEndpointAwsService.S3], ['PortalDynamoDbEndpoint', ec2.GatewayVpcEndpointAwsService.DYNAMODB]]) {
+      new ec2.GatewayVpcEndpoint(this, name, { vpc, service, subnets: [{ subnetType: ec2.SubnetType.PRIVATE_ISOLATED }] });
+    }
 
     const releases = new s3.Bucket(this, 'PortalReleases', {
       encryption: s3.BucketEncryption.S3_MANAGED,
@@ -788,6 +781,7 @@ class PortalStack extends Stack {
         }),
       },
     });
+    distribution.node.addDependency(gatewayAttachment);
     const portalOrigin = `https://${distribution.distributionDomainName}`;
 
     // Cliente Cognito próprio no mesmo grupo de utilizadores da intranet (mesma sessão e MFA).
