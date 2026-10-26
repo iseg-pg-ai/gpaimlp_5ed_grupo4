@@ -78,4 +78,4 @@ jobs:
           tags: blu-curation:${{ github.sha }}
           build-args: SOURCE_REVISION=${{ github.sha }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min

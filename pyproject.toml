@@ -11,7 +11,7 @@ dependencies = [
 
 [dependency-groups]
 dashboard = ["plotly==6.5.2", "streamlit==1.55.0"]
-translation = ["argostranslate==1.11.0", "ctranslate2>=4.0,<5"]
+translation = ["argostranslate==1.11.0", "ctranslate2>=4.0,<5", "torch==2.14.0"]
 agent = [
     "boto3>=1.35.0",
 ]
@@ -28,3 +28,12 @@ constraint-dependencies = [
 # Argos 1.11.0 fixa Stanza 1.10.1, afetado por GHSA-v5jw-96jm-7h2c.
 # Manter a primeira série corrigida até o Argos atualizar esse requisito.
 override-dependencies = ["stanza>=1.12.2,<1.13"]
+
+# A tradução usa CPU; evitar dependências CUDA no Linux e Windows.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

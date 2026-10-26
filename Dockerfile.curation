@@ -9,7 +9,8 @@ WORKDIR /app
 COPY --from=node-runtime /usr/local/ /usr/local/
 COPY --from=uv-runtime /uv /uvx /usr/local/bin/
 COPY pyproject.toml uv.lock ./
-RUN uv sync --locked --all-groups --no-install-project
+RUN uv sync --locked --all-groups --no-install-project \
+    && .venv/bin/python -c "import torch; assert torch.version.cuda is None, 'A imagem exige PyTorch CPU'"
 COPY dmc-workspace/package.json dmc-workspace/package-lock.json ./dmc-workspace/
 # A dependência local referenciada pelo lockfile tem de existir antes de npm ci.
 COPY dmc-workspace/tools ./dmc-workspace/tools

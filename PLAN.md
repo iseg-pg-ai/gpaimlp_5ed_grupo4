@@ -1,6 +1,6 @@
 # Plano de evolução do BLU AI System
 
-Revisto em 25 de outubro de 2026. Este ficheiro contém apenas trabalho aberto,
+Revisto em 26 de outubro de 2026. Este ficheiro contém apenas trabalho aberto,
 ordenado pelas dependências reais. Implementações concluídas e respetiva evidência
 ficam em [Decisões](docs/DECISIONS.md) e no histórico Git.
 
@@ -34,24 +34,22 @@ completo de warehouse e a retenção de 14 dias. Evidência em
 
 ## 2. Etapa 3 — Entrega reproduzível e operação cloud
 
-Próximo passo técnico: obter evidência dos jobs `validate` e `container` de
-`.github/workflows/portal.yml` no GitHub Actions para a revisão a entregar.
-O workflow, o `Dockerfile.curation` e a stack `infra/curation-workspace.mjs`
-já existem; não é necessário recriá-los. No commit `d176a56`, documentação,
-ETL e o job `validate` do portal passaram no GitHub Actions. A construção revelou
-um PATH sem `/usr/sbin` e a omissão das ferramentas Node de build devido a
-`NODE_ENV=production`. O PATH foi corrigido; `npm ci --include=dev` passa a
-instalar as ferramentas antes do build e `npm prune --omit=dev` remove-as depois.
-A construção completa continua por confirmar em CI.
+O commit `31a6eb5` passou os jobs `validate` e `container` no
+[GitHub Actions](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40245742304).
+O ETL passou na execução de `d176a56`. A construção é sem publicação e não
+comprova entrega no ECR nem funcionamento dos serviços cloud.
 
-A revisão local eliminou os sete avisos de tracing e restringiu o contexto Docker
-a código e recursos necessários. O build e os testes do portal passaram; a imagem
-continua por construir em CI. A dependência local `dmc-workspace/tools` passa a
-ser copiada antes de `npm ci`. Evidência em [Decisões](docs/DECISIONS.md).
+A otimização seguinte troca PyTorch por wheels CPU em Linux/Windows e a cache
+Docker por `mode=min`. O lockfile deixa de incluir 19 pacotes GPU. Imports reais
+e cinco testes com modelos simulados passaram num ambiente temporário Python
+3.12; dois ensaios de inferência local EN/PT também passaram com os modelos
+já instalados, preservando hora e montante. A imagem usa Python 3.13 e precisa
+de confirmação em CI.
 
-- [ ] Validar em CI o check/build do portal, o ciclo catálogo/ETL e a construção
-  da imagem unificada, corrigindo eventuais falhas. O job `container` atual usa
-  `push: false` e não comprova publicação no ECR.
+- [ ] Construir a imagem CPU e comparar duração e tamanho com a referência.
+  A construção anterior demorou cerca de 26 minutos, incluindo exportação de
+  cache; não foi medido o tamanho final da imagem. Preservar tradução offline e
+  validar uma tradução com os modelos locais autorizados antes de produção.
 - [ ] Definir e implementar geração de SBOM, assinatura e verificação da imagem.
 - [ ] Preparar publicação identificada no ECR e promoção por digest imutável.
   Adaptar a stack, que atualmente recebe uma imagem por tag, e testar a recusa

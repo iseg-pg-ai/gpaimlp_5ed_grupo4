@@ -223,6 +223,23 @@ ETL, versão e PDF, sem transformar lacunas em valores confirmados.
 
 Referência: [Testes](TESTING.md).
 
+### Tradução usa PyTorch CPU e a cache de imagem é mínima — 2026-10-26
+
+A tradução já executa CTranslate2 em CPU/int8. PyTorch passa a usar o índice
+oficial CPU em Linux e Windows, com a mesma versão-base e sem as 19 dependências
+GPU retiradas do lockfile. Mantém-se o override de segurança Stanza/Argos.
+Os exports são gerados por `scripts/export_requirements.py` e incluem o índice
+CPU para a instalação alternativa por pip. O build verifica a ausência de CUDA.
+
+A cache Docker passa de `mode=max` para `mode=min`, reduzindo as camadas
+intermédias exportadas à custa de possíveis reconstruções. Isto reduz a cache,
+sem por si só reduzir a imagem final. O tempo e o tamanho da nova imagem ainda
+precisam de medição em CI. Imports reais e cinco testes de tradução com mocks
+passaram num ambiente temporário Python 3.12. Dois ensaios de inferência local
+EN/PT com modelos existentes preservaram hora e montante, sem instalar modelos.
+Em português, o modelo apresentou EUR como euros. Não foi validado PDF ou
+comportamento de todos os idiomas.
+
 ## Monitoring e ambiente local
 
 ### Monitoring não aumenta a autoridade sobre dados — 2026-10-19

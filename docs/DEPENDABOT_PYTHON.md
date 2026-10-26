@@ -1,6 +1,6 @@
 # Dependências Python e exceção Argos
 
-Estado revisto em 20 de outubro de 2026. O `pyproject.toml` e o `uv.lock`
+Estado revisto em 26 de outubro de 2026. O `pyproject.toml` e o `uv.lock`
 definem o ambiente Python. `requirements.txt` e
 `translations/requirements.txt` são exports gerados por
 `scripts/export_requirements.py`; não devem ser editados manualmente.
@@ -26,6 +26,20 @@ uv sync --locked --all-groups
 `uv sync` sem `--all-groups` pode remover grupos opcionais que já estejam
 instalados. Para acrescentar um grupo preservando o ambiente existente, usar
 `--inexact --group NOME`.
+
+## Tradução em CPU
+
+O grupo `translation` declara PyTorch explicitamente para selecionar wheels CPU
+em Linux e Windows. O índice oficial `https://download.pytorch.org/whl/cpu` é
+marcado como `explicit` no uv; os restantes pacotes continuam no PyPI. O worker
+usa CTranslate2 em CPU/int8; não necessita das dependências NVIDIA/CUDA do
+PyTorch Linux por omissão. A escolha segue o
+[guia oficial uv/PyTorch](https://docs.astral.sh/uv/guides/integration/pytorch/).
+
+O export de tradução inclui os índices para o pip encontrar `torch==2.14.0+cpu`.
+O formato requirements não preserva índices por pacote: o índice CPU aparece
+como `--extra-index-url` global. Preferir `uv sync --locked` para conservar a
+associação explícita de cada pacote à sua origem. Não editar os exports à mão.
 
 ## Exceção de compatibilidade do Argos
 

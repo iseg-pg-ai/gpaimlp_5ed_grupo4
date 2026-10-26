@@ -7,7 +7,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 EXPORTS = {
     "requirements.txt": [],
-    "translations/requirements.txt": ["--only-group", "translation"],
+    "translations/requirements.txt": ["--only-group", "translation", "--emit-index-url"],
 }
 
 
