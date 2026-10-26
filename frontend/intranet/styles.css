@@ -33,6 +33,7 @@ h3 { font-size: 1.1rem; }
 .brand { display: flex; align-items: center; gap: .6rem; font-family: Georgia, serif; font-size: 1.1rem; }
 .mark { border: 1px solid #fff8; border-radius: 50%; width: 2rem; height: 2rem; display: grid; place-items: center; font-size: .8rem; }
 .tabs { display: flex; flex-wrap: wrap; gap: .25rem; flex: 1; }
+.tabs a { color: #fffc; padding: .4rem .7rem; border-radius: 6px; text-decoration: none; white-space: nowrap; }
 .tabs button { background: none; border: 0; color: #fffc; padding: .4rem .7rem; border-radius: 6px; }
 .tabs button[aria-current="page"] { background: #ffffff1f; color: #fff; }
 .who { display: flex; gap: .75rem; align-items: center; font-size: .9rem; }
@@ -124,8 +125,8 @@ p.message { margin: .3rem 0; white-space: pre-wrap; font-size: .85rem; color: va
 @media (min-width: 900px) {
   .topbar { position: sticky; top: 0; z-index: 2; min-height: 56px; }
   .tabs { position: fixed; top: 56px; left: 0; bottom: 0; width: 220px; flex-direction: column; flex-wrap: nowrap; background: #102f38; padding: 1rem .75rem; gap: .15rem; overflow-y: auto; }
-  .tabs button { text-align: left; padding: .55rem .8rem; }
-  .tabs button:hover { background: #ffffff14; }
+  .tabs button, .tabs a { text-align: left; padding: .55rem .8rem; }
+  .tabs button:hover, .tabs a:hover { background: #ffffff14; }
   .nav-group { display: block; color: #fff9; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; margin: 1rem .8rem .3rem; }
   .nav-group:first-child { margin-top: 0; }
   main { margin-left: 220px; max-width: none; padding: 1.75rem 2.25rem 3rem; }
