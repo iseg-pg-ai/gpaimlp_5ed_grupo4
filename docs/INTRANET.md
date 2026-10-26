@@ -83,6 +83,12 @@ Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só d
 - Lista de leads (`open`, `contacted`, vencidos) e detalhe, como na API de
   leads, mais as tarefas que o avaliador diário marca como
   `QUEUED_FOR_REVIEW`.
+- **Risco de desistência:** quando o cliente escreve no chat que vai desistir
+  (frases fixas em inglês e português, em `event-processor/item.mjs`), o
+  processador de eventos grava `churnSignalAt` e `churnSignal` no `PROFILE`.
+  O lead fica `atRisk`, aparece primeiro em Seguimento com um alerta e gera um
+  alerta urgente no Painel até um curador o marcar como contactado. Não há
+  contacto automático; falsos positivos só antecipam a revisão humana.
 - **Responsável:** botão «Assumir» grava `assignedTo` (o `sub` Cognito) e
   `assignedAt`; filtro «As minhas tarefas». Estes dois campos entram na lista
   de atributos permitidos da política `UpdateItem`.

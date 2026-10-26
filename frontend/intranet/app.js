@@ -156,15 +156,20 @@ const views = {
     const select = id => { state.selected = id; for (const row of view.querySelectorAll('tr.clickable')) row.classList.toggle('selected', row.dataset.id === id); showLead(detail, id, () => rerender()); };
     const rerender = () => { view.replaceChildren(); views.leads(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
     const filterButton = (key, label) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.filter === key), onclick: () => { state.filter = key; state.selected = ''; rerender(); } }, label);
+    const churning = leads.filter(lead => lead.atRisk);
     view.append(
       h('h2', {}, 'Seguimento de leads'),
+      churning.length ? h('div', { class: 'panel risk', role: 'alert' },
+        h('h3', {}, `${churning.length} lead(s) em risco de desistência`),
+        h('p', {}, 'O cliente disse que vai desistir. Contacte-o já e use «Marcar contactado» para limpar o alerta.'),
+        h('div', { class: 'actions' }, churning.map(lead => h('button', { type: 'button', class: 'secondary', onclick: () => select(lead.id) }, lead.journey.destination || lead.id)))) : '',
       h('div', { class: 'filters' }, filterButton('open', 'Em aberto'), filterButton('contacted', 'Contactados'), filterButton('all', 'Todos')),
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, rows.length ? h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Lead'), h('th', {}, 'Estado'), h('th', {}, 'Seguimento'), h('th', {}, 'Responsável'))),
           h('tbody', {}, rows.map(lead => h('tr', { class: `clickable${lead.id === state.selected ? ' selected' : ''}`, 'data-id': lead.id, tabindex: '0', onclick: () => select(lead.id), onkeydown: event => event.key === 'Enter' && select(lead.id) },
             h('td', {}, h('strong', {}, lead.journey.destination || lead.id), h('div', { class: 'muted' }, [lead.journey.timeframe, lead.journey.party].filter(Boolean).join(' · ') || lead.id), lead.synthetic ? pill('demo') : null),
-            h('td', {}, statusPill(lead.status)),
+            h('td', {}, statusPill(lead.status), lead.atRisk ? [' ', pill('Em risco', 'bad')] : null),
             h('td', {}, when(lead.status === 'CONTACTED' ? lead.contactedAt : lead.followUpAt)),
             h('td', {}, lead.assignedTo || h('span', { class: 'muted' }, '—')))))) : h('p', { class: 'muted' }, 'Nenhum lead neste filtro.')),
         detail),
@@ -491,6 +496,7 @@ async function showLead(panel, id, refreshList) {
   // replaceChildren escreveria null como texto; os blocos opcionais são filtrados.
   panel.replaceChildren(...[
     h('h3', {}, lead.journey.destination || lead.id), h('div', {}, statusPill(lead.status), ' ', lead.synthetic ? pill('demo') : null),
+    lead.atRisk ? h('p', { class: 'error', role: 'alert' }, `Sinal de desistência em ${when(lead.churnSignalAt)} («${lead.churnSignal}»). Contactar já.`) : null,
     h('dl', { class: 'facts' },
       h('dt', {}, 'Referência'), h('dd', {}, lead.id),
       ...journey.flatMap(([key, value]) => [h('dt', {}, JOURNEY[key] ?? key), h('dd', {}, value)]),

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { messageItem, profileUpdate } from '../lambda/event-processor/item.mjs';
+import { churnSignal, messageItem, profileUpdate } from '../lambda/event-processor/item.mjs';
 
 const record = (extra = {}) => ({
   conversationId: 'BLU-AC2EE15506850505', source: 'blu-cloud-site', schemaVersion: 2, analyticsConsent: false,
@@ -37,4 +37,14 @@ test('profile updates count only real messages and keep the latest journey snaps
     const used = new Set(update.UpdateExpression.match(/:[a-z]+/g));
     assert.deepEqual([...used].sort(), Object.keys(update.ExpressionAttributeValues).sort());
   }
+});
+
+test('a customer who says they will give up flags the lead for quick follow-up', () => {
+  for (const text of ["I think I'll give up on this trip", 'Forget it, too expensive', 'Desisto, é perda de tempo', 'Já não estou interessada']) assert.ok(churnSignal(text), text);
+  for (const text of ['Lisbon in May', 'What is your cancellation policy?', 'We love quiet beaches']) assert.equal(churnSignal(text), '', text);
+  const quitting = profileUpdate(record({ occurredAt: '2026-10-25T14:00:00.000Z', message: { actor: 'customer', channel: 'website', text: 'Never mind, forget it' } }));
+  assert.match(quitting.UpdateExpression, /churnSignalAt=:at, churnSignal=:signal/);
+  assert.equal(quitting.ExpressionAttributeValues[':signal'].S, 'never mind');
+  const assistant = profileUpdate(record({ occurredAt: '2026-10-25T14:00:00.000Z', message: { actor: 'assistant', channel: 'website', text: 'If you are thinking of quitting, I understand.' } }));
+  assert.doesNotMatch(assistant.UpdateExpression, /churnSignal/);
 });

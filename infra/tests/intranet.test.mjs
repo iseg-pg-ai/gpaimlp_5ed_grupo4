@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { NotFound, createApp } from '../lambda/intranet/app.mjs';
-import { CONTACTED, LEAD_TAGS, OPEN_STATUSES, groupsOf, metrics, toLead } from '../lambda/intranet/model.mjs';
+import { CONTACTED, LEAD_TAGS, OPEN_STATUSES, atRisk, groupsOf, metrics, toLead } from '../lambda/intranet/model.mjs';
 import { createDispatcher } from '../lambda/intranet/dispatch-core.mjs';
 import { lisbonToUtc, outcome, parseActivity, plan } from '../lambda/intranet/schedule.mjs';
 import { addWorkingDays, deadlineState, parseCase, parseCaseUpdate, portugueseHolidays } from '../lambda/intranet/cases.mjs';
@@ -381,4 +381,20 @@ test('the intranet stack protects every route and grants no destructive data acc
   } finally {
     await rm(outdir, { recursive: true, force: true });
   }
+});
+
+test('leads that signal quitting come first, raise an alert and clear once contacted', async () => {
+  const churning = profile('BLU-AAAAAAAA0002', { followUpAt: S('2026-10-29T10:00:00Z'), churnSignalAt: S('2026-10-26T11:00:00Z'), churnSignal: S('give up') });
+  const handler = createApp(fakeDeps({
+    queryStatus: async status => (status === 'PENDING' ? [profile('BLU-AAAAAAAA0001'), churning] : []),
+    operations: async () => null,
+    policyReport: async () => null,
+    queryAgenda: async () => [],
+  }).deps);
+  const { leads } = JSON.parse((await handler(request('GET /v1/leads'))).body);
+  assert.deepEqual(leads.map(lead => [lead.id, lead.atRisk]), [['BLU-AAAAAAAA0002', true], ['BLU-AAAAAAAA0001', false]]);
+  const { alerts } = JSON.parse((await handler(request('GET /v1/alerts'))).body);
+  assert.ok(alerts.some(alert => alert.level === 'bad' && alert.tab === 'leads' && /desistir/.test(alert.text)));
+  assert.equal(atRisk(toLead({ ...churning, contactedAt: S('2026-10-26T11:30:00Z') })), false);
+  assert.equal(atRisk(toLead({ ...churning, contactedAt: S('2026-10-20T11:30:00Z') })), true);
 });

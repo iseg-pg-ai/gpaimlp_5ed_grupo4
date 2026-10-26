@@ -53,6 +53,8 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 16px 3rem; }
 .card .label { color: var(--ink-soft); font-size: .85rem; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 1rem; }
 .panel { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; overflow-x: auto; }
+.panel.risk { border-color: #e7bdb8; border-left: 4px solid var(--bad); margin-bottom: 1rem; }
+.panel.risk h3 { color: var(--bad); margin-top: 0; }
 
 table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }

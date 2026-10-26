@@ -41,8 +41,13 @@ export function toLead(item) {
     journey: journeyOf(item),
     tags: cleanTags(item?.tags?.SS ?? []),
     curatorNote: optional('curatorNote'),
+    churnSignalAt: optional('churnSignalAt'),
+    churnSignal: optional('churnSignal'),
   };
 }
+
+/** O cliente disse que ia desistir e ainda ninguém o contactou depois disso. */
+export const atRisk = lead => Boolean(lead.churnSignalAt) && (!lead.contactedAt || lead.contactedAt < lead.churnSignalAt);
 
 export function toMessage(item) {
   return {

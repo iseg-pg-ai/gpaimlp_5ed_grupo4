@@ -1,6 +1,6 @@
 import {
   CONTACTED, NOTE_LIMIT, OPEN_STATUSES, QUESTION_LIMIT,
-  cleanTags, contactDetails, groupsOf, metrics, toLead, toMessage, validLeadId,
+  atRisk, cleanTags, contactDetails, groupsOf, metrics, toLead, toMessage, validLeadId,
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, parseActivity, plan } from './schedule.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
@@ -73,10 +73,11 @@ export function createApp(deps) {
   async function listLeads(filter) {
     const statuses = filter === 'contacted' ? [CONTACTED] : filter === 'all' ? [...OPEN_STATUSES, CONTACTED] : OPEN_STATUSES;
     const items = (await Promise.all(statuses.map(status => deps.queryStatus(status)))).flat();
-    const leads = items.map(toLead);
+    const leads = items.map(toLead).map(lead => ({ ...lead, atRisk: atRisk(lead) }));
+    // Quem disse que vai desistir aparece primeiro, para contacto rápido.
     return filter === 'contacted'
       ? leads.sort((a, b) => (b.contactedAt ?? '').localeCompare(a.contactedAt ?? ''))
-      : leads.sort((a, b) => a.followUpAt.localeCompare(b.followUpAt));
+      : leads.sort((a, b) => b.atRisk - a.atRisk || a.followUpAt.localeCompare(b.followUpAt));
   }
 
   async function getLead(id) {
@@ -84,7 +85,8 @@ export function createApp(deps) {
     const profile = records.find(item => item.recordKey?.S === 'PROFILE');
     if (!profile) throw new NotFound();
     const messages = transcript.map(toMessage).sort((a, b) => a.at.localeCompare(b.at));
-    return { ...toLead(profile), messages, ...contactDetails(messages) };
+    const lead = toLead(profile);
+    return { ...lead, atRisk: atRisk(lead), messages, ...contactDetails(messages) };
   }
 
   const routes = {
@@ -265,6 +267,8 @@ export function createApp(deps) {
       if (cases.some(item => item.deadlineState === 'overdue')) add('bad', `${cases.filter(item => item.deadlineState === 'overdue').length} caso(s) de reclamação ou litígio fora do prazo.`, 'cases');
       if (cases.some(item => item.deadlineState === 'due-soon')) add('warn', `${cases.filter(item => item.deadlineState === 'due-soon').length} caso(s) com prazo nos próximos 3 dias úteis.`, 'cases');
       if (report?.summary.fail) add('warn', `${report.summary.fail} política(s) legal(is) em falta.`, 'governance');
+      const churning = leads?.filter(lead => !lead.synthetic && lead.atRisk).length ?? 0;
+      if (churning) add('bad', `${churning} lead(s) disseram que vão desistir: contactar já.`, 'leads');
       const overdueLeads = leads?.filter(lead => !lead.synthetic && lead.status === 'QUEUED_FOR_REVIEW').length ?? 0;
       if (overdueLeads) add('warn', `${overdueLeads} lead(s) em atraso à espera de contacto.`, 'leads');
       const order = { bad: 0, warn: 1 };
