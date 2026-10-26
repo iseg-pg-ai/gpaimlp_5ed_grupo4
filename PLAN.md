@@ -4,10 +4,6 @@ Revisto em 26 de outubro de 2026. Este ficheiro contém apenas trabalho aberto,
 ordenado pelas dependências reais. Implementações concluídas e respetiva evidência
 ficam em [Decisões](docs/DECISIONS.md) e no histórico Git.
 
-A Etapa 2 do agente está concluída segundo a avaliação registada. As melhorias
-locais do concierge e da confiança IAM do Backoffice passaram os testes locais,
-mas essa validação não demonstra publicação nem comportamento de serviços reais.
-
 ## Integração de segurança — validação externa pendente
 
 As alterações locais de `fix/security-hardening` foram integradas seletivamente:
@@ -75,9 +71,23 @@ real nem cria uma assinatura de release.
   keyless de uma entrega Portal/dev aprovada. A execução cria um registo público
   Sigstore, sem publicação no ECR ou deployment.
   Política e limites em [Entrega da imagem](infra/IMAGE_DELIVERY.md).
-- [ ] Preparar publicação identificada no ECR, verificação de assinatura e
-  promoção/rollback por digest. A stack já exige SHA-256 na conta/região alvo,
-  recusa tags e regista `ImageUri`; a execução real continua pendente.
+A publicação e a preparação de rollback estão implementadas, sem execução real:
+`curation-publish.yml`, `scripts/publish_image_release.py` e
+`scripts/prepare_image_rollback.py`. O fluxo valida assinatura e bytes antes de
+obter credenciais AWS, preserva manifests/digests e exige tags imutáveis.
+
+- [ ] Confirmar o CI dos 22 testes de assinatura/publicação/rollback, com AWS
+  e transferência simuladas e um ensaio criptográfico local.
+- [ ] Após a primeira assinatura real, configurar destino ECR, role OIDC e
+  proteções do ambiente; rever a política mínima gerada por
+  `scripts/prepare_ecr_policy.py` e confirmar o formato real do subject OIDC.
+  Não inferir um subject legado para este repositório criado em setembro de 2026.
+- [ ] Com autorização, ativar retenção dos bytes OCI em `dev` e publicação manual,
+  publicar uma entrega assinada e confirmar o digest no ECR. O arquivo original
+  expira em 14 dias; nunca o substituir por uma reconstrução não assinada.
+- [ ] Validar transferência real com preservação de todos os manifests, retenção
+  permanente da evidência aprovada e preparação da referência anterior assinada.
+  O candidato de rollback não valida compatibilidade de dados nem altera serviços.
 - [ ] Preparar os parâmetros de staging: domínio/subdomínios, DNS, certificado
   ACM, grupos/utilizadores, segredos e isolamento de ambientes e dados.
 - [ ] Rever o diff da infraestrutura e publicar staging apenas com autorização

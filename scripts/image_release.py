@@ -17,7 +17,10 @@ class ReleaseError(ValueError):
 
 
 def policy():
-    return json.loads(POLICY.read_text())
+    rules = json.loads(POLICY.read_text())
+    rules["certificate_identity"] = (f"https://github.com/{rules['repository']}/"
+                                     f"{rules['signing_workflow']}@refs/heads/{rules['branch']}")
+    return rules
 
 
 def digest(value):
@@ -32,16 +35,24 @@ def revision(value):
     return value
 
 
-def validate_run(run):
+def _validate_run(run, expected_workflow, event):
     rules = policy()
     if (run.get("status") != "completed" or run.get("conclusion") != "success"
-            or run.get("event") != "push" or run.get("head_branch") != rules["branch"]
-            or run.get("path") != rules["source_workflow"]
+            or run.get("event") != event or run.get("head_branch") != rules["branch"]
+            or run.get("path") != expected_workflow
             or run.get("repository", {}).get("full_name") != rules["repository"]
             or run.get("head_repository", {}).get("full_name") != rules["repository"]
             or type(run.get("id")) is not int or run["id"] <= 0):
         raise ReleaseError("O build não pertence ao fluxo de release aprovado.")
     return revision(run.get("head_sha"))
+
+
+def validate_run(run):
+    return _validate_run(run, policy()["source_workflow"], "push")
+
+
+def validate_signing_run(run):
+    return _validate_run(run, policy()["signing_workflow"], "workflow_dispatch")
 
 
 def evidence_hashes(directory):
@@ -112,6 +123,7 @@ def main():
     sub = parser.add_subparsers(dest="operation", required=True)
     source = sub.add_parser("source")
     source.add_argument("--run", type=Path, required=True)
+    source.add_argument("--signing", action="store_true")
     source.add_argument("--environment", type=Path, required=True)
     prepare = sub.add_parser("prepare")
     prepare.add_argument("--run", type=Path, required=True)
@@ -129,7 +141,7 @@ def main():
     try:
         if args.operation == "source":
             validate_environment(json.loads(args.environment.read_text()))
-            print(validate_run(json.loads(args.run.read_text())))
+            print((validate_signing_run if args.signing else validate_run)(json.loads(args.run.read_text())))
             return
         if args.operation == "prepare":
             result = create_statement(args.evidence, json.loads(args.run.read_text()))

@@ -291,6 +291,23 @@ sem log público. A identidade OIDC e a assinatura keyless reais permanecem por
 validar. A [política de entrega](../infra/IMAGE_DELIVERY.md)
 distingue estes testes da operação real e conserva as condições de ativação.
 
+### Publicação copia a imagem assinada e confirma o digest — 2026-10-26
+
+A publicação preparada reutiliza o arquivo OCI original; não reconstrói depois
+da assinatura. Assinatura, evidência e bytes são validados antes de obter
+credenciais AWS. O destino exige conta/região aprovadas e repositório existente
+com tags imutáveis. A cópia preserva todos os manifests e digests; colisões ou
+confirmação divergente bloqueiam a promoção, sem eliminar imagens automaticamente.
+
+O fluxo real é manual e desativado por defeito. A retenção do OCI só ocorre em
+`dev` quando a preparação de releases é explicitamente ativada. Credenciais ECR
+são temporárias e não entram em argumentos de comandos ou artefactos.
+
+A referência anterior exige assinatura verificada e pode ser confirmada no ECR;
+continua a ser um candidato, sem prova de compatibilidade de dados ou atualização
+de serviços. Os testes simulam AWS e transferência. Os recursos e a operação real
+continuam sujeitos às pendências e aprovações do [plano](../PLAN.md).
+
 ## Monitoring e ambiente local
 
 ### Monitoring não aumenta a autoridade sobre dados — 2026-10-19

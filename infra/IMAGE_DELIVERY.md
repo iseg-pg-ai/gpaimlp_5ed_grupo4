@@ -85,6 +85,57 @@ posteriores do plano.
 Uma SBOM é um inventário, não uma auditoria de vulnerabilidades ou prova de que a
 imagem é segura. A política de segurança e aceitação de riscos continua a aplicar-se.
 
+## Publicação ECR preparada, ainda desativada
+
+`curation-publish.yml` é manual, só no repositório original e em `dev`, com
+`BLU_ECR_PUBLISH_ENABLED=true`. Usa o mesmo ambiente protegido `curation-release`.
+Antes de obter credenciais AWS, verifica a execução do assinante, a assinatura,
+o digest/revisão indicados pelo operador e os bytes OCI originais.
+
+O build Portal conserva esses bytes apenas em pushes de `dev` quando
+`BLU_RELEASE_SIGNING_ENABLED=true`. O arquivo OCI tem retenção de 14 dias, sem
+compressão adicional do artefacto. A ativação exige aprovação de armazenamento e
+custos; a versão medida ocupava cerca de 857 MB. Se o arquivo expirar, a operação
+falha: não é permitida uma reconstrução silenciosa da imagem assinada.
+
+Variáveis do ambiente, a preencher com os valores aprovados:
+
+| Variável | Finalidade |
+| --- | --- |
+| `TARGET_AWS_ACCOUNT_ID` | Conta AWS autorizada |
+| `TARGET_AWS_REGION` | `eu-west-1` |
+| `BLU_ECR_REPOSITORY_URI` | Repositório privado existente, sem tag/digest |
+| `BLU_ECR_PUBLISH_ROLE_ARN` | Role de publicação assumida por OIDC |
+
+`python -m scripts.prepare_ecr_policy` gera apenas o documento de permissões para
+revisão. Limita escrita/leitura ao ARN do repositório; só a obtenção do token ECR
+usa recurso `*`. Não concede criação, eliminação, IAM ou ECS e não aplica políticas.
+A confiança OIDC é configurada à parte, com audiência `sts.amazonaws.com` e subject
+exato do repositório/ambiente. Confirmar o formato real: repositórios novos podem
+incluir IDs imutáveis no subject. Não usar curingas ou copiar um subject legado.
+O ambiente deve admitir apenas `dev`, com revisão sem autoaprovação.
+
+`python -m scripts.publish_image_release` faz preflight por omissão. Só `--execute`
+contacta AWS e publica: confirma a conta, exige um repositório com tags `IMMUTABLE`,
+recusa colisões e usa `skopeo copy --all --preserve-digests`. A password ECR passa
+por stdin e o ficheiro de autenticação é temporário. A tag `git-COMMIT` identifica
+a entrega; o recibo só marca publicação depois de confirmar no ECR o digest aprovado.
+Uma tag já existente com o mesmo digest torna a operação idempotente. Não há
+criação de recursos, remoção de imagens ou atualização de serviços.
+
+## Referência anterior para rollback
+
+`python -m scripts.prepare_image_rollback` exige a evidência assinada da release
+anterior e os seus digest/revisão aprovados. Por omissão, não contacta AWS;
+`--confirm-registry` confirma a conta e a presença desse digest no ECR.
+Produz uma referência imutável, sem efetuar rollback de serviços ou dados.
+`data_compatibility_verified` permanece falso: a compatibilidade de migrações,
+versões e dados exige o ensaio separado previsto no plano.
+
+A publicação ECR e a transferência Skopeo foram testadas com mocks, sem AWS real.
+A assinatura OIDC real, a transferência com preservação dos digests, a conservação
+permanente da evidência e a aplicação da referência de rollback ainda estão pendentes.
+
 ## Referências
 
 - [SBOM no Docker](https://docs.docker.com/build/metadata/attestations/sbom/)

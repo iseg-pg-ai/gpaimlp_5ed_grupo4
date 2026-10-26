@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts.image_release import (ReleaseError, create_statement, policy,
-                                   validate_environment, validate_run, verify_release)
+                                   validate_environment, validate_run, validate_signing_run, verify_release)
 
 REVISION = "a" * 40
 DIGEST = "sha256:" + "b" * 64
@@ -41,6 +41,14 @@ class ReleaseTests(unittest.TestCase):
                 validate_run({**self.run, key: value})
         with self.assertRaises(ReleaseError):
             validate_run({**self.run, "head_repository": {"full_name": "other/repo"}})
+
+    def test_signing_source_must_be_manual_and_from_the_trusted_workflow(self):
+        signing = {**self.run, "path": policy()["signing_workflow"], "event": "workflow_dispatch"}
+        self.assertEqual(validate_signing_run(signing), REVISION)
+        with self.assertRaises(ReleaseError):
+            validate_signing_run(self.run)
+        with self.assertRaises(ReleaseError):
+            validate_signing_run({**signing, "head_branch": "other"})
 
     def test_environment_requires_review_and_no_self_approval(self):
         for rules in [[], [{"type": "required_reviewers", "reviewers": ["test"]}]]:

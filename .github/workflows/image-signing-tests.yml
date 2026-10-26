@@ -4,6 +4,11 @@ on:
   push:
     paths:
       - "scripts/image_release.py"
+      - "scripts/publish_image_release.py"
+      - "scripts/prepare_ecr_policy.py"
+      - "scripts/prepare_image_rollback.py"
+      - "tests/test_image_publish.py"
+      - ".github/workflows/curation-publish.yml"
       - "tests/test_image_release.py"
       - "config/image_signing_policy.json"
       - ".github/workflows/curation-sign.yml"
@@ -11,6 +16,11 @@ on:
   pull_request:
     paths:
       - "scripts/image_release.py"
+      - "scripts/publish_image_release.py"
+      - "scripts/prepare_ecr_policy.py"
+      - "scripts/prepare_image_rollback.py"
+      - "tests/test_image_publish.py"
+      - ".github/workflows/curation-publish.yml"
       - "tests/test_image_release.py"
       - "config/image_signing_policy.json"
       - ".github/workflows/curation-sign.yml"
@@ -34,4 +44,4 @@ jobs:
       - name: Verify signing policy with local temporary keys
         env:
           COSIGN_BINARY: cosign
-        run: python -B -m unittest tests.test_image_release -v
+        run: python -B -m unittest tests.test_image_release tests.test_image_publish -v
