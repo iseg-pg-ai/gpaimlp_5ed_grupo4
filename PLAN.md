@@ -76,8 +76,11 @@ A publicação e a preparação de rollback estão implementadas, sem execução
 `scripts/prepare_image_rollback.py`. O fluxo valida assinatura e bytes antes de
 obter credenciais AWS, preserva manifests/digests e exige tags imutáveis.
 
-- [ ] Confirmar o CI dos 22 testes de assinatura/publicação/rollback, com AWS
-  e transferência simuladas e um ensaio criptográfico local.
+O [CI de assinatura/publicação](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40252754115)
+passou com 22 testes: AWS e transferência simuladas e assinatura criptográfica
+com chave temporária. Os 31 testes de infraestrutura também passaram. Nenhuma
+publicação ECR ou assinatura keyless real foi executada.
+
 - [ ] Após a primeira assinatura real, configurar destino ECR, role OIDC e
   proteções do ambiente; rever a política mínima gerada por
   `scripts/prepare_ecr_policy.py` e confirmar o formato real do subject OIDC.

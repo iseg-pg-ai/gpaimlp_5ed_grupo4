@@ -305,8 +305,10 @@ são temporárias e não entram em argumentos de comandos ou artefactos.
 
 A referência anterior exige assinatura verificada e pode ser confirmada no ECR;
 continua a ser um candidato, sem prova de compatibilidade de dados ou atualização
-de serviços. Os testes simulam AWS e transferência. Os recursos e a operação real
-continuam sujeitos às pendências e aprovações do [plano](../PLAN.md).
+de serviços. O [CI de assinatura/publicação](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40252754115)
+passou com 22 testes, incluindo AWS/transferência simuladas e uma assinatura local
+com chave temporária. Os recursos e a operação real continuam sujeitos às
+pendências e aprovações do [plano](../PLAN.md).
 
 ## Monitoring e ambiente local
 
