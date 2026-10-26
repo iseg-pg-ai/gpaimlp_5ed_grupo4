@@ -188,7 +188,7 @@ partilhado do Studio se tiver permissão `sts:AssumeRole`, poderiam assumi-lo.
 Agora confia apenas nos ARNs de `BACKOFFICE_TRUSTED_PRINCIPAL_ARNS`
 (separados por vírgulas) e recusa a raiz da conta, curingas e outras contas.
 Sem essa variável, o papel não é criado e as restantes funções do Backoffice
-continuam a ser publicadas. `infra/tests/backoffice.test.mjs` cobre os três
+continuam a ser publicadas. `infra/tests/frontend.test.mjs` cobre os três
 casos com synth real.
 
 ## Testes e critérios de aceitação

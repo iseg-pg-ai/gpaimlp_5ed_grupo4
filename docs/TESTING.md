@@ -18,6 +18,12 @@ Bedrock; não inicia um serviço HTTP. O grupo `translation` é necessário para
 temporários, mocks para fornecedores externos e nunca alterar o catálogo,
 warehouse ou exports operacionais.
 
+Manter regressões de comportamentos atuais. Evitar testes que apenas procurem
+trechos no código ou inspecionem outros testes quando já exista validação da
+saída real. O contrato Prompt TXT é verificado em `tests/test_portal_data.py`
+e `dmc-workspace/tests/itinerary-prompt.test.mjs`; o link público da apresentação
+é verificado em `presentation/test-browser.mjs`.
+
 ## Estrutura e documentação
 
 Na raiz:
@@ -50,6 +56,11 @@ cd dmc-workspace
 npm run test:catalog-etl
 ```
 
+`tests/test_etl_pipeline.py` reúne a integração com Excel/PDF sintéticos e os
+cenários de publicação/rollback. Não depende de uma quantidade fixa de PDFs ou
+regras numa entrega privada. `tests/test_local_source.py` cobre a descoberta e
+o inventário das fontes.
+
 O workflow `data-pipeline.yml` cobre dependências exportadas, ETL, o gate
 versionado de qualidade e compatibilidade e uma seleção dos testes Python. A
 entrega sintética de diagnóstico é conservada durante 14 dias; não é uma release
@@ -64,6 +75,11 @@ npm run check
 npm run build
 ```
 
+As validações do exemplo de briefing e do preenchimento/preço do catálogo estão
+consolidadas em `tests/validation.test.mjs`, preservando os cenários individuais.
+As suites de persistência, concorrência e fronteiras cliente/servidor mantêm-se
+separadas por responsabilidade.
+
 `check` executa lint, TypeScript, formatação e testes Node. O build confirma a
 compilação de produção. O workflow `portal.yml` executa ambos e acrescenta o
 ensaio isolado catálogo aprovado → ETL → geração → confirmação → versão → PDF.
@@ -73,6 +89,13 @@ revisão-base do catálogo e das versões: exatamente um escritor é aceite e o
 outro recebe conflito, sem revisão duplicada. Isto valida uma única instância
 SQLite partilhada; não demonstra concorrência entre máquinas nem sincronização
 de rascunhos guardados no navegador.
+
+## Infraestrutura
+
+Em `infra/`, executar `npm test` depois de construir o frontend. A suite
+`tests/frontend.test.mjs` partilha a síntese válida da aplicação para verificar
+cache dos sites, limites da API e confiança IAM do Backoffice. Os controlos são
+feitos sobre o CloudFormation gerado; não constituem deployment ou validação AWS.
 
 ## Testes de navegador
 

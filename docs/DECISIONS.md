@@ -177,7 +177,7 @@ identidades IAM da conta configurada. Raízes de conta, curingas e outras contas
 recusados; sem lista, o papel não é criado. Isto evita conceder confiança implícita
 a papéis partilhados do ambiente académico.
 
-Evidência local: síntese CDK em `infra/tests/backoffice.test.mjs`. Não comprova
+Evidência local: síntese CDK em `infra/tests/frontend.test.mjs`. Não comprova
 atualização dos papéis já publicados; essa validação permanece no plano.
 
 ### Origem e limites reduzem a exposição das APIs — 2026-10-25
@@ -194,7 +194,7 @@ utilizador nem comprovam proteção integral contra abuso. A síntese local test
 os valores no template; a aplicação em serviços reais depende de deployment.
 
 Evidência: `dmc-workspace/tests/infrastructure.test.mjs` e
-`infra/tests/throttling.test.mjs`. Na validação local, passaram 31 testes de
+`infra/tests/frontend.test.mjs`. Na validação local, passaram 31 testes de
 infraestrutura, lint, tipos, formatação e build do portal com Node 22.13. A bateria
 do portal passou 206 testes, com um ignorado, usando o warehouse preparado em
 cache. O YAML ETL foi verificado localmente, preservando gate e retenção; a execução
