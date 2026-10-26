@@ -14,7 +14,7 @@ export class NotFound extends Error {}
 // Papéis (grupos Cognito) e o que cada um pode fazer. Um cofre único de acessos:
 // a identidade vive no Cognito, as credenciais de serviço no Secrets Manager.
 export const ROLES = {
-  founders: { label: 'Fundador(a)', can: ['read', 'leads', 'tasks', 'cases', 'security', 'team-admin'] },
+  founders: { label: 'Fundador(a)', can: ['read', 'leads', 'tasks', 'cases', 'security', 'team-admin', 'feedback'] },
   curators: { label: 'Curador(a)', can: ['read', 'leads', 'tasks', 'cases'] },
   governance: { label: 'Governança', can: ['read', 'tasks', 'cases', 'security'] },
   testers: { label: 'Testes', can: ['read'] },
@@ -23,7 +23,24 @@ const STAFF = Object.keys(ROLES);
 const allowed = (groups, permission) => groups.some(group => ROLES[group]?.can.includes(permission));
 const validEmail = email => typeof email === 'string' && email.length <= 254 && /^[^\s@<>()]+@[^\s@<>()]+\.[a-z]{2,}$/i.test(email);
 
+// Feedback da fundadora a uma conversa do chatbot: fica junto do lead, nunca vai para o cliente.
+export const FEEDBACK = {
+  prefix: 'FEEDBACK#',
+  verdicts: { good: 'Boa resposta', improve: 'A melhorar', wrong: 'Errada' },
+  noteLimit: 1000,
+  recent: 50,
+};
+
+export function parseFeedback(body) {
+  const verdict = typeof body.verdict === 'string' ? body.verdict : '';
+  const note = typeof body.note === 'string' ? body.note.trim() : '';
+  if (!FEEDBACK.verdicts[verdict]) return { error: 'Escolha uma avaliação.' };
+  if (note.length < 5) return { error: 'Escreva pelo menos uma frase sobre a conversa.' };
+  return { record: { verdict, note: note.slice(0, FEEDBACK.noteLimit) } };
+}
+
 const str = (item, key) => item[key]?.S ?? '';
+const toFeedback = item => ({ verdict: str(item, 'verdict'), note: str(item, 'note'), by: str(item, 'createdBy'), byName: str(item, 'createdByName'), at: str(item, 'createdAt') });
 const toCase = (item, today) => {
   const record = {
     id: str(item, 'caseId'), leadId: str(item, 'conversationId') === UNLINKED ? '' : str(item, 'conversationId'), partition: str(item, 'conversationId'),
@@ -170,6 +187,35 @@ export function createApp(deps) {
       if (!question) return fail(400, 'Escreva uma pergunta.');
       const answer = await deps.askRag(id, question);
       return reply(200, { answer: answer.answer, sourceIds: answer.sourceIds ?? [], requiresHumanApproval: true });
+    },
+
+    // Conversas mais recentes primeiro, com o feedback já dado, para a fundadora rever o chatbot.
+    'GET /v1/conversations': async () => {
+      const leads = (await listLeads('all')).sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt)).slice(0, FEEDBACK.recent);
+      const feedback = await Promise.all(leads.map(lead => deps.queryRecords(lead.id, FEEDBACK.prefix)));
+      return reply(200, {
+        verdicts: FEEDBACK.verdicts,
+        conversations: leads.map((lead, index) => {
+          const given = feedback[index].map(toFeedback).sort((a, b) => b.at.localeCompare(a.at));
+          return { id: lead.id, journey: lead.journey, stage: lead.stage, status: lead.status, synthetic: lead.synthetic, messageCount: lead.messageCount, lastActivityAt: lead.lastActivityAt, feedbackCount: given.length, lastFeedback: given[0] ?? null };
+        }),
+      });
+    },
+
+    'GET /v1/leads/{id}/feedback': async ({ id }) => {
+      const items = await deps.queryRecords(id, FEEDBACK.prefix);
+      return reply(200, { verdicts: FEEDBACK.verdicts, feedback: items.map(toFeedback).sort((a, b) => b.at.localeCompare(a.at)) });
+    },
+
+    'POST /v1/leads/{id}/feedback': async ({ id, user, body }) => {
+      const parsed = parseFeedback(body);
+      if (parsed.error) return fail(400, parsed.error);
+      const records = await deps.getRecords(id);
+      if (!records.some(item => item.recordKey?.S === 'PROFILE')) throw new NotFound();
+      const at = now().toISOString();
+      await deps.putRecords(id, [{ recordKey: `${FEEDBACK.prefix}${at}#${deps.newId()}`, ...parsed.record, createdBy: user.email, createdByName: user.name, createdAt: at }]);
+      await announce(user, `deu feedback à conversa ${id} (${FEEDBACK.verdicts[parsed.record.verdict].toLowerCase()})`);
+      return reply(201, { at });
     },
 
     'GET /v1/metrics': async () => {
@@ -556,6 +602,7 @@ export function createApp(deps) {
     if (admin.has(event.routeKey) && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores gerem acessos.');
     if (event.routeKey === 'POST /v1/settings' && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores alteram as regras de seguimento.');
     if (event.routeKey === 'POST /v1/governance/attestations' && !allowed(groups, 'security')) return fail(403, 'Só fundadores e governança confirmam regras.');
+    if (event.routeKey === 'POST /v1/leads/{id}/feedback' && !allowed(groups, 'feedback')) return fail(403, 'Só fundadores dão feedback às conversas.');
     if (caseRoutes.has(event.routeKey) && !allowed(groups, 'cases')) return fail(403, 'Sem acesso a reclamações e litígios.');
     if (taskWrites.has(event.routeKey) && !allowed(groups, 'tasks')) return fail(403, 'Só curadores, governança e fundadores alteram tarefas.');
     if (event.routeKey.includes('{taskId}') && !validRecordId(event.pathParameters?.taskId)) return fail(400, 'Tarefa inválida.');

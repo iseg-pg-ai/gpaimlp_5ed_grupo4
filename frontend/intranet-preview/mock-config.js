@@ -29,6 +29,8 @@ const taskLog = {};
 const AUTO_TYPES = { thanks: 'Agradecimento logo após o consentimento', nudge: 'Reativação quando o cliente fica 3 dias em silêncio depois do contacto', reminders: 'Lembretes de recolhas e excursões aprovadas' };
 const settings = { replyHours: 4, auto: { thanks: false, nudge: false, reminders: true }, updatedBy: '', updatedAt: '' };
 const attestations = {};
+const VERDICTS = { good: 'Boa resposta', improve: 'A melhorar', wrong: 'Errada' };
+const feedbackGiven = { 'BLU-DEMO000000000001': [{ verdict: 'improve', note: 'Devia ter perguntado as datas antes de falar de hotéis.', by: 'fundadora@example.com', byName: 'Fundadora de teste', at: hours(-20) }] };
 const dueState = task => (task.status === 'done' ? 'done' : !task.due ? 'none' : task.due < day(0) ? 'overdue' : task.due <= day(2) ? 'soon' : 'on-track');
 const withState = task => {
   const state = dueState(task);
@@ -136,6 +138,15 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
     const reply = lead => (lead.status === 'CONTACTED' ? {} : { replyDueAt: new Date(Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5).toISOString(), replyLate: Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5 < Date.now() });
     return { leads: leads.filter(lead => filter === 'all' || (filter === 'contacted') === (lead.status === 'CONTACTED')).map(lead => ({ ...lead, ...reply(lead) })) };
   }
+  if (path.endsWith('/feedback')) {
+    const id = decodeURIComponent(path.split('/')[3]);
+    if (method === 'POST') { (feedbackGiven[id] ??= []).unshift({ ...body, by: 'fundadora@example.com', byName: 'Fundadora de teste', at: new Date().toISOString() }); announce(`deu feedback à conversa ${id}`); return { at: new Date().toISOString() }; }
+    return { verdicts: VERDICTS, feedback: feedbackGiven[id] ?? [] };
+  }
+  if (path === '/v1/conversations') return { verdicts: VERDICTS, conversations: [...leads].sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt)).map(lead => ({
+    id: lead.id, journey: lead.journey, stage: lead.stage, status: lead.status, synthetic: lead.synthetic, messageCount: lead.messageCount, lastActivityAt: lead.lastActivityAt,
+    feedbackCount: (feedbackGiven[lead.id] ?? []).length, lastFeedback: (feedbackGiven[lead.id] ?? [])[0] ?? null,
+  })) };
   if (path.endsWith('/ask')) return { answer: 'O viajante procura uma viagem ativa de surf com vinho e comida vegana. Próximo passo: enviar email com duas propostas.', sourceIds: [], requiresHumanApproval: true };
   if (method !== 'GET') return null;
   if (path.startsWith('/v1/leads/')) {

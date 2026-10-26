@@ -42,6 +42,8 @@ function h(tag, props = {}, ...children) {
 
 const when = iso => (iso ? new Intl.DateTimeFormat('pt-PT', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso)) : '—');
 const pill = (text, tone = '') => h('span', { class: `pill ${tone}` }, text);
+const isRecent = iso => Boolean(iso) && Date.now() - Date.parse(iso) < 864e5;
+const VERDICT_TONE = { good: 'ok', improve: 'warn', wrong: 'bad' };
 const statusPill = status => pill(...(STATUS[status] ?? [status || '—', '']));
 const notifyPill = status => pill(...(NOTIFY_STATUS[status] ?? [status, '']));
 const groupsNow = () => session.claims?.['cognito:groups'] ?? [];
@@ -74,7 +76,7 @@ const ACTIONS = {
 };
 const EVIDENCE_KIND = { 'churn-followups': 'Revisões de clientes em risco', manifests: 'Configuração das regras e controlos' };
 // Espelha ROLES da API: só esconde o que o servidor recusaria de qualquer forma.
-const ROLE_PERMS = { founders: ['tasks', 'cases', 'security', 'team-admin'], curators: ['tasks', 'cases'], governance: ['tasks', 'cases', 'security'], testers: [] };
+const ROLE_PERMS = { founders: ['tasks', 'cases', 'security', 'team-admin', 'feedback'], curators: ['tasks', 'cases'], governance: ['tasks', 'cases', 'security'], testers: [] };
 const can = permission => groupsNow().some(group => ROLE_PERMS[group]?.includes(permission));
 const DEADLINE = { overdue: ['Fora do prazo', 'bad'], 'due-soon': ['Prazo próximo', 'warn'], 'on-track': ['No prazo', 'ok'], closed: ['Fechado', ''] };
 let casePrefill = {};
@@ -317,7 +319,8 @@ const views = {
     const [{ leads }, settings] = await Promise.all([api('GET', `/v1/leads?status=${state.filter}`), api('GET', '/v1/settings').catch(() => null)]);
     rememberLeads(leads);
     const detail = h('div', { class: 'panel' }, h('p', { class: 'muted' }, 'Escolha um lead para ver a conversa com o chatbot.'));
-    const rows = leads;
+    // Conversas mais recentes primeiro; os leads em risco continuam no alerta acima da tabela.
+    const rows = state.filter === 'contacted' ? leads : [...leads].sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt));
     const select = id => { state.selected = id; for (const row of view.querySelectorAll('tr.clickable')) row.classList.toggle('selected', row.dataset.id === id); showLead(detail, id, () => rerender()); };
     const rerender = () => { view.replaceChildren(); views.leads(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
     const filterButton = (key, label) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.filter === key), onclick: () => { state.filter = key; state.selected = ''; rerender(); } }, label);
@@ -332,9 +335,10 @@ const views = {
       h('div', { class: 'filters' }, filterButton('open', 'Em aberto'), filterButton('contacted', 'Contactados'), filterButton('all', 'Todos')),
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, rows.length ? h('table', {},
-          h('thead', {}, h('tr', {}, h('th', {}, 'Lead'), h('th', {}, 'Estado'), h('th', {}, 'Responder até'), h('th', {}, 'Responsável'))),
+          h('thead', {}, h('tr', {}, h('th', {}, 'Lead'), h('th', {}, 'Última mensagem'), h('th', {}, 'Estado'), h('th', {}, 'Responder até'), h('th', {}, 'Responsável'))),
           h('tbody', {}, rows.map(lead => h('tr', { class: `clickable${lead.id === state.selected ? ' selected' : ''}`, 'data-id': lead.id, tabindex: '0', onclick: () => select(lead.id), onkeydown: event => event.key === 'Enter' && select(lead.id) },
             h('td', {}, h('strong', {}, lead.journey.destination || lead.id), h('div', { class: 'muted' }, [lead.journey.timeframe, lead.journey.party].filter(Boolean).join(' · ') || lead.id), lead.synthetic ? pill('demo') : null),
+            h('td', {}, when(lead.lastActivityAt), isRecent(lead.lastActivityAt) ? [' ', pill('novo', 'ok')] : null),
             h('td', {}, statusPill(lead.status), lead.atRisk ? [' ', pill('Em risco', 'bad')] : null),
             h('td', {}, lead.status === 'CONTACTED' ? [h('span', { class: 'muted' }, 'Contactado '), when(lead.contactedAt)]
               : lead.replyLate ? pill(`Atrasado ${lateBy(lead.replyDueAt)}`, 'bad')
@@ -590,15 +594,16 @@ const views = {
     );
   },
 
-  async operations(view) {
-    const ops = await api('GET', '/v1/operations');
+  async operations(view, state = { selected: '' }) {
+    const [ops, review] = await Promise.all([api('GET', '/v1/operations'), api('GET', '/v1/conversations').catch(error => ({ error: error.message }))]);
     const q = ops.queues;
     const queueCard = (depth, label, badWhen) => h('div', { class: 'card' }, h('div', { class: 'value' }, depth.waiting), h('div', { class: 'label' }, label), depth.inFlight ? h('div', { class: 'muted' }, `${depth.inFlight} em processamento`) : null, badWhen && depth.waiting ? pill('Requer atenção', 'bad') : null);
     view.append(
       h('h2', {}, 'Operações do pipeline'),
       h('p', { class: 'muted' }, `Verificado em ${when(ops.checkedAt)}.`),
       h('div', { class: 'cards' },
-        queueCard(q.conversationEvents, 'Eventos por processar'), queueCard(q.failedEvents, 'Eventos falhados (DLQ)', true), queueCard(q.curatorTasks, 'Tarefas para curadores'),
+        queueCard(q.conversationEvents, 'Eventos por processar'), queueCard(q.failedEvents, 'Eventos falhados (DLQ)', true),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, q.curatorTasks.waiting), h('div', { class: 'label' }, 'Cópias para análise do backoffice'), h('div', { class: 'muted' }, 'Cópias de cada mensagem para a análise externa; as conversas para rever estão abaixo.')),
         h('div', { class: 'card' }, h('div', { class: 'value' }, ops.churnReview ? ops.churnReview.queued : '—'), h('div', { class: 'label' }, 'Revisão diária: leads em atraso'), h('div', { class: 'muted' }, ops.churnReview ? `Última execução ${when(ops.churnReview.evaluatedAt)}` : 'Sem execução nos últimos 3 dias'))),
       h('div', { class: 'panel' }, h('h3', {}, 'Workers (últimas 24 h)'), h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Função'), h('th', {}, 'Stack'), h('th', {}, 'Execuções'), h('th', {}, 'Erros'), h('th', {}, 'Limitações'), h('th', {}, 'Estado'), h('th', {}, 'Atualizada'))),
@@ -607,6 +612,7 @@ const views = {
           h('td', {}, worker.invocations24h), h('td', {}, worker.errors24h), h('td', {}, worker.throttles24h),
           h('td', {}, worker.errors24h ? pill('Com erros', 'bad') : worker.invocations24h ? pill('OK', 'ok') : pill('Sem atividade')),
           h('td', {}, when(worker.lastModified))))))),
+      conversationReview(review, state),
     );
   },
 
@@ -861,6 +867,76 @@ async function showLead(panel, id, refreshList) {
     } }, 'Perguntar')),
     answer,
   ].filter(Boolean));
+}
+
+// Conversas do chatbot para a fundadora rever: lista à esquerda, conversa e feedback à direita.
+function conversationReview(review, state) {
+  const panel = h('div', { class: 'panel spaced' }, h('h3', {}, 'Conversas para rever'),
+    h('p', { class: 'muted' }, 'As conversas mais recentes do chatbot, com consentimento. O feedback fica junto do lead e nunca é enviado ao cliente.'));
+  if (review.error) {
+    panel.append(h('p', { class: 'error' }, review.error));
+    return panel;
+  }
+  const detail = h('div', { class: 'panel' }, h('p', { class: 'muted' }, 'Escolha uma conversa para a ler e dar feedback.'));
+  const select = id => {
+    state.selected = id;
+    for (const row of panel.querySelectorAll('tr.clickable')) row.classList.toggle('selected', row.dataset.id === id);
+    showConversation(detail, id, review.verdicts, refreshRow);
+  };
+  const refreshRow = async () => {
+    const fresh = await api('GET', '/v1/conversations').catch(() => null);
+    if (!fresh) return;
+    review.conversations = fresh.conversations;
+    table.replaceWith(table = list());
+  };
+  const list = () => review.conversations.length ? h('table', {},
+    h('thead', {}, h('tr', {}, h('th', {}, 'Conversa'), h('th', {}, 'Última mensagem'), h('th', {}, 'Mensagens'), h('th', {}, 'Feedback'))),
+    h('tbody', {}, review.conversations.map(item => h('tr', { class: `clickable${item.id === state.selected ? ' selected' : ''}`, 'data-id': item.id, tabindex: '0', onclick: () => select(item.id), onkeydown: event => event.key === 'Enter' && select(item.id) },
+      h('td', {}, h('strong', {}, item.journey.destination || item.id), h('div', { class: 'muted' }, STAGES[item.stage] ?? item.stage ?? ''), item.synthetic ? pill('demo') : null),
+      h('td', {}, when(item.lastActivityAt), isRecent(item.lastActivityAt) ? [' ', pill('novo', 'ok')] : null),
+      h('td', {}, item.messageCount),
+      h('td', {}, item.lastFeedback ? [pill(review.verdicts[item.lastFeedback.verdict] ?? item.lastFeedback.verdict, VERDICT_TONE[item.lastFeedback.verdict]), item.feedbackCount > 1 ? h('div', { class: 'muted' }, `${item.feedbackCount} notas`) : null] : h('span', { class: 'muted' }, 'Por rever')))))) : h('p', { class: 'muted' }, 'Ainda não há conversas guardadas.');
+  let table = list();
+  panel.append(h('div', { class: 'split' }, h('div', {}, table), detail));
+  if (state.selected) select(state.selected);
+  return panel;
+}
+
+async function showConversation(panel, id, verdicts, refreshList) {
+  panel.replaceChildren(h('p', { class: 'muted' }, 'A carregar…'));
+  let lead, feedback;
+  try {
+    [lead, { feedback }] = await Promise.all([api('GET', `/v1/leads/${encodeURIComponent(id)}`), api('GET', `/v1/leads/${encodeURIComponent(id)}/feedback`)]);
+  } catch (error) {
+    panel.replaceChildren(h('p', { class: 'error' }, error.message));
+    return;
+  }
+  const journey = Object.entries({ ...lead.journey, stage: STAGES[lead.stage] ?? lead.stage }).filter(([, value]) => value);
+  const status = h('p', { class: 'muted', role: 'status' });
+  const save = async event => {
+    event.preventDefault();
+    status.textContent = 'A guardar…';
+    try {
+      await api('POST', `/v1/leads/${encodeURIComponent(id)}/feedback`, Object.fromEntries(new FormData(event.currentTarget)));
+      await showConversation(panel, id, verdicts, refreshList);
+      refreshList();
+    } catch (error) {
+      status.textContent = error.message;
+    }
+  };
+  const form = can('feedback') ? h('form', { class: 'verify', onsubmit: save },
+    h('div', { class: 'tags', role: 'radiogroup', 'aria-label': 'Avaliação' }, Object.entries(verdicts).map(([key, label]) => h('label', {}, h('input', { type: 'radio', name: 'verdict', value: key, required: true }), ' ', label))),
+    h('label', {}, 'O que correu bem ou o que o chatbot devia ter feito', h('textarea', { name: 'note', required: true, minlength: '5', maxlength: '1000', rows: '3', placeholder: 'Ex.: devia ter perguntado as datas antes de sugerir hotéis.' })),
+    h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Guardar feedback'), status)) : h('p', { class: 'muted' }, 'Só fundadores dão feedback às conversas.');
+  panel.replaceChildren(...[
+    h('h3', {}, lead.journey.destination || lead.id), h('div', {}, statusPill(lead.status), ' ', lead.synthetic ? pill('demo') : null),
+    h('dl', { class: 'facts' }, h('dt', {}, 'Referência'), h('dd', {}, lead.id), ...journey.flatMap(([key, value]) => [h('dt', {}, JOURNEY[key] ?? key), h('dd', {}, value)])),
+    h('h3', { class: 'spaced' }, 'Feedback da fundadora'),
+    feedback.length ? h('ul', { class: 'reminders' }, feedback.map(item => h('li', {}, pill(verdicts[item.verdict] ?? item.verdict, VERDICT_TONE[item.verdict]), ' ', h('span', { class: 'muted' }, `${item.byName || item.by} · ${when(item.at)}`), h('div', {}, item.note)))) : h('p', { class: 'muted' }, 'Ainda sem feedback.'),
+    form,
+    h('h3', { class: 'spaced' }, 'Conversa com o chatbot'),
+    h('div', { class: 'chat' }, lead.messages.length ? lead.messages.map(message => h('div', { class: `bubble ${['customer', 'assistant'].includes(message.actor) ? message.actor : 'system'}` }, message.text, h('time', {}, `${when(message.at)} · ${message.channel}`))) : h('p', { class: 'muted' }, 'Sem mensagens guardadas.')),
+  ]);
 }
 
 function leadCases(id) {

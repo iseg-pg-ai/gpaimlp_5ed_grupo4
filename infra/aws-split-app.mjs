@@ -560,6 +560,7 @@ class IntranetStack extends Stack {
       ['GET', '/v1/partners'], ['GET', '/v1/agenda'], ['GET', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities/{activityId}/cancel'],
       ['GET', '/v1/work'], ['GET', '/v1/tasks'], ['POST', '/v1/tasks'], ['GET', '/v1/leads/{id}/tasks/{taskId}'], ['POST', '/v1/leads/{id}/tasks/{taskId}'], ['GET', '/v1/feed'],
       ['GET', '/v1/settings'], ['POST', '/v1/settings'], ['POST', '/v1/governance/attestations'],
+      ['GET', '/v1/conversations'], ['GET', '/v1/leads/{id}/feedback'], ['POST', '/v1/leads/{id}/feedback'],
     ];
     for (const [method, routePath] of routes) {
       api.addRoutes({ path: routePath, methods: [apigatewayv2.HttpMethod[method]], integration, authorizer });

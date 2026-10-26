@@ -66,6 +66,28 @@ test('the Lambda model keeps the portal lead contract', async () => {
   assert.deepEqual([...block.matchAll(/^\s+"?([a-z-]+)"?:/gm)].map(match => match[1]), LEAD_TAGS);
 });
 
+test('founders give feedback to conversations, which are listed newest first', async () => {
+  const stored = [];
+  const { deps } = fakeDeps({
+    queryStatus: async status => (status === 'PENDING' ? [profile('BLU-AAAAAAAA0001'), profile('BLU-AAAAAAAA0002', { lastActivityAt: S('2026-10-26T09:00:00Z') })] : []),
+    putRecords: async (id, records) => { stored.push([id, ...records]); },
+    queryRecords: async (id, prefix) => (prefix === 'FEEDBACK#' ? stored.filter(([lead]) => lead === id).map(([, record]) => Object.fromEntries(Object.entries(record).map(([key, value]) => [key, S(value)]))) : []),
+  });
+  const handler = createApp(deps);
+  const body = { verdict: 'improve', note: 'Devia perguntar as datas mais cedo.' };
+  assert.equal((await handler(request('POST /v1/leads/{id}/feedback', { id: 'BLU-AAAAAAAA0001', body }))).statusCode, 403);
+  assert.equal((await handler(request('POST /v1/leads/{id}/feedback', { groups: '[founders]', id: 'BLU-AAAAAAAA0001', body: { verdict: 'improve', note: 'ok' } }))).statusCode, 400);
+  assert.equal((await handler(request('POST /v1/leads/{id}/feedback', { groups: '[founders]', id: 'BLU-AAAAAAAA0001', body: { verdict: 'great', note: 'Uma frase completa.' } }))).statusCode, 400);
+  assert.equal((await handler(request('POST /v1/leads/{id}/feedback', { groups: '[founders]', id: 'BLU-BBBBBBBB0009', body }))).statusCode, 404);
+  assert.equal((await handler(request('POST /v1/leads/{id}/feedback', { groups: '[founders]', id: 'BLU-AAAAAAAA0001', body, name: 'Gisela' }))).statusCode, 201);
+  assert.equal(stored.filter(([id]) => id === 'BLU-AAAAAAAA0001').length, 1);
+  const { conversations } = JSON.parse((await handler(request('GET /v1/conversations', { groups: '[testers]' }))).body);
+  assert.deepEqual(conversations.map(item => [item.id, item.feedbackCount]), [['BLU-AAAAAAAA0002', 0], ['BLU-AAAAAAAA0001', 1]]);
+  assert.equal(conversations[1].lastFeedback.note, body.note);
+  const { feedback } = JSON.parse((await handler(request('GET /v1/leads/{id}/feedback', { id: 'BLU-AAAAAAAA0001' }))).body);
+  assert.deepEqual(feedback.map(item => [item.verdict, item.byName]), [['improve', 'Gisela']]);
+});
+
 test('Cognito groups are read from arrays and from the HTTP API "[a b]" form', () => {
   assert.deepEqual(groupsOf({ 'cognito:groups': ['curators'] }), ['curators']);
   assert.deepEqual(groupsOf({ 'cognito:groups': '[curators governance]' }), ['curators', 'governance']);
@@ -469,7 +491,7 @@ test('the intranet stack protects every route and grants no destructive data acc
     const template = JSON.parse(await readFile(path.join(outdir, 'BluCostaIntranet.template.json'), 'utf8'));
     const of = type => Object.values(template.Resources).filter(resource => resource.Type === type);
     const routes = of('AWS::ApiGatewayV2::Route');
-    assert.equal(routes.length, 33);
+    assert.equal(routes.length, 39);
     for (const route of routes) assert.equal(route.Properties.AuthorizationType, 'JWT', route.Properties.RouteKey);
     const [pool] = of('AWS::Cognito::UserPool');
     assert.equal(pool.Properties.MfaConfiguration, 'ON');
