@@ -39,17 +39,17 @@ O commit `31a6eb5` passou os jobs `validate` e `container` no
 O ETL passou na execução de `d176a56`. A construção é sem publicação e não
 comprova entrega no ECR nem funcionamento dos serviços cloud.
 
-A otimização seguinte troca PyTorch por wheels CPU em Linux/Windows e a cache
-Docker por `mode=min`. O lockfile deixa de incluir 19 pacotes GPU. Imports reais
-e cinco testes com modelos simulados passaram num ambiente temporário Python
-3.12; dois ensaios de inferência local EN/PT também passaram com os modelos
-já instalados, preservando hora e montante. A imagem usa Python 3.13 e precisa
-de confirmação em CI.
+A otimização CPU e cache `mode=min` passou no
+[CI de a4f0ece](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40249243292).
+O job da imagem passou de 25 min 49 s para 3 min 51 s (cerca de 85% menos tempo).
+A verificação sem CUDA passou em Python 3.13; imports, cinco testes com mocks e
+dois ensaios de tradução real EN/PT passaram localmente em Python 3.12, sem
+instalar modelos. O tamanho final da imagem ainda não foi medido.
 
-- [ ] Construir a imagem CPU e comparar duração e tamanho com a referência.
-  A construção anterior demorou cerca de 26 minutos, incluindo exportação de
-  cache; não foi medido o tamanho final da imagem. Preservar tradução offline e
-  validar uma tradução com os modelos locais autorizados antes de produção.
+- [ ] Medir e registar o tamanho da imagem na entrega ao ECR; não confundir
+  tamanho de cache ou download de wheels com tamanho da imagem.
+- [ ] Confirmar a primeira execução de `.github/workflows/infrastructure.yml`,
+  com testes de digest, IAM e limites da API por síntese local, sem credenciais AWS.
 - [ ] Definir e implementar geração de SBOM, assinatura e verificação da imagem.
 - [ ] Preparar publicação identificada no ECR, verificação de assinatura e
   promoção/rollback por digest. A stack já exige SHA-256 na conta/região alvo,

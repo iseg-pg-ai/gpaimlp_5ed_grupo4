@@ -245,8 +245,11 @@ CPU para a instalação alternativa por pip. O build verifica a ausência de CUD
 
 A cache Docker passa de `mode=max` para `mode=min`, reduzindo as camadas
 intermédias exportadas à custa de possíveis reconstruções. Isto reduz a cache,
-sem por si só reduzir a imagem final. O tempo e o tamanho da nova imagem ainda
-precisam de medição em CI. Imports reais e cinco testes de tradução com mocks
+sem por si só reduzir a imagem final. O
+[CI CPU](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40249243292)
+passou, incluindo a verificação em Python 3.13: o job da imagem passou de
+25 min 49 s para 3 min 51 s. O tamanho final ainda não foi medido.
+Imports reais e cinco testes de tradução com mocks
 passaram num ambiente temporário Python 3.12. Dois ensaios de inferência local
 EN/PT com modelos existentes preservaram hora e montante, sem instalar modelos.
 Em português, o modelo apresentou EUR como euros. Não foi validado PDF ou
