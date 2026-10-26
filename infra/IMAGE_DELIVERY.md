@@ -31,6 +31,12 @@ pelo manifest; `oci_archive_bytes` é o tamanho do arquivo exportado. Nenhum del
 representa consumo de RAM, tamanho de cache ou espaço descomprimido em execução.
 A imagem não é incluída no artefacto de evidência.
 
+A primeira validação real passou no
+[CI de f1aea3a](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40250526927):
+713 pacotes, 852 839 550 bytes de layers comprimidos e 857 447 424 bytes no arquivo
+OCI. O relatório confirma `signature_verified: false`. A retenção de 14 dias é
+para diagnóstico; uma release permanente exigirá conservação aprovada da evidência.
+
 ## Política antes de promover uma release
 
 A promoção continua pendente de implementação e validação. Deve exigir:

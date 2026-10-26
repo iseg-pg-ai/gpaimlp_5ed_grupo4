@@ -268,7 +268,9 @@ Integridade e metadados BuildKit não equivalem a uma assinatura do produtor.
 O relatório conserva `signature_verified: false`. Assinatura, identidade de
 release e verificação antes da promoção permanecem pendentes, segundo a
 [política de entrega](../infra/IMAGE_DELIVERY.md). Os seis testes sintéticos
-cobrem aceitação e recusa de entregas adulteradas; a exportação real requer CI.
+cobrem aceitação e recusa de entregas adulteradas. A exportação real passou no
+[CI de f1aea3a](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40250526927),
+com 713 pacotes inventariados e medições distintas para layers e arquivo OCI.
 
 ## Monitoring e ambiente local
 

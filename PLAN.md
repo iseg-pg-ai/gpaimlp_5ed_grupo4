@@ -51,9 +51,12 @@ passou no commit `8fcea87`, com testes de digest, IAM e limites da API. Os ensai
 CDK usam contexto temporário explícito e lookups desativados, sem depender de
 credenciais ou cache local de zonas AWS.
 
-- [ ] Validar em CI a exportação OCI com SBOM SPDX e proveniência SLSA,
-  verificando hashes, revisão e associação ao digest. Guardar evidência e medir
-  layers comprimidos e arquivo OCI; estes valores não são tamanho de cache.
+A exportação OCI com SBOM e proveniência passou no
+[CI de f1aea3a](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40250526927).
+O verificador confirmou hashes, revisão e associação dos documentos ao digest.
+A evidência contém 713 pacotes, 852 839 550 bytes de layers comprimidos e
+857 447 424 bytes de arquivo OCI. A assinatura continua por verificar.
+
 - [ ] Implementar assinatura e verificação criptográfica da release antes de
   promoção. A evidência BuildKit sem assinatura não autoriza publicação.
   Política de aceitação em [Entrega da imagem](infra/IMAGE_DELIVERY.md).
