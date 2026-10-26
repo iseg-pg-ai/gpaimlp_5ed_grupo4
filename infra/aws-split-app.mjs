@@ -221,7 +221,8 @@ class FrontendStack extends Stack {
       memorySize: 512,
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
-        MODEL_ID: process.env.BEDROCK_MODEL_ID ?? (region === 'eu-west-1' ? 'eu.amazon.nova-lite-v1:0' : 'amazon.nova-lite-v1:0'),
+        // Nova 2 Lite é o modelo publicado em eu-west-1 desde 2026-10-25; a predefinição evita regressões ao publicar.
+        MODEL_ID: process.env.BEDROCK_MODEL_ID ?? (region === 'eu-west-1' ? 'eu.amazon.nova-2-lite-v1:0' : 'amazon.nova-lite-v1:0'),
         GUARDRAIL_ID: guardrail.attrGuardrailId,
         GUARDRAIL_VERSION: guardrailVersion.attrVersion,
       },
