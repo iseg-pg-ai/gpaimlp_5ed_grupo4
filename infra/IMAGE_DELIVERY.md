@@ -52,11 +52,35 @@ A promoção continua pendente de implementação e validação. Deve exigir:
    seguida de confirmação do digest publicado e aprovação do ambiente-alvo.
 6. Conservação da referência anterior para rollback, com a mesma verificação.
 
-O mecanismo de assinatura, identidade de release e configuração IAM/OIDC têm de
-ser preparados e validados antes da publicação. O relatório atual conserva
-`signature_verified: false`; nenhum resultado desta verificação de integridade
-substitui a assinatura ou a aprovação operacional. Checks de pull requests não
-recebem credenciais de publicação.
+A assinatura preparada usa Cosign 3.1.4 keyless, com identidade e emissor exatos
+em `config/image_signing_policy.json`. O workflow manual `curation-sign.yml`
+só aceita execuções em `dev`, com `BLU_RELEASE_SIGNING_ENABLED=true`. Exige que o
+ambiente `curation-release` tenha revisores e `prevent_self_review=true`; sem
+estas proteções, recusa a operação.
+
+O operador indica o ID do workflow Portal bem-sucedido e o digest aprovado.
+O código recusa builds de pull requests, forks, outros branches ou workflows.
+`release.json` liga o commit, os digests e os hashes de `delivery.json`, `sbom.json`
+e `provenance.json`. Cosign assina este documento; a assinatura é destacada e
+vinculada ao digest, não uma assinatura OCI publicada num registry.
+
+O bundle Sigstore e a evidência ficam num artefacto com retenção de 90 dias.
+Antes de promover, é obrigatório voltar a executar `scripts/image_release.py verify`
+com o digest e a revisão esperados de uma fonte aprovada, sem os inferir do bundle
+recebido. O verificador usa identidade e emissor exatos, sem desativar verificações
+de transparência. Não confiar apenas no ficheiro `verification.json` ou numa flag.
+
+O relatório original conserva `signature_verified: false`; o resultado da assinatura
+é separado. Checks de pull requests recebem apenas leitura e usam chaves temporárias
+para testes locais, sem identidade OIDC de release nem envio ao log público.
+
+A execução keyless real ainda não foi feita. Antes de a ativar: integrar o código
+revisto em `dev`, configurar os revisores do ambiente, assegurar acesso de leitura
+à configuração desse ambiente pelo token do workflow e obter autorização para a
+execução manual. A assinatura keyless regista a identidade pública do workflow no
+serviço de transparência Sigstore. Não há publicação ECR ou deployment neste fluxo.
+A conservação permanente da release e a configuração IAM de publicação são etapas
+posteriores do plano.
 
 Uma SBOM é um inventário, não uma auditoria de vulnerabilidades ou prova de que a
 imagem é segura. A política de segurança e aceitação de riscos continua a aplicar-se.

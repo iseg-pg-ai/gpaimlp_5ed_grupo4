@@ -1,0 +1,79 @@
+name: Sign curation release
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run:
+        description: "ID do workflow Portal aprovado em dev"
+        required: true
+        type: string
+      digest:
+        description: "Digest SHA-256 aprovado da imagem"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sign:
+    if: github.repository == 'iseg-pg-ai/gpaimlp_5ed_grupo4' && github.ref == 'refs/heads/dev' && vars.BLU_RELEASE_SIGNING_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: curation-release
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Validate approved source and environment protection
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.source_run }}
+        run: |
+          [[ "$SOURCE_RUN" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/environments/curation-release" > "$RUNNER_TEMP/release-environment.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" > "$RUNNER_TEMP/source-run.json"
+          revision=$(python scripts/image_release.py source --run "$RUNNER_TEMP/source-run.json" --environment "$RUNNER_TEMP/release-environment.json")
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name "blu-delivery-evidence-$revision" --dir "$RUNNER_TEMP/release-evidence"
+      - name: Bind evidence to approved digest
+        env:
+          APPROVED_DIGEST: ${{ inputs.digest }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/signed-release"
+          python scripts/image_release.py prepare --run "$RUNNER_TEMP/source-run.json" \
+            --evidence "$RUNNER_TEMP/release-evidence" --digest "$APPROVED_DIGEST" \
+            --output "$RUNNER_TEMP/signed-release/release.json"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.4
+      - name: Sign release statement with workflow identity
+        run: |
+          cosign sign-blob --yes --oidc-provider github-actions \
+            --bundle "$RUNNER_TEMP/signed-release/release.sigstore.json" \
+            "$RUNNER_TEMP/signed-release/release.json"
+      - name: Verify signature and exact delivery
+        env:
+          APPROVED_DIGEST: ${{ inputs.digest }}
+          APPROVED_REVISION: ${{ steps.source.outputs.revision }}
+        run: |
+          python scripts/image_release.py verify \
+            --statement "$RUNNER_TEMP/signed-release/release.json" \
+            --bundle "$RUNNER_TEMP/signed-release/release.sigstore.json" \
+            --evidence "$RUNNER_TEMP/release-evidence" \
+            --digest "$APPROVED_DIGEST" --revision "$APPROVED_REVISION" \
+            --output "$RUNNER_TEMP/signed-release/verification.json"
+          cp "$RUNNER_TEMP/release-evidence/"*.json "$RUNNER_TEMP/signed-release/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blu-signed-release-${{ steps.source.outputs.revision }}
+          path: ${{ runner.temp }}/signed-release/
+          if-no-files-found: error
+          retention-days: 90

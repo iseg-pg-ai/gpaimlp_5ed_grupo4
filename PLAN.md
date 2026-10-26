@@ -57,9 +57,20 @@ O verificador confirmou hashes, revisão e associação dos documentos ao digest
 A evidência contém 713 pacotes, 852 839 550 bytes de layers comprimidos e
 857 447 424 bytes de arquivo OCI. A assinatura continua por verificar.
 
-- [ ] Implementar assinatura e verificação criptográfica da release antes de
-  promoção. A evidência BuildKit sem assinatura não autoriza publicação.
-  Política de aceitação em [Entrega da imagem](infra/IMAGE_DELIVERY.md).
+A assinatura destacada e a verificação estão preparadas em
+`curation-sign.yml` e `scripts/image_release.py`: identidade OIDC exata,
+origem Portal/dev, ambiente com revisores e hashes da evidência ligados ao digest.
+Sete testes locais passaram, incluindo assinatura Cosign com chave temporária e
+recusa de adulteração; a identidade keyless real ainda não foi exercitada.
+
+- [ ] Confirmar o CI `Image signing tests`, que só usa chaves temporárias.
+- [ ] Integrar a preparação de assinatura revista em `dev`, configurar o ambiente
+  `curation-release` com revisores e prevenção de autoaprovação, confirmar acesso
+  de leitura à sua configuração e ativar `BLU_RELEASE_SIGNING_ENABLED` apenas
+  depois da autorização para assinar. Executar e validar a primeira assinatura
+  keyless de uma entrega Portal/dev aprovada. A execução cria um registo público
+  Sigstore, sem publicação no ECR ou deployment.
+  Política e limites em [Entrega da imagem](infra/IMAGE_DELIVERY.md).
 - [ ] Preparar publicação identificada no ECR, verificação de assinatura e
   promoção/rollback por digest. A stack já exige SHA-256 na conta/região alvo,
   recusa tags e regista `ImageUri`; a execução real continua pendente.

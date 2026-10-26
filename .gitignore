@@ -53,6 +53,9 @@ cdk.context.json
 .cdk/
 infra/cdk.context.json
 
+# Cache local de confiança Sigstore
+/.sigstore/
+
 # Segredos e configuração local
 .env
 .env.*

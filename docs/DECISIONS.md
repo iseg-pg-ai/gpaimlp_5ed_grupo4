@@ -272,6 +272,23 @@ cobrem aceitação e recusa de entregas adulteradas. A exportação real passou 
 [CI de f1aea3a](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40250526927),
 com 713 pacotes inventariados e medições distintas para layers e arquivo OCI.
 
+### A assinatura de release exige uma identidade de workflow exata — 2026-10-26
+
+Cosign assina um documento de release que liga revisão, digests e hashes da
+SBOM/proveniência. A política versionada exige a identidade de `curation-sign.yml`
+em `dev` e o emissor GitHub Actions. O verificador não aceita identidades genéricas,
+regex permissivas ou a mera presença de um bundle; confirma assinatura, evidência
+e os valores esperados fornecidos pela promoção.
+
+A assinatura real é manual, desativada por defeito e exige ambiente com revisores,
+sem autoaprovação. Builds de forks, pull requests e outros branches são recusados.
+A assinatura é destacada, vinculada ao digest; ainda não é publicada no ECR.
+
+Sete testes locais passaram, com política simulada e um ensaio criptográfico Cosign
+usando chave temporária, sem log público. A identidade OIDC e a assinatura keyless
+reais permanecem por validar. A [política de entrega](../infra/IMAGE_DELIVERY.md)
+distingue estes testes da operação real e conserva as condições de ativação.
+
 ## Monitoring e ambiente local
 
 ### Monitoring não aumenta a autoridade sobre dados — 2026-10-19

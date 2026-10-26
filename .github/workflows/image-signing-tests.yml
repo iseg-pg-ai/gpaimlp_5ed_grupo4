@@ -1,0 +1,37 @@
+name: Image signing tests
+
+on:
+  push:
+    paths:
+      - "scripts/image_release.py"
+      - "tests/test_image_release.py"
+      - "config/image_signing_policy.json"
+      - ".github/workflows/curation-sign.yml"
+      - ".github/workflows/image-signing-tests.yml"
+  pull_request:
+    paths:
+      - "scripts/image_release.py"
+      - "tests/test_image_release.py"
+      - "config/image_signing_policy.json"
+      - ".github/workflows/curation-sign.yml"
+      - ".github/workflows/image-signing-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.4
+      - name: Verify signing policy with local temporary keys
+        env:
+          COSIGN_BINARY: cosign
+        run: python -B -m unittest tests.test_image_release -v
