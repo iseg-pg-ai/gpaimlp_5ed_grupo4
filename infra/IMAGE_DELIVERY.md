@@ -56,6 +56,11 @@ relatório `delivery.json` só recebe `smoke_verified: true` depois de todas as 
 passarem. Os hashes desse relatório integram o documento de release assinado.
 Uma entrega sem este resultado não pode ser preparada para assinatura ou promovida.
 
+A primeira execução completa passou no
+[CI de c3db94b](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40255889379).
+A sonda Python consulta o catálogo canónico criado pelo fixture sintético; não
+exige tabelas `structured_*`, que dependem do suplemento opcional.
+
 O ensaio não valida TLS/ALB, identidade Cognito, EFS, fornecedores, notificações,
 concorrência distribuída ou recuperação. Não substitui o smoke de staging nem
 conclui as pendências de monitoring externo.

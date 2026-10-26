@@ -320,7 +320,9 @@ externa desativada, sem montar dados do checkout ou fornecer credenciais AWS.
 O resultado de smoke fica no relatório de entrega, protegido pelo hash que o
 documento de release assina. Ausência ou falha de smoke impede a assinatura.
 A importação local para teste não substitui os bytes OCI originais destinados
-a publicação. A validação cloud e o monitoring externo permanecem separados.
+a publicação. O [CI de c3db94b](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40255889379)
+confirmou as oito sondas com catálogo sintético e `smoke_verified: true`.
+A validação cloud e o monitoring externo permanecem separados.
 
 ## Monitoring e ambiente local
 

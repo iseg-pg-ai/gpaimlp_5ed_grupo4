@@ -64,6 +64,11 @@ passou com sete testes, incluindo assinatura Cosign local e recusa de adulteraç
 Os 31 testes de infraestrutura também passaram. Isto não valida a identidade OIDC
 real nem cria uma assinatura de release.
 
+- [ ] Reconciliar o branch de integração com `dev` antes da assinatura real.
+  A simulação contra `e4c1332` encontrou sete conflitos: onboarding, configuração
+  e interface do concierge, implementação/prompt do chat e respetivos testes.
+  Confirmar novamente o estado remoto, preservar as melhorias dos dois lados e
+  validar a resolução antes de um merge autorizado.
 - [ ] Integrar a preparação de assinatura revista em `dev`, configurar o ambiente
   `curation-release` com revisores e prevenção de autoaprovação, confirmar acesso
   de leitura à sua configuração e ativar `BLU_RELEASE_SIGNING_ENABLED` apenas
@@ -96,16 +101,19 @@ smoke da imagem, evitando comandos de arranque divergentes. O CI prepara dados
 sintéticos e testa os quatro serviços sem rede externa, com filesystem só de
 leitura e volumes temporários; a assinatura exige o resultado positivo no relatório.
 
-- [ ] Confirmar o primeiro smoke real da imagem no GitHub Actions: arranque dos
-  quatro serviços, asset JavaScript, adaptador Python, recusa de origem externa
-  e autenticação do Monitoring. Os testes locais só simulam o orquestrador.
+O [smoke real de c3db94b](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40255889379)
+passou com oito sondas: quatro serviços, JavaScript, adaptador Python sobre o
+catálogo sintético, recusa de origem externa e autenticação do Monitoring.
+O artefacto confirma `smoke_verified: true`, sem rede externa nem validação de
+identidade cloud; `signature_verified` continua falso.
+
 - [ ] Preparar os parâmetros de staging: domínio/subdomínios, DNS, certificado
   ACM, grupos/utilizadores, segredos e isolamento de ambientes e dados.
 - [ ] Rever o diff da infraestrutura e publicar staging apenas com autorização
   aplicável. Validar TLS, Cognito, papéis, ownership e autorização no backend.
   A memória servidor do agente depende dessa identidade validada; no SageMaker
   permanece desativada, com contexto recente apenas no navegador.
-- [ ] Implementar o fluxo de migrações, smoke tests, promoção e rollback,
+- [ ] Implementar o fluxo de migrações, smoke tests de staging, promoção e rollback,
   preservando a compatibilidade dos dados com a versão anterior.
 - [ ] Validar no ambiente-alvo concorrência, escritora única, persistência,
   backups e restauro; simular indisponibilidade do armazenamento operacional
