@@ -47,7 +47,7 @@ export TARGET_AWS_ACCOUNT_ID=123456789012
 export TARGET_AWS_REGION=eu-west-1
 export DEPLOY_ENVIRONMENT=staging
 export BLU_PUBLIC_DOMAIN=example.com
-export BLU_CURATION_IMAGE_URI=123456789012.dkr.ecr.eu-west-1.amazonaws.com/blu-curation:COMMIT
+export BLU_CURATION_IMAGE_URI=123456789012.dkr.ecr.eu-west-1.amazonaws.com/blu-curation@sha256:DIGEST_HEXADECIMAL_64_CARACTERES
 export BLU_CERTIFICATE_ARN=arn:aws:acm:eu-west-1:123456789012:certificate/IDENTIFICADOR
 export BLU_DATA_BUCKET_NAME=blu-dmc-data-123456789012-eu-west-1
 export BLU_BACKUP_BUCKET_NAME=blu-dmc-backups-123456789012-eu-west-1
@@ -59,6 +59,12 @@ export BLU_AGENT_RATES_JSON='{"MODELO_APROVADO":{"input":PRECO_USD_MILHAO,"outpu
 export BLU_AGENT_TIMEOUT_SECONDS=35
 npm --prefix infra run synth:curation
 ```
+
+A imagem tem de usar o digest SHA-256 aprovado, com 64 caracteres hexadecimais,
+na conta e região alvo. Tags, incluindo tags de commit, são recusadas. O output
+`ImageUri` regista a referência exata usada nos quatro containers. A publicação
+no ECR e a verificação de assinatura continuam a ser passos distintos, ainda
+pendentes no plano; conhecer um digest não comprova aprovação ou assinatura.
 
 Os valores de preço não têm predefinição porque mudam por fornecedor, modelo e
 região. Devem ser copiados da tabela oficial no momento da aprovação. A stack

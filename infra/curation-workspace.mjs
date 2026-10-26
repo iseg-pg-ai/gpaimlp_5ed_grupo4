@@ -77,12 +77,12 @@ if (!/^arn:aws(-[^:]+)?:acm:[^:]+:\d{12}:certificate\/.+/.test(certificateArn))
   throw new Error("BLU_CERTIFICATE_ARN is invalid");
 const imageMatch = imageUri.match(
   new RegExp(
-    `^${account}\\.dkr\\.ecr\\.${region}\\.amazonaws\\.com/([a-z0-9._/-]+):([A-Za-z0-9._-]+)$`,
+    `^${account}\\.dkr\\.ecr\\.${region}\\.amazonaws\\.com/([a-z0-9._/-]+)@(sha256:[a-f0-9]{64})$`,
   ),
 );
 if (!imageMatch)
   throw new Error(
-    "BLU_CURATION_IMAGE_URI must be a tagged ECR image in the target account and region",
+    "BLU_CURATION_IMAGE_URI must be an ECR image pinned by sha256 digest in the target account and region",
   );
 
 const hosts = {
@@ -440,6 +440,7 @@ class CurationWorkspaceStack extends Stack {
       value: loadBalancer.loadBalancerDnsName,
     });
     new CfnOutput(this, "UserPoolId", { value: userPool.userPoolId });
+    new CfnOutput(this, "ImageUri", { value: imageUri });
     new CfnOutput(this, "PortalHost", { value: hosts.portal });
     new CfnOutput(this, "MonitoringHost", { value: hosts.monitoring });
     new CfnOutput(this, "PresentationHost", { value: hosts.presentation });

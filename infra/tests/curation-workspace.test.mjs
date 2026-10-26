@@ -14,7 +14,7 @@ const environment = {
   DEPLOY_ENVIRONMENT: "staging",
   BLU_PUBLIC_DOMAIN: "example.test",
   BLU_CURATION_IMAGE_URI:
-    "650557269385.dkr.ecr.eu-west-1.amazonaws.com/blu-curation:test",
+    `650557269385.dkr.ecr.eu-west-1.amazonaws.com/blu-curation@sha256:${"a".repeat(64)}`,
   BLU_CERTIFICATE_ARN:
     "arn:aws:acm:eu-west-1:650557269385:certificate/00000000-0000-4000-8000-000000000000",
   BLU_DATA_BUCKET_NAME: "blu-dmc-data-650557269385-eu-west-1",
@@ -63,6 +63,9 @@ test("stack do Curation Studio mantém uma escritora e persistência retida", (t
   const task = ofType("AWS::ECS::TaskDefinition")[0];
   assert.equal(task.Properties.ContainerDefinitions.length, 4);
   assert.equal(task.Properties.NetworkMode, "awsvpc");
+  for (const container of task.Properties.ContainerDefinitions)
+    assert.ok(JSON.stringify(container.Image).includes(`@sha256:${"a".repeat(64)}`));
+  assert.equal(template.Outputs.ImageUri.Value, environment.BLU_CURATION_IMAGE_URI);
 
   const fileSystem = ofType("AWS::EFS::FileSystem")[0];
   assert.equal(fileSystem.Properties.Encrypted, true);
@@ -119,16 +122,23 @@ test("stack protege interfaces com TLS, Cognito e grupos aprovados", (t) => {
   assert.equal(variables.BLU_AGENT_MONTHLY_BUDGET_USD, "25");
 });
 
-test("configuração recusa imagem fora do ECR da conta e região alvo", () => {
-  const result = spawnSync("node", ["curation-workspace.mjs"], {
-    cwd: infra,
-    env: {
-      ...environment,
-      BLU_CURATION_IMAGE_URI: "public.example/blu:latest",
-    },
-    encoding: "utf8",
-    timeout: 10_000,
-  });
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /tagged ECR image/);
+test("configuração recusa tags, digests inválidos e ECR fora da conta ou região", () => {
+  const digest = `sha256:${"a".repeat(64)}`;
+  for (const image of [
+    "public.example/blu:latest",
+    "650557269385.dkr.ecr.eu-west-1.amazonaws.com/blu-curation:latest",
+    "650557269385.dkr.ecr.eu-west-1.amazonaws.com/blu-curation@sha256:abc",
+    `650557269385.dkr.ecr.eu-west-1.amazonaws.com/blu-curation@sha256:${"g".repeat(64)}`,
+    `999999999999.dkr.ecr.eu-west-1.amazonaws.com/blu-curation@${digest}`,
+    `650557269385.dkr.ecr.us-east-1.amazonaws.com/blu-curation@${digest}`,
+  ]) {
+    const result = spawnSync("node", ["curation-workspace.mjs"], {
+      cwd: infra,
+      env: { ...environment, BLU_CURATION_IMAGE_URI: image },
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+    assert.notEqual(result.status, 0, image);
+    assert.match(result.stderr, /pinned by sha256 digest/);
+  }
 });

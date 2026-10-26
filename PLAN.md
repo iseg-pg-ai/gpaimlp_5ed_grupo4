@@ -51,9 +51,9 @@ de confirmação em CI.
   cache; não foi medido o tamanho final da imagem. Preservar tradução offline e
   validar uma tradução com os modelos locais autorizados antes de produção.
 - [ ] Definir e implementar geração de SBOM, assinatura e verificação da imagem.
-- [ ] Preparar publicação identificada no ECR e promoção por digest imutável.
-  Adaptar a stack, que atualmente recebe uma imagem por tag, e testar a recusa
-  de referências fora da conta/região autorizadas.
+- [ ] Preparar publicação identificada no ECR, verificação de assinatura e
+  promoção/rollback por digest. A stack já exige SHA-256 na conta/região alvo,
+  recusa tags e regista `ImageUri`; a execução real continua pendente.
 - [ ] Preparar os parâmetros de staging: domínio/subdomínios, DNS, certificado
   ACM, grupos/utilizadores, segredos e isolamento de ambientes e dados.
 - [ ] Rever o diff da infraestrutura e publicar staging apenas com autorização
