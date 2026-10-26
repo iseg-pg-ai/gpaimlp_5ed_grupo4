@@ -4,6 +4,16 @@ Revisto em 26 de outubro de 2026. Este ficheiro contém apenas trabalho aberto,
 ordenado pelas dependências reais. Implementações concluídas e respetiva evidência
 ficam em [Decisões](docs/DECISIONS.md) e no histórico Git.
 
+## Correções Dependabot — integração pendente
+
+- [ ] Integrar em `dev` as correções dos 102 alertas consultados em 26 de outubro:
+  Pillow 13 com Streamlit 1.66.1, pypdf 6.21.2, certifi, filelock, setuptools e
+  Vite 6.4.4 com transitivas corrigidas. Next.js 16.4.3 já estava corrigido neste
+  branch. Confirmar o reprocessamento dos alertas após a integração; não os
+  dispensar. Lockfiles confrontados com os 102 alertas, auditorias Python
+  (99 pacotes) e npm do frontend/portal sem vulnerabilidades conhecidas.
+  Compatibilidade Python documentada em [Dependabot](docs/DEPENDABOT_PYTHON.md).
+
 ## Integração de segurança — validação externa pendente
 
 As alterações locais de `fix/security-hardening` foram integradas seletivamente:
