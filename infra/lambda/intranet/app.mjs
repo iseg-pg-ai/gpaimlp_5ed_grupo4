@@ -5,6 +5,7 @@ import {
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, parseActivity, plan } from './schedule.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
 import { ATTESTATIONS, AUTO_TYPES, SETTINGS, VALUE_RULES, applyAttestations, currentSettings, parseAttestation, parseSettings, replyState } from './settings.mjs';
+import { WHATSAPP_TEST, inboxRecord, parseInboxPost, threads, toInboxMessage, whatsappMode } from './whatsapp-test.mjs';
 import { FEED, NO_DUE, TASK_STATE, TASK_STATUS, UNLINKED_TASKS, describeChange, dueState, indexFields, parseTask, parseTaskUpdate, validRecordId } from './tasks.mjs';
 
 // Rotas da intranet. Os acessos AWS chegam injetados em `deps` (index.mjs na AWS,
@@ -65,6 +66,7 @@ const toNotification = item => ({
   occurrenceAt: str(item, 'occurrenceAt'), status: str(item, 'followUpStatus'), reason: str(item, 'reason'),
   hasNumber: Boolean(str(item, 'to')), text: str(item, 'text'), sentAt: str(item, 'sentAt'), channel: str(item, 'channel') || 'whatsapp',
   place: str(item, 'place'), people: Number(str(item, 'people') || 0), partnerName: str(item, 'partnerName'),
+  delivery: str(item, 'delivery'),
 });
 const toTask = (item, today) => {
   const partition = str(item, 'conversationId');
@@ -215,6 +217,21 @@ export function createApp(deps) {
       const at = now().toISOString();
       await deps.putRecords(id, [{ recordKey: `${FEEDBACK.prefix}${at}#${deps.newId()}`, ...parsed.record, createdBy: user.email, createdByName: user.name, createdAt: at }]);
       await announce(user, `deu feedback à conversa ${id} (${FEEDBACK.verdicts[parsed.record.verdict].toLowerCase()})`);
+      return reply(201, { at });
+    },
+
+    // Caixa de WhatsApp de teste: lembretes "enviados" em modo de teste e mensagens escritas pela equipa.
+    'GET /v1/whatsapp-test': async () => {
+      const items = await deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix);
+      return reply(200, { mode: whatsappMode(deps.whatsappMode), threads: threads(items.map(toInboxMessage)) });
+    },
+
+    'POST /v1/whatsapp-test': async ({ user, body }) => {
+      if (whatsappMode(deps.whatsappMode) !== 'test') return fail(409, 'O WhatsApp está em modo real: a caixa de teste só pode ser lida.');
+      const parsed = parseInboxPost(body, validLeadId);
+      if (parsed.error) return fail(400, parsed.error);
+      const at = now().toISOString();
+      await deps.putRecords(WHATSAPP_TEST.partition, [inboxRecord({ at, id: deps.newId(), ...parsed.message, author: user.email, authorName: user.name })]);
       return reply(201, { at });
     },
 
@@ -603,6 +620,7 @@ export function createApp(deps) {
     if (event.routeKey === 'POST /v1/settings' && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores alteram as regras de seguimento.');
     if (event.routeKey === 'POST /v1/governance/attestations' && !allowed(groups, 'security')) return fail(403, 'Só fundadores e governança confirmam regras.');
     if (event.routeKey === 'POST /v1/leads/{id}/feedback' && !allowed(groups, 'feedback')) return fail(403, 'Só fundadores dão feedback às conversas.');
+    if (event.routeKey === 'POST /v1/whatsapp-test' && !allowed(groups, 'leads')) return fail(403, 'Só curadores e fundadores escrevem na caixa de teste.');
     if (caseRoutes.has(event.routeKey) && !allowed(groups, 'cases')) return fail(403, 'Sem acesso a reclamações e litígios.');
     if (taskWrites.has(event.routeKey) && !allowed(groups, 'tasks')) return fail(403, 'Só curadores, governança e fundadores alteram tarefas.');
     if (event.routeKey.includes('{taskId}') && !validRecordId(event.pathParameters?.taskId)) return fail(400, 'Tarefa inválida.');

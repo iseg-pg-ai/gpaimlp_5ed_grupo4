@@ -260,6 +260,7 @@ export const handler = createApp({
   setRole,
   setEnabled,
   secrets,
+  whatsappMode: env.WHATSAPP_MODE,
   newId: () => randomUUID(),
   putRecords,
   setRecord,

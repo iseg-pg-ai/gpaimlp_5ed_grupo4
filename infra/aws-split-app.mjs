@@ -520,6 +520,9 @@ class IntranetStack extends Stack {
     });
     branding.node.addDependency(loginDomain);
 
+    // WhatsApp em modo de teste por omissão: só INTRANET_WHATSAPP_MODE=live envia mensagens reais.
+    const whatsappMode = process.env.INTRANET_WHATSAPP_MODE ?? 'test';
+    if (!['test', 'live'].includes(whatsappMode)) throw new Error('INTRANET_WHATSAPP_MODE must be "test" or "live"');
     const fn = new lambda.Function(this, 'IntranetApiHandler', {
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'index.handler',
@@ -536,6 +539,7 @@ class IntranetStack extends Stack {
         USER_POOL_ID: userPool.userPoolId,
         PARTNERS_JSON: JSON.stringify({ partners: partnersConfig.partners }),
         MANAGED_SECRETS: JSON.stringify([{ arn: data.whatsappSecret.secretArn, purpose: 'WhatsApp Business (envio de lembretes e mensagens)' }]),
+        WHATSAPP_MODE: whatsappMode,
       },
       code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
     });
@@ -561,6 +565,7 @@ class IntranetStack extends Stack {
       ['GET', '/v1/work'], ['GET', '/v1/tasks'], ['POST', '/v1/tasks'], ['GET', '/v1/leads/{id}/tasks/{taskId}'], ['POST', '/v1/leads/{id}/tasks/{taskId}'], ['GET', '/v1/feed'],
       ['GET', '/v1/settings'], ['POST', '/v1/settings'], ['POST', '/v1/governance/attestations'],
       ['GET', '/v1/conversations'], ['GET', '/v1/leads/{id}/feedback'], ['POST', '/v1/leads/{id}/feedback'],
+      ['GET', '/v1/whatsapp-test'], ['POST', '/v1/whatsapp-test'],
     ];
     for (const [method, routePath] of routes) {
       api.addRoutes({ path: routePath, methods: [apigatewayv2.HttpMethod[method]], integration, authorizer });
@@ -589,6 +594,7 @@ class IntranetStack extends Stack {
         EMAIL_FROM: emailFrom,
         SMS_ENABLED: smsEnabled ? 'true' : 'false',
         EVIDENCE_BUCKET: backoffice.evidenceBucket.bucketName,
+        WHATSAPP_MODE: whatsappMode,
       },
       code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
     });

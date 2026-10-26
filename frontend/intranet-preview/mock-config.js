@@ -29,6 +29,10 @@ const taskLog = {};
 const AUTO_TYPES = { thanks: 'Agradecimento logo após o consentimento', nudge: 'Reativação quando o cliente fica 3 dias em silêncio depois do contacto', reminders: 'Lembretes de recolhas e excursões aprovadas' };
 const settings = { replyHours: 4, auto: { thanks: false, nudge: false, reminders: true }, updatedBy: '', updatedAt: '' };
 const attestations = {};
+const waInbox = [
+  { at: hours(-2), direction: 'out', to: '351912345678', title: 'Recolha no hotel', text: 'BLU Costa reminder: your pickup at Hotel Avenida, tomorrow 09:30, 2 people.', leadId: 'BLU-DEMO000000000004', author: 'curator-schedule', authorName: 'Lembrete agendado' },
+  { at: hours(-1.5), direction: 'in', to: '351912345678', title: '', text: 'Perfect, see you tomorrow!', leadId: '', author: 'fundadora@example.com', authorName: 'Fundadora de teste' },
+];
 const VERDICTS = { good: 'Boa resposta', improve: 'A melhorar', wrong: 'Errada' };
 const feedbackGiven = { 'BLU-DEMO000000000001': [{ verdict: 'improve', note: 'Devia ter perguntado as datas antes de falar de hotéis.', by: 'fundadora@example.com', byName: 'Fundadora de teste', at: hours(-20) }] };
 const dueState = task => (task.status === 'done' ? 'done' : !task.due ? 'none' : task.due < day(0) ? 'overdue' : task.due <= day(2) ? 'soon' : 'on-track');
@@ -137,6 +141,12 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
     const filter = new URLSearchParams(path.split('?')[1]).get('status');
     const reply = lead => (lead.status === 'CONTACTED' ? {} : { replyDueAt: new Date(Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5).toISOString(), replyLate: Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5 < Date.now() });
     return { leads: leads.filter(lead => filter === 'all' || (filter === 'contacted') === (lead.status === 'CONTACTED')).map(lead => ({ ...lead, ...reply(lead) })) };
+  }
+  if (path === '/v1/whatsapp-test') {
+    if (method === 'POST') { waInbox.push({ at: new Date().toISOString(), direction: body.direction, to: String(body.to).replace(/\D/g, ''), text: body.text, title: '', leadId: body.leadId ?? '', author: 'fundadora@example.com', authorName: 'Fundadora de teste' }); return { at: new Date().toISOString() }; }
+    const byNumber = {};
+    for (const message of waInbox) (byNumber[message.to] ??= { to: message.to, leadId: '', messages: [] }).messages.push(message), message.leadId && (byNumber[message.to].leadId = message.leadId);
+    return { mode: 'test', threads: Object.values(byNumber).sort((a, b) => b.messages.at(-1).at.localeCompare(a.messages.at(-1).at)) };
   }
   if (path.endsWith('/feedback')) {
     const id = decodeURIComponent(path.split('/')[3]);

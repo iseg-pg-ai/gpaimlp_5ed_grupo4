@@ -10,6 +10,7 @@ import { promisify } from 'node:util';
 import { NotFound, createApp } from '../lambda/intranet/app.mjs';
 import { CONTACTED, LEAD_TAGS, OPEN_STATUSES, atRisk, groupsOf, metrics, toLead } from '../lambda/intranet/model.mjs';
 import { createDispatcher } from '../lambda/intranet/dispatch-core.mjs';
+import { WHATSAPP_TEST } from '../lambda/intranet/whatsapp-test.mjs';
 import { lisbonToUtc, outcome, parseActivity, plan } from '../lambda/intranet/schedule.mjs';
 import { addWorkingDays, deadlineState, parseCase, parseCaseUpdate, portugueseHolidays } from '../lambda/intranet/cases.mjs';
 import { dueState, parseTask, parseTaskUpdate } from '../lambda/intranet/tasks.mjs';
@@ -310,6 +311,49 @@ test('curators schedule and cancel activities; the API never returns phone numbe
   assert.equal(updates.filter(u => u[2].followUpStatus === 'NOTIFY_CANCELLED').length, 4);
 });
 
+test('in test mode a sent WhatsApp reminder is marked as delivered to the test inbox', async () => {
+  const finished = [];
+  let evidence;
+  const dispatch = createDispatcher({
+    now: () => new Date('2026-11-02T08:31:00Z'),
+    queryDue: async () => [{ conversationId: S('BLU-AAAAAAAA0001'), recordKey: S('NOTIFY#a'), followUpAt: S('2026-11-02T08:30:00Z'), to: S('351912345678'), text: S('Lembrete') }],
+    claim: async () => true,
+    send: async () => ({ delivery: WHATSAPP_TEST.delivery }),
+    requestIdFor: () => 'notify-test0000',
+    finish: async (id, key, set) => { finished.push(set); },
+    evidence: async (now, results) => { evidence = results; },
+  });
+  await dispatch();
+  assert.equal(finished[0].followUpStatus, 'NOTIFY_SENT');
+  assert.equal(finished[0].delivery, 'test-inbox');
+  assert.equal(evidence[0].delivery, 'test-inbox');
+});
+
+test('the WhatsApp test inbox groups by number and only staff who handle leads write to it', async () => {
+  const stored = [];
+  const { deps } = fakeDeps({
+    whatsappMode: 'test',
+    putRecords: async (id, list) => { stored.push(...list.map(record => ({ conversationId: id, ...record }))); },
+    queryRecords: async (id, prefix) => stored.filter(r => r.conversationId === id && r.recordKey.startsWith(prefix)).map(r => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, S(String(v))]))),
+  });
+  let n = 0;
+  deps.newId = () => `msg-${++n}`;
+  deps.now = () => new Date(`2026-10-27T09:0${n}:00Z`);
+  const handler = createApp(deps);
+  const post = (body, groups) => handler(request('POST /v1/whatsapp-test', { body, groups }));
+  assert.equal((await post({ direction: 'out', to: '351912345678', text: 'Olá' }, '[testers]')).statusCode, 403);
+  assert.equal((await post({ direction: 'out', to: '12', text: 'Olá' })).statusCode, 400);
+  assert.equal((await post({ direction: 'sideways', to: '351912345678', text: 'Olá' })).statusCode, 400);
+  assert.equal((await post({ direction: 'out', to: '+351 912 345 678', text: 'Olá, aqui a BLU.', leadId: 'BLU-AAAAAAAA0001' })).statusCode, 201);
+  assert.equal((await post({ direction: 'in', to: '351912345678', text: 'Obrigado!' })).statusCode, 201);
+  assert.equal((await post({ direction: 'out', to: '351930000000', text: 'Outro número' })).statusCode, 201);
+  const { mode, threads } = JSON.parse((await handler(request('GET /v1/whatsapp-test', { groups: '[testers]' }))).body);
+  assert.equal(mode, 'test');
+  assert.deepEqual(threads.map(thread => [thread.to, thread.leadId, thread.messages.map(message => message.direction).join('')]), [['351930000000', '', 'out'], ['351912345678', 'BLU-AAAAAAAA0001', 'outin']]);
+  deps.whatsappMode = 'live';
+  assert.equal((await createApp(deps)(request('POST /v1/whatsapp-test', { body: { direction: 'in', to: '351912345678', text: 'Olá' } }))).statusCode, 409);
+});
+
 test('working days skip weekends and Portuguese national holidays', () => {
   assert.ok(portugueseHolidays(2026).has('2026-04-03'));
   assert.ok(portugueseHolidays(2026).has('2026-06-04'));
@@ -491,7 +535,7 @@ test('the intranet stack protects every route and grants no destructive data acc
     const template = JSON.parse(await readFile(path.join(outdir, 'BluCostaIntranet.template.json'), 'utf8'));
     const of = type => Object.values(template.Resources).filter(resource => resource.Type === type);
     const routes = of('AWS::ApiGatewayV2::Route');
-    assert.equal(routes.length, 39);
+    assert.equal(routes.length, 41);
     for (const route of routes) assert.equal(route.Properties.AuthorizationType, 'JWT', route.Properties.RouteKey);
     const [pool] = of('AWS::Cognito::UserPool');
     assert.equal(pool.Properties.MfaConfiguration, 'ON');

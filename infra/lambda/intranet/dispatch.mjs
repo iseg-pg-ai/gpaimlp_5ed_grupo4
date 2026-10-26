@@ -7,6 +7,7 @@ import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 import { createDispatcher, createPlanner } from './dispatch-core.mjs';
 import { SETTINGS, currentSettings } from './settings.mjs';
 import { NOTIFY } from './schedule.mjs';
+import { WHATSAPP_TEST, inboxRecord, whatsappMode } from './whatsapp-test.mjs';
 
 const db = new DynamoDBClient({});
 const lambda = new LambdaClient({});
@@ -84,6 +85,16 @@ const dispatch = createDispatcher({
       if (env.SMS_ENABLED !== 'true') throw new Error('SMS channel is not configured');
       await sns.send(new PublishCommand({ PhoneNumber: `+${message.to}`, Message: message.text.slice(0, 600), MessageAttributes: { 'AWS.SNS.SMS.SMSType': { DataType: 'String', StringValue: 'Transactional' } } }));
       return;
+    }
+    // Modo de teste: a mensagem fica na caixa de teste da intranet e nada é enviado à Meta.
+    if (whatsappMode(env.WHATSAPP_MODE) === 'test') {
+      const record = inboxRecord({ at: new Date().toISOString(), id: message.requestId, direction: 'out', to: message.to, text: message.text, title: message.title, leadId: message.conversationId, author: message.approvedBy, authorName: 'Lembrete agendado' });
+      try {
+        await db.send(new PutItemCommand({ TableName: env.INTELLIGENCE_TABLE_NAME, Item: { conversationId: { S: WHATSAPP_TEST.partition }, ...Object.fromEntries(Object.entries(record).filter(([, value]) => value !== '').map(([key, value]) => [key, { S: String(value) }])) }, ConditionExpression: 'attribute_not_exists(recordKey)' }));
+      } catch (error) {
+        if (!(error instanceof ConditionalCheckFailedException)) throw error;
+      }
+      return { delivery: WHATSAPP_TEST.delivery };
     }
     const result = await lambda.send(new InvokeCommand({ FunctionName: env.WHATSAPP_FUNCTION_NAME, Payload: Buffer.from(JSON.stringify({ ...message, kind: 'text' })) }));
     if (result.FunctionError) {

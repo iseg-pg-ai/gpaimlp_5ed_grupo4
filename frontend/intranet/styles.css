@@ -79,6 +79,11 @@ tr.clickable:hover, tr.selected { background: #f3ecdf; }
 .bubble.assistant { align-self: flex-start; background: #fff; border: 1px solid var(--line); }
 .bubble.system { align-self: center; background: none; color: var(--ink-soft); font-size: .8rem; font-style: italic; }
 .bubble time { display: block; font-size: .72rem; opacity: .7; margin-top: .2rem; }
+/* Caixa de WhatsApp de teste: BLU à direita, cliente (simulado) à esquerda. */
+.chat.wa { background: #efeae2; margin-bottom: .75rem; }
+.bubble.wa-out { align-self: flex-end; background: #d9fdd3; border: 1px solid #c4e8bd; }
+.bubble.wa-in { align-self: flex-start; background: #fff; border: 1px solid var(--line); }
+.warn-note { border-left: 4px solid #c58a2b; }
 
 dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; margin: .5rem 0 1rem; }
 dl.facts dt { color: var(--ink-soft); }
