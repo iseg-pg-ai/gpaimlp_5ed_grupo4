@@ -2,6 +2,10 @@ import { challengeFor, claimsOf, expired, loginUrl, logoutUrl, randomString, ref
 
 // Intranet da equipa. Todo o texto vindo da API é inserido com textContent (nunca HTML).
 const config = window.BLU_INTRANET;
+// O mesmo código serve os dois sites: o backoffice mostra só o trabalho com clientes; a intranet mantém tudo.
+const SITE = config?.site === 'backoffice'
+  ? { name: 'Backoffice BLU', start: 'leads', tabs: ['dashboard', 'leads', 'agenda', 'whatsapp', 'cases', 'operations', 'governance'], other: config.intranetUrl && { label: 'Intranet ↗', url: config.intranetUrl } }
+  : { name: 'Intranet BLU', start: 'work', tabs: null, other: config?.backofficeUrl && { label: 'Backoffice ↗', url: config.backofficeUrl } };
 const session = { idToken: '', refreshToken: '', claims: null };
 const $ = id => document.getElementById(id);
 
@@ -845,11 +849,11 @@ async function watchLeads() {
     const fresh = leads.filter(lead => !seenLeads.has(lead.id) && !lead.synthetic);
     rememberLeads(leads);
     const late = leads.filter(lead => lead.replyLate && !lead.synthetic).length;
-    document.title = `${late ? `(${late}) ` : ''}Intranet BLU`;
+    document.title = `${late ? `(${late}) ` : ''}${SITE.name}`;
     if (!fresh.length) return;
     const text = fresh.length === 1 ? `Novo lead: ${fresh[0].journey.destination || fresh[0].id}` : `${fresh.length} novos leads`;
     toast(text, () => { leadsState.filter = 'open'; leadsState.selected = fresh[0].id; show('leads'); });
-    if ('Notification' in window && Notification.permission === 'granted') new Notification('Intranet BLU', { body: text, icon: 'favicon.svg' });
+    if ('Notification' in window && Notification.permission === 'granted') new Notification(SITE.name, { body: text, icon: 'favicon.svg' });
     if (['leads', 'work', 'dashboard'].includes(current)) show(current);
   } catch {
     // Sem rede ou sessão expirada: tenta no minuto seguinte.
@@ -1080,7 +1084,20 @@ function activityPanel(id, lead) {
   return h('div', {}, list, h('details', { class: 'spaced' }, h('summary', {}, 'Agendar recolha ou excursão'), form), status);
 }
 
-let current = 'work';
+let current = SITE.start;
+// Secções do backoffice, grupos vazios escondidos e ligação para o outro site.
+function applySite() {
+  const nav = $('tabs');
+  if (SITE.tabs) for (const button of nav.querySelectorAll('button[data-tab]')) if (!SITE.tabs.includes(button.dataset.tab)) button.hidden = true;
+  if (SITE.other) nav.append(h('span', { class: 'nav-group' }, 'Equipa BLU'), h('a', { href: SITE.other.url, target: '_blank', rel: 'noopener' }, SITE.other.label));
+  for (const group of nav.querySelectorAll('.nav-group')) {
+    let item = group.nextElementSibling;
+    let visible = false;
+    for (; item && !item.classList.contains('nav-group'); item = item.nextElementSibling) visible ||= !item.hidden;
+    group.hidden = !visible;
+  }
+}
+
 async function show(tab) {
   current = tab;
   for (const button of $('tabs').querySelectorAll('button')) {
@@ -1099,6 +1116,9 @@ async function show(tab) {
 }
 
 async function start() {
+  document.title = SITE.name;
+  document.querySelector('.brand span:last-child').textContent = SITE.name;
+  if (SITE.tabs) document.querySelector('#signin h1').textContent = 'Backoffice da equipa BLU';
   $('login').addEventListener('click', () => login());
   if (!config) {
     $('signin-error').textContent = 'Configuração em falta: esta página só funciona depois do deploy.';
@@ -1122,6 +1142,7 @@ async function start() {
   $('signin').hidden = true;
   $('view').hidden = false;
   for (const button of $('tabs').querySelectorAll('[data-perm]')) button.hidden = !can(button.dataset.perm);
+  applySite();
   $('tabs').hidden = false;
   $('who').hidden = false;
   const roles = groupsNow().map(group => ROLE_LABEL[group]).filter(Boolean).join(', ');
@@ -1140,7 +1161,7 @@ async function start() {
     if (document.hidden) hiddenAt = Date.now();
     else if (hiddenAt && Date.now() - hiddenAt > 60_000) show(current);
   });
-  show('work');
+  show(SITE.start);
   watchLeads();
   setInterval(watchLeads, 60_000);
 }

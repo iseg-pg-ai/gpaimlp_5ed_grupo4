@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Backoffice BLU (pré-visualização)</title>
+    <link rel="stylesheet" href="../intranet/styles.css" />
+    <script src="mock-config.js"></script>
+    <script src="backoffice-config.js"></script>
+    <script type="module" src="../intranet/app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="mark">BC</span><span>Intranet BLU</span></div>
+      <nav id="tabs" class="tabs" aria-label="Secções" hidden>
+        <span class="nav-group">Trabalho</span>
+        <button type="button" data-tab="work" aria-current="page">O meu trabalho</button>
+        <button type="button" data-tab="dashboard">Painel</button>
+        <button type="button" data-tab="leads">Seguimento</button>
+        <button type="button" data-tab="agenda">Agenda</button>
+        <button type="button" data-tab="whatsapp">WhatsApp (teste)</button>
+        <span class="nav-group">Equipa</span>
+        <button type="button" data-tab="team">Equipa e acessos</button>
+        <button type="button" data-tab="partners">Parceiros</button>
+        <span class="nav-group">Controlo</span>
+        <button type="button" data-tab="cases" data-perm="cases">Reclamações e litígios</button>
+        <button type="button" data-tab="security" data-perm="security">Segurança</button>
+        <button type="button" data-tab="operations">Operações</button>
+        <button type="button" data-tab="governance">Governança</button>
+      </nav>
+      <div id="who" class="who" hidden>
+        <span id="who-name"></span>
+        <button type="button" id="refresh" class="link" hidden>Atualizar</button>
+        <button type="button" id="logout" class="link">Sair</button>
+      </div>
+    </header>
+    <main id="main">
+      <section id="signin" class="signin">
+        <h1>Backoffice da equipa BLU</h1>
+        <p>Acesso reservado à equipa, com autenticação de dois fatores.</p>
+        <button type="button" id="login" class="primary">Entrar</button>
+        <p id="signin-error" class="error" role="alert"></p>
+      </section>
+      <section id="view" hidden></section>
+    </main>
+  </body>
+</html>

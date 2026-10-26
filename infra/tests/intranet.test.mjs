@@ -542,8 +542,16 @@ test('the intranet stack protects every route and grants no destructive data acc
     assert.equal(pool.Properties.AdminCreateUserConfig.AllowAdminCreateUserOnly, true);
     assert.equal(Object.values(template.Resources).find(resource => resource.Type === 'AWS::Cognito::UserPool').DeletionPolicy, 'Retain');
     const [api] = of('AWS::ApiGatewayV2::Api');
-    assert.equal(api.Properties.CorsConfiguration.AllowOrigins.length, 1);
+    // Só a intranet e o backoffice: duas distribuições, com os mesmos cabeçalhos e buckets privados.
+    assert.equal(api.Properties.CorsConfiguration.AllowOrigins.length, 2);
     assert.doesNotMatch(JSON.stringify(api.Properties.CorsConfiguration), /"\*"/);
+    const distributions = of('AWS::CloudFront::Distribution');
+    assert.equal(distributions.length, 2);
+    for (const site of distributions) assert.equal(site.Properties.DistributionConfig.DefaultCacheBehavior.ViewerProtocolPolicy, 'redirect-to-https');
+    assert.equal(new Set(distributions.map(site => JSON.stringify(site.Properties.DistributionConfig.DefaultCacheBehavior.ResponseHeadersPolicyId))).size, 1);
+    for (const bucket of of('AWS::S3::Bucket')) assert.equal(bucket.Properties.PublicAccessBlockConfiguration.BlockPublicAcls, true);
+    const [webClient] = of('AWS::Cognito::UserPoolClient');
+    assert.equal(webClient.Properties.CallbackURLs.length, 2);
     // A função de deploy do CDK escreve no bucket do próprio site; a API não pode apagar nem escrever dados.
     const apiPolicy = of('AWS::IAM::Policy').find(policy => JSON.stringify(policy.Properties.Roles).includes('IntranetApiHandler'));
     assert.ok(apiPolicy);
