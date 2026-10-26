@@ -83,9 +83,15 @@ Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só d
 - Lista de leads (`open`, `contacted`, vencidos) e detalhe, como na API de
   leads, mais as tarefas que o avaliador diário marca como
   `QUEUED_FOR_REVIEW`.
-- **Responsável:** botão «Assumir» grava `assignedTo` (o `sub` Cognito) e
-  `assignedAt`; filtro «As minhas tarefas». Estes dois campos entram na lista
-  de atributos permitidos da política `UpdateItem`.
+- **Risco de desistência:** quando o cliente escreve no chat que vai desistir
+  (frases fixas em inglês e português, em `event-processor/item.mjs`), o
+  processador de eventos grava `churnSignalAt` e `churnSignal` no `PROFILE`.
+  O lead fica `atRisk`, aparece primeiro em Seguimento com um alerta e gera um
+  alerta urgente no Painel até um curador o marcar como contactado. Não há
+  contacto automático; falsos positivos só antecipam a revisão humana.
+- **Responsável:** botão «Assumir» grava `assignedTo` (o email Cognito) e
+  `assignedAt`. Os leads assumidos aparecem em «O meu trabalho» (ver a secção
+  de 2026-10-26).
 - Ações existentes: marcar contactado, etiquetas e nota (até 1 000
   caracteres). Sem apagar registos.
 - Pergunta ao Backoffice RAG sobre um lead (`conversationId` + pergunta),
@@ -158,7 +164,11 @@ as ações sobre leads exigem `curators`. Respostas JSON com
 | `POST /v1/leads/{id}/assign` (`{ "release": true }` liberta) | `curators` | `204`; grava `assignedTo` e `assignedAt` |
 | `POST /v1/leads/{id}/ask` | `curators` | `200 { "answer", "sourceIds", "requiresHumanApproval" }` via Backoffice RAG |
 | `GET /v1/metrics` | equipa | Contagens agregadas sem sintéticos |
-| `GET /v1/team` | equipa | Membros dos grupos, estado da conta e leads em aberto por responsável |
+| `GET /v1/team` | equipa | Membros dos grupos, estado da conta, leads e tarefas (abertas, em atraso, bloqueadas) por responsável |
+| `GET /v1/work` | equipa | «O meu trabalho»: tarefas, leads assumidos, lembretes preparados e casos da pessoa, por urgência |
+| `GET /v1/tasks?status=` (`open`, `done`) e `GET /v1/leads/{id}/tasks/{taskId}` | equipa | Tarefas da equipa; detalhe com histórico |
+| `POST /v1/tasks`, `POST /v1/leads/{id}/tasks/{taskId}` | fundadores, curadores, governança | `201 { "taskId", "partition" }`; `204` |
+| `GET /v1/feed` | equipa | Feed «O que se passa» dos últimos 7 dias (casos só para quem os vê) |
 | `GET /v1/operations` | equipa | Filas (eventos, falhados, tarefas), workers `BluCosta*` nas últimas 24 h e última revisão diária |
 | `GET /v1/governance` | equipa | Manifesto de `config/governance-controls.json` e evidências recentes |
 
@@ -281,3 +291,31 @@ Na AWS, só com autorização e dados de teste:
   de dois fundadores, convites por aceitar, políticas em falta, casos fora do
   prazo), contas e os controlos ativos ou por ativar (AWS WAF e CloudTrail com
   alertas ainda por ativar).
+
+## O meu trabalho, tarefas e feed (2026-10-26)
+
+- **O meu trabalho:** primeiro separador depois do login. Junta numa lista o
+  que é da pessoa: tarefas, leads assumidos, lembretes preparados para enviar à
+  mão (aprovados por ela ou de leads seus) e casos de que é responsável. Ordem:
+  risco de desistência, em atraso, bloqueado, prazo próximo, resto.
+- **Tarefas:** estados *Por fazer → Em curso → Bloqueado → Feito*; um toque
+  avança para o passo seguinte (botões de 44 px para tablet). Bloquear exige o
+  motivo. Cada tarefa tem responsável (membro da equipa), prazo opcional, nota e
+  pode ligar-se a um lead ou a um caso. Fica como registo `TASK#` no perfil do
+  lead ou na partição `TASKS-UNLINKED`, listada por `FollowUpIndex`
+  (`TASK_OPEN` com o prazo em `followUpAt`; sem prazo, `9999-12-31`).
+  «Feito» passa a `TASK_DONE` e arquiva; não há rota para apagar.
+- **Histórico e feed:** cada alteração grava `TASKLOG#` na partição da tarefa e
+  uma entrada `FEED#` na partição `TEAM-FEED` (estado `FEED`, data em
+  `followUpAt`). Assumir, libertar e marcar contactado um lead, e abrir ou
+  atualizar um caso, também entram no feed; as entradas de casos ficam ocultas a
+  quem não vê casos. O feed atualiza ao voltar ao separador ou em «Atualizar».
+  Se a escrita no feed falhar, a ação mantém-se e só fica registado o erro.
+- **Painel:** tabela «Carga da equipa» com tarefas abertas, em atraso e
+  bloqueadas e leads em aberto por pessoa, com quem tem atrasos primeiro.
+- **Acesso:** a equipa de testes vê tudo isto mas não altera tarefas
+  (permissão `tasks` só para fundadores, curadores e governança).
+- **Sem contacto automático:** tarefas e feed nunca enviam mensagens a clientes.
+- Sem tabela nova nem permissões IAM novas: reutiliza `PutItem` condicional,
+  `UpdateItem` e `Query` em `FollowUpIndex`. Os workers que leem o índice só
+  consultam os seus próprios estados.

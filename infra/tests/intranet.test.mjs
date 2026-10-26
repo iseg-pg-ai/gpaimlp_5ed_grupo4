@@ -8,10 +8,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { NotFound, createApp } from '../lambda/intranet/app.mjs';
-import { CONTACTED, LEAD_TAGS, OPEN_STATUSES, groupsOf, metrics, toLead } from '../lambda/intranet/model.mjs';
+import { CONTACTED, LEAD_TAGS, OPEN_STATUSES, atRisk, groupsOf, metrics, toLead } from '../lambda/intranet/model.mjs';
 import { createDispatcher } from '../lambda/intranet/dispatch-core.mjs';
 import { lisbonToUtc, outcome, parseActivity, plan } from '../lambda/intranet/schedule.mjs';
 import { addWorkingDays, deadlineState, parseCase, parseCaseUpdate, portugueseHolidays } from '../lambda/intranet/cases.mjs';
+import { dueState, parseTask, parseTaskUpdate } from '../lambda/intranet/tasks.mjs';
 import { challengeFor, claimsOf, expired, loginUrl, refreshRequest, tokenRequest } from '../../frontend/intranet/auth.js';
 
 const infraDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -40,17 +41,19 @@ function fakeDeps(overrides = {}) {
       listTeam: async () => [{ email: 'ana@blu.pt', name: 'Ana', groups: ['curators'], status: 'CONFIRMED', enabled: true }],
       operations: async () => ({ queues: {} }),
       governance: async () => ({ manifest: {}, evidence: [] }),
+      putRecords: async () => {},
+      newId: () => 'id-00000001',
       ...overrides,
     },
   };
 }
 
-const request = (routeKey, { groups = '[curators]', id, body, query } = {}) => ({
+const request = (routeKey, { groups = '[curators]', id, body, query, email = 'ana@blu.pt', name, params } = {}) => ({
   routeKey,
-  pathParameters: id ? { id } : undefined,
+  pathParameters: id || params ? { ...(id ? { id } : {}), ...params } : undefined,
   queryStringParameters: query,
   body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
-  requestContext: { authorizer: { jwt: { claims: { email: 'ana@blu.pt', 'cognito:groups': groups } } } },
+  requestContext: { authorizer: { jwt: { claims: { email, ...(name ? { name } : {}), 'cognito:groups': groups } } } },
 });
 
 test('the Lambda model keeps the portal lead contract', async () => {
@@ -348,6 +351,110 @@ test('security overview is limited to founders and governance', async () => {
   assert.equal(overview.policies.fail, 2);
 });
 
+test('tasks validate owner, due date and the reason for a block', () => {
+  const staff = ['ana@blu.pt', 'gisela@blu.pt'];
+  const user = { email: 'Ana@blu.pt' };
+  assert.equal(parseTask({ title: ' ' }, { staff, user }).error, 'Indique o que há a fazer.');
+  assert.equal(parseTask({ title: 'x', owner: 'fora@example.com' }, { staff, user }).error, 'O responsável tem de ser um membro da equipa.');
+  assert.equal(parseTask({ title: 'x', due: '26/10' }, { staff, user }).error, 'Prazo inválido.');
+  assert.deepEqual(parseTask({ title: 'Confirmar tuk-tuk' }, { staff, user }).record, { title: 'Confirmar tuk-tuk', note: '', owner: 'ana@blu.pt', due: '', caseId: '', taskStatus: 'todo' });
+  const current = { title: 'x', owner: 'ana@blu.pt', due: '', status: 'blocked', blockedReason: 'À espera do hotel' };
+  assert.equal(parseTaskUpdate({ status: 'blocked' }, { ...current, status: 'todo', blockedReason: '' }, { staff }).error, 'Diga o que está a bloquear a tarefa.');
+  assert.deepEqual(parseTaskUpdate({ status: 'doing' }, current, { staff }).set, { taskStatus: 'doing', blockedReason: '' });
+  assert.equal(parseTaskUpdate({}, current, { staff }).error, 'Nada para atualizar.');
+  assert.equal(dueState({ status: 'todo', due: '2026-10-25' }, '2026-10-26'), 'overdue');
+  assert.equal(dueState({ status: 'todo', due: '2026-10-28' }, '2026-10-26'), 'soon');
+  assert.equal(dueState({ status: 'done', due: '2026-10-25' }, '2026-10-26'), 'done');
+  assert.equal(dueState({ status: 'todo', due: '' }, '2026-10-26'), 'none');
+});
+
+// Tabela em memória com o mesmo contrato de index.mjs (registos novos, atualização, consultas).
+function taskTable(extra = {}) {
+  const rows = [];
+  const dyn = row => Object.fromEntries(Object.entries(row).map(([key, value]) => [key, { S: String(value) }]));
+  let next = 0;
+  let tick = 0;
+  const { deps } = fakeDeps({
+    // Cada pedido um segundo depois do anterior, para o feed ter uma ordem estável.
+    now: () => new Date(Date.parse('2026-10-26T12:00:00Z') + tick++ * 1000),
+    newId: () => `id-${String(++next).padStart(8, '0')}`,
+    putRecords: async (id, list) => { rows.push(...list.map(record => Object.fromEntries(Object.entries({ conversationId: id, ...record }).filter(([, value]) => value !== '' && value !== undefined)))); },
+    setRecord: async (id, key, set) => { const row = rows.find(item => item.conversationId === id && item.recordKey === key); if (!row) throw new NotFound(); Object.assign(row, set); },
+    queryRecords: async (id, prefix) => rows.filter(item => item.conversationId === id && item.recordKey.startsWith(prefix)).map(dyn),
+    queryStatus: async status => (status === 'PENDING' ? [profile('BLU-AAAAAAAA0001', extra.profile ?? {})] : rows.filter(item => item.followUpStatus === status).map(dyn)),
+    queryAgenda: async (status, from, to) => rows.filter(item => item.followUpStatus === status && item.followUpAt >= from && item.followUpAt <= to).map(dyn),
+    listTeam: async () => [
+      { email: 'ana@blu.pt', name: 'Ana', groups: ['curators'], status: 'CONFIRMED', enabled: true },
+      { email: 'gisela@blu.pt', name: 'Gisela', groups: ['founders'], status: 'CONFIRMED', enabled: true },
+    ],
+  });
+  return { rows, handler: createApp(deps) };
+}
+
+test('a task moves from Por fazer to Feito, is archived, logged and shown in the team feed', async () => {
+  const { rows, handler } = taskTable();
+  const ana = { email: 'ana@blu.pt', name: 'Ana' };
+  const gisela = { email: 'gisela@blu.pt', name: 'Gisela', groups: '[founders]' };
+  const created = await handler(request('POST /v1/tasks', { ...ana, body: { title: 'Confirmar tuk-tuk', owner: 'gisela@blu.pt', due: '2026-10-25', leadId: 'BLU-AAAAAAAA0001' } }));
+  assert.equal(created.statusCode, 201);
+  const { taskId, partition } = JSON.parse(created.body);
+  assert.equal(partition, 'BLU-AAAAAAAA0001');
+  const task = rows.find(row => row.recordKey === `TASK#${taskId}`);
+  assert.equal(task.followUpStatus, 'TASK_OPEN');
+  assert.equal(task.leadLabel, 'Algarve');
+
+  const work = JSON.parse((await handler(request('GET /v1/work', gisela))).body);
+  assert.deepEqual(work.items.map(item => [item.kind, item.title, item.urgency]), [['task', 'Confirmar tuk-tuk', 'overdue']]);
+  assert.equal(JSON.parse((await handler(request('GET /v1/work', ana))).body).items.length, 0);
+
+  const path = { params: { taskId }, id: partition };
+  assert.equal((await handler(request('POST /v1/leads/{id}/tasks/{taskId}', { ...gisela, ...path, body: { status: 'blocked' } }))).statusCode, 400);
+  assert.equal((await handler(request('POST /v1/leads/{id}/tasks/{taskId}', { ...gisela, ...path, body: { status: 'blocked', blockedReason: 'À espera do parceiro' } }))).statusCode, 204);
+  const members = JSON.parse((await handler(request('GET /v1/team', gisela))).body).members;
+  assert.deepEqual(members.map(member => [member.name, member.openTasks, member.overdueTasks, member.blockedTasks]), [['Ana', 0, 0, 0], ['Gisela', 1, 1, 1]]);
+
+  assert.equal((await handler(request('POST /v1/leads/{id}/tasks/{taskId}', { ...gisela, ...path, body: { status: 'done' } }))).statusCode, 204);
+  assert.equal(task.followUpStatus, 'TASK_DONE');
+  assert.equal(task.blockedReason, '');
+  assert.equal(JSON.parse((await handler(request('GET /v1/tasks', gisela))).body).tasks.length, 0);
+  assert.deepEqual(JSON.parse((await handler(request('GET /v1/tasks', { ...gisela, query: { status: 'done' } }))).body).tasks.map(item => item.id), [taskId]);
+
+  const detail = JSON.parse((await handler(request('GET /v1/leads/{id}/tasks/{taskId}', { ...gisela, ...path }))).body);
+  assert.equal(detail.log.length, 3);
+  assert.match(detail.log[0].text, /Gisela moveu «Confirmar tuk-tuk» para Feito/);
+  const { feed } = JSON.parse((await handler(request('GET /v1/feed', { groups: '[testers]', email: 'teste@blu.pt' }))).body);
+  assert.deepEqual(feed.map(entry => `${entry.byName} ${entry.text}`), [
+    'Gisela moveu «Confirmar tuk-tuk» para Feito',
+    'Gisela bloqueou «Confirmar tuk-tuk»: À espera do parceiro',
+    'Ana criou «Confirmar tuk-tuk» para Gisela',
+  ]);
+  assert.ok(!rows.some(row => row.recordKey.startsWith('TASK#') && row.followUpStatus === undefined));
+});
+
+test('testers see work and feed but cannot change tasks; case news stays with case roles', async () => {
+  const { handler } = taskTable();
+  const tester = { groups: '[testers]', email: 'teste@blu.pt' };
+  assert.equal((await handler(request('GET /v1/work', tester))).statusCode, 200);
+  assert.equal((await handler(request('POST /v1/tasks', { ...tester, body: { title: 'x' } }))).statusCode, 403);
+  assert.equal((await handler(request('POST /v1/leads/{id}/tasks/{taskId}', { ...tester, id: 'TASKS-UNLINKED', params: { taskId: 'id-00000001' }, body: { status: 'done' } }))).statusCode, 403);
+  assert.equal((await handler(request('DELETE /v1/leads/{id}/tasks/{taskId}', { id: 'TASKS-UNLINKED', params: { taskId: 'id-00000001' } }))).statusCode, 404);
+  assert.equal((await handler(request('POST /v1/leads/{id}/tasks/{taskId}', { id: 'TASKS-UNLINKED', params: { taskId: 'bad' }, body: {} }))).statusCode, 400);
+  const own = await handler(request('POST /v1/tasks', { groups: '[governance]', email: 'gov@blu.pt', body: { title: 'Rever política', owner: 'ana@blu.pt' } }));
+  assert.equal(JSON.parse(own.body).partition, 'TASKS-UNLINKED');
+  await handler(request('POST /v1/cases', { body: { type: 'complaint', title: 'Atraso na recolha' } }));
+  const seen = async groups => JSON.parse((await handler(request('GET /v1/feed', { groups }))).body).feed.map(entry => entry.text);
+  assert.ok((await seen('[curators]')).some(text => /abriu o caso/.test(text)));
+  assert.ok(!(await seen('[testers]')).some(text => /caso/.test(text)));
+});
+
+test('my work puts a lead who wants to quit before overdue tasks', async () => {
+  const { handler } = taskTable({ profile: { assignedTo: S('ana@blu.pt'), churnSignalAt: S('2026-10-26T09:00:00Z'), churnSignal: S('desisto') } });
+  await handler(request('POST /v1/tasks', { body: { title: 'Pedir resposta ao hotel', due: '2026-10-20' } }));
+  await handler(request('POST /v1/tasks', { body: { title: 'Sem prazo' } }));
+  const { items } = JSON.parse((await handler(request('GET /v1/work'))).body);
+  assert.deepEqual(items.map(item => [item.kind, item.urgency]), [['lead', 'risk'], ['task', 'overdue'], ['task', 'normal']]);
+});
+
 const siteBuilt = existsSync(path.join(infraDir, '../frontend/blu-cloud-site/dist/client'));
 
 test('the intranet stack protects every route and grants no destructive data access', { skip: !siteBuilt && 'build frontend/blu-cloud-site first' }, async () => {
@@ -360,7 +467,7 @@ test('the intranet stack protects every route and grants no destructive data acc
     const template = JSON.parse(await readFile(path.join(outdir, 'BluCostaIntranet.template.json'), 'utf8'));
     const of = type => Object.values(template.Resources).filter(resource => resource.Type === type);
     const routes = of('AWS::ApiGatewayV2::Route');
-    assert.equal(routes.length, 27);
+    assert.equal(routes.length, 33);
     for (const route of routes) assert.equal(route.Properties.AuthorizationType, 'JWT', route.Properties.RouteKey);
     const [pool] = of('AWS::Cognito::UserPool');
     assert.equal(pool.Properties.MfaConfiguration, 'ON');
@@ -381,4 +488,20 @@ test('the intranet stack protects every route and grants no destructive data acc
   } finally {
     await rm(outdir, { recursive: true, force: true });
   }
+});
+
+test('leads that signal quitting come first, raise an alert and clear once contacted', async () => {
+  const churning = profile('BLU-AAAAAAAA0002', { followUpAt: S('2026-10-29T10:00:00Z'), churnSignalAt: S('2026-10-26T11:00:00Z'), churnSignal: S('give up') });
+  const handler = createApp(fakeDeps({
+    queryStatus: async status => (status === 'PENDING' ? [profile('BLU-AAAAAAAA0001'), churning] : []),
+    operations: async () => null,
+    policyReport: async () => null,
+    queryAgenda: async () => [],
+  }).deps);
+  const { leads } = JSON.parse((await handler(request('GET /v1/leads'))).body);
+  assert.deepEqual(leads.map(lead => [lead.id, lead.atRisk]), [['BLU-AAAAAAAA0002', true], ['BLU-AAAAAAAA0001', false]]);
+  const { alerts } = JSON.parse((await handler(request('GET /v1/alerts'))).body);
+  assert.ok(alerts.some(alert => alert.level === 'bad' && alert.tab === 'leads' && /desistir/.test(alert.text)));
+  assert.equal(atRisk(toLead({ ...churning, contactedAt: S('2026-10-26T11:30:00Z') })), false);
+  assert.equal(atRisk(toLead({ ...churning, contactedAt: S('2026-10-20T11:30:00Z') })), true);
 });
