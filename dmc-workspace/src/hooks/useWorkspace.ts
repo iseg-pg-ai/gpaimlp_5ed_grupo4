@@ -3,7 +3,8 @@ import { portalFetch, responseJson } from "@/lib/http-client";
 import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/locales";
 import type { CustomerBrief, ItineraryDay, ChatMessage, RecentTrip, TransitMode } from "@/types";
-import { initialBrief } from "@/data/initialBrief";
+import { emptyBrief } from "@/data/initialBrief";
+import { LEAD_DRAFT_STORAGE } from "@/lib/lead-brief";
 import { assistantHelp } from "@/lib/assistant-editing";
 import type { AgentProposal } from "@/lib/assistant-actions";
 
@@ -30,26 +31,6 @@ type HistoryVersion = {
   exportedAt?: string | null;
 };
 const STORAGE = TRIPS_STORAGE;
-const emptyBrief = (): CustomerBrief => ({
-  ...initialBrief,
-  customerName: "",
-  destination: "",
-  startDate: "",
-  endDate: "",
-  arrivalLocation: "",
-  arrivalTime: "",
-  arrivalFlightNumber: "",
-  departureLocation: "",
-  departureTime: "",
-  departureFlightNumber: "",
-  interests: [],
-  mobilityRestrictions: [],
-  dietaryRestrictions: [],
-  exclusions: [],
-  specialOccasion: "",
-  notes: "",
-  childrenAges: "",
-});
 const message = (
   sender: ChatMessage["sender"],
   text: string,
@@ -104,6 +85,18 @@ export function useWorkspace() {
               throw new Error();
           }
           setTrips(saved);
+        }
+        // Rascunho vindo de Leads («Rascunho de proposta»): abre o formulário já preenchido.
+        const leadDraft = sessionStorage.getItem(LEAD_DRAFT_STORAGE);
+        if (leadDraft) {
+          sessionStorage.removeItem(LEAD_DRAFT_STORAGE);
+          const brief = JSON.parse(leadDraft) as CustomerBrief;
+          if (brief && typeof brief.customerName === "string") {
+            setDraft({ ...emptyBrief(), ...brief });
+            setActiveId("");
+            setEditing(true);
+            setFormKey((key) => key + 1);
+          }
         }
         setReady(true);
       } catch {

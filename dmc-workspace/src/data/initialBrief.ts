@@ -37,3 +37,26 @@ export const initialBrief: CustomerBrief = {
   notes:
     "Celebrating 10th anniversary. James has a diagnosed shellfish allergy (requires kitchen cross-contamination check, especially in marisqueiras). Sarah prefers step-free or elevator routes to avoid steep Lisbon calçada hills. They value deep wine immersion in Douro and relaxed morning starts.",
 };
+
+// Briefing vazio de uma viagem nova (e base dos rascunhos a partir de leads):
+// mantém os critérios BLU por defeito, sem dados nem restrições do exemplo.
+export const emptyBrief = (): CustomerBrief => ({
+  ...initialBrief,
+  customerName: "",
+  destination: "",
+  startDate: "",
+  endDate: "",
+  arrivalLocation: "",
+  arrivalTime: "",
+  arrivalFlightNumber: "",
+  departureLocation: "",
+  departureTime: "",
+  departureFlightNumber: "",
+  interests: [],
+  mobilityRestrictions: [],
+  dietaryRestrictions: [],
+  exclusions: [],
+  specialOccasion: "",
+  notes: "",
+  childrenAges: "",
+});
