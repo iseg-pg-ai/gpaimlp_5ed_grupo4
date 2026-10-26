@@ -48,8 +48,11 @@ instalar modelos. O tamanho final da imagem ainda não foi medido.
 
 - [ ] Medir e registar o tamanho da imagem na entrega ao ECR; não confundir
   tamanho de cache ou download de wheels com tamanho da imagem.
-- [ ] Confirmar a primeira execução de `.github/workflows/infrastructure.yml`,
-  com testes de digest, IAM e limites da API por síntese local, sem credenciais AWS.
+O [CI de infraestrutura](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40249812920)
+passou no commit `8fcea87`, com testes de digest, IAM e limites da API. Os ensaios
+CDK usam contexto temporário explícito e lookups desativados, sem depender de
+credenciais ou cache local de zonas AWS.
+
 - [ ] Definir e implementar geração de SBOM, assinatura e verificação da imagem.
 - [ ] Preparar publicação identificada no ECR, verificação de assinatura e
   promoção/rollback por digest. A stack já exige SHA-256 na conta/região alvo,

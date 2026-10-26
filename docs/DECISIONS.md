@@ -230,9 +230,11 @@ hexadecimais, na conta e região alvo. Tags são recusadas para impedir que uma
 mesma referência de entrega passe a apontar para outros bytes. Os quatro
 containers usam a mesma referência, registada no output `ImageUri`.
 
-Evidência: síntese local em `infra/tests/curation-workspace.test.mjs`, incluindo
-recusa de tags, hashes inválidos e conta/região diferentes. Não foi publicado
-nenhum recurso. Publicação, verificação de assinatura e promoção permanecem
+Evidência: síntese em `infra/tests/curation-workspace.test.mjs`, incluindo
+recusa de tags, hashes inválidos e conta/região diferentes. O
+[CI de infraestrutura](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40249812920)
+passou com contexto CDK temporário explícito e lookups AWS desativados. Não foi
+publicado nenhum recurso. Publicação, verificação de assinatura e promoção permanecem
 pendentes; o digest identifica conteúdo e não comprova aprovação operacional.
 
 ### Tradução usa PyTorch CPU e a cache de imagem é mínima — 2026-10-26
