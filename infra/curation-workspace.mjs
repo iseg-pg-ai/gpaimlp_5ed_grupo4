@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import {
   App,
   CfnOutput,
@@ -265,43 +266,10 @@ class CurationWorkspaceStack extends Stack {
       repository,
       imageMatch[2],
     );
-    const containers = [
-      [
-        "portal",
-        3001,
-        [
-          "bash",
-          "-lc",
-          "cd dmc-workspace && npm run start -- --hostname 0.0.0.0 --port 3001",
-        ],
-      ],
-      [
-        "monitoring",
-        3004,
-        [
-          ".venv/bin/python",
-          "-B",
-          "-m",
-          "monitoring.server",
-          "--host",
-          "0.0.0.0",
-        ],
-      ],
-      [
-        "presentation",
-        3003,
-        [
-          ".venv/bin/python",
-          "-B",
-          "presentation/serve.py",
-          "--host",
-          "0.0.0.0",
-          "--port",
-          "3003",
-        ],
-      ],
-      ["observatory", 8501, ["bash", "scripts/start_dashboard.sh"]],
-    ].map(([name, port, command]) => {
+    const definitions = JSON.parse(readFileSync(new URL("../config/curation_services.json", import.meta.url), "utf8"));
+    if (definitions.schema_version !== 1 || !Array.isArray(definitions.services))
+      throw new Error("Invalid curation services configuration");
+    const containers = definitions.services.map(({ name, port, command }) => {
       const logGroup = new logs.LogGroup(this, `${name}Logs`, {
         retention:
           environment === "production"

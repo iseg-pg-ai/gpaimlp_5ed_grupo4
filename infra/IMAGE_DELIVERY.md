@@ -37,6 +37,29 @@ A primeira validação real passou no
 OCI. O relatório confirma `signature_verified: false`. A retenção de 14 dias é
 para diagnóstico; uma release permanente exigirá conservação aprovada da evidência.
 
+## Smoke obrigatório antes de assinar
+
+A configuração `config/curation_services.json` fornece os mesmos comandos à stack
+e ao smoke. O CI importa a plataforma linux/amd64 do arquivo OCI para o daemon
+local e confirma que o ID da configuração corresponde a `config_digest` do arquivo
+verificado. Esta importação serve apenas o teste: o OCI original, com os seus
+manifests e atestações, continua a ser a fonte dos bytes a publicar.
+
+O container de teste usa UID 1000, filesystem só de leitura, volumes temporários,
+sem capabilities, sem privilégios adicionais e `--network none`. Não recebe
+credenciais AWS nem mounts da pasta de trabalho. Cria um warehouse sintético e
+credenciais descartáveis do Monitoring; não guarda os logs dos serviços no artefacto.
+
+Verifica arranque dos quatro serviços, um asset JavaScript, leitura pelo adaptador
+Python, recusa de origem externa e resposta 401 do Monitoring sem sessão. O
+relatório `delivery.json` só recebe `smoke_verified: true` depois de todas as sondas
+passarem. Os hashes desse relatório integram o documento de release assinado.
+Uma entrega sem este resultado não pode ser preparada para assinatura ou promovida.
+
+O ensaio não valida TLS/ALB, identidade Cognito, EFS, fornecedores, notificações,
+concorrência distribuída ou recuperação. Não substitui o smoke de staging nem
+conclui as pendências de monitoring externo.
+
 ## Política antes de promover uma release
 
 A promoção continua pendente de implementação e validação. Deve exigir:

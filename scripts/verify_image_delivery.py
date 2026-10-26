@@ -92,11 +92,11 @@ def verify(archive: Path, expected_digest: str, revision: str) -> tuple[dict, di
             raise DeliveryError("SBOM vazia ou incompatível.")
         report = {
             "schema_version": 1, "build_digest": expected_digest,
-            "platform_digest": image_digest, "revision": revision,
+            "platform_digest": image_digest, "config_digest": image["config"]["digest"], "revision": revision,
             "platform": "linux/amd64", "packages": len(sbom["packages"]),
             "compressed_layers_bytes": sum(d["size"] for d in image["layers"]),
             "oci_archive_bytes": archive.stat().st_size,
-            "signature_verified": False,
+            "signature_verified": False, "smoke_verified": False,
         }
         return report, {"sbom": sbom, "provenance": provenance[0]}
 

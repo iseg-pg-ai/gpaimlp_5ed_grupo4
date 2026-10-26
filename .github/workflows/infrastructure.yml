@@ -4,11 +4,13 @@ on:
   push:
     paths:
       - "infra/**"
+      - "config/curation_services.json"
       - "frontend/blu-cloud-site/**"
       - ".github/workflows/infrastructure.yml"
   pull_request:
     paths:
       - "infra/**"
+      - "config/curation_services.json"
       - "frontend/blu-cloud-site/**"
       - ".github/workflows/infrastructure.yml"
   workflow_dispatch:

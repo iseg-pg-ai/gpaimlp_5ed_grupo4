@@ -310,6 +310,18 @@ passou com 22 testes, incluindo AWS/transferência simuladas e uma assinatura lo
 com chave temporária. Os recursos e a operação real continuam sujeitos às
 pendências e aprovações do [plano](../PLAN.md).
 
+### A assinatura exige smoke da mesma imagem — 2026-10-26
+
+Stack e smoke reutilizam `config/curation_services.json`. O teste de runtime
+confirma o ID da configuração da plataforma OCI antes de executar os quatro
+serviços. Usa dados sintéticos, volumes temporários, UID não privilegiado e rede
+externa desativada, sem montar dados do checkout ou fornecer credenciais AWS.
+
+O resultado de smoke fica no relatório de entrega, protegido pelo hash que o
+documento de release assina. Ausência ou falha de smoke impede a assinatura.
+A importação local para teste não substitui os bytes OCI originais destinados
+a publicação. A validação cloud e o monitoring externo permanecem separados.
+
 ## Monitoring e ambiente local
 
 ### Monitoring não aumenta a autoridade sobre dados — 2026-10-19

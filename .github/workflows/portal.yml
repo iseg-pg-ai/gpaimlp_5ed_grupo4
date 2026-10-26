@@ -9,6 +9,10 @@ on:
       - "scripts/create_ci_etl_fixture.py"
       - "scripts/verify_image_delivery.py"
       - "tests/test_image_delivery.py"
+      - "tests/test_image_smoke.py"
+      - "scripts/smoke_curation_image.py"
+      - "scripts/run_image_smoke.py"
+      - "config/curation_services.json"
       - "requirements.txt"
       - "pyproject.toml"
       - "uv.lock"
@@ -23,6 +27,10 @@ on:
       - "scripts/create_ci_etl_fixture.py"
       - "scripts/verify_image_delivery.py"
       - "tests/test_image_delivery.py"
+      - "tests/test_image_smoke.py"
+      - "scripts/smoke_curation_image.py"
+      - "scripts/run_image_smoke.py"
+      - "config/curation_services.json"
       - "requirements.txt"
       - "pyproject.toml"
       - "uv.lock"
@@ -77,7 +85,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: Test delivery verification
-        run: python -B -m unittest tests.test_image_delivery -v
+        run: python -B -m unittest tests.test_image_delivery tests.test_image_smoke -v
       - name: Build unified delivery without publishing
         id: image
         uses: docker/build-push-action@v6
@@ -101,6 +109,13 @@ jobs:
             --archive "$RUNNER_TEMP/blu-curation.oci.tar" \
             --digest "$BUILD_DIGEST" --revision "$GITHUB_SHA" \
             --output "$RUNNER_TEMP/blu-delivery-evidence"
+      - name: Install local OCI transfer tool for isolated smoke
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends skopeo
+      - name: Smoke test runtime without external network or AWS credentials
+        run: |
+          python scripts/run_image_smoke.py --archive "$RUNNER_TEMP/blu-curation.oci.tar" \
+            --delivery "$RUNNER_TEMP/blu-delivery-evidence/delivery.json" \
+            --output "$RUNNER_TEMP/blu-delivery-evidence/smoke.json"
       - name: Preserve delivery evidence without the image
         uses: actions/upload-artifact@v4
         with:

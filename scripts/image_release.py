@@ -78,7 +78,7 @@ def create_statement(directory, run):
     report = json.loads((directory / "delivery.json").read_text())
     if (report.get("schema_version") != 1 or report.get("revision") != commit
             or report.get("platform") != "linux/amd64"
-            or report.get("signature_verified") is not False):
+            or report.get("signature_verified") is not False or report.get("smoke_verified") is not True):
         raise ReleaseError("Relatório de entrega incompatível.")
     rules = policy()
     return {
@@ -112,7 +112,7 @@ def verify_release(statement, bundle, directory, expected_digest, expected_revis
     report = json.loads((directory / "delivery.json").read_text())
     if (report.get("build_digest") != expected_digest or report.get("revision") != expected_revision
             or report.get("platform_digest") != digest(value.get("platform_digest"))
-            or report.get("platform") != "linux/amd64"):
+            or report.get("platform") != "linux/amd64" or report.get("smoke_verified") is not True):
         raise ReleaseError("Os metadados diferem da entrega assinada.")
     return {"signature_verified": True, "build_digest": expected_digest,
             "revision": expected_revision, "certificate_identity": rules["certificate_identity"]}

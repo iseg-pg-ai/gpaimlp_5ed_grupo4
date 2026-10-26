@@ -91,6 +91,14 @@ publicação ECR ou assinatura keyless real foi executada.
 - [ ] Validar transferência real com preservação de todos os manifests, retenção
   permanente da evidência aprovada e preparação da referência anterior assinada.
   O candidato de rollback não valida compatibilidade de dados nem altera serviços.
+A configuração `config/curation_services.json` é partilhada pela stack e pelo
+smoke da imagem, evitando comandos de arranque divergentes. O CI prepara dados
+sintéticos e testa os quatro serviços sem rede externa, com filesystem só de
+leitura e volumes temporários; a assinatura exige o resultado positivo no relatório.
+
+- [ ] Confirmar o primeiro smoke real da imagem no GitHub Actions: arranque dos
+  quatro serviços, asset JavaScript, adaptador Python, recusa de origem externa
+  e autenticação do Monitoring. Os testes locais só simulam o orquestrador.
 - [ ] Preparar os parâmetros de staging: domínio/subdomínios, DNS, certificado
   ACM, grupos/utilizadores, segredos e isolamento de ambientes e dados.
 - [ ] Rever o diff da infraestrutura e publicar staging apenas com autorização

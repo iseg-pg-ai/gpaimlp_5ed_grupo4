@@ -25,7 +25,7 @@ class ReleaseTests(unittest.TestCase):
                     "head_sha": REVISION, "repository": {"full_name": rules["repository"]},
                     "head_repository": {"full_name": rules["repository"]}}
         report = {"schema_version": 1, "revision": REVISION, "build_digest": DIGEST,
-                  "platform_digest": DIGEST, "platform": "linux/amd64", "signature_verified": False}
+                  "platform_digest": DIGEST, "platform": "linux/amd64", "signature_verified": False, "smoke_verified": True}
         for name, data in [("delivery.json", report), ("sbom.json", {"packages": ["test"]}),
                            ("provenance.json", {"predicate": {"test": True}})]:
             (self.root / name).write_text(json.dumps(data))
@@ -56,6 +56,13 @@ class ReleaseTests(unittest.TestCase):
                 validate_environment({"protection_rules": rules})
         validate_environment({"protection_rules": [{"type": "required_reviewers",
                               "reviewers": ["test"], "prevent_self_review": True}]})
+
+    def test_delivery_without_smoke_cannot_be_signed(self):
+        report = json.loads((self.root / "delivery.json").read_text())
+        report.pop("smoke_verified")
+        (self.root / "delivery.json").write_text(json.dumps(report))
+        with self.assertRaises(ReleaseError):
+            create_statement(self.root, self.run)
 
     def test_verifier_requires_exact_identity_and_issuer(self):
         with patch("scripts.image_release.subprocess.run") as command:
