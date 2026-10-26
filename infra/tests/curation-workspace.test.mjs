@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -30,19 +30,27 @@ const environment = {
 };
 
 function synth(t) {
-  const output = mkdtempSync(path.join(tmpdir(), "blu-curation-cdk-"));
-  t.after(() => rmSync(output, { recursive: true, force: true }));
+  const workspace = mkdtempSync(path.join(tmpdir(), "blu-curation-cdk-"));
+  const output = path.join(workspace, "assembly");
+  t.after(() => rmSync(workspace, { recursive: true, force: true }));
+  // Contexto de teste explícito: não depender do cache ou de credenciais locais.
+  writeFileSync(path.join(workspace, "cdk.context.json"), JSON.stringify({
+    "availability-zones:account=650557269385:region=eu-west-1": [
+      "eu-west-1a", "eu-west-1b", "eu-west-1c",
+    ],
+  }));
   const result = spawnSync(
     cdk,
     [
       "synth",
       "--app",
-      "node curation-workspace.mjs",
+      `node "${path.join(infra, "curation-workspace.mjs")}"`,
+      "--lookups=false",
       "--output",
       output,
       "--quiet",
     ],
-    { cwd: infra, env: environment, encoding: "utf8", timeout: 30_000 },
+    { cwd: workspace, env: environment, encoding: "utf8", timeout: 30_000 },
   );
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const filename = readdirSync(output).find((name) =>
