@@ -284,9 +284,11 @@ A assinatura real é manual, desativada por defeito e exige ambiente com revisor
 sem autoaprovação. Builds de forks, pull requests e outros branches são recusados.
 A assinatura é destacada, vinculada ao digest; ainda não é publicada no ECR.
 
-Sete testes locais passaram, com política simulada e um ensaio criptográfico Cosign
-usando chave temporária, sem log público. A identidade OIDC e a assinatura keyless
-reais permanecem por validar. A [política de entrega](../infra/IMAGE_DELIVERY.md)
+Sete testes passaram localmente e no
+[CI de assinatura](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40251609640),
+com política simulada e um ensaio criptográfico Cosign usando chave temporária,
+sem log público. A identidade OIDC e a assinatura keyless reais permanecem por
+validar. A [política de entrega](../infra/IMAGE_DELIVERY.md)
 distingue estes testes da operação real e conserva as condições de ativação.
 
 ## Monitoring e ambiente local

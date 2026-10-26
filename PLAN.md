@@ -63,7 +63,11 @@ origem Portal/dev, ambiente com revisores e hashes da evidência ligados ao dige
 Sete testes locais passaram, incluindo assinatura Cosign com chave temporária e
 recusa de adulteração; a identidade keyless real ainda não foi exercitada.
 
-- [ ] Confirmar o CI `Image signing tests`, que só usa chaves temporárias.
+O [CI de assinatura](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40251609640)
+passou com sete testes, incluindo assinatura Cosign local e recusa de adulteração.
+Os 31 testes de infraestrutura também passaram. Isto não valida a identidade OIDC
+real nem cria uma assinatura de release.
+
 - [ ] Integrar a preparação de assinatura revista em `dev`, configurar o ambiente
   `curation-release` com revisores e prevenção de autoaprovação, confirmar acesso
   de leitura à sua configuração e ativar `BLU_RELEASE_SIGNING_ENABLED` apenas
