@@ -103,8 +103,9 @@ def smoke():
                 raise AssertionError("Asset JavaScript indisponível.")
             checks.append(phase)
             phase = "portal-python"
-            status, data = request("http://127.0.0.1:3001/api/dataset")
-            if status != 200 or json.loads(data).get("total", 0) < 1:
+            status, data = request("http://127.0.0.1:3001/api/catalog")
+            records = json.loads(data)
+            if status != 200 or not isinstance(records, list) or not records:
                 raise AssertionError("Adaptador Python indisponível.")
             checks.append(phase)
             phase = "foreign-origin"
