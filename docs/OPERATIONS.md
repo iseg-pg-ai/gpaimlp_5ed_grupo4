@@ -159,9 +159,12 @@ Um HTTP 200 não comprova um fluxo completo, acesso ao Bedrock ou validade dos
 dados. Os limiares locais são preliminares até existirem objetivos operacionais.
 Cada alerta de produção precisará de responsável, canal e ação de recuperação.
 
-## Deployment ainda por decidir
+## Deployment do portal (piloto)
 
-Antes de escolher plataforma, definir:
+Para o piloto foi escolhida a VM dedicada: stack `BluCostaPortal`, descrita em
+[Portal](PORTAL.md#servidor-privado-com-cloudfront-piloto) e registada nas
+[Decisões](DECISIONS.md). Não é produção: continua a ser uma única instância
+escritora, sem publicação na release operacional S3. Para produção, definir ainda:
 
 - demonstração, staging e produção;
 - utilizadores, identidade, papéis e exposição;
@@ -182,11 +185,10 @@ SQLite e ficheiros locais favorecem inicialmente uma única instância escritora
 Escalar horizontalmente exige rever catálogo, bloqueios, versões e armazenamento
 dos PDFs. Nenhuma alternativa está aprovada ou instalada como produção.
 
-O `Dockerfile.portal` cobre apenas o portal Node. Não inclui a materialização S3,
-ETL, Observatório, Monitoring, apresentação ou agente. Uma futura arquitetura com
-load balancer ou CDN terá de encaminhar as rotas dinâmicas e `/_next/static/*`
-para o mesmo build, validar APIs e assets e definir health checks, cache, TLS,
-rede e rollback. Essa infraestrutura ainda não existe neste repositório.
+O `Dockerfile.portal` cobre apenas o portal Node e não é usado pelo piloto. O
+piloto encaminha todas as rotas, incluindo `/_next/static/*`, para o mesmo build,
+sem cache no CloudFront. Faltam health checks externos, alertas e um rollback
+documentado além de reativar uma das três versões guardadas no servidor.
 
 ## Fluxo de entrega pretendido
 

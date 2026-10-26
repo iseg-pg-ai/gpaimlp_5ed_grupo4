@@ -1079,3 +1079,29 @@ outras versões para que o lockfile seja interpretado de forma reprodutível.
 
 Evidência: verificação completa do ambiente aprovada e seis testes do agente
 aprovados com um modelo simulado, sem chamadas a fornecedores externos.
+
+## Portal DMC num servidor privado atrás do CloudFront — 2026-10-26
+
+Decisão de piloto para a alternativa "VM dedicada" de
+[Operações](OPERATIONS.md#deployment-do-portal-piloto): o portal corre numa
+instância `t4g.small` numa sub-rede isolada, sem IP público, NAT nem internet,
+alcançada só por uma VPC origin do CloudFront. Um portão Node
+(`infra/portal/gate.mjs`) valida o ID token Cognito da intranet e só admite
+fundadores e curadores; a troca PKCE acontece no navegador e as chaves públicas
+seguem com o build, porque o servidor não alcança o Cognito. O build corre no
+CodeBuild (ARM, Node 24 verificado por SHA-256) e o servidor ativa cada versão a
+partir do S3 com verificação do hash.
+
+O estado vive num volume EBS cifrado e retido, semeado uma única vez a partir de
+`blu-portal-data.tar.gz`, com cópia diária guardada 7 dias. Esta é uma exceção
+temporária à decisão de 2026-10-22: `BLU_DATA_S3_BUCKET` não está definido no
+servidor, portanto o estado ainda não é publicado na release operacional S3. A
+pendência fica no [Plano](../PLAN.md).
+
+Custo estimado com preços de tabela em eu-west-1: cerca de 16,50 USD por mês
+(servidor 13,43, discos 2,64, cópias até 0,50) e cerca de 0,15 USD por build.
+
+Evidência antes da publicação: 83 testes Node da infraestrutura, incluindo 7 do
+portão (assinatura, emissor, cliente, validade, grupos, origem e cookie) e um
+teste do template (rede isolada, entrada só do CloudFront, saída só para S3 e
+DynamoDB, disco retido e permissões sem escrita no S3).

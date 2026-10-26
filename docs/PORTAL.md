@@ -352,7 +352,31 @@ Para reutilizar uma instalação ou build já validado, podem ser definidos
 
 O `Dockerfile.portal` cobre apenas este processo Node. A materialização S3 e os
 restantes serviços pertencem a uma futura arquitetura de deployment, descrita em
-[Operações](OPERATIONS.md#deployment-ainda-por-decidir).
+[Operações](OPERATIONS.md#deployment-do-portal-piloto).
+
+### Servidor privado com CloudFront (piloto)
+
+A stack `BluCostaPortal` (`infra/aws-split-app.mjs`) publica o portal com
+endereço próprio (saída `PortalUrl`):
+
+- **Rede:** instância `t4g.small` numa sub-rede isolada, sem IP público nem NAT;
+  o CloudFront chega-lhe por uma VPC origin na porta 8080. A saída só alcança o
+  S3 e o DynamoDB, por gateway endpoints.
+- **Login:** `infra/portal/gate.mjs` serve `/auth/*`, valida o ID token Cognito do
+  grupo da intranet e guarda-o num cookie `HttpOnly`. Só fundadores e curadores
+  entram; o Next.js escuta apenas em `127.0.0.1:3001`.
+- **Build:** cada deploy com código novo lança o projeto CodeBuild `PortalBuild`,
+  que junta `dmc-workspace`, `config`, `portal`, `etl`, os esquemas do assistente e
+  o portão num pacote com Node 24. O servidor procura uma versão nova a cada
+  2 minutos, confirma o SHA-256 e reinicia os serviços. Guarda as três últimas.
+- **Dados:** volume EBS próprio montado em `/srv/blu/state`, semeado uma única vez
+  a partir de `blu-portal-data.tar.gz` (se existir na raiz no momento do deploy) e
+  copiado todos os dias às 03:00 UTC, com 7 cópias.
+
+Sem internet no servidor, a meteorologia, o planeador do assistente e a tradução
+de itinerários não respondem, e os PDFs em mandarim precisam ainda de uma fonte
+CJK. O arranque fica registado na consola da instância
+(`aws ec2 get-console-output`).
 
 `npm run check` acrescenta `format:check` a estas verificações e deve terminar sem
 avisos antes de integrar alterações no portal.

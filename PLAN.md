@@ -1,5 +1,19 @@
 # Plano de evolução do BLU AI System
 
+## Portal, backoffice e intranet com endereços próprios — 2026-10-26
+
+Cada parte tem a sua distribuição CloudFront: site público, intranet,
+backoffice (mesmo código e login da intranet, só trabalho com clientes) e portal
+DMC (stack `BluCostaPortal`). Detalhes em [Portal](docs/PORTAL.md#servidor-privado-com-cloudfront-piloto).
+
+- [x] Backoffice em `d1x28h8mbkgn1v.cloudfront.net`, publicado e verificado (2026-10-26).
+- [x] Stack `BluCostaPortal`: servidor privado, portão de login, build no CodeBuild e cópia diária.
+- [ ] Publicar `BluCostaPortal` e validar o login, o catálogo e uma exportação PDF na AWS.
+- [ ] Publicar o estado do portal na release operacional S3 (`BLU_DATA_S3_BUCKET`);
+  hoje o disco do servidor é o estado e as cópias EBS são o backup.
+- [ ] Meteorologia, planeador do assistente e tradução sem internet no servidor.
+- [ ] Fonte CJK no build para PDFs em mandarim.
+
 ## Intranet BLU — 2026-10-25
 
 Especificação em [intranet BLU](docs/INTRANET.md): stack `BluCostaIntranet`
