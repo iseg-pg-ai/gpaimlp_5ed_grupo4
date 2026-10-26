@@ -50,6 +50,29 @@ const isCurator = () => groupsNow().some(group => ['curators', 'founders'].inclu
 const isFounder = () => groupsNow().includes('founders');
 const ROLE_LABEL = { founders: 'Fundador(a)', curators: 'Curador(a)', governance: 'Governança', testers: 'Testes' };
 const CHANNEL = { whatsapp: 'WhatsApp', sms: 'SMS', email: 'Email' };
+// Governança em linguagem simples: [quando ativo, quando inativo] por controlo do manifest.
+const PROMISES = {
+  humanApprovalRequired: ['Uma pessoa da equipa aprova antes de qualquer contacto com o cliente.', 'Há contactos com clientes sem aprovação de uma pessoa.'],
+  automaticCustomerContact: ['Algumas mensagens são enviadas automaticamente, só a quem deu consentimento.', 'Nenhum cliente recebe mensagens sem aprovação da equipa.'],
+  rawTranscriptsExcludedFromKnowledgeBase: ['As conversas completas dos clientes não entram na base de conhecimento do assistente.', null],
+  iamProtectedBackofficeInvocation: ['O assistente interno só pode ser usado pela equipa autenticada.', null],
+  evidenceVersioning: ['As provas guardam todas as versões; nada se perde.', null],
+  syntheticExcludedFromBusinessKpis: ['Dados de demonstração não contam nos números do negócio.', null],
+};
+const RULE_TOPICS = {
+  'Viagens e turismo': ['rnavt-registration', 'partner-licensing', 'package-precontract-info', 'insolvency-protection'],
+  'Clientes e reclamações': ['complaints-book', 'complaints-deadline', 'adr-information', 'no-final-prices-by-ai', 'accessibility'],
+  'Dados pessoais': ['consent-before-storage', 'storage-limitation', 'reminders-require-consent', 'no-tracking-cookies'],
+  'Inteligência artificial e segurança': ['ai-disclosure', 'security-of-processing'],
+};
+const ACTIONS = {
+  'rnavt-registration': 'Indicar o número de registo RNAVT da agência, para aparecer no rodapé do site.',
+  'adr-information': 'Escolher a entidade de resolução alternativa de litígios (RAL) e indicá-la no site.',
+  'package-precontract-info': 'Confirmar que cada cliente recebe a ficha de informação normalizada antes de pagar.',
+  'insolvency-protection': 'Guardar o comprovativo da garantia contra insolvência (Fundo de Garantia de Viagens e Turismo).',
+  accessibility: 'Rever a acessibilidade do site e do pedido de reserva.',
+};
+const EVIDENCE_KIND = { 'churn-followups': 'Revisões de clientes em risco', manifests: 'Configuração das regras e controlos' };
 // Espelha ROLES da API: só esconde o que o servidor recusaria de qualquer forma.
 const ROLE_PERMS = { founders: ['tasks', 'cases', 'security', 'team-admin'], curators: ['tasks', 'cases'], governance: ['tasks', 'cases', 'security'], testers: [] };
 const can = permission => groupsNow().some(group => ROLE_PERMS[group]?.includes(permission));
@@ -583,32 +606,65 @@ const views = {
     );
   },
 
+  // Escrito para a fundadora: linguagem simples primeiro, detalhe técnico dobrado para auditoria.
   async governance(view) {
     const { manifest, policies, evidence } = await api('GET', '/v1/governance');
-    const RESULT = { pass: ['Cumpre', 'ok'], fail: ['Em falta', 'bad'], manual: ['Manual', 'warn'] };
-    view.append(
-      h('h2', {}, 'Governança e conformidade'),
-      h('div', { class: 'notice' }, manifest.note || 'Mapeamento de apoio à auditoria; não constitui certificação.'),
-      h('div', { class: 'cards' }, Object.entries(manifest.controls ?? {}).map(([key, value]) => h('div', { class: 'card' }, h('div', { class: 'label' }, key), pill(String(value), (key === 'automaticCustomerContact' ? !value : value) ? 'ok' : 'bad')))),
-      h('div', { class: 'panel' }, h('h3', {}, 'Controlos e mapeamento proposto'), h('table', {},
-        h('thead', {}, h('tr', {}, h('th', {}, 'Controlo'), h('th', {}, 'Evidência'), h('th', {}, 'Referências'))),
-        h('tbody', {}, (manifest.mapping ?? []).map(item => h('tr', {}, h('td', {}, item.control), h('td', {}, item.evidence), h('td', {}, item.references.map(ref => h('div', {}, ref)))))))),
-      h('p', { class: 'muted' }, `Revisão: ${manifest.reviewCadence === 'quarterly' ? 'trimestral' : manifest.reviewCadence ?? '—'}.`),
-      policies ? h('div', { class: 'panel spaced' },
-        h('h3', {}, 'Regulação europeia e portuguesa (políticas como código)'),
-        h('p', { class: 'muted' }, `${policies.note} Avaliado no deploy em ${when(policies.evaluatedAt)}: ${policies.summary.pass} cumprem, ${policies.summary.fail} em falta, ${policies.summary.manual} manuais.`),
+    const RESULT = { pass: ['Cumpre', 'ok'], fail: ['Em falta', 'bad'], manual: ['Verificar à mão', 'warn'] };
+    const rules = policies?.policies ?? [];
+    const card = (value, label, tone) => h('div', { class: `card ${tone ?? ''}` }, h('div', { class: 'value' }, value), h('div', { class: 'label' }, label));
+    const sources = policy => policy.sources.map(source => h('div', {}, h('a', { href: source.url, target: '_blank', rel: 'noopener noreferrer' }, source.name), h('span', { class: 'muted' }, ` ${source.ref}`)));
+    const todo = rules.filter(policy => policy.result.status !== 'pass');
+    const promise = ([key, value]) => {
+      const [yes, no] = PROMISES[key] ?? [key.replace(/([A-Z])/g, ' $1').toLowerCase(), null];
+      const good = key === 'automaticCustomerContact' ? !value : value;
+      return h('li', { class: good ? 'kept' : 'open' }, value ? yes : (no ?? `Ainda não: ${yes.toLowerCase()}`));
+    };
+    const byTopic = Object.entries(RULE_TOPICS).map(([topic, ids]) => [topic, rules.filter(policy => ids.includes(policy.id))]);
+    const others = rules.filter(policy => !Object.values(RULE_TOPICS).flat().includes(policy.id));
+    if (others.length) byTopic.push(['Outras regras', others]);
+    const week = Date.now() - 7 * 864e5;
+    const kinds = Object.entries(evidence.reduce((groups, item) => {
+      const kind = EVIDENCE_KIND[item.key.split('/')[1]] ?? 'Outros registos';
+      (groups[kind] ??= []).push(item);
+      return groups;
+    }, {}));
+    view.append(h('div', {},
+      h('h2', {}, 'Está tudo em ordem?'),
+      h('p', { class: 'muted' }, 'As regras que a BLU tem de cumprir, o que já está garantido e o que precisa de si. Serve de apoio a uma auditoria; não é uma certificação ISO.'),
+      policies
+        ? h('div', { class: 'cards' },
+          card(policies.summary.pass, 'regras cumpridas', 'ok'),
+          card(policies.summary.fail, 'em falta: precisam de si', policies.summary.fail ? 'bad' : 'ok'),
+          card(policies.summary.manual, 'para verificar à mão', policies.summary.manual ? 'warn' : 'ok'),
+          card(when(policies.evaluatedAt).split(',')[0], `última verificação · revisão ${manifest.reviewCadence === 'quarterly' ? 'trimestral' : manifest.reviewCadence ?? '—'}`))
+        : h('div', { class: 'notice' }, 'O relatório das regras legais ainda não foi publicado. Aparece aqui depois da próxima publicação do backoffice.'),
+      todo.length ? h('div', { class: 'panel risk' },
+        h('h3', {}, 'O que precisa de si'),
+        h('ul', { class: 'todo' }, todo.map(policy => h('li', {},
+          h('strong', {}, ACTIONS[policy.id] ?? policy.requirement), ' ', pill(...RESULT[policy.result.status]),
+          h('div', { class: 'muted' }, `${policy.title}. Responsável: ${policy.owner}.`),
+          h('div', { class: 'muted' }, sources(policy)))))) : null,
+      h('div', { class: 'panel spaced' },
+        h('h3', {}, 'As nossas promessas'),
+        h('ul', { class: 'promises' }, Object.entries(manifest.controls ?? {}).map(promise)),
+        manifest.mapping?.length ? h('details', { class: 'spaced' }, h('summary', {}, `Como garantimos cada promessa (${manifest.mapping.length} controlos)`), h('table', {},
+          h('thead', {}, h('tr', {}, h('th', {}, 'Controlo'), h('th', {}, 'Onde está a prova'), h('th', {}, 'Referências'))),
+          h('tbody', {}, manifest.mapping.map(item => h('tr', {}, h('td', {}, item.control), h('td', {}, item.evidence), h('td', {}, (item.references ?? []).map(ref => h('div', { class: 'muted' }, ref)))))))) : null),
+      byTopic.filter(([, list]) => list.length).map(([topic, list]) => h('details', { class: 'panel spaced topic' },
+        h('summary', {}, `${topic} `, h('span', { class: 'muted' }, `${list.filter(policy => policy.result.status === 'pass').length} de ${list.length} cumpridas`)),
         h('table', {},
-          h('thead', {}, h('tr', {}, h('th', {}, 'Regra'), h('th', {}, 'Fonte'), h('th', {}, 'Estado'), h('th', {}, 'Verificação'), h('th', {}, 'Dono'))),
-          h('tbody', {}, policies.policies.map(policy => h('tr', {},
-            h('td', {}, h('strong', {}, policy.title), h('div', { class: 'muted' }, policy.requirement), pill(policy.jurisdiction), policy.severity === 'blocking' ? pill('bloqueia deploy', 'bad') : null),
-            h('td', {}, policy.sources.map(source => h('div', {}, h('a', { href: source.url, target: '_blank', rel: 'noopener noreferrer' }, source.name), h('span', { class: 'muted' }, ` ${source.ref}`)))),
+          h('thead', {}, h('tr', {}, h('th', {}, 'Regra'), h('th', {}, 'Estado'), h('th', {}, 'Lei'))),
+          h('tbody', {}, list.map(policy => h('tr', {},
+            h('td', {}, h('strong', {}, policy.title), h('div', { class: 'muted' }, policy.requirement)),
             h('td', {}, pill(...(RESULT[policy.result.status] ?? [policy.result.status, '']))),
-            h('td', { class: 'message' }, policy.result.detail),
-            h('td', {}, policy.owner)))))) : null,
-      h('div', { class: 'panel' }, h('h3', {}, 'Evidências recentes'), h('table', {},
-        h('thead', {}, h('tr', {}, h('th', {}, 'Objeto'), h('th', {}, 'Data'), h('th', {}, 'Tamanho'), h('th', {}, 'ETag'))),
-        h('tbody', {}, evidence.map(item => h('tr', {}, h('td', {}, item.key), h('td', {}, when(item.lastModified)), h('td', {}, `${item.size} B`), h('td', { class: 'muted' }, item.etag.slice(0, 12))))))),
-    );
+            h('td', {}, sources(policy)))))))),
+      h('div', { class: 'panel spaced' },
+        h('h3', {}, 'Provas guardadas'),
+        h('p', { class: 'muted' }, `${evidence.filter(item => Date.parse(item.lastModified) > week).length} registo(s) nos últimos 7 dias. Os registos guardam todas as versões; nada é apagado.`),
+        h('ul', {}, kinds.map(([kind, items]) => h('li', {}, `${kind}: ${items.length}, o mais recente em ${when(items[0].lastModified)}`))),
+        h('details', {}, h('summary', {}, 'Detalhe para auditoria'), h('table', {},
+          h('thead', {}, h('tr', {}, h('th', {}, 'Ficheiro'), h('th', {}, 'Data'), h('th', {}, 'Tamanho'), h('th', {}, 'ETag'))),
+          h('tbody', {}, evidence.map(item => h('tr', {}, h('td', {}, item.key), h('td', {}, when(item.lastModified)), h('td', {}, `${item.size} B`), h('td', { class: 'muted' }, item.etag.slice(0, 12))))))))));
   },
 };
 

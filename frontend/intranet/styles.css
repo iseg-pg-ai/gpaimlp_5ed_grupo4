@@ -132,3 +132,18 @@ p.message { margin: .3rem 0; white-space: pre-wrap; font-size: .85rem; color: va
   body:has(#signin:not([hidden])) main { margin-left: 0; }
   .who { margin-left: auto; }
 }
+
+/* Governança para a fundadora */
+.card.ok .value { color: var(--ok); }
+.card.warn .value { color: var(--warn); }
+.card.bad .value { color: var(--bad); }
+.todo, .promises { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; }
+.promises li { padding-left: 1.6rem; position: relative; }
+.promises li::before { position: absolute; left: 0; font-weight: 700; }
+.promises li.kept::before { content: "✓"; color: var(--ok); }
+.promises li.open::before { content: "!"; color: var(--warn); }
+.topic summary { font-family: Georgia, serif; font-weight: 500; font-size: 1.05rem; }
+.topic table { margin-top: .75rem; }
+
+/* Georgia só tem algarismos antigos (o 0 parece um O): números numa fonte com algarismos alinhados. */
+.card .value, .slot-time { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-variant-numeric: lining-nums tabular-nums; font-weight: 600; }
