@@ -46,14 +46,17 @@ A verificação sem CUDA passou em Python 3.13; imports, cinco testes com mocks 
 dois ensaios de tradução real EN/PT passaram localmente em Python 3.12, sem
 instalar modelos. O tamanho final da imagem ainda não foi medido.
 
-- [ ] Medir e registar o tamanho da imagem na entrega ao ECR; não confundir
-  tamanho de cache ou download de wheels com tamanho da imagem.
 O [CI de infraestrutura](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40249812920)
 passou no commit `8fcea87`, com testes de digest, IAM e limites da API. Os ensaios
 CDK usam contexto temporário explícito e lookups desativados, sem depender de
 credenciais ou cache local de zonas AWS.
 
-- [ ] Definir e implementar geração de SBOM, assinatura e verificação da imagem.
+- [ ] Validar em CI a exportação OCI com SBOM SPDX e proveniência SLSA,
+  verificando hashes, revisão e associação ao digest. Guardar evidência e medir
+  layers comprimidos e arquivo OCI; estes valores não são tamanho de cache.
+- [ ] Implementar assinatura e verificação criptográfica da release antes de
+  promoção. A evidência BuildKit sem assinatura não autoriza publicação.
+  Política de aceitação em [Entrega da imagem](infra/IMAGE_DELIVERY.md).
 - [ ] Preparar publicação identificada no ECR, verificação de assinatura e
   promoção/rollback por digest. A stack já exige SHA-256 na conta/região alvo,
   recusa tags e regista `ImageUri`; a execução real continua pendente.

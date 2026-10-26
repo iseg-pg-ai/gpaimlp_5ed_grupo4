@@ -257,6 +257,19 @@ EN/PT com modelos existentes preservaram hora e montante, sem instalar modelos.
 Em português, o modelo apresentou EUR como euros. Não foi validado PDF ou
 comportamento de todos os idiomas.
 
+### A evidência da imagem é validada antes da promoção — 2026-10-26
+
+O build exporta OCI com SBOM SPDX e proveniência SLSA. O verificador recalcula
+hashes e tamanhos, confirma a revisão e exige que os documentos estejam ligados
+ao manifest linux/amd64. A evidência pequena é conservada por 14 dias; não se
+publica a imagem no artefacto de diagnóstico.
+
+Integridade e metadados BuildKit não equivalem a uma assinatura do produtor.
+O relatório conserva `signature_verified: false`. Assinatura, identidade de
+release e verificação antes da promoção permanecem pendentes, segundo a
+[política de entrega](../infra/IMAGE_DELIVERY.md). Os seis testes sintéticos
+cobrem aceitação e recusa de entregas adulteradas; a exportação real requer CI.
+
 ## Monitoring e ambiente local
 
 ### Monitoring não aumenta a autoridade sobre dados — 2026-10-19
