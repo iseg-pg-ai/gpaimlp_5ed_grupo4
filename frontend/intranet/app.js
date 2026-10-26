@@ -1,8 +1,8 @@
-import { challengeFor, claimsOf, expired, loginUrl, logoutUrl, randomString, tokenRequest } from './auth.js';
+import { challengeFor, claimsOf, expired, loginUrl, logoutUrl, randomString, refreshRequest, tokenRequest } from './auth.js';
 
 // Intranet da equipa. Todo o texto vindo da API é inserido com textContent (nunca HTML).
 const config = window.BLU_INTRANET;
-const session = { idToken: '', claims: null };
+const session = { idToken: '', refreshToken: '', claims: null };
 const $ = id => document.getElementById(id);
 
 const TAGS = {
@@ -55,12 +55,14 @@ const ROLE_PERMS = { founders: ['cases', 'security', 'team-admin'], curators: ['
 const can = permission => groupsNow().some(group => ROLE_PERMS[group]?.includes(permission));
 const DEADLINE = { overdue: ['Fora do prazo', 'bad'], 'due-soon': ['Prazo próximo', 'warn'], 'on-track': ['No prazo', 'ok'], closed: ['Fechado', ''] };
 let casePrefill = {};
+// Filtro e lead aberto sobrevivem a «Atualizar» e ao regresso ao separador.
+const leadsState = { filter: 'open', selected: '' };
 let teamCache;
 const loadTeam = async () => (teamCache ??= (await api('GET', '/v1/team')).members);
 
 async function api(method, path, body) {
   if (config?.mock) return window.BLU_INTRANET_MOCK(method, path, body);
-  if (expired(session.claims)) return login();
+  if (expired(session.claims) && !(await renew())) return login();
   // Sem rede ou servidor, o navegador só diz «Failed to fetch»; mostra-se uma mensagem útil.
   const response = await fetch(`${config.api}${path}`, {
     method,
@@ -96,10 +98,28 @@ async function finishLogin() {
   const { url, init } = tokenRequest(config, { code, verifier: saved.verifier });
   const response = await fetch(url, init);
   if (!response.ok) throw new Error('Não foi possível concluir o login.');
-  const tokens = await response.json();
-  session.idToken = tokens.id_token;
-  session.claims = claimsOf(tokens.id_token);
+  keep(await response.json());
   return true;
+}
+
+function keep(tokens) {
+  session.idToken = tokens.id_token;
+  session.refreshToken = tokens.refresh_token || session.refreshToken;
+  session.claims = claimsOf(tokens.id_token);
+}
+
+// Pedidos simultâneos partilham a mesma renovação.
+let renewing;
+function renew() {
+  if (!session.refreshToken) return Promise.resolve(false);
+  renewing ??= (async () => {
+    const { url, init } = refreshRequest(config, session.refreshToken);
+    const response = await fetch(url, init).catch(() => null);
+    if (!response?.ok) return false;
+    keep(await response.json());
+    return true;
+  })().finally(() => { renewing = undefined; });
+  return renewing;
 }
 
 // ---------- Secções ----------
@@ -129,7 +149,7 @@ const views = {
     );
   },
 
-  async leads(view, state = { filter: 'open', selected: '' }) {
+  async leads(view, state = leadsState) {
     const { leads } = await api('GET', `/v1/leads?status=${state.filter}`);
     const detail = h('div', { class: 'panel' }, h('p', { class: 'muted' }, 'Escolha um lead para ver a conversa com o chatbot.'));
     const rows = leads;
@@ -598,7 +618,9 @@ function activityPanel(id, lead) {
   return h('div', {}, list, h('details', { class: 'spaced' }, h('summary', {}, 'Agendar recolha ou excursão'), form), status);
 }
 
+let current = 'dashboard';
 async function show(tab) {
+  current = tab;
   for (const button of $('tabs').querySelectorAll('button')) {
     if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
@@ -623,7 +645,14 @@ async function start() {
   }
   try {
     if (config.mock) session.claims = config.mock.claims;
-    else if (!(await finishLogin())) return;
+    else if (!(await finishLogin())) {
+      // Recarregar a página perde os tokens em memória: volta-se logo ao login gerido,
+      // salvo depois de «Sair», para não reentrar sem o pedir.
+      const signedOut = sessionStorage.getItem('blu-intranet-signed-out');
+      sessionStorage.removeItem('blu-intranet-signed-out');
+      if (!signedOut) await login();
+      return;
+    }
   } catch (error) {
     $('signin-error').textContent = error.message;
     return;
@@ -635,8 +664,20 @@ async function start() {
   $('who').hidden = false;
   const roles = groupsNow().map(group => ROLE_LABEL[group]).filter(Boolean).join(', ');
   $('who-name').textContent = [session.claims.name || session.claims.email || '', roles].filter(Boolean).join(' · ');
-  $('logout').addEventListener('click', () => (config.mock ? location.reload() : location.assign(logoutUrl(config))));
+  $('logout').addEventListener('click', () => {
+    if (config.mock) return location.reload();
+    sessionStorage.setItem('blu-intranet-signed-out', '1');
+    location.assign(logoutUrl(config));
+  });
   $('tabs').addEventListener('click', event => event.target.dataset?.tab && show(event.target.dataset.tab));
+  $('refresh').hidden = false;
+  $('refresh').addEventListener('click', () => show(current));
+  // Ao voltar ao separador depois de um minuto fora, recarrega a secção aberta.
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) hiddenAt = Date.now();
+    else if (hiddenAt && Date.now() - hiddenAt > 60_000) show(current);
+  });
   show('dashboard');
 }
 

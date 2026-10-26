@@ -12,7 +12,7 @@ import { CONTACTED, LEAD_TAGS, OPEN_STATUSES, groupsOf, metrics, toLead } from '
 import { createDispatcher } from '../lambda/intranet/dispatch-core.mjs';
 import { lisbonToUtc, outcome, parseActivity, plan } from '../lambda/intranet/schedule.mjs';
 import { addWorkingDays, deadlineState, parseCase, parseCaseUpdate, portugueseHolidays } from '../lambda/intranet/cases.mjs';
-import { challengeFor, claimsOf, expired, loginUrl, tokenRequest } from '../../frontend/intranet/auth.js';
+import { challengeFor, claimsOf, expired, loginUrl, refreshRequest, tokenRequest } from '../../frontend/intranet/auth.js';
 
 const infraDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const S = value => ({ S: value });
@@ -162,6 +162,10 @@ test('the web login uses PKCE S256 and keeps the exchange on the Cognito domain'
   const exchange = tokenRequest(config, { code: 'c', verifier: 'v' });
   assert.equal(new URL(exchange.url).origin, config.authDomain);
   assert.match(exchange.init.body, /code_verifier=v/);
+  const renewal = refreshRequest(config, 'r');
+  assert.equal(renewal.url, exchange.url);
+  assert.equal(new URLSearchParams(renewal.init.body).get('grant_type'), 'refresh_token');
+  assert.equal(new URLSearchParams(renewal.init.body).get('refresh_token'), 'r');
   const token = `x.${Buffer.from(JSON.stringify({ email: 'ana@blu.pt', exp: 2e9 })).toString('base64url')}.y`;
   assert.equal(claimsOf(token).email, 'ana@blu.pt');
   assert.equal(expired({ exp: 1 }), true);

@@ -69,6 +69,9 @@ Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só d
 - Login gerido do Cognito com código e PKCE. O ID token (1 h, com email e
   grupos) fica só em memória no navegador (nunca `localStorage`, URL ou
   logs); o verificador PKCE fica em `sessionStorage` apenas até ao regresso.
+  O refresh token (12 h) também fica só em memória e renova o ID token sem
+  novo login; ao recarregar a página, a SPA volta logo ao login gerido, que
+  devolve um código sem pedir MFA enquanto a sua sessão for válida.
 - Política de segurança de conteúdo estrita, sem scripts de terceiros; CORS da
   API limitado ao domínio da intranet.
 - Cada pedido é autorizado na Lambda pelos grupos do token, não só na SPA.

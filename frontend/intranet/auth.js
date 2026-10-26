@@ -1,5 +1,6 @@
 // Login gerido do Cognito com código de autorização e PKCE. Os tokens ficam só em
 // memória; o verificador PKCE e o estado ficam em sessionStorage apenas até ao regresso.
+// Ao recarregar a página, a sessão do login gerido, enquanto válida, devolve um código novo sem pedir MFA.
 const base64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 export function randomString(size = 32) {
@@ -30,15 +31,22 @@ export function logoutUrl(config) {
   return url.toString();
 }
 
+const tokenEndpoint = (config, fields) => ({
+  url: new URL('/oauth2/token', config.authDomain).toString(),
+  init: {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: config.clientId, ...fields }).toString(),
+  },
+});
+
 export function tokenRequest(config, { code, verifier }) {
-  return {
-    url: new URL('/oauth2/token', config.authDomain).toString(),
-    init: {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'authorization_code', client_id: config.clientId, code, redirect_uri: config.redirectUri, code_verifier: verifier }).toString(),
-    },
-  };
+  return tokenEndpoint(config, { grant_type: 'authorization_code', code, redirect_uri: config.redirectUri, code_verifier: verifier });
+}
+
+/** Renova o ID token com o refresh token (12 h, também só em memória) sem voltar ao login. */
+export function refreshRequest(config, refreshToken) {
+  return tokenEndpoint(config, { grant_type: 'refresh_token', refresh_token: refreshToken });
 }
 
 /** Lê as reivindicações do ID token para mostrar nome e grupos; a API volta a validá-lo. */
