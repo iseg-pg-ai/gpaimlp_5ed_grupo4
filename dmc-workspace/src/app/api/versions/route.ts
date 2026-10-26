@@ -5,13 +5,15 @@ import { isLocale } from "@/lib/locales";
 import { VersionStore, VersionConflict, checkTripId } from "@/lib/version-store";
 import { persistVersion, syncPendingVersions } from "@/lib/version-persistence";
 import { syncOperationalState } from "@/lib/operational-s3";
-import { jsonError, noStoreHeaders } from "@/lib/server-http";
+import { jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { renderItineraryPrompt } from "@/lib/itinerary-prompt";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
   let body;
   try {
     const raw = await request.text();

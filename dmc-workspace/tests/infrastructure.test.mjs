@@ -6,7 +6,8 @@ import { tmpdir } from "node:os";
 import path, { join } from "node:path";
 import { createRequire } from "node:module";
 import { awsConfig, validateBuild } from "../scripts/aws-config.mjs";
-import { publicUrl, publicOrigin } from "../src/lib/server-http.ts";
+import { publicUrl, publicOrigin, rejectForeignOrigin } from "../src/lib/server-http.ts";
+import { readFileSync } from "node:fs";
 
 const origin = "https://colega.studio.example.com";
 test("AWS: validar origem, porta e prefixo em ambientes distintos", () => {
@@ -100,6 +101,51 @@ test("public share URLs preserve the Studio origin and prefix once", () => {
       else process.env[key] = saved[index];
     });
   }
+});
+
+test("rejectForeignOrigin recusa apenas pedidos de outro site", async () => {
+  const saved = process.env.PORTAL_PUBLIC_ORIGIN;
+  const post = (url, origin) =>
+    new Request(url, { method: "POST", headers: origin ? { origin } : {} });
+  try {
+    delete process.env.PORTAL_PUBLIC_ORIGIN;
+    const local = "http://localhost:3000/api/versions";
+    assert.equal(rejectForeignOrigin(post(local)), null);
+    assert.equal(rejectForeignOrigin(post(local, "http://localhost:3000")), null);
+    for (const foreign of ["https://evil.example", "http://localhost:3001", "null"]) {
+      const response = rejectForeignOrigin(post(local, foreign));
+      assert.equal(response?.status, 403, foreign);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      assert.deepEqual(await response.json(), { error: "Origem inválida." });
+    }
+    // Atrás do proxy do Studio, a origem pública prevalece sobre o pedido local.
+    process.env.PORTAL_PUBLIC_ORIGIN = "https://studio.example.test";
+    assert.equal(rejectForeignOrigin(post(local, "https://studio.example.test")), null);
+    assert.equal(rejectForeignOrigin(post(local, "http://localhost:3000"))?.status, 403);
+  } finally {
+    if (saved === undefined) delete process.env.PORTAL_PUBLIC_ORIGIN;
+    else process.env.PORTAL_PUBLIC_ORIGIN = saved;
+  }
+});
+
+test("rotas que alteram dados ou geram custos verificam a origem antes de ler o pedido", () => {
+  for (const route of ["versions", "shares", "trash/cleanup", "translate"]) {
+    const source = readFileSync(
+      new URL(`../src/app/api/${route}/route.ts`, import.meta.url),
+      "utf8",
+    );
+    const post = source.slice(source.indexOf("export async function POST"));
+    assert.match(
+      post,
+      /^export async function POST\(request: Request\) \{\s+const forbidden = rejectForeignOrigin\(request\);\s+if \(forbidden\) return forbidden;/,
+      route,
+    );
+  }
+  // O endpoint antigo do assistente delega no planeador, que tem verificação própria.
+  const read = (route) =>
+    readFileSync(new URL(`../src/app/api/${route}/route.ts`, import.meta.url), "utf8");
+  assert.match(read("assistant"), /import \{ POST as plan \} from "\.\/plan\/route";/);
+  assert.match(read("assistant/plan"), /origin && origin !== publicOrigin\(request\.url\)/);
 });
 
 const require = createRequire(import.meta.url);

@@ -70,9 +70,9 @@ nvm install 24
 node -v # Verificação - mostra v.24.xx.x
 
 # python -m uv sync --locked
+```
 
-
-#FDC è necessário 2x o sync --locked ??
+\#FDC è necessário 2x o sync --locked ??
 
 Instalação de bibliotecas para as componente dashboard, agent e translation:
 
@@ -81,7 +81,7 @@ uv sync --locked --all-groups
 ```
 
 Alternativa: instalação individual por componente:
-
+>
 > - uv sync --locked --inexact --group dashboard
 > - uv sync --locked --inexact --group agent
 > - uv sync --locked --inexact --group translation
@@ -159,9 +159,9 @@ processos ativos. Essas ações pertencem exclusivamente ao `just blu it`;
 executar o ficheiro como código;
 - Valores já exportados no terminal prevalecem;
 
-(#FDC - Esta infor deve passar para secção recuperação)
+\#FDC - Esta infor deve passar para secção recuperação
 
-```bash
+```text
 O bucket de dados é separado dos checkpoints. Releases validadas podem ser
 publicadas e recuperadas com `python3 -B -m etl.s3_transport`; os contratos e
 comandos estão em [Dados e operações](docs/DATA_PIPELINE.md#origem-etl-em-s3).
@@ -186,9 +186,9 @@ Executar:
 just blu it
 ```
 
-FDC deveria estar no Onboarding.md
+\#FDC deveria estar no Onboarding.md
 
-```bash
+```text
 Detalhe do funcionamento:
   - Caso não tenha sido feito, criar conta de admin;
   - Depois de validar uma conta `admin` do Monitoring, o comando pára os serviços,
@@ -224,7 +224,7 @@ conseguem renovar tokens externos expirados.
 
 ## Operações individuais
 
-(#FDC - Incluir contexto . O termo Operações é adequado ?)
+\#FDC - Incluir contexto . O termo Operações é adequado ?
 
 - ETL e warehouse: [dados e operações](docs/DATA_PIPELINE.md).
 - Portal: [guia do DMC Workspace](docs/PORTAL.md).
@@ -232,9 +232,9 @@ conseguem renovar tokens externos expirados.
 - Monitoring e recuperação: [BLU Operations](monitoring/README.md).
 - Apresentação: [execução e controlos](presentation/README.md).
 
-(#FDC este comentário deveria estar em Observatory.md)
+\#FDC este comentário deveria estar em Observatory.md
 
-```bash
+```text
 O Observatório permite explorar a oferta, destinos, preços, histórico e qualidade
 da entrega publicada. É uma ferramenta de consulta para a curadoria; não edita o
 warehouse nem confirma disponibilidade, reservas ou preços.
@@ -264,7 +264,7 @@ testes de navegador estão em [docs/TESTING.md](docs/TESTING.md).
 
 ## Limites atuais do Portal DMC
 
-(#FDC Proponho retirar daqui e passar para a ppt ??)
+\#FDC Proponho retirar daqui e passar para a ppt ??
 
 - O portal produz propostas e documentos;
 - Não efetua reservas nem confirma automaticamente preços, disponibilidade, acessibilidade ou condições alimentares;
@@ -273,7 +273,7 @@ testes de navegador estão em [docs/TESTING.md](docs/TESTING.md).
 
 ## Assistente transacional
 
-(#FDC ??)
+\#FDC ??
 
 - O fluxo **proposta → pré-visualização → aceitação explícita** usa os contratos
 atuais de [docs/ASSISTANT.md](docs/ASSISTANT.md);
