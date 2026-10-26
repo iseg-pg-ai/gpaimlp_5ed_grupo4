@@ -1,4 +1,29 @@
 import { NOTIFY, outcome } from './schedule.mjs';
+import { contactDetails, toLead, toMessage } from './model.mjs';
+import { NUDGE_DAYS, autoMessages } from './settings.mjs';
+
+/**
+ * Prepara as mensagens automáticas ligadas nas definições (agradecimento, reativação) como
+ * lembretes NOTIFY# normais, que o envio abaixo trata como os outros. Desligadas, não faz nada.
+ */
+export function createPlanner(deps) {
+  return async function planAuto() {
+    const now = deps.now?.() ?? new Date();
+    const settings = await deps.settings();
+    if (!settings.auto.thanks && !settings.auto.nudge) return 0;
+    const leads = (await deps.leads()).map(toLead).filter(lead => lead.consentAt && !lead.synthetic);
+    const candidates = leads.filter(lead => settings.auto.thanks || (lead.status === 'CONTACTED' && now - Date.parse(lead.lastActivityAt) >= NUDGE_DAYS * 864e5));
+    let created = 0;
+    for (const lead of candidates) {
+      const existing = new Set(await deps.autoKeys(lead.id));
+      const messages = (await deps.transcript(lead.id)).map(toMessage);
+      for (const record of autoMessages(lead, messages, contactDetails(messages), settings, existing, now)) {
+        if (await deps.create(lead.id, { ...record, followUpStatus: NOTIFY.pending, followUpAt: record.sendAt, createdAt: now.toISOString() })) created += 1;
+      }
+    }
+    return created;
+  };
+}
 
 const LATE_MS = 6 * 36e5;
 const s = (item, key) => item[key]?.S ?? '';

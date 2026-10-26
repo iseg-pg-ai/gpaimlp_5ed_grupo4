@@ -42,6 +42,8 @@ function fakeDeps(overrides = {}) {
       operations: async () => ({ queues: {} }),
       governance: async () => ({ manifest: {}, evidence: [] }),
       putRecords: async () => {},
+      queryRecords: async () => [],
+      policyReport: async () => null,
       newId: () => 'id-00000001',
       ...overrides,
     },

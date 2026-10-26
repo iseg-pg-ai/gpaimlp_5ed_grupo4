@@ -257,7 +257,7 @@ const views = {
     const card = (value, label) => h('div', { class: 'card' }, h('div', { class: 'value' }, value), h('div', { class: 'label' }, label));
     view.append(
       h('h2', {}, 'O meu trabalho'),
-      h('p', { class: 'muted' }, 'Tudo o que é seu, por ordem de urgência. Cada alteração aparece no feed da equipa; nada é apagado e nenhum cliente é contactado automaticamente.'),
+      h('p', { class: 'muted' }, 'Tudo o que é seu, por ordem de urgência. Cada alteração aparece no feed da equipa; nada é apagado e só há mensagens automáticas a clientes se estiverem ligadas nas regras de seguimento.'),
       h('div', { class: 'cards' },
         card(items.length, 'Na minha lista'), card(items.filter(item => ['risk', 'overdue'].includes(item.urgency)).length, 'Urgentes ou em atraso'),
         card(mine.filter(item => item.task.status === 'blocked').length, 'Tarefas bloqueadas'), card(items.filter(item => item.kind === 'lead').length, 'Leads que assumi')),
@@ -304,7 +304,7 @@ const views = {
         : h('p', { class: 'muted' }, 'Tudo em ordem no pipeline.')),
       h('p', { class: 'muted' }, `Conversas com consentimento. ${m.synthetic} registo(s) de demonstração excluídos dos indicadores.`),
       h('div', { class: 'cards' },
-        card(m.open, 'Leads em aberto'), card(m.overdue, 'Em atraso'), card(m.unassigned, 'Sem responsável'),
+        card(m.open, 'Leads em aberto'), card(m.replyLate ?? 0, `Sem resposta há mais de ${m.replyHours ?? '—'} h`), card(m.overdue, 'Clientes em silêncio há 3 dias'), card(m.unassigned, 'Sem responsável'),
         card(m.contacted, 'Contactados'), card(m.medianHoursToContact === null ? '—' : `${m.medianHoursToContact} h`, 'Mediana até ao contacto')),
       load.length ? h('div', { class: 'panel' }, h('h3', {}, 'Carga da equipa'), h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Pessoa'), h('th', {}, 'Tarefas'), h('th', {}, 'Em atraso'), h('th', {}, 'Bloqueadas'), h('th', {}, 'Leads'))),
@@ -314,7 +314,8 @@ const views = {
   },
 
   async leads(view, state = leadsState) {
-    const { leads } = await api('GET', `/v1/leads?status=${state.filter}`);
+    const [{ leads }, settings] = await Promise.all([api('GET', `/v1/leads?status=${state.filter}`), api('GET', '/v1/settings').catch(() => null)]);
+    rememberLeads(leads);
     const detail = h('div', { class: 'panel' }, h('p', { class: 'muted' }, 'Escolha um lead para ver a conversa com o chatbot.'));
     const rows = leads;
     const select = id => { state.selected = id; for (const row of view.querySelectorAll('tr.clickable')) row.classList.toggle('selected', row.dataset.id === id); showLead(detail, id, () => rerender()); };
@@ -327,14 +328,17 @@ const views = {
         h('h3', {}, `${churning.length} lead(s) em risco de desistência`),
         h('p', {}, 'O cliente disse que vai desistir. Contacte-o já e use «Marcar contactado» para limpar o alerta.'),
         h('div', { class: 'actions' }, churning.map(lead => h('button', { type: 'button', class: 'secondary', onclick: () => select(lead.id) }, lead.journey.destination || lead.id)))) : '',
+      settings ? followUpRules(settings, rerender) : null,
       h('div', { class: 'filters' }, filterButton('open', 'Em aberto'), filterButton('contacted', 'Contactados'), filterButton('all', 'Todos')),
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, rows.length ? h('table', {},
-          h('thead', {}, h('tr', {}, h('th', {}, 'Lead'), h('th', {}, 'Estado'), h('th', {}, 'Seguimento'), h('th', {}, 'Responsável'))),
+          h('thead', {}, h('tr', {}, h('th', {}, 'Lead'), h('th', {}, 'Estado'), h('th', {}, 'Responder até'), h('th', {}, 'Responsável'))),
           h('tbody', {}, rows.map(lead => h('tr', { class: `clickable${lead.id === state.selected ? ' selected' : ''}`, 'data-id': lead.id, tabindex: '0', onclick: () => select(lead.id), onkeydown: event => event.key === 'Enter' && select(lead.id) },
             h('td', {}, h('strong', {}, lead.journey.destination || lead.id), h('div', { class: 'muted' }, [lead.journey.timeframe, lead.journey.party].filter(Boolean).join(' · ') || lead.id), lead.synthetic ? pill('demo') : null),
             h('td', {}, statusPill(lead.status), lead.atRisk ? [' ', pill('Em risco', 'bad')] : null),
-            h('td', {}, when(lead.status === 'CONTACTED' ? lead.contactedAt : lead.followUpAt)),
+            h('td', {}, lead.status === 'CONTACTED' ? [h('span', { class: 'muted' }, 'Contactado '), when(lead.contactedAt)]
+              : lead.replyLate ? pill(`Atrasado ${lateBy(lead.replyDueAt)}`, 'bad')
+              : lead.replyDueAt ? [lisbonTime(lead.replyDueAt), h('div', { class: 'muted' }, `faltam ${lateBy(lead.replyDueAt, true)}`)] : when(lead.followUpAt)),
             h('td', {}, lead.assignedTo || h('span', { class: 'muted' }, '—')))))) : h('p', { class: 'muted' }, 'Nenhum lead neste filtro.')),
         detail),
     );
@@ -606,22 +610,60 @@ const views = {
     );
   },
 
-  // Escrito para a fundadora: linguagem simples primeiro, detalhe técnico dobrado para auditoria.
-  async governance(view) {
-    const { manifest, policies, evidence } = await api('GET', '/v1/governance');
-    const RESULT = { pass: ['Cumpre', 'ok'], fail: ['Em falta', 'bad'], manual: ['Verificar à mão', 'warn'] };
+  // Escrito para a fundadora: linguagem simples primeiro, ações à mão, detalhe técnico dobrado.
+  async governance(view, state = { open: '' }) {
+    const { manifest, policies, evidence, valueRules = {} } = await api('GET', '/v1/governance');
+    const RESULT = { pass: ['Cumpre', 'ok'], attested: ['Verificada', 'ok'], fail: ['Em falta', 'bad'], manual: ['Verificar à mão', 'warn'] };
     const rules = policies?.policies ?? [];
+    const rerender = () => { view.replaceChildren(); views.governance(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
     const card = (value, label, tone) => h('div', { class: `card ${tone ?? ''}` }, h('div', { class: 'value' }, value), h('div', { class: 'label' }, label));
     const sources = policy => policy.sources.map(source => h('div', {}, h('a', { href: source.url, target: '_blank', rel: 'noopener noreferrer' }, source.name), h('span', { class: 'muted' }, ` ${source.ref}`)));
-    const todo = rules.filter(policy => policy.result.status !== 'pass');
+    const done = policy => ['pass', 'attested'].includes(policy.result.status);
+    const attestedLine = policy => policy.attestation ? h('div', { class: 'muted' },
+      `${policy.attestation.expired ? 'Verificação expirada' : 'Verificada'} por ${policy.attestation.byName || policy.attestation.by} em ${when(policy.attestation.at)}`,
+      policy.attestation.value ? ` · ${valueRules[policy.id] ?? 'Valor'}: ${policy.attestation.value}` : '',
+      policy.attestation.expired ? '' : ` · válida até ${when(policy.attestation.validUntil).split(',')[0]}`,
+      policy.attestation.proofUrl ? [' · ', h('a', { href: policy.attestation.proofUrl, target: '_blank', rel: 'noopener noreferrer' }, 'ver prova')] : '',
+      policy.attestation.note ? h('div', {}, `«${policy.attestation.note}»`) : '') : null;
+    // Formulário de confirmação: o que foi verificado, a prova e, se a regra o pedir, o valor.
+    const verify = policy => {
+      if (!can('security')) return null;
+      const status = h('p', { class: 'muted', role: 'status' });
+      const form = h('form', { class: 'verify' },
+        valueRules[policy.id] ? h('label', {}, valueRules[policy.id], h('input', { name: 'value', required: true, maxlength: '120', value: policy.attestation?.value ?? '' })) : null,
+        h('label', {}, 'O que confirmou', h('textarea', { name: 'note', required: true, minlength: '5', maxlength: '500', rows: '2', placeholder: 'Ex.: apólice n.º … em vigor até 2027' })),
+        h('label', {}, 'Ligação para a prova (opcional)', h('input', { name: 'proofUrl', type: 'url', placeholder: 'https://…' })),
+        h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Confirmar'), status));
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const data = Object.fromEntries(new FormData(form));
+        status.textContent = 'A guardar…';
+        try {
+          await api('POST', '/v1/governance/attestations', { policyId: policy.id, ...data });
+          state.open = '';
+          rerender();
+        } catch (error) {
+          status.textContent = error.message;
+        }
+      });
+      return h('details', { class: 'verify-box' }, h('summary', { class: 'button-like' }, policy.attestation && !policy.attestation.expired ? 'Renovar verificação' : valueRules[policy.id] ? 'Indicar e confirmar' : 'Marcar como verificado'), form);
+    };
+    const todo = rules.filter(policy => !done(policy));
     const promise = ([key, value]) => {
       const [yes, no] = PROMISES[key] ?? [key.replace(/([A-Z])/g, ' $1').toLowerCase(), null];
-      const good = key === 'automaticCustomerContact' ? !value : value;
+      // Mensagens automáticas só com consentimento são uma promessa cumprida nos dois estados.
+      const good = key === 'automaticCustomerContact' ? true : value;
       return h('li', { class: good ? 'kept' : 'open' }, value ? yes : (no ?? `Ainda não: ${yes.toLowerCase()}`));
     };
     const byTopic = Object.entries(RULE_TOPICS).map(([topic, ids]) => [topic, rules.filter(policy => ids.includes(policy.id))]);
     const others = rules.filter(policy => !Object.values(RULE_TOPICS).flat().includes(policy.id));
     if (others.length) byTopic.push(['Outras regras', others]);
+    const topics = byTopic.filter(([, list]) => list.length);
+    const openTopic = topic => {
+      state.open = topic;
+      const box = view.querySelector(`details[data-topic="${CSS.escape(topic)}"]`);
+      if (box) { box.open = true; box.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    };
     const week = Date.now() - 7 * 864e5;
     const kinds = Object.entries(evidence.reduce((groups, item) => {
       const kind = EVIDENCE_KIND[item.key.split('/')[1]] ?? 'Outros registos';
@@ -629,44 +671,126 @@ const views = {
       return groups;
     }, {}));
     view.append(h('div', {},
-      h('h2', {}, 'Está tudo em ordem?'),
+      h('div', { class: 'heading-row' }, h('h2', {}, 'Está tudo em ordem?'), h('button', { type: 'button', class: 'secondary', onclick: rerender }, 'Verificar outra vez')),
       h('p', { class: 'muted' }, 'As regras que a BLU tem de cumprir, o que já está garantido e o que precisa de si. Serve de apoio a uma auditoria; não é uma certificação ISO.'),
       policies
         ? h('div', { class: 'cards' },
-          card(policies.summary.pass, 'regras cumpridas', 'ok'),
+          card(policies.summary.pass, 'cumpridas automaticamente', 'ok'),
+          card(policies.summary.attested ?? 0, 'verificadas pela equipa', 'ok'),
           card(policies.summary.fail, 'em falta: precisam de si', policies.summary.fail ? 'bad' : 'ok'),
-          card(policies.summary.manual, 'para verificar à mão', policies.summary.manual ? 'warn' : 'ok'),
-          card(when(policies.evaluatedAt).split(',')[0], `última verificação · revisão ${manifest.reviewCadence === 'quarterly' ? 'trimestral' : manifest.reviewCadence ?? '—'}`))
+          card(policies.summary.manual, 'para verificar à mão', policies.summary.manual ? 'warn' : 'ok'))
         : h('div', { class: 'notice' }, 'O relatório das regras legais ainda não foi publicado. Aparece aqui depois da próxima publicação do backoffice.'),
+      topics.length ? h('div', { class: 'topic-buttons' }, topics.map(([topic, list]) => {
+        const ok = list.filter(done).length;
+        return h('button', { type: 'button', class: `topic-button ${ok === list.length ? 'ok' : 'warn'}`, onclick: () => openTopic(topic) },
+          h('span', { class: 'value' }, `${ok}/${list.length}`), h('span', {}, topic));
+      })) : null,
       todo.length ? h('div', { class: 'panel risk' },
         h('h3', {}, 'O que precisa de si'),
         h('ul', { class: 'todo' }, todo.map(policy => h('li', {},
           h('strong', {}, ACTIONS[policy.id] ?? policy.requirement), ' ', pill(...RESULT[policy.result.status]),
           h('div', { class: 'muted' }, `${policy.title}. Responsável: ${policy.owner}.`),
-          h('div', { class: 'muted' }, sources(policy)))))) : null,
+          h('div', { class: 'muted' }, sources(policy)),
+          attestedLine(policy),
+          verify(policy))))) : policies ? h('div', { class: 'notice ok' }, 'Todas as regras estão cumpridas ou verificadas. A próxima revisão é trimestral.') : null,
       h('div', { class: 'panel spaced' },
         h('h3', {}, 'As nossas promessas'),
         h('ul', { class: 'promises' }, Object.entries(manifest.controls ?? {}).map(promise)),
+        h('p', { class: 'muted' }, 'As mensagens automáticas ligam-se e desligam-se em Seguimento › Regras de seguimento.'),
         manifest.mapping?.length ? h('details', { class: 'spaced' }, h('summary', {}, `Como garantimos cada promessa (${manifest.mapping.length} controlos)`), h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Controlo'), h('th', {}, 'Onde está a prova'), h('th', {}, 'Referências'))),
           h('tbody', {}, manifest.mapping.map(item => h('tr', {}, h('td', {}, item.control), h('td', {}, item.evidence), h('td', {}, (item.references ?? []).map(ref => h('div', { class: 'muted' }, ref)))))))) : null),
-      byTopic.filter(([, list]) => list.length).map(([topic, list]) => h('details', { class: 'panel spaced topic' },
-        h('summary', {}, `${topic} `, h('span', { class: 'muted' }, `${list.filter(policy => policy.result.status === 'pass').length} de ${list.length} cumpridas`)),
+      topics.map(([topic, list]) => h('details', { class: 'panel spaced topic', 'data-topic': topic, open: state.open === topic },
+        h('summary', {}, `${topic} `, h('span', { class: 'muted' }, `${list.filter(done).length} de ${list.length} em ordem`)),
         h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Regra'), h('th', {}, 'Estado'), h('th', {}, 'Lei'))),
           h('tbody', {}, list.map(policy => h('tr', {},
-            h('td', {}, h('strong', {}, policy.title), h('div', { class: 'muted' }, policy.requirement)),
+            h('td', {}, h('strong', {}, policy.title), h('div', { class: 'muted' }, policy.requirement), attestedLine(policy), policy.result.status === 'pass' ? null : verify(policy)),
             h('td', {}, pill(...(RESULT[policy.result.status] ?? [policy.result.status, '']))),
             h('td', {}, sources(policy)))))))),
       h('div', { class: 'panel spaced' },
         h('h3', {}, 'Provas guardadas'),
-        h('p', { class: 'muted' }, `${evidence.filter(item => Date.parse(item.lastModified) > week).length} registo(s) nos últimos 7 dias. Os registos guardam todas as versões; nada é apagado.`),
+        h('p', { class: 'muted' }, `${evidence.filter(item => Date.parse(item.lastModified) > week).length} registo(s) nos últimos 7 dias, mais ${rules.filter(policy => policy.attestation).length} verificação(ões) da equipa. Nada é apagado.`),
         h('ul', {}, kinds.map(([kind, items]) => h('li', {}, `${kind}: ${items.length}, o mais recente em ${when(items[0].lastModified)}`))),
         h('details', {}, h('summary', {}, 'Detalhe para auditoria'), h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Ficheiro'), h('th', {}, 'Data'), h('th', {}, 'Tamanho'), h('th', {}, 'ETag'))),
           h('tbody', {}, evidence.map(item => h('tr', {}, h('td', {}, item.key), h('td', {}, when(item.lastModified)), h('td', {}, `${item.size} B`), h('td', { class: 'muted' }, item.etag.slice(0, 12))))))))));
   },
 };
+
+// Tempo até (ou desde) um prazo, em linguagem simples: «3 h», «25 min», «2 d».
+function lateBy(iso, ahead = false) {
+  const minutes = Math.max(0, Math.round((ahead ? Date.parse(iso) - Date.now() : Date.now() - Date.parse(iso)) / 6e4));
+  return minutes < 60 ? `${minutes} min` : minutes < 48 * 60 ? `${Math.round(minutes / 60)} h` : `${Math.round(minutes / 1440)} d`;
+}
+
+// Regras de seguimento: prazo da primeira resposta e mensagens automáticas (só fundadores alteram).
+function followUpRules(settings, refresh) {
+  const editable = isFounder();
+  const status = h('p', { class: 'muted', role: 'status' });
+  const switches = Object.entries(settings.types ?? {}).map(([type, label]) => h('label', { class: 'switch' },
+    h('input', { type: 'checkbox', name: type, checked: settings.auto[type], disabled: !editable }), h('span', {}, label)));
+  const form = h('form', { class: 'rules' },
+    h('label', {}, 'Responder a cada lead em', h('span', { class: 'inline' }, h('input', { type: 'number', name: 'replyHours', min: '1', max: '72', value: String(settings.replyHours), disabled: !editable }), ' horas')),
+    h('fieldset', {}, h('legend', {}, 'Mensagens automáticas ao cliente'), switches,
+      h('p', { class: 'muted' }, 'Só a quem deu consentimento no chat; cada mensagem diz como parar (STOP) e nunca é enviada a quem pediu para parar. Sem canal configurado, ficam preparadas na Agenda para enviar à mão.')),
+    editable ? h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Guardar regras'), status) : h('p', { class: 'muted' }, 'Só fundadores alteram estas regras.'),
+    'Notification' in window && Notification.permission === 'default'
+      ? h('button', { type: 'button', class: 'secondary', onclick: async () => { await Notification.requestPermission(); refresh(); } }, 'Avisar-me no navegador quando chega um lead') : null);
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const data = new FormData(form);
+    status.textContent = 'A guardar…';
+    try {
+      await api('POST', '/v1/settings', { replyHours: Number(data.get('replyHours')), auto: Object.fromEntries(Object.keys(settings.types).map(type => [type, data.has(type)])) });
+      refresh();
+    } catch (error) {
+      status.textContent = error.message;
+    }
+  });
+  const on = Object.entries(settings.auto).filter(([, value]) => value).map(([type]) => settings.types[type]?.split(' ')[0]).filter(Boolean);
+  return h('details', { class: 'panel spaced' }, h('summary', {}, `Regras de seguimento: responder em ${settings.replyHours} h · automáticas: ${on.length ? on.join(', ') : 'nenhuma'}`),
+    settings.updatedAt ? h('p', { class: 'muted' }, `Alteradas por ${settings.updatedBy} em ${when(settings.updatedAt)}.`) : null, form);
+}
+
+// Novos leads: o painel verifica a cada minuto (com o separador visível) e avisa logo.
+const SEEN_KEY = 'blu-intranet-seen-leads';
+let seenLeads = null;
+function rememberLeads(leads) {
+  try {
+    seenLeads ??= new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || 'null') ?? leads.map(lead => lead.id));
+    for (const lead of leads) seenLeads.add(lead.id);
+    localStorage.setItem(SEEN_KEY, JSON.stringify([...seenLeads].slice(-500)));
+  } catch {
+    seenLeads ??= new Set(leads.map(lead => lead.id));
+  }
+}
+
+function toast(text, action) {
+  const box = h('div', { class: 'toast', role: 'status' }, h('span', {}, text), action ? h('button', { type: 'button', class: 'link', onclick: () => { box.remove(); action(); } }, 'Abrir') : null,
+    h('button', { type: 'button', class: 'link', 'aria-label': 'Fechar', onclick: () => box.remove() }, '×'));
+  document.body.append(box);
+  setTimeout(() => box.remove(), 15000);
+}
+
+async function watchLeads() {
+  if (document.hidden) return;
+  try {
+    const { leads } = await api('GET', '/v1/leads?status=open');
+    if (!seenLeads) return rememberLeads(leads);
+    const fresh = leads.filter(lead => !seenLeads.has(lead.id) && !lead.synthetic);
+    rememberLeads(leads);
+    const late = leads.filter(lead => lead.replyLate && !lead.synthetic).length;
+    document.title = `${late ? `(${late}) ` : ''}Intranet BLU`;
+    if (!fresh.length) return;
+    const text = fresh.length === 1 ? `Novo lead: ${fresh[0].journey.destination || fresh[0].id}` : `${fresh.length} novos leads`;
+    toast(text, () => { leadsState.filter = 'open'; leadsState.selected = fresh[0].id; show('leads'); });
+    if ('Notification' in window && Notification.permission === 'granted') new Notification('Intranet BLU', { body: text, icon: 'favicon.svg' });
+    if (['leads', 'work', 'dashboard'].includes(current)) show(current);
+  } catch {
+    // Sem rede ou sessão expirada: tenta no minuto seguinte.
+  }
+}
 
 async function showLead(panel, id, refreshList) {
   panel.replaceChildren(h('p', { class: 'muted' }, 'A carregar…'));
@@ -883,6 +1007,8 @@ async function start() {
     else if (hiddenAt && Date.now() - hiddenAt > 60_000) show(current);
   });
   show('work');
+  watchLeads();
+  setInterval(watchLeads, 60_000);
 }
 
 start();

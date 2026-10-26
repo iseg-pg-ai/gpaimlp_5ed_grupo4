@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
-import { ConditionalCheckFailedException, DynamoDBClient, QueryCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
+import { ConditionalCheckFailedException, DynamoDBClient, PutItemCommand, QueryCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses';
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
-import { createDispatcher } from './dispatch-core.mjs';
+import { createDispatcher, createPlanner } from './dispatch-core.mjs';
+import { SETTINGS, currentSettings } from './settings.mjs';
 import { NOTIFY } from './schedule.mjs';
 
 const db = new DynamoDBClient({});
@@ -32,7 +33,27 @@ async function update(id, recordKey, set, condition, conditionValues = {}) {
   }));
 }
 
-export const handler = createDispatcher({
+const query = async input => (await db.send(new QueryCommand(input))).Items ?? [];
+const inPartition = (TableName, id, prefix) => query({ TableName, KeyConditionExpression: prefix ? 'conversationId = :id AND begins_with(recordKey, :prefix)' : 'conversationId = :id', ExpressionAttributeValues: { ':id': { S: id }, ...(prefix ? { ':prefix': { S: prefix } } : {}) } });
+
+const planAuto = createPlanner({
+  settings: async () => currentSettings(await inPartition(env.INTELLIGENCE_TABLE_NAME, SETTINGS.partition, SETTINGS.prefix)),
+  leads: async () => (await Promise.all(['PENDING', 'QUEUED_FOR_REVIEW', 'CONTACTED'].map(status => query({ TableName: env.INTELLIGENCE_TABLE_NAME, IndexName: 'FollowUpIndex', KeyConditionExpression: 'followUpStatus = :s', ExpressionAttributeValues: { ':s': { S: status } } })))).flat(),
+  autoKeys: async id => (await inPartition(env.INTELLIGENCE_TABLE_NAME, id, 'NOTIFY#AUTO#')).map(item => item.recordKey.S),
+  transcript: id => inPartition(env.MESSAGE_TABLE_NAME, id),
+  // Criação condicional: duas execuções sobrepostas nunca preparam a mesma mensagem duas vezes.
+  create: async (id, record) => {
+    try {
+      await db.send(new PutItemCommand({ TableName: env.INTELLIGENCE_TABLE_NAME, Item: { conversationId: { S: id }, ...Object.fromEntries(Object.entries(record).filter(([, value]) => value !== '').map(([key, value]) => [key, { S: String(value) }])) }, ConditionExpression: 'attribute_not_exists(recordKey)' }));
+      return true;
+    } catch (error) {
+      if (error instanceof ConditionalCheckFailedException) return false;
+      throw error;
+    }
+  },
+});
+
+const dispatch = createDispatcher({
   queryDue: async until => {
     const result = await db.send(new QueryCommand({ TableName: env.INTELLIGENCE_TABLE_NAME, IndexName: 'FollowUpIndex', KeyConditionExpression: 'followUpStatus = :pending AND followUpAt <= :until', ExpressionAttributeValues: { ':pending': { S: NOTIFY.pending }, ':until': { S: until } }, Limit: 100 }));
     return result.Items ?? [];
@@ -79,3 +100,14 @@ export const handler = createDispatcher({
     ServerSideEncryption: 'AES256',
   })),
 });
+
+// Primeiro prepara as mensagens automáticas ligadas; uma falha aqui não impede os lembretes.
+export async function handler() {
+  let planned = 0;
+  try {
+    planned = await planAuto();
+  } catch (error) {
+    console.error(JSON.stringify({ planner: 'failed', error: error?.name ?? 'Error' }));
+  }
+  return { planned, ...(await dispatch()) };
+}

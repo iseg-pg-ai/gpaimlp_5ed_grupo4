@@ -4,6 +4,7 @@ import {
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, parseActivity, plan } from './schedule.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
+import { ATTESTATIONS, AUTO_TYPES, SETTINGS, VALUE_RULES, applyAttestations, currentSettings, parseAttestation, parseSettings, replyState } from './settings.mjs';
 import { FEED, NO_DUE, TASK_STATE, TASK_STATUS, UNLINKED_TASKS, describeChange, dueState, indexFields, parseTask, parseTaskUpdate, validRecordId } from './tasks.mjs';
 
 // Rotas da intranet. Os acessos AWS chegam injetados em `deps` (index.mjs na AWS,
@@ -86,14 +87,22 @@ export function createApp(deps) {
   const now = () => deps.now?.() ?? new Date();
   const lisbonToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(now());
 
-  async function listLeads(filter) {
+  const loadSettings = async () => currentSettings(await deps.queryRecords(SETTINGS.partition, SETTINGS.prefix));
+  // Relatório legal do deploy com as verificações manuais registadas na intranet.
+  const loadReport = async () => {
+    const [report, attestations] = await Promise.all([deps.policyReport().catch(() => null), deps.queryRecords(ATTESTATIONS.partition, ATTESTATIONS.prefix)]);
+    return applyAttestations(report, attestations, now());
+  };
+
+  async function listLeads(filter, settings) {
     const statuses = filter === 'contacted' ? [CONTACTED] : filter === 'all' ? [...OPEN_STATUSES, CONTACTED] : OPEN_STATUSES;
-    const items = (await Promise.all(statuses.map(status => deps.queryStatus(status)))).flat();
-    const leads = items.map(toLead).map(lead => ({ ...lead, atRisk: atRisk(lead) }));
-    // Quem disse que vai desistir aparece primeiro, para contacto rápido.
+    const [items, rules] = await Promise.all([Promise.all(statuses.map(status => deps.queryStatus(status))).then(lists => lists.flat()), settings ?? loadSettings()]);
+    const at = now();
+    const leads = items.map(toLead).map(lead => ({ ...lead, atRisk: atRisk(lead), ...replyState(lead, rules.replyHours, at) }));
+    // Primeiro quem disse que vai desistir, depois quem passou o prazo de resposta.
     return filter === 'contacted'
       ? leads.sort((a, b) => (b.contactedAt ?? '').localeCompare(a.contactedAt ?? ''))
-      : leads.sort((a, b) => b.atRisk - a.atRisk || a.followUpAt.localeCompare(b.followUpAt));
+      : leads.sort((a, b) => b.atRisk - a.atRisk || b.replyLate - a.replyLate || (a.replyDueAt || a.followUpAt).localeCompare(b.replyDueAt || b.followUpAt));
   }
 
   async function getLead(id) {
@@ -163,7 +172,25 @@ export function createApp(deps) {
       return reply(200, { answer: answer.answer, sourceIds: answer.sourceIds ?? [], requiresHumanApproval: true });
     },
 
-    'GET /v1/metrics': async () => reply(200, metrics(await listLeads('all'), now()), 'private, max-age=60'),
+    'GET /v1/metrics': async () => {
+      const settings = await loadSettings();
+      const leads = await listLeads('all', settings);
+      return reply(200, { ...metrics(leads, now()), replyLate: leads.filter(lead => !lead.synthetic && lead.replyLate).length, replyHours: settings.replyHours }, 'private, max-age=60');
+    },
+
+    'GET /v1/settings': async () => reply(200, { ...(await loadSettings()), types: AUTO_TYPES }),
+
+    'POST /v1/settings': async ({ user, body }) => {
+      const current = await loadSettings();
+      const parsed = parseSettings(body, current);
+      if (parsed.error) return fail(400, parsed.error);
+      const at = now().toISOString();
+      await deps.putRecords(SETTINGS.partition, [{ recordKey: `${SETTINGS.prefix}${at}#${deps.newId()}`, settingsJson: JSON.stringify(parsed.settings), updatedBy: user.email, updatedAt: at }]);
+      const switched = Object.keys(AUTO_TYPES).filter(type => parsed.settings.auto[type] !== current.auto[type]).map(type => `${AUTO_TYPES[type].toLowerCase()}: ${parsed.settings.auto[type] ? 'ligado' : 'desligado'}`);
+      const changes = [parsed.settings.replyHours !== current.replyHours ? `prazo de resposta: ${parsed.settings.replyHours} h` : '', ...switched].filter(Boolean);
+      if (changes.length) await announce(user, `alterou as regras de seguimento (${changes.join('; ')})`);
+      return reply(200, { ...parsed.settings, updatedBy: user.email, updatedAt: at, types: AUTO_TYPES });
+    },
 
     // Carga por pessoa (leads e tarefas), para o Painel mostrar quem está sobrecarregado.
     'GET /v1/team': async () => {
@@ -183,7 +210,26 @@ export function createApp(deps) {
 
     'GET /v1/operations': async () => reply(200, await deps.operations(), 'private, max-age=30'),
 
-    'GET /v1/governance': async () => reply(200, await deps.governance(), 'private, max-age=300'),
+    'GET /v1/governance': async () => {
+      const [governance, attestations, settings] = await Promise.all([deps.governance(), deps.queryRecords(ATTESTATIONS.partition, ATTESTATIONS.prefix), loadSettings()]);
+      // A promessa sobre contactos automáticos segue o interruptor em vigor, não o ficheiro do deploy.
+      const automatic = settings.auto.thanks || settings.auto.nudge;
+      const manifest = { ...governance.manifest, controls: { ...governance.manifest.controls, automaticCustomerContact: automatic } };
+      return reply(200, { ...governance, manifest, policies: applyAttestations(governance.policies, attestations, now()), settings, valueRules: Object.fromEntries(Object.entries(VALUE_RULES).map(([id, rule]) => [id, rule.label])) });
+    },
+
+    'POST /v1/governance/attestations': async ({ user, body }) => {
+      const report = await deps.policyReport().catch(() => null);
+      if (!report) return fail(409, 'O relatório das regras ainda não foi publicado.');
+      const parsed = parseAttestation(body, report.policies.map(policy => policy.id));
+      if (parsed.error) return fail(400, parsed.error);
+      const at = now();
+      const validUntil = new Date(+at + ATTESTATIONS.validDays * 864e5).toISOString();
+      const title = report.policies.find(policy => policy.id === parsed.record.policyId).title;
+      await deps.putRecords(ATTESTATIONS.partition, [{ recordKey: `${ATTESTATIONS.prefix}${parsed.record.policyId}#${at.toISOString()}`, ...parsed.record, createdBy: user.email, createdByName: user.name, createdAt: at.toISOString(), validUntil }]);
+      await announce(user, `confirmou a regra «${title}»${parsed.record.value ? ` (${parsed.record.value})` : ''}`, { scope: 'cases' });
+      return reply(201, { validUntil });
+    },
 
     'GET /v1/access': async () => reply(200, {
       roles: Object.entries(ROLES).map(([id, role]) => ({ id, ...role })),
@@ -297,7 +343,7 @@ export function createApp(deps) {
           .map(task => ({ kind: 'task', id: task.id, partition: task.partition, title: task.title, due: task.due, urgency: taskUrgency(task), task })),
         ...myLeads.map(lead => ({
           kind: 'lead', id: lead.id, partition: lead.id, title: lead.journey.destination || lead.id, due: lead.followUpAt.slice(0, 10),
-          detail: [lead.journey.timeframe, lead.journey.party].filter(Boolean).join(' · '), urgency: lead.atRisk ? 'risk' : isOverdue(lead, at) ? 'overdue' : 'normal',
+          detail: [lead.journey.timeframe, lead.journey.party].filter(Boolean).join(' · '), urgency: lead.atRisk ? 'risk' : lead.replyLate || isOverdue(lead, at) ? 'overdue' : 'normal',
         })),
         ...prepared.filter(item => str(item, 'approvedBy').toLowerCase() === me || myLeadIds.has(str(item, 'conversationId'))).map(toNotification)
           .map(item => ({ kind: 'reminder', id: item.recordKey, partition: item.conversationId, title: item.title, due: item.sendAt.slice(0, 10), detail: `${item.reason || 'Preparado: enviar à mão'}`, urgency: 'overdue' })),
@@ -388,7 +434,7 @@ export function createApp(deps) {
       const settle = promise => promise.then(value => value, () => null);
       const [ops, report, prepared, failed, missed, leads, openCases] = await Promise.all([
         settle(deps.operations()),
-        settle(deps.policyReport()),
+        settle(loadReport()),
         settle(deps.queryAgenda(NOTIFY.prepared, new Date(at - 864e5).toISOString(), at.toISOString())),
         settle(deps.queryAgenda(NOTIFY.failed, new Date(at - 864e5).toISOString(), at.toISOString())),
         settle(deps.queryAgenda(NOTIFY.missed, new Date(at - 864e5).toISOString(), at.toISOString())),
@@ -413,14 +459,14 @@ export function createApp(deps) {
       if (report?.summary.fail) add('warn', `${report.summary.fail} política(s) legal(is) em falta.`, 'governance');
       const churning = leads?.filter(lead => !lead.synthetic && lead.atRisk).length ?? 0;
       if (churning) add('bad', `${churning} lead(s) disseram que vão desistir: contactar já.`, 'leads');
-      const overdueLeads = leads?.filter(lead => !lead.synthetic && lead.status === 'QUEUED_FOR_REVIEW').length ?? 0;
-      if (overdueLeads) add('warn', `${overdueLeads} lead(s) em atraso à espera de contacto.`, 'leads');
+      const late = leads?.filter(lead => !lead.synthetic && lead.replyLate) ?? [];
+      if (late.length) add('bad', `${late.length} lead(s) passaram o prazo de resposta: responder já.`, 'leads');
       const order = { bad: 0, warn: 1 };
       return reply(200, { alerts: alerts.sort((a, b) => order[a.level] - order[b.level]), checkedAt: at.toISOString() }, 'private, max-age=60');
     },
 
     'GET /v1/security': async () => {
-      const [members, report, openCases] = await Promise.all([deps.listTeam(), deps.policyReport().catch(() => null), deps.queryStatus(CASE_STATE.open)]);
+      const [members, report, openCases] = await Promise.all([deps.listTeam(), loadReport().catch(() => null), deps.queryStatus(CASE_STATE.open)]);
       const founders = members.filter(member => member.groups.includes('founders') && member.enabled);
       const today = lisbonToday();
       const overdueCases = openCases.map(item => toCase(item, today)).filter(item => item.deadlineState === 'overdue').length;
@@ -458,19 +504,21 @@ export function createApp(deps) {
     'POST /v1/leads/{id}/activities': async ({ id, user, body }) => {
       const parsed = parseActivity(body, deps.partners, now());
       if (parsed.error) return fail(400, parsed.error);
-      const lead = await getLead(id);
+      const [lead, settings] = await Promise.all([getLead(id), loadSettings()]);
       const activityId = deps.newId();
       const partner = deps.partners.find(item => item.id === parsed.activity.partnerId);
       const notifications = plan(parsed.activity, { activityId, travellerPhone: digitsOnly(lead.phones[0]), travellerEmail: lead.emails[0] ?? '', partner, travellerConsent: Boolean(lead.consentAt), now: now() });
       const at = now().toISOString();
       await deps.putRecords(id, [
         { recordKey: `ACTIVITY#${activityId}`, activityId, ...parsed.activity, reminders: parsed.activity.reminders.join(','), status: 'ACTIVE', createdBy: user.email, createdAt: at, notificationCount: String(notifications.length) },
-        ...notifications.map(notification => ({ ...notification, followUpStatus: NOTIFY.pending, followUpAt: notification.sendAt, kind: parsed.activity.kind, title: parsed.activity.title, place: parsed.activity.place, people: parsed.activity.people, partnerName: parsed.activity.partnerId === 'bolt' ? 'Bolt' : partner?.name ?? '', approvedBy: user.email, createdAt: at })),
+        // Com os lembretes automáticos desligados, ficam preparados para a equipa enviar à mão.
+        ...notifications.map(notification => ({ ...notification, followUpStatus: settings.auto.reminders ? NOTIFY.pending : NOTIFY.prepared, ...(settings.auto.reminders ? {} : { reason: 'Envio automático desligado: enviar à mão.' }), followUpAt: notification.sendAt, kind: parsed.activity.kind, title: parsed.activity.title, place: parsed.activity.place, people: parsed.activity.people, partnerName: parsed.activity.partnerId === 'bolt' ? 'Bolt' : partner?.name ?? '', approvedBy: user.email, createdAt: at })),
       ]);
       const warnings = [];
       if (notifications.some(n => n.audience === 'traveller' && !n.to)) warnings.push(`O viajante não deixou ${parsed.activity.travellerChannel === 'email' ? 'email' : 'telefone'}: os lembretes ficam preparados para envio manual.`);
       if (partner && !partner.whatsapp && notifications.some(n => n.audience === 'partner')) warnings.push(`${partner.name} não tem número WhatsApp: os lembretes ao parceiro ficam preparados.`);
       if (!lead.consentAt) warnings.push('Sem consentimento registado: não foram agendados lembretes ao viajante.');
+      if (!settings.auto.reminders) warnings.push('Os lembretes automáticos estão desligados: ficam preparados para enviar à mão.');
       return reply(201, { activityId, notifications: notifications.length, warnings });
     },
 
@@ -506,6 +554,8 @@ export function createApp(deps) {
     if (!groups.some(group => STAFF.includes(group))) return fail(403, 'Sem acesso à intranet. Peça ao grupo para o adicionar.');
     if (writes.has(event.routeKey) && !allowed(groups, 'leads')) return fail(403, 'Esta ação é reservada a curadores e fundadores.');
     if (admin.has(event.routeKey) && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores gerem acessos.');
+    if (event.routeKey === 'POST /v1/settings' && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores alteram as regras de seguimento.');
+    if (event.routeKey === 'POST /v1/governance/attestations' && !allowed(groups, 'security')) return fail(403, 'Só fundadores e governança confirmam regras.');
     if (caseRoutes.has(event.routeKey) && !allowed(groups, 'cases')) return fail(403, 'Sem acesso a reclamações e litígios.');
     if (taskWrites.has(event.routeKey) && !allowed(groups, 'tasks')) return fail(403, 'Só curadores, governança e fundadores alteram tarefas.');
     if (event.routeKey.includes('{taskId}') && !validRecordId(event.pathParameters?.taskId)) return fail(400, 'Tarefa inválida.');

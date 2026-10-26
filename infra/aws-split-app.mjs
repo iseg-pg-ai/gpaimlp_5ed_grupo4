@@ -559,6 +559,7 @@ class IntranetStack extends Stack {
       ['GET', '/v1/access'], ['POST', '/v1/team/invite'], ['POST', '/v1/team/{username}/role'], ['POST', '/v1/team/{username}/status'],
       ['GET', '/v1/partners'], ['GET', '/v1/agenda'], ['GET', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities/{activityId}/cancel'],
       ['GET', '/v1/work'], ['GET', '/v1/tasks'], ['POST', '/v1/tasks'], ['GET', '/v1/leads/{id}/tasks/{taskId}'], ['POST', '/v1/leads/{id}/tasks/{taskId}'], ['GET', '/v1/feed'],
+      ['GET', '/v1/settings'], ['POST', '/v1/settings'], ['POST', '/v1/governance/attestations'],
     ];
     for (const [method, routePath] of routes) {
       api.addRoutes({ path: routePath, methods: [apigatewayv2.HttpMethod[method]], integration, authorizer });
@@ -582,6 +583,7 @@ class IntranetStack extends Stack {
       logRetention: logs.RetentionDays.ONE_MONTH,
       environment: {
         INTELLIGENCE_TABLE_NAME: data.intelligence.tableName,
+        MESSAGE_TABLE_NAME: data.messages.tableName,
         WHATSAPP_FUNCTION_NAME: backoffice.whatsappOutbound.functionName,
         EMAIL_FROM: emailFrom,
         SMS_ENABLED: smsEnabled ? 'true' : 'false',
@@ -589,8 +591,9 @@ class IntranetStack extends Stack {
       },
       code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
     });
-    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:Query'], resources: [`${data.intelligence.tableArn}/index/FollowUpIndex`] }));
-    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem'], resources: [data.intelligence.tableArn] }));
+    // Leitura das definições, dos leads e da conversa para as mensagens automáticas; PutItem só cria (condição no código).
+    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:Query'], resources: [data.intelligence.tableArn, `${data.intelligence.tableArn}/index/FollowUpIndex`, data.messages.tableArn] }));
+    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem', 'dynamodb:PutItem'], resources: [data.intelligence.tableArn] }));
     backoffice.whatsappOutbound.grantInvoke(dispatcher);
     if (emailFrom) dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['ses:SendEmail'], resources: [`arn:aws:ses:${region}:${account}:identity/${emailFrom.split('@')[1]}`, `arn:aws:ses:${region}:${account}:identity/${emailFrom}`] }));
     if (smsEnabled) dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['sns:Publish'], notResources: ['arn:aws:sns:*:*:*'] }));

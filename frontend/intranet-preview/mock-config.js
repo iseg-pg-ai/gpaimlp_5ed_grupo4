@@ -26,6 +26,9 @@ const feed = [
   { at: hours(-5), by: 'curador@example.com', byName: 'Curador de teste', text: 'criou «Confirmar tuk-tuk para Algarve e Açores» para Fundadora de teste' },
 ];
 const taskLog = {};
+const AUTO_TYPES = { thanks: 'Agradecimento logo após o consentimento', nudge: 'Reativação quando o cliente fica 3 dias em silêncio depois do contacto', reminders: 'Lembretes de recolhas e excursões aprovadas' };
+const settings = { replyHours: 4, auto: { thanks: false, nudge: false, reminders: true }, updatedBy: '', updatedAt: '' };
+const attestations = {};
 const dueState = task => (task.status === 'done' ? 'done' : !task.due ? 'none' : task.due < day(0) ? 'overdue' : task.due <= day(2) ? 'soon' : 'on-track');
 const withState = task => {
   const state = dueState(task);
@@ -74,6 +77,13 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
   const taskResult = taskRoutes(method, path, body);
   if (taskResult !== undefined) return taskResult;
   if (path === '/v1/feed') return { feed, checkedAt: new Date().toISOString() };
+  if (path === '/v1/settings' && method === 'POST') { Object.assign(settings, body, { auto: { ...settings.auto, ...body.auto }, updatedBy: 'fundadora@example.com', updatedAt: new Date().toISOString() }); announce('alterou as regras de seguimento'); return { ...settings, types: AUTO_TYPES }; }
+  if (path === '/v1/settings') return { ...settings, types: AUTO_TYPES };
+  if (path === '/v1/governance/attestations') {
+    if (!body.note || body.note.trim().length < 5) throw new Error('Descreva em poucas palavras o que confirmou.');
+    attestations[body.policyId] = { at: new Date().toISOString(), by: 'fundadora@example.com', byName: 'Fundadora de teste', note: body.note, proofUrl: body.proofUrl, value: body.value, validUntil: hours(90 * 24) };
+    return { validUntil: hours(90 * 24) };
+  }
   if (path === '/v1/alerts') return { alerts: [{ level: 'bad', text: '1 lead(s) disseram que vão desistir: contactar já.', tab: 'leads' }, { level: 'bad', text: '2 evento(s) do chat falharam e estão na fila de erros: verificar o processamento.', tab: 'operations' }, { level: 'warn', text: 'Nenhum lead das redes sociais nos últimos 7 dias: verificar as ligações das campanhas e a ponte /connect.', tab: 'operations' }, { level: 'warn', text: '1 lembrete(s) preparado(s) para enviar à mão.', tab: 'agenda' }] };
   const types = { feedback: { label: 'Feedback' }, complaint: { label: 'Reclamação' }, livro: { label: 'Livro de Reclamações' }, legal: { label: 'Litígio / contencioso' } };
   const cases = [
@@ -120,10 +130,11 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
     identity: { provider: 'Amazon Cognito', mfa: 'Obrigatório (aplicação de autenticação)', passwordPolicy: 'Mínimo 12 caracteres, maiúsculas, minúsculas e números', selfSignUp: false, session: 'Token de 1 h; sessão máxima de 12 h' },
     secrets: [{ name: 'WhatsAppChannelSecret', purpose: 'WhatsApp Business (envio de lembretes e mensagens)', lastChanged: hours(-200), rotation: false }],
   };
-  if (path.startsWith('/v1/metrics')) return { total: 2, synthetic: 1, open: 2, overdue: 1, contacted: 0, unassigned: 1, medianHoursToContact: null, byStatus: { QUEUED_FOR_REVIEW: 1, PENDING: 1 }, byStage: { 'curator-follow-up': 1, 'ready-for-curator': 1 }, bySource: { instagram: 1, website: 1 } };
+  if (path.startsWith('/v1/metrics')) return { total: 2, synthetic: 1, open: 2, overdue: 1, contacted: 0, unassigned: 1, medianHoursToContact: null, replyLate: 2, replyHours: settings.replyHours, byStatus: { QUEUED_FOR_REVIEW: 1, PENDING: 1 }, byStage: { 'curator-follow-up': 1, 'ready-for-curator': 1 }, bySource: { instagram: 1, website: 1 } };
   if (path.startsWith('/v1/leads?')) {
     const filter = new URLSearchParams(path.split('?')[1]).get('status');
-    return { leads: leads.filter(lead => filter === 'all' || (filter === 'contacted') === (lead.status === 'CONTACTED')) };
+    const reply = lead => (lead.status === 'CONTACTED' ? {} : { replyDueAt: new Date(Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5).toISOString(), replyLate: Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5 < Date.now() });
+    return { leads: leads.filter(lead => filter === 'all' || (filter === 'contacted') === (lead.status === 'CONTACTED')).map(lead => ({ ...lead, ...reply(lead) })) };
   }
   if (path.endsWith('/ask')) return { answer: 'O viajante procura uma viagem ativa de surf com vinho e comida vegana. Próximo passo: enviar email com duas propostas.', sourceIds: [], requiresHumanApproval: true };
   if (method !== 'GET') return null;
@@ -150,8 +161,11 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
     const manifest = await fetch('../../config/governance-controls.json').then(response => response.json()).catch(() => ({ controls: {}, mapping: [] }));
     const registry = await fetch('../../config/policies.json').then(response => response.json()).catch(() => ({ note: 'Pré-visualização sem acesso a config/policies.json.', policies: [] }));
     const result = policy => (policy.enforcement === 'manual' ? { status: 'manual', detail: 'Controlo manual.' } : ['rnavt-registration', 'adr-information'].includes(policy.id) ? { status: 'fail', detail: 'Por preencher em config/policies.json.' } : { status: 'pass', detail: 'Verificado no deploy.' });
-    const policies = { evaluatedAt: hours(0), note: registry.note, summary: { pass: 9, fail: 2, manual: 3 }, policies: registry.policies.map(policy => ({ ...policy, result: result(policy) })) };
-    return { manifest, policies, evidence: [{ key: 'controls/churn-followups/2026-10-25/run.json', size: 76, lastModified: hours(-3), etag: 'abc123def4567890' }] };
+    const rows = registry.policies.map(policy => ({ ...policy, result: result(policy) })).map(policy => (attestations[policy.id] && policy.result.status !== 'pass' ? { ...policy, attestation: attestations[policy.id], result: { status: 'attested', detail: attestations[policy.id].note } } : policy));
+    const count = status => rows.filter(policy => policy.result.status === status).length;
+    const policies = { evaluatedAt: hours(0), note: registry.note, summary: { pass: count('pass'), attested: count('attested'), fail: count('fail'), manual: count('manual') }, policies: rows };
+    manifest.controls = { ...manifest.controls, automaticCustomerContact: settings.auto.thanks || settings.auto.nudge };
+    return { valueRules: { 'rnavt-registration': 'Número RNAVT', 'adr-information': 'Entidade de RAL' }, manifest, policies, evidence: [{ key: 'controls/churn-followups/2026-10-25/run.json', size: 76, lastModified: hours(-3), etag: 'abc123def4567890' }] };
   }
   throw new Error('Rota simulada desconhecida.');
 };
