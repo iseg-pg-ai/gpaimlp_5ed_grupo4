@@ -1,4 +1,7 @@
-# Review ownership for the focused customer-channel addon.
+# Responsável por defeito pelo repositório.
+* @pedrocarreiro25
+
+# Responsável pelo addon dos canais de cliente; estas regras prevalecem sobre a regra geral.
 /frontend/website/ @GiselaInge
 /frontend/blu-cloud-site/ @GiselaInge
 /infra/aws-split-app.mjs @GiselaInge

@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import os
 from pathlib import Path
 import tempfile
 import threading
@@ -178,6 +179,16 @@ class UsersTests(CredentialFixture):
 
 
 class CollectorTests(unittest.TestCase):
+    def setUp(self):
+        # As variáveis do serviço real não podem ativar SNS numa fixture local.
+        environment = patch.dict(os.environ, {"BLU_MONITORING_NOTIFICATIONS_ENABLED": "false"})
+        environment.start()
+        self.addCleanup(environment.stop)
+        network = patch("monitoring.notifications.NotificationDispatcher._sns",
+                        side_effect=AssertionError("O teste não pode contactar SNS real."))
+        network.start()
+        self.addCleanup(network.stop)
+
     def test_metadata_unknown_failed_stale_and_no_personal_content(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -232,6 +243,7 @@ class CollectorTests(unittest.TestCase):
             root = Path(directory)
             collector = Collector(root, root / "logs", {"interval_seconds": 30,
                                   "warehouse_max_age_hours": None})
+            self.assertFalse(collector.notifications.enabled)
             self.addCleanup(lambda: [handler.close() for handler in collector.logger.handlers])
             with patch("monitoring.collector.probe", side_effect=lambda name, url, enabled: {
                 "name": name, "state": "up" if enabled else "disabled", "latency_ms": 2,

@@ -89,14 +89,19 @@ just blu up
 O comando mantém serviços ativos, inicia os que estejam parados, confirma os
 cinco endpoints e abre as cinco interfaces.
 
-Na barra inferior do Code Editor, **BLU · Interfaces** abre a interface escolhida
+Na barra inferior do **Code Editor web aberto no navegador AWS**, **BLU · Interfaces** abre a interface escolhida
 através do encaminhamento nativo da sessão atual. O comando **BLU: Abrir interfaces
 deste workspace** também está disponível na paleta; `just blu up` pede à mesma
 integração para abrir as cinco interfaces. As portas são registadas pelo editor e
 os URLs são resolvidos em cada abertura, sem copiar um domínio de outro workspace.
-Após instalar ou atualizar a extensão, pode ser necessário executar **Developer:
+O instalador abrange o editor web e o VS Code por SSH, que têm diretórios de
+extensões diferentes. O painel **Ports** da sessão SSH continua a mostrar os
+extremos locais (`localhost`); isso não comprova registo no proxy HTTPS do Studio.
+Após instalar ou atualizar a extensão no editor web, pode ser necessário executar **Developer:
 Reload Window** uma vez. Se a extensão não confirmar o pedido, o launcher avisa;
-não anuncia uma abertura que não foi confirmada.
+não anuncia uma abertura que não foi confirmada. A ausência de sessão web produz
+um aviso de abertura pendente, sem marcar como falha os serviços já validados.
+Falhas reais de testes interrompem o protocolo na etapa correspondente.
 
 Este arranque rápido não cria checkpoints, não recupera backups e não para
 processos ativos. Essas ações pertencem exclusivamente ao `just blu it`.

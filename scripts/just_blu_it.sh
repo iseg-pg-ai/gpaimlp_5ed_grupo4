@@ -138,6 +138,19 @@ run_task() {
     fi
 }
 
+open_service_pages() {
+    local status
+    if python3 -B scripts/open_dashboards.py --quiet; then
+        printf '  %s✓%s  5 interfaces abertas no Code Editor web\n' "$GREEN" "$RESET"
+    else
+        status=$?
+        if [ "$status" -ne 3 ]; then
+            return "$status"
+        fi
+        printf '  %s!%s  Serviços ativos; abertura no navegador pendente de sessão Code Editor web.\n' "$GOLD" "$RESET"
+    fi
+}
+
 wait_http() {
     # Dar até um minuto a cada serviço para concluir o respetivo arranque.
     local name="$1" url="$2"
@@ -318,10 +331,9 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
     start_missing_services
     confirm_service_endpoints
     quick_start_status
-    python3 -B scripts/open_dashboards.py --quiet
+    open_service_pages
     printf '\n  %s✓%s  5 serviços operacionais\n' "$GREEN" "$RESET"
     printf '  %s✓%s  5 endpoints validados\n' "$GREEN" "$RESET"
-    printf '  %s✓%s  5 interfaces abertas\n' "$GREEN" "$RESET"
     printf '  %s↗%s  Portal AWS: %s\n' "$CYAN" "$RESET" \
         "$(python3 -B scripts/studio_urls.py --port 3001)"
     ui_footer "SYSTEM READY" "just blu up · completed"
@@ -376,7 +388,7 @@ else
         .venv/bin/python -B -m etl.cloud_runtime --destination "$CACHE_ROOT"
 fi
 rm -rf "$RECOVERED_ROOT"
-run_task "3. Preparar portal" bash -c '
+run_task "3. Preparar portal" bash -euo pipefail -c '
     npm --prefix dmc-workspace ci
     npm --prefix frontend/blu-cloud-site ci
     npm --prefix dmc-workspace exec playwright install chromium
@@ -390,20 +402,22 @@ else
     complete_task "4. Preservar acesso de monitoring"
 fi
 
-run_task "5. Validar ou recuperar dados" bash -c '
+run_task "5. Validar ou recuperar dados" bash -euo pipefail -c '
     PYTHONPATH=src .venv/bin/python -B -m monitoring.recovery ensure --root "$BLU_RUNTIME_ROOT"
     cd dmc-workspace
     node --experimental-strip-types scripts/sync-persistence.mjs
     cd ..
     .venv/bin/python -B -m etl.s3_outbox
 '
-run_task "6. Testar Python e monitoring" bash -c '
+run_task "6. Testar Python e monitoring" bash -euo pipefail -c '
+    # Apenas os processos de teste: os serviços mantêm a configuração SNS real.
+    export BLU_MONITORING_NOTIFICATIONS_ENABLED=false
     PYTHONPATH=src .venv/bin/python -B -m unittest discover -s tests -v
     PYTHONPATH=src .venv/bin/python -B -m unittest monitoring.test_monitoring monitoring.test_operations -v
     .venv/bin/python -B -m unittest translations.test_worker -v
 '
 run_task "7. Testar e construir portal" npm --prefix dmc-workspace run check
-run_task "8. Construir entrega" bash -c '
+run_task "8. Construir entrega" bash -euo pipefail -c '
     npm --prefix dmc-workspace run build
     npm --prefix frontend/blu-cloud-site run build
     npm --prefix frontend/blu-cloud-site run test:sites
@@ -414,7 +428,7 @@ export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="$(python3 -B scripts/studio_url
 run_task "9. Iniciar serviços" start_all_services
 run_task "10. Confirmar serviços e portas" confirm_services
 
-run_task "11. Testes finais dos dashboards" bash -c '
+run_task "11. Testes finais dos dashboards" bash -euo pipefail -c '
     export LD_LIBRARY_PATH="$PWD/monitoring/runtime/browser-libs/root/usr/lib/x86_64-linux-gnu:$PWD/monitoring/runtime/browser-libs/root/lib/x86_64-linux-gnu:/opt/conda/lib"
     export FONTCONFIG_FILE="$PWD/monitoring/runtime/browser-libs/fonts.conf"
     node monitoring/test-browser.mjs
@@ -422,7 +436,7 @@ run_task "11. Testes finais dos dashboards" bash -c '
 '
 
 python3 -B scripts/studio_urls.py >> "$LOG"
-run_task "12. Sistema BLU recuperado" python3 -B scripts/open_dashboards.py --quiet
+run_task "12. Confirmar abertura das interfaces" open_service_pages
 printf '  %s↗%s  Portal AWS: %s\n' "$CYAN" "$RESET" \
     "$(python3 -B scripts/studio_urls.py --port 3001)"
-ui_footer "BLU SYSTEM RESTORED" "12 tarefas · 5 serviços · 5 interfaces"
+ui_footer "BLU SYSTEM RESTORED" "12 tarefas · 5 serviços validados"

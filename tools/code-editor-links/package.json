@@ -2,7 +2,7 @@
   "name": "blu-workspace-links",
   "displayName": "BLU Workspace Links",
   "description": "Abre as interfaces BLU através do encaminhamento nativo do Code Editor atual.",
-  "version": "0.1.2",
+  "version": "0.2.1",
   "publisher": "blu-local",
   "engines": { "vscode": "^1.90.0" },
   "main": "./extension.cjs",

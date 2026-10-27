@@ -484,3 +484,72 @@ shell e verificações documentais sem erros. O Vite ativo respondeu HTTP 200.
 A sessão ainda mantinha a versão anterior da extensão carregada, pelo que a
 confirmação de abertura real através da versão nova aguarda recarregamento da
 janela; a instalação por SSH não comprova o encaminhamento na sessão web AWS.
+
+### Separação entre o editor SSH e o Code Editor web — 2026-10-27
+
+A captura do utilizador e `session.json` confirmaram `uiKind=1`: VS Code desktop
+por SSH. A coluna Forwarded Address contém os extremos locais dos túneis dessa
+sessão; `asExternalUri` nesse contexto não regista o proxy HTTPS da sessão web.
+A instalação anterior pelo CLI `code` só atingia as extensões SSH, pelo que pedir
+para recarregar essa janela não resolvia o objetivo dos URLs SageMaker.
+
+O instalador passou a detetar os dois editores e a instalar também pelo CLI
+`sagemaker-code-editor`, com o diretório persistente
+`~/sagemaker-code-editor-server-data/extensions`. O launcher em SageMaker exige
+um marcador e uma confirmação web (`uiKind=2`), não aceitando uma sessão SSH
+como evidência de encaminhamento HTTPS. A extensão não anuncia o encaminhamento
+SSH como proxy AWS; a interface SSH informa que os links HTTPS devem ser abertos
+na sessão Code Editor do navegador. Os rótulos das portas deixaram de alegar AWS.
+
+Evidência: instalação real do VSIX nos dois catálogos de extensões; 13 testes
+Python e cinco testes Node passaram. O registo e a abertura na sessão web do
+utilizador continuam por confirmar; não se afirma que a coluna Ports de uma
+sessão SSH será convertida em endereços HTTPS.
+
+### Protocolo distingue testes falhados de abertura do navegador — 2026-10-27
+
+A execução apresentada pelo utilizador tinha duas causas independentes: a fixture
+`monitoring.browser_fixture` não incluía `snapshot.alerts`, exigido pela interface,
+e omitia o agente opcional desativado. O teste parava antes de apresentar as
+métricas do agente. Os blocos `bash -c` do protocolo conservavam apenas o estado
+do último comando, permitindo que a apresentação aprovada ocultasse essa falha.
+
+A fixture passou a cumprir o contrato completo de alertas e serviços. Os blocos
+compostos de preparação, recuperação, testes e build usam `bash -euo pipefail -c`:
+um erro interrompe a etapa correspondente antes de executar o comando seguinte.
+
+A ausência de confirmação do navegador tem agora código de saída 3 no launcher,
+distinto de erros reais. A função `open_service_pages` do orquestrador trata esse
+estado como abertura pendente, sem invalidar serviços já validados e sem anunciar
+cinco interfaces abertas. Outros erros continuam a interromper o protocolo. A
+etapa 12 descreve a confirmação da abertura, não uma nova recuperação de dados.
+
+Evidência: 43 testes de orquestração, integração do editor e Monitoring aprovados;
+cenários locais do navegador em 320/768/1440/2560 px passaram com fixture isolada,
+sem fornecedores externos. `just blu up` real terminou com código 0, cinco
+serviços/endpoints validados e aviso explícito de abertura web pendente. A
+recuperação integral e as publicações S3 não foram repetidas nesta correção.
+As pendências de monitoring externo do plano mantêm-se abertas.
+
+### Isolamento SNS dos testes do protocolo — 2026-10-27
+
+A etapa 6 herdava `BLU_MONITORING_NOTIFICATIONS_ENABLED=true` do serviço real.
+O teste de rotação criava um Collector com configuração mínima, sem canal SNS,
+pelo que o dispatcher recusava corretamente a ativação herdada. Não foi relaxada
+a validação de tópicos nem alterada a configuração dos serviços.
+
+Os testes de Collector desativam explicitamente notificações externas e bloqueiam
+qualquer tentativa de obter um cliente SNS. A subshell da etapa 6 também define
+notificações externas desligadas apenas para os processos de teste. O teste de
+rejeição de tópicos inválidos ativa explicitamente o dispatcher no seu próprio
+contexto, conservando essa validação independentemente do ambiente anfitrião.
+Uma regressão verifica a variável nas três baterias sem alterar a configuração
+herdada pelo serviço.
+
+Evidência: a etapa 6 exata foi executada com ambiente exterior SNS ativo e tópico
+inválido simulado; terminou com código 0. As baterias passaram: 202 testes Python
+(um omitido), 37 de Monitoring e cinco de tradução. Testes SNS usam cliente falso;
+nenhuma notificação real foi enviada pelos ensaios. `just blu up` reiniciou os
+cinco serviços deixados parados pela interrupção e validou os cinco endpoints,
+sem recuperação de dados nem publicação S3. Monitoring externo permanece sujeito
+às pendências explícitas do plano.

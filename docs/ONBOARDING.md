@@ -90,7 +90,11 @@ a barra inferior **BLU · Interfaces** e o comando **BLU: Abrir interfaces deste
 workspace** usam o encaminhamento nativo do Code Editor. Os encaminhamentos são
 restaurados ao reabrir a sessão e resolvidos de novo em cada abertura.
 
-Após instalar/atualizar a extensão, executar **Developer: Reload Window** se o
+O instalador usa `sagemaker-code-editor` para o editor web e `code` para o editor
+SSH. Para links HTTPS, usar o Code Editor aberto no navegador AWS; a coluna
+**Ports** de uma sessão SSH continuará a mostrar túneis `localhost`.
+
+Após instalar/atualizar a extensão no editor web, executar **Developer: Reload Window** se o
 launcher indicar que a integração não respondeu. A instalação é local, sem
 Marketplace: `python3 scripts/install_code_editor_links.py`. As tarefas **BLU:
 Mostrar URLs deste workspace** e **BLU: Abrir interfaces deste workspace** também

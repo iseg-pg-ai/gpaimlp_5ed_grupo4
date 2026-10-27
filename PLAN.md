@@ -14,16 +14,25 @@ A recuperação das aprovações foi publicada no S3 com autorização em 27 de 
 252 aprovados, 521 revisões e correspondência com o warehouse reconstruído.
 API real e interface desktop/móvel validadas; evidência em [Decisões](docs/DECISIONS.md).
 
-## Links nativos do Code Editor — ativação e aceitação pendentes
+O protocolo foi corrigido para propagar a primeira falha de cada etapa e separar
+abertura web pendente de falha dos serviços. Fixture de Monitoring alinhada e
+43 testes, quatro cenários de navegador e arranque rápido validados localmente;
+evidência em [Decisões](docs/DECISIONS.md).
 
-- [ ] Recarregar a janela do Code Editor para ativar a atualização instalada de
-  **BLU Workspace Links** e confirmar **BLU · Interfaces** na sessão web em uso.
-  A versão anterior permanece carregada e não confirmou os pedidos do launcher;
-  a versão final tem entrega por sondagem além do watcher. Não confundir a
-  instalação do VSIX com abertura validada no navegador AWS.
-- [ ] Confirmar abertura das cinco interfaces nessa sessão. Descoberta real do
-  Space atual por `DescribeSpace`, testes de troca de workspace e recusa de URLs
-  antigos, APIs nativas simuladas e build Vite já validados. Evidência em
+A herança SNS na etapa 6 foi isolada dos serviços reais. A etapa completa passou
+244 testes (um omitido) e os cinco serviços foram reabertos por arranque rápido,
+sem repetir a recuperação; evidência em [Decisões](docs/DECISIONS.md).
+
+## Links do Code Editor web — aceitação pendente
+
+- [ ] Abrir o Code Editor do workspace no navegador AWS e confirmar a ativação de
+  **BLU Workspace Links** e os cinco links HTTPS. Foi corrigida a instalação:
+  o CLI `code` só instalara na sessão SSH; o VSIX 0.2.1 está agora instalado também
+  por `sagemaker-code-editor` no diretório persistente do editor web.
+- [ ] Confirmar abertura das cinco interfaces nessa sessão. O launcher exige agora
+  confirmação web (`uiKind=2`); o painel **Ports** de VS Code por SSH continuará
+  legitimamente a mostrar `localhost`, não URLs do proxy AWS. Instalação e testes
+  não comprovam abertura na sessão web do utilizador. Evidência em
   [Decisões](docs/DECISIONS.md).
 
 ## Correções Dependabot — integração pendente

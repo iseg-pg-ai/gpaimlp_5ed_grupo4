@@ -59,3 +59,8 @@ test('pedidos são confirmados mesmo quando o watcher do editor ignora o runtime
  assert.equal(response.ok,true);
  assert.equal(opened.length,5);
 });
+
+test('o túnel SSH não é anunciado como encaminhamento HTTPS SageMaker',async()=>{
+ const extension=load({env:{uiKind:1,asExternalUri:async()=>{throw new Error('não deve encaminhar');}}});
+ await assert.rejects(extension.forward(),/não na sessão SSH/);
+});

@@ -4,10 +4,12 @@ const services = require("./interfaces.json");
 const localUri = (service) => vscode.Uri.parse(`http://127.0.0.1:${service.port}/`);
 
 async function forward() {
+  if (vscode.env.uiKind === 1) throw new Error("O encaminhamento HTTPS SageMaker deve ser registado no Code Editor aberto no navegador, não na sessão SSH.");
   // Resolver de novo em cada pedido: um encaminhamento anterior pode ter sido fechado.
   for (const service of services) await vscode.env.asExternalUri(localUri(service));
 }
 async function openAll() {
+  if (vscode.env.uiKind === 1) throw new Error("Para abrir os links HTTPS SageMaker, use BLU · Interfaces no Code Editor do workspace aberto no navegador AWS. Esta janela SSH usa túneis localhost.");
   for (const service of services) {
     // openExternal resolve e encaminha o localhost na sessão atual por si próprio.
     if (!(await vscode.env.openExternal(localUri(service))))
@@ -15,6 +17,7 @@ async function openAll() {
   }
 }
 async function choose() {
+  if (vscode.env.uiKind === 1) throw new Error("Abra o Code Editor deste workspace no navegador AWS para usar os links HTTPS. O painel Ports desta janela SSH continuará a mostrar localhost.");
   const choice = await vscode.window.showQuickPick(
     [{ label: "Abrir todas as interfaces", all: true }, ...services],
     { placeHolder: "Interfaces do workspace atual" },
@@ -60,13 +63,14 @@ async function activate(context) {
       request = JSON.parse(Buffer.from(bytes).toString("utf8"));
       if (request.id === lastRequest || !/^[a-f0-9]{32}$/.test(request.id) ||
           !["open", "forward"].includes(request.action) ||
+          (request.uiKind !== undefined && request.uiKind !== vscode.env.uiKind) ||
           Math.abs(Date.now() - request.at) > 30000) return;
       lastRequest = request.id;
       if (request.action === "open") await openAll();
       else await forward();
-      await write("response.json", { id: request.id, ok: true, session });
+      await write("response.json", { id: request.id, ok: true, session, uiKind: vscode.env.uiKind });
     } catch {
-      if (request?.id) await write("response.json", { id: request.id, ok: false, session });
+      if (request?.id) await write("response.json", { id: request.id, ok: false, session, uiKind: vscode.env.uiKind });
     } finally { processing = false; }
   }
   const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, "monitoring/runtime/code-editor-links/request.json"));
@@ -76,8 +80,10 @@ async function activate(context) {
   const timer = setInterval(() => void handleRequest(), 500);
   timer.unref?.();
   context.subscriptions.push({ dispose: () => clearInterval(timer) });
-  await forward().catch(report);
-  await write("session.json", { session, at: Date.now(), uiKind: vscode.env.uiKind });
+  if (vscode.env.uiKind === 2) await forward().catch(report);
+  const state = { session, at: Date.now(), uiKind: vscode.env.uiKind };
+  await write(`session-${vscode.env.uiKind}.json`, state);
+  await write("session.json", state);
   await handleRequest();
 }
 module.exports = { activate, forward, openAll };

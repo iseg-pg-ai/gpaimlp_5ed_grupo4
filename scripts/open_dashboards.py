@@ -23,10 +23,13 @@ def request_editor(action: str = "open", timeout: float = 10) -> bool:
     """Pedir à sessão ativa que resolva as portas, sem transportar URLs públicos."""
     if action not in {"open", "forward"}:
         raise ValueError("Ação desconhecida.")
-    if not (BRIDGE / "session.json").is_file():
+    web = os.environ.get("SAGEMAKER_APP_TYPE") == "CodeEditor"
+    if not (BRIDGE / ("session-2.json" if web else "session.json")).is_file():
         return False
     identity = uuid.uuid4().hex
     request = {"id": identity, "action": action, "at": int(time.time() * 1000)}
+    if web:
+        request["uiKind"] = 2
     temporary = BRIDGE / f"request-{identity}.tmp"
     temporary.write_text(json.dumps(request), encoding="utf-8")
     os.chmod(temporary, 0o600)
@@ -36,7 +39,7 @@ def request_editor(action: str = "open", timeout: float = 10) -> bool:
         try:
             response = json.loads((BRIDGE / "response.json").read_text())
             if response.get("id") == identity:
-                return response.get("ok") is True
+                return response.get("ok") is True and (not web or response.get("uiKind") == 2)
         except (FileNotFoundError, ValueError):
             pass
         time.sleep(0.1)
@@ -72,8 +75,9 @@ def main() -> int:
     if os.environ.get("SAGEMAKER_APP_TYPE") == "CodeEditor":
         for name, url in targets:
             print(f"{name}: {url}")
-        print("A integração nativa não respondeu. Recarregue a janela web do Code Editor e execute BLU: Abrir interfaces deste workspace.")
-        return 1
+        print("A sessão web não confirmou a abertura. Abra o Code Editor do workspace no navegador AWS e execute BLU: Abrir interfaces deste workspace. A sessão SSH não regista as portas do proxy web.")
+        # Código distinto: serviços não falharam; só falta uma sessão web ativa.
+        return 3
 
     helper = os.environ.get("BROWSER", "")
     if helper and Path(helper).is_file():

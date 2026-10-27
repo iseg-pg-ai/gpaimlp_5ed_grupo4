@@ -95,7 +95,9 @@ class NotificationTests(unittest.TestCase):
 
     def test_invalid_or_implicit_configuration_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
-            with patch.dict(os.environ, {"BLU_MONITORING_SNS_TOPIC_ARN": "not-an-arn"}):
+            with patch.dict(os.environ, {
+                    "BLU_MONITORING_NOTIFICATIONS_ENABLED": "true",
+                    "BLU_MONITORING_SNS_TOPIC_ARN": "not-an-arn"}):
                 with self.assertRaisesRegex(ValueError, "tópico SNS válido"):
                     NotificationDispatcher(Path(directory), config())
             with patch.dict(os.environ, {"BLU_MONITORING_NOTIFICATIONS_ENABLED": "yes"}):
