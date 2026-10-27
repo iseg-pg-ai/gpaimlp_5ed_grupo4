@@ -90,7 +90,9 @@ test('o portal fica num servidor privado, só alcançável pelo CloudFront e com
   // Build ARM no CodeBuild, lançado em cada deploy com código novo.
   const [build] = of('AWS::CodeBuild::Project');
   assert.equal(build.Properties.Environment.Type, 'ARM_CONTAINER');
-  assert.equal(build.Properties.SecondarySources.length, 6);
+  assert.equal(build.Properties.SecondarySources.length, 7);
+  // O contorno do mapa (dashboard/region.geojson) vai no pacote: sem ele o Observatório e o mapa da proposta falham.
+  assert.match(build.Properties.Source.BuildSpec, /region\.geojson/);
   assert.match(build.Properties.Source.BuildSpec, /sha256sum -c/);
   assert.equal(of('Custom::AWS').length, 2);
 });

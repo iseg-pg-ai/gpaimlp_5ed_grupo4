@@ -831,6 +831,8 @@ class PortalStack extends Stack {
       // Leitura do catálogo, datasets e observatório em Python (só biblioteca padrão).
       pyportal: source('PyPortal', 'portal', ['__pycache__']),
       etl: source('Etl', 'etl', ['__pycache__', 'AGENTS.md']),
+      // Só o contorno da região (Natural Earth): o Observatório e o mapa da proposta leem-no.
+      dashboard: source('Dashboard', 'dashboard', ['*', '!region.geojson']),
       intranet: source('Intranet', 'frontend/intranet', ['config.js']),
       gate: source('Gate', 'infra/portal', ['jwks.json']),
     };
@@ -859,6 +861,7 @@ class PortalStack extends Stack {
               'cp -r "$CODEBUILD_SRC_DIR" "$R/dmc-workspace" && cp -r "$CODEBUILD_SRC_DIR_config" "$R/config"',
               'cp -r "$CODEBUILD_SRC_DIR_schemas" "$R/src/blu_ai/schemas" && cp -r "$CODEBUILD_SRC_DIR_intranet" "$R/frontend/intranet" && cp -r "$CODEBUILD_SRC_DIR_gate" "$R/infra/portal"',
               'cp -r "$CODEBUILD_SRC_DIR_pyportal" "$R/portal" && cp -r "$CODEBUILD_SRC_DIR_etl" "$R/etl"',
+              'mkdir -p "$R/dashboard" && cp "$CODEBUILD_SRC_DIR_dashboard/region.geojson" "$R/dashboard/region.geojson"',
               'cd "$R/dmc-workspace" && npm ci --no-audit --no-fund && npm run build && npm prune --omit=dev --no-audit --no-fund',
               'curl -fsSL "https://cognito-idp.$AWS_REGION.amazonaws.com/$USER_POOL_ID/.well-known/jwks.json" -o "$R/infra/portal/jwks.json"',
               'node -e "process.exit(JSON.parse(require(\'fs\').readFileSync(process.argv[1])).keys.length ? 0 : 1)" "$R/infra/portal/jwks.json"',

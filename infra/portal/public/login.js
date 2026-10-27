@@ -9,10 +9,14 @@ const KEY = 'blu-portal-auth';
 // Só caminhos do próprio portal: evita redirecionamentos para outros sites.
 const safeNext = value => (typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/auth/') ? value : '/');
 
+// O fragmento (#mapa) não chega ao servidor: o navegador mantém-no no redirecionamento para
+// /auth/login e guardamo-lo aqui, para a ligação direta abrir o sítio certo depois do login.
+const safeHash = value => (/^#[A-Za-z0-9-]{1,40}$/.test(value) ? value : '');
+
 async function begin() {
   const state = randomString();
   const verifier = randomString(48);
-  sessionStorage.setItem(KEY, JSON.stringify({ state, verifier, next: safeNext(new URLSearchParams(location.search).get('next')) }));
+  sessionStorage.setItem(KEY, JSON.stringify({ state, verifier, next: safeNext(new URLSearchParams(location.search).get('next')) + safeHash(location.hash) }));
   location.assign(loginUrl(auth, { state, challenge: await challengeFor(verifier) }));
 }
 

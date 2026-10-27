@@ -395,6 +395,23 @@ avisos antes de integrar alterações no portal.
 Os testes de navegador, variáveis para armazenamento isolado e alternativa Edge
 no Windows estão centralizados no [guia de testes](TESTING.md#testes-de-navegador).
 
+## Mapa da proposta e ligações diretas (2026-10-27)
+
+- **Mapa da proposta:** secção «Mapa da proposta» na proposta aberta
+  (`src/components/ProposalMap.tsx`). Cada dia tem uma cor; os pontos são
+  numerados pela ordem do roteiro e ligados por uma linha tracejada, que não é o
+  trajeto na estrada. Segue o dia escolhido na navegação por dias.
+- **Só coordenadas do catálogo** (`src/lib/proposal-map.ts`): pontos sem
+  coordenadas numéricas válidas (vazias, texto ou 0,0) ficam numa lista à parte
+  e nunca aparecem no mapa. O tempo livre não conta.
+- **Contorno:** `GET /api/map-outlines` lê `dashboard/region.geojson`, o mesmo
+  ficheiro do Observatório; o build do `BluCostaPortal` passou a incluí-lo (sem ele,
+  o Observatório também falhava no servidor). A projeção está em
+  `src/lib/map-projection.ts`, partilhada pelos dois mapas.
+- **Ligações diretas:** `/#mapa` abre a proposta com o mapa aberto e
+  `/leads?lead=BLU-…` abre esse contacto. O login do portão guarda o fragmento
+  (`#mapa`) durante o login. A proposta em edição é a do navegador de quem a abre.
+
 ## Meteorologia e controlos HTML nativos
 
 O navegador consulta `/api/weather` no próprio portal. O servidor chama

@@ -11,6 +11,7 @@ import { TransitConnector } from "./TransitConnector";
 import { TransitInspectorModal } from "./TransitInspectorModal";
 import { AddPoiModal } from "./AddPoiModal";
 import { DayWeatherBadge } from "./DayWeatherBadge";
+import { ProposalMap } from "./ProposalMap";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -356,7 +357,17 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
     activityId: string;
   } | null>(null);
   const [addPoiDay, setAddPoiDay] = useState<number | null>(null);
+  const [mapOpen, setMapOpen] = useState(false);
   const dayRefs = useRef<{ [key: number]: HTMLElement | null }>({});
+
+  // Ligação direta (…/#mapa): abre o mapa e leva-o para o ecrã.
+  useEffect(() => {
+    if (window.location.hash !== "#mapa") return;
+    queueMicrotask(() => {
+      setMapOpen(true);
+      document.getElementById("mapa")?.scrollIntoView({ block: "start" });
+    });
+  }, []);
 
   // Auto-scroll into view when a specific day is modified by the AI Assistant
   useEffect(() => {
@@ -563,6 +574,19 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               {proposalTools}
             </details>
           )}
+          {/* #mapa abre já o mapa: é o destino do atalho «Mapa da proposta» da intranet. */}
+          <details
+            id="mapa"
+            data-testid="proposal-map"
+            open={mapOpen}
+            onToggle={(event) => setMapOpen(event.currentTarget.open)}
+            className="mt-3 scroll-mt-24 rounded-xl border border-[var(--portal-line-ddd8ce)] bg-[var(--portal-bg-fffefa)] text-sm"
+          >
+            <summary className="cursor-pointer px-4 py-3 font-medium text-[var(--portal-text-143f4b)]">
+              <T text="Mapa da proposta" source="pt" />
+            </summary>
+            {mapOpen && <ProposalMap itinerary={itinerary} dayFilter={selectedDayFilter} />}
+          </details>
         </div>
       </header>
       <nav

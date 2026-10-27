@@ -44,6 +44,8 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 16px 3rem; }
 .primary { background: var(--ink); color: #fff; border: 0; border-radius: 6px; padding: .6rem 1.2rem; }
 .secondary { background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: .45rem .9rem; }
 .primary:disabled, .secondary:disabled { opacity: .5; cursor: default; }
+/* Ligações com aspeto de botão (atalhos para o portal). */
+a.button { display: inline-block; text-decoration: none; }
 .error { color: var(--bad); min-height: 1.5em; }
 .muted { color: var(--ink-soft); font-size: .9rem; }
 .notice { background: #fbf4e4; border: 1px solid #ecd9ae; border-radius: var(--radius); padding: .75rem 1rem; margin: 1rem 0; font-size: .9rem; }

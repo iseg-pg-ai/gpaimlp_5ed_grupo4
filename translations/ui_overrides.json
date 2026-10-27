@@ -182,5 +182,53 @@
     "fr": "Navigation par jour",
     "de": "Tagesnavigation",
     "zh": "按天导航"
+  },
+  "Mapa da proposta": {
+    "pt": "Mapa da proposta",
+    "en": "Proposal map",
+    "es": "Mapa de la propuesta",
+    "fr": "Carte de la proposition",
+    "de": "Karte des Angebots",
+    "zh": "方案地图"
+  },
+  "Dia": {
+    "pt": "Dia",
+    "en": "Day",
+    "es": "Día",
+    "fr": "Jour",
+    "de": "Tag",
+    "zh": "第"
+  },
+  "Nenhum ponto desta seleção tem coordenadas no catálogo.": {
+    "pt": "Nenhum ponto desta seleção tem coordenadas no catálogo.",
+    "en": "No stop in this selection has coordinates in the catalogue.",
+    "es": "Ningún punto de esta selección tiene coordenadas en el catálogo.",
+    "fr": "Aucune étape de cette sélection n’a de coordonnées dans le catalogue.",
+    "de": "Kein Halt dieser Auswahl hat Koordinaten im Katalog.",
+    "zh": "所选范围内没有任何地点在目录中有坐标。"
+  },
+  "Sem pontos com coordenadas.": {
+    "pt": "Sem pontos com coordenadas.",
+    "en": "No stops with coordinates.",
+    "es": "Sin puntos con coordenadas.",
+    "fr": "Aucune étape avec des coordonnées.",
+    "de": "Keine Halte mit Koordinaten.",
+    "zh": "没有带坐标的地点。"
+  },
+  "Sem coordenadas no catálogo (não aparecem no mapa)": {
+    "pt": "Sem coordenadas no catálogo (não aparecem no mapa)",
+    "en": "No coordinates in the catalogue (not shown on the map)",
+    "es": "Sin coordenadas en el catálogo (no aparecen en el mapa)",
+    "fr": "Sans coordonnées dans le catalogue (absentes de la carte)",
+    "de": "Ohne Koordinaten im Katalog (nicht auf der Karte)",
+    "zh": "目录中无坐标（不在地图上显示）"
+  },
+  "A linha liga os pontos pela ordem do roteiro; não é o trajeto na estrada. Coordenadas válidas não certificam a localização.": {
+    "pt": "A linha liga os pontos pela ordem do roteiro; não é o trajeto na estrada. Coordenadas válidas não certificam a localização.",
+    "en": "The line joins the stops in itinerary order; it is not the road route. Valid coordinates do not certify the location.",
+    "es": "La línea une los puntos en el orden del itinerario; no es el trayecto por carretera. Unas coordenadas válidas no certifican la ubicación.",
+    "fr": "La ligne relie les étapes dans l’ordre de l’itinéraire ; ce n’est pas le trajet routier. Des coordonnées valides ne certifient pas l’emplacement.",
+    "de": "Die Linie verbindet die Halte in der Reihenfolge der Route; sie ist nicht der Straßenweg. Gültige Koordinaten bestätigen den Ort nicht.",
+    "zh": "连线按行程顺序连接各地点，并非实际道路路线。有效坐标并不代表位置已核实。"
   }
 }

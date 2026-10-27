@@ -85,6 +85,11 @@ const EVIDENCE_KIND = { 'churn-followups': 'Revisões de clientes em risco', man
 const ROLE_PERMS = { founders: ['read', 'tasks', 'cases', 'security', 'team-admin', 'feedback'], curators: ['read', 'tasks', 'cases'], governance: ['read', 'tasks', 'cases', 'security'], testers: ['read'], marketing: ['tasks'] };
 const can = permission => groupsNow().some(group => ROLE_PERMS[group]?.includes(permission));
 const tabVisible = tab => can('read') || LIMITED_TABS.includes(tab);
+// Endereço do portal: uma só fonte, a ligação do menu (index.html).
+const portalUrl = (rest = '') => {
+  const base = document.getElementById('portal-link')?.href;
+  return base ? new URL(rest, base).toString() : '';
+};
 const DEADLINE = { overdue: ['Fora do prazo', 'bad'], 'due-soon': ['Prazo próximo', 'warn'], 'on-track': ['No prazo', 'ok'], closed: ['Fechado', ''] };
 let casePrefill = {};
 // Filtro e lead aberto sobrevivem a «Atualizar» e ao regresso ao separador.
@@ -957,6 +962,10 @@ async function showLead(panel, id, refreshList) {
       mine ? act('Libertar', () => api('POST', `/v1/leads/${id}/assign`, { release: true })) : act('Assumir', () => api('POST', `/v1/leads/${id}/assign`, {}), 'primary'),
       lead.status === 'CONTACTED' ? null : act('Marcar contactado', () => api('POST', `/v1/leads/${id}/contacted`)),
       can('tasks') ? h('button', { type: 'button', class: 'secondary', onclick: () => { taskPrefill = { leadId: id }; show('work'); } }, 'Criar tarefa') : null),
+    // Atalhos do curador: o portal abre já neste lead (para criar a proposta) ou no mapa da proposta aberta.
+    isCurator() && portalUrl() ? h('div', { class: 'actions' },
+      h('a', { class: 'button secondary', href: portalUrl(`leads?lead=${encodeURIComponent(id)}`), target: '_blank', rel: 'noopener' }, 'Proposta no portal ↗'),
+      h('a', { class: 'button secondary', href: portalUrl('#mapa'), target: '_blank', rel: 'noopener' }, 'Mapa da proposta ↗')) : null,
     isCurator() ? null : h('p', { class: 'muted' }, 'Só curadores e fundadores podem alterar leads.'),
     status,
     h('h3', {}, 'Conversa com o chatbot'),

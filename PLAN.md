@@ -21,11 +21,14 @@ mão, sem procurar noutros sites. Hoje o portal tem o mapa do catálogo no
 Observatório (SVG, sem rotas) e a exportação «TXT para Canva» de uma versão
 guardada; não há mapa da proposta nem ligação à equipa no Canva.
 
-- [ ] Mapa da proposta no portal: os pontos de cada dia e a ordem do percurso,
+- [x] Mapa da proposta no portal: os pontos de cada dia e a ordem do percurso,
   a partir das coordenadas do catálogo já usadas no encaminhamento; pontos sem
-  coordenadas listados à parte (desconhecido não é «perto»).
-- [ ] Intranet, perfil de curador: atalhos «Propostas» e «Mapa da proposta» que
-  abrem o portal no lead ou na versão certa (ligação direta, um nível).
+  coordenadas listados à parte (desconhecido não é «perto»). Testes unitários,
+  tipos e lint passaram; o `next build` local não correu por falta de memória.
+- [x] Intranet, perfil de curador: atalhos «Proposta no portal» (no lead) e
+  «Mapa da proposta» (no lead e no menu), ligação direta de um nível.
+- [ ] Publicar `BluCostaIntranet` e `BluCostaPortal` e validar o mapa com uma
+  proposta real depois do login.
 - [ ] Canva da equipa como opção do curador: ligação à equipa ou pasta Canva da
   BLU (endereço a indicar pela equipa) ao lado do «TXT para Canva»; a
   integração por API do Canva fica para depois de aprovar custos e acesso.

@@ -17,6 +17,7 @@ import {
   type Lead,
   type LeadDetail,
   type LeadFilter,
+  validLeadId,
 } from "@/lib/leads-model";
 
 async function readJson<Value>(response: Response): Promise<Value> {
@@ -85,6 +86,14 @@ export default function LeadsPage() {
       setError(openError instanceof Error ? openError.message : "Erro ao abrir o contacto.");
     }
   };
+
+  // Ligação direta da intranet (/leads?lead=BLU-…): abre logo esse contacto.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("lead") ?? "";
+    if (validLeadId(id)) queueMicrotask(() => void open(id));
+    // Só no primeiro carregamento: depois a escolha é feita na lista.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const markContacted = async () => {
     if (!selected) return;
