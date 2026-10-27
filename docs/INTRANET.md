@@ -49,7 +49,9 @@ Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só d
 - **Página estática em HTML e JavaScript sem build** em `frontend/intranet/`
   (sem dependências novas). É uma entrada nova porque a fronteira
   cliente/servidor é diferente do portal Next.js. `frontend/intranet-preview/`
-  é uma pré-visualização local com dados fictícios, excluída do deploy.
+  é uma pré-visualização local com dados fictícios, excluída do deploy: `load.js`
+  abre a página real (`frontend/intranet/index.html`) e troca só `config.js`
+  pelos dados simulados, sem cópia do menu (`?role=marketing` mostra outro perfil).
 - **Uma Lambda, `infra/lambda/intranet/`**: `app.mjs` (rotas, autorização e
   validação, testadas sem AWS), `model.mjs` (espelho de
   `dmc-workspace/src/lib/leads-model.ts`, com teste de paridade) e
