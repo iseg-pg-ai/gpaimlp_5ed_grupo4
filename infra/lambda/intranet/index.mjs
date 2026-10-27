@@ -1,3 +1,4 @@
+import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
 import { CloudWatchClient, GetMetricDataCommand } from '@aws-sdk/client-cloudwatch';
 import {
   AdminAddUserToGroupCommand, AdminCreateUserCommand, AdminDisableUserCommand, AdminEnableUserCommand, AdminRemoveUserFromGroupCommand,
@@ -18,6 +19,7 @@ const lambda = new LambdaClient({});
 const cloudwatch = new CloudWatchClient({});
 const cognito = new CognitoIdentityProviderClient({});
 const secretsManager = new SecretsManagerClient({});
+const bedrock = new BedrockRuntimeClient({});
 const STAFF_GROUPS = ['founders', 'curators', 'governance', 'testers'];
 const env = process.env;
 const WORKER_PREFIX = 'BluCosta';
@@ -253,6 +255,17 @@ async function secrets() {
 
 const partners = JSON.parse(env.PARTNERS_JSON || '{"partners":[]}').partners;
 
+// Só escreve o texto de uma resposta simples; as regras e a verificação final ficam em guardrails.mjs.
+async function draftReply({ system, user }) {
+  const result = await bedrock.send(new ConverseCommand({
+    modelId: env.MODEL_ID,
+    system: [{ text: system }],
+    messages: [{ role: 'user', content: [{ text: user }] }],
+    inferenceConfig: { maxTokens: 160, temperature: 0.2 },
+  }));
+  return result.output?.message?.content?.map(part => part.text ?? '').join('').trim() ?? '';
+}
+
 export const handler = createApp({
   partners,
   policyReport: () => readJson(POLICY_REPORT_KEY),
@@ -271,6 +284,7 @@ export const handler = createApp({
   getTranscript: id => byConversation(env.MESSAGE_TABLE_NAME, id),
   updateProfile,
   askRag,
+  draftReply: env.MODEL_ID ? draftReply : undefined,
   listTeam,
   operations,
   governance,

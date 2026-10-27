@@ -26,13 +26,53 @@ const feed = [
   { at: hours(-5), by: 'curador@example.com', byName: 'Curador de teste', text: 'criou «Confirmar tuk-tuk para Algarve e Açores» para Fundadora de teste' },
 ];
 const taskLog = {};
-const AUTO_TYPES = { thanks: 'Agradecimento logo após o consentimento', nudge: 'Reativação quando o cliente fica 3 dias em silêncio depois do contacto', reminders: 'Lembretes de recolhas e excursões aprovadas' };
-const settings = { replyHours: 4, auto: { thanks: false, nudge: false, reminders: true }, updatedBy: '', updatedAt: '' };
+const AUTO_TYPES = { thanks: 'Agradecimento logo após o consentimento', nudge: 'Reativação quando o cliente fica 3 dias em silêncio depois do contacto', reminders: 'Lembretes de recolhas e excursões aprovadas', replies: 'Respostas sozinhas a perguntas simples por WhatsApp (hora, local, confirmação), com os dados da reserva' };
+const settings = { replyHours: 4, auto: { thanks: false, nudge: false, reminders: true, replies: true }, updatedBy: '', updatedAt: '' };
 const attestations = {};
+// As regras e o agrupamento são os módulos reais da Lambda, para a pré-visualização decidir como a AWS.
+const real = Promise.all([import('../../infra/lambda/intranet/guardrails.mjs'), import('../../infra/lambda/intranet/whatsapp-test.mjs')]);
+const mockPartners = [
+  { id: 'tuk-alfama', name: 'Tuk-tuk Alfama (demo)', kind: 'tuk-tuk', area: 'Lisboa: Alfama, Baixa', seats: 6, whatsapp: '', demo: true },
+  { id: 'transfer-sintra', name: 'Transfer Sintra', kind: 'transfer', area: 'Sintra, Cascais', seats: 8, whatsapp: '351900000000', license: { type: 'RNAAT', number: '0000/2020' } },
+];
+const bookingFacts = { title: 'Recolha no hotel', place: 'Hotel Avenida, Lisboa', date: day(1), time: '09:30', people: 2, partner: 'Tuk-tuk Alfama (demo)' };
 const waInbox = [
   { at: hours(-2), direction: 'out', to: '351912345678', title: 'Recolha no hotel', text: 'BLU Costa reminder: your pickup at Hotel Avenida, tomorrow 09:30, 2 people.', leadId: 'BLU-DEMO000000000004', author: 'curator-schedule', authorName: 'Lembrete agendado' },
-  { at: hours(-1.5), direction: 'in', to: '351912345678', title: '', text: 'Perfect, see you tomorrow!', leadId: '', author: 'fundadora@example.com', authorName: 'Fundadora de teste' },
+  { at: hours(-1.6), direction: 'in', to: '351912345678', text: 'What time is the pickup?', leadId: 'BLU-DEMO000000000004', author: 'fundadora@example.com', decision: 'auto', reason: 'Pergunta simples respondida com os dados da reserva.' },
+  { at: hours(-1.59), direction: 'out', to: '351912345678', text: 'Recolha no hotel: tomorrow at 09:30 with Tuk-tuk Alfama (demo). See you then!', leadId: 'BLU-DEMO000000000004', author: 'auto-assistant', authorName: 'Resposta automática', decision: 'auto' },
+  { at: hours(-5), direction: 'in', to: '351930000000', text: 'How much would a private Douro day cost for 4?', leadId: 'BLU-DEMO000000000002', author: 'fundadora@example.com', decision: 'person', reason: 'Fala de preço ou pagamento: só uma pessoa responde.', suggestion: 'Thank you for your message. A BLU curator will reply shortly.' },
+  { at: hours(-0.5), direction: 'out', partnerId: 'tuk-alfama', to: '', text: 'BLU Costa: recolha amanhã às 09:30 no Hotel Avenida, 2 pessoas. Confirma?', leadId: 'BLU-DEMO000000000004', author: 'curator-schedule', authorName: 'Lembrete agendado' },
+  { at: hours(-0.3), direction: 'in', partnerId: 'tuk-alfama', to: '', text: 'Podemos mudar para as 10h? Trânsito na Baixa.', leadId: 'BLU-DEMO000000000004', author: 'fundadora@example.com', decision: 'person', reason: 'Fala de alteração ou cancelamento: só uma pessoa responde.', suggestion: 'Obrigado pela mensagem. Uma curadora da BLU responde em breve.' },
 ];
+async function mockInbox(method, body) {
+  const [{ decide, templateReply }, { threadKey, threads }] = await real;
+  if (method === 'POST') {
+    const partner = mockPartners.find(item => item.id === body.partnerId);
+    const message = { at: new Date().toISOString(), direction: body.direction, to: partner ? partner.whatsapp : String(body.to ?? '').replace(/\D/g, ''), partnerId: partner?.id ?? '', text: body.text, title: '', leadId: body.leadId ?? '', author: 'fundadora@example.com', authorName: 'Fundadora de teste' };
+    const thread = waInbox.filter(item => threadKey(item) === threadKey(message));
+    if (body.direction === 'out') {
+      if (thread.some(item => item.decision === 'stop')) throw new Error('Esta pessoa pediu para não receber mais mensagens.');
+      waInbox.push(message);
+      return { at: message.at };
+    }
+    message.leadId ||= thread.findLast(item => item.leadId)?.leadId ?? '';
+    const facts = message.leadId === 'BLU-DEMO000000000004' ? bookingFacts : null;
+    const autoToday = thread.filter(item => item.author === 'auto-assistant' && item.at >= hours(-24)).length;
+    const decision = decide({ text: message.text, enabled: settings.auto.replies, facts, autoToday, now: new Date() });
+    const reply = decision.action === 'stop' ? '' : templateReply(decision.intent, facts, message.text);
+    waInbox.push({ ...message, decision: decision.action, reason: decision.reason, suggestion: decision.action === 'person' ? reply : '' });
+    if (decision.action === 'auto') waInbox.push({ ...message, at: new Date(Date.now() + 1).toISOString(), direction: 'out', text: reply, author: 'auto-assistant', authorName: 'Resposta automática', decision: 'auto' });
+    return { at: message.at, decision: decision.action, reason: decision.reason };
+  }
+  return { mode: 'test', autoReplies: settings.auto.replies, threads: threads(waInbox.map(item => ({ title: '', to: '', partnerId: '', leadId: '', decision: '', reason: '', suggestion: '', authorName: '', ...item })), mockPartners) };
+}
+async function waitingWork() {
+  const { threads: all } = await mockInbox('GET');
+  return all.filter(thread => thread.waiting).map(thread => {
+    const last = thread.messages.at(-1);
+    return { kind: 'message', id: thread.key, partition: thread.leadId, title: thread.name || thread.leadId || `+${thread.to}`, due: last.at.slice(0, 10), detail: last.reason, urgency: Date.now() - Date.parse(last.at) >= settings.replyHours * 36e5 ? 'overdue' : 'soon', message: { key: thread.key, to: thread.to, partnerId: thread.partnerId, leadId: thread.leadId, audience: thread.audience, text: last.text, at: last.at, suggestion: last.suggestion } };
+  });
+}
 const VERDICTS = { good: 'Boa resposta', improve: 'A melhorar', wrong: 'Errada' };
 const feedbackGiven = { 'BLU-DEMO000000000001': [{ verdict: 'improve', note: 'Devia ter perguntado as datas antes de falar de hotéis.', by: 'fundadora@example.com', byName: 'Fundadora de teste', at: hours(-20) }] };
 const dueState = task => (task.status === 'done' ? 'done' : !task.due ? 'none' : task.due < day(0) ? 'overdue' : task.due <= day(2) ? 'soon' : 'on-track');
@@ -43,9 +83,10 @@ const withState = task => {
 const rank = { risk: 0, overdue: 1, blocked: 2, soon: 3, normal: 4 };
 const byUrgency = (a, b) => rank[a.urgency] - rank[b.urgency] || (a.due || '9999').localeCompare(b.due || '9999');
 const announce = text => feed.unshift({ at: new Date().toISOString(), by: 'fundadora@example.com', byName: 'Fundadora de teste', text });
-function taskRoutes(method, path, body = {}) {
+async function taskRoutes(method, path, body = {}) {
   const me = 'fundadora@example.com';
   if (path === '/v1/work') return { statuses: TASK_STATUS, today: day(0), items: [
+    ...(await waitingWork()),
     ...tasks.filter(task => task.owner === me && task.status !== 'done').map(withState).map(task => ({ kind: 'task', id: task.id, partition: task.partition, title: task.title, due: task.due, urgency: task.urgency, task })),
     { kind: 'lead', id: 'BLU-DEMO000000000004', partition: 'BLU-DEMO000000000004', title: 'Algarve e Açores', due: day(3), detail: 'meados de março 2027 · 2 adultos', urgency: 'risk' },
     { kind: 'reminder', id: 'NOTIFY#a1', partition: 'BLU-DEMO000000000001', title: 'Recolha no hotel', due: day(0), detail: 'Sem contacto para este canal; enviar manualmente.', urgency: 'overdue' },
@@ -80,7 +121,7 @@ function taskRoutes(method, path, body = {}) {
 
 window.BLU_INTRANET_MOCK = async (method, path, body) => {
   await new Promise(resolve => setTimeout(resolve, 150));
-  const taskResult = taskRoutes(method, path, body);
+  const taskResult = await taskRoutes(method, path, body);
   if (taskResult !== undefined) return taskResult;
   if (path === '/v1/feed') return { feed, checkedAt: new Date().toISOString() };
   if (path === '/v1/settings' && method === 'POST') { Object.assign(settings, body, { auto: { ...settings.auto, ...body.auto }, updatedBy: 'fundadora@example.com', updatedAt: new Date().toISOString() }); announce('alterou as regras de seguimento'); return { ...settings, types: AUTO_TYPES }; }
@@ -107,10 +148,7 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
     controls: [{ area: 'Identidade', control: 'Login Cognito com MFA obrigatório', status: 'on' }, { area: 'Proteção web', control: 'AWS WAF à frente da intranet e da API', status: 'off' }],
   };
   if (path === '/v1/partners') return {
-    partners: [
-      { id: 'tuk-alfama', name: 'Tuk-tuk Alfama (demo)', kind: 'tuk-tuk', area: 'Lisboa: Alfama, Baixa', seats: 6, whatsapp: '', demo: true },
-      { id: 'transfer-sintra', name: 'Transfer Sintra', kind: 'transfer', area: 'Sintra, Cascais', seats: 8, whatsapp: '351900000000', license: { type: 'RNAAT', number: '0000/2020' } },
-    ],
+    partners: mockPartners,
     reminders: [
       { id: 'traveller-evening', label: 'Viajante: véspera às 18:00' }, { id: 'traveller-1h', label: 'Viajante: 1 h antes' },
       { id: 'partner-evening', label: 'Parceiro: véspera às 18:00' }, { id: 'partner-2h', label: 'Parceiro: 2 h antes' },
@@ -142,12 +180,7 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
     const reply = lead => (lead.status === 'CONTACTED' ? {} : { replyDueAt: new Date(Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5).toISOString(), replyLate: Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5 < Date.now() });
     return { leads: leads.filter(lead => filter === 'all' || (filter === 'contacted') === (lead.status === 'CONTACTED')).map(lead => ({ ...lead, ...reply(lead) })) };
   }
-  if (path === '/v1/whatsapp-test') {
-    if (method === 'POST') { waInbox.push({ at: new Date().toISOString(), direction: body.direction, to: String(body.to).replace(/\D/g, ''), text: body.text, title: '', leadId: body.leadId ?? '', author: 'fundadora@example.com', authorName: 'Fundadora de teste' }); return { at: new Date().toISOString() }; }
-    const byNumber = {};
-    for (const message of waInbox) (byNumber[message.to] ??= { to: message.to, leadId: '', messages: [] }).messages.push(message), message.leadId && (byNumber[message.to].leadId = message.leadId);
-    return { mode: 'test', threads: Object.values(byNumber).sort((a, b) => b.messages.at(-1).at.localeCompare(a.messages.at(-1).at)) };
-  }
+  if (path === '/v1/whatsapp-test') return mockInbox(method, body);
   if (path.endsWith('/feedback')) {
     const id = decodeURIComponent(path.split('/')[3]);
     if (method === 'POST') { (feedbackGiven[id] ??= []).unshift({ ...body, by: 'fundadora@example.com', byName: 'Fundadora de teste', at: new Date().toISOString() }); announce(`deu feedback à conversa ${id}`); return { at: new Date().toISOString() }; }

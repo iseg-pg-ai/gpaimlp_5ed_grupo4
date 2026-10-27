@@ -319,3 +319,39 @@ Na AWS, só com autorização e dados de teste:
 - Sem tabela nova nem permissões IAM novas: reutiliza `PutItem` condicional,
   `UpdateItem` e `Query` em `FollowUpIndex`. Os workers que leem o índice só
   consultam os seus próprios estados.
+
+## Respostas automáticas por WhatsApp, com regras (2026-10-27)
+
+Só em modo de teste: nada sai para o WhatsApp até haver credenciais Meta e
+`INTRANET_WHATSAPP_MODE=live`. As regras estão em
+`infra/lambda/intranet/guardrails.mjs` e valem para cada mensagem recebida.
+
+- **Responde sozinho** apenas à hora, ao local, a confirmações e a
+  agradecimentos, com os factos da próxima atividade ativa do lead (título,
+  local, data, hora, pessoas, parceiro). Sem atividade, uma pergunta de hora ou
+  local vai para uma pessoa.
+- **Vai sempre para uma pessoa**, com uma resposta sugerida: preço, pagamento,
+  gorjetas, alterações, cancelamentos, queixas, emergências, pedidos novos ou
+  qualquer outra pergunta. `STOP` (ou «parar») fecha a conversa: a BLU deixa de
+  poder escrever nela.
+- **Limites:** no máximo 3 respostas automáticas por pessoa em 24 h, nenhuma
+  entre as 22:00 e as 08:00 de Lisboa, e um interruptor nas regras de seguimento
+  («Respostas sozinhas…»), desligado por defeito e só alterado por fundadores.
+- **Texto:** o Bedrock (`MODEL_ID`, o mesmo modelo do chatbot público) só escreve
+  a frase. Uma verificação final rejeita ligações, contactos, dinheiro e números
+  que não estejam nos factos; nesse caso, ou se o modelo falhar, vale um modelo
+  fixo. A mensagem do cliente é dado, nunca instrução.
+- **Registo:** cada mensagem recebida guarda a decisão (`auto`, `person`,
+  `stop`), o motivo e a sugestão; as respostas automáticas têm o autor
+  `auto-assistant` e aparecem marcadas «automática».
+- **O meu trabalho:** as conversas cuja última mensagem espera por uma pessoa
+  aparecem a todos os curadores e fundadores, com a mensagem, o motivo, a
+  resposta sugerida editável, «Enviar resposta» e «Abrir conversa» (abre essa
+  conversa no WhatsApp de teste). Ficam em atraso depois do prazo de resposta
+  das regras de seguimento.
+- **Parceiros:** uma conversa nova escolhe o parceiro na lista, sem escrever o
+  número; um parceiro de demonstração sem número fica com a chave
+  `partner:<id>`. A caixa filtra por «À espera de uma pessoa», clientes e
+  parceiros.
+- Permissão nova: `bedrock:InvokeModel` para a Lambda da intranet. Sem tabela
+  nova: tudo fica na partição `WHATSAPP-TEST`.

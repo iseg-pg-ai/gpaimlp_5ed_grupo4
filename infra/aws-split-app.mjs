@@ -564,9 +564,12 @@ class IntranetStack extends Stack {
         PARTNERS_JSON: JSON.stringify({ partners: partnersConfig.partners }),
         MANAGED_SECRETS: JSON.stringify([{ arn: data.whatsappSecret.secretArn, purpose: 'WhatsApp Business (envio de lembretes e mensagens)' }]),
         WHATSAPP_MODE: whatsappMode,
+        // Escreve só o texto das respostas simples; o mesmo modelo do chatbot público.
+        MODEL_ID: process.env.BEDROCK_REPLY_MODEL_ID ?? (region === 'eu-west-1' ? 'eu.amazon.nova-2-lite-v1:0' : 'amazon.nova-lite-v1:0'),
       },
       code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
     });
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['bedrock:InvokeModel'], resources: ['*'] }));
     // Permissões explícitas e mínimas: sem Scan nem DeleteItem; PutItem só cria registos da agenda (com condição no código).
     fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:Query', 'dynamodb:GetItem'], resources: [data.messages.tableArn, data.intelligence.tableArn, `${data.intelligence.tableArn}/index/FollowUpIndex`] }));
     fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem', 'dynamodb:PutItem'], resources: [data.intelligence.tableArn] }));

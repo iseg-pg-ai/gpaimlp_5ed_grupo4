@@ -91,7 +91,7 @@ let teamCache;
 const loadTeam = async () => (teamCache ??= (await api('GET', '/v1/team')).members);
 // «Bloqueado» já aparece no estado da tarefa; a urgência só o usa para ordenar e colorir.
 const URGENCY = { risk: ['Risco de desistência', 'bad'], overdue: ['Em atraso', 'bad'], soon: ['Prazo próximo', 'warn'] };
-const WORK_KIND = { task: 'Tarefa', lead: 'Lead', reminder: 'Lembrete', case: 'Caso' };
+const WORK_KIND = { task: 'Tarefa', lead: 'Lead', reminder: 'Lembrete', case: 'Caso', message: 'WhatsApp' };
 const TASK_TONE = { todo: '', doing: 'ok', blocked: 'warn', done: 'ok' };
 // Um toque avança a tarefa: o botão principal é o passo seguinte.
 const NEXT_STEP = { todo: ['doing', 'Começar'], doing: ['done', 'Feito'], blocked: ['doing', 'Desbloquear'], done: ['todo', 'Reabrir'] };
@@ -224,15 +224,39 @@ const views = {
       ];
     };
     const urgencyPill = urgency => (URGENCY[urgency] ? pill(...URGENCY[urgency]) : null);
+    // Ligação direta: abre o lead, a conversa ou a agenda já no ponto certo.
     const open = item => {
       if (item.kind === 'lead') { leadsState.filter = 'open'; leadsState.selected = item.id; show('leads'); }
       if (item.kind === 'case') show('cases');
       if (item.kind === 'reminder') show('agenda');
+      if (item.kind === 'message') { whatsappState.selected = item.message.key; show('whatsapp'); }
+    };
+    // Mensagem à espera: a resposta sugerida já escrita; envia-se num toque ou ajusta-se antes.
+    const messageBlock = item => {
+      const text = h('textarea', { rows: '2', maxlength: '1000', 'aria-label': 'Resposta' }, item.message.suggestion);
+      const note = h('span', { class: 'muted', role: 'status' });
+      const send = async () => {
+        note.textContent = 'A enviar…';
+        try {
+          await api('POST', '/v1/whatsapp-test', { direction: 'out', to: item.message.to || undefined, partnerId: item.message.partnerId || undefined, leadId: item.message.leadId, text: text.value });
+          state.flash = `Resposta enviada a ${item.title}.`;
+          rerender();
+        } catch (error) {
+          note.textContent = error.message;
+        }
+      };
+      return [
+        h('p', { class: 'message' }, `«${item.message.text}»`),
+        h('div', { class: 'muted' }, `${AUDIENCE[item.message.audience] ?? ''} · ${when(item.message.at)} · ${item.detail}`),
+        isCurator() ? [text, h('div', { class: 'actions task-actions' },
+          h('button', { type: 'button', class: 'primary', onclick: send }, 'Enviar resposta'),
+          h('button', { type: 'button', class: 'secondary', onclick: () => open(item) }, 'Abrir conversa'), note)] : null,
+      ];
     };
     const workItem = item => h('li', { class: `work-item ${item.urgency}` },
       h('div', {}, pill(WORK_KIND[item.kind] ?? item.kind), ' ', urgencyPill(item.urgency), item.task ? [' ', pill(statuses[item.task.status] ?? item.task.status, TASK_TONE[item.task.status])] : null),
       h('strong', {}, item.title),
-      ...(item.task ? taskBlock(item.task) : [
+      ...(item.task ? taskBlock(item.task) : item.message ? messageBlock(item) : [
         h('div', { class: 'muted' }, [item.detail, item.due ? `até ${item.due}` : ''].filter(Boolean).join(' · ')),
         h('div', { class: 'actions task-actions' }, h('button', { type: 'button', class: 'secondary', onclick: () => open(item) }, 'Abrir')),
       ]));
@@ -601,56 +625,88 @@ const views = {
 
   // Caixa de teste do WhatsApp: o que teria sido enviado e um simulador de respostas.
   async whatsapp(view, state = whatsappState) {
-    const { mode, threads } = await api('GET', '/v1/whatsapp-test');
+    const [{ mode, autoReplies, threads }, { partners }] = await Promise.all([api('GET', '/v1/whatsapp-test'), loadPartners().catch(() => ({ partners: [] }))]);
     const rerender = () => { view.replaceChildren(); views.whatsapp(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
-    const current = threads.find(thread => thread.to === state.selected) ?? (state.selected ? { to: state.selected, leadId: state.leadId ?? '', messages: [] } : null);
+    const visible = threads.filter(thread => state.filter === 'all' || !state.filter || (state.filter === 'waiting' ? thread.waiting : thread.audience === state.filter));
+    const current = threads.find(thread => thread.key === state.selected) ?? null;
     const status = h('p', { class: 'muted', role: 'status' });
-    const write = async (form, direction) => {
-      const data = Object.fromEntries(new FormData(form));
+    // Para um parceiro basta o id: o número vem da lista de parceiros (ou fica a chave de teste).
+    const target = thread => (thread.partnerId && !thread.to ? { partnerId: thread.partnerId } : { to: thread.to, partnerId: thread.partnerId || undefined });
+    const write = async (body, key) => {
       status.textContent = 'A guardar…';
       try {
-        await api('POST', '/v1/whatsapp-test', { direction, to: data.to ?? current.to, text: data.text, leadId: data.leadId ?? current?.leadId ?? '' });
-        state.selected = String(data.to ?? current.to).replace(/\D/g, '');
-        state.leadId = data.leadId ?? current?.leadId ?? '';
+        const result = await api('POST', '/v1/whatsapp-test', body);
+        state.selected = key;
+        state.flash = result?.decision === 'auto' ? 'Respondida automaticamente.' : result?.decision === 'person' ? `Fica para uma pessoa: ${result.reason}` : result?.decision === 'stop' ? 'Pediu para parar: não recebe mais mensagens.' : '';
         rerender();
       } catch (error) {
         status.textContent = error.message;
       }
     };
-    const composer = () => {
-      const form = h('form', { class: 'verify', onsubmit: event => { event.preventDefault(); write(form, event.submitter?.value === 'in' ? 'in' : 'out'); } },
-        h('label', {}, 'Mensagem', h('textarea', { name: 'text', required: true, maxlength: '1000', rows: '2', placeholder: 'Escreva como BLU ou como o cliente…' })),
+    const composer = thread => {
+      const form = h('form', { class: 'verify', onsubmit: event => {
+        event.preventDefault();
+        const direction = event.submitter?.value === 'in' ? 'in' : 'out';
+        write({ direction, ...target(thread), leadId: thread.leadId, text: new FormData(form).get('text') }, thread.key);
+      } },
+        h('label', {}, 'Mensagem', h('textarea', { name: 'text', required: true, maxlength: '1000', rows: '2', placeholder: 'Escreva como BLU, ou simule o que o outro lado responde…' })),
         h('div', { class: 'actions' },
           h('button', { type: 'submit', class: 'primary', value: 'out' }, 'Enviar como BLU'),
-          h('button', { type: 'submit', class: 'secondary', value: 'in' }, 'Simular resposta do cliente'), status));
+          h('button', { type: 'submit', class: 'secondary', value: 'in' }, thread.audience === 'partner' ? 'Simular resposta do parceiro' : 'Simular resposta do cliente'), status));
       return form;
     };
-    const newThread = h('form', { class: 'verify', onsubmit: event => { event.preventDefault(); write(event.currentTarget, 'out'); } },
-      h('label', {}, 'Número (dígitos internacionais)', h('input', { name: 'to', required: true, inputmode: 'numeric', placeholder: '351912345678' })),
-      h('label', {}, 'Lead (opcional)', h('input', { name: 'leadId', placeholder: 'BLU-…' })),
+    // Nova conversa: escolher o parceiro na lista; o número só se escreve para um cliente.
+    const who = h('select', { name: 'who', 'aria-label': 'Para quem' },
+      h('option', { value: '' }, 'Cliente (escrever o número)'),
+      partners.map(partner => h('option', { value: partner.id }, `${partner.name}${partner.whatsapp ? '' : ' · sem número (teste)'}`)));
+    const number = h('label', {}, 'Número do cliente', h('input', { name: 'to', inputmode: 'numeric', placeholder: '351912345678' }));
+    who.addEventListener('change', () => { number.hidden = Boolean(who.value); });
+    const leads = (seenLeads ? [...seenLeads] : []).slice(-50).reverse();
+    const newThread = h('form', { class: 'verify', onsubmit: event => {
+      event.preventDefault();
+      const data = Object.fromEntries(new FormData(event.currentTarget));
+      const partner = partners.find(item => item.id === data.who);
+      const digits = String(data.to ?? '').replace(/\D/g, '');
+      write({ direction: 'out', ...(partner ? { partnerId: partner.id } : { to: digits }), leadId: data.leadId, text: data.text }, partner ? (partner.whatsapp || `partner:${partner.id}`) : digits);
+    } },
+      h('label', {}, 'Para', who), number,
+      h('label', {}, 'Lead (opcional, dá à resposta automática os dados da reserva)', h('input', { name: 'leadId', placeholder: 'BLU-…', list: 'wa-leads' }), h('datalist', { id: 'wa-leads' }, leads.map(id => h('option', { value: id })))),
       h('label', {}, 'Primeira mensagem da BLU', h('textarea', { name: 'text', required: true, maxlength: '1000', rows: '2' })),
       h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Começar conversa de teste')));
-    const label = thread => thread.leadId || `+${thread.to}`;
-    const open = thread => { state.selected = thread.to; rerender(); };
+    const label = thread => thread.name || thread.leadId || `+${thread.to}`;
+    const sub = thread => [thread.to ? `+${thread.to}` : 'sem número', thread.name && thread.leadId ? thread.leadId : ''].filter(Boolean).join(' · ');
+    const open = thread => { state.selected = thread.key; rerender(); };
+    const filterButton = (key, text) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String((state.filter || 'all') === key), onclick: () => { state.filter = key; rerender(); } }, text);
+    const flash = h('p', { class: 'muted', role: 'status' }, state.flash ?? '');
+    state.flash = '';
+    const bubble = (message, thread) => h('div', { class: `bubble ${message.direction === 'in' ? 'wa-in' : 'wa-out'}` },
+      message.title ? h('strong', {}, message.title) : null, message.title ? h('br') : null, message.text,
+      message.direction === 'in' && message.decision === 'person' ? h('div', { class: 'muted' }, `Para uma pessoa: ${message.reason}`) : null,
+      h('time', {}, `${when(message.at)} · ${message.direction === 'in' ? (thread.audience === 'partner' ? 'parceiro (simulado)' : 'cliente (simulado)') : message.authorName || message.author}`),
+      message.author === 'auto-assistant' ? [' ', pill('automática', 'ok')] : null);
     view.append(
       h('h2', {}, 'WhatsApp (teste)'),
       mode === 'test'
-        ? h('div', { class: 'panel warn-note', role: 'note' }, h('strong', {}, 'Modo de teste: nenhuma mensagem sai para o WhatsApp.'), h('p', {}, 'Os lembretes e mensagens automáticas que iriam por WhatsApp aparecem aqui, à hora marcada. Pode responder como BLU ou simular a resposta do cliente para testar o circuito.'))
+        ? h('div', { class: 'panel warn-note', role: 'note' }, h('strong', {}, 'Modo de teste: nenhuma mensagem sai para o WhatsApp.'), h('p', {}, 'Os lembretes e mensagens automáticas que iriam por WhatsApp aparecem aqui, à hora marcada. Pode responder como BLU ou simular a resposta do cliente ou do parceiro para testar o circuito.'))
         : h('div', { class: 'panel', role: 'note' }, h('strong', {}, 'Modo real: as mensagens saem pelo WhatsApp Business.'), h('p', { class: 'muted' }, 'Esta caixa mostra só o histórico dos testes.')),
+      h('p', { class: 'muted' }, autoReplies
+        ? 'Respostas automáticas ligadas: só a hora, o local e confirmações de uma atividade agendada, no máximo 3 por pessoa em 24 h e nunca entre as 22:00 e as 08:00. Preço, pagamento, alterações e queixas ficam sempre para uma pessoa.'
+        : 'Respostas automáticas desligadas: cada mensagem recebida vai para «O meu trabalho» com uma resposta sugerida. Uma fundadora liga-as em Seguimento › Regras de seguimento.'),
+      flash,
+      h('div', { class: 'filters' }, filterButton('all', 'Todas'), filterButton('waiting', `À espera de uma pessoa (${threads.filter(thread => thread.waiting).length})`), filterButton('traveller', 'Clientes'), filterButton('partner', 'Parceiros')),
       h('div', { class: 'split' },
-        h('div', { class: 'panel' }, threads.length ? h('table', {},
+        h('div', { class: 'panel' }, visible.length ? h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Conversa'), h('th', {}, 'Última mensagem'), h('th', {}, 'Mensagens'))),
-          h('tbody', {}, threads.map(thread => h('tr', { class: `clickable${thread.to === state.selected ? ' selected' : ''}`, tabindex: '0', onclick: () => open(thread), onkeydown: event => event.key === 'Enter' && open(thread) },
-            h('td', {}, h('strong', {}, label(thread)), h('div', { class: 'muted' }, `+${thread.to}`)),
-            h('td', {}, when(thread.messages.at(-1).at), isRecent(thread.messages.at(-1).at) ? [' ', pill('novo', 'ok')] : null),
-            h('td', {}, thread.messages.length))))) : h('p', { class: 'muted' }, 'Ainda sem mensagens. Agende uma recolha num lead com telefone ou comece uma conversa de teste.'),
+          h('tbody', {}, visible.map(thread => h('tr', { class: `clickable${thread.key === state.selected ? ' selected' : ''}`, tabindex: '0', onclick: () => open(thread), onkeydown: event => event.key === 'Enter' && open(thread) },
+            h('td', {}, h('strong', {}, label(thread)), ' ', thread.audience === 'partner' ? pill('parceiro') : null, h('div', { class: 'muted' }, sub(thread))),
+            h('td', {}, when(thread.messages.at(-1).at), thread.waiting ? [' ', pill('à espera', 'warn')] : thread.stopped ? [' ', pill('STOP', 'bad')] : isRecent(thread.messages.at(-1).at) ? [' ', pill('novo', 'ok')] : null),
+            h('td', {}, thread.messages.length))))) : h('p', { class: 'muted' }, threads.length ? 'Nenhuma conversa neste filtro.' : 'Ainda sem mensagens. Agende uma recolha num lead com telefone ou comece uma conversa de teste.'),
           mode === 'test' && isCurator() ? [h('h3', { class: 'spaced' }, 'Nova conversa de teste'), newThread] : null),
         h('div', { class: 'panel' }, current ? [
-          h('h3', {}, label(current)), h('div', { class: 'muted' }, `+${current.to}`),
-          h('div', { class: 'chat wa' }, current.messages.length ? current.messages.map(message => h('div', { class: `bubble ${message.direction === 'in' ? 'wa-in' : 'wa-out'}` },
-            message.title ? h('strong', {}, message.title) : null, message.title ? h('br') : null, message.text,
-            h('time', {}, `${when(message.at)} · ${message.direction === 'in' ? 'cliente (simulado)' : message.authorName || message.author}`))) : h('p', { class: 'muted' }, 'Sem mensagens.')),
-          mode === 'test' && isCurator() ? composer() : null,
+          h('h3', {}, label(current)), h('div', { class: 'muted' }, sub(current)),
+          h('div', { class: 'chat wa' }, current.messages.map(message => bubble(message, current))),
+          current.stopped ? h('p', { class: 'muted' }, 'Pediu para não receber mais mensagens: a BLU já não escreve nesta conversa.')
+            : mode === 'test' && isCurator() ? composer(current) : null,
         ] : h('p', { class: 'muted' }, 'Escolha uma conversa.')),
       ),
     );

@@ -5,7 +5,8 @@ import {
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, parseActivity, plan } from './schedule.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
 import { ATTESTATIONS, AUTO_TYPES, SETTINGS, VALUE_RULES, applyAttestations, currentSettings, parseAttestation, parseSettings, replyState } from './settings.mjs';
-import { WHATSAPP_TEST, inboxRecord, parseInboxPost, threads, toInboxMessage, whatsappMode } from './whatsapp-test.mjs';
+import { AUTO_AUTHOR, WHATSAPP_TEST, inboxRecord, parseInboxPost, threadKey, threads, toInboxMessage, whatsappMode } from './whatsapp-test.mjs';
+import { checkDraft, decide, draftPrompt, nextActivity, templateReply } from './guardrails.mjs';
 import { FEED, NO_DUE, TASK_STATE, TASK_STATUS, UNLINKED_TASKS, describeChange, dueState, indexFields, parseTask, parseTaskUpdate, validRecordId } from './tasks.mjs';
 
 // Rotas da intranet. Os acessos AWS chegam injetados em `deps` (index.mjs na AWS,
@@ -107,6 +108,49 @@ export function createApp(deps) {
   const lisbonToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(now());
 
   const loadSettings = async () => currentSettings(await deps.queryRecords(SETTINGS.partition, SETTINGS.prefix));
+
+  // Texto da resposta: o modelo escreve com os factos da reserva e a verificação final decide;
+  // sem modelo, com erro ou com um texto que falhe a verificação, vale o modelo fixo.
+  const draft = async (intent, facts, text) => {
+    const fallback = templateReply(intent, facts, text);
+    if (!deps.draftReply || !intent) return { text: fallback, source: 'template' };
+    try {
+      const checked = checkDraft(await deps.draftReply(draftPrompt(intent, facts, text)), facts);
+      return checked.ok ? { text: checked.text, source: 'model' } : { text: fallback, source: 'template' };
+    } catch {
+      return { text: fallback, source: 'template' };
+    }
+  };
+
+  // Mensagem recebida (simulada em modo de teste): decide e, se as regras deixarem, responde
+  // sozinho. Fica sempre registado o que decidiu e porquê; o resto vai para «O meu trabalho».
+  const answer = async (message, at) => {
+    const inbox = (await deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix)).map(toInboxMessage);
+    const key = threadKey(message);
+    const thread = inbox.filter(item => threadKey(item) === key);
+    const leadId = message.leadId || thread.findLast(item => item.leadId)?.leadId || '';
+    const since = new Date(+at - 864e5).toISOString();
+    const autoToday = thread.filter(item => item.author === AUTO_AUTHOR.email && item.at >= since).length;
+    const settings = await loadSettings();
+    const activities = leadId ? (await deps.queryRecords(leadId, 'ACTIVITY#')).map(toActivity) : [];
+    const mine = message.partnerId ? activities.filter(activity => activity.partnerId === message.partnerId) : activities;
+    const partnerName = partnerId => deps.partners.find(partner => partner.id === partnerId)?.name ?? (partnerId === 'bolt' ? 'Bolt' : '');
+    const facts = nextActivity(mine, partnerName, at);
+    const decision = decide({ text: message.text, enabled: settings.auto.replies, facts, autoToday, now: at });
+    const suggestion = decision.action === 'stop' ? { text: '' } : await draft(decision.intent, facts, message.text);
+    const records = [inboxRecord({
+      at: at.toISOString(), id: deps.newId(), ...message, leadId,
+      decision: decision.action, reason: decision.reason, suggestion: decision.action === 'person' ? suggestion.text : '',
+    })];
+    if (decision.action === 'auto') {
+      records.push(inboxRecord({
+        at: new Date(+at + 1).toISOString(), id: deps.newId(), direction: 'out', to: message.to, partnerId: message.partnerId, leadId,
+        text: suggestion.text, author: AUTO_AUTHOR.email, authorName: AUTO_AUTHOR.name, decision: 'auto', reason: decision.reason,
+      }));
+    }
+    await deps.putRecords(WHATSAPP_TEST.partition, records);
+    return { decision: decision.action, reason: decision.reason };
+  };
   // Relatório legal do deploy com as verificações manuais registadas na intranet.
   const loadReport = async () => {
     const [report, attestations] = await Promise.all([deps.policyReport().catch(() => null), deps.queryRecords(ATTESTATIONS.partition, ATTESTATIONS.prefix)]);
@@ -223,16 +267,24 @@ export function createApp(deps) {
     // Caixa de WhatsApp de teste: lembretes "enviados" em modo de teste e mensagens escritas pela equipa.
     'GET /v1/whatsapp-test': async () => {
       const items = await deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix);
-      return reply(200, { mode: whatsappMode(deps.whatsappMode), threads: threads(items.map(toInboxMessage)) });
+      const settings = await loadSettings();
+      return reply(200, { mode: whatsappMode(deps.whatsappMode), autoReplies: settings.auto.replies, threads: threads(items.map(toInboxMessage), deps.partners) });
     },
 
     'POST /v1/whatsapp-test': async ({ user, body }) => {
       if (whatsappMode(deps.whatsappMode) !== 'test') return fail(409, 'O WhatsApp está em modo real: a caixa de teste só pode ser lida.');
-      const parsed = parseInboxPost(body, validLeadId);
+      const parsed = parseInboxPost(body, validLeadId, deps.partners);
       if (parsed.error) return fail(400, parsed.error);
-      const at = now().toISOString();
-      await deps.putRecords(WHATSAPP_TEST.partition, [inboxRecord({ at, id: deps.newId(), ...parsed.message, author: user.email, authorName: user.name })]);
-      return reply(201, { at });
+      const at = now();
+      const message = { ...parsed.message, author: user.email, authorName: user.name };
+      if (message.direction === 'out') {
+        const inbox = (await deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix)).map(toInboxMessage);
+        if (inbox.some(item => threadKey(item) === threadKey(message) && item.decision === 'stop')) return fail(409, 'Esta pessoa pediu para não receber mais mensagens.');
+        await deps.putRecords(WHATSAPP_TEST.partition, [inboxRecord({ at: at.toISOString(), id: deps.newId(), ...message })]);
+        return reply(201, { at: at.toISOString() });
+      }
+      const outcome = await answer(message, at);
+      return reply(201, { at: at.toISOString(), decision: outcome.decision, reason: outcome.reason });
     },
 
     'GET /v1/metrics': async () => {
@@ -393,15 +445,28 @@ export function createApp(deps) {
       const me = user.email.toLowerCase();
       const at = now();
       const today = lisbonToday();
-      const [taskItems, leads, prepared, openCases] = await Promise.all([
+      const [taskItems, leads, prepared, openCases, inbox, settings] = await Promise.all([
         deps.queryStatus(TASK_STATE.open),
         listLeads('open'),
         deps.queryAgenda(NOTIFY.prepared, new Date(at - 7 * 864e5).toISOString(), at.toISOString()),
         allowed(user.groups, 'cases') ? deps.queryStatus(CASE_STATE.open) : Promise.resolve([]),
+        allowed(user.groups, 'leads') ? deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix) : Promise.resolve([]),
+        loadSettings(),
       ]);
+      // Mensagens à espera de uma pessoa: de todos os curadores, com a resposta sugerida pronta.
+      const waiting = threads(inbox.map(toInboxMessage), deps.partners).filter(thread => thread.waiting).map(thread => {
+        const last = thread.messages.at(-1);
+        const late = at - Date.parse(last.at) >= settings.replyHours * 36e5;
+        return {
+          kind: 'message', id: thread.key, partition: thread.leadId, title: thread.name || thread.leadId || `+${thread.to}`, due: last.at.slice(0, 10),
+          detail: last.reason || 'Mensagem por responder.', urgency: late ? 'overdue' : 'soon',
+          message: { key: thread.key, to: thread.to, partnerId: thread.partnerId, leadId: thread.leadId, audience: thread.audience, text: last.text, at: last.at, suggestion: last.suggestion },
+        };
+      });
       const myLeads = leads.filter(lead => lead.assignedTo?.toLowerCase() === me);
       const myLeadIds = new Set(myLeads.map(lead => lead.id));
       const items = [
+        ...waiting,
         ...taskItems.map(item => toTask(item, today)).filter(task => task.owner === me)
           .map(task => ({ kind: 'task', id: task.id, partition: task.partition, title: task.title, due: task.due, urgency: taskUrgency(task), task })),
         ...myLeads.map(lead => ({

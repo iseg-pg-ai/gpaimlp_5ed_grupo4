@@ -9,8 +9,9 @@ export const AUTO_TYPES = {
   thanks: 'Agradecimento logo após o consentimento',
   nudge: 'Reativação quando o cliente fica 3 dias em silêncio depois do contacto',
   reminders: 'Lembretes de recolhas e excursões aprovadas',
+  replies: 'Respostas sozinhas a perguntas simples por WhatsApp (hora, local, confirmação), com os dados da reserva',
 };
-export const DEFAULTS = { replyHours: 4, auto: { thanks: false, nudge: false, reminders: true } };
+export const DEFAULTS = { replyHours: 4, auto: { thanks: false, nudge: false, reminders: true, replies: false } };
 export const NUDGE_DAYS = 3;
 const STOP = /^\s*(stop|unsubscribe|parar|pare|cancelar)\b/i;
 
