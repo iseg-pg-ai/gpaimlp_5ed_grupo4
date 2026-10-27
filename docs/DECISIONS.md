@@ -632,3 +632,20 @@ As pastas de autoria mista conservaram regras por ficheiro, incluindo a
 sobreposição com Gisela. O total de regras de Pedro passou de 346 para 267;
 a comparação dos responsáveis antes/depois confirmou equivalência nos 505
 ficheiros auditados. Não foi reintroduzida uma regra global por defeito.
+
+### Fixture de publicação ETL usa caminhos canónicos — 2026-10-27
+
+Os dois logs Windows fornecidos apresentavam a mesma falha: o mock do teste de
+backup transitório registava zero tentativas, em vez de duas. A fixture guardava
+o caminho temporário original, enquanto `etl.pipeline.run` usava `resolve()`;
+diferenças de representação faziam a condição do mock falhar antes de injetar o
+erro Windows. A falha `0 != 2` foi reproduzida localmente com um caminho temporário
+com `..`, sem exigir symlinks ou alterar a plataforma real.
+
+A raiz da fixture passou a ser normalizada em `setUp`, antes dos patches. Uma
+regressão executa o teste de backup sobre uma representação alternativa do mesmo
+diretório. A publicação, os retries e o rollback de produção não foram alterados.
+Evidência: a bateria exata dos logs, acrescida da regressão, passou localmente com
+36 testes e uma omissão por fontes S3 ausentes. Apenas fontes e diretórios
+sintéticos temporários foram usados. A confirmação num runner Windows real fica
+pendente da próxima execução CI; não houve commit nem push nesta correção.

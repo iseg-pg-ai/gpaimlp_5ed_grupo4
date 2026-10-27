@@ -3,6 +3,7 @@ import json
 import sqlite3
 import tempfile
 import unittest
+from types import SimpleNamespace
 from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
@@ -56,7 +57,9 @@ class EtlPublicationTest(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name)
+        # No Windows, resolve expande também nomes temporários curtos (8.3).
+        # O mock deve comparar a mesma identidade de caminho que o ETL publica.
+        self.root = Path(self.temporary.name).resolve()
         self.source = self.root / "source"
         self.source.mkdir()
         self.target = self.root / "warehouse"
@@ -190,6 +193,18 @@ class EtlPublicationTest(unittest.TestCase):
                 run(self.source, self.target)
         rename.assert_not_called()
         self.assert_previous_preserved()
+
+
+class EtlFixturePathTest(unittest.TestCase):
+    def test_backup_retry_fixture_accepts_noncanonical_temporary_path(self):
+        # Reproduz a diferença de representação sem exigir Windows ou symlinks.
+        with tempfile.TemporaryDirectory() as directory:
+            canonical = Path(directory)
+            alias = canonical / ".." / canonical.name
+            temporary = SimpleNamespace(name=str(alias), cleanup=lambda: None)
+            with patch.object(tempfile, "TemporaryDirectory", return_value=temporary):
+                case = EtlPublicationTest("test_transient_backup_error_preserves_previous_until_swap")
+                case.debug()
 
 
 if __name__ == "__main__":
