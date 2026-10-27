@@ -14,6 +14,23 @@ DMC (stack `BluCostaPortal`). Detalhes em [Portal](docs/PORTAL.md#servidor-priva
 - [ ] Meteorologia, planeador do assistente e tradução sem internet no servidor.
 - [ ] Fonte CJK no build para PDFs em mandarim.
 
+### Perfil de curador: propostas com mapa e Canva da equipa — 2026-10-27
+
+Pedido da equipa: no perfil de curador, a proposta e as suas ferramentas ficam à
+mão, sem procurar noutros sites. Hoje o portal tem o mapa do catálogo no
+Observatório (SVG, sem rotas) e a exportação «TXT para Canva» de uma versão
+guardada; não há mapa da proposta nem ligação à equipa no Canva.
+
+- [ ] Mapa da proposta no portal: os pontos de cada dia e a ordem do percurso,
+  a partir das coordenadas do catálogo já usadas no encaminhamento; pontos sem
+  coordenadas listados à parte (desconhecido não é «perto»).
+- [ ] Intranet, perfil de curador: atalhos «Propostas» e «Mapa da proposta» que
+  abrem o portal no lead ou na versão certa (ligação direta, um nível).
+- [ ] Canva da equipa como opção do curador: ligação à equipa ou pasta Canva da
+  BLU (endereço a indicar pela equipa) ao lado do «TXT para Canva»; a
+  integração por API do Canva fica para depois de aprovar custos e acesso.
+- [ ] Separação por perfil dentro do portal: marketing sem dados de clientes.
+
 ## Intranet BLU — 2026-10-25
 
 Especificação em [intranet BLU](docs/INTRANET.md): stack `BluCostaIntranet`
