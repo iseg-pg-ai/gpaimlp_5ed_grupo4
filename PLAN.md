@@ -25,8 +25,8 @@ guardada; não há mapa da proposta nem ligação à equipa no Canva.
   a partir das coordenadas do catálogo já usadas no encaminhamento; pontos sem
   coordenadas listados à parte (desconhecido não é «perto»). Testes unitários,
   tipos e lint passaram; o `next build` local não correu por falta de memória.
-- [x] Intranet, perfil de curador: atalhos «Proposta no portal» (no lead) e
-  «Mapa da proposta» (no lead e no menu), ligação direta de um nível.
+- [x] Intranet, perfil de curador: um só atalho, «Proposta no portal», no lead
+  (ligação direta de um nível); o mapa fica dentro da proposta.
 - [ ] Publicar `BluCostaIntranet` e `BluCostaPortal` e validar o mapa com uma
   proposta real depois do login.
 - [ ] Canva da equipa como opção do curador: ligação à equipa ou pasta Canva da

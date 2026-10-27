@@ -69,9 +69,9 @@ Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só d
 O menu mostra o portal de propostas (`BluCostaPortal`, output `PortalUrl`) a
 fundadores, curadores e marketing, os mesmos grupos que o portão do portal deixa
 entrar. A ligação para o backoffice saiu da intranet (2026-10-27): a intranet já
-cobre esse trabalho. Curadores e fundadores têm ainda «Mapa da proposta» no menu
-e, em cada lead, «Proposta no portal» (abre o portal já nesse lead) e «Mapa da
-proposta». O endereço do portal vive só na ligação `#portal-link` do menu.
+cobre esse trabalho. Em cada lead, curadores e fundadores têm «Proposta no
+portal», que abre o portal já nesse lead; o mapa é uma secção da proposta, sem
+ligação própria. O endereço do portal vive só na ligação `#portal-link` do menu.
 
 - Sem registo público; contas criadas pelo grupo. MFA TOTP obrigatório.
 - Login gerido do Cognito com código e PKCE. O ID token (1 h, com email e

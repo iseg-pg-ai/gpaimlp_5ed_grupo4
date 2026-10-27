@@ -962,10 +962,9 @@ async function showLead(panel, id, refreshList) {
       mine ? act('Libertar', () => api('POST', `/v1/leads/${id}/assign`, { release: true })) : act('Assumir', () => api('POST', `/v1/leads/${id}/assign`, {}), 'primary'),
       lead.status === 'CONTACTED' ? null : act('Marcar contactado', () => api('POST', `/v1/leads/${id}/contacted`)),
       can('tasks') ? h('button', { type: 'button', class: 'secondary', onclick: () => { taskPrefill = { leadId: id }; show('work'); } }, 'Criar tarefa') : null),
-    // Atalhos do curador: o portal abre já neste lead (para criar a proposta) ou no mapa da proposta aberta.
+    // Atalho do curador: o portal abre já neste lead; o mapa é uma secção da proposta.
     isCurator() && portalUrl() ? h('div', { class: 'actions' },
-      h('a', { class: 'button secondary', href: portalUrl(`leads?lead=${encodeURIComponent(id)}`), target: '_blank', rel: 'noopener' }, 'Proposta no portal ↗'),
-      h('a', { class: 'button secondary', href: portalUrl('#mapa'), target: '_blank', rel: 'noopener' }, 'Mapa da proposta ↗')) : null,
+      h('a', { class: 'button secondary', href: portalUrl(`leads?lead=${encodeURIComponent(id)}`), target: '_blank', rel: 'noopener' }, 'Proposta no portal ↗')) : null,
     isCurator() ? null : h('p', { class: 'muted' }, 'Só curadores e fundadores podem alterar leads.'),
     status,
     h('h3', {}, 'Conversa com o chatbot'),
