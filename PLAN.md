@@ -28,6 +28,13 @@ foi retirada da navegação e os links antigos seguem para o Catálogo. Novos PD
 omitem hashes e IDs, preservando os PDFs guardados. Validação em
 [Decisões](docs/DECISIONS.md).
 
+## Publicação ETL no CI Windows — confirmação pendente
+
+- [ ] Após integração, confirmar no runner Windows a correção da fixture de backup
+  transitório: caminhos temporários normalizados antes dos mocks. A falha foi
+  reproduzida e corrigida localmente; a bateria dos logs passou com 36 testes e
+  uma omissão por fontes ausentes. Evidência em [Decisões](docs/DECISIONS.md).
+
 ## Links do Code Editor web — aceitação pendente
 
 - [ ] Abrir o Code Editor do workspace no navegador AWS e confirmar a ativação de
