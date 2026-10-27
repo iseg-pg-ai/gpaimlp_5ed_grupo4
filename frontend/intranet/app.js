@@ -5,7 +5,9 @@ const config = window.BLU_INTRANET;
 // O mesmo código serve os dois sites: o backoffice mostra só o trabalho com clientes; a intranet mantém tudo.
 const SITE = config?.site === 'backoffice'
   ? { name: 'Backoffice BLU', start: 'leads', tabs: ['dashboard', 'leads', 'agenda', 'whatsapp', 'cases', 'operations', 'governance'], other: config.intranetUrl && { label: 'Intranet ↗', url: config.intranetUrl } }
-  : { name: 'Intranet BLU', start: 'work', tabs: null, other: config?.backofficeUrl && { label: 'Backoffice ↗', url: config.backofficeUrl } };
+  : { name: 'Intranet BLU', start: 'work', tabs: null, other: null };
+// Perfis sem leitura geral (marketing) veem só estes separadores; a API aplica a mesma regra.
+const LIMITED_TABS = ['work', 'dashboard'];
 const session = { idToken: '', refreshToken: '', claims: null };
 const $ = id => document.getElementById(id);
 
@@ -54,7 +56,7 @@ const groupsNow = () => session.claims?.['cognito:groups'] ?? [];
 // Fundadores e curadores alteram leads e agenda; só fundadores gerem acessos.
 const isCurator = () => groupsNow().some(group => ['curators', 'founders'].includes(group));
 const isFounder = () => groupsNow().includes('founders');
-const ROLE_LABEL = { founders: 'Fundador(a)', curators: 'Curador(a)', governance: 'Governança', testers: 'Testes' };
+const ROLE_LABEL = { founders: 'Fundador(a)', curators: 'Curador(a)', governance: 'Governança', testers: 'Testes', marketing: 'Marketing' };
 const CHANNEL = { whatsapp: 'WhatsApp', sms: 'SMS', email: 'Email' };
 // Governança em linguagem simples: [quando ativo, quando inativo] por controlo do manifest.
 const PROMISES = {
@@ -80,8 +82,9 @@ const ACTIONS = {
 };
 const EVIDENCE_KIND = { 'churn-followups': 'Revisões de clientes em risco', manifests: 'Configuração das regras e controlos' };
 // Espelha ROLES da API: só esconde o que o servidor recusaria de qualquer forma.
-const ROLE_PERMS = { founders: ['tasks', 'cases', 'security', 'team-admin', 'feedback'], curators: ['tasks', 'cases'], governance: ['tasks', 'cases', 'security'], testers: [] };
+const ROLE_PERMS = { founders: ['read', 'tasks', 'cases', 'security', 'team-admin', 'feedback'], curators: ['read', 'tasks', 'cases'], governance: ['read', 'tasks', 'cases', 'security'], testers: ['read'], marketing: ['tasks'] };
 const can = permission => groupsNow().some(group => ROLE_PERMS[group]?.includes(permission));
+const tabVisible = tab => can('read') || LIMITED_TABS.includes(tab);
 const DEADLINE = { overdue: ['Fora do prazo', 'bad'], 'due-soon': ['Prazo próximo', 'warn'], 'on-track': ['No prazo', 'ok'], closed: ['Fechado', ''] };
 let casePrefill = {};
 // Filtro e lead aberto sobrevivem a «Atualizar» e ao regresso ao separador.
@@ -331,7 +334,7 @@ const views = {
       h('div', { class: 'panel alerts' }, h('h3', {}, 'Alertas'), alerts.length
         ? h('ul', { class: 'reminders' }, alerts.map(alert => h('li', {},
           pill(alert.level === 'bad' ? 'Urgente' : 'Atenção', alert.level === 'bad' ? 'bad' : 'warn'), ' ', alert.text, ' ',
-          h('button', { type: 'button', class: 'link', onclick: () => show(alert.tab) }, 'Abrir'))))
+          tabVisible(alert.tab) ? h('button', { type: 'button', class: 'link', onclick: () => show(alert.tab) }, 'Abrir') : null)))
         : h('p', { class: 'muted' }, 'Tudo em ordem no pipeline.')),
       h('p', { class: 'muted' }, `Conversas com consentimento. ${m.synthetic} registo(s) de demonstração excluídos dos indicadores.`),
       h('div', { class: 'cards' },
@@ -1145,6 +1148,9 @@ let current = SITE.start;
 function applySite() {
   const nav = $('tabs');
   if (SITE.tabs) for (const button of nav.querySelectorAll('button[data-tab]')) if (!SITE.tabs.includes(button.dataset.tab)) button.hidden = true;
+  for (const button of nav.querySelectorAll('button[data-tab]')) if (!tabVisible(button.dataset.tab)) button.hidden = true;
+  // Ligações para outros sites só para quem lá pode entrar (data-groups).
+  for (const link of nav.querySelectorAll('a[data-groups]')) link.hidden = !link.dataset.groups.split(' ').some(group => groupsNow().includes(group));
   if (SITE.other) nav.append(h('span', { class: 'nav-group' }, 'Equipa BLU'), h('a', { href: SITE.other.url, target: '_blank', rel: 'noopener' }, SITE.other.label));
   for (const group of nav.querySelectorAll('.nav-group')) {
     let item = group.nextElementSibling;

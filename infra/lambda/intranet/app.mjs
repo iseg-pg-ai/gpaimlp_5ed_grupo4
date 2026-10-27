@@ -20,9 +20,16 @@ export const ROLES = {
   curators: { label: 'Curador(a)', can: ['read', 'leads', 'tasks', 'cases'] },
   governance: { label: 'Governança', can: ['read', 'tasks', 'cases', 'security'] },
   testers: { label: 'Testes', can: ['read'] },
+  // Marketing: o seu trabalho, os totais do painel e o portal de propostas; sem conversas nem contactos de clientes.
+  marketing: { label: 'Marketing', can: ['tasks'] },
 };
 const STAFF = Object.keys(ROLES);
 const allowed = (groups, permission) => groups.some(group => ROLES[group]?.can.includes(permission));
+// Sem a permissão "read" (marketing), só estas rotas: tarefas, feed, equipa e totais agregados.
+const LIMITED_ROUTES = new Set([
+  'GET /v1/me', 'GET /v1/work', 'GET /v1/tasks', 'POST /v1/tasks', 'GET /v1/leads/{id}/tasks/{taskId}', 'POST /v1/leads/{id}/tasks/{taskId}',
+  'GET /v1/feed', 'GET /v1/team', 'GET /v1/metrics', 'GET /v1/alerts',
+]);
 const validEmail = email => typeof email === 'string' && email.length <= 254 && /^[^\s@<>()]+@[^\s@<>()]+\.[a-z]{2,}$/i.test(email);
 
 // Feedback da fundadora a uma conversa do chatbot: fica junto do lead, nunca vai para o cliente.
@@ -680,6 +687,7 @@ export function createApp(deps) {
     const claims = event.requestContext?.authorizer?.jwt?.claims ?? {};
     const groups = groupsOf(claims);
     if (!groups.some(group => STAFF.includes(group))) return fail(403, 'Sem acesso à intranet. Peça ao grupo para o adicionar.');
+    if (!allowed(groups, 'read') && !LIMITED_ROUTES.has(event.routeKey)) return fail(403, 'O seu perfil não tem acesso a esta secção.');
     if (writes.has(event.routeKey) && !allowed(groups, 'leads')) return fail(403, 'Esta ação é reservada a curadores e fundadores.');
     if (admin.has(event.routeKey) && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores gerem acessos.');
     if (event.routeKey === 'POST /v1/settings' && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores alteram as regras de seguimento.');

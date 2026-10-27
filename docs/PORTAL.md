@@ -366,8 +366,9 @@ endereço próprio (saída `PortalUrl`):
   list pública e o bloco da sub-rede não funcionam. A VPC origin exige um internet gateway ligado,
   que não tem rotas. A saída só alcança o S3 e o DynamoDB, por gateway endpoints.
 - **Login:** `infra/portal/gate.mjs` serve `/auth/*`, valida o ID token Cognito do
-  grupo da intranet e guarda-o num cookie `HttpOnly`. Só fundadores e curadores
-  entram; o Next.js escuta apenas em `127.0.0.1:3001`.
+  grupo da intranet e guarda-o num cookie `HttpOnly`. Só fundadores, curadores e
+  marketing entram; dentro do portal ainda não há separação por perfil (quem
+  entra vê o catálogo e as propostas). O Next.js escuta apenas em `127.0.0.1:3001`.
 - **Build:** cada deploy com código novo lança o projeto CodeBuild `PortalBuild`,
   que junta `dmc-workspace`, `config`, `portal`, `etl`, os esquemas do assistente e
   o portão num pacote com Node 24. O servidor procura uma versão nova a cada

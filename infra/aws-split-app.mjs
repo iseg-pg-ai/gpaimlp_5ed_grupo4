@@ -471,7 +471,7 @@ class IntranetStack extends Stack {
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       removalPolicy: RemovalPolicy.RETAIN,
     });
-    for (const [group, description] of [['founders', 'Fundadores: tudo, incluindo gestão de acessos'], ['curators', 'Seguimento de leads, agenda e parceiros'], ['governance', 'Governança e evidências (leitura)'], ['testers', 'Equipa de testes (leitura)']]) {
+    for (const [group, description] of [['founders', 'Fundadores: tudo, incluindo gestão de acessos'], ['curators', 'Seguimento de leads, agenda e parceiros'], ['governance', 'Governança e evidências (leitura)'], ['testers', 'Equipa de testes (leitura)'], ['marketing', 'Marketing: tarefas, totais do painel e portal de propostas']]) {
       new cognito.CfnUserPoolGroup(this, `Group-${group}`, { userPoolId: userPool.userPoolId, groupName: group, description });
     }
     const domainPrefix = process.env.INTRANET_AUTH_DOMAIN_PREFIX ?? `${projectName}-${environmentName}-intranet-${account.slice(-4)}`;
@@ -646,7 +646,7 @@ class IntranetStack extends Stack {
       sources: [
         // A pasta não contém config.js nem a pré-visualização: as exclusões não se aplicam sem staging de assets.
         s3deploy.Source.asset(intranetAsset, { exclude: ['package.json'] }),
-        s3deploy.Source.data('config.js', `window.BLU_INTRANET=${JSON.stringify({ api: api.apiEndpoint, authDomain: `https://${authHost}`, clientId: client.userPoolClientId, redirectUri: siteUrl, backofficeUrl })};`),
+        s3deploy.Source.data('config.js', `window.BLU_INTRANET=${JSON.stringify({ api: api.apiEndpoint, authDomain: `https://${authHost}`, clientId: client.userPoolClientId, redirectUri: siteUrl })};`),
       ],
     });
     new s3deploy.BucketDeployment(this, 'DeployBackoffice', {
@@ -817,7 +817,7 @@ class PortalStack extends Stack {
       prune: false,
       sources: [s3deploy.Source.jsonData('gate.json', {
         region, userPoolId: intranet.userPool.userPoolId, clientId: client.userPoolClientId,
-        authDomain: `https://${intranet.authHost}`, publicOrigin: portalOrigin, allowedGroups: ['founders', 'curators'],
+        authDomain: `https://${intranet.authHost}`, publicOrigin: portalOrigin, allowedGroups: ['founders', 'curators', 'marketing'],
       })],
     });
 

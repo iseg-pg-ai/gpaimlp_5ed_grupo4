@@ -354,6 +354,17 @@ test('the WhatsApp test inbox groups by number and only staff who handle leads w
   assert.equal((await createApp(deps)(request('POST /v1/whatsapp-test', { body: { direction: 'in', to: '351912345678', text: 'Olá' } }))).statusCode, 409);
 });
 
+test('marketing sees its own work and aggregate totals, never client conversations or contacts', async () => {
+  const handler = createApp(fakeDeps({ queryAgenda: async () => [] }).deps);
+  const as = (routeKey, extra = {}) => handler(request(routeKey, { groups: '[marketing]', email: 'mk@blu.pt', ...extra }));
+  for (const route of ['GET /v1/work', 'GET /v1/metrics', 'GET /v1/feed', 'GET /v1/me']) assert.equal((await as(route)).statusCode, 200, route);
+  for (const route of ['GET /v1/leads', 'GET /v1/whatsapp-test', 'GET /v1/conversations', 'GET /v1/agenda', 'GET /v1/partners']) assert.equal((await as(route)).statusCode, 403, route);
+  assert.equal((await as('GET /v1/leads/{id}', { id: 'BLU-AAAAAAAA0001' })).statusCode, 403);
+  assert.equal((await as('POST /v1/leads/{id}/contacted', { id: 'BLU-AAAAAAAA0001', body: {} })).statusCode, 403);
+  // Os outros perfis mantêm a leitura geral.
+  assert.equal((await handler(request('GET /v1/leads', { groups: '[testers]' }))).statusCode, 200);
+});
+
 test('working days skip weekends and Portuguese national holidays', () => {
   assert.ok(portugueseHolidays(2026).has('2026-04-03'));
   assert.ok(portugueseHolidays(2026).has('2026-06-04'));
@@ -560,7 +571,7 @@ test('the intranet stack protects every route and grants no destructive data acc
     const [headers] = of('AWS::CloudFront::ResponseHeadersPolicy');
     assert.doesNotMatch(JSON.stringify(headers.Properties), /IntranetApi/);
     const groups = of('AWS::Cognito::UserPoolGroup').map(group => group.Properties.GroupName).sort();
-    assert.deepEqual(groups, ['curators', 'founders', 'governance', 'testers']);
+    assert.deepEqual(groups, ['curators', 'founders', 'governance', 'marketing', 'testers']);
   } finally {
     await rm(outdir, { recursive: true, force: true });
   }

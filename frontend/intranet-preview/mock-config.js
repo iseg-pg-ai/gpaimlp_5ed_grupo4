@@ -1,5 +1,7 @@
 // Só para pré-visualização local (excluído do deploy): dados fictícios, sem AWS nem login.
-window.BLU_INTRANET = { mock: { claims: { name: 'Fundadora de teste', email: 'fundadora@example.com', 'cognito:username': 'u-founder', 'cognito:groups': ['founders'] } }, backofficeUrl: 'backoffice.html' };
+// ?role=marketing (ou outro grupo) mostra a intranet como esse perfil a vê.
+const mockRole = new URLSearchParams(location.search).get('role') || 'founders';
+window.BLU_INTRANET = { mock: { claims: { name: 'Fundadora de teste', email: 'fundadora@example.com', 'cognito:username': 'u-founder', 'cognito:groups': [mockRole] } } };
 const hours = n => new Date(Date.now() + n * 36e5).toISOString();
 const leads = [
   { id: 'BLU-DEMO000000000004', status: 'PENDING', followUpAt: hours(70), lastActivityAt: hours(-1), channel: 'website', messageCount: 9, synthetic: false, stage: 'curator-follow-up', consentAt: hours(-3), assignedTo: 'fundadora@example.com', assignedAt: hours(-1), journey: { destination: 'Algarve e Açores', timeframe: 'meados de março 2027', party: '2 adultos', budget: '3000–6000 EUR' }, tags: [], churnSignalAt: hours(-1), churnSignal: 'give up', atRisk: true },

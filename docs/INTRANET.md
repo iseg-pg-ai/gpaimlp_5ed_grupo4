@@ -64,6 +64,12 @@ Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só d
 | `curators` | Ver painéis, leads, tarefas, wiki, governança e operações; marcar contactado, etiquetar, assumir tarefas |
 | `knowledge-editors` | Propor e editar rascunhos da wiki |
 | `governance` | Aprovar páginas da wiki; ver evidências completas |
+| `marketing` | Só «O meu trabalho», o painel (totais agregados), o site público e o portal de propostas; a API recusa leads, conversas, WhatsApp, agenda e parceiros |
+
+O menu mostra o portal de propostas (`BluCostaPortal`, output `PortalUrl`) a
+fundadores, curadores e marketing, os mesmos grupos que o portão do portal deixa
+entrar. A ligação para o backoffice saiu da intranet (2026-10-27): a intranet já
+cobre esse trabalho.
 
 - Sem registo público; contas criadas pelo grupo. MFA TOTP obrigatório.
 - Login gerido do Cognito com código e PKCE. O ID token (1 h, com email e
