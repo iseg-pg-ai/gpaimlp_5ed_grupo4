@@ -46,8 +46,10 @@ test('o portal fica num servidor privado, só alcançável pelo CloudFront e com
   assert.ok(of('AWS::CloudFront::Distribution')[0].DependsOn.includes('PortalOriginGatewayAttachment'));
 
   // Só o CloudFront entra (porta do portão); só o S3 e o DynamoDB saem.
-  const ingress = of('AWS::EC2::SecurityGroupIngress');
-  assert.deepEqual(ingress.map(rule => [rule.Properties.SourcePrefixListId, rule.Properties.FromPort, rule.Properties.ToPort]), [['pl-4fa04526', 8080, 8080]]);
+  // A ENI da VPC origin tem IP privado: a regra é o bloco da sub-rede isolada, não a prefix list pública.
+  const serverGroup = of('AWS::EC2::SecurityGroup').find(group => group.Properties.GroupDescription.startsWith('Portal:'));
+  const ingress = [...(serverGroup.Properties.SecurityGroupIngress ?? []), ...of('AWS::EC2::SecurityGroupIngress').map(rule => rule.Properties)];
+  assert.deepEqual(ingress.map(rule => [rule.CidrIp, rule.FromPort, rule.ToPort]), [['10.10.0.0/24', 8080, 8080]]);
   assert.deepEqual(of('AWS::EC2::SecurityGroupEgress').map(rule => rule.Properties.DestinationPrefixListId).sort(), ['pl-6da54004', 'pl-6fa54006']);
 
   // Dados num disco próprio, cifrado, mantido se a stack for apagada e com cópia diária.

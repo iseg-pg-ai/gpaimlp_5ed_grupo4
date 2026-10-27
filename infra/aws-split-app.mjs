@@ -672,7 +672,7 @@ class IntranetStack extends Stack {
 // cada versão a partir do S3. Os dados ficam num disco próprio, com cópia diária.
 const PORTAL_AMI = { 'eu-west-1': process.env.PORTAL_AMI_ID ?? 'ami-050d447ce746f6136' }; // AL2023 arm64 fixa: uma AMI nova não substitui o servidor.
 // Listas geridas da AWS: com.amazonaws.global.cloudfront.origin-facing e os serviços dos gateway endpoints.
-const PORTAL_PREFIX_LISTS = { 'eu-west-1': { cloudfront: 'pl-4fa04526', s3: 'pl-6da54004', dynamodb: 'pl-6fa54006' } };
+const PORTAL_PREFIX_LISTS = { 'eu-west-1': { s3:'pl-6da54004', dynamodb: 'pl-6fa54006' } };
 const portalSeedArchive = process.env.PORTAL_SEED_ARCHIVE ?? path.resolve(infraDir, '../blu-portal-data.tar.gz');
 
 class PortalStack extends Stack {
@@ -714,7 +714,10 @@ class PortalStack extends Stack {
 
     const serverGroup = new ec2.SecurityGroup(this, 'PortalServer', { vpc, description: 'Portal: only CloudFront on the gate port', allowAllOutbound: false });
     // Entrada só do CloudFront; saída só para o S3 e o DynamoDB (o resto não tem rota de qualquer forma).
-    serverGroup.addIngressRule(ec2.Peer.prefixList(prefixLists.cloudfront), ec2.Port.tcp(8080), 'CloudFront VPC origin');
+    // A VPC origin chega pela ENI que o CloudFront cria na sub-rede, com IP privado: a prefix list
+    // pública não a cobre (validado a 2026-10-27). O grupo CloudFront-VPCOrigins-Service-SG só existe
+    // depois da VPC origin, por isso a regra usa o bloco da sub-rede isolada, onde só está o portal.
+    serverGroup.addIngressRule(ec2.Peer.ipv4(subnet.ipv4CidrBlock), ec2.Port.tcp(8080), 'CloudFront VPC origin ENI');
     serverGroup.addEgressRule(ec2.Peer.prefixList(prefixLists.s3), ec2.Port.tcp(443), 'S3 gateway endpoint');
     serverGroup.addEgressRule(ec2.Peer.prefixList(prefixLists.dynamodb), ec2.Port.tcp(443), 'DynamoDB gateway endpoint');
     const role = new iam.Role(this, 'PortalServerRole', { assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'), description: 'Portal server: read releases, seed and leads; update lead profiles' });

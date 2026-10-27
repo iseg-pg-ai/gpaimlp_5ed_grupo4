@@ -2,7 +2,7 @@
 // de fundadores ou curadores. Corre no servidor privado, à frente do Next.js, sem
 // dependências nem acesso à internet: as chaves públicas (JWKS) vêm com o build.
 import { createPublicKey, verify } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -147,7 +147,9 @@ export function createGate(config) {
 }
 
 // Execução no servidor: GATE_CONFIG aponta para o JSON publicado pela stack, GATE_JWKS para as chaves do build.
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// O servidor arranca-o por /srv/blu/current (ligação simbólica) e o Node resolve
+// import.meta.url para o caminho real: comparar caminhos reais, senão sai em silêncio.
+if (process.argv[1] && realpathSync(path.resolve(process.argv[1])) === fileURLToPath(import.meta.url)) {
   const config = JSON.parse(readFileSync(process.env.GATE_CONFIG ?? '/srv/blu/gate.json', 'utf8'));
   const { keys } = JSON.parse(readFileSync(process.env.GATE_JWKS ?? path.join(here, 'jwks.json'), 'utf8'));
   const port = Number(process.env.GATE_PORT ?? 8080);
