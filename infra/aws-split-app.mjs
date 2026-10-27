@@ -879,7 +879,8 @@ class PortalStack extends Stack {
     });
     for (const asset of Object.values(sources)) asset.grantRead(build);
     // Só leitura dos outputs da intranet, para a ligação «Intranet» do portal.
-    build.addToRolePolicy(new iam.PolicyStatement({ actions: ['cloudformation:DescribeStacks'], resources: [intranet.stackId] }));
+    // Pelo nome (texto fixo): intranet.stackId seria uma exportação nova entre stacks.
+    build.addToRolePolicy(new iam.PolicyStatement({ actions: ['cloudformation:DescribeStacks'], resources: [`arn:aws:cloudformation:${region}:${account}:stack/${intranet.stackName}/*`] }));
     releases.grantPut(build, 'releases/*');
     // Cada deploy com código novo lança um build; o servidor ativa-o sozinho quando termina.
     const sourceVersion = Object.values(sources).map(asset => asset.assetHash).join('-');
