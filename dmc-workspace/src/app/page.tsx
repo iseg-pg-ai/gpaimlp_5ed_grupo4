@@ -1,5 +1,6 @@
 "use client";
 
+import { presentationText } from "@/lib/presentation-text";
 import { portalUrl } from "@/lib/http-client";
 import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -108,7 +109,7 @@ export default function WorkspacePage() {
       >
         {(error || storageError) && (
           <p role="alert" className="p-4 text-red-800">
-            <T text={error || storageError} source="pt" />
+            <T text={presentationText(error || storageError)} source="pt" />
           </p>
         )}
         {busy ? (

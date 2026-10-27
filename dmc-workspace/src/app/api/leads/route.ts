@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     if (error instanceof LeadsNotConfigured) return jsonError(error.message, 503, noStoreHeaders);
     console.error("Leads list failed", error instanceof Error ? error.name : error);
     return jsonError(
-      "Não foi possível ler os contactos na AWS. Verifique as credenciais.",
+      "Não foi possível carregar os contactos. Tente novamente mais tarde.",
       502,
       noStoreHeaders,
     );

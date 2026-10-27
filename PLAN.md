@@ -23,6 +23,11 @@ A herança SNS na etapa 6 foi isolada dos serviços reais. A etapa completa pass
 244 testes (um omitido) e os cinco serviços foram reabertos por arranque rápido,
 sem repetir a recuperação; evidência em [Decisões](docs/DECISIONS.md).
 
+A apresentação do portal foi limpa de regras e identificadores técnicos; Referências
+foi retirada da navegação e os links antigos seguem para o Catálogo. Novos PDFs
+omitem hashes e IDs, preservando os PDFs guardados. Validação em
+[Decisões](docs/DECISIONS.md).
+
 ## Links do Code Editor web — aceitação pendente
 
 - [ ] Abrir o Code Editor do workspace no navegador AWS e confirmar a ativação de

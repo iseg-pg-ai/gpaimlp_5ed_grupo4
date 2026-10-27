@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "eslint --max-warnings=0",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:production-ui": "node tests/browser/production-presentation.mjs",
     "test:reopen": "node tests/browser/reopen-latest.mjs",
     "test:responsive": "node tests/browser/ui.mjs responsive",
     "test:navigation": "node tests/browser/ui.mjs navigation",

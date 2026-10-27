@@ -324,7 +324,7 @@ export function QualityPanel({
       <p className="obs-notice">
         {data.validation
           ? data.validation.status === "passed"
-            ? "A entrega passou os controlos de integridade declarados pelo ETL."
+            ? "O catálogo passou os controlos de qualidade dos dados."
             : "A entrega tem ocorrências de validação a consultar."
           : "Relatório de validação indisponível."}{" "}
         Integridade e preenchimento não certificam informação comercial.

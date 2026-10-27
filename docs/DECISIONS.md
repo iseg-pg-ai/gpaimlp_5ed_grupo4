@@ -553,3 +553,82 @@ nenhuma notificação real foi enviada pelos ensaios. `just blu up` reiniciou os
 cinco serviços deixados parados pela interrupção e validou os cinco endpoints,
 sem recuperação de dados nem publicação S3. Monitoring externo permanece sujeito
 às pendências explícitas do plano.
+
+### Portal distingue apresentação de metadados técnicos — 2026-10-27
+
+A revisão cobriu as páginas e componentes do portal, textos gerados e o renderer
+PDF. Foram retirados os códigos de regras dos rótulos do briefing e de mobilidade,
+o resumo técnico diário gerado, os critérios de implementação dos cartões, IDs do
+catálogo e das partilhas/contactos, a posição determinística no assistente e a
+ligação direta ao JSON das versões. Campos de origem são apresentados sem
+metadados técnicos nem JSON bruto, conservando os campos comerciais aninhados.
+Fontes públicas, restrições, pendências, confirmações, estados de aprovação e
+versões úteis à recuperação continuam visíveis. Erros de configuração dos
+contactos passaram a orientar o utilizador sem expor nomes de variáveis AWS.
+
+`presentation-text.ts` filtra a apresentação dos resumos antigos e extrai fontes
+públicas da linhagem técnica. Não modifica snapshots, IDs, revisões, matching,
+concorrência ou hashes. Novos PDFs deixam de imprimir IDs, hashes, cadeias e
+códigos de regras, mantendo a versão legível, as condições e o orçamento.
+PDFs já persistidos não são reescritos; o contrato do Prompt TXT mantém-se.
+
+Referências foi retirada da navegação: a página misturava exploração técnica,
+IDs e divergências das fontes, sem constituir um fluxo necessário ao utilizador
+normal. Links antigos redirecionam para o Catálogo com o prefixo do proxy.
+O componente DatasetExplorer, usado apenas por essa página, foi removido. As
+fontes e os contratos da API de exploração não foram eliminados nem se adicionou
+uma falsa fronteira de autorização pela simples remoção de navegação.
+
+Evidência: check completo com 209 testes aprovados, lint/tipos/formatação e build
+aprovados; doze cenários desktop/móvel nos seis idiomas confirmaram ausência dos
+códigos/IDs, preservação de fontes, pendências, campos mistos aninhados e bytes do
+rascunho. Testes de referências confirmaram redirecionamento com/sem JavaScript e
+preservação da allowlist da API. PDFs sintéticos dos seis idiomas foram renderizados
+e inspecionados com traduções simuladas; mandarim usou Noto Sans CJK. Isto valida
+apresentação e paginação, não a qualidade semântica de novas traduções de modelos.
+O portal local foi reiniciado: HTTP 200, sem link Referências, redirecionamento
+307 para o catálogo e 252 aprovados/521 revisões confirmados. Não houve publicação
+S3, commit, push ou deployment cloud nesta limpeza.
+
+### CODEOWNERS baseado na autoria de criação — 2026-10-27
+
+Por indicação do utilizador, foi retirada a regra global `* @pedrocarreiro25`.
+A autoria foi apurada para cada ficheiro versionado existente com
+`git log --follow --diff-filter=A`, usando a identidade de autor dos commits de
+criação, e não o autor da última alteração. Foram encontrados 346 ficheiros de
+Pedro entre 505 com criação identificada. Ficheiros novos sem commit não foram
+atribuídos por inferência.
+
+As 12 regras anteriores do addon foram preservadas. Em
+`infra/lambda/event-processor/item.mjs`, criado por Pedro mas incluído no âmbito
+anterior de Gisela, a regra específica conserva ambos os responsáveis. Os dois
+caminhos com espaços/segmento dinâmico usam padrões estreitos, conferidos contra
+o conjunto atual de ficheiros: cobrem apenas os caminhos identificados.
+A alteração continua local e não cria ownership global para ficheiros futuros.
+
+### Auditoria dos PDFs e dos ZIPs finais — 2026-10-27
+
+A verificação complementar encontrou campos livres do corpo e orçamento que não
+passavam pelo filtro de apresentação. O renderer aplica agora a limpeza também
+nesses textos e nas traduções renderizadas. Os rótulos de hashes, já sem saída no
+PDF, foram retirados dos pedidos de tradução. A função localizada aceita uma
+tradução injetada apenas para testes; em produção conserva o tradutor local.
+
+Evidência: 211 testes/check completo e build aprovados. Uma versão sintética num
+VersionStore temporário gerou PDFs pelos caminhos reais de renderização localizada
+em seis idiomas, com tradução simulada. `pdftotext` verificou os ficheiros finais,
+incluindo descrições, pendências, inclusões, exclusões e impostos, sem códigos de
+regras, IDs internos ou hashes. Os ZIPs continham apenas um PDF para PT ou dois
+para PT/idioma do cliente; as repetições conservaram bytes idênticos. Os orçamentos
+renderizados foram inspecionados nos seis idiomas com fonte CJK para mandarim.
+Snapshots e exports operacionais não foram modificados; os PDFs antigos continuam
+imutáveis. A correção foi carregada apenas no portal local.
+
+### Consolidar CODEOWNERS por diretórios de autoria integral — 2026-10-27
+
+Por indicação do utilizador, as regras de Pedro foram agrupadas em 13 diretórios
+cujo conteúdo versionado existente tem integralmente autoria de criação de Pedro.
+As pastas de autoria mista conservaram regras por ficheiro, incluindo a
+sobreposição com Gisela. O total de regras de Pedro passou de 346 para 267;
+a comparação dos responsáveis antes/depois confirmou equivalência nos 505
+ficheiros auditados. Não foi reintroduzida uma regra global por defeito.

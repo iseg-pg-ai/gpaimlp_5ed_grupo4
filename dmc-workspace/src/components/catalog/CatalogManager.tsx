@@ -213,9 +213,6 @@ export function CatalogManager() {
                   source="pt"
                 />
               </p>
-              <p className="mt-2 break-all text-xs text-[var(--portal-text-4a636b)]">
-                {r.id} · v{r.revision}
-              </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   className={button}

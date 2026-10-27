@@ -389,7 +389,7 @@ export function CatalogEditor({ editing, setEditing, busy, save, editorRef }: Pr
               </option>
               {referencePrices.map((row, index) => (
                 <option key={index} value={index}>
-                  {String(row.nome_modalidade ?? row.id)} ·{" "}
+                  {String(row.nome_modalidade ?? row.descricao ?? "Modalidade")} ·{" "}
                   {String(row.preco_referencia_eur ?? "Por confirmar")} EUR ·{" "}
                   {String(row.unidade ?? "")}
                 </option>

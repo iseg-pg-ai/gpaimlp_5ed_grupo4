@@ -195,7 +195,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                       htmlFor="brief-specialOccasion"
                       className="block text-sm font-medium text-[var(--portal-text-143f4b)] mb-1"
                     >
-                      <T text="Special Occasion (R04)" source="en" />{" "}
+                      <T text="Special Occasion" source="en" />{" "}
                     </label>
                     <LocalizedInput
                       id="brief-specialOccasion"
@@ -452,7 +452,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div className="flex items-center gap-2">
                     <Crown className="w-4 h-4 text-[var(--portal-text-d8a65c)]" />
                     <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
-                      <T text="Proposal Curation Tier (Rules R33–R44)" source="en" />{" "}
+                      <T text="Proposal Curation Tier" source="en" />{" "}
                     </CardTitle>
                   </div>
                   <Badge variant="teal" className="text-xs">
@@ -651,7 +651,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
               <div className="flex items-center gap-2 pt-2">
                 <ShieldAlert className="w-4 h-4 text-[var(--portal-text-2d5b67)]" />
                 <h2 className="font-serif-blu font-normal text-sm tracking-tight text-[var(--portal-text-143f4b)]">
-                  <T text="Restrictions & Curation Constraints (Rules R01–R51)" source="en" />{" "}
+                  <T text="Restrictions & Curation Constraints" source="en" />{" "}
                 </h2>
               </div>
 
@@ -662,10 +662,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                     <div className="flex items-center gap-2">
                       <Accessibility className="w-4 h-4 text-[var(--portal-text-2d5b67)]" />
                       <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
-                        <T
-                          text="Physical Effort & Mobility Constraints (Rule R15–R17)"
-                          source="en"
-                        />{" "}
+                        <T text="Physical Effort & Mobility Constraints" source="en" />{" "}
                       </CardTitle>
                     </div>
                     <Badge variant="teal" className="text-xs">
@@ -743,10 +740,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                     <div className="flex items-center gap-2">
                       <UtensilsCrossed className="w-4 h-4 text-[var(--portal-text-d8a65c)]" />
                       <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
-                        <T
-                          text="Dietary Allergies & Dining Requirements (Rule R02, R04)"
-                          source="en"
-                        />{" "}
+                        <T text="Dietary Allergies & Dining Requirements" source="en" />{" "}
                       </CardTitle>
                     </div>
                     <Badge variant="gold" className="text-xs">
@@ -820,10 +814,7 @@ export const NewTripScreen: React.FC<NewTripScreenProps> = ({
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-[var(--portal-text-2d5b67)]" />
                     <CardTitle className="text-sm font-serif-blu text-[var(--portal-text-143f4b)]">
-                      <T
-                        text="Daily Rhythm & Explicit Exclusions (Rule R03, R05)"
-                        source="en"
-                      />{" "}
+                      <T text="Daily Rhythm & Explicit Exclusions" source="en" />{" "}
                     </CardTitle>
                   </div>
                 </CardHeader>

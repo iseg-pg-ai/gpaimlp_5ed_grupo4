@@ -3,37 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, type ReactNode } from "react";
-import { Compass, Inbox, Library, Archive, Files, Trash2 } from "lucide-react";
+import { Compass, Inbox, Library, Archive, Trash2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Locale } from "@/lib/locales";
 
 const labels: Record<Locale, string[]> = {
-  pt: [
-    "Workspace",
-    "Contactos",
-    "Catálogo",
-    "Histórico",
-    "Referências",
-    "Lixo",
-    "Menu",
-    "Navegação principal",
-  ],
-  en: [
-    "Workspace",
-    "Leads",
-    "Catalogue",
-    "History",
-    "References",
-    "Trash",
-    "Menu",
-    "Main navigation",
-  ],
+  pt: ["Workspace", "Contactos", "Catálogo", "Histórico", "Lixo", "Menu", "Navegação principal"],
+  en: ["Workspace", "Leads", "Catalogue", "History", "Trash", "Menu", "Main navigation"],
   es: [
     "Workspace",
     "Contactos",
     "Catálogo",
     "Historial",
-    "Referencias",
     "Papelera",
     "Menú",
     "Navegación principal",
@@ -43,25 +24,15 @@ const labels: Record<Locale, string[]> = {
     "Contacts",
     "Catalogue",
     "Historique",
-    "Références",
     "Corbeille",
     "Menu",
     "Navigation principale",
   ],
-  de: [
-    "Workspace",
-    "Kontakte",
-    "Katalog",
-    "Verlauf",
-    "Referenzen",
-    "Papierkorb",
-    "Menü",
-    "Hauptnavigation",
-  ],
-  zh: ["工作区", "潜在客户", "目录", "历史记录", "参考资料", "回收站", "菜单", "主导航"],
+  de: ["Workspace", "Kontakte", "Katalog", "Verlauf", "Papierkorb", "Menü", "Hauptnavigation"],
+  zh: ["工作区", "潜在客户", "目录", "历史记录", "回收站", "菜单", "主导航"],
 };
-const icons = [Compass, Inbox, Library, Archive, Files, Trash2];
-const routes = ["/", "/leads", "/catalog", "/exports", "/references", "/trash"];
+const icons = [Compass, Inbox, Library, Archive, Trash2];
+const routes = ["/", "/leads", "/catalog", "/exports", "/trash"];
 
 export function TopBar({ locale, children }: { locale: Locale; children: ReactNode }) {
   const pathname = usePathname();
@@ -106,7 +77,7 @@ export function TopBar({ locale, children }: { locale: Locale; children: ReactNo
             CURATION STUDIO
           </span>
         </Link>
-        <nav aria-label={text[7]} className="hidden lg:flex flex-wrap items-center gap-1">
+        <nav aria-label={text[6]} className="hidden lg:flex flex-wrap items-center gap-1">
           {links()}
         </nav>
         <div className="flex items-center gap-2">
@@ -121,10 +92,10 @@ export function TopBar({ locale, children }: { locale: Locale; children: ReactNo
             }}
           >
             <summary className="flex min-h-11 cursor-pointer items-center rounded-lg border border-[var(--portal-line-d5d1c7)] px-3 text-sm text-[var(--portal-text-143f4b)]">
-              ☰ {text[6]}
+              ☰ {text[5]}
             </summary>
             <nav
-              aria-label={text[7]}
+              aria-label={text[6]}
               className="absolute left-3 right-3 top-full max-h-[65dvh] overflow-auto rounded-b-xl border bg-[var(--portal-bg-f4f0e7)] p-2 shadow-lg"
             >
               {links()}

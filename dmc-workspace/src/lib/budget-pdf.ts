@@ -1,3 +1,4 @@
+import { presentationText } from "./presentation-text.ts";
 import { proposalBudget } from "./proposal-budget.ts";
 import type { PdfLanguageOptions, Snapshot, VersionMeta } from "./itinerary-pdf";
 
@@ -9,9 +10,10 @@ export function renderBudget(
 ) {
   const budget = proposalBudget(snapshot);
   const tr = (text: string) => {
-    const value = options.normalize?.(text) ?? text;
+    const clean = presentationText(text);
+    const value = options.normalize?.(clean) ?? clean;
     options.capture?.push(value);
-    return options.translations?.get(value) ?? value;
+    return presentationText(options.translations?.get(value) ?? value);
   };
   const money = (cents: number | null, currency: string | null) =>
     cents === null ? "Por confirmar" : `${(cents / 100).toFixed(2)} ${currency}`;

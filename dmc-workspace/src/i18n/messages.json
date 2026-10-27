@@ -3718,5 +3718,69 @@
     "fr": "Version rouverte :",
     "de": "Version erneut geöffnet:",
     "zh": "已重新打开版本："
+  },
+  "Special Occasion": {
+    "pt": "Ocasião especial",
+    "en": "Special Occasion",
+    "es": "Ocasión especial",
+    "fr": "Occasion spéciale",
+    "de": "Besondere Gelegenheit",
+    "zh": "特殊情况"
+  },
+  "Proposal Curation Tier": {
+    "pt": "Nível de cura da proposta",
+    "en": "Proposal Curation Tier",
+    "es": "Tier",
+    "fr": "Niveau de protection de la proposition",
+    "de": "Curation Tier",
+    "zh": "估价等级"
+  },
+  "Restrictions & Curation Constraints": {
+    "pt": "Restrições e restrições de cura",
+    "en": "Restrictions & Curation Constraints",
+    "es": "Restrictions &quot; Curation Constraints",
+    "fr": "Restrictions et contraintes de protection",
+    "de": "Einschränkungen und Kurationsbeschränkungen",
+    "zh": "限制和限制"
+  },
+  "Physical Effort & Mobility Constraints": {
+    "pt": "Restrições ao esforço físico e à mobilidade",
+    "en": "Physical Effort & Mobility Constraints",
+    "es": "Constraints de Movilidad Física",
+    "fr": "Contraintes en matière d'effort physique et de mobilité",
+    "de": "Einschränkungen der körperlichen Anstrengung und Mobilität",
+    "zh": "物质努力和流动限制"
+  },
+  "Dietary Allergies & Dining Requirements": {
+    "pt": "Alergias dietéticas e requisitos de refeições",
+    "en": "Dietary Allergies & Dining Requirements",
+    "es": "Requisitos dietéticos para comer",
+    "fr": "Allergies alimentaires et exigences en matière de repas",
+    "de": "Diätetische Allergien & Dining Anforderungen",
+    "zh": "饮食过敏和饮食要求"
+  },
+  "Daily Rhythm & Explicit Exclusions": {
+    "pt": "Ritmo diário & Exclusões explícitas",
+    "en": "Daily Rhythm & Explicit Exclusions",
+    "es": "Exclusiones diarias de Rhythm &amp; Explicit",
+    "fr": "Rhythme quotidien et exclusions explicites",
+    "de": "Daily Rhythm & Explicit Exclusions",
+    "zh": "每日节奏和明确排除"
+  },
+  "Avaliação de Terreno e Mobilidade": {
+    "pt": "Terreno e mobilidade",
+    "en": "Terrain and mobility",
+    "es": "Terreno y movilidad",
+    "fr": "Terrain et mobilité",
+    "de": "Gelände und Mobilität",
+    "zh": "地形与行动能力"
+  },
+  "Margem de Trânsito e Ritmo": {
+    "pt": "Deslocações e ritmo",
+    "en": "Travel time and pace",
+    "es": "Desplazamientos y ritmo",
+    "fr": "Déplacements et rythme",
+    "de": "Fahrzeiten und Reisetempo",
+    "zh": "交通时间与节奏"
   }
 }

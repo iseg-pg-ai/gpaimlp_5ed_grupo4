@@ -26,7 +26,7 @@ function tables() {
   const intelligence = process.env.BLU_INTELLIGENCE_TABLE;
   if (!messages || !intelligence)
     throw new LeadsNotConfigured(
-      "Defina BLU_CONVERSATION_TABLE e BLU_INTELLIGENCE_TABLE (saídas da stack BluCostaData).",
+      "O serviço de contactos não está disponível. Contacte o administrador.",
     );
   return { messages, intelligence };
 }

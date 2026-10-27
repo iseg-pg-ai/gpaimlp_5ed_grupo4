@@ -196,7 +196,9 @@ export default function LeadsPage() {
                     className={`w-full rounded-lg border p-3 text-left transition-colors ${selected?.id === lead.id ? "border-[var(--portal-text-143f4b)] bg-[var(--portal-bg-e3dcd0)]" : "border-[var(--portal-line-d5d1c7)] hover:bg-[var(--portal-bg-e3dcd0)]"}`}
                   >
                     <span className="flex flex-wrap items-center justify-between gap-2">
-                      <strong className="font-mono text-sm break-all">{lead.id}</strong>
+                      <strong className="text-sm">
+                        {lead.journey.destination || <T text="Contacto" source="pt" />}
+                      </strong>
                       <span
                         className={`rounded px-2 py-0.5 text-xs ${overdue ? "bg-amber-200 text-amber-950" : "bg-[var(--portal-bg-e3dcd0)]"}`}
                       >
@@ -252,7 +254,9 @@ export default function LeadsPage() {
             <article className="rounded-lg border border-[var(--portal-line-d5d1c7)] p-4">
               <header className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-mono text-lg break-all">{selected.id}</h2>
+                  <h2 className="text-lg">
+                    {selected.journey.destination || <T text="Contacto" source="pt" />}
+                  </h2>
                   <p className="text-xs opacity-80">
                     <T text={statusText[selected.status] ?? selected.status} source="pt" /> ·{" "}
                     <T text="última atividade" source="pt" /> {when(selected.lastActivityAt)}
@@ -356,7 +360,7 @@ export default function LeadsPage() {
                 {selected.emails.map((email) => (
                   <a
                     key={email}
-                    href={`mailto:${email}?subject=${encodeURIComponent(`BLU Costa · ${selected.id}`)}`}
+                    href={`mailto:${email}?subject=${encodeURIComponent("BLU Costa · A sua viagem")}`}
                     className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--portal-line-d5d1c7)] px-3 text-sm"
                   >
                     <Mail aria-hidden="true" className="size-4" /> {email}
