@@ -59,13 +59,15 @@ EOF
 cat > /usr/local/bin/blu-portal-update <<EOF
 #!/bin/bash
 set -euo pipefail
+# Região explícita: sem ela a CLI pode tentar o endpoint global do S3, que o gateway não cobre.
+export AWS_DEFAULT_REGION='__REGION__'
 B='$RELEASE_BUCKET'
 R=/srv/blu/releases
 changed=0
-aws s3 cp --only-show-errors "s3://\$B/config/gate.json" /srv/blu/gate.json.new || exit 0
+aws s3 cp --only-show-errors "s3://\$B/config/gate.json" /srv/blu/gate.json.new || { echo 'Sem configuração do portão no S3'; exit 0; }
 if cmp -s /srv/blu/gate.json.new /srv/blu/gate.json; then rm -f /srv/blu/gate.json.new; else mv /srv/blu/gate.json.new /srv/blu/gate.json; changed=1; fi
 printf 'BLU_PUBLIC_URL=%s\n' "\$(python3 -c 'import json; print(json.load(open("/srv/blu/gate.json"))["publicOrigin"])')" > /srv/blu/runtime.env
-aws s3 cp --only-show-errors "s3://\$B/releases/current.json" /tmp/blu-current.json || exit 0
+aws s3 cp --only-show-errors "s3://\$B/releases/current.json" /tmp/blu-current.json || { echo 'Ainda sem versão publicada'; exit 0; }
 read -r id key sha < <(python3 -c 'import json; c=json.load(open("/tmp/blu-current.json")); print(c["release"], c["key"], c["sha256"])')
 [[ "\$id" =~ ^[A-Za-z0-9._-]+\$ && "\$key" == "releases/\$id.tar.gz" && "\$sha" =~ ^[0-9a-f]{64}\$ ]] || { echo 'current.json inválido'; exit 1; }
 if [ ! -d "\$R/\$id" ]; then
@@ -78,8 +80,9 @@ if [ ! -d "\$R/\$id" ]; then
   rm -f /tmp/blu-release.tgz
 fi
 if [ "\$(readlink /srv/blu/current || true)" != "\$R/\$id" ]; then ln -sfn "\$R/\$id" /srv/blu/current.new && mv -T /srv/blu/current.new /srv/blu/current; changed=1; fi
-if [ "\$changed" = 1 ]; then systemctl restart blu-portal blu-gate; fi
+if [ "\$changed" = 1 ]; then echo "A ativar a versão \$id"; systemctl restart blu-portal blu-gate; fi
 ls -1dt "\$R"/*/ | tail -n +4 | xargs -r rm -rf
+echo "Versão \$id; portal \$(systemctl is-active blu-portal || true), portão \$(systemctl is-active blu-gate || true)"
 EOF
 chmod 755 /usr/local/bin/blu-portal-update
 
@@ -97,6 +100,9 @@ EnvironmentFile=-/srv/blu/runtime.env
 ExecStart=/srv/blu/current/node/bin/node /srv/blu/current/dmc-workspace/node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3001
 Restart=always
 RestartSec=5
+# Sem SSM nem internet, a consola da instância é a única janela para os logs.
+StandardOutput=journal+console
+StandardError=journal+console
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
@@ -119,6 +125,9 @@ Environment=GATE_CONFIG=/srv/blu/gate.json GATE_PORT=8080
 ExecStart=/srv/blu/current/node/bin/node /srv/blu/current/infra/portal/gate.mjs
 Restart=always
 RestartSec=5
+# Sem SSM nem internet, a consola da instância é a única janela para os logs.
+StandardOutput=journal+console
+StandardError=journal+console
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
@@ -135,6 +144,8 @@ Description=Ativa a versão mais recente do portal BLU
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/blu-portal-update
+StandardOutput=journal+console
+StandardError=journal+console
 EOF
 
 cat > /etc/systemd/system/blu-portal-update.timer <<'EOF'

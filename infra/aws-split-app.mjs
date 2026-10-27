@@ -742,6 +742,8 @@ class PortalStack extends Stack {
       role,
       securityGroup: serverGroup,
       userData,
+      // O arranque só corre uma vez: um script novo exige um servidor novo (o disco de dados fica).
+      userDataCausesReplacement: true,
       requireImdsv2: true,
       associatePublicIpAddress: false,
       blockDevices: [{ deviceName: '/dev/xvda', volume: ec2.BlockDeviceVolume.ebs(20, { volumeType: ec2.EbsDeviceVolumeType.GP3, encrypted: true }) }],
