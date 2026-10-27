@@ -845,6 +845,7 @@ class PortalStack extends Stack {
       environmentVariables: {
         RELEASE_BUCKET: { value: releases.bucketName },
         USER_POOL_ID: { value: intranet.userPool.userPoolId },
+        INTRANET_STACK: { value: intranet.stackName },
       },
       buildSpec: codebuild.BuildSpec.fromObject({
         version: '0.2',
@@ -862,6 +863,8 @@ class PortalStack extends Stack {
               'cp -r "$CODEBUILD_SRC_DIR_schemas" "$R/src/blu_ai/schemas" && cp -r "$CODEBUILD_SRC_DIR_intranet" "$R/frontend/intranet" && cp -r "$CODEBUILD_SRC_DIR_gate" "$R/infra/portal"',
               'cp -r "$CODEBUILD_SRC_DIR_pyportal" "$R/portal" && cp -r "$CODEBUILD_SRC_DIR_etl" "$R/etl"',
               'mkdir -p "$R/dashboard" && cp "$CODEBUILD_SRC_DIR_dashboard/region.geojson" "$R/dashboard/region.geojson"',
+              // Ligação «Intranet» na barra do portal: o output IntranetUrl, lido no build (sem exportação entre stacks).
+              'export NEXT_PUBLIC_INTRANET_URL="$(aws cloudformation describe-stacks --stack-name "$INTRANET_STACK" --query "Stacks[0].Outputs[?OutputKey==\'IntranetUrl\'].OutputValue" --output text)" && echo "Intranet: $NEXT_PUBLIC_INTRANET_URL"',
               'cd "$R/dmc-workspace" && npm ci --no-audit --no-fund && npm run build && npm prune --omit=dev --no-audit --no-fund',
               'curl -fsSL "https://cognito-idp.$AWS_REGION.amazonaws.com/$USER_POOL_ID/.well-known/jwks.json" -o "$R/infra/portal/jwks.json"',
               'node -e "process.exit(JSON.parse(require(\'fs\').readFileSync(process.argv[1])).keys.length ? 0 : 1)" "$R/infra/portal/jwks.json"',
@@ -875,6 +878,8 @@ class PortalStack extends Stack {
       }),
     });
     for (const asset of Object.values(sources)) asset.grantRead(build);
+    // Só leitura dos outputs da intranet, para a ligação «Intranet» do portal.
+    build.addToRolePolicy(new iam.PolicyStatement({ actions: ['cloudformation:DescribeStacks'], resources: [intranet.stackId] }));
     releases.grantPut(build, 'releases/*');
     // Cada deploy com código novo lança um build; o servidor ativa-o sozinho quando termina.
     const sourceVersion = Object.values(sources).map(asset => asset.assetHash).join('-');

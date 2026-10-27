@@ -93,6 +93,11 @@ test('o portal fica num servidor privado, só alcançável pelo CloudFront e com
   assert.equal(build.Properties.SecondarySources.length, 7);
   // O contorno do mapa (dashboard/region.geojson) vai no pacote: sem ele o Observatório e o mapa da proposta falham.
   assert.match(build.Properties.Source.BuildSpec, /region\.geojson/);
+  // A ligação «Intranet» vem do output IntranetUrl, lido no build com permissão só de leitura.
+  assert.match(build.Properties.Source.BuildSpec, /NEXT_PUBLIC_INTRANET_URL=.*IntranetUrl/);
+  const buildPolicy = json(of('AWS::IAM::Policy').find(policy => json(policy.Properties.Roles).includes('PortalBuildRole')).Properties.PolicyDocument);
+  assert.match(buildPolicy, /cloudformation:DescribeStacks/);
+  assert.doesNotMatch(buildPolicy, /cloudformation:(Update|Create|Delete)/);
   assert.match(build.Properties.Source.BuildSpec, /sha256sum -c/);
   assert.equal(of('Custom::AWS').length, 2);
 });

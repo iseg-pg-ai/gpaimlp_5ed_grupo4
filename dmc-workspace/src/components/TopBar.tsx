@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, type ReactNode } from "react";
-import { Compass, Inbox, Library, Archive, Files, Trash2 } from "lucide-react";
+import { Compass, Inbox, Library, Archive, Files, Trash2, LayoutGrid } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Locale } from "@/lib/locales";
 
@@ -62,29 +62,46 @@ const labels: Record<Locale, string[]> = {
 };
 const icons = [Compass, Inbox, Library, Archive, Files, Trash2];
 const routes = ["/", "/leads", "/catalog", "/exports", "/references", "/trash"];
+// Endereço da intranet, fixado no build da AWS (BluCostaIntranet); sem ele, a ligação não aparece.
+const intranetUrl = process.env.NEXT_PUBLIC_INTRANET_URL ?? "";
 
 export function TopBar({ locale, children }: { locale: Locale; children: ReactNode }) {
   const pathname = usePathname();
   const menu = useRef<HTMLDetailsElement>(null);
   const text = labels[locale];
   const links = () =>
-    routes.map((href, index) => {
-      const selected =
-        href === "/" ? pathname === href : pathname === href || pathname.startsWith(href + "/");
-      const Icon = icons[index];
-      return (
-        <Link
-          key={href}
-          href={href}
-          aria-current={selected ? "page" : undefined}
-          onClick={() => menu.current?.removeAttribute("open")}
-          className={`studio-nav-link flex min-h-11 items-center rounded-lg px-3 py-2 text-sm break-words transition-colors ${selected ? "bg-[var(--portal-bg-143f4b)] text-white" : "text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-e3dcd0)]"}`}
-        >
-          <Icon aria-hidden="true" className="size-4 shrink-0" />
-          {text[index]}
-        </Link>
+    routes
+      .map((href, index) => {
+        const selected =
+          href === "/" ? pathname === href : pathname === href || pathname.startsWith(href + "/");
+        const Icon = icons[index];
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={selected ? "page" : undefined}
+            onClick={() => menu.current?.removeAttribute("open")}
+            className={`studio-nav-link flex min-h-11 items-center rounded-lg px-3 py-2 text-sm break-words transition-colors ${selected ? "bg-[var(--portal-bg-143f4b)] text-white" : "text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-e3dcd0)]"}`}
+          >
+            <Icon aria-hidden="true" className="size-4 shrink-0" />
+            {text[index]}
+          </Link>
+        );
+      })
+      .concat(
+        intranetUrl ? (
+          <a
+            key="intranet"
+            href={intranetUrl}
+            className="studio-nav-link flex min-h-11 items-center rounded-lg px-3 py-2 text-sm break-words transition-colors text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-e3dcd0)]"
+          >
+            <LayoutGrid aria-hidden="true" className="size-4 shrink-0" />
+            Intranet ↗
+          </a>
+        ) : (
+          []
+        ),
       );
-    });
   return (
     <header
       data-testid="top-bar"
