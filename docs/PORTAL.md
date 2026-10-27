@@ -361,9 +361,9 @@ endereço próprio (saída `PortalUrl`):
 
 - **Rede:** instância `t4g.small` numa sub-rede isolada da VPC de `BluCostaData`
   (a conta está no limite de VPCs), sem IP público nem NAT; o CloudFront chega-lhe
-  por uma VPC origin na porta 8080, a partir de uma ENI com IP privado na mesma
-  sub-rede (a prefix list pública do CloudFront não a cobre, por isso a entrada é o
-  bloco da sub-rede). A VPC origin exige um internet gateway ligado,
+  por uma VPC origin na porta 8080. A entrada só aceita o grupo
+  `CloudFront-VPCOrigins-Service-SG`, consultado depois da distribuição: a prefix
+  list pública e o bloco da sub-rede não funcionam. A VPC origin exige um internet gateway ligado,
   que não tem rotas. A saída só alcança o S3 e o DynamoDB, por gateway endpoints.
 - **Login:** `infra/portal/gate.mjs` serve `/auth/*`, valida o ID token Cognito do
   grupo da intranet e guarda-o num cookie `HttpOnly`. Só fundadores e curadores

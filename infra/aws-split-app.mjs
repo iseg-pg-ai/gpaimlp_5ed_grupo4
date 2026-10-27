@@ -713,11 +713,7 @@ class PortalStack extends Stack {
     const seed = existsSync(portalSeedArchive) ? new s3assets.Asset(this, 'PortalSeed', { path: portalSeedArchive }) : null;
 
     const serverGroup = new ec2.SecurityGroup(this, 'PortalServer', { vpc, description: 'Portal: only CloudFront on the gate port', allowAllOutbound: false });
-    // Entrada só do CloudFront; saída só para o S3 e o DynamoDB (o resto não tem rota de qualquer forma).
-    // A VPC origin chega pela ENI que o CloudFront cria na sub-rede, com IP privado: a prefix list
-    // pública não a cobre (validado a 2026-10-27). O grupo CloudFront-VPCOrigins-Service-SG só existe
-    // depois da VPC origin, por isso a regra usa o bloco da sub-rede isolada, onde só está o portal.
-    serverGroup.addIngressRule(ec2.Peer.ipv4(subnet.ipv4CidrBlock), ec2.Port.tcp(8080), 'CloudFront VPC origin ENI');
+    // Entrada só do CloudFront (regra junto da distribuição, abaixo); saída só para o S3 e o DynamoDB.
     serverGroup.addEgressRule(ec2.Peer.prefixList(prefixLists.s3), ec2.Port.tcp(443), 'S3 gateway endpoint');
     serverGroup.addEgressRule(ec2.Peer.prefixList(prefixLists.dynamodb), ec2.Port.tcp(443), 'DynamoDB gateway endpoint');
     const role = new iam.Role(this, 'PortalServerRole', { assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'), description: 'Portal server: read releases, seed and leads; update lead profiles' });
@@ -884,6 +880,19 @@ class PortalStack extends Stack {
       policy: cr.AwsCustomResourcePolicy.fromStatements([new iam.PolicyStatement({ actions: ['codebuild:StartBuild'], resources: [build.projectArn] })]),
       installLatestAwsSdk: false,
     });
+
+    // A VPC origin só aceita tráfego autorizado pelo grupo que o CloudFront cria na VPC
+    // (CloudFront-VPCOrigins-Service-SG): nem a prefix list pública nem o bloco da sub-rede
+    // funcionam (validado a 2026-10-27). O grupo só existe depois da distribuição, daí a consulta.
+    const findOriginGroup = { service: 'EC2', action: 'describeSecurityGroups', parameters: { Filters: [{ Name: 'vpc-id', Values: [vpc.vpcId] }, { Name: 'group-name', Values: ['CloudFront-VPCOrigins-Service-SG'] }] }, outputPaths: ['SecurityGroups.0.GroupId'], physicalResourceId: cr.PhysicalResourceId.of(`portal-origin-group-${vpc.vpcId}`) };
+    const originGroup = new cr.AwsCustomResource(this, 'PortalOriginGroup', {
+      onCreate: findOriginGroup,
+      onUpdate: findOriginGroup,
+      policy: cr.AwsCustomResourcePolicy.fromStatements([new iam.PolicyStatement({ actions: ['ec2:DescribeSecurityGroups'], resources: ['*'] })]),
+      installLatestAwsSdk: false,
+    });
+    originGroup.node.addDependency(distribution);
+    new ec2.CfnSecurityGroupIngress(this, 'PortalFromCloudFront', { groupId: serverGroup.securityGroupId, ipProtocol: 'tcp', fromPort: 8080, toPort: 8080, sourceSecurityGroupId: originGroup.getResponseField('SecurityGroups.0.GroupId'), description: 'CloudFront VPC origin' });
 
     new CfnOutput(this, 'PortalUrl', { value: `${portalOrigin}/` });
     new CfnOutput(this, 'PortalReleaseBucket', { value: releases.bucketName });
