@@ -1,0 +1,43 @@
+name: Infrastructure
+
+on:
+  push:
+    paths:
+      - "infra/**"
+      - "config/curation_services.json"
+      - "frontend/blu-cloud-site/**"
+      - ".github/workflows/infrastructure.yml"
+  pull_request:
+    paths:
+      - "infra/**"
+      - "config/curation_services.json"
+      - "frontend/blu-cloud-site/**"
+      - ".github/workflows/infrastructure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      AWS_EC2_METADATA_DISABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            infra/package-lock.json
+            frontend/blu-cloud-site/package-lock.json
+      - name: Install infrastructure dependencies
+        run: npm --prefix infra ci
+      - name: Install frontend dependencies
+        run: npm --prefix frontend/blu-cloud-site ci
+      - name: Build frontend assets for local synthesis
+        run: npm --prefix frontend/blu-cloud-site run build
+      - name: Validate infrastructure without deployment
+        run: npm --prefix infra test

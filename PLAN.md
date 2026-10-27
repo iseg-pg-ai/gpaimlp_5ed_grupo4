@@ -1,114 +1,162 @@
 # Plano de evolução do BLU AI System
 
-Revisto em 25 de outubro de 2026. Este ficheiro contém apenas trabalho aberto,
-ordenado pelas dependências reais. Implementações concluídas permanecem no
-histórico Git e em [Decisões](docs/DECISIONS.md).
+Revisto em 26 de outubro de 2026. Este ficheiro contém apenas trabalho aberto,
+ordenado pelas dependências reais. Implementações concluídas e respetiva evidência
+ficam em [Decisões](docs/DECISIONS.md) e no histórico Git.
 
-## Etapa 2 — Agente de IA integrado
+A incompatibilidade de campos opcionais do Observatório foi corrigida e validada
+localmente nas seis áreas; evidência em [Decisões](docs/DECISIONS.md).
 
-- [x] Alargar o contrato para treze ações com `update_brief` e
-  `update_pending_confirmation`. O primeiro limita-se a oito campos operacionais;
-  o segundo apenas prepara horário, local, preço ou fornecedor e nunca confirma,
-  recebe contactos/referências/notas ou contorna uma proteção.
-- [x] Acrescentar diagnóstico determinístico e sem fornecedores externos ao
-  contexto: capacidade, horários, sobreposições, confirmações, catálogo, preços,
-  moedas, orçamento e pendências.
-- [x] Validar com Nova Pro o ciclo limitado de ferramentas de leitura
-  (`get_trip_context`, `get_itinerary` e `search_approved_catalog`) antes de
-  `propose_actions`. A implementação usa apenas o snapshot autoritativo já
-  minimizado e mantém a simulação e escrita no portal. O ensaio real PT/EN
-  confirmou as três leituras na primeira ronda e a proposta na segunda. O plano
-  PT foi válido; o plano EN repetiu um ranking e foi recusado sem alteração.
-- [x] Acrescentar feedback de simulação ao ciclo: a primeira falha determinística
-  é reduzida a um de nove códigos sem texto bruto e permite uma única correção do
-  plano completo. O orçamento reserva as duas chamadas possíveis; a segunda
-  simulação volta a falhar fechada e nunca executa a proposta.
-- [x] Integrar ranking explicável de candidatos elegíveis, sem transformar a
-  ordenação numa alteração. A escolha humana prepara uma proposta de adição e
-  só a aceitação posterior cria uma versão.
-- [x] Integrar feedback card a card, sinais de qualidade e casos históricos
-  aprovados na base operacional atual; comentários livres e dados pessoais não
-  entram no contexto do modelo e nenhum alerta altera o catálogo sozinho. O
-  questionário fica no histórico de versões, os agregados incluem janelas de
-  30/90/180 dias e a memória só aceita casos completos com aprovação humana.
-- [x] Acrescentar verificação da qualidade do briefing: contradições, campos em
-  falta, adequação do orçamento e restrições que exigem esclarecimento.
-- [x] Permitir ao agente preparar exportações e partilhas com o diagnóstico
-  preventivo atual. A criação e a partilha mantêm confirmação explícita e o
-  agente não envia mensagens nem confirma reservas. PDF, Prompt TXT, idioma e
-  forma de partilha são validados; destinatário, consentimento e prazo permanecem
-  exclusivamente no formulário manual.
-- [x] Disponibilizar meteorologia já consultada e estimativas de percurso como
-  leituras opcionais. Não efetuar consultas externas implícitas nem apresentar
-  histórico, estimativas ou ausência de dados como confirmação.
-- [x] Preparar respostas supervisionadas a perturbações e sinais de conteúdo:
-  chuva, encerramento, atraso, cancelamento, descrições antigas, duplicados,
-  campos em falta e inconsistências linguísticas. Não alterar catálogo, reserva
-  ou documento sem o fluxo de aprovação aplicável.
-- [x] Consolidar métricas de propostas, decisões, conflitos, expirações, tokens,
-  latência e custos configurados. Não inferir causalidade de edições posteriores
-  nem ajustar automaticamente prompts ou ranking.
-- [x] Aprovar fornecedor, modelo, teto mensal e preços atuais para utilização
-  real. O código já impõe timeout, limite de saída, orçamento, ausência de
-  fallback e falha sem alteração; Bedrock permanece a opção local atual.
-- [x] Autorizar e executar uma avaliação com modelo real, incluindo custos,
-  privacidade, os 38 casos sintéticos atuais e limiares de aceitação. Testes
-  automáticos usam modelos simulados por defeito. A execução autorizada de
-  2026-10-25 obteve 25/38 (65,8%) e não atingiu os 90% exigidos. O encerramento
-  estruturado de recusas/ambiguidades e as instruções de refinamento e confirmação
-  pendente foram corrigidos e validados com mocks. Uma segunda bateria chegou a
-  36/38 (94,7%), mas a bateria integral final caiu para 28/38 (73,7%): Nova Pro
-  não cumpriu o contrato sozinho com estabilidade suficiente. A camada híbrida
-  compila 36/38 casos sem tokens nem chamadas AWS. A bateria real final passou
-  37/38 (97,4%), com todas as operações em pelo menos 90%, 100% das proteções e
-  nenhuma escrita. Uma explicação PT falhou fechada por resposta incompleta; esta
-  limitação de disponibilidade permanece documentada e monitorizada.
+A reabertura da última versão guardada no portal foi corrigida, com confirmação
+visível e oito cenários de navegador locais; evidência em [Decisões](docs/DECISIONS.md).
 
-A memória servidor e o ownership das propostas ficam ativos apenas quando o
-backend valida os JWT do ALB e Cognito. No SageMaker, onde não existe esse
-principal, o modo de identidade permanece desativado e o portal continua a usar
-o contexto recente do navegador sem o tratar como autoridade.
+A recuperação das aprovações foi publicada no S3 com autorização em 27 de outubro:
+252 aprovados, 521 revisões e correspondência com o warehouse reconstruído.
+API real e interface desktop/móvel validadas; evidência em [Decisões](docs/DECISIONS.md).
 
-## Etapa 3 — Deployment e operação cloud
+O protocolo foi corrigido para propagar a primeira falha de cada etapa e separar
+abertura web pendente de falha dos serviços. Fixture de Monitoring alinhada e
+43 testes, quatro cenários de navegador e arranque rápido validados localmente;
+evidência em [Decisões](docs/DECISIONS.md).
 
-- [ ] Implementar a arquitetura aprovada da Etapa 1 com ambientes e dados
-  isolados, identidade central e segredos fora do código.
-- [ ] Criar CI do portal e uma entrega identificada e reproduzível para todos os
-  serviços, sem incluir dados operacionais na imagem.
-- [ ] Implementar staging, migrações, smoke tests, promoção e rollback compatível.
-- [ ] Validar concorrência, persistência e recuperação no ambiente-alvo, incluindo
-  indisponibilidade do SQL/S3 e reconstrução numa máquina nova.
-- [ ] Executar testes de segurança, privacidade, custos e carga adequados ao uso
-  aprovado.
-- [ ] Publicar apenas depois da aprovação operacional e registar o runbook final.
+A herança SNS na etapa 6 foi isolada dos serviços reais. A etapa completa passou
+244 testes (um omitido) e os cinco serviços foram reabertos por arranque rápido,
+sem repetir a recuperação; evidência em [Decisões](docs/DECISIONS.md).
 
-A imagem unificada e o job de build sem publicação já estão preparados. Esta
-tarefa permanece aberta até o build passar no GitHub Actions, existir uma política
-de SBOM/assinatura e a promoção usar o digest imutável do ECR.
-O daemon deste SageMaker bloqueia o build local por política `ImageBuild`; não é
-uma autorização para contornar a restrição.
+A apresentação do portal foi limpa de regras e identificadores técnicos; Referências
+foi retirada da navegação e os links antigos seguem para o Catálogo. Novos PDFs
+omitem hashes e IDs, preservando os PDFs guardados. Validação em
+[Decisões](docs/DECISIONS.md).
 
-## Etapa 4 — Monitoring externo
+## Links do Code Editor web — aceitação pendente
 
-- [ ] Executar uma sonda fora da máquina do BLU contra o endpoint estável.
-- [ ] Associar a sonda a responsáveis reais e validar indisponibilidade,
-  deduplicação, escalamento e recuperação através do SNS já operacional.
+- [ ] Abrir o Code Editor do workspace no navegador AWS e confirmar a ativação de
+  **BLU Workspace Links** e os cinco links HTTPS. Foi corrigida a instalação:
+  o CLI `code` só instalara na sessão SSH; o VSIX 0.2.1 está agora instalado também
+  por `sagemaker-code-editor` no diretório persistente do editor web.
+- [ ] Confirmar abertura das cinco interfaces nessa sessão. O launcher exige agora
+  confirmação web (`uiKind=2`); o painel **Ports** de VS Code por SSH continuará
+  legitimamente a mostrar `localhost`, não URLs do proxy AWS. Instalação e testes
+  não comprovam abertura na sessão web do utilizador. Evidência em
+  [Decisões](docs/DECISIONS.md).
 
-O SNS real foi validado em 2026-10-25 com subscrição confirmada e IAM limitado ao
-tópico. A sonda externa depende do endpoint produzido pela Etapa 3; logs e sondas
-na própria máquina não detetam a indisponibilidade total do ambiente.
+## Correções Dependabot — integração pendente
+
+- [ ] Integrar em `dev` as correções dos 102 alertas consultados em 26 de outubro:
+  Pillow 13 com Streamlit 1.66.1, pypdf 6.21.2, certifi, filelock, setuptools e Vite 6.4.4 com transitivas corrigidas. Next.js 16.4.3 já estava corrigido neste branch. Confirmar o reprocessamento dos alertas após a integração; não os dispensar. Lockfiles confrontados com os 102 alertas, auditorias Python (99 pacotes) e npm do frontend/portal sem vulnerabilidades conhecidas. Compatibilidade Python documentada em [Dependabot](docs/DEPENDABOT_PYTHON.md).
+
+## Integração de segurança — validação externa pendente
+
+As alterações locais de `fix/security-hardening` foram integradas seletivamente: origem nos POST sensíveis, helper nas partilhas, limites da API pública, testes, caminhos temporários do workflow ETL e exclusões CDK/npm. Foram preservados o gate completo de warehouse e a retenção de 14 dias. Evidência em [Decisões](docs/DECISIONS.md).
+
+- [ ] Após autorização de publicação, validar os limites da API e a recusa de origens externas nos serviços reais. A síntese local não comprova deployment.
+
+## 1. Decisões necessárias para a próxima entrega
+
+- [ ] Rever em grupo as propostas de [intranet](docs/INTRANET.md) e [API de leads](docs/LEADS_API.md), definindo o âmbito da primeira entrega.
+  As propostas ainda não constituem implementação nem aprovação de deployment.
+- [ ] Conciliar a proposta de manter o DMC local com o deployment do portal já previsto em [Operações](docs/OPERATIONS.md). Registar a decisão antes de criar outra interface ou fluxo de autenticação.
+- [ ] Definir se a API de leads será o primeiro módulo de `BluCostaIntranet` ou uma stack autónoma. Unificar saídas, callbacks, CORS, grupos e contratos; resolver também a divergência entre tratar `status` inválido como `open` e devolver `400` na especificação da API.
+
+## 2. Etapa 3 — Entrega reproduzível e operação cloud
+
+O commit `31a6eb5` passou os jobs `validate` e `container` no[GitHub Actions](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40245742304). O ETL passou na execução de `d176a56`. A construção é sem publicação e não comprova entrega no ECR nem funcionamento dos serviços cloud.
+
+A otimização CPU e cache `mode=min` passou no [CI de a4f0ece](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40249243292).
+O job da imagem passou de 25 min 49 s para 3 min 51 s (cerca de 85% menos tempo).
+A verificação sem CUDA passou em Python 3.13; imports, cinco testes com mocks e dois ensaios de tradução real EN/PT passaram localmente em Python 3.12, sem instalar modelos. O tamanho final da imagem ainda não foi medido.
+
+O [CI de infraestrutura](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40249812920) passou no commit `8fcea87`, com testes de digest, IAM e limites da API. Os ensaios CDK usam contexto temporário explícito e lookups desativados, sem depender de credenciais ou cache local de zonas AWS.
+
+A exportação OCI com SBOM e proveniência passou no [CI de f1aea3a](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40250526927).
+O verificador confirmou hashes, revisão e associação dos documentos ao digest.
+A evidência contém 713 pacotes, 852 839 550 bytes de layers comprimidos e 857 447 424 bytes de arquivo OCI. A assinatura continua por verificar.
+
+A assinatura destacada e a verificação estão preparadas em `curation-sign.yml` e `scripts/image_release.py`: identidade OIDC exata, origem Portal/dev, ambiente com revisores e hashes da evidência ligados ao digest.
+Sete testes locais passaram, incluindo assinatura Cosign com chave temporária e recusa de adulteração; a identidade keyless real ainda não foi exercitada.
+
+O [CI de assinatura](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40251609640) passou com sete testes, incluindo assinatura Cosign local e recusa de adulteração.
+Os 31 testes de infraestrutura também passaram. Isto não valida a identidade OIDC real nem cria uma assinatura de release.
+
+- [ ] Reconciliar o branch de integração com `dev` antes da assinatura real.
+  A simulação contra `e4c1332` encontrou sete conflitos: onboarding, configuração e interface do concierge, implementação/prompt do chat e respetivos testes.
+  Confirmar novamente o estado remoto, preservar as melhorias dos dois lados e validar a resolução antes de um merge autorizado.
+- [ ] Integrar a preparação de assinatura revista em `dev`, configurar o ambiente `curation-release` com revisores e prevenção de autoaprovação, confirmar acesso de leitura à sua configuração e ativar `BLU_RELEASE_SIGNING_ENABLED` apenas depois da autorização para assinar. Executar e validar a primeira assinatura keyless de uma entrega Portal/dev aprovada. A execução cria um registo público Sigstore, sem publicação no ECR ou deployment. Política e limites em [Entrega da imagem](infra/IMAGE_DELIVERY.md).
+A publicação e a preparação de rollback estão implementadas, sem execução real:
+`curation-publish.yml`, `scripts/publish_image_release.py` e `scripts/prepare_image_rollback.py`. O fluxo valida assinatura e bytes antes de obter credenciais AWS, preserva manifests/digests e exige tags imutáveis.
+
+O [CI de assinatura/publicação](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40252754115) passou com 22 testes: AWS e transferência simuladas e assinatura criptográfica com chave temporária. Os 31 testes de infraestrutura também passaram. Nenhuma publicação ECR ou assinatura keyless real foi executada.
+
+- [ ] Após a primeira assinatura real, configurar destino ECR, role OIDC e proteções do ambiente; rever a política mínima gerada por `scripts/prepare_ecr_policy.py` e confirmar o formato real do subject OIDC. Não inferir um subject legado para este repositório criado em setembro de 2026.
+- [ ] Com autorização, ativar retenção dos bytes OCI em `dev` e publicação manual, publicar uma entrega assinada e confirmar o digest no ECR. O arquivo original expira em 14 dias; nunca o substituir por uma reconstrução não assinada.
+- [ ] Validar transferência real com preservação de todos os manifests, retenção permanente da evidência aprovada e preparação da referência anterior assinada. O candidato de rollback não valida compatibilidade de dados nem altera serviços.
+A configuração `config/curation_services.json` é partilhada pela stack e pelo smoke da imagem, evitando comandos de arranque divergentes. O CI prepara dados sintéticos e testa os quatro serviços sem rede externa, com filesystem só de leitura e volumes temporários; a assinatura exige o resultado positivo no relatório.
+
+O [smoke real de c3db94b](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40255889379) passou com oito sondas: quatro serviços, JavaScript, adaptador Python sobre o catálogo sintético, recusa de origem externa e autenticação do Monitoring.
+O artefacto confirma `smoke_verified: true`, sem rede externa nem validação de identidade cloud; `signature_verified` continua falso.
+
+- [ ] Preparar os parâmetros de staging: domínio/subdomínios, DNS, certificado ACM, grupos/utilizadores, segredos e isolamento de ambientes e dados.
+- [ ] Rever o diff da infraestrutura e publicar staging apenas com autorização aplicável. Validar TLS, Cognito, papéis, ownership e autorização no backend. A memória servidor do agente depende dessa identidade validada; no SageMaker permanece desativada, com contexto recente apenas no navegador.
+- [ ] Implementar o fluxo de migrações, smoke tests de staging, promoção e rollback, preservando a compatibilidade dos dados com a versão anterior.
+- [ ] Validar no ambiente-alvo concorrência, escritora única, persistência, backups e restauro; simular indisponibilidade do armazenamento operacional e S3 e reconstruir numa máquina nova sem perder revisões ou PDFs.
+- [ ] Executar os testes de segurança, privacidade, custos e carga definidos para o uso aprovado, com evidência e limites de aceitação.
+- [ ] Obter aprovação operacional antes de produção e atualizar o runbook com a entrega, os responsáveis, recuperação e rollback efetivamente validados.
+
+O daemon deste SageMaker bloqueia o build local por política `ImageBuild`.
+A validação deve usar o fluxo permitido de CI, sem contornar a restrição.
+
+## 3. Backoffice e concierge — validação e publicação pendentes
+
+- [ ] Definir os ARNs autorizados em `BACKOFFICE_TRUSTED_PRINCIPAL_ARNS` e rever o template/diff antes de atualizar o Backoffice. Sem a lista, o papel de análise não é criado; a alteração local não corrige papéis já publicados.
+- [ ] Publicar as alterações do concierge e do Backoffice com autorização e validar o fluxo com dados de teste: detalhes conhecidos sem perguntas repetidas, temas em Portugal, datas legíveis, consentimento e ausência da referência interna na interface. Não prometer disponibilidade nem preços.
+- [ ] Validar na AWS a confiança IAM restrita e a ausência de acesso através de papéis partilhados não autorizados. Distinguir esta evidência da síntese CDK e dos testes locais já aprovados.
+
+## 4. API de leads autenticada — após decisão de âmbito
+
+A página e as rotas locais de Leads já existem. `leads.ts` ainda consulta
+DynamoDB com as credenciais do ambiente; a API Cognito proposta não existe.
+
+- [ ] Implementar Cognito com MFA, grupos, callbacks por ambiente e API com autorizador JWT, limitação de pedidos e IAM mínimo sobre as tabelas existentes.
+- [ ] Implementar lista, detalhe, marcação de contacto e etiquetas/notas segundo o contrato aprovado, com validação, paginação, condições de escrita e logs sem contactos, mensagens, notas ou tokens.
+- [ ] Adaptar o portal para chamar a API pelo servidor, com login/callback/logout, PKCE/state, cookies protegidos, renovação de sessão e tratamento de 401/403. Preservar as proteções atuais de identidade e a compatibilidade com o proxy SageMaker; reutilizar os modelos de Leads existentes.
+- [ ] Executar testes com mocks de API, autenticação e autorização; check/build do portal, síntese IAM e cenários de navegador com sessão expirada e sem grupo.
+- [ ] Com autorização, validar na AWS 401/403, leitura/escrita por curador, recusa IAM de atributos não permitidos e ausência de dados pessoais nos logs.
+
+## 5. Intranet — fases condicionadas à aprovação da proposta
+
+Reutilizar os dados e serviços existentes; não criar persistência paralela.
+Cada fase exige testes locais antes de publicação e aceitação no ambiente-alvo.
+
+- [ ] F0: estrutura React/Vite, navegação, stack e login Cognito com MFA, autorização por grupo, CORS restrito e configuração por ambiente.
+- [ ] F1: acompanhamento de leads e tarefas, responsável e filtro pessoal, reutilizando o módulo de API aprovado e validando as permissões de atualização.
+- [ ] F2: indicadores agregados do funil, exclusão de sintéticos dos indicadores reais e modo demo separado, sem expor contactos ou transcrições.
+- [ ] F3: manifesto de governança com fonte única em `config/` e apresentação de controlos/evidências; rever os mapeamentos propostos sem alegar certificação.
+- [ ] F4: leitura da wiki aprovada e perguntas ao RAG com revisão humana.
+- [ ] F5: rascunhos e aprovação da wiki com separação de grupos, sanitização, recusa de dados pessoais e versões recuperáveis na fonte S3 existente.
+- [ ] F6: operações só de leitura: filas, DLQ, última avaliação e erros agregados.
+- [ ] Validar permissões por rota/grupo e a interface a 390/1440 px com mocks;
+  após autorização, executar a aceitação AWS e confirmar orçamento e reversão.
+
+## Pendências de monitoring
+
+Esta secção é a fonte de verdade da Etapa 4. O SNS real foi validado em
+2026-10-25, com subscrição confirmada e IAM limitado ao tópico. Monitoring
+externo continua incompleto e depende do endpoint estável da Etapa 3.
+
+- [ ] Instalar e executar uma sonda fora da máquina do BLU contra o endpoint estável, capaz de detetar indisponibilidade total do ambiente.
+- [ ] Atribuir responsável primário, substituto, canal e prazo de resposta, registando-os no [runbook](docs/MONITORING_RUNBOOK.md).
+- [ ] Validar indisponibilidade, deduplicação, escalamento e recuperação através do SNS, com evidência de receção e atuação dos responsáveis.
+- [ ] Acompanhar a falha residual de resposta incompleta do Nova Pro registada na avaliação híbrida e definir o tratamento operacional dessa indisponibilidade.
+
+Logs e sondas na própria máquina não concluem estas pendências.
 
 ## Contratos a preservar
 
-- O catálogo e as validações determinísticas são a fonte de verdade; a IA propõe
-  ações sujeitas a validação e confirmação humana.
-- O S3 conserva as releases permanentes; a máquina usa uma cache reconstruível
-  fora do repositório.
+- O catálogo e as validações determinísticas são a fonte de verdade; a IA propõe ações sujeitas a validação e confirmação humana.
+- O S3 conserva as releases permanentes; a máquina usa uma cache reconstruível fora do repositório.
 - O ETL publica o warehouse validado sem controlar o estado operacional do portal.
-- `just blu up` inicia o ambiente preparado; `just blu it` executa recuperação
-  autenticada. Nenhum dos comandos constitui deployment de produção.
-- Segredos, dados de clientes, prompts, respostas, exports e runtimes ficam fora
-  do Git e dos logs.
+- `just blu up` inicia o ambiente preparado; `just blu it` executa recuperação autenticada. Nenhum dos comandos constitui deployment de produção.
+- Segredos, dados de clientes, prompts, respostas, exports e runtimes ficam fora do Git e dos logs.
 
 ## Referências
 

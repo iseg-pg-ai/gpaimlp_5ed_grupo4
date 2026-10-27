@@ -1,4 +1,5 @@
 "use client";
+import { dayDescription } from "@/lib/presentation-text";
 import { T, useLocale, useTranslated } from "@/components/LocaleProvider";
 
 import type { ActivityConfirmation } from "@/lib/activity-confirmation";
@@ -626,10 +627,10 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 }
               />
 
-              {day.summary && (
+              {dayDescription(day.summary) && (
                 <p className="text-sm leading-7 text-[var(--portal-text-4a636b)] mb-4">
                   &quot;
-                  <T text={day.summary} source="pt" />
+                  <T text={dayDescription(day.summary)} source="pt" />
                   &quot;
                 </p>
               )}

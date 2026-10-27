@@ -76,21 +76,31 @@ Com os pré-requisitos resolvidos:
 Este comando autentica o administrador, cria e confirma um checkpoint remoto
 quando existe estado a preservar, para os serviços e materializa a cache a partir
 desse checkpoint ou das releases do bucket de dados. Depois prepara dependências,
-testa, constrói o Portal, inicia os quatro serviços e abre as quatro interfaces.
+testa, constrói o Portal e o frontend Vite, inicia os cinco serviços e abre as
+cinco interfaces.
 Nos arranques seguintes basta:
 
 ```bash
 just blu up
 ```
 
-As portas esperadas são 3001, 3003, 3004 e 8501. A configuração versionada em
-`.vscode/settings.json` encaminha-as silenciosamente.
+As portas esperadas são 3001, 3003, 3004, 5173 e 8501, definidas em
+`config/workspace_interfaces.json`. A preparação instala **BLU Workspace Links**;
+a barra inferior **BLU · Interfaces** e o comando **BLU: Abrir interfaces deste
+workspace** usam o encaminhamento nativo do Code Editor. Os encaminhamentos são
+restaurados ao reabrir a sessão e resolvidos de novo em cada abertura.
 
-O painel **Ports** do VS Code apresenta `localhost` na coluna de encaminhamento
-porque mostra o extremo local do túnel. Os nomes identificam agora as interfaces
-AWS. Para obter os endereços públicos SageMaker, executar **Tasks: Run Task →
-BLU: Mostrar URLs AWS**; **BLU: Abrir dashboards AWS** abre diretamente as quatro
-interfaces públicas configuradas em `config/studio.local.json`.
+O instalador usa `sagemaker-code-editor` para o editor web e `code` para o editor
+SSH. Para links HTTPS, usar o Code Editor aberto no navegador AWS; a coluna
+**Ports** de uma sessão SSH continuará a mostrar túneis `localhost`.
+
+Após instalar/atualizar a extensão no editor web, executar **Developer: Reload Window** se o
+launcher indicar que a integração não respondeu. A instalação é local, sem
+Marketplace: `python3 scripts/install_code_editor_links.py`. As tarefas **BLU:
+Mostrar URLs deste workspace** e **BLU: Abrir interfaces deste workspace** também
+estão disponíveis. Os URLs HTTPS anunciados são descobertos por metadados e
+`DescribeSpace`; `config/studio.local.json` é apenas a alternativa fora do SageMaker.
+Uma falha de descoberta nunca reutiliza um URL antigo de outro Space.
 
 ## Estado local e transferência
 
@@ -109,7 +119,7 @@ python3 scripts/check_project.py
 just blu up
 ```
 
-O ambiente está pronto quando os quatro endpoints aparecem `ONLINE`, as quatro
+O ambiente está pronto quando os cinco endpoints aparecem `ONLINE`, as cinco
 interfaces abrem e o Monitoring aceita a conta pessoal do colega.
 
 ## Ficheiros incluídos no repositório para desenvolvimento

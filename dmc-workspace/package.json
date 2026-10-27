@@ -12,6 +12,8 @@
     "start": "next start",
     "lint": "eslint --max-warnings=0",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:production-ui": "node tests/browser/production-presentation.mjs",
+    "test:reopen": "node tests/browser/reopen-latest.mjs",
     "test:responsive": "node tests/browser/ui.mjs responsive",
     "test:navigation": "node tests/browser/ui.mjs navigation",
     "test:observatory": "node tests/browser/observatory.mjs",
@@ -33,6 +35,7 @@
     "test:theme": "node tests/browser/theme.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "3.1147.0",
     "aws-jwt-verify": "5.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

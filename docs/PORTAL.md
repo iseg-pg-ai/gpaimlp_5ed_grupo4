@@ -399,19 +399,29 @@ TXT**. O formulário transmite versão, idioma e formato sem estado React e
 funciona sem JavaScript. O ZIP preserva os PDFs da versão; o TXT continua a
 excluir notas internas e contactos. PDF traduzido requer os modelos locais.
 
-## Consulta das fontes em HTML
+## Apresentação para utilização normal
 
-Em `/references`, escolher a folha, escrever a pesquisa e carregar em **Filtrar**.
-A seleção e a pesquisa ficam no URL; os links Anterior/Seguinte conservam os
-filtros. O formulário, a paginação e os detalhes funcionam sem JavaScript.
-A tradução da interface continua disponível quando JavaScript está ativo.
+A interface apresenta nomes, condições, fontes públicas e confirmações pendentes.
+Códigos de regras, IDs do catálogo/viagem, posição do algoritmo de seleção, hashes
+e ligações ao JSON de diagnóstico ficam fora dos ecrãs normais. Identificadores,
+revisões e regras continuam nos contratos internos e nos snapshots. Os resumos
+antigos gerados com códigos de regras são filtrados apenas na apresentação.
 
-A pesquisa e o enriquecimento de fontes usam `portal/data.py`; a composição
-Prompt TXT usa `portal/prompt.py`. Estes módulos usam apenas a biblioteca padrão
-Python. O portal usa `BLU_PYTHON`, o ambiente `.venv` ou o Python do sistema,
-por esta ordem. Não é necessário iniciar o agente ou outro servidor. Os registos
-são renderizados pelo template `dmc-workspace/templates/dataset-row.html`, com
-escaping das fontes; valores vazios aparecem como «—».
+A página Referências misturava exploração técnica do dataset, linhagem de fontes e
+referências históricas. Foi retirada da navegação; `/references` encaminha para
+`/catalog`, conservando o prefixo SageMaker. O catálogo continua a apresentar
+informação histórica útil e avisos de validade. A API de consulta de fontes e a
+sua allowlist mantêm-se para os contratos e ferramentas internas; isto não altera
+os controlos de acesso nem elimina os dados de origem.
+
+Os novos PDFs apresentam versão legível, roteiro, condições e orçamento, sem os
+IDs internos, hashes ou códigos das regras. PDFs já guardados continuam a ser
+repetidos com os mesmos bytes. O contrato da ferramenta Prompt TXT permanece
+independente e continua a excluir contactos e notas internas.
+
+As traduções explícitas da interface são geradas a partir de `ui_sources.json` e
+`ui_overrides.json`. `python3 translations/build_ui_catalogue.py --overrides-only`
+atualiza as traduções explícitas sem executar modelos ou alterar as restantes.
 
 ### Isolar dados de testes
 

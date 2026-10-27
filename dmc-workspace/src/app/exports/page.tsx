@@ -127,13 +127,6 @@ export default async function ExportHistory({
                 <T text="Exportar TXT" source="pt" />
               </button>
             </form>
-            <a
-              className="underline"
-              href={portalUrl(`/api/versions?tripId=${v.tripId}&version=${v.version}`)}
-              target="_blank"
-            >
-              <T text="Consultar conteúdo guardado" source="pt" />
-            </a>
             <div>
               <FeedbackManager tripId={v.tripId} version={v.version} />
             </div>

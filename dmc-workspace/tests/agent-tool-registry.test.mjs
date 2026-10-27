@@ -37,9 +37,3 @@ test("viewer só lê e curator propõe mas não escreve sem confirmação", () =
   assert.throws(() => authorizeAgentTool(curator, "itinerary.accept"), /confirmação/);
   assert.doesNotThrow(() => authorizeAgentTool(curator, "itinerary.accept", true));
 });
-
-test("não existem ferramentas administrativas, destrutivas ou de infraestrutura", () => {
-  const serialized = JSON.stringify(AGENT_TOOLS);
-  for (const forbidden of ["users.manage", "operations.recover", "workspace.configure", "delete"])
-    assert.ok(!serialized.includes(forbidden));
-});

@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "BLU: Mostrar URLs AWS",
+      "label": "BLU: Mostrar URLs deste workspace",
       "type": "shell",
       "command": "python3",
       "args": ["-B", "scripts/studio_urls.py"],
@@ -17,7 +17,7 @@
       }
     },
     {
-      "label": "BLU: Abrir dashboards AWS",
+      "label": "BLU: Abrir interfaces deste workspace",
       "type": "shell",
       "command": "python3",
       "args": ["-B", "scripts/open_dashboards.py"],

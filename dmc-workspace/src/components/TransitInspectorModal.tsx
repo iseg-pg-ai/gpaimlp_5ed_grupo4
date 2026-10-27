@@ -132,7 +132,7 @@ export const TransitInspectorModal: React.FC<TransitInspectorModalProps> = ({
                   <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold text-[var(--portal-text-143f4b)]">
-                      <T text="Avaliação de Terreno e Mobilidade (Regra R15)" source="pt" />
+                      <T text="Avaliação de Terreno e Mobilidade" source="pt" />
                     </p>
                     <p className="text-[11px] text-[var(--portal-text-698288)] mt-0.5">
                       {leg.mode === "walk"
@@ -146,7 +146,7 @@ export const TransitInspectorModal: React.FC<TransitInspectorModalProps> = ({
                   <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold text-[var(--portal-text-143f4b)]">
-                      <T text="Margem de Trânsito e Ritmo (Regras R01, R03)" source="pt" />
+                      <T text="Margem de Trânsito e Ritmo" source="pt" />
                     </p>
                     <p className="text-[11px] text-[var(--portal-text-698288)] mt-0.5">
                       {`Adicionada margem de segurança de +${leg.bufferMinutes || 10} min para salvaguardar reservas de mesa e garantir um ritmo descontraído.`}

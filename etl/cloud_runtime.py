@@ -27,9 +27,20 @@ def _database_valid(path: Path) -> bool:
         return False
 
 
+def _catalog_recoverable(path: Path) -> bool:
+    """Um catálogo vazio não é uma cópia recuperável de aprovações anteriores."""
+    if not _database_valid(path):
+        return False
+    try:
+        with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as connection:
+            return connection.execute("SELECT EXISTS(SELECT 1 FROM catalog_records)").fetchone()[0] == 1
+    except sqlite3.Error:
+        return False
+
+
 def _validate_runtime(root: Path) -> None:
-    if not _database_valid(root / "data/portal/catalog.sqlite"):
-        raise ValueError("A cache não contém um catálogo SQLite válido.")
+    if not _catalog_recoverable(root / "data/portal/catalog.sqlite"):
+        raise ValueError("A cache não contém um catálogo operacional recuperável e não vazio.")
     if not _database_valid(root / "exports/itineraries/history.sqlite"):
         raise ValueError("A cache não contém um histórico SQLite válido.")
     report = json.loads((root / "warehouse/validation_report.json").read_text())
@@ -67,13 +78,15 @@ def rebuild(recovered: Path | None, destination: Path, client=None) -> dict:
         catalog = recovered / "data/portal/catalog.sqlite"
         itineraries = recovered / "exports/itineraries"
         pending = recovered / "exports/portal-persistence"
-        if not _database_valid(catalog) or not _database_valid(itineraries / "history.sqlite"):
-            raise ValueError("O checkpoint recuperado não contém as bases operacionais válidas.")
+        if not _catalog_recoverable(catalog) or not _database_valid(itineraries / "history.sqlite"):
+            raise ValueError("O checkpoint recuperado não contém um catálogo não vazio e bases operacionais válidas; a release ativa foi preservada.")
         operational = publish(catalog, itineraries, pending, bucket, environment, client)
     destination.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".blu-runtime-", dir=destination.parent) as temporary:
         staged = Path(temporary) / "cache"
         materialize(staged, bucket, environment, client)
+        if not _catalog_recoverable(staged / "data/portal/catalog.sqlite"):
+            raise ValueError("A release operacional não contém um catálogo recuperável e não vazio; recuperar um backup aprovado antes de reconstruir a cache.")
         sources = restore_missing("sources", staged / "data", bucket, environment, client)
         manifest = run(staged / "data", staged / "warehouse")
         warehouse = publish_delivery(

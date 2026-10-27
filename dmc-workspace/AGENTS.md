@@ -31,6 +31,15 @@ workspace; do not introduce Google Forms or a separate intake application.
 Relevant environment variables are `BLU_EXPORT_DIR`, `BLU_TRANSLATION_PYTHON`,
 `BLU_PDF_FONT`, `BLU_PDF_CJK_FONT`, and `BLU_PDF_CJK_FACE`.
 
+## Apresentação de produção
+
+- Não apresentar códigos de regras, IDs técnicos ou hashes aos utilizadores normais.
+  Preservá-los nos contratos internos, no histórico e nos snapshots.
+- Manter visíveis as fontes públicas úteis, as pendências, as condições e os estados
+  de confirmação; não transformar a limpeza visual em confirmação implícita.
+- PDFs guardados são imutáveis. Ajustes de apresentação aplicam-se aos novos PDFs;
+  o Prompt TXT conserva o seu contrato próprio.
+
 ## Validation
 
 From this directory:

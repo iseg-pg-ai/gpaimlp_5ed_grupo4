@@ -9,9 +9,12 @@ WORKDIR /app
 COPY --from=node-runtime /usr/local/ /usr/local/
 COPY --from=uv-runtime /uv /uvx /usr/local/bin/
 COPY pyproject.toml uv.lock ./
-RUN uv sync --locked --all-groups --no-install-project
+RUN uv sync --locked --all-groups --no-install-project \
+    && .venv/bin/python -c "import torch; assert torch.version.cuda is None, 'A imagem exige PyTorch CPU'"
 COPY dmc-workspace/package.json dmc-workspace/package-lock.json ./dmc-workspace/
-RUN cd dmc-workspace && npm ci
+# A dependência local referenciada pelo lockfile tem de existir antes de npm ci.
+COPY dmc-workspace/tools ./dmc-workspace/tools
+RUN cd dmc-workspace && npm ci --include=dev
 COPY . .
 RUN cd dmc-workspace \
     && npm run build \
@@ -26,7 +29,7 @@ ENV NODE_ENV=production \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app/src:/app \
-    PATH=/app/.venv/bin:/usr/local/bin:/usr/bin:/bin \
+    PATH=/app/.venv/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     BLU_BIND_HOST=0.0.0.0
 COPY --from=node-runtime /usr/local/ /usr/local/
 RUN apt-get update \

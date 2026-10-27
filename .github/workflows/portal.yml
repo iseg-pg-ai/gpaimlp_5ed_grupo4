@@ -7,6 +7,12 @@ on:
       - "portal/**"
       - "etl/**"
       - "scripts/create_ci_etl_fixture.py"
+      - "scripts/verify_image_delivery.py"
+      - "tests/test_image_delivery.py"
+      - "tests/test_image_smoke.py"
+      - "scripts/smoke_curation_image.py"
+      - "scripts/run_image_smoke.py"
+      - "config/curation_services.json"
       - "requirements.txt"
       - "pyproject.toml"
       - "uv.lock"
@@ -19,6 +25,12 @@ on:
       - "portal/**"
       - "etl/**"
       - "scripts/create_ci_etl_fixture.py"
+      - "scripts/verify_image_delivery.py"
+      - "tests/test_image_delivery.py"
+      - "tests/test_image_smoke.py"
+      - "scripts/smoke_curation_image.py"
+      - "scripts/run_image_smoke.py"
+      - "config/curation_services.json"
       - "requirements.txt"
       - "pyproject.toml"
       - "uv.lock"
@@ -30,10 +42,11 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    env:
-      CI_DATA_DIR: ${{ runner.temp }}/blu-data
-      BLU_WAREHOUSE_DIR: ${{ runner.temp }}/blu-warehouse
     steps:
+      - name: Set CI paths
+        run: |
+          echo "CI_DATA_DIR=$RUNNER_TEMP/blu-data" >> "$GITHUB_ENV"
+          echo "BLU_WAREHOUSE_DIR=$RUNNER_TEMP/blu-warehouse" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -68,13 +81,54 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Test delivery verification
+        run: python -B -m unittest tests.test_image_delivery tests.test_image_smoke -v
       - name: Build unified delivery without publishing
+        id: image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.curation
           push: false
+          platforms: linux/amd64
+          sbom: true
+          provenance: mode=min
+          outputs: type=oci,dest=${{ runner.temp }}/blu-curation.oci.tar
           tags: blu-curation:${{ github.sha }}
           build-args: SOURCE_REVISION=${{ github.sha }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
+      - name: Verify OCI integrity and evidence
+        env:
+          BUILD_DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          python scripts/verify_image_delivery.py \
+            --archive "$RUNNER_TEMP/blu-curation.oci.tar" \
+            --digest "$BUILD_DIGEST" --revision "$GITHUB_SHA" \
+            --output "$RUNNER_TEMP/blu-delivery-evidence"
+      - name: Install local OCI transfer tool for isolated smoke
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends skopeo
+      - name: Smoke test runtime without external network or AWS credentials
+        run: |
+          python scripts/run_image_smoke.py --archive "$RUNNER_TEMP/blu-curation.oci.tar" \
+            --delivery "$RUNNER_TEMP/blu-delivery-evidence/delivery.json" \
+            --output "$RUNNER_TEMP/blu-delivery-evidence/smoke.json"
+      - name: Preserve delivery evidence without the image
+        uses: actions/upload-artifact@v4
+        with:
+          name: blu-delivery-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/blu-delivery-evidence/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain exact OCI bytes only for enabled releases on dev
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev' && vars.BLU_RELEASE_SIGNING_ENABLED == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: blu-curation-oci-${{ github.sha }}
+          path: ${{ runner.temp }}/blu-curation.oci.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

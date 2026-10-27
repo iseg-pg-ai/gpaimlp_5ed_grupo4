@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/components/LocaleProvider";
 import { useState } from "react";
 import { Ban, Link2 } from "lucide-react";
 import { portalFetch } from "@/lib/http-client";
@@ -68,7 +69,7 @@ export function ShareAccessManager({ initialShares }: { initialShares: ShareAcce
               <div className="min-w-0 flex-1 text-sm">
                 <p className="break-all font-semibold">{share.recipient}</p>
                 <p className="mt-1 text-[var(--portal-text-4a636b)]">
-                  {share.tripId} · v{String(share.version).padStart(3, "0")} ·{" "}
+                  <T text="Versão" source="pt" /> v{String(share.version).padStart(3, "0")} ·{" "}
                   {share.locale.toUpperCase()} · {share.method === "document" ? "PDF" : "página"}
                 </p>
                 <p className="mt-1 text-xs text-[var(--portal-text-6a8288)]">

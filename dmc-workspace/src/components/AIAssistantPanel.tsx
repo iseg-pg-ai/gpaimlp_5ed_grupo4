@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Check, RotateCcw, Loader2, Copy, PanelRightClose } from "lucide-react";
 import { ChatMessage } from "@/types";
 import type { AgentProposal } from "@/lib/assistant-actions";
+import { presentationText } from "@/lib/presentation-text";
 import { canonicalSnapshot } from "@/lib/snapshot-validation";
 import {
   Conversation,
@@ -202,7 +203,9 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                     }
                   >
                     <MessageResponse>
-                      <span lang={message.language ?? "pt"}>{message.text}</span>
+                      <span lang={message.language ?? "pt"}>
+                        {isAssistant ? presentationText(message.text) : message.text}
+                      </span>
                     </MessageResponse>
                   </MessageContent>
 
@@ -349,7 +352,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                               : "Preço por confirmar")}
                           {item.pendingChecks?.map((pending, index) => (
                             <p key={index} className="text-xs">
-                              {pending}
+                              {presentationText(pending)}
                             </p>
                           ))}
                         </li>
@@ -373,7 +376,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                         {option.time} · {option.price}
                       </p>
                       {option.pendingChecks.map((pending, index) => (
-                        <p key={index}>{pending}</p>
+                        <p key={index}>{presentationText(pending)}</p>
                       ))}
                       <Button
                         disabled={isProcessing}
@@ -405,13 +408,9 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                         {option.price ??
                           (language === "en" ? "Price pending" : "Preço por confirmar")}
                       </p>
-                      <p className="text-xs">
-                        <T text="Posição na seleção determinística" source="pt" />:{" "}
-                        {option.baselinePosition}
-                      </p>
                       {option.reasons.map((reason, index) => (
                         <p className="text-xs" key={index}>
-                          {reason}
+                          {presentationText(reason)}
                         </p>
                       ))}
                       <Button

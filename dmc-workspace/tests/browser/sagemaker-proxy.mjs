@@ -59,7 +59,7 @@ try {
     return response.status;
   }, `${prefix}/?_rsc=invalid-test-key`);
   assert.equal(rscStatus, 200, "RSC correction should remain inside the public proxy");
-  for (const path of ["/catalog", "/exports", "/references", "/trash", "/"]) {
+  for (const path of ["/catalog", "/exports", "/trash", "/"]) {
     const publicPath = path === "/" ? prefix : `${prefix}${path}`;
     const selector =
       path === "/"

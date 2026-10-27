@@ -49,5 +49,7 @@ export function loadRetentionPolicy(
   filename = process.env.BLU_RETENTION_POLICY ??
     path.resolve(process.cwd(), "../config/retention_policy.json"),
 ): RetentionPolicy {
-  return validateRetentionPolicy(JSON.parse(readFileSync(filename, "utf8")));
+  return validateRetentionPolicy(
+    JSON.parse(readFileSync(/* turbopackIgnore: true */ filename, "utf8")),
+  );
 }

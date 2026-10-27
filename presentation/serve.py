@@ -25,9 +25,10 @@ def main():
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("A porta deve estar entre 1 e 65535.")
-    prefix = os.environ.get(
-        "BLU_PRESENTATION_BASE_PATH", f"/codeeditor/default/ports/{args.port}"
-    ).rstrip("/")
+    prefix = os.environ.get("BLU_PRESENTATION_BASE_PATH")
+    if prefix is None:
+        prefix = urlsplit(dashboard_url(args.port)).path
+    prefix = prefix.rstrip("/")
 
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *values, **kwargs):

@@ -37,12 +37,13 @@ def main():
                 services = [{"name": name, "state": state, "http_status": 200 if state == "up" else None,
                              "latency_ms": 12 if state != "disabled" else None}
                             for name, state in [("Portal BLU", "up"), ("Observatório analítico", "down"),
-                                                ("Apresentação", "up")]]
+                                                ("Apresentação", "up"), ("Agente IA", "disabled")]]
                 return {"snapshot": {"checked_at": now, "interval_seconds": 30, "services": services,
                                      "warehouse": {"state": "up", "published_at": now, "age_hours": 1,
                                                    "validation": "passed", "tables": 28, "records": 420,
                                                    "freshness": "not_configured"},
                                      "system": {"disk_free_gb": 42.2, "disk_used_pct": 34.5, "load_1m": 0.3},
+                                     "alerts": {"active": 1, "external": "disabled", "recent": []},
                                      "operations": {
                                          "portal": {"events_24h": 2, "errors_24h": 1},
                                          "ai": {"calls_24h": 3, "failures_24h": 0,

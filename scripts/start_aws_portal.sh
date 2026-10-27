@@ -20,7 +20,10 @@ if [ -z "${PORTAL_PUBLIC_ORIGIN:-}" ]; then
 fi
 export PORTAL_PUBLIC_ORIGIN
 export PORT="${PORT:-3001}"
-export PORTAL_ASSET_PREFIX="${PORTAL_ASSET_PREFIX:-/codeeditor/default/ports/$PORT}"
+if [ -z "${PORTAL_ASSET_PREFIX:-}" ]; then
+    PORTAL_ASSET_PREFIX="$(python3 -B scripts/studio_urls.py --port "$PORT" | python3 -c 'import sys; from urllib.parse import urlsplit; print(urlsplit(sys.stdin.read().strip()).path.rstrip("/"))')"
+fi
+export PORTAL_ASSET_PREFIX
 node --input-type=module -e 'import {awsConfig} from "./dmc-workspace/scripts/aws-config.mjs"; awsConfig(process.env, [])'
 if [ ! -d dmc-workspace/node_modules/next ]; then
     echo "Dependências ausentes. Executar npm ci em dmc-workspace antes do arranque." >&2

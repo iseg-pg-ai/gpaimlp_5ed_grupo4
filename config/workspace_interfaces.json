@@ -1,0 +1,7 @@
+[
+  { "label": "Curation Studio", "port": 3001 },
+  { "label": "Leads / Concierge", "port": 5173 },
+  { "label": "Apresentação", "port": 3003 },
+  { "label": "Monitoring", "port": 3004 },
+  { "label": "Observatório", "port": 8501 }
+]

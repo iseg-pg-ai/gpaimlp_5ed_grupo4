@@ -1,618 +1,634 @@
 # Decisões técnicas vigentes
 
-Revisto em 24 de outubro de 2026. Este documento reúne apenas decisões que ainda
-condicionam a arquitetura, o produto ou a operação. Relatos de execução, resultados
-de testes, integrações de branches e decisões substituídas permanecem no histórico
-Git. O código, os manifests e os documentos especializados prevalecem se existir
-alguma divergência.
-
-As tarefas ainda abertas estão no [plano](../PLAN.md).
+Revisto em 25 de outubro de 2026. Este documento conserva escolhas que condicionam
+arquitetura, dados e autoridade do sistema. Código, testes e manifests prevalecem.
+Procedimentos pertencem aos guias especializados; pendências ao [plano](../PLAN.md).
+Decisões substituídas e relatos de execução ficam no histórico Git.
 
 ## Dados e persistência
 
-### S3 é a persistência permanente — 2026-10-23
+### S3 conserva as releases; ETL e estado operacional são independentes — 2026-10-23
 
-O bucket de dados conserva releases imutáveis e separadas de:
+Fontes, warehouse e estado operacional têm releases separadas no S3. A máquina
+materializa uma cache reconstruível; uma reconstrução do warehouse não pode
+substituir catálogo, versões, partilhas ou PDFs. Excel, PDF e suplementos são
+protegidos; alterações editoriais não modificam fontes brutas.
 
-- fontes originais;
-- warehouse validado;
-- estado operacional do portal.
+A publicação valida manifestos, tamanhos e hashes antes de mudar o apontador ativo.
+Backups conservam checkpoints imutáveis, separados das releases. A aplicação não
+elimina objetos S3; inventariar versões substituídas não autoriza a sua eliminação.
 
-A release operacional inclui catálogo, histórico de itinerários, partilhas, PDFs e
-operações pendentes. O apontador ativo só muda depois da publicação e validação de
-todos os objetos e hashes. Uma eliminação deixa de integrar a release ativa, mas as
-releases e checkpoints anteriores permanecem disponíveis segundo a política de
-retenção.
+Referência: [Dados e operações](DATA_PIPELINE.md).
 
-A máquina materializa uma cache efémera sob `/tmp`. SQLite é usado nessa cache
-porque o deployment atual tem um único escritor e precisa de transações locais; não
-é a persistência permanente. Portal e Observatório recebem os caminhos da cache por
-variáveis de ambiente.
+### SQLite exige uma única instância escritora — 2026-10-24
 
-### O estado operacional é independente do ETL — 2026-10-22
+Vários processos podem partilhar SQLite na mesma instância, com controlo de revisão
+e recusa de escritas obsoletas. Este contrato não suporta várias réplicas escritoras.
+Escala horizontal exige rever a persistência ou manter um único serviço escritor.
 
-O ETL transforma fontes e publica apenas o warehouse validado. Não controla o
-catálogo, as versões, as partilhas, os PDFs nem as operações pendentes do portal.
-A reconstrução do warehouse não pode eliminar ou substituir estado operacional.
+Operações usam chaves idempotentes. O write-ahead conserva a operação antes do commit
+SQLite até existir outbox S3, permitindo recuperar a interrupção entre esses passos
+sem duplicar revisões. Filas transitórias não constituem outra fonte de verdade.
 
-Alterações de catálogo e versões usam chaves idempotentes e uma fila JSON
-transitória quando o SQLite não está disponível. A fila entra nas releases e nos
-checkpoints, mantém a ordem e só remove uma operação depois da confirmação SQL e da
-publicação exigida pelo fluxo. Não constitui uma segunda fonte de verdade.
+Referência: [Arquitetura](ARCHITECTURE.md) e [testes](TESTING.md).
 
-### Dados desconhecidos mantêm-se desconhecidos — 2026-10-12
+### Dados desconhecidos não são confirmações — 2026-10-12
 
-Ausência de preço, horário, disponibilidade, acessibilidade ou compatibilidade não
-pode ser convertida em zero ou numa confirmação. Custos conhecidos, pendências e
-moedas permanecem separados. A entrega exige revisão humana quando faltam dados ou
-existem conflitos.
+Ausência de preço, horário, disponibilidade, acessibilidade ou compatibilidade
+mantém-se explícita. Custos conhecidos, pendências e moedas são separados; conflitos
+ou lacunas relevantes exigem revisão humana.
 
-### Fontes são protegidas e o warehouse pertence ao pipeline — 2026-10-12
+### Retenção conserva versões autoritativas — 2026-10-25
 
-Excel, PDF e suplementos são entradas protegidas. Regras editoriais ficam em
-`config/curation_rule_overrides.json`, sem alterar as fontes brutas. O ETL constrói,
-valida e publica atomicamente o warehouse; aplicações consomem-no em modo de
-leitura e não editam os artefactos manualmente.
+A política central em `config/retention_policy.json` rege a limpeza; preservação
+legal impede eliminações. Versões autoritativas e bytes PDF não são removidos pela
+limpeza automática e continuam sujeitos ao Lixo e ao ciclo de vida da versão.
 
-## Recuperação e operação
+Referência: [Operações](OPERATIONS.md).
 
-### Colegas partilham a role de ensino em workspaces isolados — 2026-10-24
-
-O onboarding foi validado num segundo SageMaker Code Editor criado de raiz. Por
-decisão do ambiente académico, os colegas podem assumir a mesma
-`SageMakerTeachingExecutionRole`; não é obrigatório criar uma role por pessoa.
-
-O isolamento exigido aplica-se ao workspace, URL Studio, clone, configuração
-local, conta do Monitoring e cache efémera. Não se copiam credenciais, sessões,
-catálogo, exports ou caches entre colegas. O ensaio comprovou S3, Bedrock,
-recuperação integral, testes, cinco serviços e quatro interfaces. Esta decisão não
-equivale ao desenho de identidade para produção, que continua por definir.
-
-### Releases S3 são inventariadas antes de qualquer retenção — 2026-10-24
-
-O inventário de fontes e warehouse valida manifestos e hashes sem alterar o
-bucket. A release válida mais recente é `active`, as válidas anteriores são
-`superseded` e manifestos incompatíveis ou corrompidos são `invalid`. Se a release
-mais recente for inválida, a anterior válida permanece ativa, como no restauro.
-
-Esta classificação é evidência para uma futura política de retenção, não uma
-autorização de eliminação. A role da aplicação continua sem `s3:DeleteObject`.
-
-### Os buckets de dados e backups têm responsabilidades distintas — 2026-10-22
-
-O bucket de dados contém o estado ativo e as releases de fontes e warehouse. O
-bucket de backups contém checkpoints imutáveis para recuperação. Ambos usam IAM do
-ambiente, encriptação S3 e validação por tamanho e SHA-256; a aplicação não contém
-credenciais AWS nem elimina objetos remotamente.
-
-Não se aplica expiração a releases válidas até existir uma forma aprovada de marcar
-as versões substituídas. Configuração administrativa de versionamento, Block Public
-Access e lifecycle pertence a uma identidade AWS própria, mantendo a role da
-aplicação com privilégio mínimo.
-
-### `just blu up` e `just blu it` têm contratos diferentes — 2026-10-23
-
-`just blu up` inicia apenas os serviços parados, confirma endpoints e abre as
-interfaces. Não cria checkpoints, não para serviços e não executa recuperação.
-
-`just blu it` exige autenticação administrativa, cria e valida um checkpoint, para
-os serviços, recupera a versão identificada ou a release ativa, sincroniza operações
-pendentes, reconstrói o warehouse quando necessário, inicia os serviços e executa os
-testes finais. Um backup inválido ou uma falha que possa comprometer dados impede a
-continuação destrutiva.
-
-Os backups locais ficam fora do projeto. Credenciais, sessões, tokens, ambientes e
-estado privado do editor não entram em checkpoints.
-
-### Um checkout novo não inventa dados — 2026-10-23
-
-A preparação local cria configuração e credenciais próprias, mas os dados são
-materializados a partir de releases S3 autorizadas. Sem release ou checkpoint
-válido, o sistema só permite uma inicialização vazia e controlada. Contas, catálogo
-e exports de outra máquina não são copiados implicitamente.
-
-## Portal e curadoria
+## Curadoria e entregas
 
 ### A decisão final pertence ao curador — 2026-10-12
 
-Regras determinísticas e catálogo aprovado prevalecem sobre sugestões do modelo.
-Alterações propostas pelo agente são pré-visualizadas, validadas e aceites ou
-rejeitadas pelo utilizador. Atividades protegidas e confirmações concluídas não são
-alteradas automaticamente.
-
-Alterações do utilizador, alterações do agente e bloqueios explícitos são estados
-distintos. Uma edição do agente não bloqueia o dia. Regenerações preservam trabalho
-manual, atividades protegidas e confirmações.
+Catálogo aprovado e validações determinísticas prevalecem sobre o modelo. Propostas
+exigem simulação, pré-visualização e aceitação humana. Regenerações preservam edições
+manuais, atividades protegidas e confirmações; uma edição do agente não bloqueia o dia.
 
 ### Versões publicadas são imutáveis — 2026-10-12
 
-Cada versão guarda snapshot, relação parental, revisão, hash e bytes PDF. Escritores
-obsoletos não podem substituir revisões recentes. Uma alteração posterior ao
-catálogo ou ao itinerário não modifica versões ou PDFs anteriores.
+Cada versão conserva snapshot, relação parental, revisão, hash e bytes PDF. Alterar
+catálogo ou itinerário não modifica entregas anteriores. O Lixo retira versões da
+vista ativa sem destruir imediatamente o snapshot; o restauro precede nova exportação.
 
-O Lixo retira versões da vista ativa sem destruir imediatamente o respetivo
-snapshot. O restauro precede nova exportação. Partilhas mantêm a versão e o idioma
-selecionados e precisam de política operacional de acesso, retenção e revogação
-antes de produção multiutilizador.
+### Partilhas exigem consentimento, expiram e são revogáveis — 2026-10-24
 
-### O portal usa largura fluida e tema explícito — 2026-10-18
+A partilha conserva versão, idioma, destinatário, consentimento e validade. Registos
+incompletos, expirados ou revogados falham fechados. Enviar a versão para o Lixo
+revoga as ligações na mesma transação; restaurar a versão não restaura acessos.
+Clientes externos não recebem acesso ao workspace.
 
-As páginas usam contentores fluidos e margens responsivas comuns, sem um limite
-fixo diferente por rota. O tema claro é o padrão; a opção escura é guardada no
-navegador e sincronizada entre separadores. Impressão, PDFs e o Observatório
-analítico mantêm apresentação própria.
+### Prompt TXT e tradução preservam a entrega original — 2026-10-24
 
-## Assistente de IA
+Prompt TXT deriva da versão guardada, exclui contactos, referências de reserva e
+notas internas e não altera o PDF DMC. É neutro quanto à ferramenta de destino;
+um documento derivado continua sujeito a revisão humana.
 
-### O agente altera apenas itinerários através de ações estruturadas — 2026-10-21
+A tradução opcional usa modelos locais e preserva números, preços, horários,
+moedas e identificadores. Alterações não recuperáveis falham explicitamente.
+Mandarim exige uma fonte CJK no PDF. Fotografias exigem autorização, licença e créditos.
 
-O agente opcional suporta o conjunto de operações de itinerário definido no schema
-partilhado. Não altera diretamente briefing, catálogo ou confirmações manuais. O
-servidor valida o plano, permissões, revisão e impacto antes de persistir uma ação
-aceite. Conversas são locais por viagem e não se guardam prompts completos nos logs.
+Referência: [Portal](PORTAL.md).
 
-Ranking, aprendizagem por feedback, recuperação de casos históricos e ações
-proativas exigem uma iteração e critérios de aceitação próprios. Chamadas reais a
-modelos exigem autorização, orçamento e revisão de privacidade; testes usam modelos
-simulados por defeito.
+### Percursos autoritativos pertencem à fronteira Python — 2026-10-24
 
-### O agente usava a API atual de LangChain — 2026-10-23 (substituída)
+O servidor delega em `portal.routing` o cálculo de troços, ordenação, realinhamento
+horário e resumo diário. Estimativas de fallback são identificadas como estimativas.
+O adaptador TypeScript não constitui outro motor autoritativo de roteamento.
 
-A fábrica usa `langchain.agents.create_agent`, ferramentas de domínio e o modelo
-Esta decisão descreve a implementação anterior, removida em 25 de outubro de
-2026 a favor do planeador transacional invocado diretamente pelo Portal.
-LangChain/LangGraph pertenciam ao grupo Python opcional
-`agent`. Falta de credenciais ou indisponibilidade do fornecedor produz falha
-explícita, sem resposta fictícia ou fallback secreto para outro fornecedor.
+## Agente de IA
 
-### O cálculo rodoviário pertence a Python — 2026-10-20
+### Um planeador transacional com treze ações — 2026-10-25
 
-Consulta do fornecedor, validação e fallback geométrico pertencem a
-`portal/routing.py`. O adaptador TypeScript preserva o contrato do portal enquanto a
-ordenação e os resumos restantes são migrados incrementalmente. Estimativas de
-fallback são identificadas como não otimizadas.
+Portal e fachada privada reutilizam `AgentPlan`. A geração autónoma LangGraph foi
+substituída por um fluxo com viagem, versão-base, proposta e aceitação explícita.
+O agente pode propor alterações permitidas do briefing e itinerário e preparar
+confirmações pendentes; não altera catálogo nem confirma reservas.
 
-## Entregas e idiomas
+O modelo recebe contexto autoritativo minimizado e ferramentas de leitura/proposta,
+sem acesso a SQL, S3, shell ou escrita direta. Contactos, notas internas e referências
+de reserva são excluídos. Fontes, textos de clientes e respostas externas são dados,
+nunca instruções.
 
-### Tradução é local e preserva valores estruturados — 2026-10-12
+Referência: [Âmbito](AGENT_SCOPE.md) e [assistente](ASSISTANT.md).
 
-A tradução opcional usa modelos locais e não envia conteúdo de clientes a um
-fornecedor externo. Números, preços, horários, moedas e identificadores são
-protegidos; uma alteração não recuperável falha explicitamente. Mandarim exige uma
-fonte CJK configurada para PDF. Em 24 de outubro de 2026, Noto Sans CJK SC foi
-validada num segundo workspace com modelos reais, teste do renderer e exportação
-pela interface, preservando valores estruturados e sem falhas visuais observadas.
+### Pedidos inequívocos são compilados antes do Bedrock — 2026-10-25
 
-### Prompt TXT deriva de uma versão guardada — 2026-10-24
+A arquitetura híbrida compila operações explícitas apenas quando os argumentos são
+confirmados no contexto autoritativo. Pedidos ambíguos, incompletos, explicativos ou
+compostos seguem para Nova Pro. Ambos os percursos usam as mesmas validações e
+aceitação humana; a compilação local não consome tokens nem aumenta a autoridade.
 
-A exportação TXT usa o snapshot selecionado e exclui contactos, referências de
-reserva e notas internas. Não altera o estado dos PDFs DMC. O contrato
-`blu-roteiro-prompt/1.0.0` é neutro quanto à ferramenta de destino; qualquer
-documento derivado permanece sujeito à revisão do curador e não substitui
-automaticamente um PDF publicado.
+A instabilidade do planeador apenas com Nova Pro motivou esta escolha. A avaliação
+híbrida autorizada passou 37/38 casos, com 100% das proteções e sem escritas. Uma
+resposta incompleta falhou fechada; esta limitação permanece no plano de monitoring.
 
-O percurso real foi validado no segundo workspace em 24 de outubro de 2026. O
-portal descarregou o prompt com a identificação e versão esperadas, instruções
-neutras e o bloco JSON da proposta, sem configuração de fornecedor ou modelo
-visual.
+### Identidade e ownership são validados no backend — 2026-10-25
 
-Fotografias só podem integrar entregas depois de autorização, licença e créditos
-serem documentados.
+O modo cloud valida claims assinadas pelo ALB e access token Cognito, incluindo
+emissor, cliente, expiração e correspondência de `sub`. Um identificador enviado
+pelo navegador não prova identidade. Apenas o principal autorizado pode decidir
+sobre a sua proposta; a memória servidor fica isolada por utilizador, viagem e versão.
 
-### Partilhas expiram e são revogáveis — 2026-10-24
+O modo SageMaker sem identidade autenticada não ativa memória autoritativa nem
+simula multiutilizador. Capacidades administrativas e de infraestrutura ficam fora
+das ferramentas do agente.
 
-Uma nova partilha exige confirmação explícita da autorização do destinatário e
-uma validade de 7, 30 ou 90 dias. O registo conserva versão, idioma, método,
-destinatário, consentimento, validade e revogação para auditoria até à eliminação
-definitiva da versão. Partilhas antigas sem estes campos e ligações expiradas ou
-revogadas falham fechadas.
+### Nova Pro é o fornecedor único, com orçamento limitado — 2026-10-25
 
-Enviar uma versão para o Lixo revoga todas as respetivas ligações na mesma
-transação. Restaurar a versão não restaura acessos; o curador cria uma partilha
-nova se ainda existir autorização. A gestão manual fica no Histórico. Este
-controlo não substitui a identidade central e a política global de dados pessoais
-que permanecem na prioridade de operação multiutilizador.
-
-## Observatório e apresentação
+Foi aprovado Bedrock com `eu.amazon.nova-pro-v1:0`, teto de 10 USD/mês, até 1800
+tokens de saída, timeout de 35 segundos e até duas chamadas por pedido. Preços
+operacionais e modelo devem ser revalidados antes de deployment ou mudança.
 
-### O Observatório é analítico e de leitura — 2026-10-18
+O backend reserva o custo máximo no modo cloud. Configuração incompleta, orçamento
+esgotado ou falha do fornecedor terminam sem alteração e sem fallback silencioso.
+Uma falha de simulação permite uma única correção com código sanitizado, sem devolver
+texto bruto ao modelo. Testes usam mocks; chamadas reais exigem autorização aplicável.
 
-O dashboard da porta 8501 lê exclusivamente o warehouse publicado. Não chama o
-agente, não escreve no catálogo e não altera o ETL. Indicadores distinguem ausência
-de dados de valores confirmados; o mapa agrega pontos próximos sem esconder o
-acesso aos detalhes.
+Referência: [Assistente](ASSISTANT.md).
 
-### A apresentação é uma aplicação independente — 2026-10-18
-
-A apresentação da porta 3003 é estática e não usa APIs ou dados operacionais. Os
-exemplos são ilustrativos e o estado fica em memória. Animações respeitam movimento
-reduzido e podem ser desativadas sem perder conteúdo ou navegação. O último ato abre
-o portal ou Observatório configurado num separador próprio.
-
-## Monitoring e segurança
-
-### Monitoring é independente e exige autenticação — 2026-10-19
-
-O Monitoring funciona na porta 3004, apenas em loopback atrás do proxy HTTPS do
-Studio. Perfis `admin` e `viewer` são autorizados no servidor; alterações exigem
-CSRF. Não é possível remover, desativar ou despromover o último administrador
-ativo. Alterações de conta revogam as sessões relevantes.
-
-Credenciais derivadas, palavra-passe inicial, sessões e runtime ficam em
-`monitoring/runtime/`, fora do Git. A gestão local de contas não substitui uma
-decisão futura de identidade central para produção.
-
-### A telemetria é reduzida e privada — 2026-10-19
-
-Eventos operacionais não guardam passwords, tokens, prompts, respostas, corpos de
-pedidos, contactos ou dados de clientes. Mensagens e stacks são limitadas e
-redigidas. Como o portal ainda não tem identidade própria, eventos usam apenas a
-sessão aleatória do separador, `server` ou `system`; não atribuem uma ação a uma
-pessoa.
-
-A limpeza automática atua apenas sobre caches regeneráveis e backups do próprio
-Monitoring, conserva pelo menos cinco cópias completas e respeita idade e limiar de
-disco. Fontes, catálogo, warehouse, exports, credenciais, ambientes e dependências
-ficam fora do seu alcance.
-
-A sonda fora da máquina continua aberta no [plano](../PLAN.md); logs e sondas
-locais não constituem monitoring de produção.
-
-### SNS é o transporte externo validado para incidentes — 2026-10-25
-
-O Monitoring possui uma integração SNS opcional, desativada por defeito no
-repositório. Publica
-apenas a abertura e a recuperação de incidentes técnicos, através da role IAM do
-ambiente e de um tópico indicado por variável local. A fila e o estado de entrega
-são persistentes; falhas são repetidas com atraso exponencial e eventos entregues
-não são reenviados durante a operação normal.
-
-O tópico real, a subscrição confirmada e a permissão `sns:Publish` limitada ao ARN
-foram validados em `eu-west-1`. Um ensaio técnico entregou uma abertura e uma
-recuperação, deduplicou a repetição da abertura e terminou com duas entregas e zero
-pendências. A repetição após falha permanece validada por teste com falha injetada,
-evitando remover permissões reais apenas para provocar um incidente. A sonda
-externa depende ainda de um endpoint estável fora da máquina observada.
-
-## Configuração e dependências
-
-### Percurso único do agente Nova Pro — 2026-10-25
-
-O portal, a fachada HTTP privada e a compatibilidade histórica usam agora o mesmo
-planeador transacional e o contrato de onze ações. A geração autónoma LangGraph
-foi descontinuada porque não tinha viagem, versão-base, pré-visualização nem
-aceitação explícita. O endpoint histórico correspondente responde `410`.
-
-Amazon Bedrock Converse com Nova Pro é o único fornecedor do agente. Não existe
-fallback silencioso. O backend volta sempre a validar o
-`AgentPlan`; o modelo não recebe ferramentas de escrita. Os testes automáticos
-usam um cliente Bedrock simulado, sem chamadas pagas.
-
-O contexto explícito passou a incluir locais, horas e números de voo de chegada e
-partida, além da ocasião especial. Nome, email, notas livres, contactos e
-referências de reserva continuam excluídos. A memória por utilizador aguarda uma
-identidade autenticada no backend; aceitar um `ownerId` enviado pelo browser
-violaria o contrato de autorização já aprovado.
-
-### Identidade do agente validada no backend — 2026-10-25
-
-O modo cloud valida o JWT de claims assinado pelo ALB e o access token assinado
-pelo Cognito através da biblioteca oficial `aws-jwt-verify`. O backend confirma
-ARN do ALB, issuer, client ID, expiração e igualdade do `sub`; não usa
-`x-amzn-oidc-identity` como prova. Grupos desconhecidos não concedem permissões e
-a ausência de grupo aplica `viewer`.
-
-As propostas passam a guardar ownership. Apenas o mesmo principal com
-`agent.approve` pode aceitar, rejeitar ou selecionar alternativas. A memória
-servidor é ativada pelo mesmo principal e fica isolada por utilizador, viagem e
-versão. `BLU_IDENTITY_MODE=disabled` preserva o funcionamento SageMaker, mas não
-simula multiutilizador nem ativa memória autoritativa.
-
-A matriz de ferramentas do agente é fechada e tipada. Inclui apenas leitura de
-viagem/catálogo e o ciclo transacional já existente de propor, aceitar, rejeitar
-e escolher alternativas. A permissão do papel é verificada no backend e as
-operações de escrita exigem a decisão explícita recebida pela rota. Capacidades
-administrativas, destrutivas e de infraestrutura não são expostas ao agente.
-
-### Base cloud e multiutilizador aprovada — 2026-10-25
-
-Foi aprovada como arquitetura-alvo inicial uma implantação em `eu-west-1`, com
-demonstração no SageMaker e staging/produção isolados. A entrada pública usará um
-Application Load Balancer com TLS; a identidade será centralizada em Amazon
-Cognito e os segredos em AWS Secrets Manager.
-
-Os papéis internos são `owner`, `admin`, `curator` e `viewer`. Clientes externos
-continuam limitados a partilhas revogáveis e não recebem acesso ao workspace. O
-backend aplica papel e ownership; o agente herda sempre o âmbito do utilizador.
-
-Para preservar os contratos atuais, cada ambiente começa com uma única tarefa
-escritora em ECS. SQLite, outbox, histórico e exports ficam num EFS cifrado; o S3
-continua a conservar releases e backups. Não se ativa escala horizontal enquanto
-o estado operacional depender de SQLite. Rascunhos passam a ser privados por
-utilizador e viagem, mas sincronizados no servidor para continuidade entre
-dispositivos.
-
-Os checkpoints futuros conservam apenas estado operacional, porque fontes e
-warehouse já têm releases próprias. Os objetivos iniciais aprovados para produção
-são 99,5% de disponibilidade mensal, RPO de cinco minutos e RTO de sessenta
-minutos. Conversas do agente conservam-se por 30 dias, auditoria por 365 dias e
-partilhas expiradas por mais 30 dias, sujeitos a execução e revisão jurídica antes
-de produção.
-
-A aprovação autoriza preparar código, contratos e infraestrutura como código. Não
-autoriza por si só criar recursos, publicar endpoints ou assumir custos AWS.
-
-### Retenção é central, executável e conserva versões — 2026-10-25
-
-Os prazos ficam em `config/retention_policy.json`, validados antes da execução.
-Rascunhos inativos expiram após 90 dias, auditoria do agente após 365 dias e
-metadados de partilhas 30 dias depois do fim do acesso. Conversas futuras terão 30
-dias. Preservação legal impede qualquer destas eliminações.
-
-A limpeza não elimina versões autoritativas nem PDFs; estes continuam dependentes
-do Lixo, das confirmações e do ciclo de vida da versão. Os testes executam apenas
-em diretórios temporários e confirmam que uma limpeza não quebra versões, exports
-ou registos sob preservação.
-
-### Write-ahead fecha a janela de processo SQLite → S3 — 2026-10-25
-
-Catálogo e versões guardam a operação validada antes do commit SQLite. Só removem
-esse write-ahead depois de criar a outbox S3. Se o processo parar entre estes dois
-passos, a repetição reconhece a chave idempotente já confirmada em SQL, cria a
-outbox e não duplica a revisão.
-
-O comportamento foi validado bloqueando deliberadamente a criação da outbox após
-o commit. Catálogo e versões recuperaram no reinício, conservaram uma única revisão
-e voltaram a produzir o evento S3. A perda da máquina inteira continua limitada
-pelo RPO aprovado até `BLU_OPERATIONAL_DIR` residir no EFS da arquitetura-alvo.
-
-### Infraestrutura do Curation Studio tem stack isolada — 2026-10-25
-
-O Curation Studio não reutiliza a stack do site público e WhatsApp existente em
-`infra/aws-split-app.mjs`. A sua entrada independente é
-`infra/curation-workspace.mjs`, para evitar ownership, dados e ciclos de deployment
-misturados.
-
-A síntese local confirmou uma única tarefa Fargate com cinco containers, EFS
-cifrado e retido, ALB apenas em HTTPS, Cognito com os quatro papéis, Secrets Manager
-e ausência de NAT Gateway. A stack exige uma imagem ECR identificada, certificado,
-domínio, buckets e SNS como parâmetros. Não foi executado deployment nem criado
-qualquer recurso.
-
-### A configuração Studio é individual — 2026-10-19
-
-Cada instalação guarda a origem pública em `config/studio.local.json`, ignorado
-pelo Git e criado por `scripts/setup_workspace.py` a partir do exemplo versionado.
-Os URLs das portas derivam dessa origem; endereços locais servem apenas para probes
-e execução direta. A configuração não cria domínios nem renova tokens SageMaker.
-
-### Manifests e lockfiles são autoritativos — 2026-10-15
-
-`pyproject.toml` e `uv.lock` definem Python; `package.json` e `package-lock.json`
-definem cada aplicação Node. Requirements são exports gerados. O ambiente Python
-base contém apenas ETL; dashboard, agente e tradução são grupos opcionais. O projeto
-exige Python 3.12 ou 3.13, Node entre 22.13 e 24 e `uv 0.12.19`.
-
-A exceção Stanza/Argos está documentada em
-[Dependências Python](DEPENDABOT_PYTHON.md) e deve ser revista quando o Argos
-publicar um requisito compatível corrigido.
-
-### Entregas CI têm contrato versionado e dados sintéticos — 2026-10-24
-
-O manifesto do warehouse declara `schema_version`. O gate
-`scripts/check_warehouse_release.py` recusa versões incompatíveis, ficheiros
-obrigatórios em falta, validação reprovada, erros PDF e conflitos sem exceção
-auditável. Uma exceção identifica exatamente tabela, registo e campo, bem como
-responsável, justificação e validade; exceções expiradas ou sem conflito também
-falham.
-
-O CI não usa fontes comerciais. Gera um conjunto sintético e testa o percurso
-catálogo aprovado → ETL → geração → confirmação → versão → PDF. O artefacto é
-apenas diagnóstico e expira após 14 dias. As lacunas de preço, suplemento e
-entidade descritas em [Preenchimento](DATA_ENRICHMENT.md) são aceites como
-desconhecidas, nunca convertidas em zero ou em compatibilidade presumida.
-
-### Cálculo autoritativo de percurso passa pela fronteira Python — 2026-10-24
-
-O servidor do portal delega em `portal.routing` o cálculo de troços, a ordenação,
-o realinhamento horário e o resumo diário. O adaptador TypeScript de ordenação
-permanece temporariamente apenas no editor síncrono do agente e será tratado com
-a próxima iteração desse agente; não é usado pelo fluxo rodoviário do servidor.
-
-### SQLite suporta vários processos numa instância, não várias réplicas — 2026-10-24
-
-Processos Node independentes foram executados em simultâneo contra o mesmo
-catálogo e histórico de versões. Em ambos os casos, uma única escrita baseada na
-revisão corrente foi aceite e a outra foi recusada como obsoleta, preservando a
-sequência e evitando duplicados. O contrato é adequado a uma instância escritora
-com SQLite partilhado.
-
-Rascunhos continuam privados ao navegador e não têm concorrência distribuída.
-SQLite não é apresentado como base multi-réplica: uma futura execução horizontal
-exige outra persistência operacional ou um único serviço escritor, identidade e
-ownership explícitos e testes entre máquinas.
-
-### O agente cloud falha fechado por identidade, custo e fornecedor — 2026-10-25
-
-O modo cloud valida a identidade assinada pelo ALB e Cognito, associa memória e
-propostas ao utilizador e autoriza apenas ferramentas tipadas do itinerário. Cada
-escrita continua sujeita a pré-visualização e confirmação explícita.
-
-Antes de chamar o fornecedor, o backend exige modelo, teto mensal e preço por
-milhão de tokens, reservando conservadoramente o custo máximo da resposta. O
-timeout é configurável entre 5 e 120 segundos. Configuração incompleta, orçamento
-esgotado, timeout ou indisponibilidade não alteram o roteiro e não acionam outro
-modelo. Os valores comerciais permanecem uma decisão operacional por aprovar e
-não são inventados no código ou na documentação.
-
-### Base operacional da curadoria aprovada — 2026-10-25
-
-A Etapa 1 foi aprovada com uma única tarefa escritora ECS, EFS cifrado e retido,
-releases S3, entrada HTTPS por ALB, identidade Cognito, quatro papéis internos e
-segredos fora da imagem. O Grupo 4 assume provisoriamente as responsabilidades
-operacional e de segurança durante a fase académica.
-
-O dimensionamento de staging considera cinco utilizadores, 2 vCPU, 4 GB, 730
-horas/mês, 20 GB de EFS e 10 GB de logs. A estimativa bruta de referência é
-121,27 USD/mês, excluindo consumos variáveis e impostos. O domínio ainda não foi
-adquirido; imagem ECR, subdomínio, certificado e DNS são execução da Etapa 3 e
-continuam sujeitos a autorização explícita antes de criarem recursos ou custos.
-
-### O agente usa Nova Pro com ferramentas limitadas — 2026-10-25
-
-O agente ativo permanece no Amazon Bedrock com Nova Pro. O backend fornece apenas
-leituras sobre o contexto autoritativo minimizado e uma operação final de proposta;
-o modelo não recebe acesso a SQL, S3, shell, reservas ou escrita no portal. O
-contrato passou a treze ações, acrescentando alterações permitidas do briefing e
-a preparação de confirmações ainda pendentes.
-
-As regras TypeScript simulam a proposta. Uma falha pode originar uma única nova
-chamada, contendo apenas um código sanitizado e uma instrução genérica. O texto
-bruto não regressa ao modelo, o orçamento reserva as duas chamadas possíveis e a
-segunda falha termina sem alterações. A qualidade semântica continua dependente
-de uma avaliação Nova Pro real, separada e explicitamente autorizada.
-
-### Feedback e memória histórica permanecem supervisionados — 2026-10-25
-
-O feedback pós-viagem fica associado a uma única versão realizada e cobre todos
-os cartões. A entrega é imutável. Comentários e notas são conservados para revisão
-interna, mas nunca entram nas ferramentas do modelo. O agente recebe apenas
-agregados, etiquetas e tendências de 30, 90 e 180 dias.
-
-Um caso histórico só entra na memória após feedback completo, avaliação global
-mínima de quatro em todas as atividades, ausência de incidentes e aprovação
-humana. O índice usa perfil reduzido, identificadores e revisões; exclui identidade
-do cliente, texto livre, PDFs e versões no Lixo. Feedback, alertas e precedentes
-nunca alteram o catálogo automaticamente nem provam disponibilidade atual.
-
-### O agente prepara entregas, mas não as executa autonomamente — 2026-10-25
-
-O plano pode identificar PDF, Prompt TXT ou partilha, idioma e, nesta última,
-ligação ou documento. Esta intenção não pode ser combinada com alterações ao
-itinerário: a versão deve ser guardada primeiro. O servidor recalcula os
-diagnósticos e bloqueia a continuação quando existem impedimentos.
-
-A geração exige um clique explícito e reutiliza a exportação existente. Uma
-partilha abre o formulário manual, onde o curador introduz destinatário, confirma
-consentimento e escolhe retenção. O modelo não cria links, não recebe contactos e
-não envia mensagens. Emails e números de telefone escritos no chat são removidos
-antes de qualquer instrução ou memória ser enviada ao fornecedor.
-
-### Meteorologia e percursos são leituras passivas do agente — 2026-10-25
-
-O agente pode ler a meteorologia que o portal já tenha consultado e mantenha na
-cache do servidor, bem como os troços que já estejam persistidos no itinerário. Pedir uma
-proposta ao agente não desencadeia chamadas a fornecedores de meteorologia ou de
-roteamento. A rota recupera a observação pela data, local e coordenadas do
-snapshot autoritativo e reduz os campos antes de os entregar ao modelo; não
-aceita observações fornecidas pelo navegador.
-
-A evidência distingue previsão de referência histórica e percurso medido pelo
-OSRM de estimativa. Dados ausentes, históricos ou estimados não são apresentados
-como condições atuais, disponibilidade ou confirmação. As ferramentas apenas
-leem o contexto minimizado; não escrevem no itinerário nem contornam a simulação
-e a aceitação explícita.
-
-### Perturbações e conteúdo produzem sinais, não confirmações — 2026-10-25
-
-O portal calcula sinais reduzidos para chuva, encerramentos conhecidos, atrasos,
-cancelamentos, mudanças de horário e possíveis problemas de conteúdo. Os sinais
-de catálogo abrangem campos em falta, datas antigas mencionadas em descrições,
-possíveis duplicados por nome e local e mistura linguística evidente. São indícios
-conservadores para revisão, não diagnósticos de disponibilidade ou qualidade.
-
-A ferramenta `get_supervision_signals` devolve apenas códigos, proveniência, dia
-e identificadores. Distingue observação, referência histórica, informação
-comunicada pelo utilizador e revisão necessária. O modelo pode explicar impacto
-ou preparar uma alternativa através das ações já autorizadas, mas não altera o
-catálogo, reservas, confirmações ou documentos e continua dependente de simulação
-e aceitação humana explícita.
-
-### As métricas do agente reutilizam a auditoria operacional — 2026-10-25
-
-O Monitoring agrega `agent_runs` diretamente da base de histórico em modo só de
-leitura. Apresenta propostas, respostas sem alteração, aceitações, rejeições,
-pendentes, expirações, tokens, latência média e modelos. Os conflitos são contados
-nos eventos técnicos do endpoint do assistente e têm uma janela explícita de 24
-horas. Não foi criada uma segunda fonte de telemetria.
-
-Custos só são apresentados quando `BLU_AGENT_RATES_JSON` contém tarifas de
-entrada e saída válidas para todos os modelos registados. Na ausência de preços,
-o painel mostra «Por configurar» em vez de inferir um custo. O agregado exclui
-instruções, planos, respostas, motivos livres e dados de clientes; edições
-posteriores permanecem uma contagem separada e não são atribuídas causalmente ao
-agente.
-
-### Nova Pro e um teto mensal de 10 USD são aprovados — 2026-10-25
-
-Foi aprovado Amazon Bedrock como fornecedor único e o perfil
-`eu.amazon.nova-pro-v1:0` em Standard On-Demand, sem fallback. Para EU (Ireland),
-as tarifas aprovadas em 25 de outubro de 2026 são 0,92 USD por milhão de tokens
-de entrada e 3,68 USD por milhão de tokens de saída. O teto operacional é 10 USD
-por mês, com 1800 tokens máximos de saída, timeout de 35 segundos e no máximo duas
-chamadas por pedido.
-
-O backend reserva conservadoramente o custo máximo antes da chamada quando a
-identidade cloud está ativa e falha sem alteração ao atingir o teto. IAM fornece
-a autenticação e não existem chaves estáticas. Tarifas e modelo têm de ser
-revalidados na fonte oficial da AWS antes de cada deployment ou mudança.
-
-### A primeira avaliação real de Nova Pro não atinge o limiar — 2026-10-25
-
-A bateria autorizada de 38 casos sintéticos obteve 25 aprovações (65,8%), com
-13/19 em português e 12/19 em inglês. Consumiu 182 959 tokens de entrada e 5 370
-de saída, correspondentes a aproximadamente 0,1881 USD às tarifas aprovadas. Não
-foram usados dados de clientes nem efetuadas escritas no portal.
-
-As falhas concentram-se no encerramento estruturado de recusas, ambiguidades,
-grounding e proteção, bem como em refinamento, confirmação pendente e um caso de
-regeneração. O resultado não satisfaz o mínimo de 90%; por isso, a avaliação
-permanece aberta e o agente não é promovido com base neste ensaio. Qualquer nova
-bateria real requer correções verificadas com mocks e nova autorização de custo.
-
-O adaptador foi posteriormente preparado para converter uma única terminação
-textual de recusa ou esclarecimento numa ronda final com `propose_actions`
-explicitamente selecionado, capacidade suportada por Amazon Nova no Bedrock.
-Uma segunda resposta fora do contrato falha fechado. Foram ainda clarificadas as
-regras de refinamento e confirmação pendente. Os testes locais passaram, mas esta
-correção não altera o resultado histórico nem autoriza outra bateria paga.
-
-Foram autorizadas novas execuções. Uma bateria completa atingiu 36/38 (94,7%),
-mas a confirmação integral posterior obteve apenas 28/38 (73,7%), mesmo depois de
-correções dirigidas e schema discriminado por ação. Casos aprovados isoladamente
-não se mantiveram estáveis no conjunto. O projeto não seleciona a melhor execução
-como evidência e interrompe novas chamadas para evitar otimização por repetição.
-Nova Pro continua não aprovado; a arquitetura ou o modelo devem ser revistos.
-
-### Pedidos explícitos são compilados localmente antes do Bedrock — 2026-10-25
-
-O planeador passa a ser híbrido. Uma camada determinística conservadora transforma
-as treze operações explícitas em `AgentPlan`, mas apenas quando dia,
-identificadores e restantes argumentos podem ser confirmados no contexto
-autoritativo. Itens protegidos ou fora do catálogo falham localmente. Pedidos
-incompletos, ambíguos, explicativos ou compostos continuam no Nova Pro.
-
-A rota executa a pré-compilação antes de reservar orçamento AWS. Os resultados
-locais ficam identificados como `deterministic`/`blu-explicit-intent-v1`, com zero
-tokens, e continuam sujeitos à mesma validação, simulação, pré-visualização e
-aceitação humana. Esta decisão reduz custo e variabilidade sem criar uma segunda
-fonte de verdade nem aumentar a autoridade do agente. A avaliação local cobre
-36/38 casos. Uma bateria híbrida real posterior passou 37/38 (97,4%): todas as
-operações atingiram pelo menos 90%, as proteções ficaram a 100% e não houve
-escritas. Foram reportados 15 161 tokens de entrada, 340 de saída, 3 119 ms e
-cerca de 0,0152 USD.
-
-Uma explicação em português recebeu resposta incompleta do Nova Pro e falhou
-fechada. A arquitetura híbrida fica aprovada segundo o limiar definido, mantendo
-esta indisponibilidade residual explícita no monitoring. A aprovação não autoriza
-execução autónoma: simulação, pré-visualização e confirmação humana permanecem
-obrigatórias.
-
-### O ciclo real de ferramentas de leitura fica validado — 2026-10-25
-
-Um ensaio sintético PT/EN confirmou que Nova Pro solicita
-`get_trip_context`, `get_itinerary` e `search_approved_catalog` antes de terminar
-com `propose_actions`. As três leituras ocorreram na primeira ronda e a proposta
-isolada na segunda, sem acesso externo ou escrita. O resultado português foi
-válido. O inglês repetiu um ranking e foi recusado pelo contrato, demonstrando o
-encerramento seguro. Esta evidência conclui a Etapa 2, sem iniciar deployment.
+### Feedback, contexto externo e entregas mantêm supervisão humana — 2026-10-25
+
+Feedback associa-se à versão realizada; memória histórica exige dados completos,
+qualidade mínima e aprovação humana. O modelo recebe agregados e identificadores,
+sem comentários livres, contactos ou PDFs. Precedentes não provam disponibilidade
+atual nem alteram catálogo automaticamente.
+
+Meteorologia e percursos são leituras de dados já consultados ou persistidos;
+pedir uma proposta não desencadeia consultas externas. Sinais de perturbação ou de
+qualidade são indícios para revisão, com proveniência, nunca confirmações.
+
+O agente pode preparar uma exportação ou partilha, mas a versão é guardada primeiro
+e a execução exige decisão explícita. Destinatário, consentimento e retenção ficam
+no formulário manual; o modelo não cria ligações nem envia mensagens.
+
+## Arquitetura cloud e segurança
+
+### Curation Studio tem uma stack e um ciclo de entrega próprios — 2026-10-25
+
+A arquitetura-alvo em `eu-west-1` usa uma única tarefa escritora ECS, EFS cifrado,
+releases e backups S3, ALB com TLS, Cognito e Secrets Manager. A stack
+`infra/curation-workspace.mjs` é independente do site público e WhatsApp para separar
+ownership, dados e ciclos de deployment. Staging e produção são isolados.
+
+Os papéis internos são `owner`, `admin`, `curator` e `viewer`; o backend aplica papel
+e ownership. A arquitetura prevê rascunhos privados sincronizados por utilizador e
+viagem. Objetivos aprovados: 99,5% de disponibilidade mensal, RPO de cinco minutos e
+RTO de sessenta minutos; não constituem níveis já comprovados em produção.
+
+O Grupo 4 assume provisoriamente operação e segurança na fase académica. Aprovar a
+arquitetura autoriza preparação local, sem autorizar criação de recursos ou custos.
+
+Referência: [Operações](OPERATIONS.md) e [plano](../PLAN.md).
+
+### O Backoffice só confia em identidades explícitas — 2026-10-25
+
+`BACKOFFICE_TRUSTED_PRINCIPAL_ARNS` limita a confiança do papel de análise a
+identidades IAM da conta configurada. Raízes de conta, curingas e outras contas são
+recusados; sem lista, o papel não é criado. Isto evita conceder confiança implícita
+a papéis partilhados do ambiente académico.
+
+Evidência local: síntese CDK em `infra/tests/frontend.test.mjs`. Não comprova
+atualização dos papéis já publicados; essa validação permanece no plano.
+
+### Origem e limites reduzem a exposição das APIs — 2026-10-25
+
+Os POST de versões, tradução, limpeza do Lixo e partilhas recusam uma origem
+externa antes de processar o corpo; a revogação de partilhas usa o mesmo helper.
+O planeador conserva a verificação de origem existente. A origem pública
+configurada prevalece sobre a interna do proxy SageMaker. Pedidos sem `Origin`
+continuam permitidos; este controlo não substitui identidade e permissões.
+
+O stage da API pública limita o tráfego agregado a 10 pedidos/s, com pico de 20;
+o chat tem limite de 2/s, com pico de 5. Estes limites não são um orçamento por
+utilizador nem comprovam proteção integral contra abuso. A síntese local testa
+os valores no template; a aplicação em serviços reais depende de deployment.
+
+Evidência: `dmc-workspace/tests/infrastructure.test.mjs` e
+`infra/tests/frontend.test.mjs`. Na validação local, passaram 31 testes de
+infraestrutura, lint, tipos, formatação e build do portal com Node 22.13. A bateria
+do portal passou 206 testes, com um ignorado, usando o warehouse preparado em
+cache. O YAML ETL foi verificado localmente, preservando gate e retenção; a execução
+GitHub Actions e a validação dos serviços reais permanecem pendentes.
+
+### Dados de runtime ficam fora da descoberta automática do build — 2026-10-25
+
+Caminhos operacionais e executáveis fornecidos pelo ambiente são excluídos do
+tracing Turbopack nesses acessos. Os valores e o comportamento em runtime mantêm-se;
+a imagem disponibiliza explicitamente o código Python e as políticas necessárias.
+O contexto Docker admite apenas os diretórios da aplicação, excluindo dados,
+runtimes, caches e configuração privada. A dependência local do portal é copiada
+antes da instalação pelo lockfile.
+
+Evidência local: build sem os sete avisos de tracing, verificação de 1410 caminhos
+únicos dos manifests `.nft.json` sem referências aos diretórios privados verificados,
+e check do portal com 206 testes aprovados e um ignorado. A construção da imagem
+continua dependente do CI autorizado; não foi executada localmente.
+
+### CI usa dados sintéticos e contratos versionados — 2026-10-24
+
+CI não usa fontes comerciais. O gate de publicação verifica versão de schema,
+integridade e validação do warehouse; exceções identificam campo, responsável,
+justificação e validade. O ciclo de testes preserva os contratos entre catálogo,
+ETL, versão e PDF, sem transformar lacunas em valores confirmados.
+
+Referência: [Testes](TESTING.md).
+
+### Curation Studio exige imagem ECR por digest — 2026-10-26
+
+`BLU_CURATION_IMAGE_URI` passa a exigir `@sha256:` seguido de 64 caracteres
+hexadecimais, na conta e região alvo. Tags são recusadas para impedir que uma
+mesma referência de entrega passe a apontar para outros bytes. Os quatro
+containers usam a mesma referência, registada no output `ImageUri`.
+
+Evidência: síntese em `infra/tests/curation-workspace.test.mjs`, incluindo
+recusa de tags, hashes inválidos e conta/região diferentes. O
+[CI de infraestrutura](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40249812920)
+passou com contexto CDK temporário explícito e lookups AWS desativados. Não foi
+publicado nenhum recurso. Publicação, verificação de assinatura e promoção permanecem
+pendentes; o digest identifica conteúdo e não comprova aprovação operacional.
+
+### Tradução usa PyTorch CPU e a cache de imagem é mínima — 2026-10-26
+
+A tradução já executa CTranslate2 em CPU/int8. PyTorch passa a usar o índice
+oficial CPU em Linux e Windows, com a mesma versão-base e sem as 19 dependências
+GPU retiradas do lockfile. Mantém-se o override de segurança Stanza/Argos.
+Os exports são gerados por `scripts/export_requirements.py` e incluem o índice
+CPU para a instalação alternativa por pip. O build verifica a ausência de CUDA.
+
+A cache Docker passa de `mode=max` para `mode=min`, reduzindo as camadas
+intermédias exportadas à custa de possíveis reconstruções. Isto reduz a cache,
+sem por si só reduzir a imagem final. O
+[CI CPU](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40249243292)
+passou, incluindo a verificação em Python 3.13: o job da imagem passou de
+25 min 49 s para 3 min 51 s. O tamanho final ainda não foi medido.
+Imports reais e cinco testes de tradução com mocks
+passaram num ambiente temporário Python 3.12. Dois ensaios de inferência local
+EN/PT com modelos existentes preservaram hora e montante, sem instalar modelos.
+Em português, o modelo apresentou EUR como euros. Não foi validado PDF ou
+comportamento de todos os idiomas.
+
+### A evidência da imagem é validada antes da promoção — 2026-10-26
+
+O build exporta OCI com SBOM SPDX e proveniência SLSA. O verificador recalcula
+hashes e tamanhos, confirma a revisão e exige que os documentos estejam ligados
+ao manifest linux/amd64. A evidência pequena é conservada por 14 dias; não se
+publica a imagem no artefacto de diagnóstico.
+
+Integridade e metadados BuildKit não equivalem a uma assinatura do produtor.
+O relatório conserva `signature_verified: false`. Assinatura, identidade de
+release e verificação antes da promoção permanecem pendentes, segundo a
+[política de entrega](../infra/IMAGE_DELIVERY.md). Os seis testes sintéticos
+cobrem aceitação e recusa de entregas adulteradas. A exportação real passou no
+[CI de f1aea3a](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40250526927),
+com 713 pacotes inventariados e medições distintas para layers e arquivo OCI.
+
+### A assinatura de release exige uma identidade de workflow exata — 2026-10-26
+
+Cosign assina um documento de release que liga revisão, digests e hashes da
+SBOM/proveniência. A política versionada exige a identidade de `curation-sign.yml`
+em `dev` e o emissor GitHub Actions. O verificador não aceita identidades genéricas,
+regex permissivas ou a mera presença de um bundle; confirma assinatura, evidência
+e os valores esperados fornecidos pela promoção.
+
+A assinatura real é manual, desativada por defeito e exige ambiente com revisores,
+sem autoaprovação. Builds de forks, pull requests e outros branches são recusados.
+A assinatura é destacada, vinculada ao digest; ainda não é publicada no ECR.
+
+Sete testes passaram localmente e no
+[CI de assinatura](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40251609640),
+com política simulada e um ensaio criptográfico Cosign usando chave temporária,
+sem log público. A identidade OIDC e a assinatura keyless reais permanecem por
+validar. A [política de entrega](../infra/IMAGE_DELIVERY.md)
+distingue estes testes da operação real e conserva as condições de ativação.
+
+### Publicação copia a imagem assinada e confirma o digest — 2026-10-26
+
+A publicação preparada reutiliza o arquivo OCI original; não reconstrói depois
+da assinatura. Assinatura, evidência e bytes são validados antes de obter
+credenciais AWS. O destino exige conta/região aprovadas e repositório existente
+com tags imutáveis. A cópia preserva todos os manifests e digests; colisões ou
+confirmação divergente bloqueiam a promoção, sem eliminar imagens automaticamente.
+
+O fluxo real é manual e desativado por defeito. A retenção do OCI só ocorre em
+`dev` quando a preparação de releases é explicitamente ativada. Credenciais ECR
+são temporárias e não entram em argumentos de comandos ou artefactos.
+
+A referência anterior exige assinatura verificada e pode ser confirmada no ECR;
+continua a ser um candidato, sem prova de compatibilidade de dados ou atualização
+de serviços. O [CI de assinatura/publicação](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40252754115)
+passou com 22 testes, incluindo AWS/transferência simuladas e uma assinatura local
+com chave temporária. Os recursos e a operação real continuam sujeitos às
+pendências e aprovações do [plano](../PLAN.md).
+
+### A assinatura exige smoke da mesma imagem — 2026-10-26
+
+Stack e smoke reutilizam `config/curation_services.json`. O teste de runtime
+confirma o ID da configuração da plataforma OCI antes de executar os quatro
+serviços. Usa dados sintéticos, volumes temporários, UID não privilegiado e rede
+externa desativada, sem montar dados do checkout ou fornecer credenciais AWS.
+
+O resultado de smoke fica no relatório de entrega, protegido pelo hash que o
+documento de release assina. Ausência ou falha de smoke impede a assinatura.
+A importação local para teste não substitui os bytes OCI originais destinados
+a publicação. O [CI de c3db94b](https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4/actions/runs/40255889379)
+confirmou as oito sondas com catálogo sintético e `smoke_verified: true`.
+A validação cloud e o monitoring externo permanecem separados.
+
+## Monitoring e ambiente local
+
+### Monitoring não aumenta a autoridade sobre dados — 2026-10-19
+
+A aplicação local de Monitoring é independente e autentica os perfis no servidor;
+alterações exigem CSRF e não podem remover o último administrador. Credenciais e
+runtime ficam fora do Git. Esta identidade local não substitui Cognito em produção.
+
+Limpeza automática limita-se a caches regeneráveis e backups do próprio Monitoring;
+fontes, catálogo, warehouse, exports e credenciais ficam protegidos.
+
+### Telemetria é privada e reutiliza a auditoria existente — 2026-10-25
+
+Logs e métricas excluem tokens, prompts, respostas, contactos e dados de clientes.
+A identidade de uma pessoa só é atribuída com validação no backend. As métricas do
+agente leem a auditoria existente, sem criar outra persistência; edições posteriores
+não são atribuídas causalmente ao agente. Sem tarifas configuradas, custos ficam
+por configurar.
+
+SNS é o transporte opcional de incidentes, com IAM limitado ao tópico, entrega
+persistente, repetição e deduplicação. A integração foi validada, mas não substitui
+uma sonda externa. As [pendências de monitoring](../PLAN.md#pendências-de-monitoring)
+continuam abertas.
+
+### O ambiente académico partilha a role, não o estado privado — 2026-10-24
+
+Colegas podem usar `SageMakerTeachingExecutionRole`, mas mantêm workspace, clone,
+configuração e cache próprios. Não se copiam credenciais, sessões ou dados privados.
+Dados são recuperados de releases autorizadas. Esta exceção académica não define
+a identidade de produção.
+
+Referência: [Onboarding](ONBOARDING.md).
+
+### Cada aplicação mantém a sua fronteira — 2026-10-18
+
+O Observatório lê apenas o warehouse publicado; não chama o agente nem escreve no
+catálogo. A apresentação é independente e usa exemplos ilustrativos, sem dados
+operacionais. Estas entradas não são módulos obsoletos por ausência de imports.
+
+Referência: [Arquitetura](ARCHITECTURE.md).
+
+### URL público do frontend no SageMaker — 2026-10-26
+
+O servidor Vite reutiliza `config/studio.local.json` para ativar o caminho
+`/codeeditor/default/ports/5173/`, anunciar o URL HTTPS e ligar HMR por WSS/443.
+A porta é fixa: se estiver ocupada, o arranque falha em vez de anunciar outra.
+`BLU_SAGEMAKER_PROXY=0` permite desenvolvimento local explícito. O build mantém
+a base `/` para preservar os artefactos de alojamento independentes do Studio.
+O acesso externo continua a exigir sessão AWS e registo da porta no Code Editor.
+
+### Observatório aceita campos opcionais ausentes — 2026-10-26
+
+A entrega ativa materializada em SageMaker contém tabelas sem `contactos` e
+atrações sem `site_fonte`, `morada` ou acessibilidade. A consulta do catálogo
+assumia esses campos nas atrações e restaurantes, causando `DatabaseError`.
+O dashboard inspeciona agora as três tabelas e projeta `NULL` para metadados
+opcionais ausentes; identificadores e nomes continuam obrigatórios. Ausências
+mantêm-se desconhecidas, com erro de interface saneado para entregas incompatíveis.
+
+Evidência: 27 testes de dashboard/normalização aprovados, incluindo bases SQLite
+esparsas e completas; AppTest local das seis áreas sobre os 252 registos da entrega
+ativa sem exceções. SHA-256 da base inalterado. Esta execução não comprova o
+acesso através da sessão web AWS.
+
+### Reabertura explícita da última versão guardada — 2026-10-26
+
+O botão dependia do primeiro elemento do histórico já carregado no navegador e
+terminava silenciosamente se este estivesse vazio; não apresentava confirmação
+após restaurar a versão. Consulta agora o histórico no clique, escolhe a maior
+versão ativa, valida a resposta e recupera apenas o snapshot e o número da versão,
+preservando a identidade e a conversa. A interface indica o carregamento e a
+versão reaberta; uma lista vazia ou uma falha mantém o rascunho e apresenta erro.
+A reabertura não guarda outra versão nem altera os bytes PDF.
+
+Evidência local: `npm run check` com Node 22.13 e warehouse materializado passou
+205 testes, com um omitido; build com prefixo SageMaker aprovado. Oito cenários
+Playwright com APIs simuladas passaram a 1440/390 px: sucesso com histórico inicial
+vazio e lista desordenada, ausência de versões, snapshot inválido e indisponibilidade.
+Capturas desktop/móvel inspecionadas; portal local reiniciado com HTTP 200.
+O acesso autenticado pelo browser AWS não foi exercitado nesta validação.
+
+### Recuperação cloud recusa catálogos vazios — 2026-10-27
+
+O checkpoint de 26 de outubro às 23:36 UTC continha catálogo vazio; o backup
+operacional das 23:40 UTC também. A cache observada depois tinha 252 entradas
+importadas na revisão 1, em revisão. A release operacional S3 consultada em 27 de
+outubro continha catálogo vazio. Os backups de 20–22 de outubro preservavam os
+252 aprovados; o de 22 conserva 521 entradas de histórico, com revisões atuais
+entre 2 e 4. Não se tratava de reaplicar uma etiqueta: 198 registos tinham campos
+de edição diferentes da reimportação.
+
+Foi restaurado o catálogo persistente local a partir do backup de 22, após validar
+o manifesto completo, SHA-256, integridade SQLite e correspondência das revisões.
+O estado vazio anterior foi preservado no runtime privado. Os 252 aprovados
+coincidem com o gate da entrega do mesmo backup: 138 atrações, 54 restaurantes e
+60 experiências. Exports existentes ficaram inalterados. Uma reposição remota
+foi preparada localmente com apenas o catálogo substituído, conservando os outros
+artefactos da release ativa. Publicação S3 e reconstrução da cache continuam pendentes.
+
+`etl.cloud_runtime` recusa agora checkpoints com catálogo vazio antes de publicar
+estado operacional e recusa releases vazias antes do ETL ou promoção da cache.
+SQLite íntegro, por si só, não comprova que as aprovações foram recuperadas.
+Evidência: 16 testes de runtime cloud, S3 e catálogo passaram, com S3 simulado;
+a consulta e materialização da release remota foram reais e só de leitura.
+
+### Aprovações repostas no S3 e cache validada — 2026-10-27
+
+Após autorização explícita, foi publicada a release operacional
+`20261027T000806.798807Z-16481cff550a`. O apontador anterior foi comparado com a
+preparação e atualizado com `IfMatch` sobre o ETag, evitando substituir uma
+alteração concorrente. O adaptador acrescentara a tabela `portal_operations`;
+confirmou-se a igualdade exata dos snapshots atuais e históricos com o backup
+verificado antes da publicação. Nova materialização S3 confirmou os 252 aprovados,
+as 521 entradas históricas e hashes inalterados dos dois outros artefactos remotos.
+
+O fluxo `etl.cloud_runtime.rebuild` reconstruiu a cache a partir do S3 e publicou
+o warehouse `20261027T000902.135714Z-2bb57738412c`, com validação `passed`.
+O gate confirmou 138 atrações, 54 restaurantes e 60 experiências disponíveis para
+novos roteiros, mantendo as revisões recuperadas. A API real confirmou os 252
+aprovados e publicados; Playwright confirmou as três categorias em 1440/390 px,
+sem erros de JavaScript. Traduções foram simuladas e escritas de interface
+bloqueadas no ensaio. Os cinco endpoints locais passaram após `just blu up`.
+A sessão de execução mantém os serviços ativos neste ambiente.
+
+Os 16 testes de catálogo, S3 e runtime cloud passaram novamente, com S3 simulado;
+a publicação, materialização e reconstrução descritas acima usaram S3 real.
+O teste pelo navegador autenticado do utilizador no proxy AWS e as pendências de
+monitoring externo permanecem distintos desta validação local.
+
+### Interfaces resolvidas pela sessão atual do Code Editor — 2026-10-27
+
+Os links fixos da instância e o helper de navegador não registavam as portas na
+sessão web. `scripts/studio_urls.py` usa agora os metadados de Domain/Space/região
+e `DescribeSpace.Url` para identificar o workspace real; uma falha dessa consulta
+não reutiliza o URL de outro workspace. A configuração local fica como alternativa
+fora do SageMaker. Portal, apresentação e Vite usam essa resolução nos launchers;
+o build Vite mantém base `/` e não exige consulta cloud.
+
+A integração local **BLU Workspace Links** usa `env.asExternalUri` para registar
+portas e `env.openExternal` para abrir as interfaces pela sessão atual, sem montar
+ou guardar o domínio do proxy. A API `openExternal` já faz a resolução; não é
+aplicada duas vezes. Referência: [API oficial do VS Code](https://code.visualstudio.com/api/references/vscode-api).
+`config/workspace_interfaces.json` é a fonte das cinco interfaces para o pacote
+e para os launchers. O VSIX é gerado e instalado localmente, sem Marketplace,
+pela preparação e de forma idempotente no arranque. O pacote só atua em workspaces
+BLU confiáveis. A barra **BLU · Interfaces** e os comandos da paleta abrem as páginas.
+
+`open_dashboards.py` envia um pedido tipado sem URLs ao runtime privado e exige
+confirmação da extensão antes de anunciar sucesso. Uma sondagem complementar ao
+watcher garante a receção em hosts que excluem esse diretório dos eventos.
+`remote.restoreForwardedPorts` ficou ativo. Atualizações de uma extensão já ativa
+podem exigir **Developer: Reload Window**; o launcher informa essa situação.
+
+Evidência: descoberta real de `pedro-workspace` por `DescribeSpace`, instalação
+confirmada do VSIX 0.1.2, dez testes Python e quatro testes da integração com API
+simulada aprovados, build Vite e quatro testes de alojamento aprovados, scripts
+shell e verificações documentais sem erros. O Vite ativo respondeu HTTP 200.
+A sessão ainda mantinha a versão anterior da extensão carregada, pelo que a
+confirmação de abertura real através da versão nova aguarda recarregamento da
+janela; a instalação por SSH não comprova o encaminhamento na sessão web AWS.
+
+### Separação entre o editor SSH e o Code Editor web — 2026-10-27
+
+A captura do utilizador e `session.json` confirmaram `uiKind=1`: VS Code desktop
+por SSH. A coluna Forwarded Address contém os extremos locais dos túneis dessa
+sessão; `asExternalUri` nesse contexto não regista o proxy HTTPS da sessão web.
+A instalação anterior pelo CLI `code` só atingia as extensões SSH, pelo que pedir
+para recarregar essa janela não resolvia o objetivo dos URLs SageMaker.
+
+O instalador passou a detetar os dois editores e a instalar também pelo CLI
+`sagemaker-code-editor`, com o diretório persistente
+`~/sagemaker-code-editor-server-data/extensions`. O launcher em SageMaker exige
+um marcador e uma confirmação web (`uiKind=2`), não aceitando uma sessão SSH
+como evidência de encaminhamento HTTPS. A extensão não anuncia o encaminhamento
+SSH como proxy AWS; a interface SSH informa que os links HTTPS devem ser abertos
+na sessão Code Editor do navegador. Os rótulos das portas deixaram de alegar AWS.
+
+Evidência: instalação real do VSIX nos dois catálogos de extensões; 13 testes
+Python e cinco testes Node passaram. O registo e a abertura na sessão web do
+utilizador continuam por confirmar; não se afirma que a coluna Ports de uma
+sessão SSH será convertida em endereços HTTPS.
+
+### Protocolo distingue testes falhados de abertura do navegador — 2026-10-27
+
+A execução apresentada pelo utilizador tinha duas causas independentes: a fixture
+`monitoring.browser_fixture` não incluía `snapshot.alerts`, exigido pela interface,
+e omitia o agente opcional desativado. O teste parava antes de apresentar as
+métricas do agente. Os blocos `bash -c` do protocolo conservavam apenas o estado
+do último comando, permitindo que a apresentação aprovada ocultasse essa falha.
+
+A fixture passou a cumprir o contrato completo de alertas e serviços. Os blocos
+compostos de preparação, recuperação, testes e build usam `bash -euo pipefail -c`:
+um erro interrompe a etapa correspondente antes de executar o comando seguinte.
+
+A ausência de confirmação do navegador tem agora código de saída 3 no launcher,
+distinto de erros reais. A função `open_service_pages` do orquestrador trata esse
+estado como abertura pendente, sem invalidar serviços já validados e sem anunciar
+cinco interfaces abertas. Outros erros continuam a interromper o protocolo. A
+etapa 12 descreve a confirmação da abertura, não uma nova recuperação de dados.
+
+Evidência: 43 testes de orquestração, integração do editor e Monitoring aprovados;
+cenários locais do navegador em 320/768/1440/2560 px passaram com fixture isolada,
+sem fornecedores externos. `just blu up` real terminou com código 0, cinco
+serviços/endpoints validados e aviso explícito de abertura web pendente. A
+recuperação integral e as publicações S3 não foram repetidas nesta correção.
+As pendências de monitoring externo do plano mantêm-se abertas.
+
+### Isolamento SNS dos testes do protocolo — 2026-10-27
+
+A etapa 6 herdava `BLU_MONITORING_NOTIFICATIONS_ENABLED=true` do serviço real.
+O teste de rotação criava um Collector com configuração mínima, sem canal SNS,
+pelo que o dispatcher recusava corretamente a ativação herdada. Não foi relaxada
+a validação de tópicos nem alterada a configuração dos serviços.
+
+Os testes de Collector desativam explicitamente notificações externas e bloqueiam
+qualquer tentativa de obter um cliente SNS. A subshell da etapa 6 também define
+notificações externas desligadas apenas para os processos de teste. O teste de
+rejeição de tópicos inválidos ativa explicitamente o dispatcher no seu próprio
+contexto, conservando essa validação independentemente do ambiente anfitrião.
+Uma regressão verifica a variável nas três baterias sem alterar a configuração
+herdada pelo serviço.
+
+Evidência: a etapa 6 exata foi executada com ambiente exterior SNS ativo e tópico
+inválido simulado; terminou com código 0. As baterias passaram: 202 testes Python
+(um omitido), 37 de Monitoring e cinco de tradução. Testes SNS usam cliente falso;
+nenhuma notificação real foi enviada pelos ensaios. `just blu up` reiniciou os
+cinco serviços deixados parados pela interrupção e validou os cinco endpoints,
+sem recuperação de dados nem publicação S3. Monitoring externo permanece sujeito
+às pendências explícitas do plano.
+
+### Portal distingue apresentação de metadados técnicos — 2026-10-27
+
+A revisão cobriu as páginas e componentes do portal, textos gerados e o renderer
+PDF. Foram retirados os códigos de regras dos rótulos do briefing e de mobilidade,
+o resumo técnico diário gerado, os critérios de implementação dos cartões, IDs do
+catálogo e das partilhas/contactos, a posição determinística no assistente e a
+ligação direta ao JSON das versões. Campos de origem são apresentados sem
+metadados técnicos nem JSON bruto, conservando os campos comerciais aninhados.
+Fontes públicas, restrições, pendências, confirmações, estados de aprovação e
+versões úteis à recuperação continuam visíveis. Erros de configuração dos
+contactos passaram a orientar o utilizador sem expor nomes de variáveis AWS.
+
+`presentation-text.ts` filtra a apresentação dos resumos antigos e extrai fontes
+públicas da linhagem técnica. Não modifica snapshots, IDs, revisões, matching,
+concorrência ou hashes. Novos PDFs deixam de imprimir IDs, hashes, cadeias e
+códigos de regras, mantendo a versão legível, as condições e o orçamento.
+PDFs já persistidos não são reescritos; o contrato do Prompt TXT mantém-se.
+
+Referências foi retirada da navegação: a página misturava exploração técnica,
+IDs e divergências das fontes, sem constituir um fluxo necessário ao utilizador
+normal. Links antigos redirecionam para o Catálogo com o prefixo do proxy.
+O componente DatasetExplorer, usado apenas por essa página, foi removido. As
+fontes e os contratos da API de exploração não foram eliminados nem se adicionou
+uma falsa fronteira de autorização pela simples remoção de navegação.
+
+Evidência: check completo com 209 testes aprovados, lint/tipos/formatação e build
+aprovados; doze cenários desktop/móvel nos seis idiomas confirmaram ausência dos
+códigos/IDs, preservação de fontes, pendências, campos mistos aninhados e bytes do
+rascunho. Testes de referências confirmaram redirecionamento com/sem JavaScript e
+preservação da allowlist da API. PDFs sintéticos dos seis idiomas foram renderizados
+e inspecionados com traduções simuladas; mandarim usou Noto Sans CJK. Isto valida
+apresentação e paginação, não a qualidade semântica de novas traduções de modelos.
+O portal local foi reiniciado: HTTP 200, sem link Referências, redirecionamento
+307 para o catálogo e 252 aprovados/521 revisões confirmados. Não houve publicação
+S3, commit, push ou deployment cloud nesta limpeza.
+
+### CODEOWNERS baseado na autoria de criação — 2026-10-27
+
+Por indicação do utilizador, foi retirada a regra global `* @pedrocarreiro25`.
+A autoria foi apurada para cada ficheiro versionado existente com
+`git log --follow --diff-filter=A`, usando a identidade de autor dos commits de
+criação, e não o autor da última alteração. Foram encontrados 346 ficheiros de
+Pedro entre 505 com criação identificada. Ficheiros novos sem commit não foram
+atribuídos por inferência.
+
+As 12 regras anteriores do addon foram preservadas. Em
+`infra/lambda/event-processor/item.mjs`, criado por Pedro mas incluído no âmbito
+anterior de Gisela, a regra específica conserva ambos os responsáveis. Os dois
+caminhos com espaços/segmento dinâmico usam padrões estreitos, conferidos contra
+o conjunto atual de ficheiros: cobrem apenas os caminhos identificados.
+A alteração continua local e não cria ownership global para ficheiros futuros.
+
+### Auditoria dos PDFs e dos ZIPs finais — 2026-10-27
+
+A verificação complementar encontrou campos livres do corpo e orçamento que não
+passavam pelo filtro de apresentação. O renderer aplica agora a limpeza também
+nesses textos e nas traduções renderizadas. Os rótulos de hashes, já sem saída no
+PDF, foram retirados dos pedidos de tradução. A função localizada aceita uma
+tradução injetada apenas para testes; em produção conserva o tradutor local.
+
+Evidência: 211 testes/check completo e build aprovados. Uma versão sintética num
+VersionStore temporário gerou PDFs pelos caminhos reais de renderização localizada
+em seis idiomas, com tradução simulada. `pdftotext` verificou os ficheiros finais,
+incluindo descrições, pendências, inclusões, exclusões e impostos, sem códigos de
+regras, IDs internos ou hashes. Os ZIPs continham apenas um PDF para PT ou dois
+para PT/idioma do cliente; as repetições conservaram bytes idênticos. Os orçamentos
+renderizados foram inspecionados nos seis idiomas com fonte CJK para mandarim.
+Snapshots e exports operacionais não foram modificados; os PDFs antigos continuam
+imutáveis. A correção foi carregada apenas no portal local.
+
+### Consolidar CODEOWNERS por diretórios de autoria integral — 2026-10-27
+
+Por indicação do utilizador, as regras de Pedro foram agrupadas em 13 diretórios
+cujo conteúdo versionado existente tem integralmente autoria de criação de Pedro.
+As pastas de autoria mista conservaram regras por ficheiro, incluindo a
+sobreposição com Gisela. O total de regras de Pedro passou de 346 para 267;
+a comparação dos responsáveis antes/depois confirmou equivalência nos 505
+ficheiros auditados. Não foi reintroduzida uma regra global por defeito.

@@ -15,11 +15,14 @@ function publishOnce(): Promise<void> {
     "portal/catalog.sqlite",
   );
   const exports = path.resolve(
+    /* turbopackIgnore: true */
     process.env.BLU_EXPORT_DIR ?? path.join(project, "exports/itineraries"),
   );
   const pending = operationalRoot();
   return new Promise((resolve, reject) => {
+    // O executável e os dados são fornecidos pelo ambiente de runtime.
     const processHandle = spawn(
+      /* turbopackIgnore: true */
       python,
       [
         "-B",

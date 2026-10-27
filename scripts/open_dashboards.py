@@ -1,26 +1,58 @@
-"""Abre as quatro interfaces BLU na sessão de navegador do Code Editor."""
+"""Abre as cinco interfaces BLU na sessão de navegador do Code Editor."""
 from __future__ import annotations
 
 import argparse
+import json
+import time
+import uuid
 import os
 from pathlib import Path
 import signal
 import subprocess
 import webbrowser
 
-from studio_urls import dashboard_url
+try:
+    from scripts.studio_urls import dashboard_url, studio_base, INTERFACES
+except ModuleNotFoundError:
+    from studio_urls import dashboard_url, studio_base, INTERFACES
+
+BRIDGE = Path(__file__).resolve().parents[1] / "monitoring/runtime/code-editor-links"
 
 
-DASHBOARDS = (
-    ("Portal", 3001, "/"),
-    ("Apresentação", 3003, "/"),
-    ("Monitoring", 3004, "/"),
-    ("Observatório", 8501, "/"),
-)
+def request_editor(action: str = "open", timeout: float = 10) -> bool:
+    """Pedir à sessão ativa que resolva as portas, sem transportar URLs públicos."""
+    if action not in {"open", "forward"}:
+        raise ValueError("Ação desconhecida.")
+    web = os.environ.get("SAGEMAKER_APP_TYPE") == "CodeEditor"
+    if not (BRIDGE / ("session-2.json" if web else "session.json")).is_file():
+        return False
+    identity = uuid.uuid4().hex
+    request = {"id": identity, "action": action, "at": int(time.time() * 1000)}
+    if web:
+        request["uiKind"] = 2
+    temporary = BRIDGE / f"request-{identity}.tmp"
+    temporary.write_text(json.dumps(request), encoding="utf-8")
+    os.chmod(temporary, 0o600)
+    os.replace(temporary, BRIDGE / "request.json")
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            response = json.loads((BRIDGE / "response.json").read_text())
+            if response.get("id") == identity:
+                return response.get("ok") is True and (not web or response.get("uiKind") == 2)
+        except (FileNotFoundError, ValueError):
+            pass
+        time.sleep(0.1)
+    return False
+
+
+
+DASHBOARDS = tuple((service["label"], service["port"], "/") for service in INTERFACES)
 
 
 def urls() -> list[tuple[str, str]]:
-    return [(name, dashboard_url(port, path)) for name, port, path in DASHBOARDS]
+    base = studio_base()
+    return [(name, dashboard_url(port, path, base=base)) for name, port, path in DASHBOARDS]
 
 
 def main() -> int:
@@ -30,11 +62,22 @@ def main() -> int:
     parser.add_argument("--quiet", action="store_true",
                         help="Abrir sem escrever confirmação no terminal.")
     args = parser.parse_args()
+    if not args.print_only and request_editor():
+        if not args.quiet:
+            print("Interfaces abertas através do encaminhamento nativo do Code Editor atual.")
+        return 0
     targets = urls()
     if args.print_only:
         for name, url in targets:
             print(f"{name}: {url}")
         return 0
+
+    if os.environ.get("SAGEMAKER_APP_TYPE") == "CodeEditor":
+        for name, url in targets:
+            print(f"{name}: {url}")
+        print("A sessão web não confirmou a abertura. Abra o Code Editor do workspace no navegador AWS e execute BLU: Abrir interfaces deste workspace. A sessão SSH não regista as portas do proxy web.")
+        # Código distinto: serviços não falharam; só falta uma sessão web ativa.
+        return 3
 
     helper = os.environ.get("BROWSER", "")
     if helper and Path(helper).is_file():

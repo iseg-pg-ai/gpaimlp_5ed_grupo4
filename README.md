@@ -13,6 +13,7 @@ itinerário. Neste contexto, DMC significa *Destination Management Company*.
 | --- | --- | --- |
 | ETL e `warehouse/` | Ingestão, validação e publicação atómica dos dados | — |
 | DMC Workspace | Portal Next.js de curadoria e entrega | 3001 |
+| Leads / Concierge | Frontend público Vite e qualificação inicial | 5173 |
 | Apresentação | Narrativa interativa independente | 3003 |
 | BLU Operations | Monitoring privado e gestão de utilizadores | 3004 |
 | Assistente BLU | Planeador transacional integrado no Portal com Amazon Bedrock | — |
@@ -47,8 +48,9 @@ uv sync --locked --all-groups
 
 Os grupos `dashboard`, `agent` e `translation` também podem ser instalados
 individualmente com `uv sync --locked --inexact --group NOME`. Depois de instalar
-`translation`, executar `python translations/setup_models.py`. O portal tem
-dependências próprias, instaladas com `npm ci` em `dmc-workspace/`.
+`translation`, executar `python translations/setup_models.py`. O portal e o
+frontend de leads têm dependências próprias, instaladas com `npm ci` em
+`dmc-workspace/` e `frontend/blu-cloud-site/`.
 
 O `pyproject.toml`, `uv.lock`, `package.json` e `package-lock.json` são as
 fontes das dependências. Os ficheiros `requirements.txt` são exports; consultar a
@@ -59,8 +61,7 @@ Num SageMaker Code Editor novo, seguir o
 [guia de onboarding](docs/ONBOARDING.md) ou executar:
 
 ```bash
-python3 scripts/setup_workspace.py \
-  --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
+python3 scripts/setup_workspace.py
 ```
 
 Num clone sem dados locais, o [guia de onboarding](docs/ONBOARDING.md) prepara o
@@ -68,8 +69,10 @@ ambiente e o `just blu it` materializa as releases S3 autorizadas. A configuraç
 partilhável do agente está em `.env.example`. Também é possível usar
 `./bin/just blu it` sem instalar o launcher no `PATH`.
 
-O assistente valida o ambiente, guarda a URL em `config/studio.local.json`,
-instala o launcher local e cria o administrador inicial do Monitoring quando
+No SageMaker, o URL é descoberto pelos metadados do Space atual e por
+`sagemaker:DescribeSpace`. Fora desse ambiente, `--studio-url` permite configurar
+uma base local. O assistente instala a integração **BLU Workspace Links** no
+Code Editor, o launcher local e cria o administrador inicial do Monitoring quando
 ainda não existem contas. A palavra-passe inicial fica apenas em
 `monitoring/runtime/initial-password.txt` e deve ser substituída após o primeiro
 login. A gestão de contas está documentada no
@@ -84,13 +87,21 @@ just blu up
 ```
 
 O comando mantém serviços ativos, inicia os que estejam parados, confirma os
-quatro endpoints e abre as quatro interfaces.
+cinco endpoints e abre as cinco interfaces.
 
-Os URLs `/codeeditor/default/ports/PORTA/` exigem que as portas 3001, 3003, 3004
-e 8501 estejam registadas no painel **Ports** do Code Editor aberto no browser.
-Adicionar portas apenas numa sessão VS Code local/remota cria endereços
-`127.0.0.1` e não autoriza o proxy web do SageMaker. Num workspace novo, abrir o
-Code Editor pelo browser e adicionar uma vez as quatro portas nesse painel.
+Na barra inferior do **Code Editor web aberto no navegador AWS**, **BLU · Interfaces** abre a interface escolhida
+através do encaminhamento nativo da sessão atual. O comando **BLU: Abrir interfaces
+deste workspace** também está disponível na paleta; `just blu up` pede à mesma
+integração para abrir as cinco interfaces. As portas são registadas pelo editor e
+os URLs são resolvidos em cada abertura, sem copiar um domínio de outro workspace.
+O instalador abrange o editor web e o VS Code por SSH, que têm diretórios de
+extensões diferentes. O painel **Ports** da sessão SSH continua a mostrar os
+extremos locais (`localhost`); isso não comprova registo no proxy HTTPS do Studio.
+Após instalar ou atualizar a extensão no editor web, pode ser necessário executar **Developer:
+Reload Window** uma vez. Se a extensão não confirmar o pedido, o launcher avisa;
+não anuncia uma abertura que não foi confirmada. A ausência de sessão web produz
+um aviso de abertura pendente, sem marcar como falha os serviços já validados.
+Falhas reais de testes interrompem o protocolo na etapa correspondente.
 
 Este arranque rápido não cria checkpoints, não recupera backups e não para
 processos ativos. Essas ações pertencem exclusivamente ao `just blu it`.

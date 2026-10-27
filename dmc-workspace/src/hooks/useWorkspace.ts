@@ -73,6 +73,8 @@ export function useWorkspace() {
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [reopening, setReopening] = useState(false);
+  const [reopenedVersion, setReopenedVersion] = useState<number | null>(null);
   const [assistantBusy, setAssistantBusy] = useState(false);
   const [agentProposal, setAgentProposal] = useState<AgentProposal | null>(null);
   const operation = useRef(false);
@@ -222,6 +224,7 @@ export function useWorkspace() {
     setError("");
     try {
       const changed = await saveVersion(await fn(active), "edited");
+      setReopenedVersion(null);
       setAgentProposal(null);
       setTrips((prev) => prev.map((t) => (t.id === changed.id ? changed : t)));
       return true;
@@ -269,11 +272,28 @@ export function useWorkspace() {
   const exportPrepared = (format: "bundle" | "prompt", locale: Locale) =>
     exportProposal(format, locale);
   const reopenLatest = async () => {
-    const latest = history.id === activeId ? history.versions[0] : undefined;
-    if (!latest || !active || operation.current) return;
+    if (!active || operation.current) return;
     operation.current = true;
     setSaving(true);
+    setReopening(true);
+    setReopenedVersion(null);
+    setError("");
     try {
+      // Consultar o servidor no clique: o histórico local pode estar vazio ou desatualizado.
+      const versions = await responseJson<HistoryVersion[]>(
+        await portalFetch(`/api/versions?tripId=${encodeURIComponent(activeId)}`),
+      );
+      if (
+        !Array.isArray(versions) ||
+        versions.some((v) => !Number.isSafeInteger(v?.version) || v.version < 1)
+      )
+        throw new Error("Histórico inválido recebido do servidor.");
+      setHistory({ id: activeId, versions });
+      const latest = versions.reduce<HistoryVersion | undefined>(
+        (current, version) => (!current || version.version > current.version ? version : current),
+        undefined,
+      );
+      if (!latest) throw new Error("Ainda não existem versões guardadas.");
       const response = await portalFetch(
         `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${latest.version}`,
       );
@@ -284,13 +304,22 @@ export function useWorkspace() {
       validateSnapshot(result?.snapshot);
       if (result?.meta?.version !== latest.version)
         throw new Error("Versão inválida recebida do servidor.");
-      const restored = { ...active, ...result.snapshot, version: result.meta.version };
+      const restored = {
+        ...active,
+        brief: result.snapshot.brief,
+        itinerary: result.snapshot.itinerary,
+        pending: result.snapshot.pending,
+        version: result.meta.version,
+      };
       setTrips((prev) => prev.map((t) => (t.id === restored.id ? restored : t)));
+      setAgentProposal(null);
+      setReopenedVersion(result.meta.version);
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao reabrir.");
     } finally {
       operation.current = false;
+      setReopening(false);
       setSaving(false);
     }
   };
@@ -675,6 +704,7 @@ export function useWorkspace() {
   const selectTrip = (id: string) => {
     if (busy || operation.current) return;
     setActiveId(id);
+    setReopenedVersion(null);
     setEditing(false);
     setError("");
   };
@@ -846,6 +876,8 @@ export function useWorkspace() {
 
   return {
     activeId,
+    reopening,
+    reopenedVersion,
     active,
     busy,
     assistantBusy,

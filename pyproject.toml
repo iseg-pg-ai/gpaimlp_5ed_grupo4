@@ -5,13 +5,13 @@ description = "BLU ETL with optional dashboard, translation and Bedrock agent in
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "openpyxl==3.1.5",
-    "pypdf==6.19.0",
+    "pypdf==6.21.2",
     "pandas==2.3.3",
 ]
 
 [dependency-groups]
-dashboard = ["plotly==6.5.2", "streamlit==1.55.0"]
-translation = ["argostranslate==1.11.0", "ctranslate2>=4.0,<5"]
+dashboard = ["plotly==6.5.2", "streamlit==1.66.1"]
+translation = ["argostranslate==1.11.0", "ctranslate2>=4.0,<5", "torch==2.14.0"]
 agent = [
     "boto3>=1.35.0",
 ]
@@ -24,7 +24,20 @@ constraint-dependencies = [
     "gitpython>=3.1.60",
     "urllib3>=2.8.0",
     "protobuf>=6.33.5,<7",
+    "pillow>=13.0.0,<14",
+    "certifi>=2026.10.19",
+    "filelock>=4.2.1",
+    "setuptools>=84.1.0",
 ]
 # Argos 1.11.0 fixa Stanza 1.10.1, afetado por GHSA-v5jw-96jm-7h2c.
 # Manter a primeira série corrigida até o Argos atualizar esse requisito.
 override-dependencies = ["stanza>=1.12.2,<1.13"]
+
+# A tradução usa CPU; evitar dependências CUDA no Linux e Windows.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
