@@ -20,8 +20,9 @@ id blu >/dev/null 2>&1 || useradd --system --home-dir /srv/blu --shell /sbin/nol
 mkdir -p /srv/blu/releases
 
 # Disco de dados: espera pela ligação e só formata se ainda não tiver sistema de ficheiros.
+# Até 30 minutos, para cobrir a troca de servidor em dois deploys (o disco liga no segundo).
 device="/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${VOLUME_ID//-/}"
-for _ in $(seq 1 120); do [ -e "$device" ] && break; sleep 5; done
+for _ in $(seq 1 360); do [ -e "$device" ] && break; sleep 5; done
 [ -e "$device" ] || { echo "Disco de dados $VOLUME_ID não ligado"; exit 1; }
 blkid "$device" >/dev/null || mkfs.xfs -L blu-state "$device"
 mkdir -p "$STATE"
