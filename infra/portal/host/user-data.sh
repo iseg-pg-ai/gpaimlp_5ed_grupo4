@@ -164,3 +164,5 @@ EOF
 systemctl daemon-reload
 systemctl enable blu-portal blu-gate
 systemctl enable --now blu-portal-update.timer
+# Corre em cada arranque: os serviços já arrancados passam a usar as unidades acabadas de escrever.
+systemctl restart blu-portal blu-gate || true

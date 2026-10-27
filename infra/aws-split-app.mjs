@@ -734,6 +734,11 @@ class PortalStack extends Stack {
       __MESSAGE_TABLE__: data.messages.tableName,
       __INTELLIGENCE_TABLE__: data.intelligence.tableName,
     }).reduce((text, [marker, value]) => text.replaceAll(marker, value), script));
+    // O script corre em cada arranque (é idempotente): mudar o script só reinicia o servidor,
+    // sem o trocar. Trocar quebraria a VPC origin, presa à instância, e a ligação do disco.
+    const bootScript = new ec2.MultipartUserData();
+    bootScript.addPart(ec2.MultipartBody.fromRawBody({ contentType: 'text/cloud-config; charset="utf8"', body: 'cloud_final_modules:\n- [scripts-user, always]\n' }));
+    bootScript.addUserDataPart(userData, ec2.MultipartBody.SHELL_SCRIPT, true);
     const server = new ec2.Instance(this, 'PortalServerInstance', {
       vpc,
       vpcSubnets: { subnets: [subnet] },
@@ -741,18 +746,12 @@ class PortalStack extends Stack {
       machineImage: ec2.MachineImage.genericLinux(PORTAL_AMI),
       role,
       securityGroup: serverGroup,
-      userData,
-      // O arranque só corre uma vez: um script novo exige um servidor novo (o disco de dados fica).
-      userDataCausesReplacement: true,
+      userData: bootScript,
       requireImdsv2: true,
       associatePublicIpAddress: false,
       blockDevices: [{ deviceName: '/dev/xvda', volume: ec2.BlockDeviceVolume.ebs(20, { volumeType: ec2.EbsDeviceVolumeType.GP3, encrypted: true }) }],
     });
-    // Um disco só liga a um servidor e o CloudFormation cria o novo antes de apagar o antigo:
-    // para trocar o servidor, primeiro um deploy com PORTAL_DETACH_STATE=1, depois um normal.
-    if (process.env.PORTAL_DETACH_STATE !== '1') {
-      new ec2.CfnVolumeAttachment(this, 'PortalStateAttachment', { instanceId: server.instanceId, volumeId: state.volumeId, device: '/dev/sdf' });
-    }
+    new ec2.CfnVolumeAttachment(this, 'PortalStateAttachment', { instanceId: server.instanceId, volumeId: state.volumeId, device: '/dev/sdf' });
 
     // Cópia diária do disco de dados, guardada 7 dias.
     const backupRole = new iam.Role(this, 'PortalBackupRole', { assumedBy: new iam.ServicePrincipal('dlm.amazonaws.com'), managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSDataLifecycleManagerServiceRole')] });
