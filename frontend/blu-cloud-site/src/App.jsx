@@ -9,10 +9,18 @@ const prompts = [
   ["budget", /\b(budget|eur|euro|€|£|\$|\d{3,})\b/i, "What budget range should the curator work within?"],
 ];
 
+// Offline fallback, with the same rule as the chat Lambda (infra/lambda/chat/contact.mjs):
+// ask once for a way to follow up from the second message, and keep planning either way.
+const contactAsk = "If you like, leave an email or a phone or WhatsApp number so a curator can follow up even if this chat ends; we can keep planning either way.";
 function localReply(history) {
-  const joined = history.filter(message => message.role === "user").map(message => message.text).join(" ");
+  const said = history.filter(message => message.role === "user").map(message => message.text);
+  const joined = said.join(" ");
   const missing = prompts.find(([, expression]) => !expression.test(joined));
-  return missing ? missing[2] : "Please provide your email address or phone number so a curator can confirm availability and prepare a proposal shaped around what you are looking for.";
+  const given = said.some(text => contactShared.test(text));
+  const asked = history.some(message => message.role === "assistant" && contactRequested.test(message.text));
+  const next = missing ? missing[2] : "Is there anything else a curator should know, such as a celebration or a place you have always wanted to see?";
+  if (given) return said.at(-1) && contactShared.test(said.at(-1)) ? `Thank you. ${next}` : next;
+  return !asked && said.length >= 2 ? `${next} ${contactAsk}` : next;
 }
 
 // One tap answers the next missing planning detail; "Skip" lets the visitor move on.
@@ -41,8 +49,9 @@ function acquisition() {
 // Demo mode (?demo=1) is for presentations: a reset button, and every event marked synthetic.
 const demoMode = new URLSearchParams(window.location.search).get("demo") === "1";
 
+// The same patterns as infra/lambda/chat/contact.mjs, so the site and the Lambda agree on when contact was asked or shared.
 const contactShared = /[^\s@]+@[^\s@]+\.[^\s@]+|\+?\d[\d\s().-]{7,}\d/;
-const contactRequested = /\b(e-?mail|phone|contact detail|best way to reach)/i;
+const contactRequested = /\b(e-?mail|phone|whats ?app|contact details?|best way to reach|reach you)\b/i;
 
 function whatsappLink(reference) {
   const base = window.BLU_WHATSAPP_URL || "https://wa.me/351915784212";

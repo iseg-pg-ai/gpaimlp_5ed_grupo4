@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { conversationMessages } from '../lambda/chat/conversation.mjs';
+import { CONTACT_REQUESTED, CONTACT_SHARED, contactState } from '../lambda/chat/contact.mjs';
 import { lisbonDate, systemPrompt } from '../lambda/chat/prompt.mjs';
 import { cleanJourney, extractionPrompt, journeyStage, journeyTool, mergeJourney, missingDetails, toolInput } from '../lambda/chat/journey.mjs';
 
@@ -96,6 +98,32 @@ test('journey stage and missing details follow the qualifying fields', () => {
   const ready = { destination: 'Lisbon', timeframe: 'May 2027', party: '2 adults', budget: '6000 EUR' };
   assert.equal(journeyStage(ready), 'ready-for-curator');
   assert.deepEqual(missingDetails({ destination: 'Lisbon' }), ['timeframe', 'party', 'budget']);
+});
+
+test('the concierge asks for a way to follow up early, once, and keeps planning after it is given', () => {
+  const ask = { role: 'assistant', text: 'Lovely. If you like, leave an email or WhatsApp number so a curator can follow up. When are you travelling?' };
+  assert.equal(contactState([], 'A week in Lisbon'), 'later');
+  assert.equal(contactState([{ role: 'user', text: 'A week in Lisbon' }, { role: 'assistant', text: 'Who is travelling?' }], 'Two adults'), 'due');
+  assert.equal(contactState([{ role: 'user', text: 'Lisbon' }, ask], 'May 2027'), 'asked');
+  assert.equal(contactState([{ role: 'user', text: 'Lisbon' }, ask], 'ana@example.com'), 'given');
+  assert.equal(contactState([{ role: 'user', text: 'Call me on +351 912 345 678' }, ask], 'We love wine'), 'given');
+  // Budgets and years are not phone numbers.
+  assert.equal(contactState([{ role: 'user', text: 'Lisbon in May 2027' }], 'around 6000 EUR'), 'due');
+  assert.equal(contactState('not a list', 'Hi'), 'later');
+
+  assert.match(systemPrompt('2026-10-25', {}, 'due'), /ask once and lightly for an email address or a phone or WhatsApp number/);
+  assert.match(systemPrompt('2026-10-25', {}, 'due'), /still ask your next planning question/);
+  assert.match(systemPrompt('2026-10-25', {}, 'given'), /never ask for contact details again, and carry on planning/);
+  assert.match(systemPrompt('2026-10-25', {}, 'asked'), /do not ask again/);
+  assert.match(systemPrompt('2026-10-25'), /Do not ask for contact details yet/);
+  assert.match(systemPrompt('2026-10-25', {}, 'given'), /never ends the conversation/);
+  assert.doesNotMatch(systemPrompt('2026-10-25', {}, 'due'), /only once the destination is in Portugal and the dates/);
+});
+
+test('the site and the Lambda use the same contact patterns', async () => {
+  const site = await readFile(new URL('../../frontend/blu-cloud-site/src/App.jsx', import.meta.url), 'utf8');
+  assert.ok(site.includes(`const contactShared = ${CONTACT_SHARED};`));
+  assert.ok(site.includes(`const contactRequested = ${CONTACT_REQUESTED};`));
 });
 
 test('the extraction tool input is read from the Converse tool call', () => {

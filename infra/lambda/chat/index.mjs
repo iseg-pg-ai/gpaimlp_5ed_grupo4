@@ -2,6 +2,7 @@ import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-r
 import { conversationMessages } from './conversation.mjs';
 import { extractionPrompt, journeyStage, journeyTool, mergeJourney, missingDetails, toolInput } from './journey.mjs';
 import { lisbonDate, systemPrompt } from './prompt.mjs';
+import { contactState } from './contact.mjs';
 
 const bedrock = new BedrockRuntimeClient({});
 const response = (statusCode, body) => ({ statusCode, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }, body: JSON.stringify(body) });
@@ -21,10 +22,11 @@ export async function handler(event) {
     if (attack.test(message)) return response(200, { reply: safeReply, security: 'intervened', ...journeyBody(previous) });
     const history = conversationMessages(body.messages, message);
     const today = lisbonDate();
+    const contact = contactState(body.messages, message);
     // The reply and the metadata extraction run in parallel, so tracking adds no wait.
     const [answer, extraction] = await Promise.allSettled([
       bedrock.send(new ConverseCommand({
-        modelId: process.env.MODEL_ID, system: [{ text: systemPrompt(today, previous) }], messages: history,
+        modelId: process.env.MODEL_ID, system: [{ text: systemPrompt(today, previous, contact) }], messages: history,
         inferenceConfig: { maxTokens: 260, temperature: 0.5, topP: 0.9 },
         guardrailConfig: { guardrailIdentifier: process.env.GUARDRAIL_ID, guardrailVersion: process.env.GUARDRAIL_VERSION, trace: 'enabled' },
       })),

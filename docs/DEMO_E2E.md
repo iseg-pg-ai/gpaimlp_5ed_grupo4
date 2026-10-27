@@ -50,8 +50,8 @@ Abrir o site com o modo de demonstração e uma campanha fictícia:
 | --- | --- | --- |
 | 1 | Abrir **Talk to BLU** e tocar em *A week in Lisbon and Sintra* | Sugestões de resposta; o visitante pode continuar a escrever enquanto o BLU responde |
 | 2 | Escrever “Madrid in 1945 for 1000 pesetas” | O concierge limita-se a Portugal, recusa datas passadas e pede orçamento em euros |
-| 3 | Responder com os botões: viajantes, datas e orçamento | A cada resposta, o chat pergunta só o que falta; *Skip* permite avançar |
-| 4 | Aceitar **Yes** no pedido de consentimento | Nada é guardado antes; depois surge a referência `BLU-…` |
+| 3 | Responder com os botões: viajantes, datas e orçamento | A cada resposta, o chat pergunta só o que falta; *Skip* permite avançar. Logo à segunda mensagem pede, uma só vez e como opcional, um email ou número de telefone ou WhatsApp, e continua a planear na mesma resposta |
+| 4 | Escrever um email de teste e aceitar **Yes** no pedido de consentimento | O chat agradece e continua a conversa; nada é guardado antes do consentimento; depois surge a referência `BLU-…` |
 | 5 | Abrir **Contactos** no portal e o contacto mais recente | Etapa, destino, datas, viajantes, orçamento, campanha `demo-29out`, conversa e data do consentimento |
 | 6 | Marcar *Preparar proposta*, escrever uma nota e guardar | Etiquetas fixas para CRM e churn; nota interna nunca enviada ao cliente |
 | 7 | Mostrar os botões de email ou WhatsApp e **Marcar como contactado** | O contacto passa para *Contactados*; nova mensagem do cliente volta a colocá-lo *Por contactar* |
