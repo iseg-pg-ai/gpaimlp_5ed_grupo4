@@ -1,7 +1,7 @@
 {
   "remote.autoForwardPorts": true,
   "remote.autoForwardPortsSource": "process",
-  "remote.restoreForwardedPorts": false,
+  "remote.restoreForwardedPorts": true,
   "remote.portsAttributes": {
     "3001": {
       "label": "BLU · Curation Studio · AWS",

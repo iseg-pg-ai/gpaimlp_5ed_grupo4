@@ -4,6 +4,28 @@ Revisto em 26 de outubro de 2026. Este ficheiro contém apenas trabalho aberto,
 ordenado pelas dependências reais. Implementações concluídas e respetiva evidência
 ficam em [Decisões](docs/DECISIONS.md) e no histórico Git.
 
+A incompatibilidade de campos opcionais do Observatório foi corrigida e validada
+localmente nas seis áreas; evidência em [Decisões](docs/DECISIONS.md).
+
+A reabertura da última versão guardada no portal foi corrigida, com confirmação
+visível e oito cenários de navegador locais; evidência em [Decisões](docs/DECISIONS.md).
+
+A recuperação das aprovações foi publicada no S3 com autorização em 27 de outubro:
+252 aprovados, 521 revisões e correspondência com o warehouse reconstruído.
+API real e interface desktop/móvel validadas; evidência em [Decisões](docs/DECISIONS.md).
+
+## Links nativos do Code Editor — ativação e aceitação pendentes
+
+- [ ] Recarregar a janela do Code Editor para ativar a atualização instalada de
+  **BLU Workspace Links** e confirmar **BLU · Interfaces** na sessão web em uso.
+  A versão anterior permanece carregada e não confirmou os pedidos do launcher;
+  a versão final tem entrega por sondagem além do watcher. Não confundir a
+  instalação do VSIX com abertura validada no navegador AWS.
+- [ ] Confirmar abertura das cinco interfaces nessa sessão. Descoberta real do
+  Space atual por `DescribeSpace`, testes de troca de workspace e recusa de URLs
+  antigos, APIs nativas simuladas e build Vite já validados. Evidência em
+  [Decisões](docs/DECISIONS.md).
+
 ## Correções Dependabot — integração pendente
 
 - [ ] Integrar em `dev` as correções dos 102 alertas consultados em 26 de outubro:

@@ -36,6 +36,8 @@ export default function WorkspacePage() {
     draft,
     formKey,
     saving,
+    reopening,
+    reopenedVersion,
     exporting,
     error,
     storageError,
@@ -170,6 +172,18 @@ export default function WorkspacePage() {
                         >
                           <T text="Reabrir última versão guardada" source="pt" />
                         </button>
+                        {(reopening || reopenedVersion !== null) && (
+                          <p role="status" className="my-2">
+                            {reopening ? (
+                              <T text="A reabrir a última versão guardada…" source="pt" />
+                            ) : (
+                              <>
+                                <T text="Versão reaberta:" source="pt" /> v
+                                {String(reopenedVersion).padStart(3, "0")}
+                              </>
+                            )}
+                          </p>
+                        )}
                         {(history.id === activeId ? history.versions : []).map((v) => (
                           <div key={v.version} className="my-2 break-words">
                             <a
@@ -204,7 +218,7 @@ export default function WorkspacePage() {
                           </div>
                         ))}
                       </details>
-                      {saving && (
+                      {saving && !reopening && (
                         <p role="status" className="px-4">
                           <T text="A guardar nova versão…" source="pt" />
                         </p>

@@ -364,3 +364,123 @@ catálogo. A apresentação é independente e usa exemplos ilustrativos, sem dad
 operacionais. Estas entradas não são módulos obsoletos por ausência de imports.
 
 Referência: [Arquitetura](ARCHITECTURE.md).
+
+### URL público do frontend no SageMaker — 2026-10-26
+
+O servidor Vite reutiliza `config/studio.local.json` para ativar o caminho
+`/codeeditor/default/ports/5173/`, anunciar o URL HTTPS e ligar HMR por WSS/443.
+A porta é fixa: se estiver ocupada, o arranque falha em vez de anunciar outra.
+`BLU_SAGEMAKER_PROXY=0` permite desenvolvimento local explícito. O build mantém
+a base `/` para preservar os artefactos de alojamento independentes do Studio.
+O acesso externo continua a exigir sessão AWS e registo da porta no Code Editor.
+
+### Observatório aceita campos opcionais ausentes — 2026-10-26
+
+A entrega ativa materializada em SageMaker contém tabelas sem `contactos` e
+atrações sem `site_fonte`, `morada` ou acessibilidade. A consulta do catálogo
+assumia esses campos nas atrações e restaurantes, causando `DatabaseError`.
+O dashboard inspeciona agora as três tabelas e projeta `NULL` para metadados
+opcionais ausentes; identificadores e nomes continuam obrigatórios. Ausências
+mantêm-se desconhecidas, com erro de interface saneado para entregas incompatíveis.
+
+Evidência: 27 testes de dashboard/normalização aprovados, incluindo bases SQLite
+esparsas e completas; AppTest local das seis áreas sobre os 252 registos da entrega
+ativa sem exceções. SHA-256 da base inalterado. Esta execução não comprova o
+acesso através da sessão web AWS.
+
+### Reabertura explícita da última versão guardada — 2026-10-26
+
+O botão dependia do primeiro elemento do histórico já carregado no navegador e
+terminava silenciosamente se este estivesse vazio; não apresentava confirmação
+após restaurar a versão. Consulta agora o histórico no clique, escolhe a maior
+versão ativa, valida a resposta e recupera apenas o snapshot e o número da versão,
+preservando a identidade e a conversa. A interface indica o carregamento e a
+versão reaberta; uma lista vazia ou uma falha mantém o rascunho e apresenta erro.
+A reabertura não guarda outra versão nem altera os bytes PDF.
+
+Evidência local: `npm run check` com Node 22.13 e warehouse materializado passou
+205 testes, com um omitido; build com prefixo SageMaker aprovado. Oito cenários
+Playwright com APIs simuladas passaram a 1440/390 px: sucesso com histórico inicial
+vazio e lista desordenada, ausência de versões, snapshot inválido e indisponibilidade.
+Capturas desktop/móvel inspecionadas; portal local reiniciado com HTTP 200.
+O acesso autenticado pelo browser AWS não foi exercitado nesta validação.
+
+### Recuperação cloud recusa catálogos vazios — 2026-10-27
+
+O checkpoint de 26 de outubro às 23:36 UTC continha catálogo vazio; o backup
+operacional das 23:40 UTC também. A cache observada depois tinha 252 entradas
+importadas na revisão 1, em revisão. A release operacional S3 consultada em 27 de
+outubro continha catálogo vazio. Os backups de 20–22 de outubro preservavam os
+252 aprovados; o de 22 conserva 521 entradas de histórico, com revisões atuais
+entre 2 e 4. Não se tratava de reaplicar uma etiqueta: 198 registos tinham campos
+de edição diferentes da reimportação.
+
+Foi restaurado o catálogo persistente local a partir do backup de 22, após validar
+o manifesto completo, SHA-256, integridade SQLite e correspondência das revisões.
+O estado vazio anterior foi preservado no runtime privado. Os 252 aprovados
+coincidem com o gate da entrega do mesmo backup: 138 atrações, 54 restaurantes e
+60 experiências. Exports existentes ficaram inalterados. Uma reposição remota
+foi preparada localmente com apenas o catálogo substituído, conservando os outros
+artefactos da release ativa. Publicação S3 e reconstrução da cache continuam pendentes.
+
+`etl.cloud_runtime` recusa agora checkpoints com catálogo vazio antes de publicar
+estado operacional e recusa releases vazias antes do ETL ou promoção da cache.
+SQLite íntegro, por si só, não comprova que as aprovações foram recuperadas.
+Evidência: 16 testes de runtime cloud, S3 e catálogo passaram, com S3 simulado;
+a consulta e materialização da release remota foram reais e só de leitura.
+
+### Aprovações repostas no S3 e cache validada — 2026-10-27
+
+Após autorização explícita, foi publicada a release operacional
+`20261027T000806.798807Z-16481cff550a`. O apontador anterior foi comparado com a
+preparação e atualizado com `IfMatch` sobre o ETag, evitando substituir uma
+alteração concorrente. O adaptador acrescentara a tabela `portal_operations`;
+confirmou-se a igualdade exata dos snapshots atuais e históricos com o backup
+verificado antes da publicação. Nova materialização S3 confirmou os 252 aprovados,
+as 521 entradas históricas e hashes inalterados dos dois outros artefactos remotos.
+
+O fluxo `etl.cloud_runtime.rebuild` reconstruiu a cache a partir do S3 e publicou
+o warehouse `20261027T000902.135714Z-2bb57738412c`, com validação `passed`.
+O gate confirmou 138 atrações, 54 restaurantes e 60 experiências disponíveis para
+novos roteiros, mantendo as revisões recuperadas. A API real confirmou os 252
+aprovados e publicados; Playwright confirmou as três categorias em 1440/390 px,
+sem erros de JavaScript. Traduções foram simuladas e escritas de interface
+bloqueadas no ensaio. Os cinco endpoints locais passaram após `just blu up`.
+A sessão de execução mantém os serviços ativos neste ambiente.
+
+Os 16 testes de catálogo, S3 e runtime cloud passaram novamente, com S3 simulado;
+a publicação, materialização e reconstrução descritas acima usaram S3 real.
+O teste pelo navegador autenticado do utilizador no proxy AWS e as pendências de
+monitoring externo permanecem distintos desta validação local.
+
+### Interfaces resolvidas pela sessão atual do Code Editor — 2026-10-27
+
+Os links fixos da instância e o helper de navegador não registavam as portas na
+sessão web. `scripts/studio_urls.py` usa agora os metadados de Domain/Space/região
+e `DescribeSpace.Url` para identificar o workspace real; uma falha dessa consulta
+não reutiliza o URL de outro workspace. A configuração local fica como alternativa
+fora do SageMaker. Portal, apresentação e Vite usam essa resolução nos launchers;
+o build Vite mantém base `/` e não exige consulta cloud.
+
+A integração local **BLU Workspace Links** usa `env.asExternalUri` para registar
+portas e `env.openExternal` para abrir as interfaces pela sessão atual, sem montar
+ou guardar o domínio do proxy. A API `openExternal` já faz a resolução; não é
+aplicada duas vezes. Referência: [API oficial do VS Code](https://code.visualstudio.com/api/references/vscode-api).
+`config/workspace_interfaces.json` é a fonte das cinco interfaces para o pacote
+e para os launchers. O VSIX é gerado e instalado localmente, sem Marketplace,
+pela preparação e de forma idempotente no arranque. O pacote só atua em workspaces
+BLU confiáveis. A barra **BLU · Interfaces** e os comandos da paleta abrem as páginas.
+
+`open_dashboards.py` envia um pedido tipado sem URLs ao runtime privado e exige
+confirmação da extensão antes de anunciar sucesso. Uma sondagem complementar ao
+watcher garante a receção em hosts que excluem esse diretório dos eventos.
+`remote.restoreForwardedPorts` ficou ativo. Atualizações de uma extensão já ativa
+podem exigir **Developer: Reload Window**; o launcher informa essa situação.
+
+Evidência: descoberta real de `pedro-workspace` por `DescribeSpace`, instalação
+confirmada do VSIX 0.1.2, dez testes Python e quatro testes da integração com API
+simulada aprovados, build Vite e quatro testes de alojamento aprovados, scripts
+shell e verificações documentais sem erros. O Vite ativo respondeu HTTP 200.
+A sessão ainda mantinha a versão anterior da extensão carregada, pelo que a
+confirmação de abertura real através da versão nova aguarda recarregamento da
+janela; a instalação por SSH não comprova o encaminhamento na sessão web AWS.

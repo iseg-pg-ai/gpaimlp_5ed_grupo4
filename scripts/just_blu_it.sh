@@ -243,6 +243,9 @@ verify_environment() {
     command -v node >/dev/null
     command -v npm >/dev/null
     command -v curl >/dev/null
+    if [ "${SAGEMAKER_APP_TYPE:-}" = "CodeEditor" ]; then
+        python3 -B scripts/install_code_editor_links.py
+    fi
     python3 -c 'import sys; assert (3,12) <= sys.version_info[:2] < (3,14)'
     node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a<22||a>24||(a===22&&b<13)?1:0)'
 }
@@ -311,7 +314,7 @@ if [ "${BLU_MODE:-it}" = "up" ]; then
     fi
     verify_environment
     PORTAL_PUBLIC_ORIGIN="$(python3 -B scripts/studio_urls.py --origin)"
-    export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="/codeeditor/default/ports/3001"
+    export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="$(python3 -B scripts/studio_urls.py --port 3001 | python3 -c 'import sys; from urllib.parse import urlsplit; print(urlsplit(sys.stdin.read().strip()).path.rstrip("/"))')"
     start_missing_services
     confirm_service_endpoints
     quick_start_status
@@ -407,7 +410,7 @@ run_task "8. Construir entrega" bash -c '
 '
 
 PORTAL_PUBLIC_ORIGIN="$(python3 -B scripts/studio_urls.py --origin)"
-export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="/codeeditor/default/ports/3001"
+export PORTAL_PUBLIC_ORIGIN PORTAL_ASSET_PREFIX="$(python3 -B scripts/studio_urls.py --port 3001 | python3 -c 'import sys; from urllib.parse import urlsplit; print(urlsplit(sys.stdin.read().strip()).path.rstrip("/"))')"
 run_task "9. Iniciar serviços" start_all_services
 run_task "10. Confirmar serviços e portas" confirm_services
 

@@ -3702,5 +3702,21 @@
     "fr": "Numéro du vol de départ",
     "de": "Abflugnummer",
     "zh": "出发航班号"
+  },
+  "A reabrir a última versão guardada…": {
+    "pt": "A reabrir a última versão guardada…",
+    "en": "Reopening the latest saved version…",
+    "es": "Reabriendo la última versión guardada…",
+    "fr": "Réouverture de la dernière version enregistrée…",
+    "de": "Die zuletzt gespeicherte Version wird erneut geöffnet…",
+    "zh": "正在重新打开最新保存的版本…"
+  },
+  "Versão reaberta:": {
+    "pt": "Versão reaberta:",
+    "en": "Version reopened:",
+    "es": "Versión reabierta:",
+    "fr": "Version rouverte :",
+    "de": "Version erneut geöffnet:",
+    "zh": "已重新打开版本："
   }
 }

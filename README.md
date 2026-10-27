@@ -61,8 +61,7 @@ Num SageMaker Code Editor novo, seguir o
 [guia de onboarding](docs/ONBOARDING.md) ou executar:
 
 ```bash
-python3 scripts/setup_workspace.py \
-  --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
+python3 scripts/setup_workspace.py
 ```
 
 Num clone sem dados locais, o [guia de onboarding](docs/ONBOARDING.md) prepara o
@@ -70,8 +69,10 @@ ambiente e o `just blu it` materializa as releases S3 autorizadas. A configuraç
 partilhável do agente está em `.env.example`. Também é possível usar
 `./bin/just blu it` sem instalar o launcher no `PATH`.
 
-O assistente valida o ambiente, guarda a URL em `config/studio.local.json`,
-instala o launcher local e cria o administrador inicial do Monitoring quando
+No SageMaker, o URL é descoberto pelos metadados do Space atual e por
+`sagemaker:DescribeSpace`. Fora desse ambiente, `--studio-url` permite configurar
+uma base local. O assistente instala a integração **BLU Workspace Links** no
+Code Editor, o launcher local e cria o administrador inicial do Monitoring quando
 ainda não existem contas. A palavra-passe inicial fica apenas em
 `monitoring/runtime/initial-password.txt` e deve ser substituída após o primeiro
 login. A gestão de contas está documentada no
@@ -88,11 +89,14 @@ just blu up
 O comando mantém serviços ativos, inicia os que estejam parados, confirma os
 cinco endpoints e abre as cinco interfaces.
 
-Os URLs `/codeeditor/default/ports/PORTA/` exigem que as portas 3001, 3003, 3004,
-5173 e 8501 estejam registadas no painel **Ports** do Code Editor aberto no browser.
-Adicionar portas apenas numa sessão VS Code local/remota cria endereços
-`127.0.0.1` e não autoriza o proxy web do SageMaker. Num workspace novo, abrir o
-Code Editor pelo browser e adicionar uma vez as cinco portas nesse painel.
+Na barra inferior do Code Editor, **BLU · Interfaces** abre a interface escolhida
+através do encaminhamento nativo da sessão atual. O comando **BLU: Abrir interfaces
+deste workspace** também está disponível na paleta; `just blu up` pede à mesma
+integração para abrir as cinco interfaces. As portas são registadas pelo editor e
+os URLs são resolvidos em cada abertura, sem copiar um domínio de outro workspace.
+Após instalar ou atualizar a extensão, pode ser necessário executar **Developer:
+Reload Window** uma vez. Se a extensão não confirmar o pedido, o launcher avisa;
+não anuncia uma abertura que não foi confirmada.
 
 Este arranque rápido não cria checkpoints, não recupera backups e não para
 processos ativos. Essas ações pertencem exclusivamente ao `just blu it`.

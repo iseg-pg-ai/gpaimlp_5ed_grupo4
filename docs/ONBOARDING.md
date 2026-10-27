@@ -84,14 +84,19 @@ Nos arranques seguintes basta:
 just blu up
 ```
 
-As portas esperadas são 3001, 3003, 3004, 5173 e 8501. A configuração versionada em
-`.vscode/settings.json` encaminha-as silenciosamente.
+As portas esperadas são 3001, 3003, 3004, 5173 e 8501, definidas em
+`config/workspace_interfaces.json`. A preparação instala **BLU Workspace Links**;
+a barra inferior **BLU · Interfaces** e o comando **BLU: Abrir interfaces deste
+workspace** usam o encaminhamento nativo do Code Editor. Os encaminhamentos são
+restaurados ao reabrir a sessão e resolvidos de novo em cada abertura.
 
-O painel **Ports** do VS Code apresenta `localhost` na coluna de encaminhamento
-porque mostra o extremo local do túnel. Os nomes identificam agora as interfaces
-AWS. Para obter os endereços públicos SageMaker, executar **Tasks: Run Task →
-BLU: Mostrar URLs AWS**; **BLU: Abrir dashboards AWS** abre diretamente as cinco
-interfaces públicas configuradas em `config/studio.local.json`.
+Após instalar/atualizar a extensão, executar **Developer: Reload Window** se o
+launcher indicar que a integração não respondeu. A instalação é local, sem
+Marketplace: `python3 scripts/install_code_editor_links.py`. As tarefas **BLU:
+Mostrar URLs deste workspace** e **BLU: Abrir interfaces deste workspace** também
+estão disponíveis. Os URLs HTTPS anunciados são descobertos por metadados e
+`DescribeSpace`; `config/studio.local.json` é apenas a alternativa fora do SageMaker.
+Uma falha de descoberta nunca reutiliza um URL antigo de outro Space.
 
 ## Estado local e transferência
 

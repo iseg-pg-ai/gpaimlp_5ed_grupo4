@@ -31,12 +31,10 @@ credenciais derivadas, acesso inicial temporário, logs técnicos, fila local de
 alertas, métricas de IA e cópias de segurança. O serviço
 recusa arrancar sem credenciais. Não disponibiliza esses ficheiros por HTTP.
 
-O endereço é gerado a partir de `config/studio.local.json`, acrescentando `/ports/3004/`.
-O servidor escuta apenas em `127.0.0.1`, atrás do HTTPS e da sessão SageMaker.
-No Code Editor, abrir **Ports/Portas** (ou **View → Open View → Ports**) e
-selecionar **Forward a Port/Encaminhar porta**, indicando `3004`. O proxy devolve
-HTTP 400 enquanto essa porta não estiver encaminhada. Esta configuração é do
-Code Editor e não é removida pelo login do painel.
+O endereço HTTPS é descoberto para o Space atual por `DescribeSpace`, acrescentando
+`/ports/3004/`; fora do SageMaker, usa `config/studio.local.json`. O servidor escuta
+apenas em `127.0.0.1`. **BLU · Interfaces → Monitoring** usa o encaminhamento nativo
+do Code Editor. Ver [onboarding](../docs/ONBOARDING.md) para a ativação da integração.
 
 O login do painel é adicional ao acesso Studio. Acesso HTTP direto não suporta
 os cookies Secure da configuração normal: usar o endereço HTTPS anunciado.
