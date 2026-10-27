@@ -376,8 +376,15 @@ endereço próprio (saída `PortalUrl`):
 
 Sem internet no servidor, a meteorologia, o planeador do assistente e a tradução
 de itinerários não respondem, e os PDFs em mandarim precisam ainda de uma fonte
-CJK. O arranque fica registado na consola da instância
-(`aws ec2 get-console-output`).
+CJK. O arranque, o atualizador e os serviços escrevem na consola da instância
+(`aws ec2 get-console-output --latest`), a única janela sem SSM nem internet.
+
+Uma alteração ao script de arranque troca o servidor. Como o disco de dados só
+liga a um servidor de cada vez, a troca faz-se em dois deploys: primeiro com
+`PORTAL_DETACH_STATE=1` (desliga o disco), depois um deploy normal. A conta do
+curso para todas as instâncias de 6 em 6 horas e as inativas de hora a hora
+(`iseg-ec2-autoshutdown-cleaner`); sem exceção aprovada, o portal só responde
+depois de alguém voltar a ligar o servidor.
 
 `npm run check` acrescenta `format:check` a estas verificações e deve terminar sem
 avisos antes de integrar alterações no portal.

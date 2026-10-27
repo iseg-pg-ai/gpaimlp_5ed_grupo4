@@ -748,7 +748,11 @@ class PortalStack extends Stack {
       associatePublicIpAddress: false,
       blockDevices: [{ deviceName: '/dev/xvda', volume: ec2.BlockDeviceVolume.ebs(20, { volumeType: ec2.EbsDeviceVolumeType.GP3, encrypted: true }) }],
     });
-    new ec2.CfnVolumeAttachment(this, 'PortalStateAttachment', { instanceId: server.instanceId, volumeId: state.volumeId, device: '/dev/sdf' });
+    // Um disco só liga a um servidor e o CloudFormation cria o novo antes de apagar o antigo:
+    // para trocar o servidor, primeiro um deploy com PORTAL_DETACH_STATE=1, depois um normal.
+    if (process.env.PORTAL_DETACH_STATE !== '1') {
+      new ec2.CfnVolumeAttachment(this, 'PortalStateAttachment', { instanceId: server.instanceId, volumeId: state.volumeId, device: '/dev/sdf' });
+    }
 
     // Cópia diária do disco de dados, guardada 7 dias.
     const backupRole = new iam.Role(this, 'PortalBackupRole', { assumedBy: new iam.ServicePrincipal('dlm.amazonaws.com'), managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSDataLifecycleManagerServiceRole')] });
