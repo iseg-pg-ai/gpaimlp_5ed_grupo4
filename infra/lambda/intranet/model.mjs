@@ -1,5 +1,7 @@
 // Espelha dmc-workspace/src/lib/leads-model.ts (o Lambda não executa TypeScript);
 // infra/tests/intranet.test.mjs confirma que estados e etiquetas continuam iguais.
+import { chatbotOf, signalsOf } from './signals.mjs';
+
 export const OPEN_STATUSES = ['PENDING', 'QUEUED_FOR_REVIEW'];
 export const CONTACTED = 'CONTACTED';
 export const LEAD_TAGS = ['hot', 'proposal-next', 'needs-info', 'vip', 'at-risk', 'not-a-fit'];
@@ -43,11 +45,22 @@ export function toLead(item) {
     curatorNote: optional('curatorNote'),
     churnSignalAt: optional('churnSignalAt'),
     churnSignal: optional('churnSignal'),
+    // Análise automática (signals.mjs): só leitura; as etiquetas manuais antigas ficam em `tags`, sem uso.
+    aiStatus: optional('aiStatus'),
+    aiAnalysedAt: optional('aiAnalysedAt'),
+    aiSentiment: optional('aiSentiment'),
+    aiSignals: signalsOf(item),
+    aiReason: optional('aiReason'),
+    aiChatbot: chatbotOf(item),
+    aiRiskAt: optional('aiRiskAt'),
   };
 }
 
-/** O cliente disse que ia desistir e ainda ninguém o contactou depois disso. */
-export const atRisk = lead => Boolean(lead.churnSignalAt) && (!lead.contactedAt || lead.contactedAt < lead.churnSignalAt);
+/** Momento do último sinal de desistência: frases fixas no chat ou análise automática confiante. */
+export const riskAt = lead => [lead.churnSignalAt, lead.aiRiskAt].filter(Boolean).sort().at(-1) ?? '';
+
+/** O cliente mostrou que ia desistir e ainda ninguém o contactou depois disso. */
+export const atRisk = lead => Boolean(riskAt(lead)) && (!lead.contactedAt || lead.contactedAt < riskAt(lead));
 
 export function toMessage(item) {
   return {

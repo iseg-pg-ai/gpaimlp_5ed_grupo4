@@ -2,7 +2,7 @@ import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-r
 import { CloudWatchClient, GetMetricDataCommand } from '@aws-sdk/client-cloudwatch';
 import {
   AdminAddUserToGroupCommand, AdminCreateUserCommand, AdminDisableUserCommand, AdminEnableUserCommand, AdminRemoveUserFromGroupCommand,
-  CognitoIdentityProviderClient, ListUsersInGroupCommand, UsernameExistsException,
+  CognitoIdentityProviderClient, UsernameExistsException,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { DescribeSecretCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { ConditionalCheckFailedException, DynamoDBClient, PutItemCommand, QueryCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
@@ -11,6 +11,7 @@ import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/clien
 import { GetQueueAttributesCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { randomUUID } from 'node:crypto';
 import { NotFound, createApp } from './app.mjs';
+import { listTeamMembers } from './team.mjs';
 
 const db = new DynamoDBClient({});
 const s3 = new S3Client({});
@@ -20,7 +21,6 @@ const cloudwatch = new CloudWatchClient({});
 const cognito = new CognitoIdentityProviderClient({});
 const secretsManager = new SecretsManagerClient({});
 const bedrock = new BedrockRuntimeClient({});
-const STAFF_GROUPS = ['founders', 'curators', 'governance', 'testers', 'marketing'];
 const env = process.env;
 const WORKER_PREFIX = 'BluCosta';
 const MANIFEST_KEY = 'controls/manifests/customer-intelligence-controls.json';
@@ -73,26 +73,7 @@ async function askRag(conversationId, question) {
   return JSON.parse(response.body || '{}');
 }
 
-async function listTeam() {
-  const members = new Map();
-  for (const group of STAFF_GROUPS) {
-    let NextToken;
-    do {
-      const page = await cognito.send(new ListUsersInGroupCommand({ UserPoolId: env.USER_POOL_ID, GroupName: group, NextToken }));
-      for (const user of page.Users ?? []) {
-        const attribute = name => user.Attributes?.find(item => item.Name === name)?.Value ?? '';
-        const member = members.get(user.Username) ?? {
-          username: user.Username, email: attribute('email'), name: attribute('name') || attribute('email'),
-          status: user.UserStatus, enabled: user.Enabled !== false, createdAt: user.UserCreateDate?.toISOString?.() ?? '', groups: [],
-        };
-        member.groups.push(group);
-        members.set(user.Username, member);
-      }
-      NextToken = page.NextToken;
-    } while (NextToken);
-  }
-  return [...members.values()].sort((a, b) => a.name.localeCompare(b.name));
-}
+const listTeam = () => listTeamMembers(cognito, env.USER_POOL_ID);
 
 async function queueDepth(url) {
   const { Attributes = {} } = await sqs.send(new GetQueueAttributesCommand({ QueueUrl: url, AttributeNames: ['ApproximateNumberOfMessages', 'ApproximateNumberOfMessagesNotVisible', 'RedrivePolicy'] }));
@@ -266,6 +247,17 @@ async function draftReply({ system, user }) {
   return result.output?.message?.content?.map(part => part.text ?? '').join('').trim() ?? '';
 }
 
+// Assistente da intranet: devolve JSON com resposta e ações sugeridas; assistant.mjs valida tudo.
+async function assist({ system, user }) {
+  const result = await bedrock.send(new ConverseCommand({
+    modelId: env.MODEL_ID,
+    system: [{ text: system }],
+    messages: [{ role: 'user', content: [{ text: user }] }],
+    inferenceConfig: { maxTokens: 700, temperature: 0.1 },
+  }));
+  return result.output?.message?.content?.map(part => part.text ?? '').join('').trim() ?? '';
+}
+
 export const handler = createApp({
   partners,
   policyReport: () => readJson(POLICY_REPORT_KEY),
@@ -285,6 +277,7 @@ export const handler = createApp({
   updateProfile,
   askRag,
   draftReply: env.MODEL_ID ? draftReply : undefined,
+  assist: env.MODEL_ID ? assist : undefined,
   listTeam,
   operations,
   governance,

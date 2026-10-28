@@ -1,6 +1,9 @@
 import { NOTIFY, outcome } from './schedule.mjs';
 import { contactDetails, toLead, toMessage } from './model.mjs';
-import { NUDGE_DAYS, autoMessages } from './settings.mjs';
+import { NUDGE_DAYS, autoMessages, currentSettings } from './settings.mjs';
+import { toCase, toNotification, toTask } from './app.mjs';
+import { alertRecord, teamAlerts } from './team-alerts.mjs';
+import { ANALYSIS, needsAnalysis, parseSignals, profileFields, signalPrompt } from './signals.mjs';
 
 /**
  * Prepara as mensagens automáticas ligadas nas definições (agradecimento, reativação) como
@@ -60,5 +63,78 @@ export function createDispatcher(deps) {
     }
     if (results.length) await deps.evidence(now, results);
     return { checkedAt: now.toISOString(), due: due.length, processed: results.length, sent: results.filter(r => r.status === NOTIFY.sent).length };
+  };
+}
+
+const lisbonDay = now => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(now);
+
+/**
+ * Alertas à equipa: junta leads, tarefas, casos e lembretes falhados, grava cada alerta novo
+ * uma única vez (criação condicional) e envia-o por email quando o canal está configurado.
+ * Sem email, o alerta fica na intranet («O meu trabalho» e Painel). Uma falha de envio não
+ * apaga o alerta: fica marcado para a equipa ver.
+ */
+export function createAlerter(deps) {
+  return async function raiseAlerts() {
+    const now = deps.now?.() ?? new Date();
+    const today = lisbonDay(now);
+    const since = new Date(now - 864e5).toISOString();
+    const [settingsItems, leads, taskItems, caseItems, failed, missed, members] = await Promise.all([
+      deps.settings(), deps.leads(), deps.queryStatus('TASK_OPEN'), deps.queryStatus('CASE_OPEN'),
+      deps.queryAgenda(NOTIFY.failed, since, now.toISOString()), deps.queryAgenda(NOTIFY.missed, since, now.toISOString()), deps.listTeam(),
+    ]);
+    const alerts = teamAlerts({
+      leads: leads.map(toLead),
+      tasks: taskItems.map(item => toTask(item, today)),
+      cases: caseItems.map(item => toCase(item, today)),
+      reminders: [...failed, ...missed].map(toNotification),
+      members, replyHours: currentSettings(settingsItems).replyHours, now,
+    });
+    let raised = 0;
+    let emailed = 0;
+    for (const alert of alerts) {
+      const delivery = deps.emailEnabled && alert.to.length ? 'email' : 'in-app';
+      if (!(await deps.create(alertRecord(alert, delivery)))) continue;
+      raised += 1;
+      if (delivery !== 'email') continue;
+      try {
+        await deps.sendAlert(alert);
+        emailed += 1;
+      } catch (error) {
+        console.error(JSON.stringify({ alert: 'email-failed', error: error?.name ?? 'Error' }));
+        await deps.markAlert(alert.key, 'email-failed');
+      }
+    }
+    return { alerts: alerts.length, raised, emailed, withoutRecipient: alerts.filter(alert => !alert.to.length).length };
+  };
+}
+
+/**
+ * Análise automática das conversas paradas com mensagens novas (no máximo ANALYSIS.perRun por execução,
+ * as mais recentes primeiro). O modelo só classifica; a validação decide o que fica gravado.
+ * Uma resposta inválida ou um erro do modelo ficam como «falhou» até à próxima mensagem do cliente.
+ */
+export function createAnalyser(deps) {
+  return async function analyse() {
+    const now = deps.now?.() ?? new Date();
+    const leads = (await deps.leads()).map(toLead).filter(lead => needsAnalysis(lead, now))
+      .sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt)).slice(0, ANALYSIS.perRun);
+    let analysed = 0;
+    let failed = 0;
+    for (const lead of leads) {
+      const prompt = signalPrompt((await deps.transcript(lead.id)).map(toMessage).sort((a, b) => a.at.localeCompare(b.at)));
+      if (!prompt.customerIds.length) continue;
+      let result = null;
+      try {
+        result = parseSignals(await deps.classify(prompt), prompt.customerIds, prompt.ids);
+      } catch (error) {
+        console.error(JSON.stringify({ analysis: 'model-failed', error: error?.name ?? 'Error' }));
+      }
+      // O risco antigo só se mantém se ainda ninguém contactou o cliente depois dele.
+      const previousRiskAt = lead.aiRiskAt && lead.aiRiskAt > (lead.contactedAt ?? '') ? lead.aiRiskAt : '';
+      await deps.saveAnalysis(lead.id, profileFields(result, { now, modelId: deps.modelId, previousRiskAt }));
+      if (result) analysed += 1; else failed += 1;
+    }
+    return { analysed, failed };
   };
 }

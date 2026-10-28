@@ -546,6 +546,8 @@ class IntranetStack extends Stack {
 
     // WhatsApp em modo de teste por omissão: só INTRANET_WHATSAPP_MODE=live envia mensagens reais.
     const whatsappMode = process.env.INTRANET_WHATSAPP_MODE ?? 'test';
+    // O mesmo modelo escreve as respostas simples (API) e analisa as conversas (despachante).
+    const replyModelId = process.env.BEDROCK_REPLY_MODEL_ID ?? (region === 'eu-west-1' ? 'eu.amazon.nova-2-lite-v1:0' : 'amazon.nova-lite-v1:0');
     if (!['test', 'live'].includes(whatsappMode)) throw new Error('INTRANET_WHATSAPP_MODE must be "test" or "live"');
     const fn = new lambda.Function(this, 'IntranetApiHandler', {
       runtime: lambda.Runtime.NODEJS_22_X,
@@ -565,7 +567,7 @@ class IntranetStack extends Stack {
         MANAGED_SECRETS: JSON.stringify([{ arn: data.whatsappSecret.secretArn, purpose: 'WhatsApp Business (envio de lembretes e mensagens)' }]),
         WHATSAPP_MODE: whatsappMode,
         // Escreve só o texto das respostas simples; o mesmo modelo do chatbot público.
-        MODEL_ID: process.env.BEDROCK_REPLY_MODEL_ID ?? (region === 'eu-west-1' ? 'eu.amazon.nova-2-lite-v1:0' : 'amazon.nova-lite-v1:0'),
+        MODEL_ID: replyModelId,
       },
       code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
     });
@@ -586,7 +588,7 @@ class IntranetStack extends Stack {
       ['GET', '/v1/me'], ['GET', '/v1/leads'], ['GET', '/v1/leads/{id}'],
       ['POST', '/v1/leads/{id}/contacted'], ['POST', '/v1/leads/{id}/assign'], ['PUT', '/v1/leads/{id}/tags'], ['POST', '/v1/leads/{id}/ask'],
       ['GET', '/v1/metrics'], ['GET', '/v1/team'], ['GET', '/v1/operations'], ['GET', '/v1/governance'],
-      ['GET', '/v1/alerts'], ['GET', '/v1/cases'], ['POST', '/v1/cases'], ['GET', '/v1/leads/{id}/cases'], ['GET', '/v1/leads/{id}/cases/{caseId}'], ['POST', '/v1/leads/{id}/cases/{caseId}'], ['GET', '/v1/security'],
+      ['GET', '/v1/alerts'], ['GET', '/v1/cases'], ['POST', '/v1/cases'], ['GET', '/v1/leads/{id}/cases'], ['GET', '/v1/leads/{id}/cases/{caseId}'], ['POST', '/v1/leads/{id}/cases/{caseId}'], ['GET', '/v1/security'], ['GET', '/v1/control'], ['POST', '/v1/assistant'],
       ['GET', '/v1/access'], ['POST', '/v1/team/invite'], ['POST', '/v1/team/{username}/role'], ['POST', '/v1/team/{username}/status'],
       ['GET', '/v1/partners'], ['GET', '/v1/agenda'], ['GET', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities/{activityId}/cancel'],
       ['GET', '/v1/work'], ['GET', '/v1/tasks'], ['POST', '/v1/tasks'], ['GET', '/v1/leads/{id}/tasks/{taskId}'], ['POST', '/v1/leads/{id}/tasks/{taskId}'], ['GET', '/v1/feed'],
@@ -622,9 +624,16 @@ class IntranetStack extends Stack {
         SMS_ENABLED: smsEnabled ? 'true' : 'false',
         EVIDENCE_BUCKET: backoffice.evidenceBucket.bucketName,
         WHATSAPP_MODE: whatsappMode,
+        USER_POOL_ID: userPool.userPoolId,
+        INTRANET_URL: `https://${distribution.distributionDomainName}`,
+        MODEL_ID: replyModelId,
       },
       code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
     });
+    // Alertas à equipa: só lê quem está em cada grupo para saber a quem avisar.
+    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['cognito-idp:ListUsersInGroup'], resources: [userPool.userPoolArn] }));
+    // Análise automática das conversas: só invoca o modelo (como a API da intranet).
+    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['bedrock:InvokeModel'], resources: ['*'] }));
     // Leitura das definições, dos leads e da conversa para as mensagens automáticas; PutItem só cria (condição no código).
     dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:Query'], resources: [data.intelligence.tableArn, `${data.intelligence.tableArn}/index/FollowUpIndex`, data.messages.tableArn] }));
     dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem', 'dynamodb:PutItem'], resources: [data.intelligence.tableArn] }));
@@ -768,8 +777,31 @@ class PortalStack extends Stack {
       },
     });
 
+    // Página «o portal está a acordar»: se o servidor não responder (desligado ou a arrancar), o
+    // CloudFront mostra esta página em vez do erro 504, que volta a tentar sozinha.
+    const statusPage = new s3.Bucket(this, 'PortalStatusPage', {
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    new s3deploy.BucketDeployment(this, 'PortalStatusFiles', {
+      destinationBucket: statusPage,
+      destinationKeyPrefix: '_blu',
+      prune: false,
+      sources: [s3deploy.Source.asset(path.join(infraDir, 'portal/status'))],
+    });
     const distribution = new cloudfront.Distribution(this, 'PortalDistribution', {
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+      additionalBehaviors: {
+        '/_blu/*': {
+          origin: origins.S3BucketOrigin.withOriginAccessControl(statusPage),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        },
+      },
+      // Erros do servidor (desligado, a arrancar): a página de espera, guardada só 10 segundos.
+      errorResponses: [502, 503, 504].map(httpStatus => ({ httpStatus, responseHttpStatus: 503, responsePagePath: '/_blu/waking.html', ttl: Duration.seconds(10) })),
       defaultBehavior: {
         origin: origins.VpcOrigin.withEc2Instance(server, { httpPort: 8080, protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY, readTimeout: Duration.seconds(60) }),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -834,7 +866,8 @@ class PortalStack extends Stack {
       // Só o contorno da região (Natural Earth): o Observatório e o mapa da proposta leem-no.
       dashboard: source('Dashboard', 'dashboard', ['*', '!region.geojson']),
       intranet: source('Intranet', 'frontend/intranet', ['config.js']),
-      gate: source('Gate', 'infra/portal', ['jwks.json']),
+      // A página de espera vai para o CloudFront, não para o servidor.
+      gate: source('Gate', 'infra/portal', ['jwks.json', 'status']),
     };
     const build = new codebuild.Project(this, 'PortalBuild', {
       description: 'Builds the BLU portal release for the private portal server',
@@ -905,6 +938,26 @@ class PortalStack extends Stack {
     });
     originGroup.node.addDependency(distribution);
     new ec2.CfnSecurityGroupIngress(this, 'PortalFromCloudFront', { groupId: serverGroup.securityGroupId, ipProtocol: 'tcp', fromPort: 8080, toPort: 8080, sourceSecurityGroupId: originGroup.getResponseField('SecurityGroups.0.GroupId'), description: 'CloudFront VPC origin' });
+
+    // Guarda: a limpeza automática da conta do curso desliga o servidor; esta regra volta a ligá-lo.
+    // Só pode ligar esta instância; a etiqueta blu-keep-stopped=true deixa-o desligado de propósito.
+    const guard = new lambda.Function(this, 'PortalGuard', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/portal-guard')),
+      timeout: Duration.seconds(30),
+      memorySize: 128,
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: { INSTANCE_ID: server.instanceId },
+      description: 'Starts the BLU portal server again when it is stopped',
+    });
+    guard.addToRolePolicy(new iam.PolicyStatement({ actions: ['ec2:StartInstances'], resources: [`arn:aws:ec2:${region}:${account}:instance/${server.instanceId}`] }));
+    guard.addToRolePolicy(new iam.PolicyStatement({ actions: ['ec2:DescribeInstances'], resources: ['*'] }));
+    new events.Rule(this, 'PortalStoppedRule', {
+      description: 'BLU portal server stopped: start it again',
+      eventPattern: { source: ['aws.ec2'], detailType: ['EC2 Instance State-change Notification'], detail: { state: ['stopped'], 'instance-id': [server.instanceId] } },
+      targets: [new targets.LambdaFunction(guard, { retryAttempts: 2 })],
+    });
 
     new CfnOutput(this, 'PortalUrl', { value: `${portalOrigin}/` });
     new CfnOutput(this, 'PortalReleaseBucket', { value: releases.bucketName });

@@ -80,8 +80,7 @@ test('o portal fica num servidor privado, só alcançável pelo CloudFront e com
   assert.equal(of('AWS::Cognito::ManagedLoginBranding').length, 1);
 
   // A configuração do portão não apaga as versões publicadas; o servidor não escreve no S3 nem apaga dados.
-  const [gateConfig] = of('Custom::CDKBucketDeployment');
-  assert.equal(gateConfig.Properties.Prune, false);
+  for (const deployment of of('Custom::CDKBucketDeployment')) assert.equal(deployment.Properties.Prune, false);
   const serverPolicy = of('AWS::IAM::Policy').find(policy => json(policy.Properties.Roles).includes('PortalServerRole'));
   const actions = json(serverPolicy.Properties.PolicyDocument);
   assert.doesNotMatch(actions, /s3:Put|s3:Delete|dynamodb:(Scan|DeleteItem|PutItem|BatchWriteItem)|dynamodb:\*/);
@@ -100,4 +99,31 @@ test('o portal fica num servidor privado, só alcançável pelo CloudFront e com
   assert.doesNotMatch(buildPolicy, /cloudformation:(Update|Create|Delete)/);
   assert.match(build.Properties.Source.BuildSpec, /sha256sum -c/);
   assert.equal(of('Custom::AWS').length, 2);
+
+  // Servidor desligado ou a arrancar: página de espera em vez do 504, vinda de um bucket privado.
+  assert.deepEqual(config.CustomErrorResponses.map(item => [item.ErrorCode, item.ResponseCode, item.ResponsePagePath]), [[502, 503, '/_blu/waking.html'], [503, 503, '/_blu/waking.html'], [504, 503, '/_blu/waking.html']]);
+  assert.deepEqual(config.CacheBehaviors.map(behavior => behavior.PathPattern), ['/_blu/*']);
+  assert.ok(config.Origins[1].S3OriginConfig);
+
+  // Guarda: volta a ligar só o servidor do portal quando ele pára.
+  const [rule] = of('AWS::Events::Rule');
+  assert.deepEqual(rule.Properties.EventPattern.detail.state, ['stopped']);
+  assert.match(json(rule.Properties.EventPattern.detail['instance-id']), /PortalServerInstance/);
+  const guardPolicy = json(of('AWS::IAM::Policy').find(policy => json(policy.Properties.Roles).includes('PortalGuard')).Properties.PolicyDocument);
+  assert.match(guardPolicy, /ec2:StartInstances.*instance\/.*PortalServerInstance/);
+  assert.doesNotMatch(guardPolicy, /ec2:(StopInstances|TerminateInstances|RunInstances|ModifyInstanceAttribute)|ec2:\*/);
+});
+
+test('a guarda liga de novo só o servidor do portal, salvo se ficar desligado de propósito', async () => {
+  const { createGuard } = await import('../lambda/portal-guard/guard.mjs');
+  const started = [];
+  const tags = [];
+  const guard = createGuard({ instanceId: 'i-portal', describe: async () => ({ Tags: tags, StateTransitionReason: 'User initiated' }), start: async id => started.push(id) });
+  const stopped = id => ({ detail: { 'instance-id': id, state: 'stopped' } });
+  assert.deepEqual(await guard(stopped('i-other')), { skipped: 'other instance or state' });
+  assert.deepEqual(await guard({ detail: { 'instance-id': 'i-portal', state: 'stopping' } }), { skipped: 'other instance or state' });
+  assert.deepEqual(await guard(stopped('i-portal')), { started: 'i-portal' });
+  tags.push({ Key: 'blu-keep-stopped', Value: 'true' });
+  assert.deepEqual(await guard(stopped('i-portal')), { skipped: 'blu-keep-stopped' });
+  assert.deepEqual(started, ['i-portal']);
 });

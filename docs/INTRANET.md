@@ -365,3 +365,89 @@ Só em modo de teste: nada sai para o WhatsApp até haver credenciais Meta e
   parceiros.
 - Permissão nova: `bedrock:InvokeModel` para a Lambda da intranet. Sem tabela
   nova: tudo fica na partição `WHATSAPP-TEST`.
+
+## Alertas à equipa (2026-10-28)
+
+O despachante `ScheduledNotifications` (a cada 5 minutos) também verifica o
+seguimento e avisa a equipa, para o trabalho não depender de uma só pessoa.
+Regras em `infra/lambda/intranet/team-alerts.mjs`:
+
+- Lead fora do prazo de resposta: avisa o responsável; sem responsável ativo,
+  todos os curadores e fundadores. Quatro horas depois do prazo, os fundadores
+  também. Cliente que diz que vai desistir: responsável (ou equipa) e fundadores.
+- Tarefa atrasada: o responsável. Tarefa bloqueada, caso fora do prazo e
+  lembrete falhado: os fundadores (e o responsável, se houver).
+- Cada alerta tem uma chave fixa e fica como registo `ALERT#` na partição
+  `TEAM-ALERTS` (estado `TEAM_ALERT` em `FollowUpIndex`); duas execuções nunca o
+  repetem. Sai por email (SES, com `INTRANET_EMAIL_FROM`; no modo sandbox os
+  destinatários têm de estar verificados) e aparece em «O meu trabalho». Sem email
+  configurado, fica só na intranet; uma falha de envio marca `email-failed`.
+- O texto leva só a referência e o destino do lead, nunca contactos nem mensagens.
+- «O meu trabalho» mostra a curadores e fundadores os leads sem responsável que
+  passaram o prazo ou querem desistir, com «Sem responsável: assumir».
+- Permissão nova: `cognito-idp:ListUsersInGroup` no despachante, para saber a quem
+  avisar (a lista de membros é a mesma da página Equipa, em `team.mjs`).
+
+## Visão geral da fundadora (2026-10-28)
+
+Separador «Visão geral», só para fundadores (`GET /v1/control`, permissão
+`team-admin`). Junta numa página:
+
+- **Seguimentos:** em aberto, dentro do prazo, fora do prazo, clientes a desistir
+  e sem responsável (registos de demonstração excluídos).
+- **Pontos de falha:** leads atrasados sem responsável, contas desativadas com
+  trabalho atribuído, tarefas sem responsável ativo ou bloqueadas, casos fora do
+  prazo, lembretes falhados, alertas sem destinatário ou cujo email falhou, menos
+  de duas pessoas ativas a seguir leads e alguém com o dobro dos leads da média.
+- **Quem tem o quê:** por pessoa, leads (e atrasados), tarefas (em atraso,
+  bloqueadas) e casos fora do prazo, com quem precisa de ajuda primeiro.
+- **Lembretes e alertas** dos últimos 7 dias, com destinatários e forma de envio.
+
+As contas vêm de `controlSummary` em `team-alerts.mjs`, a mesma função que a
+pré-visualização usa. A resposta tem só totais, nomes da equipa e referências de
+leads, nunca contactos nem mensagens de clientes.
+
+## Análise automática das conversas (2026-10-28)
+
+As etiquetas deixaram de ser manuais. Uma etiqueta errada, ou posta de propósito,
+mudaria os indicadores e os dados que um modelo viesse a usar.
+
+- O despachante de 5 minutos analisa as conversas reais, com consentimento, que
+  têm mensagens novas desde a última análise e estão paradas há 2 minutos na primeira leitura e 10 nas seguintes, porque o
+  seguimento humano é mais lento (no fim
+  ou numa pausa longa; no máximo 10 por execução). Usa o
+  modelo das respostas da intranet (`BEDROCK_REPLY_MODEL_ID`) com temperatura 0.
+- O modelo devolve só JSON: sentimento (positivo, neutro, negativo), sinais
+  (`hot`, `proposal-next`, `needs-info`, `at-risk`, `not-a-fit`) com confiança e os
+  ids das mensagens do cliente que os provam, e uma frase de razão. Regras e
+  validação em `infra/lambda/intranet/signals.mjs`.
+- Respostas fora do formato, sinais desconhecidos ou sem prova são recusados; a
+  razão perde-se se tiver contactos ou ligações. Uma falha fica «não foi possível»
+  e repete com a próxima mensagem do cliente.
+- Sinais com confiança abaixo de 0,7 aparecem como «incerto» e não contam para
+  alertas. Risco de perda confiante grava `aiRiskAt`: o lead fica em risco, como
+  com as frases fixas, até alguém o contactar.
+- Ninguém altera a análise. `PUT /v1/leads/{id}/tags` guarda só a nota interna e
+  ignora `tags`; as etiquetas manuais antigas ficam no registo, sem uso.
+- Permissão nova: `bedrock:InvokeModel` no despachante. Custo: uma chamada por
+  conversa com mensagens novas.
+- **Feedback inferido:** a mesma análise avalia o chatbot (`good`, `improve`,
+  `wrong`, com confiança, prova e uma nota). Aparece em Operações → Conversas para
+  rever como «IA: …», separado do feedback da fundadora, que continua opcional.
+
+## Assistente (2026-10-28)
+
+Separador «Assistente», para todos os perfis (`POST /v1/assistant`). Junta o que
+a pessoa já vê (o seu trabalho, alertas, totais, leads em aberto, regras de
+seguimento e, para fundadores, a visão geral) e um guia curto da intranet
+(`assistant.mjs`), e pede ao modelo da intranet uma resposta em JSON.
+
+- Só sugere ações, que a pessoa clica: abrir um separador ou lead, preparar uma
+  tarefa (abre «Nova tarefa» preenchida) ou um rascunho de resposta (copiado e o
+  lead aberto). Nada é feito nem enviado pelo assistente.
+- As ações são validadas: separadores que o perfil não vê, leads fora do
+  contexto e ações que o perfil não pode fazer são descartados.
+- Sem contactos: e-mails e telefones são tapados no contexto, no histórico e na
+  resposta. Marketing não recebe leads nem regras de seguimento.
+- O histórico fica só no navegador (últimas 6 trocas) e apaga-se ao recarregar.
+- Custo: uma chamada ao modelo por pergunta (até 700 tokens de resposta).

@@ -5,7 +5,7 @@ window.BLU_INTRANET = { mock: { claims: { name: 'Fundadora de teste', email: 'fu
 const hours = n => new Date(Date.now() + n * 36e5).toISOString();
 const leads = [
   { id: 'BLU-DEMO000000000004', status: 'PENDING', followUpAt: hours(70), lastActivityAt: hours(-1), channel: 'website', messageCount: 9, synthetic: false, stage: 'curator-follow-up', consentAt: hours(-3), assignedTo: 'fundadora@example.com', assignedAt: hours(-1), journey: { destination: 'Algarve e Açores', timeframe: 'meados de março 2027', party: '2 adultos', budget: '3000–6000 EUR' }, tags: [], churnSignalAt: hours(-1), churnSignal: 'give up', atRisk: true },
-  { id: 'BLU-DEMO000000000001', status: 'QUEUED_FOR_REVIEW', followUpAt: hours(-20), lastActivityAt: hours(-90), channel: 'website', messageCount: 4, synthetic: false, stage: 'curator-follow-up', consentAt: hours(-92), journey: { destination: 'Costa norte e Algarve', timeframe: '25 nov – 10 dez 2026', party: '3 adultos', budget: '3000 EUR', interests: 'surf, vinho, vegano', pace: 'ativo', socialSource: 'instagram' }, tags: ['hot'], curatorNote: 'Prefere contacto por email.' },
+  { id: 'BLU-DEMO000000000001', status: 'QUEUED_FOR_REVIEW', followUpAt: hours(-20), lastActivityAt: hours(-90), channel: 'website', messageCount: 4, synthetic: false, stage: 'curator-follow-up', consentAt: hours(-92), journey: { destination: 'Costa norte e Algarve', timeframe: '25 nov – 10 dez 2026', party: '3 adultos', budget: '3000 EUR', interests: 'surf, vinho, vegano', pace: 'ativo', socialSource: 'instagram' }, tags: ['hot'], curatorNote: 'Prefere contacto por email.', aiStatus: 'ok', aiAnalysedAt: hours(-89), aiSentiment: 'positive', aiSignals: [{ signal: 'hot', confidence: 0.86, certain: true }, { signal: 'needs-info', confidence: 0.55, certain: false }], aiReason: 'Pedido concreto com orçamento e grupo; faltam as datas exatas.', aiChatbot: { verdict: 'improve', confidence: 0.78, certain: true, note: 'Pediu o contacto antes de perguntar as datas da viagem.' } },
   { id: 'BLU-DEMO000000000002', status: 'PENDING', followUpAt: hours(30), lastActivityAt: hours(-40), channel: 'website', messageCount: 6, synthetic: false, stage: 'ready-for-curator', consentAt: hours(-41), assignedTo: 'curador@example.com', assignedAt: hours(-2), journey: { destination: 'Lisboa e Sintra', timeframe: 'maio 2027', party: 'casal', interests: 'história romana' }, tags: [] },
   { id: 'BLU-DEMO000000000003', status: 'CONTACTED', followUpAt: hours(-50), contactedAt: hours(-60), lastActivityAt: hours(-80), channel: 'whatsapp', messageCount: 3, synthetic: true, consentAt: hours(-85), journey: { destination: 'Douro' }, tags: ['vip'] },
 ];
@@ -125,6 +125,21 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
   await new Promise(resolve => setTimeout(resolve, 150));
   const taskResult = await taskRoutes(method, path, body);
   if (taskResult !== undefined) return taskResult;
+  // Assistente: resposta fictícia, validada pelas mesmas regras da Lambda (assistant.mjs).
+  if (path === '/v1/assistant') {
+    const { parseAssistant } = await import('../../infra/lambda/intranet/assistant.mjs');
+    const text = JSON.stringify({
+      answer: `Primeiro o lead Costa norte e Algarve (BLU-DEMO000000000001): passou o prazo de resposta e não tem responsável. Depois, a tarefa em atraso «Confirmar tuk-tuk para Algarve e Açores».`,
+      sources: ['work', 'leads'],
+      actions: [
+        { type: 'open', tab: 'leads', leadId: 'BLU-DEMO000000000001' },
+        { type: 'task', title: 'Contactar o cliente da Costa norte e Algarve', leadId: 'BLU-DEMO000000000001' },
+        { type: 'reply', leadId: 'BLU-DEMO000000000001', text: 'Hello! Thank you for your patience. Could you share your exact travel dates so we can prepare your surf trip?' },
+        { type: 'open', tab: 'security' },
+      ],
+    });
+    return parseAssistant(text, { leadIds: leads.map(lead => lead.id), tabs: ['work', 'dashboard', 'leads', 'agenda'], canTasks: true, canLeads: true });
+  }
   if (path === '/v1/feed') return { feed, checkedAt: new Date().toISOString() };
   if (path === '/v1/settings' && method === 'POST') { Object.assign(settings, body, { auto: { ...settings.auto, ...body.auto }, updatedBy: 'fundadora@example.com', updatedAt: new Date().toISOString() }); announce('alterou as regras de seguimento'); return { ...settings, types: AUTO_TYPES }; }
   if (path === '/v1/settings') return { ...settings, types: AUTO_TYPES };
@@ -190,13 +205,33 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
   }
   if (path === '/v1/conversations') return { verdicts: VERDICTS, conversations: [...leads].sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt)).map(lead => ({
     id: lead.id, journey: lead.journey, stage: lead.stage, status: lead.status, synthetic: lead.synthetic, messageCount: lead.messageCount, lastActivityAt: lead.lastActivityAt,
-    feedbackCount: (feedbackGiven[lead.id] ?? []).length, lastFeedback: (feedbackGiven[lead.id] ?? [])[0] ?? null,
+    feedbackCount: (feedbackGiven[lead.id] ?? []).length, lastFeedback: (feedbackGiven[lead.id] ?? [])[0] ?? null, inferred: lead.aiChatbot ?? null,
   })) };
   if (path.endsWith('/ask')) return { answer: 'O viajante procura uma viagem ativa de surf com vinho e comida vegana. Próximo passo: enviar email com duas propostas.', sourceIds: [], requiresHumanApproval: true };
   if (method !== 'GET') return null;
   if (path.startsWith('/v1/leads/')) {
     const lead = leads.find(item => item.id === decodeURIComponent(path.split('/')[3]));
-    return { ...lead, messages, emails: ['demo@example.com'], phones: [] };
+    return { ...lead, messages, emails: ['demo@example.com'], phones: { 'BLU-DEMO000000000004': ['351912345678'], 'BLU-DEMO000000000002': ['351930000000'] }[lead.id] ?? [] };
+  }
+  // Visão geral da fundadora: a mesma soma da Lambda (team-alerts.mjs) sobre os dados fictícios.
+  if (path === '/v1/control') {
+    const { controlSummary } = await import('../../infra/lambda/intranet/team-alerts.mjs');
+    const members = [
+      { name: 'Fundadora de teste', email: 'fundadora@example.com', groups: ['founders'], enabled: true },
+      { name: 'Curador de teste', email: 'curador@example.com', groups: ['curators'], enabled: true },
+      { name: 'Ex-colaborador', email: 'antigo@example.com', groups: ['curators'], enabled: false },
+    ];
+    const late = lead => lead.status !== 'CONTACTED' && Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5 <= Date.now();
+    return { checkedAt: new Date().toISOString(), ...controlSummary({
+      leads: leads.map(lead => ({ ...lead, replyLate: late(lead) })), members,
+      tasks: [...tasks, { id: 'task-0009', title: 'Ligar ao hotel em Óbidos', owner: 'antigo@example.com', status: 'todo', due: day(1) }].filter(task => task.status !== 'done').map(withState),
+      cases,
+      alerts: [
+        { key: 'escalate#BLU-DEMO000000000001#x', at: hours(-2), level: 'bad', tab: 'leads', leadId: 'BLU-DEMO000000000001', text: 'O lead Costa norte e Algarve (BLU-DEMO000000000001) está há mais de 4 h sem resposta depois do prazo.', to: ['fundadora@example.com'], delivery: 'email' },
+        { key: 'late#BLU-DEMO000000000001#x', at: hours(-6), level: 'bad', tab: 'leads', leadId: 'BLU-DEMO000000000001', text: 'O lead Costa norte e Algarve (BLU-DEMO000000000001) passou o prazo de resposta e não tem responsável.', to: ['curador@example.com', 'fundadora@example.com'], delivery: 'in-app' },
+      ],
+      reminders: { sent: 6, prepared: 1, failed: 0, missed: 1 },
+    }) };
   }
   if (path === '/v1/team') return { members: [
     ...[

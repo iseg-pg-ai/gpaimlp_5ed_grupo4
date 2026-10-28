@@ -1,5 +1,61 @@
 # Plano de evolução do BLU AI System
 
+## Pendências ISEG — 2026-10-28
+
+Levantamento da folha de requisitos ISEG contra o código. A folha pede sobretudo
+dados (perfil, atrações, restaurantes, experiências, 51 regras, preços e três
+tiers), já cobertos pelo catálogo e pelo ETL. Ficam os pontos pedidos pelo Zolton,
+um de cada vez:
+
+- [x] Seguimento que corre sozinho com alertas à equipa: a verificação de 5
+  minutos (`ScheduledNotifications`) cria alertas para leads fora do prazo ou em
+  risco, escala aos fundadores após 4 h, avisa tarefas atrasadas ou bloqueadas,
+  casos fora do prazo e lembretes falhados; cada alerta só sai uma vez, por email
+  (SES, se configurado) e em «O meu trabalho». Leads sem responsável aparecem a
+  curadores e fundadores. Testes locais com mocks; sem deploy.
+- [x] Painel da fundadora («Visão geral», só fundadores, `GET /v1/control`):
+  seguimentos dentro e fora do prazo, em risco e sem responsável; pontos de falha
+  (contas desativadas com trabalho, tarefas sem responsável, alertas sem
+  destinatário ou com email falhado, seguimento dependente de uma pessoa, carga
+  desigual); quem tem o quê; lembretes e alertas dos últimos 7 dias. Testes locais
+  (100/100, incluindo synth) e pré-visualização no navegador a 375 px e desktop.
+- [x] Análise automática das conversas (`signals.mjs`): o modelo da intranet indica
+  sentimento e sinais (interesse, falta de informação, proposta, risco, fora do âmbito)
+  com confiança e prova nas mensagens do cliente; abaixo de 0,7 fica «incerto» e não
+  conta. Ninguém altera os sinais à mão (etiquetas manuais ignoradas pela API e fora
+  do ecrã; as antigas ficam guardadas, sem uso). Risco confiante gera o alerta à
+  equipa. Testes com modelo simulado; sem chamadas reais ao Bedrock.
+- [x] Feedback inferido: a análise corre quando a conversa pára 2 minutos (10 depois da
+  primeira leitura) e também
+  avalia o chatbot (boa, a melhorar, errada) com prova nas mensagens; aparece em
+  Operações → Conversas para rever, ao lado do feedback da fundadora.
+- [ ] Avaliações online (Google, TripAdvisor…) na secção de feedback: falta saber as
+  plataformas e o acesso (API ou exportação).
+- [ ] Propostas com melhor retorno para autoavaliação do curador: falta definir o
+  retorno (aceites, valor, margem) e onde está esse dado.
+- [ ] Portal: retirar as caixas de etiquetas da página de Leads e mostrar a análise
+  automática (precisa de `npm ci` em `dmc-workspace/` e espaço em disco).
+- [x] Números e linhas do Painel e da Visão geral são atalhos para Seguimento (no lead
+  certo), Agenda, WhatsApp, Casos e «O meu trabalho».
+- [ ] Alertas do Monitoring para os responsáveis (ver «Pendências de monitoring»).
+- [ ] Número WhatsApp partilhado da equipa (VoIP verificado pela Meta) com
+  distribuição interna; até lá, o número do site (+351 915 784 212) como substituto.
+- [ ] Depois do login, todos entram no painel da intranet; opções por papel e
+  geração de proposta para Canva no perfil de marketing/curador.
+- [ ] Testes do percurso do lead, de fornecedores válidos e de parceiros com licença.
+- [x] Assistente da intranet (separador «Assistente», todos os perfis): responde a
+  partir do que o perfil já vê (trabalho, alertas, totais, leads, visão geral,
+  regras) e de um guia; sugere botões (abrir, preparar tarefa, rascunho de
+  resposta) que a pessoa clica; sem contactos de clientes. Testes com modelo
+  simulado; sem chamadas reais ao Bedrock.
+- [x] Canva: «Canva: dias (CSV)» no portal, para a criação em massa no modelo BLU
+  (uma página por dia). Teste unitário passou; `tsc`, lint e `next build` por
+  correr (sem `node_modules`, disco cheio).
+- [x] Portal: guarda que volta a ligar o servidor quando a limpeza da conta o
+  desliga e página «o portal está a acordar» em vez do 504 (por publicar).
+- [ ] Ambiente local: sem `node_modules` no portal nem `.venv`; `npm run check/build`
+  e testes Python ainda por correr (o synth CDK já corre em `infra/`).
+
 ## Portal, backoffice e intranet com endereços próprios — 2026-10-26
 
 Cada parte tem a sua distribuição CloudFront: site público, intranet,
@@ -29,9 +85,9 @@ guardada; não há mapa da proposta nem ligação à equipa no Canva.
   (ligação direta de um nível); o mapa fica dentro da proposta.
 - [ ] Publicar `BluCostaIntranet` e `BluCostaPortal` e validar o mapa com uma
   proposta real depois do login.
-- [ ] Canva da equipa como opção do curador: ligação à equipa ou pasta Canva da
-  BLU (endereço a indicar pela equipa) ao lado do «TXT para Canva»; a
-  integração por API do Canva fica para depois de aprovar custos e acesso.
+- [ ] Canva da equipa como opção do curador: pasta da equipa BLU (endereço a
+  indicar pela equipa); a integração por API do Canva fica para depois de aprovar
+  custos e acesso. O CSV de criação em massa já cobre a geração por dia.
 - [ ] Separação por perfil dentro do portal: marketing sem dados de clientes.
 
 ## Intranet BLU — 2026-10-25

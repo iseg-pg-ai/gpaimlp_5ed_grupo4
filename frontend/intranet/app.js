@@ -7,14 +7,16 @@ const SITE = config?.site === 'backoffice'
   ? { name: 'Backoffice BLU', start: 'leads', tabs: ['dashboard', 'leads', 'agenda', 'whatsapp', 'cases', 'operations', 'governance'], other: config.intranetUrl && { label: 'Intranet ↗', url: config.intranetUrl } }
   : { name: 'Intranet BLU', start: 'work', tabs: null, other: null };
 // Perfis sem leitura geral (marketing) veem só estes separadores; a API aplica a mesma regra.
-const LIMITED_TABS = ['work', 'dashboard'];
+const LIMITED_TABS = ['work', 'assistant', 'dashboard'];
 const session = { idToken: '', refreshToken: '', claims: null };
 const $ = id => document.getElementById(id);
 
-const TAGS = {
+// Sinais da análise automática (infra/lambda/intranet/signals.mjs); ninguém os altera à mão.
+const SIGNALS = {
   hot: 'Muito interessado', 'proposal-next': 'Preparar proposta', 'needs-info': 'Falta informação',
-  vip: 'VIP', 'at-risk': 'Risco de perda', 'not-a-fit': 'Fora do âmbito',
+  'at-risk': 'Risco de perda', 'not-a-fit': 'Fora do âmbito',
 };
+const SENTIMENTS = { positive: ['Positivo', 'ok'], neutral: ['Neutro', ''], negative: ['Negativo', 'bad'] };
 const JOURNEY = {
   destination: 'Destino', timeframe: 'Datas', party: 'Viajantes', budget: 'Orçamento', interests: 'Interesses',
   pace: 'Ritmo', socialSource: 'Origem', campaign: 'Campanha', medium: 'Meio', content: 'Conteúdo', stage: 'Etapa',
@@ -48,6 +50,18 @@ function h(tag, props = {}, ...children) {
 
 const when = iso => (iso ? new Intl.DateTimeFormat('pt-PT', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso)) : '—');
 const pill = (text, tone = '') => h('span', { class: `pill ${tone}` }, text);
+// Atalhos: cada número ou linha abre o separador certo (no lead, se houver). Sem acesso ao
+// separador, fica só o número.
+const goTo = (tab, { filter, lead } = {}) => {
+  if (tab === 'leads') { if (filter) leadsState.filter = filter; leadsState.selected = lead ?? ''; }
+  show(tab);
+};
+const goCard = (value, label, tab, options = {}, tone = '') => {
+  const body = [h('div', { class: 'value' }, value ?? '—'), h('div', { class: 'label' }, label)];
+  const shade = tone && value ? tone : '';
+  return tab && tabVisible(tab) ? h('button', { type: 'button', class: `card go ${shade}`, onclick: () => goTo(tab, options) }, ...body) : h('div', { class: `card ${shade}` }, ...body);
+};
+const goLink = (tab, options = {}, label = 'Abrir') => (tabVisible(tab) ? h('button', { type: 'button', class: 'link', onclick: () => goTo(tab, options) }, label) : null);
 const isRecent = iso => Boolean(iso) && Date.now() - Date.parse(iso) < 864e5;
 const VERDICT_TONE = { good: 'ok', improve: 'warn', wrong: 'bad' };
 const statusPill = status => pill(...(STATUS[status] ?? [status || '—', '']));
@@ -94,12 +108,14 @@ const DEADLINE = { overdue: ['Fora do prazo', 'bad'], 'due-soon': ['Prazo próxi
 let casePrefill = {};
 // Filtro e lead aberto sobrevivem a «Atualizar» e ao regresso ao separador.
 const leadsState = { filter: 'open', selected: '' };
+// Conversa com o assistente: só em memória, apaga-se ao recarregar a página.
+const assistantState = { history: [] };
 const whatsappState = { selected: '', leadId: '' };
 let teamCache;
 const loadTeam = async () => (teamCache ??= (await api('GET', '/v1/team')).members);
 // «Bloqueado» já aparece no estado da tarefa; a urgência só o usa para ordenar e colorir.
 const URGENCY = { risk: ['Risco de desistência', 'bad'], overdue: ['Em atraso', 'bad'], soon: ['Prazo próximo', 'warn'] };
-const WORK_KIND = { task: 'Tarefa', lead: 'Lead', reminder: 'Lembrete', case: 'Caso', message: 'WhatsApp' };
+const WORK_KIND = { task: 'Tarefa', lead: 'Lead', reminder: 'Lembrete', case: 'Caso', message: 'WhatsApp', alert: 'Alerta' };
 const TASK_TONE = { todo: '', doing: 'ok', blocked: 'warn', done: 'ok' };
 // Um toque avança a tarefa: o botão principal é o passo seguinte.
 const NEXT_STEP = { todo: ['doing', 'Começar'], doing: ['done', 'Feito'], blocked: ['doing', 'Desbloquear'], done: ['todo', 'Reabrir'] };
@@ -238,6 +254,11 @@ const views = {
       if (item.kind === 'case') show('cases');
       if (item.kind === 'reminder') show('agenda');
       if (item.kind === 'message') { whatsappState.selected = item.message.key; show('whatsapp'); }
+      // Alerta: abre o separador indicado (no lead, se houver).
+      if (item.kind === 'alert') {
+        if (item.detail === 'leads' && item.partition) { leadsState.filter = 'all'; leadsState.selected = item.partition; }
+        show(item.detail);
+      }
     };
     // Mensagem à espera: a resposta sugerida já escrita; envia-se num toque ou ajusta-se antes.
     const messageBlock = item => {
@@ -275,7 +296,7 @@ const views = {
     const due = h('input', { type: 'date', 'aria-label': 'Prazo' });
     const leadId = h('input', { type: 'text', maxlength: '80', placeholder: 'BLU-… (opcional)', 'aria-label': 'Lead', value: taskPrefill.leadId ?? '' });
     const note = h('input', { type: 'text', maxlength: '1000', placeholder: 'Nota (opcional)', 'aria-label': 'Nota' });
-    const prefilled = Boolean(taskPrefill.leadId);
+    const prefilled = Boolean(taskPrefill.leadId || taskPrefill.title);
     taskPrefill = {};
     const create = h('form', { onsubmit: async event => {
       event.preventDefault();
@@ -299,7 +320,7 @@ const views = {
       h('p', { class: 'muted' }, 'Tudo o que é seu, por ordem de urgência. Cada alteração aparece no feed da equipa; nada é apagado e só há mensagens automáticas a clientes se estiverem ligadas nas regras de seguimento.'),
       h('div', { class: 'cards' },
         card(items.length, 'Na minha lista'), card(items.filter(item => ['risk', 'overdue'].includes(item.urgency)).length, 'Urgentes ou em atraso'),
-        card(mine.filter(item => item.task.status === 'blocked').length, 'Tarefas bloqueadas'), card(items.filter(item => item.kind === 'lead').length, 'Leads que assumi')),
+        card(mine.filter(item => item.task.status === 'blocked').length, 'Tarefas bloqueadas'), card(items.filter(item => item.kind === 'lead' && !item.unassigned).length, 'Leads que assumi')),
       status,
       can('tasks') ? h('details', { class: 'panel', open: prefilled }, h('summary', {}, 'Nova tarefa'), create) : h('p', { class: 'muted' }, 'Pode ver as tarefas e o feed; só curadores, governança e fundadores as alteram.'),
       h('div', { class: 'split spaced' },
@@ -320,6 +341,57 @@ const views = {
             ? h('ul', { class: 'feed' }, feed.map(entry => h('li', {}, h('strong', {}, entry.byName || entry.by), ` ${entry.text}`, h('time', {}, when(entry.at)))))
             : h('p', { class: 'muted' }, 'Ainda sem movimento.'))),
     );
+  },
+
+  // Assistente: responde a partir do que a pessoa já pode ver e sugere ações que ela própria clica.
+  async assistant(view, state = assistantState) {
+    const SOURCES = { work: 'O meu trabalho', alerts: 'Alertas', metrics: 'Painel', leads: 'Seguimento', control: 'Visão geral', settings: 'Regras de seguimento', guide: 'Guia da intranet' };
+    const log = h('div', { class: 'chat assistant-log', 'aria-live': 'polite' });
+    const status = h('p', { class: 'muted', role: 'status' });
+    const actionButton = action => {
+      if (action.type === 'open') return h('button', { type: 'button', class: 'secondary', onclick: () => goTo(action.tab, action.leadId ? { filter: 'all', lead: action.leadId } : {}) }, action.leadId ? `Abrir o lead ${action.leadId}` : `Abrir ${$('tabs').querySelector(`[data-tab="${action.tab}"]`)?.textContent ?? action.tab}`);
+      if (action.type === 'task') return h('button', { type: 'button', class: 'secondary', onclick: () => { taskPrefill = { title: action.title, leadId: action.leadId }; show('work'); } }, `Preparar tarefa: ${action.title}`);
+      // Rascunho de resposta: copiado para a área de transferência e o lead aberto; nada é enviado.
+      return h('div', { class: 'draft' }, h('div', { class: 'muted' }, `Rascunho para ${action.leadId}`), h('p', {}, action.text),
+        h('button', { type: 'button', class: 'secondary', onclick: async event => {
+          await navigator.clipboard?.writeText(action.text).catch(() => {});
+          event.currentTarget.textContent = 'Copiado';
+          goTo('leads', { filter: 'all', lead: action.leadId });
+        } }, 'Copiar e abrir o lead'));
+    };
+    const render = () => log.replaceChildren(...(state.history.length ? state.history.map(turn => h('div', { class: `bubble ${turn.role === 'user' ? 'customer' : 'assistant'}` },
+      turn.text,
+      turn.actions?.length ? h('div', { class: 'actions' }, turn.actions.map(actionButton)) : null,
+      turn.sources?.length ? h('time', {}, `Fontes: ${turn.sources.map(source => SOURCES[source] ?? source).join(', ')}`) : null))
+      : [h('p', { class: 'muted' }, 'Pergunte, por exemplo: «O que devo fazer primeiro hoje?», «Que leads estão em risco?» ou «Como agendo uma recolha?»')]));
+    const input = h('textarea', { name: 'question', rows: '2', maxlength: '1000', required: true, 'aria-label': 'Pergunta ao assistente' });
+    const form = h('form', { class: 'verify', onsubmit: async event => {
+      event.preventDefault();
+      const question = input.value.trim();
+      if (!question) return;
+      const history = state.history.map(turn => ({ role: turn.role, text: turn.text }));
+      state.history.push({ role: 'user', text: question });
+      input.value = '';
+      render();
+      status.textContent = 'A pensar…';
+      try {
+        const result = await api('POST', '/v1/assistant', { question, history });
+        state.history.push({ role: 'assistant', text: result.answer, actions: result.actions, sources: result.sources });
+        status.textContent = '';
+      } catch (error) {
+        status.textContent = error.message;
+      }
+      render();
+      log.lastElementChild?.scrollIntoView({ block: 'nearest' });
+    } },
+      input,
+      h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Perguntar'),
+        h('button', { type: 'button', class: 'link', onclick: () => { state.history = []; render(); } }, 'Nova conversa'), status));
+    render();
+    view.append(
+      h('h2', {}, 'Assistente'),
+      h('p', { class: 'muted' }, 'Responde a partir do que o seu perfil já vê na intranet e sugere ações. Nada é feito nem enviado sem o seu clique; sem contactos de clientes.'),
+      h('div', { class: 'panel' }, log, form));
   },
 
   async dashboard(view) {
@@ -343,12 +415,53 @@ const views = {
         : h('p', { class: 'muted' }, 'Tudo em ordem no pipeline.')),
       h('p', { class: 'muted' }, `Conversas com consentimento. ${m.synthetic} registo(s) de demonstração excluídos dos indicadores.`),
       h('div', { class: 'cards' },
-        card(m.open, 'Leads em aberto'), card(m.replyLate ?? 0, `Sem resposta há mais de ${m.replyHours ?? '—'} h`), card(m.overdue, 'Clientes em silêncio há 3 dias'), card(m.unassigned, 'Sem responsável'),
-        card(m.contacted, 'Contactados'), card(m.medianHoursToContact === null ? '—' : `${m.medianHoursToContact} h`, 'Mediana até ao contacto')),
+        goCard(m.open, 'Leads em aberto', 'leads', { filter: 'open' }), goCard(m.replyLate ?? 0, `Sem resposta há mais de ${m.replyHours ?? '—'} h`, 'leads', { filter: 'open' }),
+        goCard(m.overdue, 'Clientes em silêncio há 3 dias', 'leads', { filter: 'open' }), goCard(m.unassigned, 'Sem responsável', 'leads', { filter: 'open' }),
+        goCard(m.contacted, 'Contactados', 'leads', { filter: 'contacted' }), card(m.medianHoursToContact === null ? '—' : `${m.medianHoursToContact} h`, 'Mediana até ao contacto')),
       load.length ? h('div', { class: 'panel' }, h('h3', {}, 'Carga da equipa'), h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Pessoa'), h('th', {}, 'Tarefas'), h('th', {}, 'Em atraso'), h('th', {}, 'Bloqueadas'), h('th', {}, 'Leads'))),
         h('tbody', {}, load.map(member => h('tr', {}, h('td', {}, member.name), h('td', {}, member.openTasks ?? 0), countCell(member.overdueTasks ?? 0, 'bad'), countCell(member.blockedTasks ?? 0, 'warn'), h('td', {}, member.openLeads)))))) : null,
       h('div', { class: 'grid2 spaced' }, breakdown('Por estado', m.byStatus, STATUS), breakdown('Por etapa do percurso', m.byStage, STAGES), breakdown('Por origem', m.bySource)),
+    );
+  },
+
+  // Painel da fundadora: o estado de todos os seguimentos, onde está a falhar e quem tem o quê.
+  async control(view) {
+    const c = await api('GET', '/v1/control');
+    const countCell = (n, tone) => h('td', {}, n ? pill(String(n), tone) : h('span', { class: 'muted' }, '0'));
+    const roles = groups => groups.map(group => ROLE_LABEL[group] ?? group).join(', ');
+    const DELIVERY = { email: 'Email', 'in-app': 'Só na intranet', 'email-failed': 'Email falhou' };
+    view.append(
+      h('h2', {}, 'Visão geral da fundadora'),
+      h('p', { class: 'muted' }, `Seguimentos, pontos de falha e quem tem o quê. Atualizado ${when(c.checkedAt)}; os alertas saem sozinhos a cada 5 minutos.`),
+      h('div', { class: 'cards' },
+        goCard(c.followUps.open, 'Seguimentos em aberto', 'leads', { filter: 'open' }), goCard(c.followUps.onTime, 'Dentro do prazo', 'leads', { filter: 'open' }),
+        goCard(c.followUps.late, 'Fora do prazo', 'leads', { filter: 'open' }, 'bad'), goCard(c.followUps.atRisk, 'Clientes a desistir', 'leads', { filter: 'all' }, 'bad'),
+        goCard(c.followUps.unassigned, 'Sem responsável', 'leads', { filter: 'open' }, 'warn')),
+      h('div', { class: 'panel alerts' }, h('h3', {}, 'Pontos de falha'), c.breaking.length
+        ? h('ul', { class: 'reminders' }, c.breaking.map(item => h('li', {},
+          pill(item.level === 'bad' ? 'Urgente' : 'Atenção', item.level === 'bad' ? 'bad' : 'warn'), ' ', item.text, ' ',
+          goLink(item.tab))))
+        : h('p', { class: 'muted' }, 'Nenhum ponto de falha: o seguimento não depende de uma só pessoa.')),
+      h('div', { class: 'panel' }, h('h3', {}, 'Quem tem o quê'), c.people.length ? h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'Pessoa'), h('th', {}, 'Papel'), h('th', {}, 'Leads'), h('th', {}, 'Atrasados'), h('th', {}, 'Tarefas'), h('th', {}, 'Em atraso'), h('th', {}, 'Bloqueadas'), h('th', {}, 'Casos fora do prazo'), h('th', {}, ''))),
+        h('tbody', {}, c.people.map(person => h('tr', {},
+          h('td', {}, person.name, person.enabled ? null : [' ', pill('Desativada', 'bad')]), h('td', {}, roles(person.groups)),
+          h('td', {}, person.openLeads), countCell(person.lateLeads, 'bad'), h('td', {}, person.openTasks), countCell(person.overdueTasks, 'bad'), countCell(person.blockedTasks, 'warn'), countCell(person.overdueCases, 'bad'),
+          // Leads na lista de seguimento; tarefas em «O meu trabalho»; casos no separador respetivo.
+          h('td', {}, person.openLeads ? goLink('leads', { filter: 'open' }, 'Leads') : null, ' ', person.openTasks ? goLink('work', {}, 'Tarefas') : null, ' ', person.overdueCases ? goLink('cases', {}, 'Casos') : null))))) : h('p', { class: 'muted' }, 'Sem equipa registada.')),
+      h('div', { class: 'grid2 spaced' },
+        h('div', { class: 'panel' }, h('h3', {}, 'Lembretes (7 dias)'), h('table', {}, h('tbody', {},
+          // Os lembretes vivem na Agenda; os enviados por WhatsApp em teste também na caixa do WhatsApp.
+          h('tr', {}, h('td', {}, 'Enviados'), h('td', {}, c.reminders.sent), h('td', {}, goLink('agenda', {}, 'Agenda'), ' ', goLink('whatsapp', {}, 'WhatsApp'))),
+          h('tr', {}, h('td', {}, 'Preparados para enviar à mão'), countCell(c.reminders.prepared, 'warn'), h('td', {}, goLink('work', {}, 'O meu trabalho'))),
+          h('tr', {}, h('td', {}, 'Falharam'), countCell(c.reminders.failed, 'bad'), h('td', {}, goLink('agenda', {}, 'Agenda'))),
+          h('tr', {}, h('td', {}, 'Não saíram a tempo'), countCell(c.reminders.missed, 'bad'), h('td', {}, goLink('agenda', {}, 'Agenda')))))),
+        h('div', { class: 'panel' }, h('h3', {}, 'Alertas enviados à equipa (7 dias)'), c.alerts.length
+          ? h('ul', { class: 'feed' }, c.alerts.map(alert => h('li', {}, pill(alert.level === 'bad' ? 'Urgente' : 'Atenção', alert.level === 'bad' ? 'bad' : 'warn'), ' ', alert.text,
+            h('div', { class: 'muted' }, `${alert.to.length ? `Para ${alert.to.join(', ')}` : 'Sem destinatário'} · ${DELIVERY[alert.delivery] ?? alert.delivery} · `,
+              goLink(alert.tab, alert.leadId ? { filter: 'all', lead: alert.leadId } : {}, alert.leadId ? 'Abrir o lead' : 'Abrir')), h('time', {}, when(alert.at)))))
+          : h('p', { class: 'muted' }, 'Ainda sem alertas.'))),
     );
   },
 
@@ -633,10 +746,17 @@ const views = {
 
   // Caixa de teste do WhatsApp: o que teria sido enviado e um simulador de respostas.
   async whatsapp(view, state = whatsappState) {
-    const [{ mode, autoReplies, threads }, { partners }] = await Promise.all([api('GET', '/v1/whatsapp-test'), loadPartners().catch(() => ({ partners: [] }))]);
+    const [{ mode, autoReplies, threads }, { partners }, { leads }] = await Promise.all([
+      api('GET', '/v1/whatsapp-test'), loadPartners().catch(() => ({ partners: [] })), api('GET', '/v1/leads?status=all').catch(() => ({ leads: [] })),
+    ]);
     const rerender = () => { view.replaceChildren(); views.whatsapp(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
-    const visible = threads.filter(thread => state.filter === 'all' || !state.filter || (state.filter === 'waiting' ? thread.waiting : thread.audience === state.filter));
-    const current = threads.find(thread => thread.key === state.selected) ?? null;
+    // Todas: tudo; À espera: clientes e parceiros com mensagem por responder; Clientes e Parceiros: só esses.
+    const filter = state.filter || 'all';
+    const inFilter = key => thread => key === 'all' || (key === 'waiting' ? thread.waiting : thread.audience === key);
+    const visible = threads.filter(inFilter(filter));
+    // A conversa aberta só fica se pertencer ao filtro escolhido.
+    const current = visible.find(thread => thread.key === state.selected) ?? null;
+    const tripOf = id => leads.find(lead => lead.id === id)?.journey?.destination ?? '';
     const status = h('p', { class: 'muted', role: 'status' });
     // Para um parceiro basta o id: o número vem da lista de parceiros (ou fica a chave de teste).
     const target = thread => (thread.partnerId && !thread.to ? { partnerId: thread.partnerId } : { to: thread.to, partnerId: thread.partnerId || undefined });
@@ -663,28 +783,48 @@ const views = {
           h('button', { type: 'submit', class: 'secondary', value: 'in' }, thread.audience === 'partner' ? 'Simular resposta do parceiro' : 'Simular resposta do cliente'), status));
       return form;
     };
-    // Nova conversa: escolher o parceiro na lista; o número só se escreve para um cliente.
-    const who = h('select', { name: 'who', 'aria-label': 'Para quem' },
-      h('option', { value: '' }, 'Cliente (escrever o número)'),
-      partners.map(partner => h('option', { value: partner.id }, `${partner.name}${partner.whatsapp ? '' : ' · sem número (teste)'}`)));
-    const number = h('label', {}, 'Número do cliente', h('input', { name: 'to', inputmode: 'numeric', placeholder: '351912345678' }));
-    who.addEventListener('change', () => { number.hidden = Boolean(who.value); });
-    const leads = (seenLeads ? [...seenLeads] : []).slice(-50).reverse();
+    // Nova conversa: escolher o cliente (lead) ou o parceiro; o número do cliente vem do lead.
+    // No filtro Clientes só aparecem clientes; em Parceiros, só parceiros.
+    const clientOptions = h('optgroup', { label: 'Clientes' },
+      leads.map(lead => h('option', { value: `lead:${lead.id}` }, `${lead.journey?.destination || 'Sem destino'} · ${lead.id}${lead.synthetic ? ' (demo)' : ''}`)),
+      h('option', { value: 'client' }, 'Outro cliente (escrever o número)'));
+    const partnerOptions = h('optgroup', { label: 'Parceiros' },
+      partners.map(partner => h('option', { value: `partner:${partner.id}` }, `${partner.name}${partner.whatsapp ? '' : ' · sem número'}`)));
+    const who = h('select', { name: 'who', required: true, 'aria-label': 'Para quem' }, h('option', { value: '' }, 'Escolher…'),
+      filter === 'partner' ? null : clientOptions, filter === 'traveller' ? null : partnerOptions);
+    const phone = h('input', { name: 'to', inputmode: 'tel', placeholder: '+351 912 345 678' });
+    const number = h('label', { hidden: true }, 'Número do cliente', phone);
+    const hint = h('p', { class: 'muted', role: 'status' });
+    who.addEventListener('change', async () => {
+      const [kind, id] = who.value.split(':');
+      number.hidden = !['lead', 'client'].includes(kind);
+      phone.value = '';
+      hint.textContent = '';
+      if (kind !== 'lead') return;
+      hint.textContent = 'A procurar o telefone do cliente…';
+      const detail = await api('GET', `/v1/leads/${encodeURIComponent(id)}`).catch(() => null);
+      phone.value = detail?.phones?.[0] ?? '';
+      hint.textContent = phone.value ? 'Número do cliente preenchido a partir da conversa.' : 'Este cliente não deixou telefone: escreva o número.';
+    });
     const newThread = h('form', { class: 'verify', onsubmit: event => {
       event.preventDefault();
       const data = Object.fromEntries(new FormData(event.currentTarget));
-      const partner = partners.find(item => item.id === data.who);
+      const [kind, id] = String(data.who).split(':');
+      const partner = kind === 'partner' ? partners.find(item => item.id === id) : null;
       const digits = String(data.to ?? '').replace(/\D/g, '');
-      write({ direction: 'out', ...(partner ? { partnerId: partner.id } : { to: digits }), leadId: data.leadId, text: data.text }, partner ? (partner.whatsapp || `partner:${partner.id}`) : digits);
+      if (!partner && digits.length < 9) { hint.textContent = 'Indique o número do cliente.'; return; }
+      write({ direction: 'out', ...(partner ? { partnerId: partner.id } : { to: digits }), leadId: kind === 'lead' ? id : '', text: data.text }, partner ? (partner.whatsapp || `partner:${partner.id}`) : digits);
     } },
-      h('label', {}, 'Para', who), number,
-      h('label', {}, 'Lead (opcional, dá à resposta automática os dados da reserva)', h('input', { name: 'leadId', placeholder: 'BLU-…', list: 'wa-leads' }), h('datalist', { id: 'wa-leads' }, leads.map(id => h('option', { value: id })))),
+      h('label', {}, 'Para', who), number, hint,
       h('label', {}, 'Primeira mensagem da BLU', h('textarea', { name: 'text', required: true, maxlength: '1000', rows: '2' })),
-      h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Começar conversa de teste')));
-    const label = thread => thread.name || thread.leadId || `+${thread.to}`;
-    const sub = thread => [thread.to ? `+${thread.to}` : 'sem número', thread.name && thread.leadId ? thread.leadId : ''].filter(Boolean).join(' · ');
+      h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Começar conversa')));
+    // Parceiro: nome e número. Cliente: destino da viagem (ou número) e número; nada do outro lado.
+    const label = thread => thread.name || tripOf(thread.leadId) || thread.leadId || `+${thread.to}`;
+    const sub = thread => (thread.audience === 'partner'
+      ? (thread.to ? `+${thread.to}` : 'sem número')
+      : [thread.to ? `+${thread.to}` : 'sem número', thread.leadId].filter(Boolean).join(' · '));
     const open = thread => { state.selected = thread.key; rerender(); };
-    const filterButton = (key, text) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String((state.filter || 'all') === key), onclick: () => { state.filter = key; rerender(); } }, text);
+    const filterButton = (key, text) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(filter === key), onclick: () => { state.filter = key; rerender(); } }, `${text} (${threads.filter(inFilter(key)).length})`);
     const flash = h('p', { class: 'muted', role: 'status' }, state.flash ?? '');
     state.flash = '';
     const bubble = (message, thread) => h('div', { class: `bubble ${message.direction === 'in' ? 'wa-in' : 'wa-out'}` },
@@ -693,7 +833,7 @@ const views = {
       h('time', {}, `${when(message.at)} · ${message.direction === 'in' ? (thread.audience === 'partner' ? 'parceiro (simulado)' : 'cliente (simulado)') : message.authorName || message.author}`),
       message.author === 'auto-assistant' ? [' ', pill('automática', 'ok')] : null);
     view.append(
-      h('h2', {}, 'WhatsApp (teste)'),
+      h('h2', {}, 'WhatsApp'),
       mode === 'test'
         ? h('div', { class: 'panel warn-note', role: 'note' }, h('strong', {}, 'Modo de teste: nenhuma mensagem sai para o WhatsApp.'), h('p', {}, 'Os lembretes e mensagens automáticas que iriam por WhatsApp aparecem aqui, à hora marcada. Pode responder como BLU ou simular a resposta do cliente ou do parceiro para testar o circuito.'))
         : h('div', { class: 'panel', role: 'note' }, h('strong', {}, 'Modo real: as mensagens saem pelo WhatsApp Business.'), h('p', { class: 'muted' }, 'Esta caixa mostra só o histórico dos testes.')),
@@ -701,15 +841,15 @@ const views = {
         ? 'Respostas automáticas ligadas: só a hora, o local e confirmações de uma atividade agendada, no máximo 3 por pessoa em 24 h e nunca entre as 22:00 e as 08:00. Preço, pagamento, alterações e queixas ficam sempre para uma pessoa.'
         : 'Respostas automáticas desligadas: cada mensagem recebida vai para «O meu trabalho» com uma resposta sugerida. Uma fundadora liga-as em Seguimento › Regras de seguimento.'),
       flash,
-      h('div', { class: 'filters' }, filterButton('all', 'Todas'), filterButton('waiting', `À espera de uma pessoa (${threads.filter(thread => thread.waiting).length})`), filterButton('traveller', 'Clientes'), filterButton('partner', 'Parceiros')),
+      h('div', { class: 'filters' }, filterButton('all', 'Todas'), filterButton('waiting', 'À espera de resposta'), filterButton('traveller', 'Clientes'), filterButton('partner', 'Parceiros')),
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, visible.length ? h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Conversa'), h('th', {}, 'Última mensagem'), h('th', {}, 'Mensagens'))),
           h('tbody', {}, visible.map(thread => h('tr', { class: `clickable${thread.key === state.selected ? ' selected' : ''}`, tabindex: '0', onclick: () => open(thread), onkeydown: event => event.key === 'Enter' && open(thread) },
             h('td', {}, h('strong', {}, label(thread)), ' ', thread.audience === 'partner' ? pill('parceiro') : null, h('div', { class: 'muted' }, sub(thread))),
             h('td', {}, when(thread.messages.at(-1).at), thread.waiting ? [' ', pill('à espera', 'warn')] : thread.stopped ? [' ', pill('STOP', 'bad')] : isRecent(thread.messages.at(-1).at) ? [' ', pill('novo', 'ok')] : null),
-            h('td', {}, thread.messages.length))))) : h('p', { class: 'muted' }, threads.length ? 'Nenhuma conversa neste filtro.' : 'Ainda sem mensagens. Agende uma recolha num lead com telefone ou comece uma conversa de teste.'),
-          mode === 'test' && isCurator() ? [h('h3', { class: 'spaced' }, 'Nova conversa de teste'), newThread] : null),
+            h('td', {}, thread.messages.length))))) : h('p', { class: 'muted' }, threads.length ? 'Nenhuma conversa neste filtro.' : 'Ainda sem mensagens. Agende uma recolha num lead com telefone ou comece uma conversa.'),
+          mode === 'test' && isCurator() ? [h('h3', { class: 'spaced' }, 'Nova conversa'), newThread] : null),
         h('div', { class: 'panel' }, current ? [
           h('h3', {}, label(current)), h('div', { class: 'muted' }, sub(current)),
           h('div', { class: 'chat wa' }, current.messages.map(message => bubble(message, current))),
@@ -924,6 +1064,19 @@ async function watchLeads() {
   }
 }
 
+// Sentimento e sinais lidos pelo modelo, só leitura. Um sinal incerto não conta para alertas;
+// a análise repete-se quando o cliente volta a escrever.
+function analysisBlock(lead) {
+  if (!lead.aiAnalysedAt) return h('p', { class: 'muted' }, 'Ainda sem análise: corre sozinha quando o cliente deixa de escrever por 2 minutos (depois, 10 minutos).');
+  if (lead.aiStatus === 'failed') return h('p', { class: 'muted' }, `A análise de ${when(lead.aiAnalysedAt)} não foi possível; repete com a próxima mensagem do cliente.`);
+  const [label, tone] = SENTIMENTS[lead.aiSentiment] ?? [lead.aiSentiment, ''];
+  return h('div', { class: 'analysis' },
+    h('div', { class: 'tags' }, pill(`Sentimento: ${label}`, tone), ...(lead.aiSignals ?? []).map(signal =>
+      pill(`${SIGNALS[signal.signal] ?? signal.signal}${signal.certain ? '' : ' (incerto)'} · ${Math.round(signal.confidence * 100)}%`, signal.certain ? (signal.signal === 'at-risk' ? 'bad' : '') : 'muted'))),
+    lead.aiReason ? h('p', {}, lead.aiReason) : null,
+    h('p', { class: 'muted' }, `Analisado ${when(lead.aiAnalysedAt)} · só leitura`));
+}
+
 async function showLead(panel, id, refreshList) {
   panel.replaceChildren(h('p', { class: 'muted' }, 'A carregar…'));
   let lead;
@@ -939,7 +1092,6 @@ async function showLead(panel, id, refreshList) {
     try { await fn(); status.textContent = 'Guardado.'; refreshList(); } catch (error) { status.textContent = error.message; event.currentTarget.disabled = false; }
   } }, label);
   const mine = lead.assignedTo && lead.assignedTo === session.claims?.email;
-  const chosen = new Set(lead.tags);
   const note = h('textarea', { rows: '3', maxlength: '1000', 'aria-label': 'Nota interna' });
   note.value = lead.curatorNote ?? '';
   const question = h('input', { type: 'text', maxlength: '1000', 'aria-label': 'Pergunta ao assistente interno', value: 'Resume o que este viajante procura e sugere o próximo passo.' });
@@ -949,7 +1101,9 @@ async function showLead(panel, id, refreshList) {
   // replaceChildren escreveria null como texto; os blocos opcionais são filtrados.
   panel.replaceChildren(...[
     h('h3', {}, lead.journey.destination || lead.id), h('div', {}, statusPill(lead.status), ' ', lead.synthetic ? pill('demo') : null),
-    lead.atRisk ? h('p', { class: 'error', role: 'alert' }, `Sinal de desistência em ${when(lead.churnSignalAt)} («${lead.churnSignal}»). Contactar já.`) : null,
+    lead.atRisk ? h('p', { class: 'error', role: 'alert' }, lead.churnSignalAt && lead.churnSignalAt >= (lead.aiRiskAt ?? '')
+      ? `Sinal de desistência em ${when(lead.churnSignalAt)} («${lead.churnSignal}»). Contactar já.`
+      : `A análise automática detetou risco de perda em ${when(lead.aiRiskAt)}. Contactar já.`) : null,
     h('dl', { class: 'facts' },
       h('dt', {}, 'Referência'), h('dd', {}, lead.id),
       ...journey.flatMap(([key, value]) => [h('dt', {}, JOURNEY[key] ?? key), h('dd', {}, value)]),
@@ -969,13 +1123,12 @@ async function showLead(panel, id, refreshList) {
     status,
     h('h3', {}, 'Conversa com o chatbot'),
     h('div', { class: 'chat' }, lead.messages.length ? lead.messages.map(message => h('div', { class: `bubble ${['customer', 'assistant'].includes(message.actor) ? message.actor : 'system'}` }, message.text, h('time', {}, `${when(message.at)} · ${message.channel}`))) : h('p', { class: 'muted' }, 'Sem mensagens guardadas.')),
-    h('h3', { class: 'spaced' }, 'Etiquetas e nota interna'),
-    h('div', { class: 'tags' }, Object.entries(TAGS).map(([key, label]) => {
-      const box = h('input', { type: 'checkbox', checked: chosen.has(key), disabled: !isCurator(), onchange: event => (event.target.checked ? chosen.add(key) : chosen.delete(key)) });
-      return h('label', {}, box, ' ', label);
-    })),
+    h('h3', { class: 'spaced' }, 'Análise automática'),
+    analysisBlock(lead),
+    h('h3', { class: 'spaced' }, 'Nota interna'),
+    h('p', { class: 'muted' }, 'Só para a equipa; não muda a análise nem os indicadores.'),
     note,
-    h('div', { class: 'actions' }, act('Guardar etiquetas e nota', () => api('PUT', `/v1/leads/${id}/tags`, { tags: [...chosen], note: note.value }))),
+    h('div', { class: 'actions' }, act('Guardar nota', () => api('PUT', `/v1/leads/${id}/tags`, { note: note.value }))),
     can('cases') ? h('h3', { class: 'spaced' }, 'Reclamações e litígios') : null,
     can('cases') ? leadCases(id) : null,
     h('h3', { class: 'spaced' }, 'Agenda do viajante'),
@@ -1024,12 +1177,17 @@ function conversationReview(review, state) {
       h('td', {}, h('strong', {}, item.journey.destination || item.id), h('div', { class: 'muted' }, STAGES[item.stage] ?? item.stage ?? ''), item.synthetic ? pill('demo') : null),
       h('td', {}, when(item.lastActivityAt), isRecent(item.lastActivityAt) ? [' ', pill('novo', 'ok')] : null),
       h('td', {}, item.messageCount),
-      h('td', {}, item.lastFeedback ? [pill(review.verdicts[item.lastFeedback.verdict] ?? item.lastFeedback.verdict, VERDICT_TONE[item.lastFeedback.verdict]), item.feedbackCount > 1 ? h('div', { class: 'muted' }, `${item.feedbackCount} notas`) : null] : h('span', { class: 'muted' }, 'Por rever')))))) : h('p', { class: 'muted' }, 'Ainda não há conversas guardadas.');
+      // Sem feedback dado à mão, mostra a avaliação inferida pela IA (marcada como tal).
+      h('td', {}, item.lastFeedback ? [pill(review.verdicts[item.lastFeedback.verdict] ?? item.lastFeedback.verdict, VERDICT_TONE[item.lastFeedback.verdict]), item.feedbackCount > 1 ? h('div', { class: 'muted' }, `${item.feedbackCount} notas`) : null]
+        : item.inferred ? inferredPill(item.inferred, review.verdicts) : h('span', { class: 'muted' }, 'Por rever')))))) : h('p', { class: 'muted' }, 'Ainda não há conversas guardadas.');
   let table = list();
   panel.append(h('div', { class: 'split' }, h('div', {}, table), detail));
   if (state.selected) select(state.selected);
   return panel;
 }
+
+// Avaliação inferida: tracejada se a IA não tem a certeza (abaixo de 70%).
+const inferredPill = (inferred, verdicts) => pill(`IA: ${verdicts[inferred.verdict] ?? inferred.verdict}${inferred.certain ? '' : ' (incerto)'} · ${Math.round(inferred.confidence * 100)}%`, inferred.certain ? VERDICT_TONE[inferred.verdict] : 'muted');
 
 async function showConversation(panel, id, verdicts, refreshList) {
   panel.replaceChildren(h('p', { class: 'muted' }, 'A carregar…'));
@@ -1060,6 +1218,11 @@ async function showConversation(panel, id, verdicts, refreshList) {
   panel.replaceChildren(...[
     h('h3', {}, lead.journey.destination || lead.id), h('div', {}, statusPill(lead.status), ' ', lead.synthetic ? pill('demo') : null),
     h('dl', { class: 'facts' }, h('dt', {}, 'Referência'), h('dd', {}, lead.id), ...journey.flatMap(([key, value]) => [h('dt', {}, JOURNEY[key] ?? key), h('dd', {}, value)])),
+    h('h3', { class: 'spaced' }, 'Avaliação inferida pela IA'),
+    lead.aiChatbot
+      ? h('div', {}, inferredPill(lead.aiChatbot, verdicts), lead.aiChatbot.note ? h('p', {}, lead.aiChatbot.note) : null,
+        h('p', { class: 'muted' }, `Lida da conversa quando parou (${when(lead.aiAnalysedAt)}), pelas reações do cliente; só leitura.`))
+      : h('p', { class: 'muted' }, 'Ainda sem avaliação: a IA lê a conversa quando o cliente deixa de escrever por 2 minutos (depois, 10 minutos).'),
     h('h3', { class: 'spaced' }, 'Feedback da fundadora'),
     feedback.length ? h('ul', { class: 'reminders' }, feedback.map(item => h('li', {}, pill(verdicts[item.verdict] ?? item.verdict, VERDICT_TONE[item.verdict]), ' ', h('span', { class: 'muted' }, `${item.byName || item.by} · ${when(item.at)}`), h('div', {}, item.note)))) : h('p', { class: 'muted' }, 'Ainda sem feedback.'),
     form,

@@ -54,6 +54,9 @@ a.button { display: inline-block; text-decoration: none; }
 .card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; }
 .card .value { font-size: 1.8rem; font-family: Georgia, serif; }
 .card .label { color: var(--ink-soft); font-size: .85rem; }
+/* Número que é atalho: o cartão inteiro abre o separador certo. */
+.card.go { font: inherit; color: inherit; text-align: left; cursor: pointer; min-height: 44px; }
+.card.go:hover, .card.go:focus-visible { border-color: var(--accent); }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 1rem; }
 .panel { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; overflow-x: auto; }
 .panel.risk { border-color: #e7bdb8; border-left: 4px solid var(--bad); margin-bottom: 1rem; }
@@ -70,6 +73,11 @@ tr.clickable:hover, tr.selected { background: #f3ecdf; }
 .pill.ok { color: var(--ok); border-color: #b9dcc6; }
 .pill.warn { color: var(--warn); border-color: #ecd0ac; }
 .pill.bad { color: var(--bad); border-color: #e7bdb8; }
+/* Assistente: ações sugeridas por baixo da resposta e rascunhos destacados. */
+.assistant-log .actions { margin-top: .5rem; }
+.assistant-log .draft { border-left: 3px solid var(--accent); padding-left: .6rem; margin-top: .5rem; }
+/* Sinal incerto da análise automática: tracejado e esbatido, não conta para alertas. */
+.pill.muted { color: var(--ink-soft); border-style: dashed; }
 
 .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1rem; align-items: start; }
 .filters { display: flex; gap: .5rem; margin-bottom: .75rem; flex-wrap: wrap; }

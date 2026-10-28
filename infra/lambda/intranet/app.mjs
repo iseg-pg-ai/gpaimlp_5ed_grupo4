@@ -1,12 +1,14 @@
 import {
   CONTACTED, NOTE_LIMIT, OPEN_STATUSES, QUESTION_LIMIT,
-  atRisk, cleanTags, contactDetails, groupsOf, isOverdue, metrics, toLead, toMessage, validLeadId,
+  atRisk, contactDetails, groupsOf, isOverdue, metrics, toLead, toMessage, validLeadId,
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, parseActivity, plan } from './schedule.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
 import { ATTESTATIONS, AUTO_TYPES, SETTINGS, VALUE_RULES, applyAttestations, currentSettings, parseAttestation, parseSettings, replyState } from './settings.mjs';
 import { AUTO_AUTHOR, WHATSAPP_TEST, inboxRecord, parseInboxPost, threadKey, threads, toInboxMessage, whatsappMode } from './whatsapp-test.mjs';
 import { checkDraft, decide, draftPrompt, nextActivity, templateReply } from './guardrails.mjs';
+import { TEAM_ALERTS, controlSummary, toAlert } from './team-alerts.mjs';
+import { ASSISTANT, TABS as ASSISTANT_TABS, assistantPrompt, cleanHistory, leadContext, parseAssistant } from './assistant.mjs';
 import { FEED, NO_DUE, TASK_STATE, TASK_STATUS, UNLINKED_TASKS, describeChange, dueState, indexFields, parseTask, parseTaskUpdate, validRecordId } from './tasks.mjs';
 
 // Rotas da intranet. Os acessos AWS chegam injetados em `deps` (index.mjs na AWS,
@@ -28,7 +30,7 @@ const allowed = (groups, permission) => groups.some(group => ROLES[group]?.can.i
 // Sem a permissão "read" (marketing), só estas rotas: tarefas, feed, equipa e totais agregados.
 const LIMITED_ROUTES = new Set([
   'GET /v1/me', 'GET /v1/work', 'GET /v1/tasks', 'POST /v1/tasks', 'GET /v1/leads/{id}/tasks/{taskId}', 'POST /v1/leads/{id}/tasks/{taskId}',
-  'GET /v1/feed', 'GET /v1/team', 'GET /v1/metrics', 'GET /v1/alerts',
+  'GET /v1/feed', 'GET /v1/team', 'GET /v1/metrics', 'GET /v1/alerts', 'POST /v1/assistant',
 ]);
 const validEmail = email => typeof email === 'string' && email.length <= 254 && /^[^\s@<>()]+@[^\s@<>()]+\.[a-z]{2,}$/i.test(email);
 
@@ -50,7 +52,7 @@ export function parseFeedback(body) {
 
 const str = (item, key) => item[key]?.S ?? '';
 const toFeedback = item => ({ verdict: str(item, 'verdict'), note: str(item, 'note'), by: str(item, 'createdBy'), byName: str(item, 'createdByName'), at: str(item, 'createdAt') });
-const toCase = (item, today) => {
+export const toCase = (item, today) => {
   const record = {
     id: str(item, 'caseId'), leadId: str(item, 'conversationId') === UNLINKED ? '' : str(item, 'conversationId'), partition: str(item, 'conversationId'),
     type: str(item, 'type'), title: str(item, 'title'), description: str(item, 'description'), channel: str(item, 'channel'),
@@ -68,15 +70,15 @@ const toActivity = item => ({
   createdAt: str(item, 'createdAt'), reminders: str(item, 'reminders').split(',').filter(Boolean),
 });
 // O número de destino não sai da API; só se indica se existe.
-const toNotification = item => ({
+export const toNotification = item => ({
   conversationId: str(item, 'conversationId'), recordKey: str(item, 'recordKey'), activityId: str(item, 'activityId'),
   audience: str(item, 'audience'), kind: str(item, 'kind'), title: str(item, 'title'), sendAt: str(item, 'followUpAt'),
   occurrenceAt: str(item, 'occurrenceAt'), status: str(item, 'followUpStatus'), reason: str(item, 'reason'),
   hasNumber: Boolean(str(item, 'to')), text: str(item, 'text'), sentAt: str(item, 'sentAt'), channel: str(item, 'channel') || 'whatsapp',
   place: str(item, 'place'), people: Number(str(item, 'people') || 0), partnerName: str(item, 'partnerName'),
-  delivery: str(item, 'delivery'),
+  delivery: str(item, 'delivery'), approvedBy: str(item, 'approvedBy'),
 });
-const toTask = (item, today) => {
+export const toTask = (item, today) => {
   const partition = str(item, 'conversationId');
   const record = {
     id: str(item, 'taskId'), partition, leadId: partition === UNLINKED_TASKS ? '' : partition, leadLabel: str(item, 'leadLabel'),
@@ -223,13 +225,13 @@ export function createApp(deps) {
       return reply(204);
     },
 
+    // Só a nota interna. As etiquetas passaram a ser da análise automática (signals.mjs):
+    // `tags` no pedido é ignorado e as etiquetas manuais antigas ficam como estavam, sem uso.
     'PUT /v1/leads/{id}/tags': async ({ id, body }) => {
       const at = now().toISOString();
-      const tags = cleanTags(body.tags);
       const note = typeof body.note === 'string' ? body.note.trim().slice(0, NOTE_LIMIT) : '';
-      const set = { taggedAt: at, updatedAt: at };
+      const set = { updatedAt: at };
       const remove = [];
-      if (tags.length) set.tags = tags; else remove.push('tags');
       if (note) set.curatorNote = note; else remove.push('curatorNote');
       await deps.updateProfile(id, set, remove);
       return reply(204);
@@ -250,7 +252,7 @@ export function createApp(deps) {
         verdicts: FEEDBACK.verdicts,
         conversations: leads.map((lead, index) => {
           const given = feedback[index].map(toFeedback).sort((a, b) => b.at.localeCompare(a.at));
-          return { id: lead.id, journey: lead.journey, stage: lead.stage, status: lead.status, synthetic: lead.synthetic, messageCount: lead.messageCount, lastActivityAt: lead.lastActivityAt, feedbackCount: given.length, lastFeedback: given[0] ?? null };
+          return { id: lead.id, journey: lead.journey, stage: lead.stage, status: lead.status, synthetic: lead.synthetic, messageCount: lead.messageCount, lastActivityAt: lead.lastActivityAt, feedbackCount: given.length, lastFeedback: given[0] ?? null, inferred: lead.aiChatbot ?? null };
         }),
       });
     },
@@ -292,6 +294,42 @@ export function createApp(deps) {
       }
       const outcome = await answer(message, at);
       return reply(201, { at: at.toISOString(), decision: outcome.decision, reason: outcome.reason });
+    },
+
+    // Assistente: junta o que esta pessoa já pode ver e pede ao modelo uma resposta com ações sugeridas.
+    'POST /v1/assistant': async ({ user, body }) => {
+      if (!deps.assist) return fail(503, 'O assistente não está ligado neste ambiente.');
+      const question = typeof body.question === 'string' ? body.question.trim().slice(0, ASSISTANT.questionLimit) : '';
+      if (!question) return fail(400, 'Escreva uma pergunta.');
+      const can = permission => allowed(user.groups, permission);
+      // As mesmas rotas que a pessoa abriria; uma que falhe fica de fora do contexto.
+      const view = async (key, show = true) => {
+        if (!show) return null;
+        try {
+          const result = await routes[key]({ user, event: { queryStringParameters: {} }, body: {} });
+          return result.statusCode === 200 ? JSON.parse(result.body) : null;
+        } catch {
+          return null;
+        }
+      };
+      const [work, alerts, metrics, settings, leads, control] = await Promise.all([
+        view('GET /v1/work'), view('GET /v1/alerts'), view('GET /v1/metrics'), view('GET /v1/settings', can('read')),
+        can('read') ? listLeads('open').catch(() => []) : Promise.resolve([]), view('GET /v1/control', can('team-admin')),
+      ]);
+      const tabs = Object.keys(ASSISTANT_TABS).filter(tab => ['work', 'dashboard'].includes(tab) || (can('read') && (
+        tab === 'control' ? can('team-admin') : tab === 'cases' ? can('cases') : tab === 'security' ? can('security') : true)));
+      const leadList = leads.slice(0, 60).map(leadContext);
+      const items = work?.items ?? [];
+      const context = {
+        today: lisbonToday(), me: { name: user.name, roles: user.groups.map(group => ROLES[group]?.label ?? group) }, tabs,
+        work: items.slice(0, 40).map(item => ({ kind: item.kind, title: item.title, due: item.due, urgency: item.urgency, status: item.status, leadId: item.leadId || item.partition || '' })),
+        alerts: alerts?.alerts ?? [], metrics, leads: leadList,
+        settings: settings ? { replyHours: settings.replyHours, auto: settings.auto } : null,
+        control: control ? { followUps: control.followUps, breaking: control.breaking, people: control.people } : null,
+      };
+      const leadIds = [...new Set([...leadList.map(lead => lead.id), ...context.work.map(item => item.leadId)].filter(validLeadId))];
+      const text = await deps.assist(assistantPrompt({ question, history: cleanHistory(body.history), context }));
+      return reply(200, parseAssistant(text, { leadIds, tabs, canTasks: can('tasks'), canLeads: can('leads') }));
     },
 
     'GET /v1/metrics': async () => {
@@ -452,13 +490,14 @@ export function createApp(deps) {
       const me = user.email.toLowerCase();
       const at = now();
       const today = lisbonToday();
-      const [taskItems, leads, prepared, openCases, inbox, settings] = await Promise.all([
+      const [taskItems, leads, prepared, openCases, inbox, settings, alertItems] = await Promise.all([
         deps.queryStatus(TASK_STATE.open),
         listLeads('open'),
         deps.queryAgenda(NOTIFY.prepared, new Date(at - 7 * 864e5).toISOString(), at.toISOString()),
         allowed(user.groups, 'cases') ? deps.queryStatus(CASE_STATE.open) : Promise.resolve([]),
         allowed(user.groups, 'leads') ? deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix) : Promise.resolve([]),
         loadSettings(),
+        Promise.resolve().then(() => deps.queryAgenda(TEAM_ALERTS.status, new Date(at - 864e5).toISOString(), at.toISOString())).catch(() => []),
       ]);
       // Mensagens à espera de uma pessoa: de todos os curadores, com a resposta sugerida pronta.
       const waiting = threads(inbox.map(toInboxMessage), deps.partners).filter(thread => thread.waiting).map(thread => {
@@ -482,6 +521,15 @@ export function createApp(deps) {
         })),
         ...prepared.filter(item => str(item, 'approvedBy').toLowerCase() === me || myLeadIds.has(str(item, 'conversationId'))).map(toNotification)
           .map(item => ({ kind: 'reminder', id: item.recordKey, partition: item.conversationId, title: item.title, due: item.sendAt.slice(0, 10), detail: `${item.reason || 'Preparado: enviar à mão'}`, urgency: 'overdue' })),
+        // Leads sem responsável que passaram o prazo ou querem desistir: aparecem a quem segue leads.
+        ...(allowed(user.groups, 'leads') ? leads.filter(lead => !lead.synthetic && !lead.assignedTo && (lead.atRisk || lead.replyLate)) : []).map(lead => ({
+          kind: 'lead', id: lead.id, partition: lead.id, title: lead.journey.destination || lead.id, due: (lead.replyDueAt || lead.followUpAt).slice(0, 10),
+          detail: 'Sem responsável: assumir', urgency: lead.atRisk ? 'risk' : 'overdue', unassigned: true,
+        })),
+        // Alertas que não têm já um item próprio acima: escalamentos, bloqueios, lembretes e casos de outros.
+        ...alertItems.map(toAlert).filter(alert => alert.to.includes(me) && /^(escalate|blocked|reminder|case)#/.test(alert.key))
+          .filter(alert => !(alert.key.startsWith('case#') && (openCases ?? []).some(item => str(item, 'owner') === me && alert.key.startsWith(`case#${str(item, 'caseId')}#`))))
+          .map(alert => ({ kind: 'alert', id: alert.key, partition: alert.leadId, title: alert.text, due: alert.at.slice(0, 10), detail: alert.tab, urgency: alert.level === 'bad' ? 'overdue' : 'soon' })),
         ...(openCases ?? []).map(item => toCase(item, today)).filter(item => item.owner === me)
           .map(item => ({ kind: 'case', id: item.id, partition: item.partition, title: item.title, due: item.deadline, detail: CASE_TYPES[item.type]?.label ?? item.type, urgency: item.deadlineState === 'overdue' ? 'overdue' : item.deadlineState === 'due-soon' ? 'soon' : 'normal' })),
       ].sort(byUrgency);
@@ -600,6 +648,25 @@ export function createApp(deps) {
       return reply(200, { alerts: alerts.sort((a, b) => order[a.level] - order[b.level]), checkedAt: at.toISOString() }, 'private, max-age=60');
     },
 
+    // Painel da fundadora: seguimentos, pontos de falha e quem tem o quê, numa só vista.
+    'GET /v1/control': async () => {
+      const at = now();
+      const today = lisbonToday();
+      const week = new Date(at - 7 * 864e5).toISOString();
+      const settle = promise => Promise.resolve().then(() => promise).catch(() => []);
+      const [members, leads, taskItems, caseItems, alertItems, ...reminderLists] = await Promise.all([
+        deps.listTeam(), listLeads('all'), deps.queryStatus(TASK_STATE.open), deps.queryStatus(CASE_STATE.open),
+        settle(deps.queryAgenda(TEAM_ALERTS.status, week, at.toISOString())),
+        ...['sent', 'prepared', 'failed', 'missed'].map(status => settle(deps.queryAgenda(NOTIFY[status], week, at.toISOString()))),
+      ]);
+      const summary = controlSummary({
+        leads, members, tasks: taskItems.map(item => toTask(item, today)), cases: caseItems.map(item => toCase(item, today)),
+        alerts: alertItems.map(toAlert),
+        reminders: Object.fromEntries(['sent', 'prepared', 'failed', 'missed'].map((status, index) => [status, reminderLists[index].length])),
+      });
+      return reply(200, { ...summary, checkedAt: at.toISOString() }, 'private, max-age=60');
+    },
+
     'GET /v1/security': async () => {
       const [members, report, openCases] = await Promise.all([deps.listTeam(), loadReport().catch(() => null), deps.queryStatus(CASE_STATE.open)]);
       const founders = members.filter(member => member.groups.includes('founders') && member.enabled);
@@ -697,6 +764,7 @@ export function createApp(deps) {
     if (caseRoutes.has(event.routeKey) && !allowed(groups, 'cases')) return fail(403, 'Sem acesso a reclamações e litígios.');
     if (taskWrites.has(event.routeKey) && !allowed(groups, 'tasks')) return fail(403, 'Só curadores, governança e fundadores alteram tarefas.');
     if (event.routeKey.includes('{taskId}') && !validRecordId(event.pathParameters?.taskId)) return fail(400, 'Tarefa inválida.');
+    if (event.routeKey === 'GET /v1/control' && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores veem o painel de controlo.');
     if (event.routeKey === 'GET /v1/security' && !allowed(groups, 'security')) return fail(403, 'Só fundadores e governança veem a segurança.');
     if (event.routeKey.includes('{caseId}') && !/^[A-Za-z0-9-]{8,64}$/.test(event.pathParameters?.caseId ?? '')) return fail(400, 'Caso inválido.');
     const user = { email: String(claims.email ?? ''), name: String(claims.name ?? claims.email ?? ''), username: String(claims['cognito:username'] ?? claims.sub ?? ''), groups };
