@@ -12,7 +12,7 @@ uv sync --locked --all-groups
 
 O grupo `agent` é necessário para os testes do planeador e do adaptador Bedrock; não inicia um serviço HTTP. O grupo `translation` é necessário para `translations.test_worker`. Os testes devem usar diretórios temporários, mocks para fornecedores externos e nunca alterar o catálogo, warehouse ou exports operacionais.
 
-Manter regressões de comportamentos atuais. Evitar testes que apenas procurem trechos no código ou inspecionem outros testes quando já exista validação da saída real. O contrato Prompt TXT é verificado em `tests/test_portal_data.py` e `dmc-workspace/tests/itinerary-prompt.test.mjs`; o link público da apresentação é verificado em `presentation/test-browser.mjs`.
+Manter regressões de comportamentos atuais. Evitar testes que apenas procurem trechos no código ou inspecionem outros testes quando já exista validação da saída real. O contrato Prompt TXT é verificado em `tests/test_portal_data.py` e `dmc-workspace/tests/itinerary-prompt.test.mjs`; o contacto público e o isolamento do pitch são verificados em `presentation/test-browser.mjs`.
 
 ## Estrutura e documentação
 

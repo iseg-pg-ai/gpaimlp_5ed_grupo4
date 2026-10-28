@@ -9,7 +9,7 @@ Projeto do Grupo 4 da 5.ª edição da Pós-Graduação em Artificial Intelligen
 | ETL | Ingestão, validação e publicação do warehouse | — |
 | DMC Workspace | Briefing, catálogo, curadoria, versões e propostas | 3001 |
 | Leads / Concierge | Pré-visualização do site e qualificação inicial | 5173 |
-| Apresentação | Narrativa interativa com dados fictícios | 3003 |
+| Apresentação | Pitch comercial ilustrativo para viajantes e parceiros | 3003 |
 | BLU Operations | Monitoring privado, incidentes e contas locais | 3004 |
 | Assistente BLU | Planeador Python transacional integrado no portal | — |
 | Observatório | Análise Streamlit, só de leitura | 8501 |
@@ -51,8 +51,7 @@ Num ambiente preparado e com cache válida:
 ./bin/just blu up
 ```
 
-Para recuperação integral, com autenticação interativa de administrador do
-Monitoring e autorização para os efeitos S3:
+Para recuperação integral, com autenticação interativa de administrador do Monitoring e autorização para os efeitos S3:
 
 ```bash
 ./bin/just blu it
@@ -67,18 +66,12 @@ Monitoring e autorização para os efeitos S3:
 Os detalhes, efeitos, falhas e recuperação estão em [Operações](docs/OPERATIONS.md#recuperação-local).
 
 No Code Editor, **BLU · Interfaces** usa o encaminhamento da sessão web atual.
-O domínio é descoberto por metadados e `sagemaker:DescribeSpace`; não copiar um
-`studio-id` entre workspaces. A ausência de sessão web pode deixar a abertura
-pendente mesmo com os serviços saudáveis. Fora do SageMaker,
-`config/studio.local.json` é a alternativa local de configuração.
+O domínio é descoberto por metadados e `sagemaker:DescribeSpace`; não copiar um `studio-id` entre workspaces. A ausência de sessão web pode deixar a abertura pendente mesmo com os serviços saudáveis. Fora do SageMaker, `config/studio.local.json` é a alternativa local de configuração.
 
 ## Dados e persistência
 
-As fontes, warehouse, catálogo, histórico e PDFs autoritativos pertencem às
-releases S3. A execução materializa uma cache em `/tmp`; o Git não é backup.
-`BLU_DATA_DIR`, `BLU_WAREHOUSE_DIR`, `BLU_EXPORT_DIR` e `BLU_OPERATIONAL_DIR`
-selecionam essa cache. O portal escreve no catálogo operacional; o ETL publica
-o warehouse sem modificar fontes ou versões guardadas.
+As fontes, warehouse, catálogo, histórico e PDFs autoritativos pertencem às releases S3. A execução materializa uma cache em `/tmp`; o Git não é backup.
+`BLU_DATA_DIR`, `BLU_WAREHOUSE_DIR`, `BLU_EXPORT_DIR` e `BLU_OPERATIONAL_DIR` selecionam essa cache. O portal escreve no catálogo operacional; o ETL publica o warehouse sem modificar fontes ou versões guardadas.
 
 Os rascunhos e preferências do navegador não são versões autoritativas.
 Segredos, modelos, fontes CJK, runtimes e dados operacionais ficam fora do Git.
@@ -90,15 +83,11 @@ Ver [Dados e ETL](docs/DATA_PIPELINE.md) e [retenção S3](docs/S3_RETENTION.md)
 python3 scripts/check_project.py
 ```
 
-As baterias Python, Node, navegador e PDF e a preparação de dados sintéticos
-estão em [Testes](docs/TESTING.md). Um build aprovado ou HTTP 200 não comprova
-o fluxo completo, disponibilidade de fornecedores ou operação entre máquinas.
+As baterias Python, Node, navegador e PDF e a preparação de dados sintéticos estão em [Testes](docs/TESTING.md). Um build aprovado ou HTTP 200 não comprova o fluxo completo, disponibilidade de fornecedores ou operação entre máquinas.
 
 ## Documentação
 
-A documentação descreve o comportamento existente e os seus limites. Código,
-testes e manifests prevalecem sobre exemplos e resultados históricos. O destino
-atual é operação individual no SageMaker Code Editor em `eu-west-1`.
+A documentação descreve o comportamento existente e os seus limites. Código, testes e manifests prevalecem sobre exemplos e resultados históricos. O destino atual é operação individual no SageMaker Code Editor em `eu-west-1`.
 
 ### Como escolher o documento
 
@@ -143,15 +132,14 @@ atual é operação individual no SageMaker Code Editor em `eu-west-1`.
 | [Alternativa ECS](infra/CURATION_WORKSPACE.md) | Parâmetros e contrato do hosting cloud de curadoria |
 | [Entrega de imagem](infra/IMAGE_DELIVERY.md) | OCI, SBOM, assinatura, publicação ECR e referência de rollback |
 
-Uma síntese ou build não comprova deployment. O hosting ECS e a imagem ECR não
-são requisitos de arranque do destino Code Editor escolhido.
+Uma síntese ou build não comprova deployment. O hosting ECS e a imagem ECR não são requisitos de arranque do destino Code Editor escolhido.
 
 ### Apresentação, demonstrações e canais
 
 | Documento | Âmbito |
 | --- | --- |
 | [Apresentação](presentation/README.md) | Execução, controlos, isolamento e testes da narrativa |
-| [Guião editorial](docs/APRESENTACAO.md) | Conteúdo técnico, narrativa e preparação da apresentação |
+| [Guião editorial](docs/APRESENTACAO.md) | Pitch de seis momentos e encerramentos para viajantes e parceiros |
 | [Demo do assistente](docs/DEMO_CHATBOT_SCRIPT.md) | Percurso ilustrativo de curadoria com confirmação humana |
 | [Demo E2E](docs/DEMO_E2E.md) | Concierge, consentimento, eventos e seguimento no portal |
 | [Site BLU](frontend/blu-cloud-site/README.md) | Pré-visualização, configuração pública, build e testes |
@@ -161,22 +149,13 @@ são requisitos de arranque do destino Code Editor escolhido.
 
 ### Propostas e instruções de desenvolvimento
 
-[API de Leads](docs/LEADS_API.md) e [Intranet](docs/INTRANET.md) são propostas de novas
-fronteiras autenticadas. Não são manuais de stacks já implementadas. As páginas
-Leads existentes não equivalem à API ou SPA propostas.
+[API de Leads](docs/LEADS_API.md) e [Intranet](docs/INTRANET.md) são propostas de novas fronteiras autenticadas. Não são manuais de stacks já implementadas. As páginas Leads existentes não equivalem à API ou SPA propostas.
 
-[AGENTS.md](AGENTS.md) e os ficheiros homónimos de cada área são instruções de
-desenvolvimento, não guias de produto. `dmc-workspace/CLAUDE.md` delega nessas
-instruções. Instalação e operação mantêm uma entrada de referência por fluxo.
+[AGENTS.md](AGENTS.md) e os ficheiros homónimos de cada área são instruções de desenvolvimento, não guias de produto. `dmc-workspace/CLAUDE.md` delega nessas instruções. Instalação e operação mantêm uma entrada de referência por fluxo.
 
 ## Limites atuais
 
-O sistema produz propostas e documentos, sem efetuar reservas ou confirmar
-preços, disponibilidade ou compatibilidade automaticamente. O curador revê e
-aceita as alterações do [assistente transacional](docs/ASSISTANT.md).
+O sistema produz propostas e documentos, sem efetuar reservas ou confirmar preços, disponibilidade ou compatibilidade automaticamente. O curador revê e aceita as alterações do [assistente transacional](docs/ASSISTANT.md).
 
 O destino escolhido é operação individual no Code Editor em `eu-west-1`.
-O portal depende do acesso privado do Studio; o login do Monitoring protege
-apenas esse painel. A implementação ALB/Cognito é uma alternativa cloud,
-sem ativação implícita neste destino. Monitoring externo e aceitação operacional
-mantêm as pendências indicadas no plano e no runbook.
+O portal depende do acesso privado do Studio; o login do Monitoring protege apenas esse painel. A implementação ALB/Cognito é uma alternativa cloud, sem ativação implícita neste destino. Monitoring externo e aceitação operacional mantêm as pendências indicadas no plano e no runbook.

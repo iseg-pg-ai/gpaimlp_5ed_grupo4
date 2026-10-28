@@ -5,34 +5,27 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#091b23" />
-    <meta name="blu-portal-url" content="" />
     <meta
       name="description"
-      content="Uma experiência de curadoria BLU: do pedido ao território e à proposta. Protótipo com dados fictícios."
+      content="Conhecer quem viaja. Escolher com intenção. Descubra a curadoria BLU numa experiência ilustrativa para viajantes e parceiros."
     />
     <base href="./" />
-    <title>BLU · Presentation</title>
+    <title>BLU · Viajar com intenção</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="technical.css" />
-    <link rel="stylesheet" href="viewport.css?v=20261021-screen-fit" />
-    <script src="technology-content.js" defer></script>
-    <script src="technical.js" defer></script>
-    <script src="viewport.js?v=20261021-screen-fit" defer></script>
-    <script src="app.js?v=20261021-screen-fit" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261028-pitch" />
+    <link rel="stylesheet" href="viewport.css?v=20261028-pitch" />
+    <script src="viewport.js?v=20261028-pitch" defer></script>
+    <script src="app.js?v=20261028-pitch" defer></script>
   </head>
   <body>
     <main id="experience">
       <header class="show-header">
-        <a
-          href="./"
-          class="show-brand"
-          aria-label="BLU · Recomeçar apresentação"
+        <a href="./" class="show-brand" aria-label="BLU · Voltar ao início"
           >blu<span>.</span
           ><small>COSTA TRAVEL<br />THE CURATION EXPERIENCE</small></a
         >
         <span class="show-demo"
-          ><span></span> DEMONSTRAÇÃO · CASO FICTÍCIO</span
+          ><span></span> CURADORIA DE VIAGENS / PORTUGAL</span
         >
         <div class="show-header-actions">
           <button
@@ -60,9 +53,9 @@
             title="Pausar animações"
           >
             Ⅱ</button
-          ><a id="portal-link" target="_blank" rel="noopener"
-            >Abrir sistema <span aria-hidden="true">↗</span></a
-          >
+          ><button id="contact-jump" type="button">
+            Vamos conversar <span aria-hidden="true">↗</span>
+          </button>
         </div>
       </header>
       <p
@@ -75,7 +68,6 @@
         >Capítulo
         <select id="chapter-select" aria-label="Escolher capítulo"></select
       ></label>
-      <nav class="show-parts" aria-label="Partes da apresentação"></nav>
       <nav class="show-chapters" aria-label="Capítulos da apresentação"></nav>
       <section class="show-stage" aria-labelledby="show-title">
         <div class="show-scene-heading">
@@ -111,8 +103,8 @@
         </div>
       </footer>
       <p class="show-bottom-note">
-        PROTÓTIPO INDEPENDENTE · sem geração por IA, reservas ou alterações a
-        dados reais
+        EXPERIÊNCIA ILUSTRATIVA · preços e disponibilidade por confirmar · sem
+        reservas
       </p>
       <noscript
         >Ative JavaScript para explorar a apresentação interativa. O guião está

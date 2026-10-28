@@ -1,5 +1,4 @@
-/* Regras de enquadramento e escala da apresentação nos diferentes tamanhos de ecrã. */
-/* Cada capítulo ocupa o ecrã; o conteúdo excedente passa para o passo lateral. */
+/* Enquadramento do pitch: texto legível e passos laterais quando o ecrã é compacto. */
 html,
 body {
   height: 100%;
@@ -11,8 +10,8 @@ body {
   padding: 0 clamp(12px, 2.5vw, 56px);
 }
 .show-header {
-  min-height: 48px;
-  padding-block: 6px;
+  min-height: 56px;
+  padding-block: 8px;
   gap: 8px;
   flex-wrap: nowrap;
 }
@@ -22,24 +21,10 @@ body {
 .show-header-actions {
   gap: 6px;
 }
-.show-parts {
-  margin-top: 8px;
-  gap: 8px;
-}
-.show-parts > :is(button, a) {
-  min-height: 44px;
-  padding: 6px 10px;
-  gap: 3px 8px;
-}
-.show-parts small {
-  display: none;
-}
-.show-parts > :is(button, a) > span {
-  grid-row: auto;
-}
 .show-chapters {
-  margin-block: 6px;
-  gap: 8px;
+  margin-block: 12px;
+  gap: 12px;
+  padding: 0;
 }
 .show-chapters button {
   min-height: 44px;
@@ -50,8 +35,8 @@ body {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding-block: 8px;
-  gap: 8px;
+  padding-block: 12px;
+  gap: 12px;
 }
 .show-scene-heading {
   margin: 0;
@@ -60,15 +45,15 @@ body {
 .show-scene-heading .show-eyebrow {
   margin: 0;
 }
-h1 {
-  font-size: clamp(24px, 3.2vw, 48px);
-  margin: 4px 0;
+.show-scene-heading h1 {
+  font-size: clamp(26px, 3.4vw, 54px);
+  margin: 6px 0;
 }
 .show-intro {
-  font-size: 14px;
-  line-height: 1.45;
-  margin: 6px 0;
-  max-width: 1050px;
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 8px 0;
+  max-width: 860px;
 }
 #scene-window {
   flex: 1;
@@ -80,8 +65,9 @@ h1 {
   min-height: 0;
   overflow: auto;
   scrollbar-width: none;
-  gap: 20px;
+  gap: 24px;
   align-items: start;
+  --reading-size: clamp(14px, 1.05vw, 18px);
 }
 #scene::-webkit-scrollbar {
   display: none;
@@ -100,86 +86,53 @@ h1 {
 #scene.is-paged :is(h2, h3, .show-panel-title, .show-day-heading) {
   break-after: avoid;
 }
-#scene.is-paged
-  :is(button, li, .show-message, .tech-boundary, .show-component-flow > div) {
+#scene.is-paged :is(button, li, .pitch-pillars > div) {
   break-inside: avoid;
 }
 #scene :is(.show-mission, .show-map) {
   min-height: 0;
-  height: min(360px, var(--frame-height));
+  height: min(390px, var(--frame-height));
   max-height: var(--frame-height);
   break-inside: avoid;
 }
-#scene
-  :is(
-    .tech-detail,
-    .show-trust,
-    .show-project-context,
-    .show-conversation,
-    .show-document
-  ) {
-  padding: 16px;
+#scene .show-document {
+  padding: 20px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
-#scene
-  :is(
-    .tech-detail,
-    .show-decision,
-    .show-assistant-actions,
-    .show-delivery-detail,
-    .tech-proof-list
-  )
-  h2 {
-  font-size: clamp(24px, 2.4vw, 36px);
-  margin-block: 8px;
+#scene :is(.show-decision, .show-delivery-detail) h2 {
+  font-size: clamp(26px, 2.6vw, 40px);
+  margin-block: 10px;
 }
 #scene p {
-  font-size: 14px;
+  font-size: var(--reading-size);
   line-height: 1.55;
+  orphans: 2;
+  widows: 2;
 }
 #scene .show-context {
   font-size: 12px;
   line-height: 1.5;
-  margin-block: 8px;
+  margin-block: 10px;
 }
 #scene .show-eyebrow {
   font-size: 11px;
   letter-spacing: 0.08em;
 }
-#scene
-  :is(
-    .tech-part-heading,
-    .show-project-context,
-    .show-trust,
-    .show-journey-modes
-  ) {
-  margin-block: 0 12px;
-  padding-bottom: 12px;
-}
-#scene .show-component-flow {
-  gap: 10px;
-}
-#scene .show-component-flow > div {
-  padding: 12px;
-}
 #scene .show-day {
   margin-bottom: 12px;
 }
 #scene .show-day li {
-  padding-block: 10px;
+  padding-block: 12px;
 }
-#scene .show-finale {
-  padding-block: 8px;
+#scene.is-paged .show-document-days {
+  display: block;
 }
-#scene .show-final-symbol {
-  display: none;
+#scene.is-paged .show-document-days > div {
+  margin-bottom: 12px;
 }
-#scene .show-project-conclusion {
-  margin-block: 12px;
-}
-#scene .show-final-summary {
-  margin-block: 8px;
+#scene.is-paged :is(.show-place-detail, .show-document) {
+  overflow: visible;
 }
 #content-pages {
   display: flex;
@@ -205,14 +158,13 @@ h1 {
   visibility: hidden;
 }
 .show-footer {
-  padding-block: 6px;
+  padding-block: 10px;
   gap: 8px;
   flex-wrap: nowrap;
   flex-shrink: 0;
 }
 .show-footer-note p,
-.show-keyboard,
-.show-bottom-note {
+.show-keyboard {
   display: none;
 }
 .show-footer-note {
@@ -222,26 +174,34 @@ h1 {
   gap: 8px;
 }
 .show-primary {
-  min-height: 40px;
-  padding: 8px 12px;
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 14px;
 }
 .show-footer .show-primary {
-  max-width: 250px;
+  max-width: 280px;
 }
 .show-footer .show-previous {
-  min-height: 40px;
+  min-height: 44px;
 }
-@media (max-width: 900px) {
+.show-bottom-note {
+  display: block;
+  font-size: 10px;
+  line-height: 1.4;
+  margin: 0 0 6px;
+  letter-spacing: 0.025em;
+}
+.show-compact-navigation {
+  display: none;
+}
+@media (max-width: 1000px) {
   .show-brand small,
   .show-demo {
     display: none;
   }
-  .show-parts strong {
-    font-size: 12px;
-  }
-  .show-chapters,
-  .show-chapters.show-technical-chapters {
+  .show-chapters {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px 10px;
   }
   .show-chapters button {
     font-size: 12px;
@@ -258,17 +218,10 @@ h1 {
     display: none;
   }
   .show-scene-heading h1 {
-    font-size: clamp(22px, 3.5vw, 32px);
+    font-size: clamp(24px, 3.5vw, 36px);
   }
   .show-scene-heading .show-eyebrow {
     font-size: 9px;
-  }
-  .show-parts > :is(button, a) {
-    display: flex;
-    padding: 5px;
-  }
-  .show-parts > :is(button, a) > span {
-    display: none;
   }
   .show-footer-note {
     display: none;
@@ -277,92 +230,19 @@ h1 {
     width: 100%;
     justify-content: space-between;
   }
-  .show-header-actions a {
-    font-size: 11px;
-  }
 }
-@media (max-height: 650px) {
+@media (max-height: 700px) {
   .show-header {
-    min-height: 40px;
+    min-height: 48px;
+    padding-block: 4px;
   }
   .show-brand {
     font-size: 2rem;
   }
-  .show-intro,
   .show-brand small,
-  .show-demo {
-    display: none;
-  }
-  .show-scene-heading h1 {
-    font-size: 24px;
-  }
-  .show-scene-heading h1 br {
-    display: none;
-  }
-  .show-stage {
-    padding-block: 4px;
-    gap: 4px;
-  }
-  .show-parts,
-  .show-chapters {
-    margin-block: 3px;
-  }
-}
-.show-chapters {
-  padding-top: 0;
-}
-.show-scene-heading h1 {
-  font-size: clamp(24px, 2.6vw, 40px);
-}
-.show-scene-heading h1 br {
-  display: none;
-}
-.show-compact-navigation {
-  display: none;
-}
-.viewport-intro {
-  display: none;
-}
-#scene.is-paged .tech-node-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-#scene.is-paged .tech-node-grid button {
-  min-height: 64px;
-  padding: 10px;
-}
-#scene.is-paged .tech-wires {
-  overflow: hidden;
-}
-#scene.is-paged :is(.show-place-detail, .show-document) {
-  overflow: visible;
-}
-#scene.is-paged .show-document-days {
-  display: block;
-}
-#scene.is-paged .show-document-days > div {
-  margin-bottom: 12px;
-}
-#scene.is-paged .show-document-wrap {
-  display: block;
-}
-#scene.is-paged .show-document {
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-}
-@media (max-width: 900px) {
-  .viewport-intro {
-    display: block;
-    color: var(--muted);
-    margin: 0 0 12px;
-  }
-  #scene.is-paged .tech-node-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-height: 700px) {
-  .show-parts,
-  .show-chapters {
+  .show-demo,
+  .show-chapters,
+  .show-intro {
     display: none;
   }
   .show-compact-navigation {
@@ -385,31 +265,26 @@ h1 {
     font: inherit;
     font-size: 14px;
   }
-  .show-intro {
-    display: none;
-  }
-  .viewport-intro {
-    display: block;
-    color: var(--muted);
-    margin: 0 0 12px;
-  }
   .show-scene-heading h1 {
     font-size: 24px;
+  }
+  .show-scene-heading h1 br {
+    display: none;
   }
   .show-scene-heading .show-eyebrow {
     display: none;
   }
   .show-stage {
+    padding-block: 6px;
+    gap: 6px;
+  }
+  .show-footer {
     padding-block: 4px;
-    gap: 4px;
   }
 }
 @media print {
   html,
-  body {
-    height: auto;
-    overflow: visible;
-  }
+  body,
   #experience {
     height: auto;
     overflow: visible;
@@ -428,30 +303,24 @@ h1 {
     display: none;
   }
 }
-#scene.is-paged.is-short-frame .tech-node-grid {
-  display: block;
-}
-#scene.is-paged.is-short-frame .tech-node-grid > button {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 54px;
-  margin-bottom: 8px;
-}
-#scene.is-paged.is-short-frame .tech-wires {
+/* Em janelas muito baixas, a decoração cede espaço à leitura sem cortar a promessa. */
+#scene.is-paged.is-short-frame .show-detail-number {
   display: none;
 }
-#scene p {
-  orphans: 2;
-  widows: 2;
+#scene.is-paged.is-short-frame .pitch-hero {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  break-inside: auto;
 }
-#scene {
-  --reading-size: clamp(14px, 1.05vw, 18px);
+#scene.is-paged.is-short-frame .pitch-hero :is(.show-orbit, .show-coordinate) {
+  display: none;
 }
-#scene :is(p, .tech-boundary, .show-choice-summary dd) {
-  font-size: var(--reading-size);
+#scene.is-paged.is-short-frame .pitch-hero .show-mission-label {
+  position: static;
+  padding: 12px;
 }
-#scene .show-context {
-  font-size: 12px;
+#scene.is-paged.is-short-frame .pitch-hero .show-mission-label > strong {
+  font-size: 32px;
+  margin-block: 10px;
 }

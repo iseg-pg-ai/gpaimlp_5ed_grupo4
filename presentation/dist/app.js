@@ -1,44 +1,11 @@
-// Coordena a demonstração interativa com dados ilustrativos, sem gravar propostas no portal
-// operacional.
-/* Estado exclusivamente em memória: esta demonstração não consulta nem escreve dados do portal. */
+// Pitch independente: escolhas ilustrativas em memória, sem APIs, reservas ou dados de clientes.
 const state = {
   scene: 0,
   preference: "culture",
-  mode: "classic",
   selected: 0,
   free: false,
-  response: null,
-  version: 2,
+  audience: "travellers",
 };
-const journeyModes = {
-  soft: {
-    label: "Soft",
-    description:
-      "Uma forma mais leve de viver a Journey: menos tempo ou profundidade, mantendo a curadoria.",
-  },
-  classic: {
-    label: "Classic",
-    description:
-      "A abordagem de referência: mais tempo para explorar e uma experiência mais desenvolvida.",
-  },
-  signature: {
-    label: "Signature",
-    description:
-      "A expressão mais completa da Journey: maior profundidade, riqueza de experiência e personalização.",
-  },
-};
-function modeSelector() {
-  return `<div class="show-journey-modes"><span class="show-eyebrow">TRÊS INTERPRETAÇÕES DA MESMA JOURNEY</span><div role="group" aria-label="Abordagem de curadoria">${Object.entries(
-    journeyModes,
-  )
-    .map(
-      ([key, mode]) =>
-        `<button type="button" data-mode="${key}" aria-pressed="${state.mode === key}">${mode.label}</button>`,
-    )
-    .join(
-      "",
-    )}</div><p id="mode-description" aria-live="polite">${journeyModes[state.mode].description}</p><small>Não são graus de qualidade nem tarifas. Nesta ilustração, a seleção explica a abordagem; não recalcula o roteiro ou o preço.</small></div>`;
-}
 const choices = {
   culture: {
     label: "Cultura & património",
@@ -82,15 +49,6 @@ const stops = [
       "Um momento para observar a cidade. Acesso, esforço e percurso exigem confirmação antes de uma proposta real.",
   },
 ];
-const experienceChapters = [
-  "O pedido",
-  "O território",
-  "A proposta",
-  "A colaboração",
-  "A entrega",
-  "O próximo passo",
-];
-
 const icons = {
   compass:
     '<circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 5.5L8 16l2.5-5.5Z"/>',
@@ -108,25 +66,44 @@ const icons = {
 const icon = (name) =>
   `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]}</svg>`;
 const $ = (selector) => document.querySelector(selector);
-// O servidor injeta o endereço público configurado. A derivação abaixo mantém a
-// apresentação utilizável quando os ficheiros estáticos são abertos sem servidor.
-const configuredPortalUrl = document
-  .querySelector('meta[name="blu-portal-url"]')
-  ?.getAttribute("content")
-  ?.trim();
-const studioPath = window.location.pathname.match(
-  /^(.*\/codeeditor\/default\/ports\/)\d+/,
-);
-const observatoryUrl =
-  configuredPortalUrl ||
-  (studioPath
-    ? `${window.location.origin}${studioPath[1]}3001/`
-    : "http://localhost:3001/");
-$("#portal-link").href = observatoryUrl;
+const contactUrl = "https://wa.me/351915784212";
 
+const audiences = {
+  travellers: {
+    label: "Para quem viaja",
+    heading: "A próxima viagem começa<br>com uma conversa.",
+    text: "Conte-nos o que o inspira, quando gostaria de viajar e com quem. O primeiro passo é conhecê-lo.",
+    action: "Falar sobre a minha viagem",
+    message:
+      "Olá BLU, gostaria de falar com um curador sobre uma viagem a Portugal.",
+    steps: [
+      "Partilhar interesses e expectativas",
+      "Conversar sobre as possibilidades",
+      "Rever uma proposta à sua medida",
+    ],
+  },
+  partners: {
+    label: "Para parceiros",
+    heading: "Os seus clientes.<br>Uma experiência com intenção.",
+    text: "Conversemos sobre o perfil dos seus clientes e o papel da BLU na curadoria de experiências em Portugal.",
+    action: "Conversar sobre uma parceria",
+    message:
+      "Olá BLU, gostaria de conversar sobre uma possível parceria para experiências em Portugal.",
+    steps: [
+      "Conhecer o perfil dos seus clientes",
+      "Explorar uma colaboração com a BLU",
+      "Definir âmbito e próximos passos",
+    ],
+  },
+};
+
+function promiseScene() {
+  return `<div class="show-mission pitch-hero"><div class="show-orbit" aria-hidden="true"><div></div><div></div><div></div>${icon("compass")}</div><span class="show-coordinate">PORTUGAL / À SUA MANEIRA</span><div class="show-mission-label"><span>BLU COSTA TRAVEL CURATION</span><strong>Viajar.<br>Com intenção.</strong><p>O lugar é o começo.<br>A experiência é pessoal.</p></div></div>
+  <div class="pitch-promise"><span class="show-eyebrow">O LUXO DE UMA ESCOLHA COM SENTIDO</span><h2>Conhecer quem viaja.<br>Escolher com intenção.</h2><p>Uma cidade pode ser vivida de muitas formas. A curadoria liga os seus interesses, o seu ritmo e os momentos que quer levar consigo.</p><div class="pitch-pillars"><div>${icon("people")}<h3>Escuta</h3><p>Começamos pelas pessoas.</p></div><div>${icon("compass")}<h3>Curadoria</h3><p>Damos contexto às escolhas.</p></div><div>${icon("route")}<h3>Cuidado</h3><p>A proposta é revista consigo.</p></div></div></div>`;
+}
 function requestScene() {
-  return `<div class="show-mission"><div class="show-orbit" aria-hidden="true"><div></div><div></div><div></div>${icon("compass")}</div><span class="show-coordinate">38°43′ N / 9°08′ W</span><div class="show-mission-label"><span>DESTINO 01</span><strong>Lisboa</strong><p>O próximo capítulo começa aqui.</p></div><span class="show-orbit-caption">${icon("compass")} CADA PESSOA, UM PERCURSO</span></div>
-  <div class="show-brief"><div class="show-panel-title">${icon("people")}<span>O seu grupo de demonstração</span><span class="show-tag">02 PESSOAS</span></div><div class="show-facts"><div><small>A duração</small><strong>Dois dias</strong></div><div><small>O ritmo</small><strong>Sem pressa</strong></div><div><small>O que evitar</small><strong>Atividades de barco</strong></div></div><div class="show-question"><span class="show-eyebrow">A PRIMEIRA DECISÃO É SUA</span><h2>O que nos leva a descobrir uma cidade?</h2><div class="show-preferences" role="group" aria-label="Interesse do grupo">${Object.entries(
+  return `<div class="pitch-person"><span class="show-eyebrow">IMAGINE A SUA PRÓXIMA VIAGEM</span><h2>Dois dias.<br>Uma cidade.<br><em>O seu ritmo.</em></h2><p>Lisboa, dois adultos e tempo para descobrir sem pressa. Neste exemplo, deixamos de fora as atividades de barco.</p><span class="pitch-caption">CASO ILUSTRATIVO / NÃO É UMA OFERTA COMERCIAL</span></div>
+  <div class="show-brief"><div class="show-panel-title">${icon("people")}<span>O ponto de partida</span></div><div class="show-facts"><div><small>A duração</small><strong>Dois dias</strong></div><div><small>O ritmo</small><strong>Sem pressa</strong></div></div><div class="show-question"><span class="show-eyebrow">UMA ESCOLHA PARA EXPERIMENTAR</span><h2>O que o inspira?</h2><div class="show-preferences" role="group" aria-label="Interesse da viagem">${Object.entries(
     choices,
   )
     .map(
@@ -135,7 +112,7 @@ function requestScene() {
     )
     .join(
       "",
-    )}</div></div><p class="show-context">${icon("shield")} Preferências orientam a proposta. Restrições e informação em falta exigem validação.</p></div>`;
+    )}</div></div><p class="show-context">Esta escolha acompanha o percurso e a proposta ilustrativa dos próximos momentos.</p></div>`;
 }
 function mapScene() {
   return `<div class="show-map" role="group" aria-label="Mapa esquemático de Lisboa com três experiências fictícias"><div class="show-map-grid" aria-hidden="true"></div><svg class="show-map-geography" viewBox="0 0 900 620" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="river" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#204c59"/><stop offset="1" stop-color="#0b2530"/></linearGradient></defs><path fill="url(#river)" d="M0 520 Q170 500 340 545 T610 500 Q740 400 900 450 V620 H0Z"/><g fill="none" stroke="#6a9090" stroke-opacity=".2" stroke-width="1"><path d="M40 90 260 150 440 80 650 160 900 100M0 240 260 150 320 340 570 320 650 160M0 420 180 360 320 340 410 500M570 320 740 400 900 260M440 80 480 230 570 320M180 360 160 210 40 90"/><path d="M80 0 160 210 480 230 620 20M320 340 470 390 740 400 850 0"/></g><path class="show-map-route" d="M333 242 Q380 315 513 341 T648 186" fill="none"/></svg><span class="show-map-caption">LISBOA / POSSIBILIDADES EM LIGAÇÃO</span><span class="show-map-water">TEJO</span>${stops.map((stop, index) => `<button type="button" class="show-map-point ${state.selected === index ? "is-selected" : ""}" style="left:${stop.x}%;top:${stop.y}%" aria-pressed="${state.selected === index}" aria-label="Explorar ${stop.label}" data-stop="${index}"><span>0${index + 1}</span><strong>${stop.label}</strong></button>`).join("")}<span class="show-map-disclaimer">Mapa esquemático · posições e percurso ilustrativos</span></div><div id="place-detail" class="show-place-detail" aria-live="polite" aria-atomic="true">${placeDetail()}</div>`;
@@ -143,158 +120,142 @@ function mapScene() {
 function placeDetail() {
   const stop = stops[state.selected],
     choice = choices[state.preference];
-  return `<div class="show-panel-title">${icon("pin")}<span>POSSIBILIDADE 0${state.selected + 1}</span></div><span class="show-detail-number" aria-hidden="true">0${state.selected + 1}</span><p class="show-eyebrow">${stop.area}</p><h2>${state.selected === 0 ? choice.title : stop.label}</h2><p>${stop.description}</p><dl class="show-evidence"><div><dt>Interesse escolhido</dt><dd>${icon(choice.icon)} ${choice.label}</dd></div><div><dt>Origem destes dados</dt><dd>Exemplo preparado para a apresentação</dd></div><div><dt>Preço e disponibilidade</dt><dd class="show-pending">Por confirmar</dd></div></dl>`;
+  return `<div class="show-panel-title">${icon("pin")}<span>POSSIBILIDADE 0${state.selected + 1}</span></div><span class="show-detail-number" aria-hidden="true">0${state.selected + 1}</span><p class="show-eyebrow">${stop.area}</p><h2>${state.selected === 0 ? choice.title : stop.label}</h2><p>${stop.description}</p><dl class="show-evidence"><div><dt>Interesse escolhido</dt><dd>${icon(choice.icon)} ${choice.label}</dd></div><div><dt>Sobre este percurso</dt><dd>Exemplo ilustrativo de uma viagem</dd></div><div><dt>Preço e disponibilidade</dt><dd class="show-pending">Por confirmar</dd></div></dl>`;
 }
+
 function itineraryScene() {
   const choice = choices[state.preference];
-  return `<div class="show-itinerary"><div class="show-panel-title">${icon("route")}<span>O PERCURSO DO GRUPO</span><span class="show-tag">SIMULAÇÃO</span></div><div class="show-day"><div class="show-day-heading"><span>01</span><h2>Descobrir Lisboa</h2><small>Dia 1 / sem pressa</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>${choice.detail}</h3><p>${choice.label} · escolha alinhada com o briefing</p></div>${icon(choice.icon)}</li><li><span class="show-time">ALMOÇO</span><div><h3>À mesa, com tempo</h3><p>Uma pausa faz parte da experiência</p></div></li><li><span class="show-time">TARDE</span><div><h3>Outro ponto de vista</h3><p>Acesso e deslocação por validar</p></div></li></ol></div><div class="show-day"><div class="show-day-heading"><span>02</span><h2>Ao ritmo de quem viaja</h2><small>Dia 2 / adaptável</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>Continuar a explorar</h3><p>Margem para uma descoberta local</p></div></li><li id="free-slot" class="${state.free ? "show-free-time" : ""}">${freeSlot()}</li></ol></div></div><div class="show-decision">${modeSelector()}<span class="show-eyebrow">UMA VIAGEM NÃO É ESTÁTICA</span><h2>E se o cliente<br>mudar de ideias?</h2><p>«Preferia ter a segunda tarde livre.»</p><button type="button" id="free-toggle" class="show-primary" aria-pressed="${state.free}">${state.free ? "✓ Repor a experiência" : icon("spark") + "Reservar a tarde livre"}</button><p class="show-change-status" role="status">${changeStatus()}</p></div>`;
+  return `<div class="show-itinerary"><div class="show-panel-title">${icon("route")}<span>Um percurso possível</span><span class="show-tag">ILUSTRATIVO</span></div><div class="show-day"><div class="show-day-heading"><span>01</span><h2>Descobrir Lisboa</h2><small>Dia 1</small></div><ol><li><span class="show-time">MANHÃ</span><div><h3>${choice.detail}</h3><p>${choice.label}</p></div>${icon(choice.icon)}</li><li><span class="show-time">ALMOÇO</span><div><h3>À mesa, com tempo</h3><p>A pausa também faz parte da viagem.</p></div></li></ol></div><div class="show-day"><div class="show-day-heading"><span>02</span><h2>Ao seu ritmo</h2><small>Dia 2</small></div><ol><li id="free-slot" class="${state.free ? "show-free-time" : ""}">${freeSlot()}</li></ol></div></div>
+  <div class="show-decision"><span class="show-eyebrow">CONSTRUÍDA EM CONJUNTO</span><h2>Os planos mudam.<br>A escuta continua.</h2><blockquote>«Gostava de ter a segunda tarde só para mim.»</blockquote><p>O curador revê o pedido e ajusta a proposta consigo. A tecnologia apoia a preparação; a decisão continua humana.</p><button type="button" id="free-toggle" class="show-primary" aria-pressed="${state.free}">${state.free ? "Repor o exemplo inicial" : "Experimentar uma tarde livre"}</button><p class="show-change-status" role="status">${changeStatus()}</p></div>`;
 }
 function freeSlot() {
-  return `<span class="show-time">TARDE</span><div><h3>${state.free ? "Uma tarde só sua" : "Uma experiência por escolher"}</h3><p>${state.free ? "Tempo livre reservado · a proposta acompanha o pedido" : "O curador ainda tem uma decisão a rever"}</p></div>${state.free ? icon("moon") : ""}`;
+  return `<span class="show-time">TARDE</span><div><h3>${state.free ? "Uma tarde só sua" : "Uma descoberta por escolher"}</h3><p>${state.free ? "Tempo livre no exemplo · sem reserva de serviços" : "Uma possibilidade a conversar com o curador"}</p></div>${state.free ? icon("moon") : ""}`;
 }
 function changeStatus() {
   return state.free
-    ? "O dia 2 mudou. O interesse escolhido e o dia 1 mantêm-se."
-    : "Experimente alterar o plano. Pode voltar atrás.";
-}
-
-function collaborationScene() {
-  return `<div class="show-conversation"><div class="show-panel-title">${icon("spark")}<span>UMA CONVERSA COM LIMITES</span><span class="show-tag">SIMULAÇÃO PREPARADA</span></div><div class="show-message show-message-human"><small>O CURADOR</small><p>Vamos ajustar o plano, mantendo o que já foi revisto.</p></div><div id="assistant-response" aria-live="polite" aria-atomic="true">${assistantResponse()}</div><p class="show-context">As respostas desta cena estão preparadas. Não existe uma chamada a um modelo de linguagem.</p></div><div class="show-assistant-actions"><span class="show-eyebrow">EXPERIMENTE OS DOIS PEDIDOS</span><h2>Ajudar também é<br>saber onde parar.</h2><button type="button" data-assist="free">${icon("moon")}<span><strong>Reservar uma tarde livre</strong><small>Ajustar a segunda tarde do roteiro</small></span><span aria-hidden="true">→</span></button><button type="button" data-assist="protected">${icon("shield")}<span><strong>Remover uma atividade protegida</strong><small>Testar o limite de uma alteração</small></span><span aria-hidden="true">→</span></button></div>`;
-}
-function assistantResponse() {
-  if (state.response === "protected")
-    return `<div class="show-message show-message-assistant show-message-blocked"><small>O LIMITE / EXEMPLO ILUSTRATIVO</small><h3>A atividade protegida mantém-se.</h3><p>Este pedido não é aplicado na demonstração. A proteção exige uma decisão explícita do curador no fluxo adequado.</p><span class="show-response-state">${icon("shield")} SEM ALTERAÇÃO AO ROTEIRO</span></div>`;
-  if (state.response === "free")
-    return `<div class="show-message show-message-assistant"><small>A ALTERAÇÃO / EXEMPLO ILUSTRATIVO</small><h3>Uma tarde livre no dia 2.</h3><p>A demonstração reservou o período. O interesse escolhido e o primeiro dia mantêm-se; pode verificar o resultado no capítulo A proposta.</p><span class="show-response-state">✓ DEMONSTRAÇÃO ATUALIZADA</span></div>`;
-  return `<div class="show-message show-message-assistant"><small>A ASSISTÊNCIA</small><h3>Qual é a próxima decisão?</h3><p>Escolha um pedido ao lado para observar uma alteração permitida ou um limite de proteção.</p></div>`;
-}
-function deliveryScene() {
-  return `<div class="show-document-wrap"><div class="show-version-switch" role="group" aria-label="Exemplos de versões"><button type="button" data-version="1" aria-pressed="${state.version === 1}">01 / Exemplo inicial</button><button type="button" data-version="2" aria-pressed="${state.version === 2}">02 / As suas escolhas</button></div><div id="document-preview" class="show-document" aria-live="polite" aria-atomic="true">${documentPreview()}</div><p class="show-context">Pré-visualização ilustrativa. Não é um PDF exportado nem uma versão guardada no portal.</p></div><div class="show-delivery-detail"><span class="show-eyebrow">AS ESCOLHAS TORNAM-SE VISÍVEIS</span><h2>A sua viagem,<br>nas suas escolhas.</h2><dl class="show-choice-summary"><div><dt>O interesse</dt><dd>${choices[state.preference].label}</dd></div><div><dt>A abordagem</dt><dd>${journeyModes[state.mode].label} · dois dias, sem pressa</dd></div><div><dt>A segunda tarde</dt><dd>${state.free ? "Tempo livre reservado" : "Uma experiência por escolher"}</dd></div></dl><p class="show-context">Compare o ponto de partida com as escolhas que fez. No portal real, o curador revê e guarda a proposta antes da entrega. O Prompt TXT conserva os dados estruturados da versão para utilização externa revista, sem substituir o PDF DMC nem atualizar a partilha.</p></div>`;
+    ? "A segunda tarde ficou livre no exemplo. O primeiro dia mantém-se."
+    : "Veja como o percurso se adapta, sem mudar o primeiro dia.";
 }
 function documentPreview() {
-  const current = state.version === 2;
-  return `<div class="show-document-brand">blu<span>.</span><small>TRAVEL CURATION / EXEMPLO</small></div><span class="show-eyebrow">PORTUGAL / DOIS DIAS</span><h2>Lisboa,<br>ao seu ritmo.</h2><p class="show-document-intro">${current ? choices[state.preference].label : choices.culture.label} · ${current ? journeyModes[state.mode].label : "Classic"} · dois adultos · sem pressa</p><div class="show-document-days"><div><span>01</span><h3>Descobrir Lisboa</h3><p>${current ? choices[state.preference].detail : choices.culture.detail}<br>À mesa, com tempo<br>Outro ponto de vista</p></div><div><span>02</span><h3>Continuar a explorar</h3><p>${current && state.free ? "Uma tarde só sua · tempo livre reservado" : "Uma experiência por escolher"}</p></div></div><div class="show-document-pending">PREÇO E DISPONIBILIDADE POR CONFIRMAR</div><small class="show-document-footer">GRUPO DEMONSTRAÇÃO BLU / EXEMPLO 0${state.version}</small>`;
+  return `<div class="show-document-brand">blu<span>.</span><small>TRAVEL CURATION / EXEMPLO</small></div><span class="show-eyebrow">PORTUGAL / DOIS DIAS</span><h2>Lisboa,<br>ao seu ritmo.</h2><p class="show-document-intro">${choices[state.preference].label} · dois adultos · sem pressa</p><div class="show-document-days"><div><span>01</span><h3>Descobrir Lisboa</h3><p>${choices[state.preference].detail}<br>À mesa, com tempo</p></div><div><span>02</span><h3>Continuar a explorar</h3><p>${state.free ? "Uma tarde só sua · tempo livre" : "Uma descoberta por escolher"}</p></div></div><div class="show-document-pending">PREÇO, DISPONIBILIDADE E CONDIÇÕES POR CONFIRMAR</div><small class="show-document-footer">PROPOSTA ILUSTRATIVA / NÃO CONSTITUI RESERVA</small>`;
 }
+function deliveryScene() {
+  return `<div class="show-document-wrap"><div class="show-document">${documentPreview()}</div></div><div class="show-delivery-detail"><span class="show-eyebrow">DO DIÁLOGO À PROPOSTA</span><h2>A viagem ganha forma.<br>Consigo, até ao detalhe.</h2><p>Um percurso legível, escolhas com contexto e espaço para rever o que importa antes de avançar.</p><dl class="show-choice-summary"><div><dt>O que o inspira</dt><dd>${choices[state.preference].label}</dd></div><div><dt>O seu ritmo</dt><dd>Dois dias, sem pressa</dd></div><div><dt>A segunda tarde</dt><dd>${state.free ? "Tempo livre" : "Uma descoberta por escolher"}</dd></div></dl><p class="show-context">Este é um exemplo visual, não um documento comercial emitido. Preços, disponibilidade e condições exigem confirmação. Uma proposta não equivale a uma reserva.</p></div>`;
+}
+// O contacto abre apenas por ação do visitante; não envia mensagens nem publica o exemplo.
 function finalScene() {
-  return `<div class="show-finale"><div class="show-final-symbol" aria-hidden="true">${icon("compass")}</div><div class="show-final-summary"><span>02 dias em Lisboa</span><span>${choices[state.preference].label}</span><span>${state.free ? "Uma tarde livre reservada" : "Um roteiro ainda por rever"}</span></div><a id="observatory-final" class="show-primary" href="${observatoryUrl}" target="_blank" rel="noopener noreferrer">Explorar o Observatório real <span aria-hidden="true">↗</span></a><p class="show-final-note">Abre o portal real num novo separador. O acesso depende da sua sessão SageMaker.</p><div class="show-project-conclusion"><h2>Do conhecimento disperso à proposta revista.</h2><p>O contributo é ligar fontes rastreáveis, regras de curadoria e versões identificáveis. A automação prepara; o curador decide e aprova a entrega.</p><p>A evolução proposta é o autosserviço do cliente e a ligação ao CRM, com reservas, pagamentos e comunicações sujeitos a desenvolvimento e validação.</p><small>Grupo 4 · Fernando Carvalheiro · Gisela Matos · Henrique Reduto · Manuel Amaral · Pedro Carreiro<br>PG Applied AI &amp; Machine Learning · 5.ª edição · Apresentação prevista: 30 de outubro de 2026</small></div><div class="show-final-principles"><span>${icon("compass")} Conhecimento com origem</span><span>${icon("shield")} Revisão humana</span><span>${icon("route")} Entregas identificáveis</span></div></div>`;
+  const audience = audiences[state.audience];
+  const href = `${contactUrl}?text=${encodeURIComponent(audience.message)}`;
+  return `<div class="pitch-contact"><div class="pitch-audiences" role="group" aria-label="Escolher o objetivo do contacto">${Object.entries(
+    audiences,
+  )
+    .map(
+      ([key, value]) =>
+        `<button type="button" data-audience="${key}" aria-pressed="${state.audience === key}">${value.label}</button>`,
+    )
+    .join(
+      "",
+    )}</div><div class="pitch-contact-copy"><span class="show-eyebrow">BLU COSTA TRAVEL CURATION</span><h2>${audience.heading}</h2><p>${audience.text}</p><a id="contact-final" class="show-primary" href="${href}" target="_blank" rel="noopener noreferrer">${audience.action}<span aria-hidden="true">↗</span></a><p class="show-context">Abre o WhatsApp com um texto inicial. A mensagem só é enviada por si.</p></div></div><div class="pitch-next-steps"><span class="show-eyebrow">O PRÓXIMO CAPÍTULO</span><ol>${audience.steps.map((text, index) => `<li><span>0${index + 1}</span><p>${text}</p></li>`).join("")}</ol><p class="pitch-signature">Conhecer. Escolher. Viver.</p></div>`;
 }
-const experienceScenes = [
+const scenes = [
   {
-    heading: "Dois dias em Lisboa.<br><em>Uma viagem à sua medida.</em>",
-    eyebrow: "CADA VIAGEM COMEÇA COM ALGUÉM",
+    id: "promise",
+    label: "A promessa",
+    heading:
+      "Portugal, com intenção.<br><em>Uma viagem que faz sentido para si.</em>",
+    eyebrow: "CADA PESSOA, UM PERCURSO",
+    intro: "Curadoria de viagens para ligar quem é aos lugares que quer viver.",
+    note: "Conhecer quem viaja. Escolher com intenção.",
+    next: "Começar pelas pessoas",
+    render: promiseScene,
+  },
+  {
+    id: "request",
+    label: "A sua viagem",
+    heading: "Antes dos lugares,<br><em>vem a sua história.</em>",
+    eyebrow: "COMEÇAMOS POR OUVIR",
     intro:
-      "Antes de escolher um lugar, precisamos de conhecer as pessoas. Vamos começar por uma decisão sua.",
+      "Interesses, ritmo e expectativas dão o primeiro sentido à viagem. Experimente uma escolha neste exemplo.",
     note: "Primeiro as pessoas. Depois os lugares.",
-    next: "Explorar o território",
+    next: "Descobrir Lisboa",
     render: requestScene,
   },
   {
-    heading: "O território é o começo.<br><em>O contexto faz a escolha.</em>",
-    eyebrow: "CONHECIMENTO QUE ORIENTA",
+    id: "map",
+    label: "O destino",
+    heading:
+      "Conhecer o lugar.<br><em>Escolher o que lhe diz alguma coisa.</em>",
+    eyebrow: "O CONTEXTO FAZ A DIFERENÇA",
     intro:
-      "Cada ponto é uma possibilidade. Explore o mapa e descubra o contexto por trás da escolha.",
-    note: "Uma escolha ganha valor quando tem contexto.",
-    next: "Dar forma à viagem",
+      "Uma descoberta, uma mesa, outro ponto de vista. Explore três possibilidades de um percurso ilustrativo em Lisboa.",
+    note: "Um destino. Muitas formas de o viver.",
+    next: "Construir em conjunto",
     render: mapScene,
   },
   {
-    heading: "De possibilidades<br><em>a um plano com sentido.</em>",
-    eyebrow: "CURADORIA EM MOVIMENTO",
+    id: "itinerary",
+    label: "A curadoria",
+    heading: "Uma proposta que se constrói<br><em>em conversa consigo.</em>",
+    eyebrow: "TECNOLOGIA AO SERVIÇO DA CURADORIA",
     intro:
-      "O pedido e o interesse escolhido encontram-se num roteiro. Agora, veja o que muda quando o cliente muda de ideias.",
-    note: "Uma proposta para rever, adaptar e entregar.",
-    next: "Continuar a revisão",
+      "O curador transforma preferências em escolhas e revê o percurso consigo. Experimente deixar uma tarde livre.",
+    note: "A tecnologia apoia. O curador revê. A viagem é sua.",
+    next: "Ver a proposta",
     render: itineraryScene,
   },
   {
-    heading: "Inteligência para ajudar.<br><em>Critério para decidir.</em>",
-    eyebrow: "ASSISTÊNCIA COM FRONTEIRAS",
+    id: "delivery",
+    label: "A proposta",
+    heading:
+      "Mais do que uma lista de lugares.<br><em>Um percurso com sentido.</em>",
+    eyebrow: "AS SUAS ESCOLHAS GANHAM FORMA",
     intro:
-      "Uma alteração útil tem de respeitar o plano e os seus limites. Experimente duas situações numa conversa preparada.",
-    note: "Assistência, validação e revisão humana.",
-    next: "Preparar a entrega",
-    render: collaborationScene,
-  },
-  {
-    heading: "A viagem muda.<br><em>O histórico permanece.</em>",
-    eyebrow: "DA REVISÃO À ENTREGA",
-    intro:
-      "Compare o exemplo inicial com as escolhas que fez. No sistema, uma entrega corresponde a uma versão guardada.",
-    note: "Rever, guardar e entregar são passos distintos.",
-    next: "Abrir o próximo capítulo",
+      "O exemplo acompanha o interesse e o ritmo que escolheu. O próximo passo é rever os detalhes com a BLU.",
+    note: "Uma proposta clara. Espaço para decidir.",
+    next: "Vamos conversar",
     render: deliveryScene,
   },
   {
-    heading: "Da informação à decisão.<br><em>Da decisão à viagem.</em>",
-    eyebrow: "BLU / THE CURATION EXPERIENCE",
+    id: "final",
+    label: "Vamos conversar",
+    heading: "O próximo capítulo<br><em>pode começar aqui.</em>",
+    eyebrow: "PARA VIAJANTES E PARCEIROS",
     intro:
-      "O percurso termina aqui. A exploração do sistema pode começar agora.",
-    note: "Obrigado por acompanhar esta viagem.",
+      "Uma viagem pessoal ou uma oportunidade de colaboração: comece por nos contar o que tem em mente.",
+    note: "BLU Costa Travel Curation",
     next: "Recomeçar",
     render: finalScene,
   },
 ];
-const technicalCount = window.BluTechnical.scenes.length;
-const scenes = [
-  ...window.BluTechnical.scenes,
-  ...experienceScenes.map((scene, index) => ({
-    ...scene,
-    label: experienceChapters[index],
-    id: ["request", "map", "itinerary", "collaboration", "delivery", "final"][
-      index
-    ],
-  })),
-];
+
 function render(focus = true) {
   const scene = scenes[state.scene];
-  const technical = state.scene < technicalCount;
-  const offset = technical ? 0 : technicalCount;
-  const group = technical
-    ? window.BluTechnical.scenes
-    : scenes.slice(technicalCount);
-  const localIndex = state.scene - offset;
-  $("#experience").dataset.part = technical ? "technical" : "experience";
   $("#show-title").innerHTML = scene.heading.replaceAll("<br>", "<br> ");
-  $("#eyebrow").textContent = "BLU INTELLIGENCE / " + scene.eyebrow;
+  $("#eyebrow").textContent = scene.eyebrow;
   $("#intro").textContent = scene.intro;
-  $(".show-parts").innerHTML =
-    `<button type="button" data-part="technical" ${technical ? 'aria-current="step"' : ""}><span>I</span><strong>Fundamentos técnicos</strong><small>Como foi construído</small></button><button type="button" data-part="experience" ${!technical ? 'aria-current="step"' : ""}><span>II</span><strong>Experiência de curadoria</strong><small>O significado na prática</small></button><a href="${observatoryUrl}" target="_blank" rel="noopener noreferrer"><span>III</span><strong>Portal real ↗</strong><small>Aplicação em novo separador</small></a>`;
-  $(".show-chapters").classList.toggle("show-technical-chapters", technical);
-  $(".show-chapters").innerHTML = group
+  $(".show-chapters").innerHTML = scenes
     .map(
       (item, index) =>
-        `<button type="button" aria-label="0${index + 1} ${item.label}" data-scene="${index + offset}" ${localIndex === index ? 'aria-current="step"' : ""}><span>0${index + 1}</span>${item.label}<i aria-hidden="true"></i></button>`,
+        `<button type="button" aria-label="0${index + 1} ${item.label}" data-scene="${index}" ${state.scene === index ? 'aria-current="step"' : ""}><span>0${index + 1}</span>${item.label}<i aria-hidden="true"></i></button>`,
     )
     .join("");
   $("#chapter-select").innerHTML = scenes
     .map(
       (item, index) =>
-        `<option value="${index}" ${index === state.scene ? "selected" : ""}>${index < technicalCount ? "I" : "II"} · ${item.label}</option>`,
+        `<option value="${index}" ${index === state.scene ? "selected" : ""}>0${index + 1} · ${item.label}</option>`,
     )
     .join("");
-  $("#scene").className =
-    `show-scene ${technical ? scene.className : `show-scene-${scene.id}`}`;
+  $("#scene").className = `show-scene show-scene-${scene.id}`;
   $("#scene").innerHTML = scene.render();
-  $("#counter").textContent =
-    `${technical ? "I" : "II"} · 0${localIndex + 1} / 0${group.length}`;
+  $("#counter").textContent = `0${state.scene + 1} / 06`;
   $("#conclusion").textContent = scene.note;
   $("#previous").disabled = state.scene === 0;
   $("#next").innerHTML =
     scene.next +
     `<span aria-hidden="true">${state.scene === scenes.length - 1 ? "↺" : "→"}</span>`;
-  $(".show-demo").innerHTML =
-    `<span></span>${technical ? "FUNDAMENTOS / FLUXOS ILUSTRADOS" : "DEMONSTRAÇÃO · CASO FICTÍCIO"}`;
-  $(".show-bottom-note").textContent = technical
-    ? "CONTEÚDO BASEADO NO PROJETO · sem executar ETL, testes, modelos ou alterações a dados"
-    : "PROTÓTIPO INDEPENDENTE · sem geração por IA, reservas ou alterações a dados reais";
-  window.BluTechnical.mount();
   window.BluViewport.refresh(true);
-  if (focus) {
-    $("#show-title").focus({ preventScroll: true });
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }
+  if (focus) $("#show-title").focus({ preventScroll: true });
 }
-
 function go(scene) {
   state.scene = Math.max(0, Math.min(scenes.length - 1, scene));
   render();
@@ -304,17 +265,13 @@ $("#next").addEventListener("click", () => {
     Object.assign(state, {
       scene: 0,
       preference: "culture",
-      mode: "classic",
       selected: 0,
       free: false,
-      response: null,
-      version: 2,
+      audience: "travellers",
     });
-    window.BluTechnical.reset();
     render();
   } else go(state.scene + 1);
 });
-
 $("#chapter-select").addEventListener("change", (event) =>
   go(Number(event.target.value)),
 );
@@ -323,46 +280,14 @@ $(".show-chapters").addEventListener("click", (event) => {
   const button = event.target.closest("[data-scene]");
   if (button) go(Number(button.dataset.scene));
 });
-$(".show-parts").addEventListener("click", (event) => {
-  const button = event.target.closest("[data-part]");
-  if (button) go(button.dataset.part === "technical" ? 0 : technicalCount);
+$("#contact-jump").addEventListener("click", () => go(5));
+$(".show-brand").addEventListener("click", (event) => {
+  event.preventDefault();
+  go(0);
 });
 $("#scene").addEventListener("click", (event) => {
-  if (window.BluTechnical.handleClick(event)) return;
-  const mode = event.target.closest("[data-mode]");
-  if (mode && journeyModes[mode.dataset.mode]) {
-    state.mode = mode.dataset.mode;
-    document
-      .querySelectorAll("[data-mode]")
-      .forEach((button) =>
-        button.setAttribute(
-          "aria-pressed",
-          String(button.dataset.mode === state.mode),
-        ),
-      );
-    $("#mode-description").textContent = journeyModes[state.mode].description;
-  }
-  const assist = event.target.closest("[data-assist]");
-  if (assist) {
-    state.response = assist.dataset.assist;
-    if (state.response === "free") state.free = true;
-    $("#assistant-response").innerHTML = assistantResponse();
-  }
-  const version = event.target.closest("[data-version]");
-  if (version) {
-    state.version = Number(version.dataset.version);
-    document
-      .querySelectorAll("[data-version]")
-      .forEach((button) =>
-        button.setAttribute(
-          "aria-pressed",
-          String(Number(button.dataset.version) === state.version),
-        ),
-      );
-    $("#document-preview").innerHTML = documentPreview();
-  }
   const preference = event.target.closest("[data-preference]");
-  if (preference) {
+  if (preference && choices[preference.dataset.preference]) {
     state.preference = preference.dataset.preference;
     document.querySelectorAll("[data-preference]").forEach((button) => {
       const active = button.dataset.preference === state.preference;
@@ -385,10 +310,17 @@ $("#scene").addEventListener("click", (event) => {
     $("#free-slot").classList.toggle("show-free-time", state.free);
     $("#free-slot").innerHTML = freeSlot();
     $("#free-toggle").setAttribute("aria-pressed", String(state.free));
-    $("#free-toggle").innerHTML = state.free
-      ? "✓ Repor a experiência"
-      : icon("spark") + "Reservar a tarde livre";
+    $("#free-toggle").textContent = state.free
+      ? "Repor o exemplo inicial"
+      : "Experimentar uma tarde livre";
     $(".show-change-status").textContent = changeStatus();
+  }
+  const audience = event.target.closest("[data-audience]");
+  if (audience && audiences[audience.dataset.audience]) {
+    state.audience = audience.dataset.audience;
+    $("#scene").innerHTML = finalScene();
+    // Repor o foco no seletor após atualizar o encerramento para o público escolhido.
+    $(`[data-audience="${state.audience}"]`).focus({ preventScroll: true });
   }
 });
 document.addEventListener("keydown", (event) => {
@@ -412,7 +344,7 @@ $("#fullscreen").addEventListener("click", async () => {
     $("#fullscreen-note").hidden = true;
   } catch {
     $("#fullscreen-note").textContent =
-      "O navegador não permitiu ecrã inteiro. A apresentação continua nesta janela.";
+      "O navegador não permitiu ecrã inteiro. O pitch continua nesta janela.";
     $("#fullscreen-note").hidden = false;
   }
 });

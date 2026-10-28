@@ -15,13 +15,15 @@ A stack ECS/ALB/Cognito continua disponível como alternativa. O seu código e o
 
 Referências: [Arquitetura](ARCHITECTURE.md), [Operações](OPERATIONS.md) e [stack alternativa](../infra/CURATION_WORKSPACE.md).
 
+O [pitch comercial](APRESENTACAO.md) segue um percurso comum para viajantes e parceiros e adapta o contacto final ao público. A narrativa privilegia a experiência de curadoria e funciona sem acesso ao portal; os detalhes de engenharia pertencem aos guias técnicos. Esta separação permite apresentar a BLU sem expor ferramentas internas nem confundir o caso ilustrativo com uma proposta ou reserva real.
+
 ## Separação de responsabilidades e linguagens
 
 A aplicação combina ingestão de ficheiros, análise, edição interativa e geração de documentos. Concentrar tudo num serviço ou duplicar regras em Python e TypeScript tornaria menos claras a autoridade de escrita e a origem dos dados.
 
 Python mantém ingestão, validação ETL, acesso ao catálogo, leituras de fontes, meteorologia, cálculo de troços e planeamento do agente. O portal usa Next.js e TypeScript para interface, curadoria, simulação, versões e PDFs. A comunicação local usa JSON por stdin/stdout, sem shell e sem criar um servidor HTTP por operação. Reutilizam-se os contratos existentes em vez de outro catálogo ou persistência paralela.
 
-Observatório, apresentação e Monitoring são entradas independentes: o primeiro consulta o warehouse; a apresentação usa exemplos fictícios; o Monitoring observa e gere o seu acesso local. Ausência de imports entre estas aplicações não prova desuso. O agente e a tradução são subprocessos do portal, sem portas próprias. A fronteira de cada regra é identificada antes de qualquer migração.
+Observatório, apresentação e Monitoring são entradas independentes: o primeiro consulta o warehouse; a apresentação é um pitch comercial com exemplos fictícios; o Monitoring observa e gere o seu acesso local. Ausência de imports entre estas aplicações não prova desuso. O agente e a tradução são subprocessos do portal, sem portas próprias. A fronteira de cada regra é identificada antes de qualquer migração.
 
 Referências: [mapa de componentes e fronteiras](ARCHITECTURE.md#pontos-de-entrada-e-responsabilidades) e [modelo de dados](../reports/data_model_report.md).
 

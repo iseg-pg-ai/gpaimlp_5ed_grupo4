@@ -1,22 +1,16 @@
-# Serve a apresentação estática e resolve o acesso ao portal no workspace atual.
-"""Servidor estático da apresentação, isolado dos serviços e dados do portal."""
+"""Serve o pitch estático sem depender do portal, de credenciais ou de descoberta AWS."""
 from __future__ import annotations
 
 import argparse
+from html import escape
 from io import BytesIO
-import re
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
 import os
-import sys
+from pathlib import Path
+import re
 from urllib.parse import urlsplit
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-from scripts.studio_urls import dashboard_url, studio_base
-
-DIST = ROOT / "presentation/dist"
+DIST = Path(__file__).resolve().parent / "dist"
 
 
 def main():
@@ -26,10 +20,9 @@ def main():
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("A porta deve estar entre 1 e 65535.")
-    prefix = os.environ.get("BLU_PRESENTATION_BASE_PATH")
-    if prefix is None:
-        prefix = urlsplit(dashboard_url(args.port)).path
-    prefix = prefix.rstrip("/")
+    configured_prefix = os.environ.get("BLU_PRESENTATION_BASE_PATH", "").rstrip("/")
+    if configured_prefix and (not configured_prefix.startswith("/") or configured_prefix.startswith("//")):
+        parser.error("O prefixo da apresentação deve ser um caminho local iniciado por /.")
 
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *values, **kwargs):
@@ -37,25 +30,17 @@ def main():
 
         def send_head(self):
             path = urlsplit(self.path).path
-            if path == prefix or path.startswith(prefix + "/"):
+            # O prefixo vem do pedido do proxy; servir localmente não exige acesso à AWS.
+            proxy = re.match(r"^(.*?/ports/\d+)(?=/|$)", path)
+            prefix = configured_prefix or (proxy.group(1) if proxy else "")
+            if prefix and (path == prefix or path.startswith(prefix + "/")):
                 self.path = self.path[len(prefix):] or "/"
                 path = urlsplit(self.path).path
             if path in ("/", "/index.html"):
                 document = re.sub(
                     r'<base\s+href="\./"\s*/?>',
-                    f'<base href="{prefix}/">',
+                    lambda _: f'<base href="{escape(prefix, quote=True)}/">',
                     (DIST / "index.html").read_text(),
-                )
-                portal_url = os.environ.get("BLU_PORTAL_PUBLIC_URL", "")
-                if not portal_url:
-                    try:
-                        portal_url = dashboard_url(3001)
-                    except ValueError:
-                        portal_url = ""
-                document = re.sub(
-                    r'(<meta\s+name="blu-portal-url"\s+content=")[^"]*("\s*/?>)',
-                    rf"\g<1>{portal_url}\g<2>",
-                    document,
                 )
                 content = document.encode("utf-8")
                 self.send_response(200)
@@ -71,15 +56,11 @@ def main():
             return None
 
         def log_message(self, format, *values):
-            # Evitar registar URLs ou outros conteúdos recebidos pelo servidor.
+            # Os pedidos do visitante não são guardados em logs da apresentação.
             pass
 
     with ThreadingHTTPServer((args.host, args.port), Handler) as server:
-        try:
-            print(f"Apresentação: {studio_base()}/ports/{args.port}/", flush=True)
-        except ValueError:
-            pass
-        print(f"Endereço local: http://{args.host}:{args.port}/", flush=True)
+        print(f"Pitch BLU: http://{args.host}:{args.port}/", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

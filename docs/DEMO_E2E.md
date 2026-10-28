@@ -1,7 +1,7 @@
 # Demonstração de ponta a ponta — concierge, CRM e seguimento
 
 Guião reutilizável para demonstrar a integração entre site, eventos AWS e seguimento no portal. Usar dados fictícios e indicar se a sessão é real,
-simulada ou apoiada por capturas datadas. Complementa a [Parte III da apresentação](APRESENTACAO.md#4-parte-iii--demonstração-do-portal-real).
+simulada ou apoiada por capturas datadas. Complementa a [demonstração operacional complementar](APRESENTACAO.md#demonstração-operacional-complementar).
 
 ## Percurso demonstrado
 

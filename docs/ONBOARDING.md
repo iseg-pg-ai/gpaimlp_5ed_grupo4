@@ -247,7 +247,7 @@ Manter aberto o **Code Editor web do mesmo Space**, na consola AWS. A integraç�
 | --- | --- | --- |
 | Curation Studio | 3001 | Página do portal e navegação do catálogo |
 | Leads / Concierge | 5173 | Site e abertura do painel Talk to BLU |
-| Apresentação | 3003 | Capítulos técnicos e narrativos |
+| Apresentação | 3003 | Pitch comercial de seis momentos, para viajantes e parceiros |
 | Monitoring | 3004 | Login e acesso com a conta local |
 | Observatório | 8501 | Dashboard Streamlit com dados da entrega |
 
