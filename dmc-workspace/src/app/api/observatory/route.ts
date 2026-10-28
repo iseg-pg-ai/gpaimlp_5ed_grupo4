@@ -1,3 +1,5 @@
+// Endpoint: fornece os dados analíticos do Observatório integrado sem permitir escrita no
+// warehouse.
 import { portalRequest } from "@/lib/python-portal";
 import { warehouseRoot } from "@/lib/catalog-store";
 import { jsonError, noStoreHeaders } from "@/lib/server-http";

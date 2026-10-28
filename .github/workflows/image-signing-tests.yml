@@ -1,3 +1,4 @@
+# Testa os contratos de assinatura e verificação antes de os usar numa entrega.
 name: Image signing tests
 
 on:

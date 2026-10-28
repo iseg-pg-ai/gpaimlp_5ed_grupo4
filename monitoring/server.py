@@ -1,3 +1,5 @@
+# Expõe o Monitoring e a gestão de contas com sessão e restrições de origem no proxy HTTPS
+# configurado.
 """Servidor privado do monitoring, protegido por proxy HTTPS autenticado."""
 from __future__ import annotations
 
@@ -23,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STATIC = Path(__file__).resolve().parent / "static"
 
 
+# Associar origem, cookies e rotas à configuração do proxy antes de aceitar pedidos.
 def make_server(port, security, collector, public_url, insecure_local=False,
                 host="127.0.0.1"):
     public = urlsplit(public_url)
@@ -45,6 +48,7 @@ def make_server(port, security, collector, public_url, insecure_local=False,
         def log_message(self, *args):
             pass
 
+        # Centralizar os cabeçalhos para aplicar as mesmas restrições a todas as respostas.
         def reply(self, status, content=b"", kind="text/html; charset=utf-8", headers=None):
             if isinstance(content, str):
                 content = content.encode()

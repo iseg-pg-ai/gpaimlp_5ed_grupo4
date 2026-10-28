@@ -1,3 +1,5 @@
+// Endpoint: recebe o pedido de planeamento e devolve uma proposta validada para revisão
+// humana.
 import { loadPublishedCatalog } from "@/lib/catalog-store";
 import {
   plannerContext,

@@ -1,3 +1,4 @@
+// Configuração da build e do servidor local do site.
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { existsSync } from "node:fs";

@@ -1,3 +1,4 @@
+# Verifica estrutura e Markdown para impedir referências locais quebradas na documentação.
 name: Documentation
 
 on:

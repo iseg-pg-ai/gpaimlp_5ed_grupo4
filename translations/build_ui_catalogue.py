@@ -1,3 +1,5 @@
+# Gera o catálogo de interface a partir das fontes e substituições versionadas; não é
+# tradução de itinerários.
 """Generate checked-in portal translations with the installed offline models."""
 import json
 import argparse

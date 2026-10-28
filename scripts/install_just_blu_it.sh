@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Disponibiliza o launcher BLU no ambiente local sem duplicar a lógica do protocolo de
+# recuperação.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

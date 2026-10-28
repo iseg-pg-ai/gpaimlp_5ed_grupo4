@@ -1,3 +1,4 @@
+// Expõe lacunas e incompatibilidades para revisão humana antes da aprovação da proposta.
 import type { Snapshot } from "./itinerary-pdf";
 import type { Catalog } from "./curation.ts";
 import { proposalBudget } from "./proposal-budget.ts";

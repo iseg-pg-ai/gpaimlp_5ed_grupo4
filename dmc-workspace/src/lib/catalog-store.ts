@@ -1,3 +1,5 @@
+// Coordena o acesso ao catálogo operacional e propaga conflitos em vez de substituir
+// revisões silenciosamente.
 import path from "node:path";
 import type { Catalog } from "./curation";
 import { portalRequest, PortalPythonError } from "./python-portal.ts";

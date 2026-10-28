@@ -1,3 +1,4 @@
+// Verifica a correspondência entre o pedido e o plano, distinguindo adicionar de substituir.
 import type { AgentPlan } from "./assistant-actions.ts";
 
 export type RequestIntent =
@@ -31,6 +32,7 @@ export function requestIntent(input: string): RequestIntent {
   return { kind: "other" };
 }
 
+// Recusar mudanças de intenção, incluindo substituições quando o pedido era acrescentar.
 export function assertPlanIntent(plan: AgentPlan, intent: RequestIntent) {
   if (intent.kind !== "add") return;
   if (

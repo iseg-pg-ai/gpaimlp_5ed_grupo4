@@ -1,3 +1,5 @@
+// Contratos partilhados entre briefing, catálogo e itinerário; os tipos não substituem
+// validação em runtime.
 export type ActivityCategory = "hotel" | "activity" | "restaurant" | "transport" | "free_time";
 
 export type TransitMode =

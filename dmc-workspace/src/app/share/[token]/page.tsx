@@ -1,3 +1,5 @@
+// Mostra uma proposta através do acesso de partilha, sujeito à validação do token no
+// servidor.
 import { portalUrl } from "@/lib/http-client";
 import { notFound } from "next/navigation";
 import { VersionStore } from "@/lib/version-store";

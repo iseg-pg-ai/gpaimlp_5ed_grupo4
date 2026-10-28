@@ -1,3 +1,4 @@
+# Descobre e normaliza o URL do Space atual para evitar ligações copiadas de outro workspace.
 """Endereços das interfaces resolvidos para o workspace Code Editor atual."""
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ def normalize_studio_url(raw: str) -> str:
     return value
 
 
+# Descobrir o domínio do Space em execução sem reutilizar um identificador de outro ambiente.
 def studio_base() -> str:
     if METADATA.is_file():
         metadata = json.loads(METADATA.read_text())

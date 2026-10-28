@@ -1,3 +1,5 @@
+# Coordena a proposta de ações e valida o contrato antes de devolver resultados ao portal
+# para revisão.
 """Planeamento Bedrock: propor ações de itinerário sem ferramentas de escrita."""
 
 import copy
@@ -151,6 +153,7 @@ def validate_value(value, schema):
             validate_value(item, schema["items"])
 
 
+# Recusar saídas fora do contrato antes de as apresentar como propostas aplicáveis.
 def validate_plan(plan):
     validate_value(plan, SCHEMA)
     seen_actions = set()
@@ -348,6 +351,7 @@ def failure_code(error):
     return "AGENT_UNAVAILABLE"
 
 
+# Separar a operação pedida e traduzir falhas para o protocolo de resposta.
 def execute(payload, compile_only=False):
     try:
         return {"ok": True, "data": compile_actions(payload) if compile_only else plan_actions(payload)}

@@ -1,3 +1,4 @@
+// Valida e canonicaliza o snapshot antes de o usar em versões, hashes ou entregas.
 import { validateConfirmation } from "./activity-confirmation.ts";
 import { validateCatalogDetails } from "./catalog-details.ts";
 import { validateBrief } from "./curation.ts";
@@ -15,6 +16,7 @@ export function canonicalSnapshot(value: unknown): string {
   return JSON.stringify(value);
 }
 
+// Verificar a estrutura recebida antes de persistir ou renderizar uma versão.
 export function validateSnapshot(value: unknown): asserts value is Snapshot {
   if (!value || typeof value !== "object") throw new Error("Roteiro inválido.");
   const s = value as Snapshot;

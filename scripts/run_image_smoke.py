@@ -1,3 +1,5 @@
+# Executa o ensaio da imagem com parâmetros controlados e propaga falhas dos serviços
+# verificados.
 """Importa a plataforma OCI para testes isolados, preservando o arquivo original."""
 import argparse
 import json

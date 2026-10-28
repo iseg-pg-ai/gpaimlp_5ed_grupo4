@@ -1,3 +1,5 @@
+# Identifica o catálogo principal e o suplemento estruturado, mantendo os restantes ficheiros
+# como referências.
 """Source discovery boundary. Local folders supply the same files a future S3 adapter can stage."""
 from dataclasses import dataclass
 import hashlib

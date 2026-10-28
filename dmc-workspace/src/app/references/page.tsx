@@ -1,3 +1,5 @@
+// Disponibiliza referências de apoio sem as transformar em disponibilidade ou condições
+// comerciais confirmadas.
 import { portalUrl } from "@/lib/http-client";
 import { redirect } from "next/navigation";
 

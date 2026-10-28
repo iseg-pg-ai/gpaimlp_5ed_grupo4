@@ -1,3 +1,4 @@
+// Coordena o arranque AWS com a configuração do proxy e o estado operacional preparado.
 import { createServer } from "node:http";
 import next from "next";
 import { awsConfig, validateBuild } from "./aws-config.mjs";

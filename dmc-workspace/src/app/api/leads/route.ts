@@ -1,3 +1,5 @@
+// Endpoint: lista Leads através das tabelas configuradas e das permissões da identidade de
+// execução.
 import { LeadsNotConfigured, listLeads } from "@/lib/leads";
 import { jsonError, noStoreHeaders } from "@/lib/server-http";
 import {

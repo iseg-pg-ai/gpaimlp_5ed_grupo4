@@ -1,3 +1,5 @@
+// Mantém a fila durável de escritas do catálogo e reenvia pendências sem perder o controlo
+// de versão.
 import { createHash } from "node:crypto";
 import {
   existsSync,
@@ -79,6 +81,7 @@ function enqueue(item: PendingCatalogWrite, root: string) {
   return target;
 }
 
+// Sincronizar pendências com validação e controlo de revisão do catálogo.
 export async function syncPendingCatalog(store: CatalogStore, root = operationalRoot()) {
   const directory = pendingRoot(root);
   if (!existsSync(directory)) return 0;
@@ -112,6 +115,7 @@ export async function syncPendingCatalog(store: CatalogStore, root = operational
   return entries.length;
 }
 
+// Preservar a intenção de escrita quando o destino não permite concluir a operação.
 export async function persistCatalog(
   input: unknown,
   options: { catalogRoot?: string; operationalRoot?: string } = {},

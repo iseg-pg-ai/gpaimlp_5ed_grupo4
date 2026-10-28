@@ -1,3 +1,4 @@
+// Adapta a área da apresentação ao ecrã disponível sem alterar os dados ilustrativos.
 /* Enquadramento por ecrã: preserva conteúdo e estado sem deslocação vertical. */
 window.BluViewport = (() => {
   const scene = document.querySelector("#scene");

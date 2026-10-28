@@ -3,18 +3,13 @@
 Guião revisto em 20 de outubro de 2026.
 Público de referência: avaliação académica e responsáveis da operação.
 
-A apresentação passa a ter **três partes: explicar como o sistema foi construído,
-mostrar como as peças criam valor e demonstrar o portal real**.
+A apresentação passa a ter **três partes: explicar como o sistema foi construído, mostrar como as peças criam valor e demonstrar o portal real**.
 
-Estado atual: a [apresentação independente](../presentation/README.md) inclui
-seis cenas técnicas e seis cenas narrativas. Há navegação entre
-as partes e animações explicativas controláveis. O acesso ao portal abre um
-novo separador; o portal e o dashboard analítico continuam separados.
+Estado atual: a [apresentação independente](../presentation/README.md) inclui seis cenas técnicas e seis cenas narrativas. Há navegação entre as partes e animações explicativas controláveis. O acesso ao portal abre um novo separador; o portal e o dashboard analítico continuam separados.
 
 ## 1. Estrutura e mensagem central
 
-**O sistema transforma conhecimento disperso numa proposta personalizada,
-consultável, revista pelo curador e associada a uma versão identificável.**
+**O sistema transforma conhecimento disperso numa proposta personalizada, consultável, revista pelo curador e associada a uma versão identificável.**
 
 ```mermaid
 flowchart LR
@@ -38,33 +33,24 @@ Proposta de duração, a ajustar ao tempo atribuído:
 | III. Portal real | 7 minutos | 5 minutos |
 | Total, sem perguntas | 20 minutos | 12 minutos |
 
-O tempo é uma proposta de guião, não um requisito já acordado. Os
-aprofundamentos devem ficar acessíveis para perguntas, sem interromper o fio.
+O tempo é uma proposta de guião, não um requisito já acordado. Os aprofundamentos devem ficar acessíveis para perguntas, sem interromper o fio.
 
 ## 2. Parte I — os pontos técnicos a abordar
 
 ### 2.1. Problema, utilizadores e âmbito
 
-Começar pela necessidade operacional e só depois apresentar a solução:
-conhecimento em Excel, suplementos e PDFs; necessidade de o organizar,
-consultar, rever e usar na preparação de propostas personalizadas.
+Começar pela necessidade operacional e só depois apresentar a solução: conhecimento em Excel, suplementos e PDFs; necessidade de o organizar, consultar, rever e usar na preparação de propostas personalizadas.
 
-Identificar o **curador** como utilizador principal do portal. Distinguir o
-trabalho de quem mantém e aprova o catálogo da análise e da preparação da
-proposta, sem sugerir que já existe gestão de papéis na aplicação.
+Identificar o **curador** como utilizador principal do portal. Distinguir o trabalho de quem mantém e aprova o catálogo da análise e da preparação da proposta, sem sugerir que já existe gestão de papéis na aplicação.
 
-Explicar o âmbito: o sistema prepara e entrega propostas; disponibilidade,
-condições e reservas exigem processos próprios. Autenticação e colaboração
-multiutilizador continuam a ser evolução a desenvolver.
+Explicar o âmbito: o sistema prepara e entrega propostas; disponibilidade, condições e reservas exigem processos próprios. Autenticação e colaboração multiutilizador continuam a ser evolução a desenvolver.
 
 **Visual sugerido:** fontes dispersas convergem num fluxo de curadoria.
-**Mensagem oral:** «Definimos o que o sistema deve apoiar e onde continua a ser
-necessária uma decisão humana.»
+**Mensagem oral:** «Definimos o que o sistema deve apoiar e onde continua a ser necessária uma decisão humana.»
 
 ### 2.2. Requisitos funcionais e requisitos de qualidade
 
-Mostrar requisitos ligados a comportamentos observáveis, com critérios de
-aceitação que possam ser demonstrados.
+Mostrar requisitos ligados a comportamentos observáveis, com critérios de aceitação que possam ser demonstrados.
 
 | Tipo | Requisito a apresentar | Como o tornar verificável |
 | --- | --- | --- |
@@ -79,13 +65,11 @@ aceitação que possam ser demonstrados.
 | Evolução | Autenticação, papéis e colaboração multiutilizador | Apresentar como trabalho futuro, com critérios ainda a definir |
 
 Evitar requisitos vagos como «ser inteligente», «ser rápido» ou «ser seguro».
-Se forem discutidos desempenho ou segurança, indicar métricas e controlos
-concretos, o âmbito avaliado e o que falta medir ou implementar.
+Se forem discutidos desempenho ou segurança, indicar métricas e controlos concretos, o âmbito avaliado e o que falta medir ou implementar.
 
 ### 2.3. Arquitetura e fronteiras de responsabilidade
 
-Mostrar primeiro os fluxos, depois identificar as tecnologias. Explicar a
-separação entre fontes, catálogo operacional, entrega publicada e propostas.
+Mostrar primeiro os fluxos, depois identificar as tecnologias. Explicar a separação entre fontes, catálogo operacional, entrega publicada e propostas.
 
 ```mermaid
 flowchart TB
@@ -102,9 +86,7 @@ flowchart TB
     AG --> M[Amazon Bedrock e leituras controladas]
 ```
 
-O diagrama é funcional: não representa todos os pedidos nem um deployment
-completo. As operações locais Python usam processos sem shell e mensagens JSON;
-o agente segue a mesma fronteira e não exige um segundo servidor.
+O diagrama é funcional: não representa todos os pedidos nem um deployment completo. As operações locais Python usam processos sem shell e mensagens JSON; o agente segue a mesma fronteira e não exige um segundo servidor.
 
 Quatro distinções essenciais:
 
@@ -113,14 +95,12 @@ Quatro distinções essenciais:
 - **Rascunhos:** estado de trabalho no navegador.
 - **Versões:** snapshots e documentos históricos persistidos no servidor.
 
-Uma alteração no catálogo não reescreve uma proposta já guardada. O portal não
-edita diretamente o warehouse. Estas fronteiras explicam boa parte do desenho.
+Uma alteração no catálogo não reescreve uma proposta já guardada. O portal não edita diretamente o warehouse. Estas fronteiras explicam boa parte do desenho.
 
 ### 2.4. Tecnologias e justificação das escolhas
 
 Apresentar cada tecnologia através da responsabilidade que tem no código.
-A justificação abaixo é uma forma de explicar o desenho atual; não substitui
-um levantamento de alternativas ou um benchmark, que não foi realizado aqui.
+A justificação abaixo é uma forma de explicar o desenho atual; não substitui um levantamento de alternativas ou um benchmark, que não foi realizado aqui.
 
 | Camada | Tecnologias declaradas no projeto | Papel e justificação a desenvolver |
 | --- | --- | --- |
@@ -134,14 +114,9 @@ um levantamento de alternativas ou um benchmark, que não foi realizado aqui.
 | Verificação | unittest, node:test e Playwright | Testes de regras, persistência, integração e interface |
 | Apresentação independente | HTML, CSS, JavaScript e servidor Python padrão | Narrativa demonstrativa na porta 3003, sem dependências de execução do portal |
 
-Confirmar versões nos manifests antes da sessão: Python 3.12/3.13 e Node
-22.13 a 24.x são os intervalos definidos neste checkout. Os manifests e os
-lockfiles prevalecem sobre este resumo.
+Confirmar versões nos manifests antes da sessão: Python 3.12/3.13 e Node 22.13 a 24.x são os intervalos definidos neste checkout. Os manifests e os lockfiles prevalecem sobre este resumo.
 
-Distinguir também **onde corre** de **como foi construído**: o ambiente atual
-usa SageMaker Studio Code Editor para execução e acesso. Isto não significa
-que foi treinado um modelo próprio no SageMaker, nem que existe autenticação
-interna do portal. O acesso do Studio e os papéis da aplicação são temas distintos.
+Distinguir também **onde corre** de **como foi construído**: o ambiente atual usa SageMaker Studio Code Editor para execução e acesso. Isto não significa que foi treinado um modelo próprio no SageMaker, nem que existe autenticação interna do portal. O acesso do Studio e os papéis da aplicação são temas distintos.
 
 ### 2.5. Dados, modelos e processos de ponta a ponta
 
@@ -163,19 +138,15 @@ flowchart LR
 
 Abordar estes aspetos com um exemplo por tema:
 
-- **Identidade e relações:** IDs e chaves explícitas ligam registos e histórico;
-  uma semelhança de nomes não prova uma correspondência.
+- **Identidade e relações:** IDs e chaves explícitas ligam registos e histórico; uma semelhança de nomes não prova uma correspondência.
 - **Qualidade:** campos em falta, conflitos e evidência têm tratamento explícito.
-- **Normalização:** destinos e unidades são harmonizados sem apagar as condições
-  e o valor original. Informação desconhecida continua desconhecida.
+- **Normalização:** destinos e unidades são harmonizados sem apagar as condições e o valor original. Informação desconhecida continua desconhecida.
 - **Validade temporal:** um preço histórico ou expirado não passa a preço atual.
 - **Publicação:** o ETL valida antes da troca e tem recuperação da entrega anterior.
 - **Revisões:** aprovar, publicar e guardar uma proposta são operações distintas.
 - **Custos:** separar valores conhecidos, pendências e totais por moeda.
 
-O fluxo deve mostrar as releases imutáveis no S3, a cache temporária e o
-checkpoint remoto do `just blu it`. Isto comprova persistência e recuperação no
-ambiente atual; não equivale a deployment multi-instância de produção.
+O fluxo deve mostrar as releases imutáveis no S3, a cache temporária e o checkpoint remoto do `just blu it`. Isto comprova persistência e recuperação no ambiente atual; não equivale a deployment multi-instância de produção.
 
 ### 2.6. Papel da IA, ferramentas e controlo humano
 
@@ -199,18 +170,14 @@ flowchart LR
     H --> V[Aplicar e guardar através do fluxo validado]
 ```
 
-O esquema mostra a separação de responsabilidades a explicar; não afirma que
-qualquer resposta livre do agente seja convertida automaticamente numa ação.
+O esquema mostra a separação de responsabilidades a explicar; não afirma que qualquer resposta livre do agente seja convertida automaticamente numa ação.
 Mostrar a chamada e o comportamento concretos do fluxo escolhido.
 
 Explicar a consulta ao catálogo conhecido e as ferramentas realmente presentes.
-Não apresentar fine-tuning, pesquisa vetorial, RAG com embeddings ou treino
-próprio como funcionalidades implementadas sem evidência no código.
+Não apresentar fine-tuning, pesquisa vetorial, RAG com embeddings ou treinopróprio como funcionalidades implementadas sem evidência no código.
 
 A demonstração atual tem respostas preparadas e assinaladas como simulação.
-Para uma chamada real, confirmar serviço, modelo configurado e autorização de
-custos antes da sessão. Conteúdos de PDFs, clientes e respostas externas são
-dados; não devem ser tratados como instruções do sistema.
+Para uma chamada real, confirmar serviço, modelo configurado e autorização de custos antes da sessão. Conteúdos de PDFs, clientes e respostas externas são dados; não devem ser tratados como instruções do sistema.
 
 ### 2.7. Validação, evidência e limitações
 
@@ -218,26 +185,18 @@ Mostrar **o que os testes protegem**, com exemplos concretos:
 
 | Fronteira | Comportamento a verificar | Referência no repositório |
 | --- | --- | --- |
-| Publicação ETL | Falha de construção conserva a entrega; falha na troca repõe a anterior | [test_local_source.py](../tests/test_local_source.py) |
+| Publicação ETL | Falha de construção conserva a entrega; falha na troca repõe a anterior | [test_etl_pipeline.py](../tests/test_etl_pipeline.py) |
 | Catálogo e publicação | Revisões e estado publicado condicionam a oferta elegível | [catalog.test.mjs](../dmc-workspace/tests/catalog.test.mjs) |
 | Versões | Escritas desatualizadas são rejeitadas; snapshots e bytes históricos são preservados | [versions.test.mjs](../dmc-workspace/tests/versions.test.mjs) |
 | Informação desconhecida | Ausências e zero não são confundidos na análise | [test_portal_observatory.py](../tests/test_portal_observatory.py) |
 | Interface | Navegação, foco, dimensões e texto ampliado | [ui.mjs](../dmc-workspace/tests/browser/ui.mjs) |
 | Tradução | Números protegidos, falhas e modelos ausentes | [test_worker.py](../translations/test_worker.py) |
 
-Distinguir resultados de testes unitários, integração com dados temporários,
-interface com APIs simuladas e serviços externos reais. Uma bateria aprovada
-não prova, por si só, adequação comercial ou prontidão para produção.
+Distinguir resultados de testes unitários, integração com dados temporários, interface com APIs simuladas e serviços externos reais. Uma bateria aprovada não prova, por si só, adequação comercial ou prontidão para produção.
 
-Se forem usados números, apresentar data, ambiente e âmbito da execução. O
-[guia de testes](TESTING.md) explica o que cada bateria valida; resultados
-transitórios não devem ser apresentados como estado permanente.
+Se forem usados números, apresentar data, ambiente e âmbito da execução. O [guia de testes](TESTING.md) explica o que cada bateria valida; resultados transitórios não devem ser apresentados como estado permanente.
 
-Fechar com os limites atuais: o login local do Monitoring não autentica o portal;
-identidade, papéis, sincronização multiutilizador, hosting de produção e acesso
-externo continuam por definir. Ganhos de
-rapidez, consistência e qualidade devem ser avaliados com curadores; não
-atribuir percentagens sem medições.
+Fechar com os limites atuais: o login local do Monitoring não autentica o portal; o destino atual é operação individual no Code Editor. Identidade cloud e sincronização multiutilizador pertencem a outra fronteira; monitoring externo e aceitação operacional continuam a exigir evidência. Ganhos de rapidez, consistência e qualidade devem ser avaliados com curadores; não atribuir percentagens sem medições.
 
 ### 2.8. Seis cenas técnicas, com aprofundamento opcional
 
@@ -250,15 +209,9 @@ atribuir percentagens sem medições.
 | T5. Papel da IA | 1 min | Mecanismos distintos | Comparar regras, agente e tradução |
 | T6. Validação e limites | 1 min | Contratos e evidência | Explorar números na tradução, conflitos e interface |
 
-**Total proposto: 8 minutos.** As seis cenas estão implementadas, sem chamadas
-a modelos, publicação de dados ou execução implícita de testes. Os efeitos
-visuais podem ser desativados pelo botão ou pela preferência de movimento reduzido.
+**Total proposto: 8 minutos.** As seis cenas estão implementadas, sem chamadas a modelos, publicação de dados ou execução implícita de testes. Os efeitos visuais podem ser desativados pelo botão ou pela preferência de movimento reduzido.
 
-No capítulo Tecnologias, não percorrer todos os detalhes durante o guião
-principal. Escolher duas áreas que melhor respondam à audiência e reservar
-as restantes para perguntas. O inventário está em
-[technology-content.js](../presentation/dist/technology-content.js), separado da
-lógica de navegação para facilitar a complementação posterior.
+No capítulo Tecnologias, não percorrer todos os detalhes durante o guião principal. Escolher duas áreas que melhor respondam à audiência e reservar as restantes para perguntas. O inventário está em [technology-content.js](../presentation/dist/technology-content.js), separado da lógica de navegação para facilitar a complementação posterior.
 
 ### 2.9. Detalhes de implementação agora disponíveis
 
@@ -270,12 +223,9 @@ lógica de navegação para facilitar a complementação posterior.
 | Agente e ferramentas | Planeador transacional, boto3/Bedrock e ferramentas de leitura tipadas | Modelo, limites e tarifas definidos na configuração operacional; ações continuam sujeitas a validação e confirmação |
 | Análise e tradução | Streamlit/Plotly, Observatório React/SVG em leitura, worker JSON-lines e modelos Argos/CTranslate2 | Grupos opcionais; não presumir disponibilidade por existir uma dependência |
 | Serviços externos | Open-Meteo e OSRM, timeout/aborto, previsão/histórico, cache e falhas explícitas | Comportamentos do código; sem chamadas reais nesta apresentação |
-| Ambiente e automação | `uv.lock`, `package-lock.json`, testes, CI de dados/documentação e acesso SageMaker | Não há workflow CI do portal neste checkout; sem certificação de produção |
+| Ambiente e automação | `uv.lock`, `package-lock.json`, testes, CI de dados/documentação e acesso SageMaker | Workflow Portal com check/build e imagem; CI não equivale a aceitação de produção |
 
-As versões exibidas são as declaradas nos manifests, e não uma listagem de
-bibliotecas atualmente instaladas ou serviços em execução. Os limites do código
-não são apresentados como resultados de desempenho. A justificação histórica das
-escolhas e a comparação de alternativas precisam da informação da equipa.
+As versões exibidas são as declaradas nos manifests, e não uma listagem de bibliotecas atualmente instaladas ou serviços em execução. Os limites do código não são apresentados como resultados de desempenho. A justificação histórica das escolhas e a comparação de alternativas precisam da informação da equipa.
 
 Frase de passagem para a parte II:
 
@@ -284,9 +234,7 @@ Frase de passagem para a parte II:
 
 ## 3. Parte II — transição entre engenharia e experiência
 
-Reutilizar a apresentação interativa existente. O público acompanha um caso
-fictício e vê os efeitos das escolhas, sem precisar de voltar a ouvir a descrição
-de cada tecnologia.
+Reutilizar a apresentação interativa existente. O público acompanha um caso fictício e vê os efeitos das escolhas, sem precisar de voltar a ouvir a descrição de cada tecnologia.
 
 Percurso guiado sugerido, usando os capítulos já disponíveis:
 
@@ -299,19 +247,11 @@ Percurso guiado sugerido, usando os capítulos já disponíveis:
 | A entrega | Comparar exemplos de versões e ligar revisão à entrega |
 | O próximo passo | Encerrar a simulação e abrir o Observatório real |
 
-As cenas **Os dados** e **Por dentro** foram retiradas da parte II: os seus
-conteúdos pertencem à arquitetura e aos processos da parte I. A entrega mostra
-as escolhas do grupo e a comparação do exemplo, em vez de repetir tecnologias
-e formatos. O acesso ao portal fica no encerramento e no controlo global.
+As cenas **Os dados** e **Por dentro** foram retiradas da parte II: os seus conteúdos pertencem à arquitetura e aos processos da parte I. A entrega mostra as escolhas do grupo e a comparação do exemplo, em vez de repetir tecnologias e formatos. O acesso ao portal fica no encerramento e no controlo global.
 
-Caso comum: Grupo Demonstração BLU, dois adultos, dois dias em Lisboa, ritmo
-tranquilo, cultura ou gastronomia e exclusão de atividades de barco. O exemplo
-deve manter-se consistente nas três partes. Necessidades de mobilidade exigem
-verificação explícita; se faltar informação, mostrar a pendência.
+Caso comum: Grupo Demonstração BLU, dois adultos, dois dias em Lisboa, ritmo tranquilo, cultura ou gastronomia e exclusão de atividades de barco. O exemplo deve manter-se consistente nas três partes. Necessidades de mobilidade exigem verificação explícita; se faltar informação, mostrar a pendência.
 
-O mapa, as ofertas, as respostas e a pré-visualização de versões nesta
-apresentação são ilustrativos. Não são leituras em direto do catálogo, geração
-por IA, versões persistidas ou PDFs exportados.
+O mapa, as ofertas, as respostas e a pré-visualização de versões nesta apresentação são ilustrativos. Não são leituras em direto do catálogo, geração por IA, versões persistidas ou PDFs exportados.
 
 Frase de passagem para a parte III:
 
@@ -320,46 +260,29 @@ Frase de passagem para a parte III:
 
 ## 4. Parte III — demonstração do portal real
 
-O ecrã final mantém o botão **Explorar o Observatório real**, que abre um
-novo separador com o endereço indicado pelo utilizador:
+O ecrã final mantém o botão **Explorar o Observatório real**, que abre um novo separador com o endereço indicado pelo utilizador:
 
 [Explorar o Observatório real](https://ai5qwwdt6siuxug.studio.eu-west-1.sagemaker.aws/codeeditor/default/ports/3001/)
 
-O acesso depende da sessão SageMaker do visitante. O endereço não é um link
-público para clientes externos. Renovar o acesso antes da apresentação e manter
-a apresentação aberta para poder regressar ao guião.
+O acesso depende da sessão SageMaker do visitante. O endereço não é um link público para clientes externos. Renovar o acesso antes da apresentação e manter a apresentação aberta para poder regressar ao guião.
 
 Demonstração sugerida, com um caso previamente preparado:
 
-1. **Observatório:** filtrar um destino, abrir a ficha e mostrar contexto,
-   qualidade ou uma pendência. Os indicadores pertencem à entrega consultada;
-   registar a data se forem usados em capturas.
-2. **Workspace:** relacionar os campos do briefing com uma proposta de demonstração
-   e explicar uma escolha, exclusão ou informação por confirmar.
-3. **Revisão:** mostrar uma edição suportada ou uma atividade protegida,
-   distinguindo comandos determinísticos de eventuais chamadas ao agente.
-4. **Entrega:** abrir uma versão de demonstração e o seu PDF, mostrando a ligação
-   entre snapshot e documento. Explicar o Prompt TXT como exportação independente.
+1. **Observatório:** filtrar um destino, abrir a ficha e mostrar contexto, qualidade ou uma pendência. Os indicadores pertencem à entrega consultada; registar a data se forem usados em capturas.
+2. **Workspace:** relacionar os campos do briefing com uma proposta de demonstração e explicar uma escolha, exclusão ou informação por confirmar.
+3. **Revisão:** mostrar uma edição suportada ou uma atividade protegida, distinguindo comandos determinísticos de eventuais chamadas ao agente.
+4. **Entrega:** abrir uma versão de demonstração e o seu PDF, mostrando a ligação entre snapshot e documento. Explicar o Prompt TXT como exportação independente.
 
-O Observatório nativo tem Panorama, Explorar oferta, Destinos, Preços, Histórico
-e Qualidade; escolher apenas as vistas relevantes para a história. A aplicação
-Streamlit original continua separada. A interface do portal tem seis idiomas;
-a tradução de conteúdos exportados depende dos modelos locais preparados.
+O Observatório nativo tem Panorama, Explorar oferta, Destinos, Preços, Histórico e Qualidade; escolher apenas as vistas relevantes para a história. A aplicação Streamlit original continua separada. A interface do portal tem seis idiomas; a tradução de conteúdos exportados depende dos modelos locais preparados.
 
 Usar dados fictícios e armazenamento de demonstração para os fluxos com escrita.
-Preparar o cenário antes da sessão para não alterar catálogo, aprovações ou
-propostas de clientes durante uma demonstração improvisada. O sistema produz
-propostas, não efetua reservas nem confirma automaticamente condições comerciais.
+Preparar o cenário antes da sessão para não alterar catálogo, aprovações ou propostas de clientes durante uma demonstração improvisada. O sistema produz propostas, não efetua reservas nem confirma automaticamente condições comerciais.
 
-Para demonstrar o percurso do concierge público até ao seguimento do curador,
-usar o guão [Demonstração de ponta a ponta](DEMO_E2E.md). O cenário distingue
-consentimento, qualificação e contacto humano de uma reserva ou venda concluída.
+Para demonstrar o percurso do concierge público até ao seguimento do curador, usar o guão [Demonstração de ponta a ponta](DEMO_E2E.md). O cenário distingue consentimento, qualificação e contacto humano de uma reserva ou venda concluída.
 
 ## 5. Linguagem visual e navegação
 
-Manter a identidade da mesa de curadoria: azul-petróleo, tipografia editorial,
-apontamentos dourados e transições com significado. Cada cena deve ter uma
-pergunta, uma prova visual e uma conclusão curta.
+Manter a identidade da mesa de curadoria: azul-petróleo, tipografia editorial, apontamentos dourados e transições com significado. Cada cena deve ter uma pergunta, uma prova visual e uma conclusão curta.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────┐
@@ -375,13 +298,11 @@ pergunta, uma prova visual e uma conclusão curta.
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-A navegação de três partes está implementada neste branch. A terceira parte
-abre o portal, sem o incorporar num iframe nem alterar os seus serviços.
+A navegação de três partes está implementada neste branch. A terceira parte abre o portal, sem o incorporar num iframe nem alterar os seus serviços.
 
 Dar acesso direto às partes para perguntas e para uma apresentação mais curta.
 O avanço é manual; manter teclado, foco visível e alternativa sem movimento.
-Evitar código extenso no ecrã: usar um excerto curto apenas quando fundamenta
-uma decisão importante. Referências detalhadas ficam disponíveis no guião.
+Evitar código extenso no ecrã: usar um excerto curto apenas quando fundamenta uma decisão importante. Referências detalhadas ficam disponíveis no guião.
 
 ## 6. Perguntas a preparar
 
@@ -394,24 +315,21 @@ uma decisão importante. Referências detalhadas ficam disponíveis no guião.
 | Como avaliam respostas ou propostas? | Testes de contratos e bateria real datada; a validação comercial com curadores continua separada |
 | Como evitam factos inventados? | Catálogo conhecido, fontes, validações, pendências e revisão humana; não prometer ausência total de erros |
 | Como resolvem alterações concorrentes? | Revisões e conflitos; isso não equivale a sincronização colaborativa completa |
-| O que falta para produção? | Identidade central, papéis, deployment cloud, acesso externo e avaliação no contexto de uso |
+| O que falta para concluir a operação? | Aceitação do destino Code Editor, recursos externos, recuperação e monitoring; identidade cloud só pertence à alternativa respetiva |
 
 ## 7. Preparação e próximos passos
 
-- Ensaiar as seis cenas técnicas e a navegação das três partes já implementadas
-  na aplicação independente, mantendo os serviços do portal inalterados.
+- Ensaiar as seis cenas técnicas e a navegação das três partes já implementadas na aplicação independente, mantendo os serviços do portal inalterados.
 - Ensaiar o percurso e a duração com alguém que não conhece o sistema.
 - Confirmar versões, fontes e evidência antes de mostrar números ou resultados.
 - Preparar a sessão SageMaker, o caso fictício e uma versão de apoio para o portal.
 - Identificar claramente simulações, capturas datadas e demonstrações reais.
 - Confirmar serviços opcionais e autorização antes de qualquer chamada com custos.
-- Preparar capturas ou gravação de apoio, sem apresentar uma gravação como execução
-  ao vivo se uma dependência falhar.
+- Preparar capturas ou gravação de apoio, sem apresentar uma gravação como execução ao vivo se uma dependência falhar.
 
 ## 8. Informação a complementar mais tarde
 
-Esta revisão não exige que a equipa responda já. A matriz identifica o que
-falta e onde integrar essa informação quando estiver disponível.
+Esta revisão não exige que a equipa responda já. A matriz identifica o que falta e onde integrar essa informação quando estiver disponível.
 
 | Informação por confirmar | O que sabemos pelo código | Complemento a fornecer | Onde integrar |
 | --- | --- | --- | --- |
@@ -422,29 +340,17 @@ falta e onde integrar essa informação quando estiver disponível.
 | Avaliação da qualidade | Existem testes de contratos e interface | Casos avaliados, rubrica, respostas revistas e parecer de curadores | Validação |
 | Desempenho e custos | Há timeouts, limites e mecanismos de falha | Latência, número de chamadas, tokens/custos e condições de medição | Validação e dependências |
 | Processo de desenvolvimento | Git, lockfiles e workflows existentes | Etapas, divisão do trabalho e decisões tomadas pela equipa | Ambiente/automação |
-| Operação futura | Execução Studio, S3 e checkpoints validados | Retenção administrativa, identidade, acessos e plano de deployment aprovados | Limites e evolução |
+| Operação | Destino Code Editor individual, S3 e checkpoints | Aceitação no ambiente-alvo, objetivos de recuperação e monitoring externo | Limites e evolução |
 
-Não preencher estas lacunas com benchmarks, ganhos percentuais, decisões de
-negócio ou funcionalidades presumidas. Quando houver informação nova, associar
-data, fonte e distinção entre proposta, implementação e resultado observado.
+Não preencher estas lacunas com benchmarks, ganhos percentuais, decisões de negócio ou funcionalidades presumidas. Quando houver informação nova, associar data, fonte e distinção entre proposta, implementação e resultado observado.
 
 ## 9. Conteúdo do PowerPoint e adaptação ao ecrã
 
-O ficheiro `PG 5_edicao - GPAIDMP - Trabalho de Grupo - Apresentação - FDC -
-v2026-10-30.pptx` é conservado como fonte editorial. A apresentação interativa
-incorpora o contexto académico P6, a parceria BLU, o objetivo de apoio ao curador,
-as abordagens Soft/Classic/Signature, a equipa e a visão futura. Notas de trabalho,
-contagens históricas e serviços não comprovados no código não são apresentados
-como estado operacional.
+O PowerPoint do grupo foi uma fonte editorial histórica. Não integra o checkout atual; o conteúdo já incorporado está nos recursos de `presentation/dist/`. A apresentação interativa incorpora o contexto académico P6, a parceria BLU, o objetivo de apoio ao curador, as abordagens Soft/Classic/Signature, a equipa e a visão futura. Notas de trabalho, contagens históricas e serviços não comprovados no código não são apresentados como estado operacional.
 
-Cada capítulo ocupa a janela disponível. Quando o conteúdo não cabe, passa para
-passos laterais dentro do mesmo capítulo, preservando título, navegação, tamanho
-de leitura e estado interativo. Em janelas baixas, o índice é substituído por um
-seletor compacto. O teste `presentation/test-viewport.mjs` percorre os doze
-capítulos e respetivos passos em sete dimensões de ecrã.
+Cada capítulo ocupa a janela disponível. Quando o conteúdo não cabe, passa para passos laterais dentro do mesmo capítulo, preservando título, navegação, tamanho de leitura e estado interativo. Em janelas baixas, o índice é substituído por um seletor compacto. O teste `presentation/test-viewport.mjs` percorre os doze capítulos e respetivos passos em sete dimensões de ecrã.
 
-A exportação visual atualmente documentada é o Prompt TXT independente de
-fornecedor. Não existe integração Canva no portal nem na apresentação.
+A exportação visual atualmente documentada é o Prompt TXT independente de fornecedor. Não existe integração Canva no portal nem na apresentação.
 
 ## Fontes internas
 
@@ -453,7 +359,7 @@ fornecedor. Não existe integração Canva no portal nem na apresentação.
 - [Pipeline e publicação](DATA_PIPELINE.md)
 - [Testes e histórico](TESTING.md)
 - [Decisões](DECISIONS.md)
-- [Plano e registos de validação](../PLAN.md)
+- [Operações e critérios de aceitação](OPERATIONS.md)
 - [Dependências Python](../pyproject.toml)
 - [Dependências e comandos do portal](../dmc-workspace/package.json)
 - [Adaptador local Python](../dmc-workspace/src/lib/python-portal.ts)

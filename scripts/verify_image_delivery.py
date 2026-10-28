@@ -1,3 +1,5 @@
+# Confirma os contratos da entrega da imagem antes de permitir que seja apresentada como
+# candidata válida.
 """Valida uma entrega OCI e conserva evidência, sem extrair ou executar a imagem."""
 from __future__ import annotations
 

@@ -1,3 +1,4 @@
+// Conserva o registo de supervisão das propostas e decisões relativas ao agente.
 import { randomUUID, createHash } from "node:crypto";
 import { VersionStore, VersionConflict, snapshotFingerprint } from "./version-store.ts";
 import {

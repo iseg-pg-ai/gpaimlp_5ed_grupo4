@@ -1,3 +1,5 @@
+// Define a alternativa de hosting do portal em infraestrutura cloud; não é requisito do
+// arranque no Code Editor.
 import { readFileSync } from "node:fs";
 import {
   App,

@@ -1,3 +1,5 @@
+# Converte pedidos explícitos em propostas estruturadas, preservando as proteções dos itens
+# do itinerário.
 """Compilar comandos inequívocos do curador sem consultar um modelo externo."""
 
 from __future__ import annotations

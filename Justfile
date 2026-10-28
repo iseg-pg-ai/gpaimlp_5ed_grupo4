@@ -1,3 +1,5 @@
+# Ponto de entrada dos comandos BLU; a orquestração operacional permanece nos scripts
+# chamados.
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 
 # Recupera todo o sistema ou inicia apenas os serviços parados.

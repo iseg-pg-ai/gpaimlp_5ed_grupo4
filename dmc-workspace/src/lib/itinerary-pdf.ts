@@ -1,3 +1,5 @@
+// Renderiza a entrega PDF a partir do snapshot e das fontes configuradas, incluindo suporte
+// CJK.
 import { activitySource, dayDescription, presentationText } from "./presentation-text.ts";
 import { outstandingChecks } from "./activity-confirmation.ts";
 import { renderBudget } from "./budget-pdf.ts";
@@ -22,6 +24,7 @@ export type PdfLanguageOptions = {
   normalize?: (text: string) => string;
   translations?: Map<string, string>;
 };
+// Exigir a fonte compatível antes de tentar renderizar caracteres CJK.
 export function resolveChineseFont() {
   const configured = process.env.BLU_PDF_CJK_FONT;
   const candidates = configured

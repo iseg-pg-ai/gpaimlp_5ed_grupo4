@@ -1,6 +1,6 @@
-# Assistente BLU — itinerário transacional
+# Assistente BLU — âmbito e contrato transacional
 
-## Âmbito atual
+## Missão e âmbito
 
 O modelo consulta ferramentas de leitura limitadas, propõe alterações e o portal
 valida-as com as regras já existentes.
@@ -9,10 +9,7 @@ O fluxo é pedido → proposta → validação → pré-visualização → aceit
 Cada proposta refere uma viagem e uma versão guardada. Rascunhos por guardar,
 versões ultrapassadas ou no Lixo exigem resolução antes de continuar.
 
-Operações: add_catalog_item, replace_item, remove_item, reschedule_item,
-reorder_day, set_day_capacity, add_free_period, set_free_day, move_item,
-optimize_route, regenerate_day, update_brief e update_pending_confirmation. Até
-oito ações por proposta, sem campos extra ou ações duplicadas. Opções de
+Até oito ações por proposta, sem campos extra ou ações duplicadas. Opções de
 substituição exigem uma escolha e nova revisão.
 O ranking ordena até cinco candidatos já elegíveis por dia e não altera o
 roteiro. A escolha humana prepara uma proposta de adição, volta a passar pela
@@ -63,16 +60,77 @@ concluída impedem novas alterações. Uma regeneração ampla preserva atividad
 editadas manualmente; uma ação explícita e revista pelo curador pode voltar a
 alterá-las. O mesmo dia pode ser editado repetidamente pelo Blu.
 
-## Implementação atual e aceitação
+## Capacidades funcionais
 
-A iteração atual substituiu os dois percursos Python por um único planeador
-transacional híbrido. Um compilador local trata comandos inequívocos e o Amazon
-Bedrock com Nova Pro interpreta apenas pedidos ambíguos, explicações,
+O agente apoia a curadoria da viagem e versão atuais. Não substitui o catálogo,
+confirmação comercial ou a decisão do curador. O contrato expõe estas ações:
+
+| Ação funcional | Operação do contrato |
+| --- | --- |
+| Adicionar oferta aprovada | `add_catalog_item` |
+| Substituir atividade | `replace_item` |
+| Remover atividade | `remove_item` |
+| Reagendar atividade | `reschedule_item` |
+| Reorganizar um dia | `reorder_day` |
+| Ajustar capacidade diária | `set_day_capacity` |
+| Criar período livre | `add_free_period` |
+| Criar dia livre | `set_free_day` |
+| Mover atividade entre dias | `move_item` |
+| Otimizar sequência geográfica estimada | `optimize_route` |
+| Regenerar parcialmente um dia | `regenerate_day` |
+| Alterar briefing operacional permitido | `update_brief` |
+| Preparar confirmação ainda pendente | `update_pending_confirmation` |
+
+No briefing, alterações limitam-se a orçamento, ritmo, preferência de manhã,
+esforço físico, interesses, exclusões e restrições de mobilidade ou alimentação.
+Uma confirmação pendente só recebe horário, local, preço ou fornecedor fornecidos
+pelo utilizador ou por fonte autorizada. O agente não a confirma, não inventa
+reserva ou evidência e não escreve no catálogo.
+
+### Explicabilidade e diagnóstico
+
+Recomendações devem relacionar preferências e regras com a revisão/fonte do
+catálogo, capacidade, horários, deslocações, preços conhecidos e pendências.
+Preços de moedas distintas não são somados nem convertidos implicitamente.
+Ausência de dados não permite concluir adequação ao orçamento ou compatibilidade.
+
+O diagnóstico sinaliza contradições, capacidade excedida, itens fora da oferta
+aprovada, lacunas no briefing, logística incompleta e restrições vagas, sem
+preencher respostas pelo utilizador. Explicar diferenças entre versões ou sugerir
+alternativas continua a ser análise, sem escrita automática.
+
+### Feedback, casos históricos e evolução
+
+O feedback associa-se a uma versão efetivamente realizada e cobre todos os cartões:
+realizada, cancelada, substituída ou não aplicável. Nas atividades realizadas,
+pode recolher avaliações de descrição, fornecedor, horário/duração, valor,
+acessibilidade e alimentação. Comentários livres não entram no contexto do modelo.
+
+Agregados podem orientar revisão de catálogo e tendências a 30/90/180 dias, mas
+não alteram automaticamente ranking, prompts ou oferta. Inativar um registo
+mantém avaliações e versões históricas. Uma edição posterior não demonstra que
+o agente causou o resultado.
+
+Casos reutilizáveis exigem feedback completo, qualidade mínima, ausência de
+incidentes e aprovação humana. Usam perfil reduzido, IDs e revisões, sem contactos,
+comentários ou PDFs. A pesquisa atual é estruturada/textual; embeddings só se
+justificam depois de ganho demonstrado face ao custo e complexidade.
+
+Perturbações comunicadas, meteorologia em cache e percursos persistidos podem
+fundamentar alternativas, preservando confirmações. Facto observado, referência
+histórica, informação do utilizador e indício a rever permanecem distintos.
+Voos, reservas e contactos externos exigiriam APIs e políticas próprias e estão
+fora das ferramentas atuais. Previsão de aceitação, risco, duração real e
+otimização multiobjetivo ficam adiadas até existir feedback suficiente e validado.
+
+## Implementação e critérios de aceitação
+
+A implementação usa um único planeador transacional híbrido. Um compilador
+local trata comandos inequívocos e o Amazon Bedrock com Nova Pro interpreta apenas pedidos ambíguos, explicações,
 recomendações e refinamentos compostos. Nenhum dos percursos recebe autoridade
 adicional nem escreve diretamente no portal.
 
-O contrato contém agora treze ações: as onze operações de itinerário anteriores,
-`update_brief` e `update_pending_confirmation`. Não acrescenta acesso à
+As treze ações acima não acrescentam acesso à
 máquina, execução de código, browser autónomo, reservas, contactos a terceiros,
 IAM, backups ou deployment. As ferramentas de leitura e escrita supervisionada
 usam sempre o contexto da viagem. A identidade servidor e o isolamento
@@ -109,88 +167,19 @@ segurança bloqueia a ativação, mesmo que a média global seja superior.
 Chamadas reais permanecem opt-in, com orçamento e modelo aprovados. Os testes de
 CI usam adaptadores simulados e não dependem de credenciais externas.
 
-### Avaliação real de 25 de outubro de 2026
+### Evidência de avaliação e limites
 
-Uma execução explicitamente autorizada avaliou os 38 casos sintéticos com
-`eu.amazon.nova-pro-v1:0`. Passaram 25 casos (65,8%): 13/19 em português e 12/19
-em inglês. Foram contabilizados 182 959 tokens de entrada, 5 370 de saída e
-53 584 ms de latência acumulada reportada. Às tarifas aprovadas, o custo calculado
-foi 0,1881 USD.
+A motivação do planeador híbrido está em
+[Decisões](DECISIONS.md#planeador-híbrido-e-autoridade-do-agente).
+Os resultados datados de avaliação pertencem ao histórico da revisão avaliada,
+sem aprovar todos os pedidos, idiomas ou execução autónoma. A avaliação mantém
+os critérios acima e exige autorização própria para chamadas pagas.
 
-Falharam sobretudo os casos em que o modelo deveria terminar uma recusa ou pedido
-de esclarecimento através de `propose_actions`, além de refinamento de uma
-proposta, `regenerate_day` em inglês e preparação de confirmação pendente. Três
-falhas foram divergências semânticas com resposta estruturalmente válida; as
-restantes foram normalizadas como `AGENT_INVALID_RESPONSE`. O ensaio não escreveu
-no portal nem usou dados reais de clientes. Como o resultado ficou abaixo do
-limiar de 90%, o modelo não é considerado aprovado para ativação autónoma e uma
-nova execução paga exige correção local e nova autorização explícita.
-
-Após o ensaio, o adaptador passou a recuperar uma única resposta textual de
-recusa ou esclarecimento: mantém o texto dentro da conversa com o fornecedor e
-faz uma ronda final com `propose_actions` selecionado explicitamente. Se essa
-ronda não devolver uma única ferramenta válida, o pedido continua a falhar
-fechado. A seleção específica é suportada pelos modelos Amazon Nova segundo a
-[referência `ToolChoice` do Bedrock](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html).
-As instruções também distinguem a preparação de confirmação pendente de um mero
-reagendamento e explicitam que alternativas pedidas num refinamento não são
-ações aplicadas. A correção passou nos 159 testes Python locais; comprovar a
-melhoria semântica continua a exigir uma nova execução real autorizada.
-
-As execuções seguintes demonstraram variabilidade incompatível com aprovação. A
-segunda bateria completa atingiu 36/38 (94,7%), mas uma bateria integral posterior,
-já com schema discriminado e correções dirigidas validadas, obteve 28/38 (73,7%).
-Casos que passaram isoladamente voltaram a falhar na execução completa. Por isso,
-o melhor resultado não é usado seletivamente como prova de qualidade e Nova Pro
-permanece não aprovado para ativação autónoma. A próxima decisão deve comparar
-outro modelo compatível, reduzir a liberdade do planeamento ou deslocar intenções
-inequívocas para uma camada determinística antes de realizar novos ensaios pagos.
-
-Essa camada determinística foi implementada como
-`src/blu_ai/deterministic.py`. Reconhece apenas frases completas com argumentos
-inequívocos, resolve identificadores contra o snapshot e candidatos autorizados,
-recusa localmente itens protegidos ou exteriores ao catálogo e devolve o mesmo
-`AgentPlan` sujeito a simulação e confirmação humana. Não usa correspondência
-aproximada nem tenta adivinhar argumentos em falta. Quando não reconhece o pedido,
-devolve controlo ao Nova Pro.
-
-Nos 38 casos sintéticos atuais, 36 são agora concluídos localmente e todos passam
-o respetivo oráculo sem chamadas AWS. Apenas duas explicações livres permanecem
-no Nova Pro. A rota tenta `agent-compile`
-antes de reservar orçamento; resultados locais usam o fornecedor
-`deterministic`, modelo `blu-explicit-intent-v1`, zero tokens e custo zero. Apenas
-um resultado nulo ativa a política de orçamento e `agent-plan`.
-
-### Avaliação híbrida final de 25 de outubro de 2026
-
-O primeiro ensaio híbrido obteve 34/38 (89,5%) e expôs três encerramentos
-incompletos e um refinamento indevido no Nova Pro. Depois de mover esses contratos
-inequívocos para o compilador e os validar localmente, uma bateria integral
-independente obteve 37/38 (97,4%). Todas as treze operações ficaram a 100%; o
-grupo `none`, que agrega recusas e leituras, ficou em 9/10 (90%). Português obteve
-18/19 e inglês 19/19. Proteções mantiveram 100% e não houve escritas.
-
-Só as duas explicações livres consultaram o Nova Pro. O ensaio contabilizou
-15 161 tokens de entrada, 340 de saída e 3 119 ms de latência acumulada, com custo
-estimado de 0,0152 USD às tarifas aprovadas. A explicação em português falhou
-fechada porque a resposta estruturada omitiu campos obrigatórios: o portal não
-recebeu plano nem alteração. O fluxo híbrido atinge o limiar aprovado, mas essa
-falha continua a ser uma limitação de disponibilidade observável, não um sucesso.
-
-Uma validação real separada confirmou o ciclo de leitura nos dois idiomas. Nova
-Pro pediu `get_trip_context`, `get_itinerary` e `search_approved_catalog` em
-paralelo na primeira ronda e terminou isoladamente com `propose_actions` na
-segunda. Em português produziu um ranking válido. Em inglês repetiu o grupo do
-mesmo dia; o contrato detetou `Ranking repetido`, devolveu
-`AGENT_INVALID_RESPONSE` e não criou proposta nem alteração. Assim, a integração
-das ferramentas fica validada sem converter variabilidade do modelo em sucesso.
-
-Em cloud, o backend recusa a chamada antes do fornecedor quando faltam o teto
-mensal ou o preço do modelo. A reserva usa uma estimativa conservadora do pedido e
-do limite máximo de saída; o consumo confirmado vem dos tokens registados na
-auditoria. Atingir o teto devolve erro controlado, não muda a viagem e não troca de
-modelo. Os preços são configuração operacional por milhão de tokens e precisam de
-ser revistos na fonte oficial antes de cada ativação ou mudança de modelo.
+O compilador `src/blu_ai/deterministic.py` reconhece apenas intenções inequívocas,
+resolve itens no contexto autorizado e devolve o mesmo contrato validado. Quando
+não reconhece o pedido, passa ao fornecedor. A reserva de orçamento precede a
+chamada Bedrock; ausência de configuração, limite atingido ou resposta inválida
+produzem erro controlado sem mudar a viagem ou trocar de modelo.
 
 ## Autoridade, persistência e falhas
 
@@ -303,12 +292,9 @@ Configuração do planeador:
 | BLU_EXPORT_DIR | Armazenamento de versões e auditoria |
 | PORTAL_PUBLIC_ORIGIN | Origem pública do proxy privado quando aplicável |
 
-Em 25 de outubro de 2026 foram aprovados Amazon Bedrock, o perfil
-`eu.amazon.nova-pro-v1:0`, Standard On-Demand em EU (Ireland), 0,92 USD por
-milhão de tokens de entrada, 3,68 USD por milhão de tokens de saída e um teto de
-10 USD por mês. Mantêm-se 1800 tokens máximos de saída, timeout de 35 segundos e
-até duas chamadas por pedido. Os preços devem ser revistos na tabela oficial da
-AWS antes de cada deployment ou alteração de modelo.
+Modelo, tarifas e teto mensal são configuração operacional, não autorização
+para gastar. Rever os valores nas fontes aprovadas antes de uma avaliação real
+ou mudança de modelo; ausência de configuração não equivale a custo zero.
 
 O portal chama o planeador Python por processo local, sem shell nem serviço HTTP
 adicional. A antiga fachada FastAPI e o agente LangGraph foram removidos para
@@ -330,6 +316,9 @@ tests/browser/assistant.mjs no portal. Os scripts HTTP/navegador exigem um servi
 local de testes e os seus parâmetros; consultar o cabeçalho de cada script.
 scripts/evaluate_agent.py --list lista casos sintéticos sem chamar o modelo;
 a execução real exige --live e aprovação da fase aplicável.
+
+A conclusão funcional exige ainda custo, privacidade, retenção e operação
+aceites para o âmbito utilizado, sem confundir o Code Editor com identidade cloud.
 
 Os mocks demonstram o funcionamento técnico e as proteções, não a qualidade
 semântica de Nova Pro. Uma avaliação real deverá validar acesso privado e modelo,

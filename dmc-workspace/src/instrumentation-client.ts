@@ -1,3 +1,5 @@
+// Recolhe eventos técnicos do navegador com tratamento centralizado, sem usar o corpo dos
+// pedidos como log.
 import { portalUrl } from "./lib/http-client";
 
 const endpoint = portalUrl("/api/telemetry");

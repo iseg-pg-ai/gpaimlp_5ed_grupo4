@@ -1,94 +1,71 @@
 # Demonstração de ponta a ponta — concierge, CRM e seguimento
 
-Guião para as sessões de terça-feira, 27 de outubro, e de 29 a 31 de outubro
-de 2026. Mostra o percurso completo: visitante no site, conversa com o
-concierge, consentimento, registo na AWS, contacto no portal e seguimento do
-curador. Complementa a [Parte III da apresentação](APRESENTACAO.md#4-parte-iii--demonstração-do-portal-real).
+Guião reutilizável para demonstrar a integração entre site, eventos AWS e seguimento no portal. Usar dados fictícios e indicar se a sessão é real,
+simulada ou apoiada por capturas datadas. Complementa a [Parte III da apresentação](APRESENTACAO.md#4-parte-iii--demonstração-do-portal-real).
 
 ## Percurso demonstrado
 
-```text
-Site (CloudFront) ─ chat ─► Lambda BedrockChat ─► resposta + dados da viagem
-        │ consentimento
-        ▼
-API /v1/conversation-events ─► SQS ─► processador ─► DynamoDB + arquivo S3
-                                                        │
-Portal (SageMaker Studio) ─ /leads ◄────────────────────┘
-        └─ etiquetas, nota, contactado, email/WhatsApp
+```mermaid
+flowchart TB
+    site["Site / concierge"]
+    chat["Lambda de chat"]
+    reply["Resposta e contexto da viagem"]
+    events["API de eventos"]
+    queue["SQS"]
+    processor["Processador"]
+    data["DynamoDB e arquivo S3"]
+    leads["Portal /leads"]
+    review["Revisão humana<br/>Etiquetas, nota e estado de contacto"]
+
+    site --> chat --> reply
+    site -->|Retenção autorizada| events
+    events --> queue --> processor --> data
+    data --> leads --> review
 ```
 
-## Preparação (até à véspera)
+A pré-visualização local do site e o site CloudFront são entradas distintas.
+Os endpoints públicos e a referência da conversa têm de pertencer ao ambiente aprovado; uma referência `BLU-…` não autentica o visitante.
 
-1. **Disco do portátil:** pelo menos 3 GB livres. Desligar a hibernação numa
-   consola de administrador (`powercfg /h off`), que liberta cerca de 9,5 GB.
-2. **Sessão AWS:** `aws sso login --profile blu-costa-admin` e confirmar com
-   `aws sts get-caller-identity --profile blu-costa-admin`.
-3. **Site:** confirmar que `https://d1sb8lbbur6ggj.cloudfront.net/?demo=1`
-   mostra o botão **New conversation** no cabeçalho do chat. Se não aparecer,
-   publicar o `BluCostaFrontend` a partir de `inge/addon`.
-4. **Portal no SageMaker Studio:** obter o branch `inge/leads-page` e definir as
-   tabelas do `BluCostaData` antes de arrancar o portal na porta 3001:
+## Preparação
 
-   ```bash
-   export BLU_CONVERSATION_TABLE=<ConversationTableName>
-   export BLU_INTELLIGENCE_TABLE=<CustomerIntelligenceTableName>
-   ```
+1. Confirmar o branch/commit e o ambiente aprovado, sem trocar de branch ou publicar recursos durante a demonstração.
+2. Confirmar a sessão AWS com `aws sts get-caller-identity`. Usar a role/perfil já autorizado; não pressupor um perfil SSO de outra instalação.
+3. Abrir o site do ambiente com `?demo=1` e confirmar **New conversation**.
+   O modo demo marca eventos sintéticos, mas não desliga chamadas reais nem custos.
+4. Confirmar `BLU_CONVERSATION_TABLE` e `BLU_INTELLIGENCE_TABLE` do mesmo ambiente no portal, com permissões Query/UpdateItem aprovadas.
+5. Preparar uma conversa fictícia e confirmar que pode ser distinguida dos contactos comerciais. Não usar nomes, emails ou telefones de clientes.
+6. Autorizar separadamente os efeitos de um ensaio real: inferência, eventos persistidos e eventual acesso aos canais externos.
 
-   Os valores são as saídas da stack `BluCostaData` (CloudFormation). O papel
-   de execução do Studio precisa de `dynamodb:Query` nas duas tabelas e no
-   índice `FollowUpIndex`, e de `dynamodb:UpdateItem` na tabela
-   `CustomerIntelligence`.
-5. **Ensaio completo:** executar o guião uma vez e confirmar que o contacto
-   aparece em **Contactos** com a etiqueta “teste”.
+Obter a URL do site e os nomes das tabelas dos outputs atuais da stack autorizada; não copiar URLs de uma demo antiga. O contrato está em [Arquitetura AWS](../infra/SPLIT_ARCHITECTURE.md).
 
-## Guião (cerca de 10 minutos)
+## Guião
 
-Abrir o site com o modo de demonstração e uma campanha fictícia:
-`https://d1sb8lbbur6ggj.cloudfront.net/?demo=1&utm_source=instagram&utm_campaign=demo-29out`.
-
-| Passo | Ação | O que mostrar |
+| Passo | Ação | Evidência a verificar |
 | --- | --- | --- |
-| 1 | Abrir **Talk to BLU** e tocar em *A week in Lisbon and Sintra* | Sugestões de resposta; o visitante pode continuar a escrever enquanto o BLU responde |
-| 2 | Escrever “Madrid in 1945 for 1000 pesetas” | O concierge limita-se a Portugal, recusa datas passadas e pede orçamento em euros |
-| 3 | Responder com os botões: viajantes, datas e orçamento | A cada resposta, o chat pergunta só o que falta; *Skip* permite avançar |
-| 4 | Aceitar **Yes** no pedido de consentimento | Nada é guardado antes; depois surge a referência `BLU-…` |
-| 5 | Abrir **Contactos** no portal e o contacto mais recente | Etapa, destino, datas, viajantes, orçamento, campanha `demo-29out`, conversa e data do consentimento |
-| 6 | Marcar *Preparar proposta*, escrever uma nota e guardar | Etiquetas fixas para CRM e churn; nota interna nunca enviada ao cliente |
-| 7 | Mostrar os botões de email ou WhatsApp e **Marcar como contactado** | O contacto passa para *Contactados*; nova mensagem do cliente volta a colocá-lo *Por contactar* |
-| 8 | Carregar em **New conversation** | Nova referência e consentimento limpo, para o ensaio seguinte |
+| 1 | Abrir **Talk to BLU** e escolher uma sugestão | Concierge abre e aceita o pedido |
+| 2 | Pedir um destino fora de Portugal ou datas passadas | Resposta respeita o âmbito e pede esclarecimento, sem promessas |
+| 3 | Completar destino, viajantes, datas e orçamento fictícios | Contexto é mantido; sugestões e Skip funcionam |
+| 4 | Aceitar retenção em **Yes** | Consentimento e eventos sintéticos ficam identificados |
+| 5 | Abrir Contactos no portal | Conversa de ensaio, contexto, campanha e consentimento correspondem |
+| 6 | Etiquetar e escrever uma nota fictícia | Nota interna e estado são guardados sem envio ao visitante |
+| 7 | Marcar como contactado | Estado muda; não é enviado email ou WhatsApp automaticamente |
+| 8 | Usar **New conversation** durante ou após resposta | Nova referência, consentimento limpo e ausência de resposta antiga |
 
-Mensagem central: o chat recolhe dados úteis sem interrogar o cliente, só
-guarda com consentimento, e o curador decide o seguimento.
+A narrativa é recolha supervisionada: o visitante autoriza retenção e o curador decide o seguimento. Se o modelo violar o âmbito ou falhar, mostrar a limitação; não tratar texto plausível como aprovação automática do caso.
 
-## Prova na AWS (opcional, para perguntas técnicas)
+## Verificação técnica
 
-Substituir a referência pela que o chat mostrou:
+Numa sessão autorizada, consultar apenas o perfil da conversa sintética criada no ensaio. Verificar `followUpStatus`, `followUpAt`, `journeyStage`, `journeyJson`, `consentAt`, etiquetas e nota sem mostrar transcrições ou contactos reais.
+A recusa de DescribeTable/DescribeStacks não prova, por si só, recusa de Query.
+Não alargar IAM apenas para obter uma demonstração administrativa.
 
-```bash
-aws dynamodb get-item --profile blu-costa-admin --region eu-west-1 \
-  --table-name <CustomerIntelligenceTableName> \
-  --key '{"conversationId":{"S":"BLU-…"},"recordKey":{"S":"PROFILE"}}'
-```
+Os testes locais com mocks e os testes de infraestrutura estão em [Testes](TESTING.md). Evidência desses testes não comprova que as stacks AWS foram publicadas com a mesma revisão.
 
-O registo `PROFILE` mostra `followUpStatus`, `followUpAt` (três dias após a
-última mensagem), `journeyStage`, `journeyJson`, `consentAt`, `tags` e
-`curatorNote`.
+## Limites e alternativas
 
-## Limites a assumir na sessão
-
-- O seguimento automático diário (churn) e o chatbot de backoffice pertencem à
-  stack `BluCostaBackoffice`, que ainda não está publicada.
-- O WhatsApp junta mensagens com a referência `BLU-…` à mesma conversa apenas
-  se o número e o webhook estiverem configurados.
-- O portal não tem autenticação própria: mostrar apenas através da sessão do
-  SageMaker Studio, nunca num endereço público.
-- Os contactos de demonstração ficam marcados como `synthetic` e com “teste” no
-  portal. Remover os registos de ensaio depois das sessões.
-
-## Plano B
-
-- **Bedrock indisponível:** o chat mostra a mensagem de recurso e o botão de
-  WhatsApp. Usar capturas de um ensaio anterior.
-- **Portal indisponível:** mostrar o registo `PROFILE` com o comando acima.
-- **Site com versão antiga:** recarregar com Ctrl+F5; os ficheiros são servidos
-  com `Cache-Control: no-cache`.
+- RAG e avaliador diário dependem do deployment efetivo de Backoffice; confirmar a versão publicada em vez de assumir um estado histórico.
+- WhatsApp exige número, segredo e webhook configurados; não enviar mensagens a terceiros para demonstrar apenas a abertura da ligação.
+- O portal no Code Editor depende da sessão privada do Studio.
+- Excluir sintéticos de indicadores reais e aplicar a retenção aprovada; não apagar registos em massa como parte do guião.
+- Em falha Bedrock, demonstrar a degradação e o seguimento manual sem repetir chamadas pagas automaticamente.
+- Capturas de apoio devem indicar data e origem e ser apresentadas como gravação, nunca como uma execução ao vivo.

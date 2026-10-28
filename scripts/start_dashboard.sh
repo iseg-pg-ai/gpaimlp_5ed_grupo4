@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Arranca o Observatório no ambiente Python do projeto, separado do editor operacional.
 #
 # Starts the local Streamlit dashboard after confirming a warehouse exists.
 

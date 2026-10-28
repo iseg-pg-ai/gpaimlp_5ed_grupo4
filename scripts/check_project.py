@@ -1,3 +1,5 @@
+# Verifica os ficheiros versionados e as ligações locais da documentação sem depender de
+# serviços externos.
 """Verifica artefactos locais versionados e links Markdown sem dependências externas."""
 
 from pathlib import Path

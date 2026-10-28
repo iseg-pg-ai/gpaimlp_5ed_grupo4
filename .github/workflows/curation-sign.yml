@@ -1,3 +1,4 @@
+# Assina a imagem identificada e produz a evidência de assinatura associada à execução.
 name: Sign curation release
 
 on:

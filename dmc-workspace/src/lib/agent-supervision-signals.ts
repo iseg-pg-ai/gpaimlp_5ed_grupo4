@@ -1,3 +1,5 @@
+// Produz sinais de supervisão a partir do resultado proposto e das condições da sua
+// aplicação.
 import { closureState } from "./itinerary-scheduling.ts";
 import { norm, type Catalog } from "./curation.ts";
 import type { Snapshot } from "./itinerary-pdf.ts";

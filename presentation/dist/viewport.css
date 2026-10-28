@@ -1,3 +1,4 @@
+/* Regras de enquadramento e escala da apresentação nos diferentes tamanhos de ecrã. */
 /* Cada capítulo ocupa o ecrã; o conteúdo excedente passa para o passo lateral. */
 html,
 body {

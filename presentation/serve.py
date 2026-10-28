@@ -1,3 +1,4 @@
+# Serve a apresentação estática e resolve o acesso ao portal no workspace atual.
 """Servidor estático da apresentação, isolado dos serviços e dados do portal."""
 from __future__ import annotations
 

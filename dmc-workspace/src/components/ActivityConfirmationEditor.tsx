@@ -1,3 +1,4 @@
+// Recolhe os detalhes da confirmação humana sem os deduzir da existência de uma proposta.
 "use client";
 import { portalFetch } from "@/lib/http-client";
 

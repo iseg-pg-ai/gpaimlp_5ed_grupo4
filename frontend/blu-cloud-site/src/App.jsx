@@ -1,3 +1,5 @@
+// Conversa pública do concierge: separa resposta, consentimento de retenção e publicação de
+// eventos.
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const opening = { id: "opening", role: "assistant", text: "Tell me what you have in mind for Portugal. I can explore the possibilities with you, then pass the useful details to a curator." };
@@ -79,6 +81,7 @@ export function App() {
     setMessages(messagesRef.current);
   }
 
+  // A retenção depende do consentimento; uma falha permite voltar a tentar o mesmo evento.
   async function publish(message, consent = {}) {
     const endpoint = window.BLU_CONVERSATION_EVENTS_ENDPOINT;
     const retainJourney = consent.journeyConsent ?? consentRef.current;
@@ -130,6 +133,7 @@ export function App() {
   }
 
   // Sends every unanswered visitor message as one turn; messages typed meanwhile wait for the next turn.
+  // Consumir uma vez as mensagens pendentes e ignorar respostas de uma conversa já reiniciada.
   async function pump() {
     if (inFlight.current) return;
     const all = messagesRef.current;

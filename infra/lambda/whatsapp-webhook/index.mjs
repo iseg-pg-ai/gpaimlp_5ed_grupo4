@@ -1,3 +1,4 @@
+// Valida o webhook e a assinatura sobre o corpo original antes de aceitar eventos do canal.
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { normalizeWhatsAppPayload, signatureMatches } from './normalize.mjs';
@@ -21,6 +22,7 @@ async function channelSecret() {
   return cachedSecret;
 }
 
+// Conservar o corpo original, necessário para verificar a assinatura enviada pelo canal.
 function rawBody(event) {
   const body = event.body || '';
   return event.isBase64Encoded ? Buffer.from(body, 'base64').toString('utf8') : body;

@@ -1,3 +1,5 @@
+# Transporta fontes e entregas S3 com manifests e hashes, sem tratar um prefixo vazio como
+# restauro válido.
 """Publicação e recuperação imutáveis de fontes e entregas ETL no Amazon S3."""
 from __future__ import annotations
 
@@ -85,6 +87,7 @@ def _files(kind: str, root: Path) -> list[Path]:
     return _source_files(root) if kind == "sources" else _warehouse_files(root)
 
 
+# Confirmar o objeto escrito antes de o aceitar como parte da entrega remota.
 def _put_verified(client, bucket: str, key: str, path: Path, digest: str,
                   metadata: dict[str, str]) -> None:
     with path.open("rb") as body:

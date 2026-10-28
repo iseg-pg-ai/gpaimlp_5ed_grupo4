@@ -1,3 +1,4 @@
+// Endpoint: consulta e grava o catálogo operacional com validação e deteção de conflitos.
 import { portalRequest, PortalPythonError } from "@/lib/python-portal";
 import { publicOrigin, jsonError, noStoreHeaders } from "@/lib/server-http";
 import { CatalogStore, CatalogConflict, catalogRoot, warehouseRoot } from "@/lib/catalog-store";

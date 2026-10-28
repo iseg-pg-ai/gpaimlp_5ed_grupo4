@@ -1,3 +1,5 @@
+// Atualiza o painel a partir das APIs autenticadas e apresenta incidentes, serviços e
+// detalhe dos eventos.
 const $ = (id) => document.getElementById(id);
 const labels = {
   up: "Disponível",

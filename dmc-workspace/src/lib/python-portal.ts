@@ -1,3 +1,4 @@
+// Fronteira Node/Python com protocolo, prazo de execução e erros públicos controlados.
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";

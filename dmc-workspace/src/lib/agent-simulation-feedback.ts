@@ -1,3 +1,4 @@
+// Resume a simulação para revisão sem apresentar uma proposta como alteração já aplicada.
 export type AgentSimulationFeedback = {
   code:
     | "PROTECTED_ITEM"

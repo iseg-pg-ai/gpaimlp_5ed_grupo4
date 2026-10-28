@@ -1,3 +1,5 @@
+// Gere a navegação dos canais e conserva o contexto de campanha permitido pelo fluxo de
+// consentimento.
 const fallbackConfig = {
   whatsappUrl: "https://wa.me/351915784212",
   chatEndpoint: "",

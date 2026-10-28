@@ -1,3 +1,4 @@
+// Define as ferramentas permitidas e recusa operações fora do âmbito autorizado ao agente.
 import { type AuthenticatedPrincipal, requirePermission } from "./server-principal.ts";
 
 export type AgentToolName =

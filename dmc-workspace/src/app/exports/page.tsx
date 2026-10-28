@@ -1,3 +1,4 @@
+// Apresenta o histórico das versões guardadas e os respetivos acessos de exportação.
 import { portalUrl } from "@/lib/http-client";
 import { T } from "@/components/LocaleProvider";
 import Link from "next/link";

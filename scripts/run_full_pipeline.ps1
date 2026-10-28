@@ -1,3 +1,5 @@
+# Prepara o ambiente Windows e executa o pipeline com falha propagada, a partir da raiz do
+# projeto.
 <#
 .SYNOPSIS
 Bootstraps the local environment and executes the full BLU data pipeline.

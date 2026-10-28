@@ -1,3 +1,4 @@
+// Endpoint: disponibiliza a representação do catálogo consumida pela curadoria.
 import { detailsFromRecord } from "@/lib/catalog-details";
 import { CatalogStore } from "@/lib/catalog-store";
 import { jsonError, noStoreHeaders } from "@/lib/server-http";

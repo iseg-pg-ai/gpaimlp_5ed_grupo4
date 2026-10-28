@@ -1,3 +1,4 @@
+// Reúne os controlos globais do portal e o contexto da área aberta.
 "use client";
 
 import Link from "next/link";

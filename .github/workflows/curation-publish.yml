@@ -1,3 +1,4 @@
+# Publica o artefacto da imagem segundo as condições e permissões explícitas deste workflow.
 name: Publish signed curation image
 
 on:

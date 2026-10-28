@@ -1,3 +1,5 @@
+// Motor determinístico de elegibilidade e composição do itinerário; os comandos continuam
+// sujeitos às mesmas regras.
 import {
   closureState,
   transferEstimate,
@@ -150,6 +152,7 @@ export function mentioned(value: string, aliases: string[]) {
   return aliases.some((a) => new RegExp(`\\b${a}\\b`).test(norm(value)));
 }
 
+// Combinar as regras de elegibilidade e composição sem dispensar as pendências de revisão.
 export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
   validateBrief(brief);
   const requiredRules = [

@@ -1,3 +1,4 @@
+// Partilha resultados meteorológicos no servidor com chaves e validade controladas.
 import type { DayWeather, DayWeatherResult, WeatherOptions } from "./weather.ts";
 
 const cache = new Map<string, { expires: number; result: DayWeatherResult }>();

@@ -1,3 +1,4 @@
+# Verifica a consistência da extração antes de permitir a construção e publicação da entrega.
 """Data-quality validation for records produced by the local ETL."""
 
 from __future__ import annotations

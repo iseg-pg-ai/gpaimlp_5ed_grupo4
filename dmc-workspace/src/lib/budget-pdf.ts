@@ -1,3 +1,5 @@
+// Desenha o orçamento no PDF a partir dos valores já classificados como conhecidos ou
+// pendentes.
 import { presentationText } from "./presentation-text.ts";
 import { proposalBudget } from "./proposal-budget.ts";
 import type { PdfLanguageOptions, Snapshot, VersionMeta } from "./itinerary-pdf";

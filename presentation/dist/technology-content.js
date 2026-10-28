@@ -1,3 +1,4 @@
+// Define o conteúdo técnico da apresentação para reutilização pelas cenas da demonstração.
 /* Inventário editorial baseado nos manifests e código; não consulta serviços nem configuração privada. */
 window.BluTechnologyContent = [
   {

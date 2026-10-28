@@ -1,3 +1,4 @@
+// Mostra a proveniência e os campos de origem necessários à revisão do registo.
 import { T } from "./LocaleProvider";
 export function SourceFields({ value }: { value: Record<string, unknown> }) {
   return (

@@ -1,3 +1,4 @@
+# Mantém o catálogo operacional em SQLite e integra apenas o estado publicado no fluxo ETL.
 """Catálogo operacional e integração ETL, que lê a fonte sem a modificar."""
 import hashlib
 import json
@@ -39,6 +40,7 @@ def legacy_id(category, row):
     return 'cat-' + hashlib.sha256(f'{category}:{_source_string(key)}'.encode()).hexdigest()[:32]
 
 
+# Projetar o estado publicado do catálogo para o ETL sem editar as fontes originais.
 def integrate_portal(data_dir: Path, tables: dict):
     database = data_dir / 'portal' / 'catalog.sqlite'
     managed = []

@@ -1,3 +1,4 @@
+// Estrutura visual da conversa e do seu estado de apresentação.
 "use client";
 
 import * as React from "react";

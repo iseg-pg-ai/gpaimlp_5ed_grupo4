@@ -1,3 +1,5 @@
+# Cria e verifica cópias locais; a existência de um ficheiro não basta para declarar um
+# backup válido.
 """Cópias locais verificáveis e ensaios de restauro isolados."""
 from __future__ import annotations
 

@@ -1,3 +1,5 @@
+// Prepara texto legível para apresentação, mantendo os identificadores técnicos nos
+// contratos internos.
 /** Apresentação do texto gerado; nunca altera o snapshot, os hashes ou as regras. */
 export function presentationText(value: string): string {
   return value

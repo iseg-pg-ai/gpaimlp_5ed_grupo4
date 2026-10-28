@@ -1,3 +1,5 @@
+// Entrada do workspace de curadoria, que liga o estado da viagem aos controlos de edição e
+// revisão.
 "use client";
 
 import { presentationText } from "@/lib/presentation-text";

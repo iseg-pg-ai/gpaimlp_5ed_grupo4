@@ -1,3 +1,4 @@
+// Edita os critérios de personalização que alimentam as regras do briefing.
 "use client";
 import { T } from "./LocaleProvider";
 import { subcategories, categoryLabels, type Category } from "@/lib/catalog-schema";

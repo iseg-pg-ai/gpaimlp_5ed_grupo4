@@ -1,3 +1,4 @@
+// Converte os dados de origem no contrato operacional e valida os campos editáveis.
 export type Operational = {
   latitude: string;
   longitude: string;

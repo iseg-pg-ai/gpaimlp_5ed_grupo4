@@ -1,3 +1,5 @@
+# Prepara a política de permissões necessária à publicação; gerar o documento não aplica
+# alterações na AWS.
 """Gera permissões ECR mínimas para revisão, sem criar ou alterar IAM."""
 import argparse
 import json

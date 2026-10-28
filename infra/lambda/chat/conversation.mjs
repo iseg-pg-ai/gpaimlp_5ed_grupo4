@@ -1,3 +1,4 @@
+// Normaliza o histórico recebido antes de o enviar ao concierge.
 // Bedrock Converse rejects histories that start with the assistant or repeat a role,
 // so the site's greeting and any unanswered turns are folded into a valid exchange.
 export function conversationMessages(previous, message) {

@@ -1,3 +1,4 @@
+// Endpoint: consulta e atualiza um Lead autorizado, mantendo o acesso DynamoDB no servidor.
 import { LeadNotFound, LeadsNotConfigured, getLead, markContacted, tagLead } from "@/lib/leads";
 import { validLeadId } from "@/lib/leads-model";
 import { jsonError, noStoreHeaders, publicOrigin } from "@/lib/server-http";

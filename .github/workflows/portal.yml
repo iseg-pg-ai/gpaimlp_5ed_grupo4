@@ -1,3 +1,5 @@
+# Executa as verificações do portal e os ensaios de integração configurados para a revisão
+# candidata.
 name: Portal
 
 on:

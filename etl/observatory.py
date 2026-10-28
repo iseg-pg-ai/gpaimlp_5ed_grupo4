@@ -1,3 +1,5 @@
+# Normaliza dimensões analíticas e proveniência para comparar inventário, referências e
+# contexto temporal.
 """Contratos analíticos conservadores; nunca substituem valores das fontes."""
 from __future__ import annotations
 

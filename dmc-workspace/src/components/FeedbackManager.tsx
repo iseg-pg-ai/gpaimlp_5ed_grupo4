@@ -1,3 +1,4 @@
+// Recolhe feedback de supervisão relativo às propostas apresentadas.
 "use client";
 
 import { useState } from "react";

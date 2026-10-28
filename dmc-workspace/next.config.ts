@@ -1,3 +1,4 @@
+// Configura o runtime Next.js e as opções partilhadas pelo desenvolvimento e pela build.
 import type { NextConfig } from "next";
 
 const portalPrefix =

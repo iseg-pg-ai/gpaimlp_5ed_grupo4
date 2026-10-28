@@ -1,3 +1,4 @@
+// Endpoint: encaminha traduções para o worker local com validação e tratamento de falhas.
 import { translateLocal, TranslationError } from "@/lib/local-translation";
 import { isLocale } from "@/lib/locales";
 import { jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";

@@ -1,3 +1,4 @@
+// Compõe a estrutura comum do portal e os fornecedores de contexto usados pelas páginas.
 import type { Metadata } from "next";
 import "./globals.css";
 import { themeInitScript } from "@/lib/theme";

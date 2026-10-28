@@ -1,3 +1,4 @@
+// Formulário de revisão dos campos do catálogo, com gravação sujeita ao controlo de versão.
 "use client";
 import { SourceFields } from "../SourceFields";
 import { operationalFromSource, operationalLabels } from "@/lib/catalog-operational";

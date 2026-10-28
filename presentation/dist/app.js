@@ -1,3 +1,5 @@
+// Coordena a demonstração interativa com dados ilustrativos, sem gravar propostas no portal
+// operacional.
 /* Estado exclusivamente em memória: esta demonstração não consulta nem escreve dados do portal. */
 const state = {
   scene: 0,

@@ -1,3 +1,4 @@
+// Gere os acessos de partilha existentes através dos contratos do servidor.
 "use client";
 
 import { T } from "@/components/LocaleProvider";

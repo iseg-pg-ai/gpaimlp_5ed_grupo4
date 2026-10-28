@@ -1,3 +1,5 @@
+// Operações geométricas e de sequência partilhadas, sem as apresentar como confirmação de um
+// fornecedor rodoviário.
 import type { ActivityItem } from "../types/index";
 import { clockTime, durationMinutes } from "./itinerary-scheduling.ts";
 

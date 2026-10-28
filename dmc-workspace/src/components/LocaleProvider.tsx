@@ -1,3 +1,5 @@
+// Partilha o idioma da interface e os textos localizados sem alterar a língua das versões
+// guardadas.
 "use client";
 import { portalFetch } from "@/lib/http-client";
 

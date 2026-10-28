@@ -1,3 +1,5 @@
+// Define as stacks de dados, frontend e Backoffice com responsabilidades e permissões
+// separadas.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -49,6 +51,7 @@ const tag = stack => {
   Tags.of(stack).add('ManagedBy', 'aws-cdk');
 };
 
+// Concentrar persistência e processamento dos eventos na stack de dados.
 class DataStack extends Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
@@ -127,6 +130,7 @@ class DataStack extends Stack {
   }
 }
 
+// Publicar os pontos de entrada públicos sem colocar segredos na configuração do navegador.
 class FrontendStack extends Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
@@ -304,6 +308,7 @@ class FrontendStack extends Stack {
   }
 }
 
+// Manter o acesso interno ao conhecimento e ao modelo numa fronteira própria.
 class BackofficeStack extends Stack {
   constructor(scope, id, props) {
     super(scope, id, props);

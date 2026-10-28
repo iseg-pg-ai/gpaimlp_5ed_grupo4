@@ -1,3 +1,5 @@
+# Exploração analítica em Streamlit: consulta o warehouse e apresenta evidência sem editar o
+# catálogo operacional.
 """Observatório BLU: exploração só de leitura da entrega publicada pelo ETL."""
 from __future__ import annotations
 

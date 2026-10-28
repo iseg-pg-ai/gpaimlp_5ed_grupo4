@@ -1,3 +1,4 @@
+// Centraliza a origem pública e as respostas sanitizadas dos endpoints do portal.
 import { portalUrl } from "./http-client.ts";
 
 /** BLU_PUBLIC_URL may include a base path; Studio's origin does not. */

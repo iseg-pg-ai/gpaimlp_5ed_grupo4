@@ -1,3 +1,4 @@
+// Disponibiliza a navegação do portal nos diferentes tamanhos de ecrã.
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";

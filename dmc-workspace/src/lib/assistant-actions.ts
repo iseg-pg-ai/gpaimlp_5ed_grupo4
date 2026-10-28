@@ -1,3 +1,4 @@
+// Valida e simula planos do assistente sobre o snapshot antes de permitir a sua aprovação.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { editWithAssistant, markEditOrigin, moveWithAssistant } from "./assistant-editing.ts";
@@ -129,6 +130,7 @@ function validate(value: unknown, rule: Schema): void {
       fail();
   } else if (rule.type === "boolean" && typeof value !== "boolean") fail();
 }
+// Verificar o contrato completo antes de considerar qualquer ação da proposta.
 export function validatePlan(value: unknown): asserts value is AgentPlan {
   validate(value, schema);
   const seen = new Set<string>();
@@ -179,6 +181,7 @@ export function resolveDelivery(snapshot: Snapshot, plan: AgentPlan, catalog: Ca
 }
 const protectedItem = (item: Snapshot["itinerary"][number]["items"][number]) =>
   item.isLocked || item.confirmation?.status === "confirmed";
+// Aplicar as ações à simulação para expor incompatibilidades antes da aceitação humana.
 export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catalog): Snapshot {
   validatePlan(plan);
   resolveAlternatives(snapshot, plan, catalog);
@@ -489,6 +492,7 @@ export function resolveRanking(snapshot: Snapshot, plan: AgentPlan, catalog: Cat
   });
 }
 
+// Selecionar o contexto necessário ao planeamento sem lhe conceder autoridade de escrita.
 export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
   // Lista explícita: campos futuros do briefing não são enviados implicitamente.
   const brief: Record<string, unknown> = Object.fromEntries(

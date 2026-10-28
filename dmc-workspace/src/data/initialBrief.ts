@@ -1,3 +1,5 @@
+// Valores iniciais do formulário; os dados finais continuam sujeitos à validação do
+// briefing.
 import type { CustomerBrief } from "@/types";
 
 export const initialBrief: CustomerBrief = {

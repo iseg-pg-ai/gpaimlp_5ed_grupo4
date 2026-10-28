@@ -1,3 +1,5 @@
+// Apresenta os mecanismos técnicos de forma ilustrativa; os controlos não executam operações
+// reais.
 /* Ato técnico ilustrativo. Não executa ETL, modelos, testes ou operações do portal. */
 window.BluTechnical = (() => {
   const initial = {

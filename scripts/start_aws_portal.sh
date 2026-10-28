@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Arranca o portal com a configuração do ambiente AWS e os caminhos de execução preparados.
 set -euo pipefail
 
 PORTAL_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

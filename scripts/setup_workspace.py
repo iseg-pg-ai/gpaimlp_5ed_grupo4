@@ -1,3 +1,5 @@
+# Prepara dependências, descoberta do Space e comandos locais sem tratar a configuração como
+# aceitação operacional.
 """Prepara um checkout BLU para um colega no SageMaker Code Editor."""
 from __future__ import annotations
 
@@ -72,6 +74,8 @@ def ensure_launcher() -> None:
     destination.symlink_to(ROOT / "bin/just")
 
 
+# Criar acesso inicial apenas quando necessário, conservando as credenciais no runtime
+# privado.
 def ensure_monitoring_access() -> bool:
     credentials = ROOT / "monitoring/runtime/credentials.json"
     if credentials.exists():

@@ -1,3 +1,4 @@
+// Aplica as regras de edição às ações propostas e conserva as proteções do itinerário.
 import {
   applyCommand,
   generateItinerary,
@@ -182,6 +183,7 @@ export function moveWithAssistant(
     ? { ...completed, itinerary: markEditOrigin(snapshot.itinerary, completed.itinerary, origin) }
     : completed;
 }
+// Reutilizar as regras de edição para que a origem assistida não contorne proteções.
 function applyEdit(
   snapshot: Snapshot,
   input: string,

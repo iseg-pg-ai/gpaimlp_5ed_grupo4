@@ -1,3 +1,5 @@
+# Fornece consultas do dataset ao portal e conserva a distinção entre inventário atual e
+# referências históricas.
 """Fontes do portal: pesquisa, paginação e enriquecimento sem alterar o warehouse."""
 
 from contextlib import closing

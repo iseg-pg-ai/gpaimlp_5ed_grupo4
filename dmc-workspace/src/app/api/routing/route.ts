@@ -1,3 +1,5 @@
+// Endpoint: calcula trajetos e alterações de sequência através do serviço de routing do
+// servidor.
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { loadPublishedCatalog } from "@/lib/catalog-store";
 import { jsonError } from "@/lib/server-http";

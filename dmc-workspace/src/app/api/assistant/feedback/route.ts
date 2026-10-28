@@ -1,3 +1,5 @@
+// Endpoint: consulta e regista feedback de supervisão depois de validar identidade e
+// permissões.
 import { FeedbackInputError, FeedbackStore } from "@/lib/feedback-store";
 import { HistoricalCaseStore } from "@/lib/historical-cases";
 import { syncOperationalState } from "@/lib/operational-s3";

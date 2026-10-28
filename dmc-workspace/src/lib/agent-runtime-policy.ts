@@ -1,3 +1,4 @@
+// Impõe a configuração e os limites de consumo do agente antes da chamada ao fornecedor.
 import type { AgentAuditStore } from "./agent-audit-store.ts";
 
 type Rate = { input: number; output: number };

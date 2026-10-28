@@ -1,3 +1,4 @@
+# Prepara o acesso inicial ao Monitoring sem publicar credenciais no repositório.
 """Preparar credenciais sem enviar segredos para o Git ou argumentos CLI."""
 import argparse
 import getpass

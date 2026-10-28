@@ -1,3 +1,5 @@
+// Obtém contexto meteorológico para a interface e trata indisponibilidade sem bloquear a
+// curadoria.
 import { portalFetch, responseJson } from "./http-client.ts";
 
 export interface DayWeather {

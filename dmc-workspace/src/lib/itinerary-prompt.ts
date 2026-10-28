@@ -1,3 +1,4 @@
+// Produz o Prompt TXT da versão guardada sem alterar o estado da exportação PDF.
 import { outstandingChecks } from "./activity-confirmation.ts";
 import { proposalBudget } from "./proposal-budget.ts";
 import { languages, type Locale } from "./locales.ts";
