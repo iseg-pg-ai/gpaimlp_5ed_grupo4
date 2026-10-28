@@ -649,3 +649,49 @@ Evidência: a bateria exata dos logs, acrescida da regressão, passou localmente
 36 testes e uma omissão por fontes S3 ausentes. Apenas fontes e diretórios
 sintéticos temporários foram usados. A confirmação num runner Windows real fica
 pendente da próxima execução CI; não houve commit nem push nesta correção.
+
+### Foco do plano na preparação para produção — 2026-10-28
+
+Por indicação explícita do utilizador, o conteúdo anterior de `PLAN.md` foi
+substituído pelos nove pontos de preparação do branch para produção: âmbito,
+integração com `dev`, instalação, testes, segurança, dados, infraestrutura,
+funcionalidades e operação/rollback. As pendências retiradas não foram marcadas
+como concluídas; o Git conserva o histórico. Monitoring passa a ser avaliado no
+ponto de operação. Esta decisão altera o foco do trabalho, sem aprovar publicação
+ou deployment nem comprovar prontidão para produção.
+
+### Âmbito completo da preparação para produção — 2026-10-28
+
+O utilizador escolheu todos os componentes existentes, incluindo Leads/concierge
+e Backoffice, além da entrega de curadoria (portal DMC, agente, tradução,
+Monitoring, apresentação, Observatório e ETL). A análise abrange
+`infra/curation-workspace.mjs` e as stacks Data/Frontend/Backoffice de
+`infra/aws-split-app.mjs`, incluindo os contratos entre elas. A proposta de uma
+nova intranet não constitui implementação incluída nesta decisão. Esta escolha
+autoriza a preparação e validação, sem autorizar merge ou deployment.
+
+### Resolução de integração com dev preparada isoladamente — 2026-10-28
+
+Após autorização para preparar a resolução, `origin/dev` em `e4c1332` foi
+combinado com `0dc7f2b` num worktree destacado em
+`/tmp/blu-production-integration`, sem commit. Os oito conflitos foram resolvidos
+preservando o concierge mais completo do branch: contexto estruturado, consentimento,
+sugestões, atribuição e proteção contra respostas de uma conversa reiniciada.
+Os contratos de data Lisboa, Portugal, orçamento, alternância de mensagens e
+cache dos deployments existentes em `dev` permanecem cobertos pelos testes.
+
+Os endpoints públicos predefinidos ficam vazios, como em `dev`; a stack escreve
+os valores do ambiente no deployment. Não se importam caches CDK já ignoradas.
+As notas README alternativas foram consolidadas nos guias atuais, preservando no
+Git o documento de origem e retirando do candidato um domínio privado e
+instruções incompatíveis com os launchers atuais.
+
+Evidência local: Node 22.13.0, build do site, quatro testes de packaging e 31
+testes de infraestrutura aprovados sem omissões; navegador sobre o build a
+375/1440 px com mocks para chat/eventos e sem chamadas AWS/Bedrock. Confirmados
+consentimento, eventos sintéticos, atribuição e descarte de resposta após reset.
+Estrutura/ligações, Markdown e whitespace aprovados. Árvore preparada
+`8f05d82feae73e280a200dc518151cde2319bd8e`; patch em
+`/tmp/blu-production-integration.patch`. Branch original e alterações locais
+preservados. Integração final, commit candidato, CI completo e deployment não
+foram executados.

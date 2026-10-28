@@ -27,8 +27,8 @@ python3 -m pip install --user uv==0.12.19
 export PATH="$HOME/.local/bin:$PATH"
 uv sync --locked --all-groups
 .venv/bin/python translations/setup_models.py
-.venv/bin/python scripts/setup_workspace.py \
-  --studio-url "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
+read -r -p "URL real deste Code Editor (até /codeeditor/default): " BLU_STUDIO_URL
+.venv/bin/python scripts/setup_workspace.py --studio-url "$BLU_STUDIO_URL"
 ```
 
 Os modelos Argos são artefactos locais separados das dependências Python. O
@@ -62,7 +62,7 @@ o acesso inicial.
 Para repetir apenas o diagnóstico:
 
 ```bash
-python3 scripts/setup_workspace.py --check-only
+.venv/bin/python scripts/setup_workspace.py --check-only
 ```
 
 ## Construção e arranque
@@ -83,6 +83,10 @@ Nos arranques seguintes basta:
 ```bash
 just blu up
 ```
+
+O arranque diário mantém os serviços ativos e inicia apenas os que estejam
+parados; não cria checkpoints nem recupera dados. Para os detalhes de backups,
+retenção e restauro, consultar [Operações](OPERATIONS.md).
 
 As portas esperadas são 3001, 3003, 3004, 5173 e 8501, definidas em
 `config/workspace_interfaces.json`. A preparação instala **BLU Workspace Links**;
@@ -114,7 +118,7 @@ não transferir hashes ou palavras-passe como método normal de onboarding.
 ## Verificação final
 
 ```bash
-python3 scripts/setup_workspace.py --check-only
+.venv/bin/python scripts/setup_workspace.py --check-only
 python3 scripts/check_project.py
 just blu up
 ```

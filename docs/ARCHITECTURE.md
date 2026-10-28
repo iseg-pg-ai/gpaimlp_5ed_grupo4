@@ -242,7 +242,9 @@ enquanto os componentes estão instalados ou em execução.
   contém os cenários de navegação e interação.
 - Tradução: `translations/test_worker.py` protege números, falhas e modelos ausentes.
 - CI de dados: verifica dependências, ETL e entrega; CI documental: Markdown.
-- Não há CI do portal neste checkout; executar `npm run check` e `npm run build`.
+- O CI do portal está em `.github/workflows/portal.yml`: validação, build,
+  ciclo de catálogo/ETL e construção da imagem. Confirmar os resultados do commit
+  candidato; localmente, executar `npm run check` e `npm run build`.
 
 Manter um guia por responsabilidade: [dados e ETL](DATA_PIPELINE.md),
 [portal](PORTAL.md), [operações](OPERATIONS.md), [testes](TESTING.md) e

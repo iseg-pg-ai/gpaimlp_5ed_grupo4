@@ -23,5 +23,6 @@
       "label": "BLU Analytics · Observatório",
       "onAutoForward": "silent"
     }
-  }
+  },
+  "python.terminal.useEnvFile": true
 }
