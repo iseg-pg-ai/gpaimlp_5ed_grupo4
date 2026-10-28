@@ -17,14 +17,13 @@ Abrir [http://localhost:3001](http://localhost:3001). O portal precisa de Node
 >=22.13 e <25 e encontra o Python através de `BLU_PYTHON`, `../.venv` ou do
 sistema. O agente de IA é opcional.
 
-No SageMaker, configurar primeiro a URL individual com
-`scripts/setup_workspace.py` e usar `just blu up` a partir da raiz. Para
-diagnóstico ou arranque isolado do portal:
+No SageMaker, preparar o ambiente pelo [onboarding](../docs/ONBOARDING.md)
+e usar `./bin/just blu up` na raiz. O Space é descoberto dinamicamente.
+Para diagnóstico isolado, com os caminhos de dados já preparados:
 
 ```bash
 cd ..
-PORTAL_PUBLIC_ORIGIN=https://<dominio>.studio.eu-west-1.sagemaker.aws \
-  bash scripts/start_aws_portal.sh
+bash scripts/start_aws_portal.sh
 ```
 
 O proxy acrescenta `/codeeditor/default/ports/3001`; não reutilizar um build
@@ -48,7 +47,7 @@ npm run check
 npm run build
 ```
 
-Os testes de navegador exigem o portal iniciado na porta 3001 e estão descritos
+Os testes de navegador exigem um servidor iniciado e aceitam `PORTAL_URL` e estão descritos
 no [guia de testes](../docs/TESTING.md).
 
 ## Documentação

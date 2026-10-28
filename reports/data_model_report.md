@@ -1,5 +1,9 @@
 # Modelo de dados do warehouse BLU
 
+Este guia descreve o modelo publicado pelo ETL, não uma medição do volume de
+dados atual. O inventário completo de uma release pertence ao seu manifesto.
+O catálogo operacional editável e o histórico de versões são bases distintas.
+
 ## Abordagem
 
 O warehouse usa um modelo analítico pragmático. Cada folha das fontes representa
@@ -29,6 +33,17 @@ não existem páginas órfãs.
 O identificador do documento representa uma instância do ficheiro fornecido. O
 `content_sha256` permite detetar conteúdo duplicado sem fundir ficheiros entregues
 separadamente.
+
+## Complementos e evidência
+
+As tabelas `structured_*` preservam as folhas do suplemento. O cruzamento por
+chave exata conserva conflitos e alterações em tabelas próprias, sem substituir
+silenciosamente valores conhecidos. Ver [Dataset complementar](../docs/DATA_PIPELINE.md#dataset-estruturado-complementar).
+
+`model_observatory_catalog`, `model_observatory_prices` e `model_field_evidence`
+acrescentam normalização e evidência por campo. Estado temporal é reavaliado na
+consulta; não equivale a preço ou disponibilidade confirmados. O contrato está
+em [Observatório](../docs/OBSERVATORY.md).
 
 ## Camada analítica
 

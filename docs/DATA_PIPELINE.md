@@ -10,11 +10,13 @@ alterada.
 Para uma execução manual, na raiz do repositório:
 
 ```bash
-python -B -m etl.cloud_runtime --destination /tmp/blu-runtime-manual
+.venv/bin/python -B -m etl.cloud_runtime --destination /tmp/blu-runtime-manual
 ```
 
-No Windows também pode ser usado
-`.\.venv\Scripts\python.exe -B -m etl.pipeline --data-dir data --output-dir warehouse`.
+O comando cloud pode publicar recursos S3 e exige o ambiente e a autorização
+correspondentes. Para transformação estritamente local, usar `etl.pipeline`
+sobre fontes e destinos explicitamente escolhidos; não executar uma regeneração
+operacional apenas para testar código.
 O fluxo com instalação, validação e testes está em
 [Automação e operações](#automação-e-operações).
 
@@ -56,21 +58,39 @@ manualmente nem versionado.
 
 ## Dataset estruturado complementar
 
-Quando `data/reference/structured_dataset.xlsx` está presente, as suas folhas são
-publicadas como `structured_*`. As bases complementam o catálogo apenas por chave
-exata e sem substituir valores existentes. Divergências e alterações ficam em
-`structured_merge_conflicts` e `structured_merge_changes`.
+`data/reference/structured_dataset.xlsx` é o suplemento fornecido pelo utilizador
+na release de fontes. Quando materializado, mantém a identidade do original;
+não deve ser editado durante o onboarding. A pipeline importa-o em conjunto com
+o Excel principal, quando presente, sem alterar os ficheiros de origem.
 
-Roteiros, viajantes e preços históricos permanecem fontes de referência; não são
-reservas, disponibilidade ou tarifas atuais. Consulte a
-[política do dataset complementar](../data/reference/README.md).
+- As folhas, incluindo guias e auditorias, são preservadas como `structured_*`.
+- `Atracoes_base`, `Restaurantes_base`, `Experiencias_base` e `Precos_base`
+  complementam o catálogo por chave exata: preenchem lacunas e acrescentam chaves
+  novas, sem substituir valores existentes.
+- Divergências ficam em `structured_merge_conflicts`; alterações em
+  `structured_merge_changes`. A linhagem identifica ficheiro, folha e linha.
+- IDs duplicados, chaves em falta ou referências quebradas interrompem a
+  importação antes da substituição do warehouse.
+- Roteiros, viajantes, menções e preços históricos continuam separados da oferta
+  atual: não são reservas, disponibilidade ou tarifas vigentes.
+- `Regras_BLU` conserva a versão documental; regras operacionais e tiers seguem
+  a origem principal e os overrides em `config/curation_rule_overrides.json`.
+
+O manifesto inclui hash, contagens por folha e balanço da integração. O conteúdo
+dos guias é tratado como dados, nunca como instruções. O portal consome o catálogo
+enriquecido; a consulta técnica permanece em `portal/data.py`. A rota antiga
+`/references` redireciona para `/catalog`, sem página autónoma na navegação normal.
 
 ## Catálogo editável
 
 O portal guarda alterações em `BLU_DATA_DIR/portal/catalog.sqlite`. Durante a execução, o
 ETL incorpora apenas revisões aprovadas, preservando IDs e histórico. O portal lê
-sempre a oferta publicada no warehouse para gerar itinerários. Consulte o
-[contrato do catálogo local](../data/portal/README.md).
+sempre a oferta publicada no warehouse para gerar itinerários.
+
+A pasta `data/portal/` no checkout é apenas o caminho local de compatibilidade;
+no SageMaker, a base é materializada na cache selecionada por `BLU_DATA_DIR`.
+Criar, rever e aprovar oferta no [portal](PORTAL.md#catálogo) antes da publicação.
+Não editar o warehouse, copiar SQLite durante escritas ou usar o Git como backup.
 
 Esta base e `BLU_EXPORT_DIR/history.sqlite` são operacionais e não pertencem ao
 ciclo de vida do ETL. Recriar o warehouse não as remove. O deployment guarda o
@@ -105,16 +125,16 @@ pelos checkpoints. O warehouse só pode ser publicado quando
 `validation_report.json` e `manifest.json` confirmam `passed`.
 
 ```bash
-python3 -B -m etl.s3_transport publish sources --path data
-python3 -B -m etl.s3_transport publish warehouse --path warehouse
+.venv/bin/python -B -m etl.s3_transport publish sources --path data
+.venv/bin/python -B -m etl.s3_transport publish warehouse --path warehouse
 ```
 
 Uma recuperação descarrega para um diretório novo ou vazio e confirma manifesto,
 tamanho e hash de todos os objetos antes de publicar a pasta local:
 
 ```bash
-python3 -B -m etl.s3_transport fetch-latest sources --path /tmp/blu-sources
-python3 -B -m etl.s3_transport fetch-latest warehouse --path /tmp/blu-warehouse
+.venv/bin/python -B -m etl.s3_transport fetch-latest sources --path /tmp/blu-sources
+.venv/bin/python -B -m etl.s3_transport fetch-latest warehouse --path /tmp/blu-warehouse
 ```
 
 Antes de definir retenção, o inventário de releases identifica a release válida
@@ -122,8 +142,8 @@ ativa, as releases válidas substituídas e manifestos inválidos, sem escrever 
 eliminar objetos:
 
 ```bash
-python3 -B -m etl.s3_transport inventory sources
-python3 -B -m etl.s3_transport inventory warehouse
+.venv/bin/python -B -m etl.s3_transport inventory sources
+.venv/bin/python -B -m etl.s3_transport inventory warehouse
 ```
 
 A classificação usa a mesma validação de integridade da recuperação. Não concede
@@ -157,12 +177,12 @@ objetos da release são imutáveis; `operational/current.json` identifica a rele
 ativa e o versionamento do bucket conserva as revisões anteriores.
 
 ```bash
-python3 -B -m etl.operational_s3 publish \
+.venv/bin/python -B -m etl.operational_s3 publish \
   --catalog data/portal/catalog.sqlite \
   --exports exports/itineraries \
   --pending exports/portal-persistence
 
-python3 -B -m etl.operational_s3 materialize \
+.venv/bin/python -B -m etl.operational_s3 materialize \
   --destination /tmp/blu-runtime
 ```
 
@@ -178,9 +198,10 @@ completa a outbox. Se o S3 falhar, o evento permanece na outbox. A sincronizaç�
 respeita a ordem e só remove cada registo depois da confirmação seguinte.
 
 Esta garantia cobre falhas do processo e reinícios enquanto
-`BLU_OPERATIONAL_DIR` sobreviver. No SageMaker atual, a perda total da cache antes
-da publicação S3 continua abrangida pelo RPO aprovado de cinco minutos. No alvo de
-produção, SQLite, write-ahead e outbox ficam no EFS persistente.
+`BLU_OPERATIONAL_DIR` sobreviver. No SageMaker atual, a perda total da cache antes da publicação S3 pode perder
+operações ainda locais. O objetivo cloud histórico de cinco minutos não comprova
+uma garantia de RPO nesta instalação. A alternativa ECS usa EFS persistente;
+a sua existência em código não equivale a deployment ou ensaio de recuperação.
 
 Enviar uma versão para o Lixo conserva-a na release ativa com `trashedAt`.
 Uma eliminação permanente retira-a apenas da release ativa seguinte; releases e
@@ -257,7 +278,7 @@ normalização, confirmação por campo, validade e fotografias estão no
 O workflow `.github/workflows/data-pipeline.yml` é executado quando mudam dados,
 ETL, dashboard, testes, dependências ou scripts. Valida o lock e os exports de
 dependências, reconstrói o warehouse, executa a validação e os testes e publica o
-artefacto `blu-warehouse`.
+artefacto sintético `blu-warehouse-ci-smoke`, retido durante 14 dias.
 
 Não existe atualização agendada das fontes. Um agendamento só deve ser criado
 depois de serem definidos a cadência, a origem e o processo de aprovação.

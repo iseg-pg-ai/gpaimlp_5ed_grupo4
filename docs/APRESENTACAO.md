@@ -218,7 +218,7 @@ Mostrar **o que os testes protegem**, com exemplos concretos:
 
 | Fronteira | Comportamento a verificar | Referência no repositório |
 | --- | --- | --- |
-| Publicação ETL | Falha de construção conserva a entrega; falha na troca repõe a anterior | [test_local_source.py](../tests/test_local_source.py) |
+| Publicação ETL | Falha de construção conserva a entrega; falha na troca repõe a anterior | [test_etl_pipeline.py](../tests/test_etl_pipeline.py) |
 | Catálogo e publicação | Revisões e estado publicado condicionam a oferta elegível | [catalog.test.mjs](../dmc-workspace/tests/catalog.test.mjs) |
 | Versões | Escritas desatualizadas são rejeitadas; snapshots e bytes históricos são preservados | [versions.test.mjs](../dmc-workspace/tests/versions.test.mjs) |
 | Informação desconhecida | Ausências e zero não são confundidos na análise | [test_portal_observatory.py](../tests/test_portal_observatory.py) |
@@ -234,8 +234,9 @@ Se forem usados números, apresentar data, ambiente e âmbito da execução. O
 transitórios não devem ser apresentados como estado permanente.
 
 Fechar com os limites atuais: o login local do Monitoring não autentica o portal;
-identidade, papéis, sincronização multiutilizador, hosting de produção e acesso
-externo continuam por definir. Ganhos de
+o destino atual é operação individual no Code Editor. Identidade cloud e
+sincronização multiutilizador pertencem a outra fronteira; monitoring externo
+e aceitação operacional continuam a exigir evidência. Ganhos de
 rapidez, consistência e qualidade devem ser avaliados com curadores; não
 atribuir percentagens sem medições.
 
@@ -270,7 +271,7 @@ lógica de navegação para facilitar a complementação posterior.
 | Agente e ferramentas | Planeador transacional, boto3/Bedrock e ferramentas de leitura tipadas | Modelo, limites e tarifas definidos na configuração operacional; ações continuam sujeitas a validação e confirmação |
 | Análise e tradução | Streamlit/Plotly, Observatório React/SVG em leitura, worker JSON-lines e modelos Argos/CTranslate2 | Grupos opcionais; não presumir disponibilidade por existir uma dependência |
 | Serviços externos | Open-Meteo e OSRM, timeout/aborto, previsão/histórico, cache e falhas explícitas | Comportamentos do código; sem chamadas reais nesta apresentação |
-| Ambiente e automação | `uv.lock`, `package-lock.json`, testes, CI de dados/documentação e acesso SageMaker | Não há workflow CI do portal neste checkout; sem certificação de produção |
+| Ambiente e automação | `uv.lock`, `package-lock.json`, testes, CI de dados/documentação e acesso SageMaker | Workflow Portal com check/build e imagem; CI não equivale a aceitação de produção |
 
 As versões exibidas são as declaradas nos manifests, e não uma listagem de
 bibliotecas atualmente instaladas ou serviços em execução. Os limites do código
@@ -394,7 +395,7 @@ uma decisão importante. Referências detalhadas ficam disponíveis no guião.
 | Como avaliam respostas ou propostas? | Testes de contratos e bateria real datada; a validação comercial com curadores continua separada |
 | Como evitam factos inventados? | Catálogo conhecido, fontes, validações, pendências e revisão humana; não prometer ausência total de erros |
 | Como resolvem alterações concorrentes? | Revisões e conflitos; isso não equivale a sincronização colaborativa completa |
-| O que falta para produção? | Identidade central, papéis, deployment cloud, acesso externo e avaliação no contexto de uso |
+| O que falta para concluir a operação? | Aceitação do destino Code Editor, recursos externos, recuperação e monitoring; identidade cloud só pertence à alternativa respetiva |
 
 ## 7. Preparação e próximos passos
 
@@ -422,7 +423,7 @@ falta e onde integrar essa informação quando estiver disponível.
 | Avaliação da qualidade | Existem testes de contratos e interface | Casos avaliados, rubrica, respostas revistas e parecer de curadores | Validação |
 | Desempenho e custos | Há timeouts, limites e mecanismos de falha | Latência, número de chamadas, tokens/custos e condições de medição | Validação e dependências |
 | Processo de desenvolvimento | Git, lockfiles e workflows existentes | Etapas, divisão do trabalho e decisões tomadas pela equipa | Ambiente/automação |
-| Operação futura | Execução Studio, S3 e checkpoints validados | Retenção administrativa, identidade, acessos e plano de deployment aprovados | Limites e evolução |
+| Operação | Destino Code Editor individual, S3 e checkpoints | Aceitação no ambiente-alvo, objetivos de recuperação e monitoring externo | Limites e evolução |
 
 Não preencher estas lacunas com benchmarks, ganhos percentuais, decisões de
 negócio ou funcionalidades presumidas. Quando houver informação nova, associar
@@ -430,8 +431,8 @@ data, fonte e distinção entre proposta, implementação e resultado observado.
 
 ## 9. Conteúdo do PowerPoint e adaptação ao ecrã
 
-O ficheiro `PG 5_edicao - GPAIDMP - Trabalho de Grupo - Apresentação - FDC -
-v2026-10-30.pptx` é conservado como fonte editorial. A apresentação interativa
+O PowerPoint do grupo foi uma fonte editorial histórica. Não integra o checkout
+atual; o conteúdo já incorporado está nos recursos de `presentation/dist/`. A apresentação interativa
 incorpora o contexto académico P6, a parceria BLU, o objetivo de apoio ao curador,
 as abordagens Soft/Classic/Signature, a equipa e a visão futura. Notas de trabalho,
 contagens históricas e serviços não comprovados no código não são apresentados
@@ -453,7 +454,7 @@ fornecedor. Não existe integração Canva no portal nem na apresentação.
 - [Pipeline e publicação](DATA_PIPELINE.md)
 - [Testes e histórico](TESTING.md)
 - [Decisões](DECISIONS.md)
-- [Plano e registos de validação](../PLAN.md)
+- [Operações e critérios de aceitação](OPERATIONS.md)
 - [Dependências Python](../pyproject.toml)
 - [Dependências e comandos do portal](../dmc-workspace/package.json)
 - [Adaptador local Python](../dmc-workspace/src/lib/python-portal.ts)

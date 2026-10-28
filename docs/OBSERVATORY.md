@@ -6,6 +6,14 @@ confirmação e validade seguem o contrato versionado em
 [observatory.py](../etl/observatory.py). Não existe outro catálogo nem escrita a
 partir do dashboard.
 
+## Interfaces que consomem o contrato
+
+O Streamlit original e o Observatório nativo do portal consultam a entrega
+publicada. A aplicação Streamlit tem [guia próprio](../dashboard/README.md);
+a utilização da vista nativa pertence ao [Portal](PORTAL.md#catálogo).
+Este documento concentra o contrato de dados partilhado, não a instalação ou
+uma contagem atual de ofertas.
+
 ## Localizações e unidades
 
 A localização original é preservada. O destino é determinado por vocabulário
@@ -144,4 +152,4 @@ aprovadas podem fornecer esses dados ao ETL; referências ou valores já
 preenchidos não são substituídos. A origem permanece no catálogo operacional,
 sem reescrever o Excel ou introduzir persistência adicional.
 
-Ver [o preenchimento verificado e as limitações](DATA_ENRICHMENT.md).
+Ver [a fundamentação dos critérios de enriquecimento](DECISIONS.md#fontes-qualidade-e-publicação-do-warehouse).

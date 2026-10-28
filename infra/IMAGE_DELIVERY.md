@@ -1,6 +1,7 @@
 # Evidência e aceitação da imagem de curadoria
 
-Revisto em 26 de outubro de 2026. A entrega usa uma imagem linux/amd64 com digest
+Revisto em 28 de outubro de 2026. Este pipeline é da alternativa de hosting
+cloud, não um requisito de arranque no Code Editor. A entrega usa uma imagem linux/amd64 com digest
 imutável. O build de CI não publica imagens no ECR nem efetua deployment.
 
 ## Evidência produzida pelo CI
@@ -67,7 +68,8 @@ conclui as pendências de monitoring externo.
 
 ## Política antes de promover uma release
 
-A promoção continua pendente de implementação e validação. Deve exigir:
+Os scripts e workflows implementam a preparação de promoção. A execução real
+exige revisão e evidência do candidato. A política exige:
 
 1. Commit revisto e integrado em `dev`, com os checks obrigatórios aprovados.
 2. Build da revisão exata, SBOM e proveniência associadas ao digest imutável.
@@ -102,13 +104,14 @@ O relatório original conserva `signature_verified: false`; o resultado da assin
 é separado. Checks de pull requests recebem apenas leitura e usam chaves temporárias
 para testes locais, sem identidade OIDC de release nem envio ao log público.
 
-A execução keyless real ainda não foi feita. Antes de a ativar: integrar o código
+Uma execução keyless só é válida com evidência explícita do workflow. Antes de
+a ativar: integrar o código
 revisto em `dev`, configurar os revisores do ambiente, assegurar acesso de leitura
 à configuração desse ambiente pelo token do workflow e obter autorização para a
 execução manual. A assinatura keyless regista a identidade pública do workflow no
 serviço de transparência Sigstore. Não há publicação ECR ou deployment neste fluxo.
 A conservação permanente da release e a configuração IAM de publicação são etapas
-posteriores do plano.
+posteriores de uma publicação cloud autorizada.
 
 Uma SBOM é um inventário, não uma auditoria de vulnerabilidades ou prova de que a
 imagem é segura. A política de segurança e aceitação de riscos continua a aplicar-se.
@@ -168,4 +171,4 @@ permanente da evidência e a aplicação da referência de rollback ainda estão
 
 - [SBOM no Docker](https://docs.docker.com/build/metadata/attestations/sbom/)
 - [Armazenamento de atestações](https://docs.docker.com/build/metadata/attestations/attestation-storage/)
-- [Plano do projeto](../PLAN.md)
+- [Operações e critérios de aceitação](../docs/OPERATIONS.md)

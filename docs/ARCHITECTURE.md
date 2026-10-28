@@ -1,9 +1,18 @@
 # Arquitetura e âmbito do BLU AI System
 
-Revisto em 20 de outubro de 2026. Este documento concentra o mapa do projeto,
+Revisto em 28 de outubro de 2026. Este documento concentra o mapa do projeto,
 as capacidades atuais e as fronteiras entre componentes. Os comandos estão no [README](../README.md),
-as tarefas no [plano](../PLAN.md) e os contratos duráveis em
+as pendências em [Operações](OPERATIONS.md#pendências-para-produção) e os contratos duráveis em
 [decisões](DECISIONS.md).
+
+## Execução e fronteiras
+
+O destino atual é operação individual no SageMaker Code Editor, em `eu-west-1`.
+As cinco interfaces locais são portal, Leads/concierge, apresentação, Monitoring
+e Observatório. O Space é descoberto dinamicamente; o agente e a tradução são
+subprocessos, sem portas próprias. O site público e os recursos Data/Frontend/
+Backoffice pertencem a uma infraestrutura AWS separada. Hosting ECS/ALB é uma
+alternativa implementada em código, sem ativação implícita neste destino.
 
 ## Fluxo dos dados
 
@@ -57,6 +66,9 @@ não requer SageMaker SDK, MLflow ou outro ambiente experimental de treino.
 | Adaptador Prompt TXT | `src/lib/itinerary-prompt.ts` | Reutilizar regras partilhadas e produzir um prompt independente de fornecedor |
 | Monitoring | `monitoring/server.py`, `monitoring/collector.py` | Autenticar utilizadores e agregar sinais operacionais locais |
 | Apresentação | `presentation/serve.py` | Servir a narrativa interativa sem alterar o portal |
+| Site/concierge | `frontend/blu-cloud-site/src/App.jsx`, `infra/lambda/chat/` | Recolher contexto e propostas de seguimento com consentimento |
+| Leads | `dmc-workspace/src/lib/leads.ts` | Consultar e gerir perfis nas tabelas DynamoDB existentes |
+| Backoffice | `infra/aws-split-app.mjs`, `infra/lambda/backoffice-rag/` | Recuperação limitada de conhecimento e seguimento sujeito a revisão |
 
 Na tabela, `src/` pertence a `dmc-workspace/`, exceto os caminhos `src/blu_ai/`,
 que são relativos à raiz. As APIs e páginas do Next.js são entradas do framework;
@@ -116,9 +128,9 @@ da raiz do projeto. A base operacional fica em `BLU_DATA_DIR/portal/catalog.sqli
 `BLU_EXPORT_DIR` continua a controlar apenas o histórico de versões e PDFs.
 
 As novas versões e revisões do catálogo usam `version-persistence.ts` e
-`catalog-persistence.ts`. Uma gravação tenta primeiro o SQLite transacional da
-cache. A release operacional S3 continua a ser a fonte permanente. Se a
-base estiver indisponível, guarda uma operação validada em
+`catalog-persistence.ts`. Uma gravação protege primeiro o pedido no write-ahead validado e tenta a
+transação SQLite da cache. A release operacional S3 continua a ser a fonte
+permanente. Se a base estiver indisponível, mantém a operação em
 `BLU_OPERATIONAL_DIR/pending-versions/` ou `pending-catalog/`. Fora do launcher,
 o fallback é `exports/portal-persistence/`; no SageMaker, o caminho pertence à
 cache temporária. Cada operação tem uma chave SHA-256 determinística,
@@ -145,10 +157,12 @@ e `owner`; permissões desconhecidas, papéis desconhecidos e qualquer tentativa
 reduzir garantias obrigatórias são recusados. `portal.identity_policy` valida o
 contrato sem depender de Cognito, permitindo testar as regras antes do deployment.
 
-Este contrato ainda não autentica pedidos. A identidade chegará do fornecedor
-aprovado na Etapa 3 e o backend aplicará papel, ownership e confirmação. O frontend
-não é autoridade, o agente não eleva permissões e clientes externos continuam a
-usar partilhas revogáveis em vez de papéis internos.
+A política não autentica pedidos por si só. `src/lib/server-principal.ts` já
+implementa verificação ALB/Cognito no modo `alb-cognito`, com assinaturas, sujeito
+e grupos validados. No Code Editor, o modo central permanece desativado: o acesso
+é o da sessão Studio e o Monitoring tem login próprio. O frontend não é autoridade
+e o agente não eleva permissões. A existência de código cloud não comprova a
+aplicação desses papéis na instalação atual.
 
 `src/lib/draft-store.ts` define o contrato servidor dos futuros rascunhos
 sincronizados. A chave é `ownerId + tripId`; leituras, escritas e eliminações
@@ -168,8 +182,8 @@ fornecerem um `ownerId` confiável; até lá, o store não fica exposto por HTTP
 central remove rascunhos inativos após 90 dias, auditoria do agente após 365 dias
 e registos de partilha 30 dias depois da expiração. Uma preservação legal prevalece
 sempre. Versões autoritativas e respetivos exports nunca entram nesta limpeza; só
-seguem o fluxo explícito de Lixo e confirmação já existente. A futura persistência
-de conversas usará o prazo declarado de 30 dias quando for criada na Etapa 2.
+seguem o fluxo explícito de Lixo e confirmação já existente. A memória de conversas do agente usa o prazo declarado de 30 dias quando
+ativada com identidade de servidor verificada.
 
 - Apenas oferta aprovada e compatível com a revisão publicada é elegível.
 - Curadoria e alterações respeitam atividades protegidas, restrições e exclusões.
@@ -201,13 +215,12 @@ própria; o prompt não fornece factos para outras viagens. Ver o
 [guia do portal](PORTAL.md).
 
 O sistema produz propostas; não efetua reservas. O Monitoring tem autenticação
-local própria. O contrato de papéis do portal existe, mas a autenticação central
-e a aplicação dessas permissões aos pedidos ainda dependem do deployment. A
-persistência S3 está implementada, mas hosting de produção e
-fotografias autorizadas nos PDFs DMC continuam pendentes. As partilhas têm
-consentimento explícito, validade e revogação, mas a identidade central e a
-execução integral da política de dados pessoais continuam pendentes antes de produção.
-Acesso pelo Studio não torna a proposta pública para clientes externos.
+local própria. A persistência S3 está implementada; o destino escolhido é o
+Code Editor, sem tornar as propostas públicas para clientes externos. As partilhas
+mantêm consentimento, validade e revogação, mas o seu acesso depende da exposição
+efetivamente configurada. Novas fotografias nos PDFs exigem origem e licença
+aprovadas. A aceitação operacional e o monitoring externo não decorrem da
+existência destas funcionalidades.
 
 A memória temporária do agente usa a SQLite operacional, não uma segunda fonte
 de verdade. Está modelada por utilizador, viagem e versão e sujeita à política de
@@ -219,7 +232,7 @@ recente do browser continua a ser contexto não autoritativo e limitado.
 
 O fluxo transacional está integrado: o planeador produz propostas estruturadas,
 o portal volta a validá-las e o curador tem de as aceitar antes da criação de uma
-versão. As onze operações suportadas, proteções e limites estão em
+versão. As treze ações suportadas, proteções e limites estão em
 [Assistente BLU](ASSISTANT.md).
 
 O agente não expõe um serviço HTTP independente: o Portal invoca o planeador por

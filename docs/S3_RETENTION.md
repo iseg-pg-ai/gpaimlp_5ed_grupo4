@@ -4,7 +4,7 @@ Revisto em 23 de outubro de 2026. Esta política distingue dados ativos de cópi
 de recuperação e não concede à aplicação permissões administrativas sobre os
 buckets.
 
-## Estado verificado
+## Evidência histórica de 23 de outubro de 2026
 
 | Controlo | Bucket de dados | Bucket de backups |
 | --- | --- | --- |
@@ -44,9 +44,9 @@ neste projeto só pode ser considerada aplicada depois de um administrador:
 3. confirmar Versioning, Default Encryption e Block Public Access;
 4. voltar a consultar a configuração e guardar evidência da validação.
 
-Estas exceções estão registadas no `PLAN.md` como fronteira administrativa
-aceite. A regra não deve ser apresentada como aplicada enquanto um administrador
-não a confirmar na consola.
+Estas exceções definem a fronteira administrativa da aplicação. A regra não deve
+ser apresentada como aplicada enquanto um administrador não a confirmar. Uma
+revisão documental ou um ensaio histórico não substitui essa consulta atual.
 
 ## Decisão proposta
 
@@ -73,8 +73,8 @@ No bucket de dados:
 As releases de fontes e warehouse podem ser inventariadas sem alterar o bucket:
 
 ```bash
-python3 -B -m etl.s3_transport inventory sources
-python3 -B -m etl.s3_transport inventory warehouse
+.venv/bin/python -B -m etl.s3_transport inventory sources
+.venv/bin/python -B -m etl.s3_transport inventory warehouse
 ```
 
 O inventário aplica a mesma validação usada na recuperação. A release válida mais

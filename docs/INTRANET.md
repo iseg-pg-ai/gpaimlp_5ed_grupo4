@@ -1,8 +1,11 @@
 # Especificação da intranet BLU
 
-Estado: **proposta para revisão do grupo, 2026-10-25.** Nada implementado nem
-publicado. Complementa a [especificação da API de leads](LEADS_API.md) e o
-[plano](../PLAN.md).
+Estado: **proposta de nova intranet, sem implementação neste checkout**.
+As páginas Leads e o portal existentes não constituem esta SPA nem a stack
+`BluCostaIntranet`. Não executar os comandos de publicação como se a stack já
+existisse. A opção atual de operação individual no Code Editor não aprova esta
+proposta. Complementa a [especificação da API de leads](LEADS_API.md) e o
+[guia de operações](OPERATIONS.md).
 
 ## Objetivo
 
@@ -202,7 +205,7 @@ Na AWS, só com autorização e dados de teste:
 
 - `cdk diff BluCostaIntranet`, revisto pelo grupo, depois
   `cdk deploy --exclusively BluCostaIntranet`. Contas criadas pelo grupo.
-- Custo esperado baixo: Cognito no escalão gratuito, CloudFront, HTTP API e
-  Lambda por pedido. Confirmar no orçamento antes do deploy.
+- Estimar utilizadores, plano Cognito/MFA, CloudFront e pedidos HTTP API/Lambda
+  com preços atuais antes de aprovar custos; não assumir gratuitidade.
 - `cdk destroy BluCostaIntranet` remove site, API e Lambdas; o user pool e o
   bucket do site ficam retidos. Dados de `BluCostaData` não são afetados.

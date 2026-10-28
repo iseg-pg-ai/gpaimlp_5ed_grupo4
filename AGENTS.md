@@ -1,7 +1,7 @@
 # BLU AI System — instruções para desenvolvimento
 
-Revisto em 2026-10-15. Ler este ficheiro, o `PLAN.md` para trabalho com vários
-ficheiros e as instruções da área afetada. O portal tem regras específicas em
+Revisto em 2026-10-15. Ler este ficheiro, as pendências em `docs/OPERATIONS.md` para trabalho com
+vários ficheiros e as instruções da área afetada. O portal tem regras específicas em
 `dmc-workspace/AGENTS.md`; lê-las antes de alterar Next.js.
 
 ## Fontes de verdade
@@ -10,7 +10,7 @@ ficheiros e as instruções da área afetada. O portal tem regras específicas e
 - [README](README.md): instalação e comandos principais.
 - [Dados e operações](docs/DATA_PIPELINE.md): ETL, automação, CI e recuperação.
 - [Portal](docs/PORTAL.md): funcionalidades, exportação e execução.
-- [Decisões](docs/DECISIONS.md): histórico datado; confirmar o estado no código.
+- [Decisões](docs/DECISIONS.md): fundamentação por tema; evolução no Git e estado confirmado no código.
 
 Código, testes e manifests prevalecem sobre notas históricas. Não inferir que
 uma funcionalidade está operacional apenas por existir num relatório antigo.
@@ -54,7 +54,7 @@ deployment, operações destrutivas e chamadas com custos ou efeitos externos
 precisam de autorização aplicável na conversa. Usar caminhos explícitos no staging
 e commits separados quando solicitado. Publicação não decorre de uma limpeza local.
 
-Manter tarefas em `PLAN.md` e decisões duráveis com data e evidência em
+Manter pendências operacionais em `docs/OPERATIONS.md` e decisões duráveis com data e evidência em
 `docs/DECISIONS.md`. O Git conserva o histórico dos documentos consolidados.
 
 ## Ambiente e validação
@@ -86,7 +86,7 @@ execução local e validação de serviços reais. Ver [testes](docs/TESTING.md)
 ## Lembrete persistente: monitoring incompleto
 
 Ao retomar monitoring ou preparar deployment/produção, consultar a secção
-**Pendências de monitoring** do [PLAN.md](PLAN.md) e avisar o utilizador dos
+**Pendências de monitoring** de [Operações](docs/OPERATIONS.md#pendências-de-monitoring) e avisar o utilizador dos
 itens ainda abertos. Essa secção é a fonte de verdade para o estado da próxima
 etapa. Não apresentar logs de sondas e incidentes locais como monitoring
 completo; só dar uma pendência como concluída com implementação e validação.

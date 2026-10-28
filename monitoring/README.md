@@ -1,22 +1,25 @@
 # BLU Operations — monitoring privado
 
 Painel independente do portal, Observatório e apresentação, na porta **3004**.
-Usa apenas Python 3.12/3.13 e a biblioteca padrão. Não exige o grupo `agent`.
+O servidor/painel usa Python 3.12/3.13 e a biblioteca padrão; integrações AWS
+usam boto3 quando ativadas. Não depende do planeador do agente.
 Interface e API de estado exigem login próprio; o CSS da página de login é público.
 
 ## Preparar e iniciar
 
-Na raiz do repositório, definir credenciais interativamente:
+Na raiz do repositório, usar o Python do projeto. No Windows, substituir
+`.venv/bin/python` por `.venv\Scripts\python.exe`. Definir credenciais
+interativamente:
 
 ```bash
-python -B -m monitoring.setup
-python -B -m monitoring.server
+.venv/bin/python -B -m monitoring.setup
+.venv/bin/python -B -m monitoring.server
 ```
 
 Para um primeiro acesso gerado localmente:
 
 ```bash
-python -B -m monitoring.setup --generate
+.venv/bin/python -B -m monitoring.setup --generate
 ```
 
 Esse modo cria o utilizador `admin` e uma palavra-passe aleatória em
@@ -69,7 +72,7 @@ pessoa, definir uma palavra-passe e transmiti-la por um canal privado próprio;
 o painel não envia emails nem convites. As contas são exclusivas do monitoring
 e não dão acesso ao portal ou a uma sessão SageMaker.
 
-O comando `python -B -m monitoring.setup` passa a criar/recuperar o administrador
+O comando `.venv/bin/python -B -m monitoring.setup` passa a criar/recuperar o administrador
 indicado, preservando as restantes contas. Usar com o serviço parado e reiniciar;
 não executar recuperação CLI em paralelo com alterações na página. O ficheiro
 local e as sessões em memória destinam-se a um único processo servidor.
@@ -99,7 +102,7 @@ como a assistência IA, continuam a escrever no mesmo runtime. Eventos repetidos
 mesma interação são suprimidos durante 750 ms e as escritas no processo Node são
 serializadas. A atualização das tabelas ocorre a cada 15 segundos.
 
-O portal ainda não tem identidade própria. A coluna **Utilizador** distingue `server`,
+No modo Code Editor, o portal não tem login próprio. A coluna **Utilizador** distingue `server`,
 `system` ou um identificador aleatório limitado à sessão do separador, sem o associar
 a uma pessoa. Não são recolhidos valores de formulários, corpos HTTP, labels visíveis,
 prompts ou respostas. Mensagens e stacks passam por limites e redação de segredos,
@@ -188,13 +191,13 @@ JSON pendentes, e validar imediatamente hashes, integridade SQLite e restauro nu
 diretório temporário:
 
 ```bash
-python -B -m monitoring.backup create-and-verify
+.venv/bin/python -B -m monitoring.backup create-and-verify
 ```
 
 Também é possível repetir a verificação sem alterar as fontes:
 
 ```bash
-python -B -m monitoring.backup verify monitoring/runtime/backups/IDENTIFICADOR
+.venv/bin/python -B -m monitoring.backup verify monitoring/runtime/backups/IDENTIFICADOR
 ```
 
 O manifesto inclui hashes SHA-256 e tamanhos. A evidência mais recente fica em
@@ -243,9 +246,9 @@ reportados pelo fornecedor aparecem como desconhecidos e nunca são estimados.
 - Sem acesso a URLs arbitrários, sem redirects nas sondas, sem endpoints de escrita
   operacional, sem listagem de diretórios ou entrega de ficheiros fora da whitelist.
 
-Este servidor é para utilização interna no Studio. Uma exposição de produção
-exige uma decisão de hosting, servidor/reverse proxy adequado, limites de tráfego,
-identidade central e revisão operacional. Sessões e limitação de tentativas são
+Este servidor é para utilização interna no Studio, o destino escolhido para
+operação individual. Exposição independente do Studio exigiria outra decisão de
+hosting, proxy, identidade e revisão operacional. Sessões e limitação de tentativas são
 locais ao processo. Outros portais sob a mesma origem Studio não constituem uma
 fronteira de segurança por domínio; para isolamento de produção, usar origem própria.
 Se o próprio ambiente Studio cair, este monitor também deixa de recolher: uma sonda
@@ -257,9 +260,12 @@ e [armazenamento de palavras-passe](https://cheatsheetseries.owasp.org/cheatshee
 ## Verificação
 
 ```bash
-python -B -m unittest monitoring.test_monitoring -v
+.venv/bin/python -B -m unittest monitoring.test_monitoring -v
 node monitoring/test-browser.mjs
 ```
+
+Para checkpoints, recuperação e transporte com mocks, executar também
+`PYTHONPATH=src .venv/bin/.venv/bin/python -B -m unittest monitoring.test_checkpoint monitoring.test_operations -v`.
 
 O teste de navegador usa o Playwright já instalado no portal, credenciais de
 fixture e servidor temporário em loopback, sem ler credenciais reais. Os testes

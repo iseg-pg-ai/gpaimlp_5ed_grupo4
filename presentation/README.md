@@ -6,8 +6,8 @@ Dashboard independente organizado em três partes:
    dados/processos, mecanismos de IA e validação/limites.
 2. **Experiência de curadoria:** seis cenas narrativas, com escolhas que
    acompanham o mapa esquemático, o roteiro e a pré-visualização ilustrativa.
-3. **Portal real:** abertura do Observatório indicado pelo utilizador num novo
-   separador, dependente da sessão SageMaker.
+3. **Portal real:** abertura do portal na porta 3001, onde existe o Observatório
+   nativo, num novo separador dependente da sessão SageMaker.
 
 A abertura começa na parte técnica. Os controlos no topo permitem saltar para
 qualquer parte; o avanço sequencial passa da sexta cena técnica para o pedido.
@@ -18,17 +18,18 @@ O portal real não é incorporado nem alterado pela apresentação.
 Na raiz do projeto, com Python 3.12 ou 3.13:
 
 ```bash
-python -B presentation/serve.py --port 3003
+.venv/bin/python -B presentation/serve.py --port 3003
 ```
 
 Abrir [a apresentação local](http://127.0.0.1:3003/). No Studio, obter a ligação
-correta do ambiente atual com `python -B scripts/studio_urls.py --port 3003`.
+correta do ambiente atual com `.venv/bin/python -B scripts/studio_urls.py --port 3003`.
 A base pública é descoberta para o Space atual por `DescribeSpace`; fora do
 SageMaker, usa `config/studio.local.json`. No Code Editor, **BLU · Interfaces**
 abre a apresentação pelo encaminhamento da sessão atual. O servidor aceita o
 prefixo ou o caminho direto e serve apenas a pasta `dist/`.
 
-Não é preciso instalar pacotes, compilar o portal ou iniciar o agente.
+Não é preciso compilar o portal ou iniciar o agente. No Code Editor, a descoberta
+do Space usa boto3 do ambiente preparado; o servidor HTTP usa a biblioteca padrão.
 O servidor usa a biblioteca padrão de Python e escuta em `127.0.0.1` por defeito.
 Pode usar `--host 0.0.0.0` quando o ambiente exigir escuta noutras interfaces.
 
@@ -112,10 +113,11 @@ encerramento. Os capítulos repetidos de dados e arquitetura foram retirados,
 com o código e estilos específicos. A auditoria e as lacunas estão registadas
 no [guião](../docs/APRESENTACAO.md).
 
-## Conteúdo incorporado do PowerPoint — 21 de outubro de 2026
+## Proveniência editorial do conteúdo
 
-A apresentação integra informação do ficheiro local
-`PG 5_edicao - GPAIDMP - Trabalho de Grupo - Apresentação - FDC - v2026-10-30.pptx`:
+A versão incorporada em 21 de outubro de 2026 usou um PowerPoint do grupo como
+fonte editorial. Esse ficheiro não integra o checkout atual nem é necessário
+para servir os recursos existentes em `dist/`. O conteúdo incorporado inclui:
 contexto académico P6, parceria BLU, objetivo de apoio ao curador, percurso entre
 fontes, portal e entrega, abordagens Soft/Classic/Signature, equipa e visão futura.
 A data de 30 de outubro é apresentada como prevista, conforme o documento.

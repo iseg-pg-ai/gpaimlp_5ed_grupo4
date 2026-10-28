@@ -1,4 +1,23 @@
-# Cartografia do dashboard
+# Dashboard analítico Streamlit
+
+Este é o consumidor analítico original do warehouse, em modo só de leitura.
+É distinto do Observatório nativo do portal; ambos seguem os
+[contratos analíticos](../docs/OBSERVATORY.md).
+
+## Executar
+
+Na raiz, com warehouse válido selecionado por `BLU_WAREHOUSE_DIR`:
+
+```bash
+uv sync --locked --inexact --group dashboard
+bash scripts/start_dashboard.sh
+```
+
+No Code Editor, o launcher global gere o arranque e a interface da porta 8501.
+No Windows, usar `scripts/start_dashboard.ps1`. O dashboard não regenera dados;
+preparar a entrega pelo [fluxo ETL](../docs/DATA_PIPELINE.md).
+
+## Cartografia
 
 `region.geojson` contém contornos da Europa e do norte de África extraídos de Natural Earth, escala 1:50m, camada `admin_0_countries`.
 São apresentados localmente como contexto, sem serviços de mosaicos ou pedidos
@@ -35,7 +54,7 @@ altura de 420 px e largura adaptável ao cartão, evitando bandas laterais.
 Validação dos contratos: `PYTHONPATH=src .venv/bin/python -B -m unittest tests.test_dashboard -v`.
 Os testes são ignorados se o grupo opcional `dashboard` não estiver instalado.
 
-## Conclusão dos contratos
+## Contratos partilhados
 
 Destinos e unidades seguem o contrato partilhado do ETL. As fichas e a área de
 qualidade mostram confirmação e validade por campo, reavaliadas à data atual.

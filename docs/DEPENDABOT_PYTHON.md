@@ -13,8 +13,7 @@ A instalação base contém o ETL. Os grupos opcionais são:
 - `agent`: cliente boto3 usado pela integração transacional com Amazon Bedrock;
 - `translation`: Argos Translate e CTranslate2.
 
-SageMaker SDK, MLflow, pytest, sqlparse e cryptography não pertencem ao ambiente
-atual. O projeto usa a função IAM do ambiente AWS através de boto3; não precisa do
+SageMaker SDK e MLflow não são dependências diretas deste projeto. O projeto usa a função IAM do ambiente AWS através de boto3; não precisa do
 SDK SageMaker.
 
 Preparar tudo com:
@@ -77,18 +76,13 @@ ignorar o requisito de Pillow. Referências:
 [Pillow](https://github.com/python-pillow/Pillow/security/advisories/GHSA-v9pv-5gc8-w2m6)
 e [metadata Streamlit 1.66.1](https://pypi.org/pypi/streamlit/1.66.1/json).
 
-O lockfile resolve Pillow 13.0.0, certifi 2026.10.23, filelock 4.2.4 e
-setuptools 84.2.1. `uv audit --locked` analisou 99 pacotes sem vulnerabilidades
-conhecidas nessa data. Os alertas GitHub só podem encerrar automaticamente após
-a integração das correções no branch predefinido; não os dispensar manualmente.
-
-Validação local em ambiente isolado com todos os grupos: 189 testes Python
-(três ignorados), cinco testes de tradução com mocks e dois ensaios EN/PT com
-modelos já instalados. As seis áreas do dashboard passaram com `AppTest` sobre
-dados sintéticos temporários; o arranque HTTP também foi verificado. O portal
-passou `check` (206 testes aprovados e um ignorado) e `build`. O frontend passou
-`build` e quatro testes de empacotamento; ambas as auditorias npm ficaram sem
-vulnerabilidades conhecidas. Estes ensaios não validam serviços cloud.
+As versões efetivas devem ser consultadas no lockfile. Auditorias são datadas e
+não comprovam disponibilidade de serviços ou ausência futura de vulnerabilidades.
+Os resultados e omissões devem identificar a revisão auditada. A fundamentação
+das escolhas pertence a [Decisões](DECISIONS.md#dependências-testes-e-identificação-da-entrega); o
+procedimento de auditoria está em [Testes](TESTING.md#auditoria-das-dependências-python).
+Os alertas GitHub só podem ser reprocessados após integração no branch predefinido;
+não os dispensar para substituir esse processo.
 
 Depois de alterar dependências:
 

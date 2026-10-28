@@ -1,9 +1,13 @@
 # Guião de demonstração — questionário e assistente BLU
 
-Revisto em 25 de outubro de 2026. Este guião usa o exemplo do botão
-**Preencher exemplo** e a release de warehouse
-`20261025T145638.707204Z-7fe9c7657cbd`. Os comandos usam os nomes visíveis dos
-cartões; se o catálogo mudar, confirmar os nomes antes da apresentação.
+Guião baseado no exemplo **Preencher exemplo** e num catálogo de ensaio
+conhecido. Os nomes e a seleção abaixo são uma referência ilustrativa, não uma
+saída garantida de qualquer release. Antes da sessão, confirmar o commit, a
+release publicada e os cartões elegíveis. Usar apenas dados fictícios.
+
+Comandos determinísticos não chamam o modelo; explicações e recomendações podem
+usar Bedrock e exigem autorização para esse custo. Não repetir chamadas reais
+apenas para forçar um resultado de demonstração.
 
 ## Objetivo da história
 
@@ -26,7 +30,7 @@ entre Lisboa e Porto. Têm um orçamento de referência de 4 800 EUR, ritmo
 descontraído, interesse em património, gastronomia, vinhos e artesanato, e
 excluem autocarros turísticos e lojas de recordações comerciais.
 
-## Resultado inicial esperado
+## Seleção de referência para o ensaio
 
 | Dia | Cidade | Seleção inicial |
 | --- | --- | --- |

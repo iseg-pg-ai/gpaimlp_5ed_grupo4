@@ -1,8 +1,8 @@
 # Testes de conformidade e regressão
 
 Este documento descreve como validar o checkout atual. Resultados de execuções
-antigas não são garantia do estado presente; o histórico permanece no Git e em
-[decisões](DECISIONS.md).
+antigas não são garantia do estado presente; o Git conserva a evolução e
+[Decisões](DECISIONS.md) explica as escolhas e os seus limites.
 
 ## Preparação
 
@@ -44,7 +44,7 @@ Na raiz, com o ambiente preparado:
 
 ```bash
 PYTHONPATH=src .venv/bin/python -B -m unittest discover -s tests -v
-.venv/bin/python -B -m unittest monitoring.test_monitoring -v
+.venv/bin/python -B -m unittest monitoring.test_monitoring monitoring.test_checkpoint monitoring.test_operations -v
 .venv/bin/python -B -m unittest translations.test_worker -v
 ```
 
@@ -116,7 +116,8 @@ feitos sobre o CloudFormation gerado; não constituem deployment ou validação 
 
 ## Testes de navegador
 
-Os cenários de navegador exigem o portal iniciado na porta 3001. Preparar o
+Os cenários de navegador exigem um Portal de testes iniciado, por omissão na
+porta 3001. Não os executar contra dados operacionais. Preparar o
 browser do Playwright quando necessário:
 
 ```bash
@@ -144,7 +145,10 @@ npm run test:compliance
 `STRESS=1` ativa o cenário de conteúdo longo. No Windows, definir
 `BROWSER_CHANNEL=msedge` quando se pretender usar o Edge instalado.
 
-Usar `PORTAL_URL` para outra origem. Cenários que escrevem versões, catálogo ou
+Usar `PORTAL_URL` para outra origem, incluindo o basePath do build quando existir.
+Num servidor sintético fora do proxy real, definir `PORTAL_PUBLIC_ORIGIN` para
+a origem local efetivamente usada no navegador; não relaxar a proteção de origem
+para fazer passar os formulários. Builds com e sem prefixo são distintos. Cenários que escrevem versões, catálogo ou
 entregas devem arrancar o portal com `BLU_DATA_DIR`, `BLU_WAREHOUSE_DIR` e
 `BLU_EXPORT_DIR` apontados para cópias temporárias. Tradução, meteorologia,
 percursos, Bedrock e outros fornecedores externos são simulados por defeito.
@@ -168,9 +172,9 @@ credenciais e runtime temporários; não usa contas reais.
 - A aprovação de um build não confirma a configuração administrativa dos buckets,
   alertas externos ou recuperação de uma máquina completa.
 
-Registar em [DECISIONS.md](DECISIONS.md) apenas resultados que condicionem uma
-decisão durável. Resultados transitórios pertencem ao log da execução ou à revisão
-de código, evitando acumular contagens desatualizadas neste guia.
+Registar em [DECISIONS.md](DECISIONS.md) a fundamentação e os limites de decisões
+duráveis, com referências ao código e verificações relevantes. Logs e contagens
+transitórias pertencem à execução ou à revisão avaliada, não a um diário nesse guia.
 
 ## Auditoria das dependências Python
 
@@ -187,8 +191,9 @@ uv tool run --from pip-audit pip-audit --disable-pip --no-deps \
 
 Esta consulta requer rede. Inspecionar também os pacotes omitidos no JSON:
 a ausência de vulnerabilidades reportadas não cobre dependências que a ferramenta
-não conseguiu analisar. Em 28 de outubro de 2026, a variante PyTorch CPU
-`2.14.0+cpu` foi omitida por não estar no PyPI; essa cobertura permanece pendente.
+não conseguiu analisar. Variantes distribuídas fora do PyPI podem ser omitidas. Complementar a consulta
+com a versão e a origem exatas, registando a base de avisos e os limites; isso
+não atesta os bytes do wheel instalado.
 Não substituir a variante CPU nem alterar o lockfile apenas para obter um resultado
 sem omissões. Para regenerar requirements versionados, manter o fluxo
 `scripts/export_requirements.py`.

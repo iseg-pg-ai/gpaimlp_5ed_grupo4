@@ -1,7 +1,14 @@
 # Especificação da API de leads
 
-Estado: **proposta para revisão do grupo, 2026-10-25.** Nada implementado
-nem publicado. Contexto e tarefas em [PLAN.md](../PLAN.md).
+Estado: **proposta de API autónoma, sem implementação dessa stack neste checkout**.
+A página e as rotas Leads do portal já existem e usam `leads.ts` com DynamoDB
+pelo servidor. No Code Editor usam a role da máquina; em modo cloud podem
+aplicar o principal ALB/Cognito. Este documento propõe outro acesso autenticado;
+as rotas `/v1/leads`, callbacks e outputs abaixo não são um guia de configuração
+atual. Ver [arquitetura existente](../infra/SPLIT_ARCHITECTURE.md).
+
+As secções seguintes são o contrato proposto, a rever antes de implementação.
+Não representam uma decisão de publicar outra stack.
 
 ## Objetivo
 
@@ -82,7 +89,7 @@ Erros: corpo `{ "error": "<mensagem em português>" }`.
 
 | Código | Quando |
 | --- | --- |
-| `400` | Identificador, `status`, etiquetas, nota ou JSON inválidos |
+| `400` | Identificador, etiquetas, nota ou JSON inválidos |
 | `401` | Token em falta, expirado ou de outro cliente (autorizador) |
 | `403` | Utilizador autenticado fora do grupo `curators` |
 | `404` | Perfil inexistente |
@@ -93,8 +100,8 @@ Erros: corpo `{ "error": "<mensagem em português>" }`.
 
 As chaves válidas são as de `LEAD_TAGS` em `leads-model.ts`. A Lambda guarda
 uma cópia das chaves (sem rótulos), seguindo o padrão já usado para os
-estados partilhados com `event-processor`. Um teste do portal compara as duas
-listas e falha se divergirem.
+estados partilhados com `event-processor`. A implementação proposta deve incluir um teste que compare as duas listas
+e falhe se divergirem.
 
 ## Autenticação e autorização
 
@@ -111,8 +118,8 @@ listas e falha se divergirem.
 
 ## Dados e permissões
 
-A Lambda tem só registos no CloudWatch Logs e esta política, já validada no
-IAM Access Analyzer sem resultados:
+A Lambda proposta deve limitar-se a logs e à política abaixo. Uma validação
+histórica no IAM Access Analyzer não substitui a revisão do template final:
 
 - `dynamodb:Query` em `ConversationMessages`, `CustomerIntelligence` e
   `CustomerIntelligence/index/FollowUpIndex`.
@@ -181,7 +188,8 @@ Sem estas variáveis, a página continua a responder `503` com instruções
 
 ## Correção associada: confiança do Backoffice
 
-Implementada em 2026-10-25 (`af957b7`), ainda sem deploy.
+A restrição de confiança está implementada no código; a sua aplicação na AWS
+exige confirmação do ambiente efetivamente publicado.
 `BackofficeAnalysisRole` em `infra/aws-split-app.mjs` confiava em toda a
 conta (`AccountPrincipal`), pelo que outros papéis da conta, incluindo o papel
 partilhado do Studio se tiver permissão `sts:AssumeRole`, poderiam assumi-lo.
@@ -191,12 +199,12 @@ Sem essa variável, o papel não é criado e as restantes funções do Backoffic
 continuam a ser publicadas. `infra/tests/frontend.test.mjs` cobre os três
 casos com synth real.
 
-## Testes e critérios de aceitação
+## Testes propostos e critérios de aceitação
 
 Testes locais, sem chamadas AWS:
 
-- Lambda (`infra/tests/leads-api.test.mjs`, `node --test`, cliente DynamoDB
-  injetado): listas `open`/`contacted`, paginação até 1 000, detalhe, `404`,
+- Lambda: criar `infra/tests/leads-api.test.mjs` com `node --test` e cliente
+  DynamoDB injetado, cobrindo listas `open`/`contacted`, paginação até 1 000, detalhe, `404`,
   `403` sem grupo, etiquetas e notas inválidas, remoção de campos vazios,
   logs sem dados pessoais.
 - Synth: a política da Lambda tem só as duas ações, nos recursos indicados,
@@ -230,6 +238,6 @@ Reversão: `cdk destroy BluCostaLeadsApi` remove API e Lambda; o user pool fica
 retido e apaga-se manualmente se desejado. As tabelas não são afetadas. Sem a
 API, a página de Leads mostra a mensagem de configuração em falta.
 
-Custo esperado: Cognito dentro do escalão gratuito de utilizadores ativos
-(confirmar o plano de funcionalidades do login gerido), HTTP API e Lambda
-cobrados por pedido. Confirmar no orçamento antes do deploy.
+Antes de aprovar deployment, estimar utilizadores Cognito, plano de autenticação,
+MFA e pedidos HTTP API/Lambda com preços atuais. Não assumir gratuitidade ou
+aprovação de custo a partir desta proposta.
