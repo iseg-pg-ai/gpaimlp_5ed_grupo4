@@ -1,3 +1,4 @@
+// Recolhe o briefing inicial no portal antes de gerar uma proposta sujeita a validação.
 "use client";
 import { T, LocalizedInput, LocalizedTextarea } from "@/components/LocaleProvider";
 

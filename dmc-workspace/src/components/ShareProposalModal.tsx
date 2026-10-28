@@ -1,3 +1,4 @@
+// Recolhe os parâmetros de partilha e deixa a validação do acesso ao servidor.
 "use client";
 import { portalFetch } from "@/lib/http-client";
 

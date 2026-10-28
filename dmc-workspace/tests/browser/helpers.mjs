@@ -1,3 +1,5 @@
+// Helpers de navegador para reutilizar preparação, navegação e verificações dos cenários do
+// portal.
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
 

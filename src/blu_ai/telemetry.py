@@ -1,3 +1,5 @@
+# Regista consumo e falhas técnicas com campos controlados, sem guardar o texto do cliente
+# como telemetria.
 """Telemetria operacional reduzida, sem prompts nem respostas de modelos."""
 from __future__ import annotations
 
@@ -54,6 +56,7 @@ def usage_from_messages(messages: list[Any]) -> dict[str, int | None]:
     return {key: value if key in found else None for key, value in totals.items()}
 
 
+# Persistir apenas as métricas e categorias técnicas autorizadas para observação operacional.
 def record_ai_usage(operation: str, outcome: str, duration_ms: float,
                     messages: list[Any] | None = None, error_code: str | None = None) -> None:
     try:

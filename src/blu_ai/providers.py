@@ -1,3 +1,5 @@
+# Isola o fornecedor de planeamento e a leitura de ferramentas do contrato de ações usado
+# pelo portal.
 """Adaptadores de fornecedor para o mesmo contrato transacional BLU."""
 
 from __future__ import annotations

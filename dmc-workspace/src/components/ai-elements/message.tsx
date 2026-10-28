@@ -1,3 +1,4 @@
+// Apresentação das mensagens, separada do planeamento e da aplicação de ações.
 "use client";
 
 import * as React from "react";

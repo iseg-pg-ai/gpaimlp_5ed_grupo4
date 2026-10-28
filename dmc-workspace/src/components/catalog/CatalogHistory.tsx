@@ -1,3 +1,4 @@
+// Apresenta as revisões do catálogo para permitir auditar alterações anteriores.
 "use client";
 import { SourceFields } from "../SourceFields";
 import type { RefObject } from "react";

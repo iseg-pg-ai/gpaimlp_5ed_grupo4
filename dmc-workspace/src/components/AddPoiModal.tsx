@@ -1,3 +1,4 @@
+// Permite escolher uma atividade elegível para acrescentar ao dia em revisão.
 "use client";
 import { portalFetch } from "@/lib/http-client";
 

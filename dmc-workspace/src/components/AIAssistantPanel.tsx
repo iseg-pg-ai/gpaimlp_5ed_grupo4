@@ -1,3 +1,5 @@
+// Apresenta a conversa e as propostas do assistente para revisão, sem as tratar como
+// alterações já aprovadas.
 "use client";
 import { T, useTranslated } from "@/components/LocaleProvider";
 

@@ -1,3 +1,5 @@
+// Endpoint: recebe eventos técnicos com campos limitados para o runtime privado do
+// Monitoring.
 import { recordOperationalEvent, type OperationalEvent } from "@/lib/operational-telemetry";
 
 export const runtime = "nodejs";

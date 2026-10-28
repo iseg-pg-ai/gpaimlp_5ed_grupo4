@@ -1,3 +1,5 @@
+// Consulta casos anteriores como contexto, mantendo-os distintos do catálogo e das tarifas
+// atuais.
 import { createHash } from "node:crypto";
 
 import { FeedbackStore } from "./feedback-store.ts";

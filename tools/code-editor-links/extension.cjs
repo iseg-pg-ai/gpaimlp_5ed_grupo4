@@ -1,3 +1,5 @@
+// Integra as interfaces BLU no editor e distingue o encaminhamento web dos túneis da sessão
+// remota.
 /* Os URLs pertencem à sessão do editor; nunca guardar nem construir o domínio do proxy. */
 const vscode = require("vscode");
 const services = require("./interfaces.json");

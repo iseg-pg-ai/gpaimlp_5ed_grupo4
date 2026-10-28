@@ -1,3 +1,5 @@
+// Endpoint: cria e revoga acessos de partilha segundo o contrato e as permissões do
+// servidor.
 import { publicUrl, jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";
 import { isLocale } from "@/lib/locales";
 

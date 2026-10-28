@@ -1,3 +1,5 @@
+// Guarda os turnos do agente com validação do contrato e associação à conversa
+// correspondente.
 import { randomUUID } from "node:crypto";
 import { checkOwnerId } from "./draft-store.ts";
 import { checkTripId, VersionStore } from "./version-store.ts";

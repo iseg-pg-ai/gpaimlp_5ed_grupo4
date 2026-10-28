@@ -1,3 +1,4 @@
+// Adapta a área da apresentação ao ecrã disponível sem alterar os dados ilustrativos.
 /* Enquadramento por ecrã: preserva conteúdo e estado sem deslocação vertical. */
 window.BluViewport = (() => {
   const scene = document.querySelector("#scene");
@@ -15,9 +16,7 @@ window.BluViewport = (() => {
     next.disabled = page === count - 1;
     pager.dataset.active = String(count > 1);
     document.querySelector("#content-counter").textContent =
-      count > 1
-        ? `Passo ${page + 1} de ${count} · mesmo capítulo`
-        : "Capítulo completo neste ecrã";
+      count > 1 ? `Passo ${page + 1} de ${count} · mesmo capítulo` : "";
   }
   function show(value) {
     page = Math.max(0, Math.min(count - 1, value));
@@ -41,13 +40,7 @@ window.BluViewport = (() => {
     show(selected);
   }
   function refresh(reset = false) {
-    if (reset) {
-      page = 0;
-      const intro = document.createElement("p");
-      intro.className = "viewport-intro";
-      intro.textContent = document.querySelector("#intro").textContent;
-      scene.prepend(intro);
-    }
+    if (reset) page = 0;
     cancelAnimationFrame(pending);
     pending = requestAnimationFrame(fit);
   }
@@ -70,26 +63,14 @@ window.BluViewport = (() => {
   });
   new ResizeObserver(() => refresh()).observe(frame);
   new MutationObserver((changes) => {
-    if (changes.some((change) => !change.target.closest?.(".tech-wires")))
-      refresh();
+    if (changes.length) refresh();
   }).observe(scene, { childList: true, subtree: true, characterData: true });
   scene.addEventListener("toggle", () => refresh(), true);
   document.addEventListener("click", (event) => {
     const mappings = [
-      ["[data-tech-requirement]", "#tech-requirement-detail"],
-      ["[data-tech-node]", "#tech-node-detail"],
-      ["[data-tech-stack]", "#tech-stack-detail"],
-      ["[data-tech-proof]", "#tech-proof-detail"],
-      ["[data-tech-mechanism]", "#tech-mechanism-detail"],
-      [
-        "#tech-advance, #tech-failure, [data-tech-phase]",
-        "#tech-process-status",
-      ],
-      ["[data-assist]", "#assistant-response"],
-      ["[data-mode]", "#mode-description"],
-      ["[data-version]", "#document-preview"],
       ["[data-stop]", "#place-detail"],
       ["#free-toggle", "#free-slot"],
+      ["[data-audience]", ".pitch-contact-copy"],
     ];
     const match = mappings.find(([selector]) => event.target.closest(selector));
     if (!match) return;

@@ -1,3 +1,5 @@
+# Reenvia alterações pendentes para S3 com identificação e verificação das operações já
+# publicadas.
 """Envio idempotente das alterações operacionais confirmadas para o bucket de dados."""
 from __future__ import annotations
 

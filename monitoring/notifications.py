@@ -1,3 +1,5 @@
+# Entrega notificações operacionais e mantém o estado das tentativas para permitir reenvio
+# controlado.
 """Entrega externa persistente de transições de incidentes, sem dados de clientes."""
 from __future__ import annotations
 

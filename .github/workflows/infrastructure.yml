@@ -1,3 +1,5 @@
+# Valida os contratos e a síntese da infraestrutura sem equivaler a aceitação de serviços
+# reais.
 name: Infrastructure
 
 on:

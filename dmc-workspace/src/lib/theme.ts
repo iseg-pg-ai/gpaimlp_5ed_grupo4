@@ -1,3 +1,5 @@
+// Configuração de tema partilhada entre a preferência local e a apresentação inicial do
+// portal.
 export const themeStorageKey = "blu-portal-theme";
 
 // Executar antes da primeira pintura evita um clarão claro na preferência escura.

@@ -1,3 +1,6 @@
+# Modelo inativo. Reativar apenas segundo infra/IMAGE_DELIVERY.md.
+# Destino de reativação: .github/workflows/curation-publish.yml
+# Publica o artefacto da imagem segundo as condições e permissões explícitas deste workflow.
 name: Publish signed curation image
 
 on:

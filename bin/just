@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Resolve a raiz do checkout e delega o comando no protocolo único de arranque/recuperação.
 set -euo pipefail
 
 if [ "${1:-}" != "blu" ] || [ "$#" -ne 2 ] \

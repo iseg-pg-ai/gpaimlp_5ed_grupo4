@@ -1,3 +1,5 @@
+# Publica e recupera o estado operacional através de cópias verificadas, preservando os
+# ficheiros autoritativos.
 """Estado operacional versionado no S3 e materialização numa cache local."""
 from __future__ import annotations
 
@@ -39,6 +41,7 @@ def _hash(path: Path) -> str:
     return digest.hexdigest()
 
 
+# Obter uma cópia consistente do SQLite antes de calcular hashes e transferir o estado.
 def _sqlite_copy(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(source) as connection, sqlite3.connect(destination) as output:

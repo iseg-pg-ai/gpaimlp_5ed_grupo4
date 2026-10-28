@@ -1,3 +1,5 @@
+// Calcula janelas e horários com restrições explícitas, distinguindo informação conhecida de
+// estimativas.
 import type { CustomerBrief } from "../types/index";
 type Row = Record<string, unknown>;
 const clean = (s: unknown) =>

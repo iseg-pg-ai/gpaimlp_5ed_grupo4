@@ -1,3 +1,5 @@
+# Reconstrói e valida uma cache temporária antes de a promover para os caminhos usados pelos
+# serviços.
 """Reconstrução integral da cache efémera a partir dos dois buckets S3."""
 from __future__ import annotations
 
@@ -48,6 +50,7 @@ def _validate_runtime(root: Path) -> None:
         raise ValueError("A cache não contém um warehouse aprovado.")
 
 
+# Trocar a cache preparada com possibilidade de recuperar o diretório anterior.
 def _promote(staged: Path, destination: Path) -> None:
     previous = destination.with_name(f".{destination.name}.previous")
     if previous.exists():
@@ -70,6 +73,7 @@ def rebuild(recovered: Path | None, destination: Path, client=None) -> dict:
     destination = destination.resolve()
     bucket, environment = _configuration()
     operational = None
+    # Recusar um checkpoint inválido antes de publicar qualquer substituição da release ativa.
     if recovered is not None:
         recovered = recovered.resolve()
         if (recovered == destination or recovered in destination.parents
@@ -92,6 +96,7 @@ def rebuild(recovered: Path | None, destination: Path, client=None) -> dict:
         warehouse = publish_delivery(
             "warehouse", staged / "warehouse", bucket, environment, client
         )
+        # Só trocar a cache dos serviços depois de verificar o conjunto reconstruído.
         _validate_runtime(staged)
         _promote(staged, destination)
 

@@ -1,3 +1,5 @@
+// Resolve a configuração AWS do portal e verifica a existência de uma build utilizável antes
+// do arranque.
 import { readFileSync, readdirSync } from "node:fs";
 
 export function awsConfig(env = process.env, args = process.argv.slice(2)) {

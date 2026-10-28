@@ -1,3 +1,5 @@
+# Prepara um ambiente de ensaio do Monitoring com dados controlados para os cenários de
+# navegador.
 """Serve fixtures de UI isoladas; não lê credenciais nem dados operacionais."""
 from datetime import datetime, timezone
 import json

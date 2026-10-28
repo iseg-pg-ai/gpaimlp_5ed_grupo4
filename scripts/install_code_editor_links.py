@@ -1,3 +1,5 @@
+# Instala os comandos de acesso às interfaces nos editores disponíveis, distinguindo a sessão
+# web da remota.
 """Instalar a integração local de links BLU sem Marketplace nem dependências externas."""
 from pathlib import Path
 import json

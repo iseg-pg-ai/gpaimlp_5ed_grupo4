@@ -1,3 +1,5 @@
+// Apresenta indicadores, preços, histórico e qualidade a partir dos dados analíticos
+// recebidos.
 "use client";
 import { useState, type ReactNode } from "react";
 import {

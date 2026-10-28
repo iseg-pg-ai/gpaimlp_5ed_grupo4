@@ -10,7 +10,7 @@
 /infra/lambda/churn-evaluator/ @GiselaInge
 /scripts/deploy-aws.sh @GiselaInge
 /Makefile @GiselaInge
-/docs/ADDON_PROVENANCE.md @GiselaInge
+/infra/SPLIT_ARCHITECTURE.md @GiselaInge
 
 /.dockerignore @pedrocarreiro25
 /.env.example @pedrocarreiro25
@@ -20,15 +20,12 @@
 /Dockerfile.curation @pedrocarreiro25
 /Justfile @pedrocarreiro25
 /PG*5_edicao*-*GPAIDMP*-*Trabalho*de*Grupo*-*Apresentação*-*FDC*-*v2026-10-30.pptx @pedrocarreiro25
-/PLAN.md @pedrocarreiro25
 /README.md @pedrocarreiro25
 /bin/just @pedrocarreiro25
 /dashboard/README.md @pedrocarreiro25
 /dashboard/app.py @pedrocarreiro25
 /dashboard/region.geojson @pedrocarreiro25
 /dashboard/style.css @pedrocarreiro25
-/data/portal/README.md @pedrocarreiro25
-/data/reference/README.md @pedrocarreiro25
 /dmc-workspace/.prettierrc.json @pedrocarreiro25
 /dmc-workspace/public/favicon.svg @pedrocarreiro25
 /dmc-workspace/src/app/api/assistant/feedback/route.ts @pedrocarreiro25
@@ -160,10 +157,9 @@
 /dmc-workspace/tests/version-persistence.test.mjs @pedrocarreiro25
 /dmc-workspace/tests/versions.test.mjs @pedrocarreiro25
 /dmc-workspace/tests/weather-server-cache.test.mjs @pedrocarreiro25
-/docs/AGENT_SCOPE.md @pedrocarreiro25
+/docs/ASSISTANT.md @pedrocarreiro25
 /docs/APRESENTACAO.md @pedrocarreiro25
 /docs/ARCHITECTURE.md @pedrocarreiro25
-/docs/DATA_ENRICHMENT.md @pedrocarreiro25
 /docs/DATA_PIPELINE.md @pedrocarreiro25
 /docs/DEMO_CHATBOT_SCRIPT.md @pedrocarreiro25
 /docs/DEMO_E2E.md @pedrocarreiro25
@@ -176,7 +172,6 @@
 /docs/OPERATIONS.md @pedrocarreiro25
 /docs/PORTAL.md @pedrocarreiro25
 /docs/S3_RETENTION.md @pedrocarreiro25
-/docs/SECOND_WORKSPACE_VALIDATION.md @pedrocarreiro25
 /etl/__init__.py @pedrocarreiro25
 /etl/analytics.py @pedrocarreiro25
 /etl/cloud_runtime.py @pedrocarreiro25
@@ -280,3 +275,5 @@
 /portal/ @pedrocarreiro25
 /presentation/ @pedrocarreiro25
 /tools/ @pedrocarreiro25
+
+/infra/workflow-templates/ @pedrocarreiro25

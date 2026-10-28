@@ -1,3 +1,4 @@
+// Constrói as instruções do concierge com data de Lisboa e contexto da jornada.
 // A data de Lisboa permite ao modelo avaliar as datas da viagem.
 export function lisbonDate(now = new Date()) {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Lisbon' }).format(now);

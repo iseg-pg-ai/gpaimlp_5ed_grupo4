@@ -1,3 +1,5 @@
+// Publica o estado operacional para a recuperação remota sem criar uma persistência paralela
+// no navegador.
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { operationalRoot } from "./version-persistence.ts";

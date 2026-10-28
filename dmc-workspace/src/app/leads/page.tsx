@@ -1,3 +1,5 @@
+// Apresenta e acompanha Leads através das APIs do servidor, sem expor credenciais AWS ao
+// navegador.
 "use client";
 import { portalFetch } from "@/lib/http-client";
 

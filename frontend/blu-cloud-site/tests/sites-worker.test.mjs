@@ -1,3 +1,5 @@
+// Verifica recursos, fallback e packaging do site sem transformar pedidos de API em páginas
+// HTML.
 import assert from "node:assert/strict";
 import { access } from "node:fs/promises";
 import test from "node:test";

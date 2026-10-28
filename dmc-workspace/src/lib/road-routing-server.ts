@@ -1,3 +1,5 @@
+// Liga o itinerário ao cálculo rodoviário no servidor e atualiza os trajetos sujeitos às
+// regras de edição.
 import type { ItineraryDay, TransitLeg, TransitMode } from "../types/index";
 import { portalRequest } from "./python-portal.ts";
 import { buildCoordMap, extractCoords, type LocationCoords } from "./road-routing.ts";
@@ -42,6 +44,8 @@ export async function calculateRoadLeg(
   });
 }
 
+// Adicionar contexto rodoviário ao itinerário sem tornar a indisponibilidade do fornecedor
+// um dado confirmado.
 export async function enrichItineraryWithRoadRouting(
   days: ItineraryDay[],
   catalogRecords?: Array<Record<string, unknown>>,

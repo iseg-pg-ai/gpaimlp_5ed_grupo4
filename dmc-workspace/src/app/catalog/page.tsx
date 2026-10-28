@@ -1,3 +1,5 @@
+// Entrada da gestão de catálogo; a escrita operacional passa pelos contratos e endpoints do
+// servidor.
 "use client";
 import { useState } from "react";
 import { ChartNoAxesCombined, SlidersHorizontal } from "lucide-react";

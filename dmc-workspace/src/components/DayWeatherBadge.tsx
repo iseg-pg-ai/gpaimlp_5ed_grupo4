@@ -1,3 +1,5 @@
+// Apresenta o contexto meteorológico do dia sem o tornar uma condição confirmada do
+// itinerário.
 "use client";
 
 import { useEffect, useId, useState } from "react";

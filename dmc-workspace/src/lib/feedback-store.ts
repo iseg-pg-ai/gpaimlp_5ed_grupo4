@@ -1,3 +1,4 @@
+// Valida e conserva feedback de supervisão sem o transformar em aprovação automática.
 import { VersionStore, VersionConflict, checkTripId } from "./version-store.ts";
 import type { Snapshot } from "./itinerary-pdf";
 

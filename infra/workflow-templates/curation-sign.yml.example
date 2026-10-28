@@ -1,3 +1,6 @@
+# Modelo inativo. Reativar apenas segundo infra/IMAGE_DELIVERY.md.
+# Destino de reativação: .github/workflows/curation-sign.yml
+# Assina a imagem identificada e produz a evidência de assinatura associada à execução.
 name: Sign curation release
 
 on:

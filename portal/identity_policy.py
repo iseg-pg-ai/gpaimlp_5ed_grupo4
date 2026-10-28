@@ -1,3 +1,5 @@
+# Carrega a política de identidade partilhada e decide as permissões a partir dos papéis
+# definidos.
 """Validação do contrato comum de identidade e autorização do BLU."""
 from __future__ import annotations
 

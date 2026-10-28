@@ -1,9 +1,11 @@
+// Verifica e normaliza mensagens WhatsApp para o contrato de eventos interno.
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 const JOURNEY_REFERENCE = /\bBLU-[A-F0-9]{16}\b/i;
 
 const safeText = (value, maximum = 4000) => String(value || '').trim().slice(0, maximum);
 
+// Comparar a assinatura calculada sobre o payload original antes de confiar nos eventos.
 export function signatureMatches(rawBody, signatureHeader, appSecret) {
   if (!appSecret || !signatureHeader?.startsWith('sha256=')) return false;
   const supplied = signatureHeader.slice(7);

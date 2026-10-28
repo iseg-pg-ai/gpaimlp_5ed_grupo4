@@ -1,3 +1,5 @@
+# Constrói o TXT a partir da versão guardada, com seleção explícita dos campos incluídos na
+# entrega.
 """Exportação Prompt TXT do snapshot; apenas campos destinados ao cliente."""
 import json
 
@@ -22,6 +24,7 @@ def json_numbers(value):
     return value
 
 
+# Selecionar o conteúdo da entrega TXT sem incluir campos internos ou contactos.
 def render_prompt(payload: dict) -> str:
     snapshot, meta, budget = payload["snapshot"], payload["meta"], payload["budget"]
     brief = snapshot["brief"]

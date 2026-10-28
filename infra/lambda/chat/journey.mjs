@@ -1,3 +1,5 @@
+// Valida os campos extraídos e calcula o estado da jornada sem inventar os detalhes em
+// falta.
 // Customer-journey metadata extracted from the conversation. Field names match the
 // ingest Lambda's context allowlist, so the site can store them as conversation events.
 export const JOURNEY_FIELDS = ['destination', 'timeframe', 'party', 'budget', 'interests', 'pace'];

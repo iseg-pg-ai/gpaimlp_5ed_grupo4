@@ -1,3 +1,5 @@
+# Calcula sequência, horários e trajetos, distinguindo estimativas geométricas de informação
+# rodoviária externa.
 """Cálculo rodoviário determinístico usado pelo portal através da fronteira JSON."""
 from __future__ import annotations
 

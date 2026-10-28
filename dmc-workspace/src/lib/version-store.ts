@@ -1,3 +1,5 @@
+// Conserva snapshots, relações parentais, hashes e bytes PDF, com conflitos explícitos entre
+// escritas concorrentes.
 import { DatabaseSync } from "node:sqlite";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
@@ -69,6 +71,7 @@ export type ProposalShareRecord = Omit<ProposalShare, "consentAt" | "expiresAt">
   consentAt: string | null;
   expiresAt: string | null;
 };
+// Manter versões e entregas no mesmo contrato transacional, com conflitos explícitos.
 export class VersionStore {
   db: DatabaseSync;
   root: string;
@@ -97,6 +100,7 @@ export class VersionStore {
         FOREIGN KEY(tripId,version) REFERENCES versions(tripId,version));
       CREATE TABLE IF NOT EXISTS portal_operations (
         id TEXT PRIMARY KEY, kind TEXT NOT NULL, result TEXT NOT NULL, createdAt TEXT NOT NULL);`);
+    // Migrar apenas as colunas em falta, conservando versões e PDFs já existentes.
     const versionColumns = this.db
       .prepare("PRAGMA table_info(versions)")
       .all() as unknown as Array<{
@@ -158,6 +162,7 @@ export class VersionStore {
       });
     });
   }
+  // A passagem ao Lixo revoga os acessos de partilha na mesma transação.
   trashVersion(tripId: string, version: number) {
     this.get(tripId, version);
     const trashedAt = new Date().toISOString();
@@ -180,6 +185,7 @@ export class VersionStore {
     }
     return this.listTrash().find((item) => item.tripId === tripId && item.version === version)!;
   }
+  // Restaurar a versão não reativa automaticamente os acessos anteriormente revogados.
   restoreVersion(tripId: string, version: number) {
     this.get(tripId, version);
     this.db
@@ -197,6 +203,7 @@ export class VersionStore {
         .run(cutoff.toISOString()).changes,
     );
   }
+  // Verificar retenção e confirmações antes de remover versões e os respetivos artefactos.
   cleanupExpiredTrash(
     tripIds: string[],
     today: string,
@@ -420,6 +427,7 @@ export class VersionStore {
       endDate: snapshot.brief.endDate,
     };
   }
+  // Um token existente só permite acesso com consentimento, prazo válido e versão fora do Lixo.
   getShare(token: string): ProposalShare {
     const share = this.shareRecord(token);
     const stored = this.get(share.tripId, share.version);
@@ -433,6 +441,7 @@ export class VersionStore {
       throw new Error("Partilha não encontrada.");
     return { ...share, consentAt: share.consentAt, expiresAt: share.expiresAt };
   }
+  // Serializar a decisão de escrita: deduplicação e revisão de base são verificadas sob a transação.
   save(
     tripId: string,
     snapshot: Snapshot,
@@ -448,6 +457,7 @@ export class VersionStore {
       snapshotHash = hash(serialized);
     this.db.exec("BEGIN IMMEDIATE");
     try {
+      // Repetir a mesma operação devolve o resultado anterior sem criar outra versão.
       if (operationId) {
         const completed = this.db
           .prepare("SELECT result FROM portal_operations WHERE id=? AND kind='version.save'")
@@ -523,6 +533,7 @@ export class VersionStore {
       throw error;
     }
   }
+  // Reutilizar os bytes guardados por idioma; uma nova consulta não deve retraduzir a entrega.
   async localizedPdf(tripId: string, version: number, locale: Locale) {
     const stored = this.get(tripId, version);
     type LocalPdf = { filename: string; pdf: Uint8Array; pdfHash: string };
@@ -557,6 +568,7 @@ export class VersionStore {
     }
     return { bytes: Buffer.from(result.pdf), filename: result.filename };
   }
+  // O PDF guardado é autoritativo; os ficheiros de exportação são materializados sem sobrescrita.
   async pdf(tripId: string, version: number) {
     let stored = this.get(tripId, version);
     if (!stored.pdf) {

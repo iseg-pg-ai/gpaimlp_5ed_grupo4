@@ -1,3 +1,4 @@
+// Persiste rascunhos com verificação do proprietário e da revisão esperada.
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
@@ -96,6 +97,7 @@ export class DraftStore {
     ).map(publicDraft);
   }
 
+  // A escrita exige a revisão esperada para impedir que um separador substitua alterações de outro.
   save(
     ownerId: string,
     tripId: string,

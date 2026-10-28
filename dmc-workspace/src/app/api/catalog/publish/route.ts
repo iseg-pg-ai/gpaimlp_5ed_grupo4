@@ -1,3 +1,5 @@
+// Endpoint: publica o estado revisto do catálogo pelo fluxo controlado de integração com o
+// ETL.
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { existsSync, mkdirSync, openSync, closeSync, unlinkSync } from "node:fs";

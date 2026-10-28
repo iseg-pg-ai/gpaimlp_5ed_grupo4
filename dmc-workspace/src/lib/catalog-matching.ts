@@ -1,3 +1,5 @@
+// Compara o perfil do catálogo com os critérios do briefing sem transformar lacunas em
+// compatibilidade.
 import {
   interestOptions,
   mobilityOptions,

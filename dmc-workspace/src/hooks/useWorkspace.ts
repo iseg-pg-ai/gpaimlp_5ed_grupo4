@@ -1,3 +1,5 @@
+// Coordena rascunhos e ações da interface; as versões autoritativas e os conflitos são
+// tratados no servidor.
 "use client";
 import { portalFetch, responseJson } from "@/lib/http-client";
 import { useEffect, useRef, useState } from "react";
@@ -61,6 +63,8 @@ const message = (
   text,
   timestamp: new Date().toLocaleTimeString(),
 });
+// Concentrar o ciclo do rascunho e a comunicação com o servidor sem duplicar a persistência
+// autoritativa.
 export function useWorkspace() {
   const [clientLanguage, setClientLanguage] = useState<Locale>("en");
   const [trips, setTrips] = useState<Trip[]>([]);

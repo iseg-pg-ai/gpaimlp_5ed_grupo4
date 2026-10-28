@@ -1,6 +1,8 @@
+// Prepara os textos localizados antes da renderização, preservando o snapshot guardado.
 import { renderPdf, type Snapshot, type VersionMeta } from "./itinerary-pdf.ts";
 import { translateLocal } from "./local-translation.ts";
 import type { Locale } from "./locales";
+// Preparar a tradução da entrega sem reescrever o snapshot autoritativo.
 export async function renderLocalizedPdf(
   snapshot: Snapshot,
   meta: VersionMeta,

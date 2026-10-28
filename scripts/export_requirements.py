@@ -1,3 +1,5 @@
+# Exporta os requirements a partir dos lockfiles; estes ficheiros não são uma segunda fonte
+# de dependências.
 """Export pip requirements from uv.lock; --check detects stale exports in CI."""
 import argparse
 from pathlib import Path

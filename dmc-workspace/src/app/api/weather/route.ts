@@ -1,3 +1,5 @@
+// Endpoint: fornece contexto meteorológico com cache e estados explícitos de
+// indisponibilidade.
 import type { DayWeatherResult, WeatherOptions } from "@/lib/weather";
 import { portalRequest } from "@/lib/python-portal";
 import { jsonError, noStoreHeaders } from "@/lib/server-http";

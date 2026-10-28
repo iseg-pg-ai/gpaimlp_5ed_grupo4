@@ -1,3 +1,4 @@
+# Valida a identidade da revisão e a evidência da imagem usada na preparação de uma entrega.
 """Associa evidência ao digest e verifica a assinatura da identidade de release."""
 from __future__ import annotations
 
@@ -72,6 +73,7 @@ def validate_environment(value):
         raise ReleaseError("O ambiente exige revisores e prevenção de autoaprovação.")
 
 
+# Relacionar revisão, imagem e evidência para permitir a verificação posterior da entrega.
 def create_statement(directory, run):
     commit = validate_run(run)
     hashes = evidence_hashes(directory)

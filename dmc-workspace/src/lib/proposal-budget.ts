@@ -1,3 +1,5 @@
+// Agrega custos conhecidos e pendências por moeda, sem converter valores desconhecidos em
+// custo zero.
 import { validatePricing, type CatalogPricing } from "./catalog-schema.ts";
 import type { Snapshot } from "./itinerary-pdf";
 
@@ -30,6 +32,7 @@ function parsePrice(value: string | undefined): CatalogPricing | undefined {
   };
 }
 
+// Separar totais por moeda e explicitar custos pendentes em vez de os somar como zero.
 export function proposalBudget(snapshot: Snapshot) {
   const lines: BudgetLine[] = [];
   const terms: { description: string; inclusions: string; exclusions: string; taxes: string }[] =

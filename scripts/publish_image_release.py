@@ -1,3 +1,5 @@
+# Publica uma imagem identificada e verifica o digest remoto para relacionar o artefacto com
+# a entrega.
 """Publica bytes OCI assinados, sem criar recursos nem alterar serviços ECS."""
 from __future__ import annotations
 
@@ -53,6 +55,7 @@ def copy_archive(archive, registry, destination, region):
                        check=True, capture_output=True, timeout=1200)
 
 
+# Confirmar o digest publicado para evitar promover apenas uma etiqueta mutável.
 def publish(archive, signed, expected_digest, expected_revision, repository_uri,
             account, region="eu-west-1", *, execute=False):
     expected_digest, expected_revision = digest(expected_digest), revision(expected_revision)

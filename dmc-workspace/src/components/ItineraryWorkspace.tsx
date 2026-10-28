@@ -1,3 +1,5 @@
+// Compõe os dias, atividades e controlos da proposta a partir do estado gerido pelo
+// workspace.
 "use client";
 import { dayDescription } from "@/lib/presentation-text";
 import { T, useLocale, useTranslated } from "@/components/LocaleProvider";

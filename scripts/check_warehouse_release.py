@@ -1,3 +1,4 @@
+# Valida os artefactos de uma entrega antes de a aceitar como warehouse consumível.
 """Aplica o gate versionado de qualidade e compatibilidade a um warehouse."""
 
 from __future__ import annotations

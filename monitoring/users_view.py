@@ -1,3 +1,4 @@
+# Renderiza a gestão de contas do Monitoring, cuja autorização é validada pelo servidor.
 """Formulários de administração; nunca apresentar hashes ou palavras-passe."""
 from html import escape
 

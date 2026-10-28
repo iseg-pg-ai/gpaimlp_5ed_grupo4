@@ -1,3 +1,4 @@
+# Avalia propostas do agente com os casos definidos e torna explícitas as falhas do contrato.
 """Avaliação explícita com casos sintéticos; listar nunca chama o Bedrock."""
 import argparse
 import json

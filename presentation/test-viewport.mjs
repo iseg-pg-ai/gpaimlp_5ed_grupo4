@@ -28,7 +28,11 @@ async function check(page) {
       available: frame.clientHeight,
       footer: footer.bottom,
       scroll: scrollY,
-      font: parseFloat(getComputedStyle(scene.querySelector("p")).fontSize),
+      font: Math.min(
+        ...[
+          ...scene.querySelectorAll("p:not(.show-eyebrow):not(.show-context)"),
+        ].map((node) => parseFloat(getComputedStyle(node).fontSize)),
+      ),
     };
   });
   assert.ok(
@@ -64,20 +68,11 @@ try {
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(origin);
-    for (let index = 0; index < 12; index++) {
+    for (let index = 0; index < 6; index++) {
       if (await page.locator("#chapter-select").isVisible()) {
         await page.locator("#chapter-select").selectOption(String(index));
       } else {
-        if (index === 0 || index === 6)
-          await page
-            .locator(
-              `.show-parts [data-part="${index < 6 ? "technical" : "experience"}"]`,
-            )
-            .click();
-        await page
-          .locator(".show-chapters button")
-          .nth(index % 6)
-          .click();
+        await page.locator(".show-chapters button").nth(index).click();
       }
       await settled(page);
       for (let step = 0; step < 40; step++) {
@@ -92,7 +87,7 @@ try {
     }
     assert.deepEqual(errors, []);
     console.log(
-      `${width} × ${height}: 12 capítulos e todos os passos sem cortes nem deslocação vertical.`,
+      `${width} × ${height}: seis momentos e todos os passos sem cortes nem deslocação vertical.`,
     );
     await page.close();
   }
@@ -101,33 +96,34 @@ try {
     reducedMotion: "reduce",
   });
   await page.goto(origin);
-  await page.locator(".show-parts [data-part='experience']").click();
-  await page.locator(".show-chapters button").nth(2).click();
-  await page.getByRole("button", { name: "Signature", exact: true }).click();
+  await page.locator(".show-chapters button").nth(1).click();
+  await page.getByRole("button", { name: "Sabores & encontros" }).click();
   await page.setViewportSize({ width: 1366, height: 768 });
   await settled(page);
   assert.equal(
-    await page
-      .getByRole("button", { name: "Signature", exact: true })
-      .getAttribute("aria-pressed"),
+    await page.locator('[data-preference="food"]').getAttribute("aria-pressed"),
     "true",
   );
   await check(page);
   while (!(await page.locator("#content-previous").isDisabled()))
     await page.locator("#content-previous").click();
+  await page.screenshot({ path: "/tmp/blu-pitch-brief-desktop.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await settled(page);
+  while (!(await page.locator("#content-previous").isDisabled()))
+    await page.locator("#content-previous").click();
   await page.locator("#show-title").focus();
   const title = await page.locator("#show-title").innerText();
   await page.keyboard.press("ArrowRight");
-  assert.match(
-    await page.locator("#content-counter").innerText(),
-    /^Passo 2 de/,
-  );
-  assert.equal(await page.locator("#show-title").innerText(), title);
+  if (!(await page.locator("#content-next").isDisabled())) {
+    assert.match(
+      await page.locator("#content-counter").innerText(),
+      /^Passo 2 de/,
+    );
+    assert.equal(await page.locator("#show-title").innerText(), title);
+  }
   await page.keyboard.press("ArrowLeft");
-  await page.screenshot({ path: "/tmp/blu-viewport-proposal-desktop.png" });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await settled(page);
-  await page.screenshot({ path: "/tmp/blu-viewport-proposal-mobile.png" });
+  await page.screenshot({ path: "/tmp/blu-pitch-brief-mobile.png" });
   await page.close();
 } finally {
   await browser.close();

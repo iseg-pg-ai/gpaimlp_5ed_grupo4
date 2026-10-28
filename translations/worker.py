@@ -1,3 +1,5 @@
+# Processa pedidos JSON-lines com modelos locais e cache, preservando o conteúdo numérico da
+# tradução.
 """Offline JSON-lines worker using local Argos/CTranslate2 models and a disk cache."""
 import os, sys, json, sqlite3, hashlib, re
 from collections import Counter
@@ -20,6 +22,7 @@ CACHE_DIR.mkdir(parents=True,exist_ok=True)
 DB = sqlite3.connect(CACHE_DIR / "cache.sqlite")
 DB.execute("CREATE TABLE IF NOT EXISTS translations (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
 
+# Carregar o modelo local e recusar alterações numéricas antes de aceitar a tradução.
 def direct(texts, source, target, protect_numbers=True):
     pkg = PACKAGES.get((source,target))
     if pkg is None:
@@ -55,6 +58,7 @@ def direct(texts, source, target, protect_numbers=True):
                 raise ValueError("Translation changed numeric content; export cancelled.")
     return values
 
+# Agrupar pedidos não presentes na cache e usar inglês como ponte quando necessário.
 def translate(items, target):
     if target not in ["pt","en","es","fr","de","zh"]: raise ValueError("Unsupported language")
     result=[None]*len(items)
@@ -81,6 +85,7 @@ def translate(items, target):
 if __name__=="__main__":
     sys.stdin.reconfigure(encoding="utf-8")
     sys.stdout.reconfigure(encoding="utf-8")
+    # Responder com o mesmo identificador para o portal associar resultados concorrentes.
     for line in sys.stdin:
         try:
             request=json.loads(line)

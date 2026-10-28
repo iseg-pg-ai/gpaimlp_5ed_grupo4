@@ -1,3 +1,4 @@
+# Testa os contratos de assinatura e verificação antes de os usar numa entrega.
 name: Image signing tests
 
 on:
@@ -8,10 +9,11 @@ on:
       - "scripts/prepare_ecr_policy.py"
       - "scripts/prepare_image_rollback.py"
       - "tests/test_image_publish.py"
+      - "infra/workflow-templates/**"
+      - ".github/workflows/curation-sign.yml"
       - ".github/workflows/curation-publish.yml"
       - "tests/test_image_release.py"
       - "config/image_signing_policy.json"
-      - ".github/workflows/curation-sign.yml"
       - ".github/workflows/image-signing-tests.yml"
   pull_request:
     paths:
@@ -20,10 +22,11 @@ on:
       - "scripts/prepare_ecr_policy.py"
       - "scripts/prepare_image_rollback.py"
       - "tests/test_image_publish.py"
+      - "infra/workflow-templates/**"
+      - ".github/workflows/curation-sign.yml"
       - ".github/workflows/curation-publish.yml"
       - "tests/test_image_release.py"
       - "config/image_signing_policy.json"
-      - ".github/workflows/curation-sign.yml"
       - ".github/workflows/image-signing-tests.yml"
 
 permissions:

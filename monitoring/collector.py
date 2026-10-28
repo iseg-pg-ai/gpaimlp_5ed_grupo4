@@ -1,3 +1,5 @@
+# Recolhe sondas e sinais locais para o painel; não substitui uma sonda independente da
+# máquina.
 """Sondas de leitura limitadas a serviços locais e metadados publicados."""
 from __future__ import annotations
 

@@ -1,3 +1,4 @@
+// Valida e recebe eventos públicos antes de os encaminhar para o processamento persistente.
 import { randomUUID } from 'node:crypto';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 

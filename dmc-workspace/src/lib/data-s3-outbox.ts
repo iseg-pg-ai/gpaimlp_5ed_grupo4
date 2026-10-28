@@ -1,3 +1,5 @@
+// Regista alterações para publicação posterior, separando a escrita local da confirmação
+// remota.
 import { existsSync, linkSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 

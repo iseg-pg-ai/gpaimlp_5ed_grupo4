@@ -1,3 +1,4 @@
+// Seleciona os campos de conversa que podem atravessar a fronteira pública do agente.
 type Turn = { sender: "user" | "assistant"; text: string };
 
 /** Remove contactos diretos antes de qualquer contexto chegar ao fornecedor. */

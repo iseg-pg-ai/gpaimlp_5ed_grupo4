@@ -1,3 +1,5 @@
+// Processo de ensaio que escreve em paralelo para verificar os contratos de concorrência
+// entre instâncias.
 import { readFileSync } from "node:fs";
 import { CatalogStore } from "../../src/lib/catalog-store.ts";
 import { VersionStore } from "../../src/lib/version-store.ts";

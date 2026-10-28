@@ -1,3 +1,5 @@
+// Endpoint: guarda e consulta versões autoritativas com validação do snapshot e da revisão
+// de base.
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { zipSync } from "fflate";
 import { TranslationError } from "@/lib/local-translation";

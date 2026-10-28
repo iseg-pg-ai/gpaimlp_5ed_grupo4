@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Orquestra arranque ou recuperação; o fluxo de recuperação exige autenticação e checkpoint
+# antes da paragem.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -79,7 +81,29 @@ fi
 CURRENT_TASK="Preparação"
 render_task() {
     local percent="$1" label="$2" width=30 label_width=38 filled empty padding
-    local full_part empty_part
+    local full_part empty_part columns available terminal_fd
+    if [ -t 1 ]; then
+        exec {terminal_fd}>&1
+        columns="$(stty size <&"$terminal_fd" 2>/dev/null || true)"
+        exec {terminal_fd}>&-
+        columns="${columns##* }"
+        columns="${columns:-80}"
+        case "$columns" in ''|*[!0-9]*) columns=80 ;; esac
+        # Reservar uma coluna para impedir a quebra automática do terminal.
+        available=$((columns - 10))
+        if [ "$available" -lt 8 ]; then
+            # Em terminais mínimos, mostrar apenas a conclusão sem animação.
+            if [ "$percent" -eq 100 ]; then printf '✓'; fi
+            return 0
+        fi
+        if [ "$available" -lt $((label_width + width)) ]; then
+            label_width=$((available / 2))
+            width=$((available - label_width))
+        fi
+        if [ "${#label}" -ge "$label_width" ]; then
+            label="${label:0:label_width-2}…"
+        fi
+    fi
     filled=$((percent * width / 100))
     empty=$((width - filled))
     printf -v full_part '%*s' "$filled" ''
@@ -114,6 +138,7 @@ fail() {
     tail -40 "$LOG" >&2 || true
     printf '\nO sistema anterior foi preservado sempre que estava válido.\n' >&2
 }
+# Conservar o diagnóstico em ficheiro e atualizar o estado da tarefa conforme o resultado.
 run_task() {
     local label="$1" pid progress=0 status
     shift
@@ -138,6 +163,7 @@ run_task() {
     fi
 }
 
+# O pedido de abertura no editor é separado da verificação HTTP dos cinco serviços.
 open_service_pages() {
     local status
     if python3 -B scripts/open_dashboards.py --quiet; then
@@ -189,6 +215,7 @@ port_is_open() {
     (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null
 }
 
+# Confirmar a libertação das portas antes de permitir uma nova instância dos serviços.
 stop_all_services() {
     local attempt port open
     stop_known_services
@@ -239,6 +266,7 @@ start_missing_service() {
     start_service "$name" "$@"
 }
 
+# No arranque diário, conservar os processos ativos e iniciar apenas os serviços em falta.
 start_missing_services() {
     start_missing_service observatory 8501 bash scripts/start_dashboard.sh
     start_missing_service presentation 3003 .venv/bin/python -B presentation/serve.py --port 3003
@@ -251,6 +279,7 @@ start_missing_services() {
         bash -c 'cd frontend/blu-cloud-site && exec npm run dev -- --host 127.0.0.1 --port 5173'
 }
 
+# Recusar runtimes incompatíveis antes de instalar dependências ou executar o protocolo.
 verify_environment() {
     command -v uv >/dev/null
     command -v node >/dev/null

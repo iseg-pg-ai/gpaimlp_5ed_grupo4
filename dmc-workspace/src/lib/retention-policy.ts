@@ -1,3 +1,5 @@
+// Carrega e valida a política que determina quando os elementos no Lixo podem ser
+// eliminados.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 

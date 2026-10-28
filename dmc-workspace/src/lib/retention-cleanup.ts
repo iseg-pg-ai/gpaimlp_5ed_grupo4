@@ -1,3 +1,5 @@
+// Executa a retenção sobre os elementos elegíveis, preservando as condições de restauro e
+// integridade.
 import { AgentAuditStore } from "./agent-audit-store.ts";
 import { AgentConversationStore } from "./agent-conversation-store.ts";
 import { DraftStore } from "./draft-store.ts";

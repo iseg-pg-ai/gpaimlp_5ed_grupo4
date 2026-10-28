@@ -1,3 +1,5 @@
+// Ensaios da integração do editor com APIs simuladas, sem abrir interfaces reais no
+// workspace.
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {readFileSync} = require('node:fs');

@@ -1,3 +1,5 @@
+# Aplica a retenção e limpeza operacional sem confundir caches regeneráveis com dados a
+# preservar.
 """Limpeza conservadora de artefactos regeneráveis e backups excedentes."""
 from __future__ import annotations
 

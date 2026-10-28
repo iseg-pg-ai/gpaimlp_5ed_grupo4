@@ -1,3 +1,5 @@
+# Transforma estado e eventos técnicos em sinais operacionais, sem disponibilizar os
+# ficheiros privados por HTTP.
 """Leitura limitada e agregada dos sinais operacionais locais."""
 from __future__ import annotations
 

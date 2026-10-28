@@ -1,150 +1,105 @@
-# Split AWS architecture
+# Arquitetura AWS de site, dados e Backoffice
 
-The cloud entry point is `npm run synth:cloud`; an explicitly approved deployment is
-`npm run deploy:cloud`. Set `TARGET_AWS_ACCOUNT_ID`, `TARGET_AWS_REGION`, and optionally
-`DEPLOY_ENVIRONMENT`, `CLOUD_VPC_CIDR`, and `BEDROCK_MODEL_ID`. The default cloud network is
-`10.10.0.0/16`, with two isolated `/24` backoffice subnets and no NAT gateways.
+Este guia descreve `infra/aws-split-app.mjs`, separado do portal DMC no Code Editor e da [alternativa ECS de curadoria](CURATION_WORKSPACE.md). Define recursos e contratos; a existência da stack não comprova deployment no ambiente atual.
 
-`BEDROCK_GUARDRAIL_PROFILE_ARN` is optional. Supplying a supported cross-Region guardrail profile
-enables the Standard content-filter tier; otherwise the stack uses the classic regional tier. The
-chat Lambda also refuses common prompt-extraction instructions before calling Bedrock. Neither
-control replaces API abuse protection: add a production origin allowlist and rate limits before a
-public launch.
+## Pontos de entrada e configuração
 
-For the default `eu-west-1` deployment, the chat uses the EU Nova Lite inference profile
-`eu.amazon.nova-lite-v1:0`. Override `BEDROCK_MODEL_ID` when deploying to another Region. To enable
-the Standard guardrail tier in Ireland, set `BEDROCK_GUARDRAIL_PROFILE_ARN` to the account-specific
-ARN ending in `guardrail-profile/eu.guardrail.v1:0`.
+A partir da raiz, com as dependências de `infra/` instaladas:
 
-## Deployment units
+```bash
+npm --prefix infra run synth:cloud
+```
 
-- `BluCostaFrontend` owns the private website bucket, CloudFront distribution, public chat API,
-  Bedrock chat Lambda and Guardrail, event-ingestion Lambda, WhatsApp webhook, and asynchronous
-  storage worker.
-- `BluCostaData` owns the inexpensive shared data plane: an on-demand DynamoDB message journal,
-  private retained S3 archive, ingestion queue with DLQ, and a separate CRM delivery queue.
-- `BluCostaBackoffice` owns analysis exports and a role that can read the journal/archive and
-  consume the CRM queue. It also owns the curator-approved WhatsApp sender Lambda and has no
-  public backoffice HTTP route.
+A síntese exige `TARGET_AWS_ACCOUNT_ID`; a região usa `TARGET_AWS_REGION`, predefinida para `eu-west-1`, e `DEPLOY_ENVIRONMENT` distingue o ambiente.
+A rede usa `CLOUD_VPC_CIDR` quando indicado, duas sub-redes isoladas e nenhum NAT Gateway. O frontend deve estar construído antes da síntese.
 
-The production build from `frontend/blu-cloud-site/dist/client` is copied to private S3 and served only
-through CloudFront. CDK generates `config.js` during deployment with the emitted `/v1/chat` and
-`/v1/conversation-events` URLs. A custom domain and certificate are intentionally not guessed;
-attach them after the target Route 53 zone and certificate are selected.
+`deploy:cloud` publica recursos e só deve ser executado com autorização própria.
+Não inferir autorização de deployment a partir de um pedido de documentação, de um build ou de uma síntese aprovada.
 
-The smaller social conversation bridge is deployed under `/connect` at the
-`SocialConversationBridgeUrl` output from `frontend/website`. Campaign links may add
-`utm_source`, `utm_medium`, `utm_campaign`, and
-`utm_content`. The browser creates a pseudonymous `BLU-` journey reference and uses it for both
-website events and the prefilled WhatsApp handoff. That reference is correlation, not
-authentication, entitlement, or proof of customer identity.
+## Unidades de deployment
 
-## Conversation and consent flow
+| Stack | Responsabilidade |
+| --- | --- |
+| `BluCostaData` | Tabelas de mensagens/inteligência, arquivo S3, filas de ingestão e CRM, DLQ e segredo de canal |
+| `BluCostaFrontend` | S3 privado/CloudFront do site, chat Bedrock, ingestão, webhook WhatsApp e processamento assíncrono |
+| `BluCostaBackoffice` | Exportações/evidências, RAG limitado, avaliador diário e envio WhatsApp sujeito a aprovação |
 
-The browser creates a random, pseudonymous `conversationId`; it is a session key, not a customer
-or email identity. Contact details remain in the visitor's message until a CRM consumer creates a
-real contact and returns its own `leadId`. Do not partition S3 by email or phone number.
+A stack serve `frontend/blu-cloud-site/dist/client` através de CloudFront. Gera `config.js` com os endpoints `/v1/chat`, `/v1/conversation-events` e o URL público WhatsApp; não guardar segredos nesse ficheiro. A ponte social de `frontend/website/` tem o output `SocialConversationBridgeUrl`.
 
-The operational event contract is:
+Os outputs `ConversationTableName` e `CustomerIntelligenceTableName` ligam o portal às tabelas existentes. O portal não cria outro catálogo ou CRM.
+A API de Leads com login próprio permanece uma [proposta](../docs/LEADS_API.md).
+
+## Conversa e consentimento
+
+A referência aleatória `BLU-…` correlaciona eventos do site e WhatsApp. Não é identidade autenticada, autorização ou prova de titularidade de um contacto.
+Os parâmetros `utm_source`, `utm_medium`, `utm_campaign` e `utm_content` são indícios de atribuição, não identidades verificadas.
+
+Contrato de ingestão:
 
 ```text
 POST /v1/conversation-events
 journeyConsent=true
 analyticsConsent=true|false
 conversationId
-leadId?                 # assigned by CRM/backoffice, never trusted as browser identity
+leadId?
 synthetic=true|false
 source
 message={actor,channel,text}
 ```
 
-`journeyConsent` allows the conversation to be retained for curator follow-up. The separate
-`analyticsConsent` flag determines whether Pedro's analytics should include that event. The
-browser can still hold an unsaved conversation when journey consent is absent. Consumers must
-exclude `analyticsConsent=false` and must normally exclude `synthetic=true` from business KPIs.
+`journeyConsent` permite retenção para seguimento. `analyticsConsent` é uma escolha separada para análise; a conversa pode permanecer apenas no navegador sem autorização de retenção. Excluir eventos `synthetic=true` dos indicadores reais e respeitar `analyticsConsent=false`.
 
-The ingestion Lambda validates the envelope and puts it on SQS. A worker then writes the same
-idempotent event key to DynamoDB and S3 under `sessions/{conversationId}/...json`, and publishes a
-normalized `conversation.message.recorded` envelope to `BackofficeCrmQueueUrl`. Delivery is
-at-least-once; Pedro's consumer must deduplicate with the event `id`. This keeps storage and CRM
-failures away from the visitor's chat request while preserving a recoverable raw record.
+A ingestão valida o envelope e envia-o a SQS. O processador grava eventos idempotentes em DynamoDB e no arquivo S3 e publica `conversation.message.recorded` na fila CRM. A entrega é pelo menos uma vez; o consumidor tem de deduplicar pelo identificador do evento. Não particionar objetos por email ou telefone.
 
-## Social and WhatsApp channel
+## Chat e controlo de abuso
 
-`GET|POST /v1/channels/whatsapp` is the Meta WhatsApp Cloud API callback. `GET` performs the
-subscription challenge. `POST` validates `X-Hub-Signature-256` against the Meta app secret before
-accepting any payload. Inbound messages become the same `conversation.message.recorded` event used
-by the website. If the customer includes the `BLU-` reference, both channels share a timeline;
-otherwise the sender identifier is HMAC-pseudonymized for the operational conversation key.
+O chat usa `BEDROCK_MODEL_ID`; em `eu-west-1`, o perfil predefinido é `eu.amazon.nova-lite-v1:0`. Este concierge público é distinto do planeador Nova Pro do portal. O prompt limita o serviço a Portugal, trata datas e orçamento como dados a confirmar e não promete preço final ou disponibilidade.
 
-WhatsApp does **not** imply analytics consent. Inbound events are retained for the customer-
-initiated service conversation with `analyticsConsent=false`. The raw channel identifier is sent
-only in the short-lived encrypted session archive and CRM envelope; it is not used as the DynamoDB
-partition key. Media is acknowledged by type but is not downloaded, indexed, or sent to Bedrock.
+A stack inclui Guardrail, recusa local de padrões de extração de instruções e limites API: 10 pedidos/s com pico de 20 por omissão, e chat 2/s com pico de 5.
+CORS público não autentica clientes nem substitui proteção contra abuso. A configuração efetiva e o comportamento AWS têm de ser validados antes de exposição.
+`BEDROCK_GUARDRAIL_PROFILE_ARN` configura o perfil Guardrail quando aplicável.
 
-The `WhatsAppOutboundFunctionArn` is directly invokable by the backoffice role. It is not exposed
-through the public API. A command requires `conversationId`, stable `requestId`, destination,
-`approvedBy`, and either text or a Meta-approved template. A successful provider message is added
-to the shared timeline. Pedro's CRM remains responsible for operator authentication, permissions,
-customer opt-out/suppression, contact resolution, and retry/idempotency policy.
+## Canal WhatsApp
 
-Channel credentials live in the secret emitted as `WhatsAppChannelSecretArn`. If
-`WHATSAPP_SECRET_ARN` is supplied at synth/deploy time, CDK uses that existing secret; otherwise it
-creates a secret with a generated `verifyToken` and placeholders. Before registering the callback,
-replace the placeholders with server-side values:
+`GET|POST /v1/channels/whatsapp` implementa o callback Meta. GET verifica o challenge; POST valida `X-Hub-Signature-256` sobre os bytes originais antes de aceitar eventos. Uma referência BLU explícita junta os canais; sem ela, o identificador de origem é pseudonimizado com HMAC.
 
-```json
-{
-  "verifyToken": "generated-or-selected-verification-token",
-  "appSecret": "meta-app-secret",
-  "accessToken": "system-user-access-token",
-  "phoneNumberId": "registered-whatsapp-phone-number-id",
-  "graphApiVersion": "currently-supported-version"
-}
-```
+WhatsApp não implica consentimento analítico: os eventos de serviço usam `analyticsConsent=false`. Conteúdo de média não é descarregado ou enviado ao modelo. Os identificadores necessários ao canal pertencem ao arquivo privado e à fronteira CRM, não à configuração pública do navegador.
 
-Never place these values in `frontend/website`, CloudFormation parameters, GitHub variables, or
-browser configuration. [Meta's official examples](https://github.com/fbsamples/whatsapp-api-examples)
-cover raw-payload signature validation, and the
-[official Postman collection](https://www.postman.com/meta/whatsapp-business-platform/folder/o48mro7/messages)
-documents the `/{phone-number-id}/messages` endpoint. AWS recommends
-[Secrets Manager-backed retrieval and caching](https://docs.aws.amazon.com/lambda/latest/dg/with-secrets-manager.html)
-for Lambda credentials.
+Credenciais ficam no segredo `WhatsAppChannelSecretArn`, importado através de `WHATSAPP_SECRET_ARN` ou criado pela stack com valores a configurar no servidor.
+Os campos são `verifyToken`, `appSecret`, `accessToken`, `phoneNumberId` e `graphApiVersion`; não os colocar no Git, browser ou variáveis públicas GitHub.
 
-## Backoffice, proposals and RAG
+`WhatsAppOutboundFunctionArn` é invocável pelo Backoffice autorizado, sem rota HTTP pública. Um pedido exige conversa, `requestId` estável, destino, `approvedBy` e texto ou template aprovado. Autenticação do operador, opt-out, contacto correto e política de repetição continuam responsabilidades do consumidor.
 
-The CRM queue is the handoff boundary, not an automatic approval. Pedro's consumer can resolve a
-contact, score or match the brief, and open a curator task. Final prices, supplier availability,
-proposal publication, and customer delivery remain behind the existing human approval gates.
-The model is instructed never to claim live availability, expose supplier costs/margins, or quote
-a final price.
+## Backoffice, propostas e RAG
 
-For Bedrock Knowledge Bases, use the archive bucket only through a separate `curated/` prefix of
-redacted, approved tour and proposal summaries. Never attach raw `sessions/` transcripts directly
-as a RAG source: they may contain names, emails, phone numbers, or prompt attacks. DynamoDB is the
-small operational journal here, not the knowledge base; it can later be replaced behind the queue
-contract without changing the browser.
+O Backoffice limita a confiança de análise aos ARNs explícitos em `BACKOFFICE_TRUSTED_PRINCIPAL_ARNS`. Raiz da conta, curingas e outras contas são recusados; sem a lista, o papel de análise não é criado.
 
-The deployed backoffice assistant uses a low-cost bounded retrieval layer rather than OpenSearch:
-it joins the selected conversation timeline and lifecycle/feedback records from the customer
-intelligence table with JSON documents found only under `curated/approved/`. The Lambda is directly
-invokable only by the backoffice IAM role, returns source IDs, and labels every recommendation as
-requiring human approval. A daily evaluator creates CRM review tasks for conversations whose
-follow-up date is due; it never contacts customers. Each run writes versioned evidence to the
-governance bucket. These artifacts support control testing and an ISO audit, but are not themselves
-an ISO certification.
+O RAG lê a conversa selecionada e documentos apenas sob `curated/approved/`.
+Transcrições brutas em `sessions/` não são uma base de conhecimento aprovada.
+Respostas incluem fontes e exigem revisão humana. O avaliador diário cria tarefas
+CRM de revisão; não contacta clientes. Evidências no bucket de governança apoiam auditoria, sem constituir certificação ISO.
 
-## Synthetic pipeline check
+Preços finais, disponibilidade, publicação e entrega ao cliente permanecem sujeitos aos controlos de aprovação existentes.
 
-After deployment, copy `ConversationEventsEndpoint` and optionally `ChatEndpoint` from CDK outputs:
+## Validação e ensaio sintético
 
-```powershell
-$env:CONVERSATION_EVENTS_ENDPOINT = 'https://.../v1/conversation-events'
-$env:BLU_CHAT_API = 'https://.../v1/chat'
-npm --prefix infra run synthetic:cloud
-```
+Construir o site e executar a bateria de infraestrutura conforme [Testes](../docs/TESTING.md#infraestrutura). A síntese testa o contrato produzido, não comprova serviços publicados.
 
-The generator writes three fictional conversations with `synthetic=true`, source
-`synthetic-pipeline-validation`, and both consent flags enabled. Verify their event IDs in S3 or
-DynamoDB and consume copies from `BackofficeCrmQueueUrl`; keep them out of revenue and conversion
-metrics.
+Depois de deployment autorizado, `npm --prefix infra run synthetic:cloud` envia conversas fictícias para os endpoints configurados em `CONVERSATION_EVENTS_ENDPOINT` e, opcionalmente, `BLU_CHAT_API`. Tem efeitos reais e pode gerar custos. Confirmar eventos S3/DynamoDB e deduplicação da fila CRM sem misturar esses registos com indicadores comerciais ou contactos reais.
+
+Referências: [guião E2E](../docs/DEMO_E2E.md) e [operações](../docs/OPERATIONS.md).
+
+## Ponte social de campanhas
+
+`frontend/website/index/index.html` é a entrada leve para campanhas sociais.
+Encaminha para concierge e WhatsApp mantendo a referência pseudónima do separador; não é outro portal DMC. Com retenção autorizada, as mensagens e o contexto de campanha usam o endpoint de eventos existente.
+
+Os valores públicos estão em `frontend/website/data/channels.json`. O deployment gera `config.js` junto das pastas `data` e `index`; tokens Meta, segredos e credenciais CRM permanecem no servidor. Etiquetas Instagram, Facebook, Pinterest, LinkedIn, WhatsApp e acesso direto são indícios de atribuição, não identidades.
+Os parâmetros UTM nunca são instruções de execução.
+
+## Proveniência do addon
+
+O addon de canais desenvolvido em `inge/addon` foi orientado e escrito por GiselaInge.
+O âmbito inclui o código específico de `frontend/website`, a ponte de eventos e WhatsApp de `infra` e os testes/notas associados; não atribui autoria do trabalho pré-existente do grupo ou de recursos de terceiros.
+
+O histórico Git é a fonte de proveniência. Esta consolidação não altera licenças ou atribuições do conteúdo.

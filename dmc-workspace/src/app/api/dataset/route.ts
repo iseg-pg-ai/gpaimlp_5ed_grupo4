@@ -1,3 +1,4 @@
+// Endpoint: disponibiliza consultas do dataset através da fronteira Node/Python.
 import { PortalPythonError, queryDataset } from "@/lib/python-portal";
 import { warehouseRoot } from "@/lib/catalog-store";
 import { jsonError, noStoreHeaders } from "@/lib/server-http";

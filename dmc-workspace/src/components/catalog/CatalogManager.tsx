@@ -1,3 +1,4 @@
+// Coordena a seleção, edição e publicação dos registos do catálogo operacional.
 "use client";
 import { formatPricing } from "@/lib/catalog-schema";
 import { T } from "@/components/LocaleProvider";

@@ -1,3 +1,5 @@
+# Completa campos com evidência verificada e conserva a distinção entre valores desconhecidos
+# e confirmados.
 """Preenchimento verificável de lacunas no catálogo existente, sem inferência."""
 from __future__ import annotations
 

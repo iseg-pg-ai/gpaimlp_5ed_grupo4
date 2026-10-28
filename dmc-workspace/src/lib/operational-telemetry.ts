@@ -1,3 +1,5 @@
+// Seleciona e reduz os eventos técnicos antes de os persistir no runtime privado do
+// Monitoring.
 import { appendFile, mkdir, rename, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 
@@ -28,6 +30,7 @@ function clean(value: string, maximum = 80) {
   return value.replace(/[^A-Za-z0-9_.:/-]/g, "_").slice(0, maximum);
 }
 
+// Reduzir os campos observáveis para evitar guardar conteúdo sensível nos eventos.
 function redact(value: string, maximum = 500) {
   return value
     .replace(/(password|token|secret|authorization|cookie)\s*[:=]\s*\S+/gi, "$1=[REDACTED]")

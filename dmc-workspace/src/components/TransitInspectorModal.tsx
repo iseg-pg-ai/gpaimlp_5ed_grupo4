@@ -1,3 +1,4 @@
+// Expõe o detalhe do trajeto para revisão sem o confundir com uma reserva de transporte.
 "use client";
 import { T, useTranslated } from "@/components/LocaleProvider";
 

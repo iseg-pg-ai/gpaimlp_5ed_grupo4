@@ -1,3 +1,4 @@
+// Liga os filtros e os dados do Observatório à apresentação analítica no portal.
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, Maximize2, RefreshCw, Compass, MapPin, Layers } from "lucide-react";

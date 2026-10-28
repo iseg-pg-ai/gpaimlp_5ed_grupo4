@@ -1,3 +1,5 @@
+// Resolve a identidade e as permissões no backend; esconder controlos na interface não
+// constitui autorização.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { AlbJwtVerifier, CognitoJwtVerifier } from "aws-jwt-verify";
@@ -106,6 +108,7 @@ export async function requestPrincipal(
   }
 }
 
+// Validar a ação autorizada antes de aceder ao recurso protegido.
 export function requirePermission(principal: AuthenticatedPrincipal, permission: string) {
   if (!principal.permissions.includes(permission))
     throw new IdentityDenied("Permissão insuficiente.");

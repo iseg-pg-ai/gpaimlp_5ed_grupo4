@@ -1,3 +1,5 @@
+# Verifica o arranque e as respostas da imagem num ambiente de ensaio e termina os processos
+# que criou.
 """Smoke interno da imagem, com dados sintéticos e processos descartáveis."""
 from __future__ import annotations
 

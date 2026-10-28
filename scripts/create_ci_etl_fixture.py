@@ -1,3 +1,4 @@
+# Cria fontes sintéticas isoladas para a CI, sem modificar os Excel e PDF operacionais.
 """Cria fontes sintéticas mínimas para validar o ETL em CI sem dados privados."""
 
 from __future__ import annotations

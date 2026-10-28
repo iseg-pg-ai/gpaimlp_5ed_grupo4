@@ -1,3 +1,4 @@
+// Resume o estado da proposta e as condições ainda pendentes de revisão.
 "use client";
 
 import { T } from "@/components/LocaleProvider";

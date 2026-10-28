@@ -1,3 +1,4 @@
+// Apresenta a atividade e os controlos de edição, mantendo visíveis condições e pendências.
 "use client";
 import { activitySource, presentationText } from "@/lib/presentation-text";
 import { T, useTranslated } from "@/components/LocaleProvider";

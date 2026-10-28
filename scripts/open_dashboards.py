@@ -1,3 +1,5 @@
+# Resolve os URLs do Space atual e pede a abertura das interfaces, sem confundir esse pedido
+# com saúde dos serviços.
 """Abre as cinco interfaces BLU na sessão de navegador do Code Editor."""
 from __future__ import annotations
 

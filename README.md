@@ -1,212 +1,161 @@
 # BLU AI System
 
-Projeto do Grupo 4 da 5.ª edição da Pós-Graduação em Artificial Intelligence &
-Machine Learning do ISEG.
-
-O sistema transforma fontes locais num warehouse auditável e usa esse catálogo
-para explorar a oferta e criar, rever, versionar e exportar propostas de
-itinerário. Neste contexto, DMC significa *Destination Management Company*.
+Projeto do Grupo 4 da 5.ª edição da Pós-Graduação em Artificial Intelligence & Machine Learning do ISEG. O sistema transforma fontes BLU num warehouse auditável e apoia a criação, revisão e exportação de propostas de itinerário. DMC significa *Destination Management Company*.
 
 ## Componentes
 
-| Componente | Responsabilidade | Porta |
+| Componente | Responsabilidade | Porta no Code Editor |
 | --- | --- | --- |
-| ETL e `warehouse/` | Ingestão, validação e publicação atómica dos dados | — |
-| DMC Workspace | Portal Next.js de curadoria e entrega | 3001 |
-| Leads / Concierge | Frontend público Vite e qualificação inicial | 5173 |
-| Apresentação | Narrativa interativa independente | 3003 |
-| BLU Operations | Monitoring privado e gestão de utilizadores | 3004 |
-| Assistente BLU | Planeador transacional integrado no Portal com Amazon Bedrock | — |
-| Observatório | Dashboard analítico Streamlit, só de leitura | 8501 |
+| ETL | Ingestão, validação e publicação do warehouse | — |
+| DMC Workspace | Briefing, catálogo, curadoria, versões e propostas | 3001 |
+| Leads / Concierge | Pré-visualização do site e qualificação inicial | 5173 |
+| Apresentação | Pitch comercial ilustrativo para viajantes e parceiros | 3003 |
+| BLU Operations | Monitoring privado, incidentes e contas locais | 3004 |
+| Assistente BLU | Planeador Python transacional integrado no portal | — |
+| Observatório | Análise Streamlit, só de leitura | 8501 |
 
-As fontes, o catálogo editável, as versões, os PDFs e o warehouse vivem em
-releases S3. O arranque materializa uma cache efémera em `/tmp`; segredos,
-runtimes e dados operacionais não são partilhados pelo Git.
+As cinco interfaces seguem `config/workspace_interfaces.json`. O agente não tem porta HTTP própria. O site público e os recursos AWS de Leads/Backoffice são uma fronteira distinta da pré-visualização local.
 
 ## Requisitos
 
-- Python 3.12 ou 3.13;
-- Node.js >=22.13 e <25, preferencialmente Node 24 LTS;
-- npm, Git e `uv` 0.12.19;
-- PowerShell apenas para os scripts destinados a Windows.
+- Python 3.12 ou 3.13.
+- Node.js >=22.13 e <25, preferindo Node 24 LTS; npm e Git.
+- `uv` 0.12.19; PowerShell apenas para os scripts Windows.
+- No SageMaker, role IAM com acesso aos recursos autorizados do ambiente.
+
+`pyproject.toml` e `uv.lock` definem Python; cada projeto Node tem `package.json` e `package-lock.json`. Requirements são exports gerados, não fontes de edição.
+Ver [dependências Python](docs/DEPENDABOT_PYTHON.md).
 
 ## Preparar um ambiente
 
-Na raiz do repositório:
+No SageMaker Code Editor, seguir o [guia único de inicialização](docs/ONBOARDING.md): cobre uma instalação nova ou um segundo Space, desde o clone até à abertura dos cinco dashboards no navegador.
+
+O ambiente AWS é um **SageMaker Studio Code Editor (Space)**. Os comandos podem ser executados pelo **VS Code remoto** ligado a esse ambiente; para abrir os dashboards pelo proxy AWS, usar o **Code Editor web no navegador**. São dois acessos ao mesmo ambiente, com encaminhamentos de portas distintos.
+O guia cobre clone, Node, Python, IAM, configuração e recuperação S3.
+
+A instalação Python base contém apenas o ETL. Para o ambiente completo, na raiz:
 
 ```bash
-python -m pip install uv==0.12.19
-python -m uv sync --locked
-```
-
-A instalação base contém o ETL. Preparar todos os componentes Python para
-desenvolvimento ou recuperação integral com:
-
-```bash
+python3 -m pip install --user uv==0.12.19
+export PATH="$HOME/.local/bin:$PATH"
 uv sync --locked --all-groups
 ```
 
-Os grupos `dashboard`, `agent` e `translation` também podem ser instalados
-individualmente com `uv sync --locked --inexact --group NOME`. Depois de instalar
-`translation`, executar `python translations/setup_models.py`. O portal e o
-frontend de leads têm dependências próprias, instaladas com `npm ci` em
-`dmc-workspace/` e `frontend/blu-cloud-site/`.
-
-O `pyproject.toml`, `uv.lock`, `package.json` e `package-lock.json` são as
-fontes das dependências. Os ficheiros `requirements.txt` são exports; consultar a
-[nota de dependências Python](docs/DEPENDABOT_PYTHON.md) antes de os usar ou
-regenerar.
-
-Num SageMaker Code Editor novo, seguir o
-[guia de onboarding](docs/ONBOARDING.md) ou executar:
-
-```bash
-python3 scripts/setup_workspace.py
-```
-
-Num clone sem dados locais, o [guia de onboarding](docs/ONBOARDING.md) prepara o
-ambiente e o `just blu it` materializa as releases S3 autorizadas. A configuração
-partilhável do agente está em `.env.example`. Também é possível usar
-`./bin/just blu it` sem instalar o launcher no `PATH`.
-
-No SageMaker, o URL é descoberto pelos metadados do Space atual e por
-`sagemaker:DescribeSpace`. Fora desse ambiente, `--studio-url` permite configurar
-uma base local. O assistente instala a integração **BLU Workspace Links** no
-Code Editor, o launcher local e cria o administrador inicial do Monitoring quando
-ainda não existem contas. A palavra-passe inicial fica apenas em
-`monitoring/runtime/initial-password.txt` e deve ser substituída após o primeiro
-login. A gestão de contas está documentada no
-[guia de Monitoring](monitoring/README.md#gerir-utilizadores-na-página).
+Os grupos opcionais são `dashboard`, `agent` e `translation`. Modelos de tradução e fontes CJK são recursos locais separados; `npm ci` não os instala.
 
 ## Arrancar o sistema
 
-Para o uso diário num ambiente já preparado:
+Num ambiente preparado e com cache válida:
 
 ```bash
-just blu up
+./bin/just blu up
 ```
 
-O comando mantém serviços ativos, inicia os que estejam parados, confirma os
-cinco endpoints e abre as cinco interfaces.
-
-Na barra inferior do **Code Editor web aberto no navegador AWS**, **BLU · Interfaces** abre a interface escolhida
-através do encaminhamento nativo da sessão atual. O comando **BLU: Abrir interfaces
-deste workspace** também está disponível na paleta; `just blu up` pede à mesma
-integração para abrir as cinco interfaces. As portas são registadas pelo editor e
-os URLs são resolvidos em cada abertura, sem copiar um domínio de outro workspace.
-O instalador abrange o editor web e o VS Code por SSH, que têm diretórios de
-extensões diferentes. O painel **Ports** da sessão SSH continua a mostrar os
-extremos locais (`localhost`); isso não comprova registo no proxy HTTPS do Studio.
-Após instalar ou atualizar a extensão no editor web, pode ser necessário executar **Developer:
-Reload Window** uma vez. Se a extensão não confirmar o pedido, o launcher avisa;
-não anuncia uma abertura que não foi confirmada. A ausência de sessão web produz
-um aviso de abertura pendente, sem marcar como falha os serviços já validados.
-Falhas reais de testes interrompem o protocolo na etapa correspondente.
-
-Este arranque rápido não cria checkpoints, não recupera backups e não para
-processos ativos. Essas ações pertencem exclusivamente ao `just blu it`.
-
-Os launchers carregam estas chaves reconhecidas a partir do `.env` local, sem
-executar o ficheiro como código. Valores já exportados no terminal prevalecem.
-
-O bucket de dados é separado dos checkpoints. Releases validadas podem ser
-publicadas e recuperadas com `python3 -B -m etl.s3_transport`; os contratos e
-comandos estão em [Dados e operações](docs/DATA_PIPELINE.md#origem-etl-em-s3).
-O mesmo bucket guarda releases operacionais versionadas do catálogo, itinerários
-e propostas. O SQLite é materializado como cache porque o S3 não executa uma base
-SQL diretamente. Os launchers apontam todos os consumidores para essa cache.
-O percurso de criação, alteração e publicação está em
-[Dados e ETL](docs/DATA_PIPELINE.md); checkpoints, recuperação e limites estão em
-[Operações](docs/OPERATIONS.md).
-
-O S3 guarda objetos imutáveis por ambiente e data. Sem cópia local válida, o
-arranque tenta automaticamente a cópia remota mais recente. Configuração KMS,
-permissões mínimas e recuperação manual estão no
-[guia de operações](docs/OPERATIONS.md#recuperação-local).
-
-Para uma recuperação integral autenticada:
+Para recuperação integral, com autenticação interativa de administrador do Monitoring e autorização para os efeitos S3:
 
 ```bash
-just blu it
+./bin/just blu it
 ```
 
-Depois de validar uma conta `admin` do Monitoring, o comando para os serviços,
-prepara dependências, inicializa um clone novo ou recupera dados existentes,
-executa testes, constrói o portal, reinicia o sistema e abre as interfaces. Os
-detalhes e limites estão no
-[guia de operações](docs/OPERATIONS.md#recuperação-local).
+| Comando | Comportamento |
+| --- | --- |
+| `blu up` | Mantém serviços ativos, inicia os parados, verifica cinco endpoints e pede abertura das cinco interfaces |
+| `blu it` | Protege o estado com checkpoint, para serviços, recupera/materializa dados, testa, constrói e reinicia |
 
-O `just blu it` cria um identificador único, guarda e confirma no bucket de
-backups o checkpoint dessa execução e só depois para os serviços. Recupera essa
-cópia específica; se ela não estiver disponível, recupera os ficheiros ausentes
-das releases de fontes e warehouse do bucket de dados. Depois prepara e testa o
-sistema, sincroniza as operações pendentes, inicia os serviços e abre os
-dashboards. Uma falha no backup obrigatório impede a paragem.
+`just blu up` e `just blu it` são equivalentes quando o launcher está no `PATH`.
+Os detalhes, efeitos, falhas e recuperação estão em [Operações](docs/OPERATIONS.md#recuperação-local).
 
-A autenticação administrativa é sempre interativa; não colocar a palavra-passe
-em variáveis, scripts ou logs. A role da aplicação também não administra
-Versioning, encriptação por defeito, Block Public Access ou lifecycle dos buckets.
-As exceções e confirmações manuais estão documentadas em
-[Retenção dos buckets S3](docs/S3_RETENTION.md#exceções-e-validações-manuais).
+No Code Editor, **BLU · Interfaces** usa o encaminhamento da sessão web atual.
+O domínio é descoberto por metadados e `sagemaker:DescribeSpace`; não copiar um `studio-id` entre workspaces. A ausência de sessão web pode deixar a abertura pendente mesmo com os serviços saudáveis. Fora do SageMaker, `config/studio.local.json` é a alternativa local de configuração.
 
-O `just blu up` não executa recuperação nem para processos ativos. Inicia apenas
-os serviços parados, confirma os quatro endpoints e abre os quatro dashboards.
+## Dados e persistência
 
-Cada alteração confirmada do catálogo ou das versões gera também um evento numa
-outbox persistente. O Monitoring envia estes eventos de forma idempotente para
-`operational-changes/` no bucket de dados e só remove o JSON local depois da
-confirmação remota. Falhas de rede mantêm a operação pendente.
+As fontes, warehouse, catálogo, histórico e PDFs autoritativos pertencem às releases S3. A execução materializa uma cache em `/tmp`; o Git não é backup.
+`BLU_DATA_DIR`, `BLU_WAREHOUSE_DIR`, `BLU_EXPORT_DIR` e `BLU_OPERATIONAL_DIR` selecionam essa cache. O portal escreve no catálogo operacional; o ETL publica o warehouse sem modificar fontes ou versões guardadas.
 
-O SageMaker pode exigir a renovação da sessão pela consola AWS; os comandos não
-conseguem renovar tokens externos expirados.
-
-## Operações individuais
-
-- ETL e warehouse: [dados e operações](docs/DATA_PIPELINE.md).
-- Portal: [guia do DMC Workspace](docs/PORTAL.md).
-- Observatório: [contratos analíticos](docs/OBSERVATORY.md).
-- Monitoring e recuperação: [BLU Operations](monitoring/README.md).
-- Apresentação: [execução e controlos](presentation/README.md).
-
-O Observatório permite explorar a oferta, destinos, preços, histórico e qualidade
-da entrega publicada. É uma ferramenta de consulta para a curadoria; não edita o
-warehouse nem confirma disponibilidade, reservas ou preços.
+Os rascunhos e preferências do navegador não são versões autoritativas.
+Segredos, modelos, fontes CJK, runtimes e dados operacionais ficam fora do Git.
+Ver [Dados e ETL](docs/DATA_PIPELINE.md) e [retenção S3](docs/S3_RETENTION.md).
 
 ## Verificação
 
-Verificar estrutura e ligações locais sem instalar dependências:
-
 ```bash
-python scripts/check_project.py
+python3 scripts/check_project.py
 ```
 
-As baterias dependem da área alterada. Os comandos atuais e os requisitos dos
-testes de navegador estão em [docs/TESTING.md](docs/TESTING.md).
+As baterias Python, Node, navegador e PDF e a preparação de dados sintéticos estão em [Testes](docs/TESTING.md). Um build aprovado ou HTTP 200 não comprova o fluxo completo, disponibilidade de fornecedores ou operação entre máquinas.
 
 ## Documentação
 
-- [Arquitetura e âmbito](docs/ARCHITECTURE.md)
-- [Preparar um novo ambiente](docs/ONBOARDING.md)
-- [Dados e ETL](docs/DATA_PIPELINE.md)
-- [Portal](docs/PORTAL.md)
-- [Âmbito funcional do BLU Agent](docs/AGENT_SCOPE.md)
-- [Implementação do assistente Nova Pro](docs/ASSISTANT.md)
-- [Monitoring e deployment](docs/OPERATIONS.md)
-- [Testes](docs/TESTING.md)
-- [Plano ativo](PLAN.md)
-- [Decisões técnicas vigentes](docs/DECISIONS.md)
+A documentação descreve o comportamento existente e os seus limites. Código, testes e manifests prevalecem sobre exemplos e resultados históricos. O destino atual é operação individual no SageMaker Code Editor em `eu-west-1`.
+
+### Como escolher o documento
+
+| Necessidade | Documento responsável |
+| --- | --- |
+| Inicializar o projeto e abrir os cinco dashboards | [Guia de inicialização](docs/ONBOARDING.md) |
+| Entender fronteiras e contratos | [Arquitetura](docs/ARCHITECTURE.md) |
+| Arrancar, recuperar e operar | [Operações](docs/OPERATIONS.md) |
+| Executar verificações com dados isolados | [Testes](docs/TESTING.md) |
+| Compreender a fundamentação das decisões | [Decisões](docs/DECISIONS.md) |
+| Identificar pendências de entrega | [Operações](docs/OPERATIONS.md#pendências-para-produção) |
+
+### Dados e análise
+
+| Documento | Âmbito |
+| --- | --- |
+| [Dados e ETL](docs/DATA_PIPELINE.md) | Fontes, publicação, cache, S3 e estado operacional |
+| [Modelo de dados](reports/data_model_report.md) | Entidades, grão, chaves e modelos analíticos |
+| [Dataset complementar](docs/DATA_PIPELINE.md#dataset-estruturado-complementar) | Integração exata do suplemento e tratamento de conflitos |
+| [Catálogo operacional](docs/DATA_PIPELINE.md#catálogo-editável) | Base editável e relação com o warehouse |
+| [Observatório](docs/OBSERVATORY.md) | Normalização, evidência, validade e fotografias |
+| [Dashboard Streamlit](dashboard/README.md) | Execução e interação da aplicação analítica original |
+| [Critérios de enriquecimento](docs/DECISIONS.md#fontes-qualidade-e-publicação-do-warehouse) | Razões para exigir chaves exatas, evidência e validade por campo |
+| [Retenção S3](docs/S3_RETENTION.md) | Política proposta, fronteira administrativa e validação manual |
+
+### Portal, agente e dependências
+
+| Documento | Âmbito |
+| --- | --- |
+| [Portal](docs/PORTAL.md) | Utilização, catálogo, propostas, versões, TXT/PDF e resolução de problemas |
+| [Entrada do DMC Workspace](dmc-workspace/README.md) | Comandos locais e ligações para os contratos do portal |
+| [Assistente transacional](docs/ASSISTANT.md) | Âmbito funcional, contrato, ferramentas, autoridade e configuração |
+| [Dependências Python](docs/DEPENDABOT_PYTHON.md) | Grupos, CPU, override Argos/Stanza e manutenção dos exports |
+
+### Monitoring e infraestrutura
+
+| Documento | Âmbito |
+| --- | --- |
+| [BLU Operations](monitoring/README.md) | Contas, painel, sinais, backups e transporte de alertas |
+| [Runbook](docs/MONITORING_RUNBOOK.md) | Resposta a incidentes e limites da deteção local |
+| [Arquitetura AWS separada](infra/SPLIT_ARCHITECTURE.md) | Data, site público, eventos, WhatsApp e Backoffice |
+| [Alternativa ECS](infra/CURATION_WORKSPACE.md) | Parâmetros e contrato do hosting cloud de curadoria |
+| [Entrega de imagem](infra/IMAGE_DELIVERY.md) | OCI, SBOM, assinatura, publicação ECR e referência de rollback |
+
+Uma síntese ou build não comprova deployment. O hosting ECS e a imagem ECR não são requisitos de arranque do destino Code Editor escolhido.
+
+### Apresentação, demonstrações e canais
+
+| Documento | Âmbito |
+| --- | --- |
+| [Apresentação](presentation/README.md) | Execução, controlos, isolamento e testes da narrativa |
+| [Guião editorial](docs/APRESENTACAO.md) | Pitch de seis momentos e encerramentos para viajantes e parceiros |
+| [Demo do assistente](docs/DEMO_CHATBOT_SCRIPT.md) | Percurso ilustrativo de curadoria com confirmação humana |
+| [Demo E2E](docs/DEMO_E2E.md) | Concierge, consentimento, eventos e seguimento no portal |
+| [Site BLU](frontend/blu-cloud-site/README.md) | Pré-visualização, configuração pública, build e testes |
+| [QA visual](frontend/blu-cloud-site/README.md#verificação-visual-e-funcional) | Critérios de comparação e evidência reproduzível |
+| [Ponte social](infra/SPLIT_ARCHITECTURE.md#ponte-social-de-campanhas) | Campanhas, referência BLU e passagem para WhatsApp |
+| [Proveniência](infra/SPLIT_ARCHITECTURE.md#proveniência-do-addon) | Autoria e proveniência do addon de canais |
+
+### Propostas e instruções de desenvolvimento
+
+[API de Leads](docs/LEADS_API.md) e [Intranet](docs/INTRANET.md) são propostas de novas fronteiras autenticadas. Não são manuais de stacks já implementadas. As páginas Leads existentes não equivalem à API ou SPA propostas.
+
+[AGENTS.md](AGENTS.md) e os ficheiros homónimos de cada área são instruções de desenvolvimento, não guias de produto. `dmc-workspace/CLAUDE.md` delega nessas instruções. Instalação e operação mantêm uma entrada de referência por fluxo.
 
 ## Limites atuais
 
-O portal produz propostas e documentos; não efetua reservas nem confirma
-automaticamente preços, disponibilidade, acessibilidade ou condições alimentares.
-O portal não tem autenticação própria nem sincronização multiutilizador. O login
-do Monitoring protege apenas o painel operacional. A publicação em produção,
-identidade central, retenção administrada e alertas externos continuam por definir.
+O sistema produz propostas e documentos, sem efetuar reservas ou confirmar preços, disponibilidade ou compatibilidade automaticamente. O curador revê e aceita as alterações do [assistente transacional](docs/ASSISTANT.md).
 
-## Assistente transacional
-
-O fluxo proposta → pré-visualização → aceitação explícita usa os contratos
-atuais de [docs/ASSISTANT.md](docs/ASSISTANT.md). A rota anterior de assistência
-permanece como entrada de compatibilidade para este mesmo fluxo. O monitoring
-não autoriza execução implícita nem chamadas reais a fornecedores.
+O destino escolhido é operação individual no Code Editor em `eu-west-1`.
+O portal depende do acesso privado do Studio; o login do Monitoring protege apenas esse painel. A implementação ALB/Cognito é uma alternativa cloud, sem ativação implícita neste destino. Monitoring externo e aceitação operacional mantêm as pendências indicadas no plano e no runbook.

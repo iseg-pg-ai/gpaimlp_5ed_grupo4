@@ -1,3 +1,5 @@
+# Prepara a reversão para uma imagem identificada sem assumir compatibilidade automática dos
+# dados.
 """Prepara uma referência anterior assinada, sem atualizar serviços ou dados."""
 import argparse
 import json

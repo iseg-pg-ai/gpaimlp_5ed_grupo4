@@ -1,3 +1,4 @@
+// Valida e normaliza os detalhes editáveis de cada registo do catálogo.
 import {
   formatPricing,
   validatePricing,
