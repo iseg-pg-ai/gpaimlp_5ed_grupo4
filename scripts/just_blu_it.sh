@@ -79,7 +79,29 @@ fi
 CURRENT_TASK="Preparação"
 render_task() {
     local percent="$1" label="$2" width=30 label_width=38 filled empty padding
-    local full_part empty_part
+    local full_part empty_part columns available terminal_fd
+    if [ -t 1 ]; then
+        exec {terminal_fd}>&1
+        columns="$(stty size <&"$terminal_fd" 2>/dev/null || true)"
+        exec {terminal_fd}>&-
+        columns="${columns##* }"
+        columns="${columns:-80}"
+        case "$columns" in ''|*[!0-9]*) columns=80 ;; esac
+        # Reservar uma coluna para impedir a quebra automática do terminal.
+        available=$((columns - 10))
+        if [ "$available" -lt 8 ]; then
+            # Em terminais mínimos, mostrar apenas a conclusão sem animação.
+            if [ "$percent" -eq 100 ]; then printf '✓'; fi
+            return 0
+        fi
+        if [ "$available" -lt $((label_width + width)) ]; then
+            label_width=$((available / 2))
+            width=$((available - label_width))
+        fi
+        if [ "${#label}" -ge "$label_width" ]; then
+            label="${label:0:label_width-2}…"
+        fi
+    fi
     filled=$((percent * width / 100))
     empty=$((width - filled))
     printf -v full_part '%*s' "$filled" ''

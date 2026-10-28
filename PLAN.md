@@ -28,6 +28,13 @@ foi retirada da navegação e os links antigos seguem para o Catálogo. Novos PD
 omitem hashes e IDs, preservando os PDFs guardados. Validação em
 [Decisões](docs/DECISIONS.md).
 
+## Segundo workspace — confirmação da apresentação pendente
+
+- [ ] Confirmar no terminal do novo workspace a barra adaptativa de
+  `scripts/just_blu_it.sh`, após disponibilizar a alteração. A largura fixa
+  provocava quebras e linhas repetidas em terminais estreitos; verificar também
+  a conclusão da recuperação iniciada em 27 de outubro de 2026.
+
 ## Publicação ETL no CI Windows — confirmação pendente
 
 - [ ] Após integração, confirmar no runner Windows a correção da fixture de backup

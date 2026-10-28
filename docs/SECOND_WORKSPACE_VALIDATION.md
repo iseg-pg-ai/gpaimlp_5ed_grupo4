@@ -10,20 +10,40 @@ marcado como concluído depois de existirem evidências de todas as etapas.
 - Região: `eu-west-1`
 - URL base do segundo Code Editor: guardada apenas em
   `config/studio.local.json`, fora do Git.
-- Estado: concluído em 24 de outubro de 2026
+- Estado do ensaio anterior: concluído em 24 de outubro de 2026.
+- Novo ensaio iniciado em 27 de outubro de 2026: preparação das ferramentas em
+  curso; os resultados históricos abaixo não comprovam esta nova execução.
+
+### Acompanhamento do novo ensaio — 27 de outubro de 2026
+
+- Raiz do clone confirmada: `/home/sagemaker-user/gpaimlp_5ed_grupo4`,
+  onde foi encontrado `pyproject.toml`.
+
+- Confirmados pelo output do novo workspace: Python 3.12.15, Node 20.19.6,
+  npm 11.21.0 e Git 2.43.0.
+- A chamada `aws sts get-caller-identity` confirmou a identidade efetiva através
+  da role `SageMakerTeachingExecutionRole`. As permissões para os recursos serão
+  verificadas nas etapas próprias; STS não as comprova.
+- A primeira tentativa de usar `nvm` devolveu `nvm: command not found`.
+  Posteriormente, o diagnóstico da falha na etapa 11 identificou
+  `Node.js v24.22.1`, comprovando uma versão suportada nessa execução.
+- Em cada novo terminal, carregar o nvm e selecionar Node 24 conforme as etapas
+  2 e 8. A versão ativa no terminal pode diferir da selecionada internamente
+  pelo assistente de configuração.
 
 Não copiar `.aws/`, `.env`, caches, contas do Monitoring, catálogo ou exports do
 primeiro workspace.
 
 ## Etapa 1 — Clone, ferramentas e identidade AWS
 
-No terminal do segundo Code Editor:
+No terminal do segundo Code Editor, clonar apenas se o repositório ainda não
+existir. Se já existir, executar apenas o `cd` para a pasta do clone:
 
 ```bash
 git clone --branch feat/last-verification \
-  https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4.git blu-validation
+  https://github.com/iseg-pg-ai/gpaimlp_5ed_grupo4.git
 
-cd blu-validation
+cd "$HOME/gpaimlp_5ed_grupo4"
 
 python3 --version
 node --version
@@ -56,7 +76,19 @@ de validar a saída desta etapa.
 
 ## Etapa 2 — Selecionar Node 24 LTS
 
-O workspace não incluía `nvm`. Descarregar primeiro o instalador oficial numa
+Se `nvm` devolver `command not found`, verificar primeiro se está instalado mas
+não foi carregado nesta sessão:
+
+```bash
+export NVM_DIR="$HOME/.nvm"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh"
+fi
+command -v nvm
+```
+
+Se o último comando não mostrar `nvm`, instalar com os comandos seguintes.
+Descarregar primeiro o instalador oficial numa
 versão fixa, executá-lo separadamente e instalar/selecionar Node 24:
 
 ```bash
@@ -77,9 +109,14 @@ npm --version
 ```
 
 O resultado esperado é Node 24.x. A instalação é local ao utilizador deste
-workspace e não altera o repositório.
+workspace e não altera o repositório. O npm incluído nesta instalação é
+suficiente; não é necessário atualizá-lo separadamente. Se a instalação falhar,
+parar nesta etapa e guardar o erro antes de continuar.
 
-### Resultado da etapa 2
+Em novos terminais, se `nvm` não estiver disponível, voltar a carregar
+`$HOME/.nvm/nvm.sh` e executar `nvm use 24`.
+
+### Resultado da etapa 2 (ensaio anterior)
 
 - NVM 0.40.8 instalado na pasta pessoal.
 - Node 24.22.1 e npm 11.19.1 selecionados a partir da mesma instalação.
@@ -87,8 +124,21 @@ workspace e não altera o repositório.
 
 ## Etapa 3 — Preparar as dependências Python
 
+Executar esta etapa na raiz do clone criado na etapa 1. Se tiver sido aberto um
+novo terminal, voltar a entrar nessa pasta e confirmar os manifests antes de
+instalar dependências:
+
+```bash
+cd "$HOME/gpaimlp_5ed_grupo4"
+pwd
+ls pyproject.toml uv.lock
+```
+
+Se o clone tiver outro nome ou localização, ajustar o caminho do `cd`. Só avançar
+quando ambos os ficheiros existirem nessa pasta.
+
 Instalar a versão de `uv` fixada pelo projeto e sincronizar todos os grupos do
-lockfile:
+lockfile, mantendo o terminal na raiz do clone:
 
 ```bash
 python3 -m pip install --user uv==0.12.19
@@ -100,7 +150,19 @@ uv sync --locked --all-groups
 Não usar `requirements.txt` nem instalar pacotes Python individualmente. O comando
 de sincronização deve terminar sem alterar `uv.lock`.
 
-### Resultado da etapa 3
+Se `uv sync` devolver `No pyproject.toml found in current directory or any
+parent directory`, o comando foi executado fora da raiz do projeto. Repetir o
+`cd` e a confirmação dos manifests acima, depois executar novamente
+`uv sync --locked --all-groups`. Não criar outro `pyproject.toml` nem executar
+`uv init` para resolver este erro. Manter esta pasta como diretório atual nas
+etapas seguintes.
+
+### Resultado da etapa 3 (novo ensaio — 27 de outubro de 2026)
+
+- Foi reportado o erro de ausência de `pyproject.toml`; a sincronização ainda
+  não está confirmada neste ensaio.
+
+### Resultado da etapa 3 (ensaio anterior)
 
 - `uv 0.12.19` já estava disponível na pasta pessoal.
 - O lock resolveu 149 pacotes e verificou 147 pacotes sem erros.
@@ -108,14 +170,14 @@ de sincronização deve terminar sem alterar `uv.lock`.
 ## Etapa 4 — Configurar o workspace sem materializar dados
 
 Confirmar primeiro que o clone continua limpo e executar o assistente com a URL
-própria deste Code Editor:
+própria deste Code Editor. Copiar a URL real da barra de endereços do navegador,
+até `/codeeditor/default`, sem `/ports/...`. Não introduzir `<studio-id>`:
 
 ```bash
 git status --short
 
-.venv/bin/python scripts/setup_workspace.py \
-  --studio-url \
-  "https://<studio-id>.studio.eu-west-1.sagemaker.aws/codeeditor/default"
+read -r -p "URL real deste Code Editor (até /codeeditor/default): " BLU_STUDIO_URL
+.venv/bin/python scripts/setup_workspace.py --studio-url "$BLU_STUDIO_URL"
 
 .venv/bin/python scripts/setup_workspace.py --check-only
 ```
@@ -136,14 +198,18 @@ ser copiada para documentação, Git ou mensagens. Nesta etapa não se usa
 
 ## Etapa 5 — Validar o acesso IAM aos buckets
 
-Antes de executar a recuperação, confirmar os nomes efetivos dos buckets de dados
-e backups. Estes identificadores não são segredos, mas não devem ser inferidos nem
-substituídos por nomes de exemplo. Os comandos de leitura e a configuração local
-usam variáveis temporárias para evitar guardar identificadores do ambiente no Git:
+Usar os mesmos buckets do projeto, confirmados no `.env` do workspace original.
+Os nomes abaixo foram incluídos neste guia por indicação do utilizador em
+27 de outubro de 2026. São identificadores de recursos, não credenciais.
+Não é necessário executar `list-buckets`: a role de ensino não permite
+`s3:ListAllMyBuckets`, mas o acesso aos prefixos é testado diretamente abaixo.
+As variáveis serão reutilizadas na etapa 6.
+
+No terminal do novo workspace:
 
 ```bash
-export DATA_BUCKET="<bucket-de-dados>"
-export BACKUP_BUCKET="<bucket-de-backups>"
+export DATA_BUCKET="blu-dmc-data-650557269385-eu-west-1"
+export BACKUP_BUCKET="blu-dmc-backups-650557269385-eu-west-1"
 
 for prefix in \
   development/sources/ \
@@ -167,7 +233,19 @@ aws s3api list-objects-v2 \
 Uma resposta com `count` igual a zero continua a provar autorização de listagem;
 `AccessDenied` indica que a política IAM ou o prefixo ainda não está correto.
 
-### Resultado da etapa 5
+### Resultado da etapa 5 (novo ensaio — 27 de outubro de 2026)
+
+- A primeira tentativa usou literalmente `<bucket-de-dados>` e
+  `<bucket-de-backups>` e foi recusada pela validação dos parâmetros do AWS CLI.
+  Este erro não comprova nem recusa permissões IAM. Os comandos acima passaram
+  a incluir os nomes reais; falta repetir as listagens.
+- A tentativa de descoberta por `list-buckets` devolveu `AccessDenied` para
+  `s3:ListAllMyBuckets`. A role de ensino não permite enumerar todos os buckets
+  da conta. Os dois nomes foram obtidos na configuração local do workspace
+  original, sem alterar IAM. O acesso aos prefixos continua por confirmar
+  neste novo ensaio.
+
+### Resultado da etapa 5 (ensaio anterior)
 
 A mesma role do primeiro workspace conseguiu listar, no segundo workspace, pelo
 menos um objeto em cada prefixo esperado:
@@ -177,9 +255,9 @@ menos um objeto em cada prefixo esperado:
 - estado operacional;
 - checkpoints de backup.
 
-Os nomes dos buckets e objetos não ficam registados neste documento. A listagem
-prova leitura autorizada, mas ainda não comprova escrita, integridade do conteúdo
-ou recuperação.
+Os nomes dos objetos não ficam registados neste documento. A listagem prova
+autorização para listar os prefixos, mas ainda não comprova leitura dos objetos,
+escrita, integridade do conteúdo ou recuperação.
 
 ## Etapa 6 — Guardar configuração local e inventariar releases
 
@@ -300,6 +378,34 @@ Confirmar no final:
 - cinco endpoints online;
 - quatro interfaces abertas através da URL deste workspace;
 - nenhum dado persistente criado dentro do repositório.
+
+### Apresentação do progresso em terminais estreitos
+
+No ensaio de 27 de outubro, as atualizações da barra apareceram em linhas
+repetidas. O renderer tinha largura fixa e redesenhava a linha a cada 0,25 s;
+quando a linha ultrapassa a largura do terminal, a limpeza só apaga a linha atual.
+A barra passou a adaptar a largura e a abreviar o título quando necessário.
+Esta alteração precisa de chegar ao clone do novo workspace para ser utilizada;
+não altera uma execução já em curso. A repetição visual, por si só, não comprova
+duplicação de dados ou de tarefas. O excerto recebido terminou aos 90% da
+recuperação e ainda não confirma a conclusão dessa execução.
+
+### Falha de URL no novo ensaio — 27 de outubro de 2026
+
+A etapa 11 passou os cenários do Monitoring nas quatro larguras, mas o teste da
+apresentação falhou: o link real apontava para o workspace atual, enquanto o
+valor esperado, lido de `config/studio.local.json`, ainda continha `<studio-id>`.
+Corrigir a configuração repetindo a etapa 4 com a URL real. Não alterar o teste
+para aceitar o marcador nem repetir a recuperação S3 para diagnosticar esta falha.
+Com os serviços ativos, verificar isoladamente:
+
+```bash
+node presentation/test-browser.mjs
+```
+
+Se o Playwright indicar dependências de sistema em falta, usar o ambiente de
+navegador preparado pelo protocolo, conforme a configuração local. O excerto
+recebido não confirma ainda a passagem deste teste após a correção.
 
 ### Primeiro resultado
 
