@@ -153,7 +153,7 @@ Referências: [Operações](OPERATIONS.md), [runbook](MONITORING_RUNBOOK.md) e [
 
 ## Manutenção do conhecimento e autoria
 
-Documentação organizada por assunto permite encontrar um contrato sem percorrer o relato de uma execução. Cada tema tem um guia responsável; este documento explica a fundamentação, sem duplicar comandos, catálogos de fornecedores ou contagens transitórias. A inicialização de qualquer Space segue o mesmo [guia](ONBOARDING.md), desde o clone até à abertura visual dos dashboards; um guia de segundo workspace separado duplicaria esse fluxo. O Git conserva a evolução; o plano contém trabalho aberto.
+Documentação organizada por assunto permite encontrar um contrato sem percorrer o relato de uma execução. Cada tema tem um guia responsável; este documento explica a fundamentação, sem duplicar comandos, catálogos de fornecedores ou contagens transitórias. A inicialização de qualquer Space segue o mesmo [guia](ONBOARDING.md), desde o clone até à abertura visual dos dashboards; um guia de segundo workspace separado duplicaria esse fluxo. O Git conserva a evolução; as pendências operacionais estão em [Operações](OPERATIONS.md).
 
 CODEOWNERS identifica a revisão segundo a autoria apurada no histórico de criação, sem atribuir o projeto inteiro por uma regra global. Diretórios de autoria mista mantêm regras específicas; mover documentação exige preservar a atribuição e atualizar referências. Proveniência de terceiros e atribuições de autoria não são eliminadas pela consolidação.
 

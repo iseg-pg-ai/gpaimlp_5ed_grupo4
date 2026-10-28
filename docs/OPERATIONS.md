@@ -138,6 +138,11 @@ A role precisa de Query nas duas tabelas e no `FollowUpIndex`, e UpdateItem na t
 
 Na alternativa ECS, a stack de curadoria aceita os mesmos nomes, injeta-os apenas no portal e concede essas ações à role partilhada da task. Não há isolamento IAM por container. Configuração parcial ou nomes inválidos são recusados; sem ambos, Leads fica indisponível. Não são criadas tabelas paralelas.
 
+A assinatura e a publicação de imagens são alternativas cloud conservadas como
+[modelos inativos](../infra/IMAGE_DELIVERY.md#reativação-dos-modelos-para-uma-entrega-cloud).
+A CI mantém a validação local da imagem sem exigir um ambiente de release
+ou variáveis de publicação para a operação no Code Editor.
+
 ## Fluxo de entrega pretendido
 
 1. Rever o código e identificar um candidato com lockfiles reproduzíveis.

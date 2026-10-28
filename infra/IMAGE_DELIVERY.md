@@ -43,7 +43,7 @@ O ensaio não valida TLS/ALB, identidade Cognito, EFS, fornecedores, notificaç�
 
 ## Política antes de promover uma release
 
-Os scripts e workflows implementam a preparação de promoção. A execução real
+Os scripts e os modelos inativos de workflows implementam a preparação de promoção. A execução real
 exige revisão e evidência do candidato. A política exige:
 
 1. Commit revisto e integrado em `dev`, com os checks obrigatórios aprovados.
@@ -53,7 +53,7 @@ exige revisão e evidência do candidato. A política exige:
 5. Publicação apenas no ECR da conta e região aprovadas, com permissões mínimas, seguida de confirmação do digest publicado e aprovação do ambiente-alvo.
 6. Conservação da referência anterior para rollback, com a mesma verificação.
 
-A assinatura preparada usa Cosign 3.1.4 keyless, com identidade e emissor exatos em `config/image_signing_policy.json`. O workflow manual `curation-sign.yml` só aceita execuções em `dev`, com `BLU_RELEASE_SIGNING_ENABLED=true`. Exige que o ambiente `curation-release` tenha revisores e `prevent_self_review=true`; sem estas proteções, recusa a operação.
+A assinatura preparada usa Cosign 3.1.4 keyless, com identidade e emissor exatos em `config/image_signing_policy.json`. O modelo [curation-sign.yml.example](workflow-templates/curation-sign.yml.example) está fora dos workflows ativos. Quando reativado, só aceita execuções manuais em `dev`, com `BLU_RELEASE_SIGNING_ENABLED=true`. Exige que o ambiente `curation-release` tenha revisores e `prevent_self_review=true`; sem estas proteções, recusa a operação.
 
 O operador indica o ID do workflow Portal bem-sucedido e o digest aprovado.
 O código recusa builds de pull requests, forks, outros branches ou workflows.
@@ -71,10 +71,10 @@ Uma SBOM é um inventário, não uma auditoria de vulnerabilidades ou prova de q
 
 ## Publicação ECR preparada, ainda desativada
 
-`curation-publish.yml` é manual, só no repositório original e em `dev`, com `BLU_ECR_PUBLISH_ENABLED=true`. Usa o mesmo ambiente protegido `curation-release`.
+O modelo [curation-publish.yml.example](workflow-templates/curation-publish.yml.example) está inativo. Quando reativado, é manual, só no repositório original e em `dev`, com `BLU_ECR_PUBLISH_ENABLED=true`. Usa o mesmo ambiente protegido `curation-release`.
 Antes de obter credenciais AWS, verifica a execução do assinante, a assinatura, o digest/revisão indicados pelo operador e os bytes OCI originais.
 
-O build Portal conserva esses bytes apenas em pushes de `dev` quando `BLU_RELEASE_SIGNING_ENABLED=true`. O arquivo OCI tem retenção de 14 dias, sem compressão adicional do artefacto. A ativação exige aprovação de armazenamento e custos; a versão medida ocupava cerca de 857 MB. Se o arquivo expirar, a operação falha: não é permitida uma reconstrução silenciosa da imagem assinada.
+A CI atual constrói e testa o OCI temporariamente e conserva apenas a evidência, sem carregar o arquivo da imagem. O modelo [portal-oci-artifact.yml.example](workflow-templates/portal-oci-artifact.yml.example), quando inserido no job `container`, conserva os bytes apenas em pushes de `dev` quando `BLU_RELEASE_SIGNING_ENABLED=true`. O arquivo OCI tem retenção de 14 dias, sem compressão adicional do artefacto. A ativação exige aprovação de armazenamento e custos; a versão medida ocupava cerca de 857 MB. Se o arquivo expirar, a operação falha: não é permitida uma reconstrução silenciosa da imagem assinada.
 
 Variáveis do ambiente, a preencher com os valores aprovados:
 
@@ -92,11 +92,40 @@ O ambiente deve admitir apenas `dev`, com revisão sem autoaprovação.
 `python -m scripts.publish_image_release` faz preflight por omissão. Só `--execute` contacta AWS e publica: confirma a conta, exige um repositório com tags `IMMUTABLE`, recusa colisões e usa `skopeo copy --all --preserve-digests`. A password ECR passa por stdin e o ficheiro de autenticação é temporário. A tag `git-COMMIT` identifica a entrega; o recibo só marca publicação depois de confirmar no ECR o digest aprovado.
 Uma tag já existente com o mesmo digest torna a operação idempotente. Não há criação de recursos, remoção de imagens ou atualização de serviços.
 
+## Reativação dos modelos para uma entrega cloud
+
+A operação no Code Editor não exige assinatura keyless, publicação ECR nem as
+variáveis desses modelos. Os testes locais da política de imagem continuam na CI;
+não assinam nem publicam uma release de produção.
+
+Para uma futura publicação autorizada:
+
+1. Configurar o ambiente GitHub `curation-release` com revisão, impedimento de
+   autoaprovação e acesso limitado a `dev`. A operação individual no Code Editor
+   não satisfaz por si só estas condições.
+2. Configurar as variáveis de destino da tabela anterior e a confiança OIDC da
+   role de publicação. Manter os sinalizadores de ativação desativados durante
+   a preparação.
+3. Copiar os dois modelos para `.github/workflows/curation-sign.yml` e
+   `.github/workflows/curation-publish.yml`, retirando o sufixo `.example`.
+   O caminho do assinante em `config/image_signing_policy.json` é o destino
+   exigido para a identidade futura, não um workflow atualmente instalado.
+4. Inserir o item do modelo `portal-oci-artifact.yml.example` em
+   `jobs.container.steps` de `portal.yml`; não copiar esse excerto como workflow
+   independente.
+5. Rever e testar o candidato. Só depois de aprovação, definir as variáveis de
+   repositório `BLU_RELEASE_SIGNING_ENABLED=true` e
+   `BLU_ECR_PUBLISH_ENABLED=true`, produzir uma nova build em `dev` e executar
+   os workflows manuais com a revisão e o digest aprovados.
+
+Mover ou copiar um modelo não configura permissões, revisores ou recursos AWS.
+Não reutilizar uma evidência antiga como prova da nova execução.
+
 ## Referência anterior para rollback
 
 `python -m scripts.prepare_image_rollback` exige a evidência assinada da release anterior e os seus digest/revisão aprovados. Por omissão, não contacta AWS; `--confirm-registry` confirma a conta e a presença desse digest no ECR.
 Produz uma referência imutável, sem efetuar rollback de serviços ou dados.
-`data_compatibility_verified` permanece falso: a compatibilidade de migrações, versões e dados exige o ensaio separado previsto no plano.
+`data_compatibility_verified` permanece falso: a compatibilidade de migrações, versões e dados exige o ensaio separado descrito em [Operações](../docs/OPERATIONS.md#fluxo-de-entrega-pretendido).
 
 A publicação ECR e a transferência Skopeo foram testadas com mocks, sem AWS real.
 A assinatura OIDC real, a transferência com preservação dos digests, a conservação permanente da evidência e a aplicação da referência de rollback ainda estão pendentes.

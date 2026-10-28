@@ -125,12 +125,3 @@ jobs:
           path: ${{ runner.temp }}/blu-delivery-evidence/
           if-no-files-found: error
           retention-days: 14
-      - name: Retain exact OCI bytes only for enabled releases on dev
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev' && vars.BLU_RELEASE_SIGNING_ENABLED == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: blu-curation-oci-${{ github.sha }}
-          path: ${{ runner.temp }}/blu-curation.oci.tar
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 14

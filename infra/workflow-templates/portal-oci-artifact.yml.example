@@ -1,0 +1,11 @@
+# Modelo inativo: inserir este item em jobs.container.steps de .github/workflows/portal.yml.
+# Reativar em conjunto com a assinatura/publicação; consultar infra/IMAGE_DELIVERY.md.
+- name: Retain exact OCI bytes only for enabled releases on dev
+  if: github.event_name == 'push' && github.ref == 'refs/heads/dev' && vars.BLU_RELEASE_SIGNING_ENABLED == 'true'
+  uses: actions/upload-artifact@v4
+  with:
+    name: blu-curation-oci-${{ github.sha }}
+    path: ${{ runner.temp }}/blu-curation.oci.tar
+    if-no-files-found: error
+    compression-level: 0
+    retention-days: 14
