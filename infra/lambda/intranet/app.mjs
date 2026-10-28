@@ -633,8 +633,11 @@ export function createApp(deps) {
       if (ops && (!ops.churnReview || at - new Date(ops.churnReview.evaluatedAt) > 36 * 36e5)) add('warn', 'A revisão diária de leads não corre há mais de 36 h.', 'operations');
       const social = leads?.filter(lead => lead.journey.socialSource && at - new Date(lead.lastActivityAt) < 7 * 864e5).length ?? null;
       if (social === 0) add('warn', 'Nenhum lead das redes sociais nos últimos 7 dias: verificar as ligações das campanhas e a ponte /connect.', 'operations');
-      if (prepared?.length) add('warn', `${prepared.length} lembrete(s) preparado(s) para enviar à mão.`, 'agenda');
-      if ((failed?.length ?? 0) + (missed?.length ?? 0)) add('bad', `${(failed?.length ?? 0) + (missed?.length ?? 0)} lembrete(s) falharam ou não foram enviados a tempo.`, 'agenda');
+      // Lembretes de leads de demonstração (sintéticos) não contam, como nos indicadores.
+      const demo = new Set(leads?.filter(lead => lead.synthetic).map(lead => lead.id) ?? []);
+      const real = list => (list ?? []).filter(item => !demo.has(str(item, 'conversationId')));
+      if (real(prepared).length) add('warn', `${real(prepared).length} lembrete(s) preparado(s) para enviar à mão.`, 'agenda');
+      if (real(failed).length + real(missed).length) add('bad', `${real(failed).length + real(missed).length} lembrete(s) falharam ou não foram enviados a tempo.`, 'agenda');
       const today = lisbonToday();
       const cases = openCases?.map(item => toCase(item, today)) ?? [];
       if (cases.some(item => item.deadlineState === 'overdue')) add('bad', `${cases.filter(item => item.deadlineState === 'overdue').length} caso(s) de reclamação ou litígio fora do prazo.`, 'cases');
@@ -659,10 +662,11 @@ export function createApp(deps) {
         settle(deps.queryAgenda(TEAM_ALERTS.status, week, at.toISOString())),
         ...['sent', 'prepared', 'failed', 'missed'].map(status => settle(deps.queryAgenda(NOTIFY[status], week, at.toISOString()))),
       ]);
+      const demo = new Set(leads.filter(lead => lead.synthetic).map(lead => lead.id));
       const summary = controlSummary({
         leads, members, tasks: taskItems.map(item => toTask(item, today)), cases: caseItems.map(item => toCase(item, today)),
         alerts: alertItems.map(toAlert),
-        reminders: Object.fromEntries(['sent', 'prepared', 'failed', 'missed'].map((status, index) => [status, reminderLists[index].length])),
+        reminders: Object.fromEntries(['sent', 'prepared', 'failed', 'missed'].map((status, index) => [status, reminderLists[index].filter(item => !demo.has(str(item, 'conversationId'))).length])),
       });
       return reply(200, { ...summary, checkedAt: at.toISOString() }, 'private, max-age=60');
     },

@@ -451,3 +451,19 @@ seguimento e, para fundadores, a visão geral) e um guia curto da intranet
   resposta. Marketing não recebe leads nem regras de seguimento.
 - O histórico fica só no navegador (últimas 6 trocas) e apaga-se ao recarregar.
 - Custo: uma chamada ao modelo por pergunta (até 700 tokens de resposta).
+
+## Verificação depois de cada deploy (2026-10-28)
+
+Depois de publicar, a partir de `infra/` e no mesmo commit que foi publicado:
+
+    node scripts/live-check.mjs --seed
+
+Confirma que as stacks estão estáveis, que os ficheiros da intranet e do backoffice
+publicados são os do commit atual, que a API recusa pedidos sem login, que o portal
+responde e, invocando a Lambda da API com um utilizador técnico só de leitura, que
+a Agenda, o Seguimento, os alertas, «O meu trabalho» e o Painel respondem.
+
+`--seed` cria, se faltar, o lead de demonstração `BLU-DEMOLIVE00000001` (sintético,
+sem contactos, fora dos indicadores e dos alertas) e uma recolha diária durante 30
+dias. Assim um ecrã vazio significa avaria, não falta de dados. Os lembretes da
+demonstração não têm destinatário: ficam preparados e nunca saem.
