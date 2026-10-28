@@ -42,6 +42,11 @@ um de cada vez:
   distribuição interna; até lá, o número do site (+351 915 784 212) como substituto.
 - [ ] Depois do login, todos entram no painel da intranet; opções por papel e
   geração de proposta para Canva no perfil de marketing/curador.
+- [x] Avaliação dos parceiros: resultado de cada serviço na Agenda e pontuação,
+  posição por tipo, pontualidade, clientes, fiabilidade, margem, ROI e preço por
+  pessoa no separador Parceiros; ordem pela pontuação ao agendar (por publicar).
+- [ ] Parceiros no portal: sugerir o parceiro mais bem avaliado em cada atividade
+  da proposta (ligação ao catálogo) e confirmações por WhatsApp como indicador.
 - [ ] Testes do percurso do lead, de fornecedores válidos e de parceiros com licença.
 - [x] Assistente da intranet (separador «Assistente», todos os perfis): responde a
   partir do que o perfil já vê (trabalho, alertas, totais, leads, visão geral,

@@ -588,7 +588,7 @@ class IntranetStack extends Stack {
       ['GET', '/v1/me'], ['GET', '/v1/leads'], ['GET', '/v1/leads/{id}'],
       ['POST', '/v1/leads/{id}/contacted'], ['POST', '/v1/leads/{id}/assign'], ['PUT', '/v1/leads/{id}/tags'], ['POST', '/v1/leads/{id}/ask'],
       ['GET', '/v1/metrics'], ['GET', '/v1/team'], ['GET', '/v1/operations'], ['GET', '/v1/governance'],
-      ['GET', '/v1/alerts'], ['GET', '/v1/cases'], ['POST', '/v1/cases'], ['GET', '/v1/leads/{id}/cases'], ['GET', '/v1/leads/{id}/cases/{caseId}'], ['POST', '/v1/leads/{id}/cases/{caseId}'], ['GET', '/v1/security'], ['GET', '/v1/control'], ['POST', '/v1/assistant'],
+      ['GET', '/v1/alerts'], ['GET', '/v1/cases'], ['POST', '/v1/cases'], ['GET', '/v1/leads/{id}/cases'], ['GET', '/v1/leads/{id}/cases/{caseId}'], ['POST', '/v1/leads/{id}/cases/{caseId}'], ['GET', '/v1/security'], ['GET', '/v1/control'], ['POST', '/v1/assistant'], ['POST', '/v1/leads/{id}/activities/{activityId}/outcome'],
       ['GET', '/v1/access'], ['POST', '/v1/team/invite'], ['POST', '/v1/team/{username}/role'], ['POST', '/v1/team/{username}/status'],
       ['GET', '/v1/partners'], ['GET', '/v1/agenda'], ['GET', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities/{activityId}/cancel'],
       ['GET', '/v1/work'], ['GET', '/v1/tasks'], ['POST', '/v1/tasks'], ['GET', '/v1/leads/{id}/tasks/{taskId}'], ['POST', '/v1/leads/{id}/tasks/{taskId}'], ['GET', '/v1/feed'],

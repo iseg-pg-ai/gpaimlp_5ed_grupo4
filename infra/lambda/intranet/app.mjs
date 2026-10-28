@@ -2,7 +2,8 @@ import {
   CONTACTED, NOTE_LIMIT, OPEN_STATUSES, QUESTION_LIMIT,
   atRisk, contactDetails, groupsOf, isOverdue, metrics, toLead, toMessage, validLeadId,
 } from './model.mjs';
-import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, parseActivity, plan } from './schedule.mjs';
+import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, lisbonToUtc, parseActivity, plan } from './schedule.mjs';
+import { OUTCOMES, OUTCOME_STATUS, SCORE, outcomeRecord, parseOutcome, scorecards, toOutcome } from './partner-score.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
 import { ATTESTATIONS, AUTO_TYPES, SETTINGS, VALUE_RULES, applyAttestations, currentSettings, parseAttestation, parseSettings, replyState } from './settings.mjs';
 import { AUTO_AUTHOR, WHATSAPP_TEST, inboxRecord, parseInboxPost, threadKey, threads, toInboxMessage, whatsappMode } from './whatsapp-test.mjs';
@@ -700,7 +701,27 @@ export function createApp(deps) {
       });
     },
 
-    'GET /v1/partners': async () => reply(200, { partners: deps.partners, reminders: REMINDERS, kinds: KINDS, channels: CHANNELS }, 'private, max-age=300'),
+    // Parceiros com a avaliação dos últimos SCORE.windowDays dias (resultados registados na Agenda).
+    'GET /v1/partners': async () => {
+      const at = now();
+      const outcomes = await deps.queryAgenda(OUTCOME_STATUS, new Date(at - SCORE.windowDays * 864e5).toISOString(), at.toISOString()).catch(() => []);
+      return reply(200, { partners: deps.partners, reminders: REMINDERS, kinds: KINDS, channels: CHANNELS, outcomes: OUTCOMES, score: SCORE, scorecards: scorecards(deps.partners, outcomes.map(toOutcome), at) }, 'private, max-age=60');
+    },
+
+    // Resultado de um dia de serviço de um parceiro: um registo por ocorrência, que se pode corrigir.
+    'POST /v1/leads/{id}/activities/{activityId}/outcome': async ({ id, user, event, body }) => {
+      const activityId = event.pathParameters?.activityId ?? '';
+      if (!/^[A-Za-z0-9-]{8,64}$/.test(activityId)) return fail(400, 'Atividade inválida.');
+      const activity = (await deps.queryRecords(id, 'ACTIVITY#')).map(toActivity).find(item => item.id === activityId);
+      if (!activity) throw new NotFound();
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(body.date ?? '') ? body.date : '';
+      const inRange = date && date >= activity.date && date <= (activity.repeatUntil || activity.date);
+      const occurrenceAt = inRange ? lisbonToUtc(date, activity.time) : null;
+      const parsed = parseOutcome(body, activity, occurrenceAt, now());
+      if (parsed.error) return fail(400, parsed.error);
+      await deps.putRecords(id, [outcomeRecord({ activityId, date, occurrenceAt, activity, outcome: parsed.outcome, user, now: now() })]);
+      return reply(201, { result: parsed.outcome.result });
+    },
 
     'GET /v1/leads/{id}/activities': async ({ id }) => {
       const [activities, notifications] = await Promise.all([deps.queryRecords(id, 'ACTIVITY#'), deps.queryRecords(id, 'NOTIFY#')]);
@@ -742,12 +763,15 @@ export function createApp(deps) {
       const start = new Date(now() - 864e5).toISOString();
       const end = new Date(+now() + days * 864e5).toISOString();
       const statuses = [NOTIFY.pending, NOTIFY.sent, NOTIFY.prepared, NOTIFY.failed, NOTIFY.missed];
-      const items = (await Promise.all(statuses.map(status => deps.queryAgenda(status, start, end)))).flat();
-      return reply(200, { notifications: items.map(toNotification).sort((a, b) => a.sendAt.localeCompare(b.sendAt)) });
+      const [items, outcomes] = await Promise.all([
+        Promise.all(statuses.map(status => deps.queryAgenda(status, start, end))).then(lists => lists.flat()),
+        deps.queryAgenda(OUTCOME_STATUS, start, end).catch(() => []),
+      ]);
+      return reply(200, { notifications: items.map(toNotification).sort((a, b) => a.sendAt.localeCompare(b.sendAt)), outcomes: outcomes.map(toOutcome), outcomeLabels: OUTCOMES });
     },
   };
 
-  const writes = new Set(['POST /v1/leads/{id}/contacted', 'POST /v1/leads/{id}/assign', 'PUT /v1/leads/{id}/tags', 'POST /v1/leads/{id}/ask', 'POST /v1/leads/{id}/activities', 'POST /v1/leads/{id}/activities/{activityId}/cancel']);
+  const writes = new Set(['POST /v1/leads/{id}/activities/{activityId}/outcome', 'POST /v1/leads/{id}/contacted', 'POST /v1/leads/{id}/assign', 'PUT /v1/leads/{id}/tags', 'POST /v1/leads/{id}/ask', 'POST /v1/leads/{id}/activities', 'POST /v1/leads/{id}/activities/{activityId}/cancel']);
   const admin = new Set(['POST /v1/team/invite', 'POST /v1/team/{username}/role', 'POST /v1/team/{username}/status']);
   const caseRoutes = new Set(['GET /v1/cases', 'POST /v1/cases', 'GET /v1/leads/{id}/cases', 'GET /v1/leads/{id}/cases/{caseId}', 'POST /v1/leads/{id}/cases/{caseId}']);
   const taskWrites = new Set(['POST /v1/tasks', 'POST /v1/leads/{id}/tasks/{taskId}']);

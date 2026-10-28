@@ -554,7 +554,7 @@ test('the intranet stack protects every route and grants no destructive data acc
     const template = JSON.parse(await readFile(path.join(outdir, 'BluCostaIntranet.template.json'), 'utf8'));
     const of = type => Object.values(template.Resources).filter(resource => resource.Type === type);
     const routes = of('AWS::ApiGatewayV2::Route');
-    assert.equal(routes.length, 43);
+    assert.equal(routes.length, 44);
     assert.ok(routes.some(route => route.Properties.RouteKey === 'GET /v1/control'));
     for (const route of routes) assert.equal(route.Properties.AuthorizationType, 'JWT', route.Properties.RouteKey);
     const [pool] = of('AWS::Cognito::UserPool');

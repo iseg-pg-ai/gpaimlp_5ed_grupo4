@@ -500,7 +500,7 @@ const views = {
   },
 
   async agenda(view) {
-    const { notifications } = await api('GET', '/v1/agenda?days=7');
+    const { notifications, outcomes = [], outcomeLabels = {} } = await api('GET', '/v1/agenda?days=7');
     // Agrupa por dia da atividade e, dentro do dia, por atividade: cada cartão diz em
     // linguagem simples quem recebe o quê, por que canal e quando.
     const dayKey = iso => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(new Date(iso));
@@ -538,6 +538,7 @@ const views = {
             h('div', { class: 'slot-body' },
               h('strong', {}, `${KIND[first.kind] ?? first.kind}: ${first.title}`),
               h('div', { class: 'muted' }, [first.place, first.people ? `${first.people} pessoa(s)` : '', first.partnerName, first.conversationId].filter(Boolean).join(' · ')),
+              outcomeBlock(first, outcomes, outcomeLabels, () => { view.replaceChildren(); views.agenda(view).catch(error => view.append(h('p', { class: 'error' }, error.message))); }),
               h('ul', { class: 'reminders' }, items.sort((a, b) => a.sendAt.localeCompare(b.sendAt)).map(item => h('li', {},
                 h('span', {}, `${CHANNEL[item.channel] ?? item.channel} ao ${(AUDIENCE[item.audience] ?? item.audience).toLowerCase()}, ${relative(item.sendAt)}`), ' ',
                 notifyPill(item.status), item.delivery === 'test-inbox' ? [' ', pill('teste')] : null,
@@ -547,15 +548,54 @@ const views = {
     );
   },
 
-  async partners(view) {
-    const { partners } = await loadPartners();
-    view.append(h('h2', {}, 'Parceiros'), h('p', { class: 'muted' }, 'Tuk-tuks, transfers e guias que recebem lembretes por WhatsApp. A lista vem de config/partners.json.'),
-      h('div', { class: 'panel' }, h('table', {},
-        h('thead', {}, h('tr', {}, h('th', {}, 'Parceiro'), h('th', {}, 'Tipo'), h('th', {}, 'Zona'), h('th', {}, 'Lugares'), h('th', {}, 'WhatsApp'), h('th', {}, 'Licença'))),
-        h('tbody', {}, partners.map(partner => h('tr', {},
-          h('td', {}, partner.name, partner.demo ? [' ', pill('demo')] : null), h('td', {}, partner.kind), h('td', {}, partner.area), h('td', {}, partner.seats),
-          h('td', {}, partner.whatsapp ? pill('Configurado', 'ok') : pill('Em falta', 'warn')),
-          h('td', {}, partner.license?.number ? `${partner.license.type} ${partner.license.number}` : pill(partner.demo ? 'Demo' : 'Em falta', partner.demo ? '' : 'bad'))))))));
+  // Parceiros: avaliação a partir dos resultados registados na Agenda; a melhor pontuação de cada
+  // tipo primeiro. Sem serviços suficientes não há pontuação (desconhecido não é bom nem mau).
+  async partners(view, state = { selected: '' }) {
+    partnerCache = null;
+    const { partners, scorecards = [], score = {}, outcomes: labels = {} } = await loadPartners();
+    const info = Object.fromEntries(partners.map(partner => [partner.id, partner]));
+    const percent = value => (value === null || value === undefined ? '—' : `${Math.round(value * 100)}%`);
+    const scorePill = card => (card.score === null ? pill('Dados insuficientes') : pill(`${card.score}`, card.score >= 75 ? 'ok' : card.score >= 50 ? 'warn' : 'bad'));
+    const detail = h('div', { class: 'panel' });
+    const showDetail = card => {
+      state.selected = card.id;
+      for (const row of view.querySelectorAll('tr.clickable')) row.classList.toggle('selected', row.dataset.id === card.id);
+      const m = card.metrics;
+      const partner = info[card.id] ?? {};
+      detail.replaceChildren(
+        h('h3', {}, card.name), h('div', { class: 'muted' }, [partner.kind, partner.area, partner.seats ? `${partner.seats} lugares` : ''].filter(Boolean).join(' · ')),
+        h('dl', { class: 'facts' },
+          h('dt', {}, 'Pontuação'), h('dd', {}, scorePill(card), card.rank ? ` ${card.rank}.º dos ${partner.kind ?? card.kind}` : ''),
+          h('dt', {}, 'Serviços'), h('dd', {}, `${m.services} (${m.people} pessoas)`),
+          h('dt', {}, 'Pontualidade'), h('dd', {}, `${percent(m.punctuality)}${m.averageDelay ? ` · atraso médio ${m.averageDelay} min` : ''}`),
+          h('dt', {}, 'Fiabilidade'), h('dd', {}, `${percent(m.reliability)} · ${m.noShows} falta(s), ${m.cancellations} cancelamento(s)`),
+          h('dt', {}, 'Avaliação dos clientes'), h('dd', {}, m.rating === null ? 'sem avaliações' : `${m.rating} / 5 (${m.ratings})`),
+          h('dt', {}, 'Margem e ROI'), h('dd', {}, m.margin === null ? 'sem custos e preços registados' : `margem ${percent(m.margin)} · ROI ${percent(m.roi)}`),
+          h('dt', {}, 'Preço médio por pessoa'), h('dd', {}, m.pricePerPerson === null ? '—' : `${m.pricePerPerson} ${m.currency}`),
+          ...Object.entries(m.byCurrency).flatMap(([currency, totals]) => [h('dt', {}, `Totais ${currency}`), h('dd', {}, `receita ${totals.revenue} · custo ${totals.cost}`)]),
+          h('dt', {}, 'WhatsApp'), h('dd', {}, partner.whatsapp ? pill('Configurado', 'ok') : pill('Em falta', 'warn')),
+          h('dt', {}, 'Licença'), h('dd', {}, partner.license?.number ? `${partner.license.type} ${partner.license.number}` : pill(partner.demo ? 'Demo' : 'Em falta', partner.demo ? '' : 'bad'))),
+        h('h3', { class: 'spaced' }, 'Últimos serviços'),
+        card.recent.length ? h('ul', { class: 'feed' }, card.recent.map(item => h('li', {},
+          h('strong', {}, labels[item.result] ?? item.result), item.result === 'late' ? ` (${item.delayMinutes} min)` : '', ` · ${item.title}`,
+          item.rating ? ` · cliente ${item.rating}/5` : '', item.price !== null && item.cost !== null ? ` · ${item.price} − ${item.cost} ${item.currency}` : '',
+          item.comment ? h('div', { class: 'muted' }, `«${item.comment}»`) : null, h('time', {}, `${item.date} · ${item.conversationId}`))))
+          : h('p', { class: 'muted' }, 'Ainda sem resultados. Depois de cada serviço, registe-o na Agenda (botão «Registar resultado»).'));
+    };
+    const cards = scorecards.length ? scorecards : partners.map(partner => ({ id: partner.id, name: partner.name, kind: partner.kind, demo: partner.demo, score: null, metrics: { services: 0, people: 0, punctuality: null, averageDelay: 0, noShows: 0, cancellations: 0, reliability: null, rating: null, ratings: 0, margin: null, roi: null, pricePerPerson: null, currency: '', byCurrency: {} }, recent: [] }));
+    view.append(h('h2', {}, 'Parceiros'),
+      h('p', { class: 'muted' }, `Avaliação dos últimos ${score.windowDays ?? 90} dias a partir dos resultados registados na Agenda: pontualidade, avaliação dos clientes, fiabilidade (faltas e cancelamentos) e margem. Pontuação só com ${score.minServices ?? 3} ou mais serviços. A lista vem de config/partners.json.`),
+      h('div', { class: 'split' },
+        h('div', { class: 'panel' }, h('table', {},
+          h('thead', {}, h('tr', {}, h('th', {}, 'Parceiro'), h('th', {}, 'Tipo'), h('th', {}, 'Pontuação'), h('th', {}, 'Serviços'), h('th', {}, 'Pontualidade'), h('th', {}, 'Clientes'), h('th', {}, 'Margem'), h('th', {}, 'Preço/pessoa'))),
+          h('tbody', {}, cards.map(card => h('tr', { class: `clickable${card.id === state.selected ? ' selected' : ''}`, 'data-id': card.id, tabindex: '0', onclick: () => showDetail(card), onkeydown: event => event.key === 'Enter' && showDetail(card) },
+            h('td', {}, card.rank ? `${card.rank}. ` : '', card.name, card.demo ? [' ', pill('demo')] : null),
+            h('td', {}, card.kind), h('td', {}, scorePill(card)), h('td', {}, card.metrics.services),
+            h('td', {}, percent(card.metrics.punctuality)), h('td', {}, card.metrics.rating === null ? '—' : `${card.metrics.rating}/5`),
+            h('td', {}, percent(card.metrics.margin)), h('td', {}, card.metrics.pricePerPerson === null ? '—' : `${card.metrics.pricePerPerson} ${card.metrics.currency}`)))))),
+        detail));
+    const chosen = cards.find(card => card.id === state.selected) ?? cards[0];
+    if (chosen) showDetail(chosen);
   },
 
   async team(view) {
@@ -1077,6 +1117,37 @@ function analysisBlock(lead) {
     h('p', { class: 'muted' }, `Analisado ${when(lead.aiAnalysedAt)} · só leitura`));
 }
 
+// Depois de um serviço com parceiro: registar o resultado (a horas, atraso, falta), a avaliação do
+// cliente, o custo e o preço. Alimenta a avaliação dos parceiros; pode corrigir-se.
+function outcomeBlock(item, outcomes, labels, refresh) {
+  if (!item.partnerName || item.partnerName === 'Bolt' || Date.parse(item.occurrenceAt) > Date.now()) return null;
+  const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(new Date(item.occurrenceAt));
+  const done = outcomes.find(outcome => outcome.activityId === item.activityId && outcome.date === date);
+  if (!isCurator()) return done ? h('div', {}, pill(labels[done.result] ?? done.result, done.result === 'on-time' ? 'ok' : 'warn')) : null;
+  const status = h('span', { class: 'muted', role: 'status' });
+  const result = h('select', { name: 'result', required: true }, h('option', { value: '' }, 'Resultado…'), Object.entries(labels).map(([key, label]) => h('option', { value: key, selected: done?.result === key }, label)));
+  const delay = h('input', { name: 'delayMinutes', type: 'number', min: '1', max: '600', placeholder: 'Atraso (min)', value: done?.delayMinutes || '' });
+  const rating = h('select', { name: 'rating' }, h('option', { value: '' }, 'Cliente: sem avaliação'), [5, 4, 3, 2, 1].map(value => h('option', { value, selected: done?.rating === value }, `Cliente: ${value}/5`)));
+  const form = h('form', { class: 'outcome', onsubmit: async event => {
+    event.preventDefault();
+    status.textContent = 'A guardar…';
+    try {
+      await api('POST', `/v1/leads/${item.conversationId}/activities/${item.activityId}/outcome`, { date, ...Object.fromEntries(new FormData(form)) });
+      partnerCache = null;
+      refresh();
+    } catch (error) {
+      status.textContent = error.message;
+    }
+  } },
+    result, delay, rating,
+    h('input', { name: 'cost', inputmode: 'decimal', placeholder: 'Custo (EUR)', value: done?.cost ?? '' }),
+    h('input', { name: 'price', inputmode: 'decimal', placeholder: 'Preço ao cliente (EUR)', value: done?.price ?? '' }),
+    h('input', { name: 'comment', maxlength: '500', placeholder: 'Comentário (opcional)', value: done?.comment ?? '' }),
+    h('button', { type: 'submit', class: 'secondary' }, done ? 'Corrigir' : 'Guardar'), status);
+  return h('details', { class: 'outcome-box', open: !done },
+    h('summary', {}, done ? ['Resultado: ', pill(labels[done.result] ?? done.result, done.result === 'on-time' ? 'ok' : 'warn')] : 'Registar resultado do serviço'), form);
+}
+
 async function showLead(panel, id, refreshList) {
   panel.replaceChildren(h('p', { class: 'muted' }, 'A carregar…'));
   let lead;
@@ -1285,8 +1356,11 @@ function activityPanel(id, lead) {
   const travellerChannel = h('select', {}, Object.entries(CHANNEL).map(([id, label]) => h('option', { value: id }, label)));
   const partnerChannel = h('select', {}, ['whatsapp', 'sms'].map(id => h('option', { value: id }, CHANNEL[id])));
   const reminders = h('div', { class: 'tags' });
-  loadPartners().then(({ partners, reminders: options }) => {
-    partner.append(...partners.map(item => h('option', { value: item.id }, item.name)));
+  loadPartners().then(({ partners, reminders: options, scorecards = [] }) => {
+    // Melhor pontuação primeiro; a pontuação aparece ao lado do nome para ajudar a escolher.
+    const scoreOf = id => scorecards.find(card => card.id === id)?.score ?? null;
+    const ranked = [...partners].sort((a, b) => (scoreOf(b.id) ?? -1) - (scoreOf(a.id) ?? -1) || a.name.localeCompare(b.name));
+    partner.append(...ranked.map(item => h('option', { value: item.id }, `${item.name}${scoreOf(item.id) === null ? '' : ` · pontuação ${scoreOf(item.id)}`}`)));
     reminders.append(...options.map(option => h('label', {}, h('input', { type: 'checkbox', value: option.id, checked: true }), ' ', option.label)));
   }).catch(() => {});
   const form = h('form', { class: 'activity-form', onsubmit: async event => {

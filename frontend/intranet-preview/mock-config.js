@@ -37,6 +37,14 @@ const mockPartners = [
   { id: 'tuk-alfama', name: 'Tuk-tuk Alfama (demo)', kind: 'tuk-tuk', area: 'Lisboa: Alfama, Baixa', seats: 6, whatsapp: '', demo: true },
   { id: 'transfer-sintra', name: 'Transfer Sintra', kind: 'transfer', area: 'Sintra, Cascais', seats: 8, whatsapp: '351900000000', license: { type: 'RNAAT', number: '0000/2020' } },
 ];
+// Resultados de serviços dos parceiros (90 dias): o tuk-tuk pontual e com boa margem, o transfer com atrasos.
+const outcome = (partnerId, daysAgo, result, extra = {}) => ({ conversationId: 'BLU-DEMO000000000004', activityId: `demo-${partnerId}-${daysAgo}`, date: day(-daysAgo), at: hours(-24 * daysAgo), partnerId, kind: 'pickup', title: 'Recolha no hotel', people: 2, result, delayMinutes: 0, rating: null, cost: null, price: null, currency: 'EUR', comment: '', ...extra });
+const partnerOutcomes = [
+  outcome('tuk-alfama', 3, 'on-time', { rating: 5, cost: 60, price: 90 }), outcome('tuk-alfama', 10, 'on-time', { rating: 4, cost: 60, price: 85 }),
+  outcome('tuk-alfama', 20, 'late', { delayMinutes: 10, rating: 4, cost: 55, price: 80 }), outcome('tuk-alfama', 40, 'on-time', { rating: 5 }),
+  outcome('transfer-sintra', 5, 'late', { delayMinutes: 35, rating: 2, cost: 70, price: 80, comment: 'Chegou tarde ao aeroporto.' }),
+  outcome('transfer-sintra', 15, 'no-show', { cost: 0, price: 0 }), outcome('transfer-sintra', 25, 'on-time', { rating: 4, cost: 70, price: 95 }),
+];
 const bookingFacts = { title: 'Recolha no hotel', place: 'Hotel Avenida, Lisboa', date: day(1), time: '09:30', people: 2, partner: 'Tuk-tuk Alfama (demo)' };
 const waInbox = [
   { at: hours(-2), direction: 'out', to: '351912345678', title: 'Recolha no hotel', text: 'BLU Costa reminder: your pickup at Hotel Avenida, tomorrow 09:30, 2 people.', leadId: 'BLU-DEMO000000000004', author: 'curator-schedule', authorName: 'Lembrete agendado' },
@@ -164,14 +172,24 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
     accounts: { total: 2, active: 2, disabled: 0, pendingInvites: 1, founders: 1 }, policies: { pass: 10, fail: 2, manual: 3 },
     controls: [{ area: 'Identidade', control: 'Login Cognito com MFA obrigatório', status: 'on' }, { area: 'Proteção web', control: 'AWS WAF à frente da intranet e da API', status: 'off' }],
   };
+  // Avaliação dos parceiros: resultados fictícios e as mesmas contas da Lambda (partner-score.mjs).
+  if (path.endsWith('/outcome') && method === 'POST') {
+    const [, id, , activityId] = path.split('/').slice(2);
+    const index = partnerOutcomes.findIndex(item => item.activityId === activityId && item.date === body.date);
+    const record = { conversationId: id, activityId, date: body.date, at: new Date().toISOString(), partnerId: 'transfer-sintra', kind: 'pickup', title: 'Recolha no aeroporto', people: 2, result: body.result, delayMinutes: Number(body.delayMinutes || 0), rating: body.rating ? Number(body.rating) : null, cost: body.cost === '' ? null : Number(body.cost), price: body.price === '' ? null : Number(body.price), currency: 'EUR', comment: body.comment ?? '' };
+    if (index >= 0) partnerOutcomes[index] = record; else partnerOutcomes.push(record);
+    return { result: body.result };
+  }
   if (path === '/v1/partners') return {
+    ...(await import('../../infra/lambda/intranet/partner-score.mjs').then(({ OUTCOMES, SCORE, scorecards }) => ({ outcomes: OUTCOMES, score: SCORE, scorecards: scorecards(mockPartners, partnerOutcomes) }))),
     partners: mockPartners,
     reminders: [
       { id: 'traveller-evening', label: 'Viajante: véspera às 18:00' }, { id: 'traveller-1h', label: 'Viajante: 1 h antes' },
       { id: 'partner-evening', label: 'Parceiro: véspera às 18:00' }, { id: 'partner-2h', label: 'Parceiro: 2 h antes' },
     ],
   };
-  if (path.startsWith('/v1/agenda')) return { notifications: [
+  if (path.startsWith('/v1/agenda')) return { outcomes: partnerOutcomes, outcomeLabels: { 'on-time': 'A horas', late: 'Atrasado', 'no-show': 'Não apareceu', cancelled: 'Cancelado pelo parceiro' }, notifications: [
+    { conversationId: 'BLU-DEMO000000000004', activityId: 'a0-yesterday', audience: 'partner', kind: 'pickup', title: 'Recolha no aeroporto', sendAt: hours(-26), occurrenceAt: hours(-20), status: 'NOTIFY_SENT', channel: 'whatsapp', place: 'Aeroporto de Lisboa', people: 2, partnerName: 'Transfer Sintra', text: 'BLU Costa: recolha amanhã.' },
     { conversationId: 'BLU-DEMO000000000001', activityId: 'a1', audience: 'partner', kind: 'pickup', title: 'Recolha no hotel', sendAt: hours(-2), occurrenceAt: hours(14), status: 'NOTIFY_PREPARED', reason: 'Sem contacto para este canal; enviar manualmente.', hasNumber: false, channel: 'whatsapp', place: 'Hotel Alfama', people: 3, partnerName: 'Tuk-tuk Alfama (demo)', text: 'BLU Costa: recolha "Recolha no hotel" em Hotel Alfama, amanhã 09:30, 3 pessoa(s). Responda OK para confirmar.' },
     { conversationId: 'BLU-DEMO000000000001', activityId: 'a1', audience: 'traveller', kind: 'pickup', title: 'Recolha no hotel', sendAt: hours(13), occurrenceAt: hours(14), status: 'NOTIFY_PENDING', hasNumber: true, channel: 'email', place: 'Hotel Alfama', people: 3, partnerName: 'Tuk-tuk Alfama (demo)', text: 'BLU Costa reminder: your pickup "Recolha no hotel" at Hotel Alfama, Tue 09:30, 3 people.' },
     { conversationId: 'BLU-DEMO000000000002', activityId: 'a2', audience: 'traveller', kind: 'excursion', title: 'Sintra e Cabo da Roca', sendAt: hours(30), occurrenceAt: hours(40), status: 'NOTIFY_PENDING', hasNumber: true, channel: 'sms', place: 'Rossio', people: 2, partnerName: 'Bolt', text: 'BLU Costa reminder: your excursion "Sintra e Cabo da Roca" at Rossio, Wed 10:00, 2 people. Please book a Bolt ride to arrive on time: https://bolt.eu/' },

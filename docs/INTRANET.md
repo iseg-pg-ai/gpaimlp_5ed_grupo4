@@ -467,3 +467,25 @@ a Agenda, o Seguimento, os alertas, «O meu trabalho» e o Painel respondem.
 sem contactos, fora dos indicadores e dos alertas) e uma recolha diária durante 30
 dias. Assim um ecrã vazio significa avaria, não falta de dados. Os lembretes da
 demonstração não têm destinatário: ficam preparados e nunca saem.
+
+## Avaliação dos parceiros (2026-10-28)
+
+Depois de cada serviço com parceiro, a Agenda mostra «Registar resultado do
+serviço»: a horas, atrasado (minutos), não apareceu ou cancelado pelo parceiro, a
+avaliação do cliente (1 a 5), o custo e o preço ao cliente e um comentário. Um
+registo por dia de serviço (`OUTCOME#<atividade>#<data>`, estado
+`PARTNER_OUTCOME` no índice FollowUpIndex); pode corrigir-se. Só curadores e
+fundadores registam.
+
+O separador Parceiros calcula, para os últimos 90 dias (`partner-score.mjs`):
+serviços e pessoas, pontualidade e atraso médio, fiabilidade (faltas e
+cancelamentos), avaliação média dos clientes, margem, ROI, preço por pessoa e
+totais por moeda (moedas diferentes não se somam). A pontuação de 0 a 100 pesa
+pontualidade 30, clientes 30, fiabilidade 25 e margem 15 (margem de 30% vale o
+máximo); um componente sem dados não conta e o peso divide-se pelos outros. Com
+menos de 3 serviços não há pontuação: desconhecido não é bom nem mau. Cada
+parceiro tem a posição dentro do seu tipo e, ao agendar, a lista de parceiros
+aparece pela pontuação.
+
+Por fazer: confirmações dos parceiros por WhatsApp como indicador e ligação ao
+catálogo do portal para sugerir o parceiro em cada atividade da proposta.

@@ -73,6 +73,10 @@ tr.clickable:hover, tr.selected { background: #f3ecdf; }
 .pill.ok { color: var(--ok); border-color: #b9dcc6; }
 .pill.warn { color: var(--warn); border-color: #ecd0ac; }
 .pill.bad { color: var(--bad); border-color: #e7bdb8; }
+/* Resultado de um serviço na Agenda: campos em linha que quebram no telemóvel. */
+.outcome { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .4rem; }
+.outcome input, .outcome select { max-width: 11rem; }
+.outcome-box { margin-top: .4rem; }
 /* Assistente: ações sugeridas por baixo da resposta e rascunhos destacados. */
 .assistant-log .actions { margin-top: .5rem; }
 .assistant-log .draft { border-left: 3px solid var(--accent); padding-left: .6rem; margin-top: .5rem; }
