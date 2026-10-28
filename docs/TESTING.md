@@ -80,6 +80,23 @@ consolidadas em `tests/validation.test.mjs`, preservando os cenários individuai
 As suites de persistência, concorrência e fronteiras cliente/servidor mantêm-se
 separadas por responsabilidade.
 
+Se não existir warehouse local, preparar a fixture sintética do CI num diretório
+temporário antes do `check`, sem materializar dados operacionais:
+
+```bash
+# Na raiz do repositório; manter a variável neste terminal.
+BLU_TEST_ROOT="$(mktemp -d /tmp/blu-validation.XXXXXX)"
+.venv/bin/python scripts/create_ci_etl_fixture.py --output "$BLU_TEST_ROOT/data"
+.venv/bin/python -B -m etl.pipeline \
+  --data-dir "$BLU_TEST_ROOT/data" --output-dir "$BLU_TEST_ROOT/warehouse"
+export BLU_WAREHOUSE_DIR="$BLU_TEST_ROOT/warehouse"
+```
+
+Voltar a `dmc-workspace/` para executar `npm run check` e `npm run build` no mesmo
+terminal. O teste de importação de catálogo e os testes de curadoria precisam
+destes ficheiros; a sua ausência não deve ser resolvida criando dados em
+`warehouse/` dentro do checkout.
+
 `check` executa lint, TypeScript, formatação e testes Node. O build confirma a
 compilação de produção. O workflow `portal.yml` executa ambos e acrescenta o
 ensaio isolado catálogo aprovado → ETL → geração → confirmação → versão → PDF.
@@ -154,3 +171,24 @@ credenciais e runtime temporários; não usa contas reais.
 Registar em [DECISIONS.md](DECISIONS.md) apenas resultados que condicionem uma
 decisão durável. Resultados transitórios pertencem ao log da execução ou à revisão
 de código, evitando acumular contagens desatualizadas neste guia.
+
+## Auditoria das dependências Python
+
+Auditar o export base não cobre os grupos opcionais. Para avaliar todos os grupos
+sem alterar o ambiente do projeto nem os exports versionados:
+
+```bash
+uv export --locked --all-groups --no-hashes --no-emit-project \
+  --format requirements-txt --output-file /tmp/blu-audit-all-groups.txt
+uv tool run --from pip-audit pip-audit --disable-pip --no-deps \
+  --requirement /tmp/blu-audit-all-groups.txt --format json \
+  --output /tmp/blu-audit-all-groups.json
+```
+
+Esta consulta requer rede. Inspecionar também os pacotes omitidos no JSON:
+a ausência de vulnerabilidades reportadas não cobre dependências que a ferramenta
+não conseguiu analisar. Em 28 de outubro de 2026, a variante PyTorch CPU
+`2.14.0+cpu` foi omitida por não estar no PyPI; essa cobertura permanece pendente.
+Não substituir a variante CPU nem alterar o lockfile apenas para obter um resultado
+sem omissões. Para regenerar requirements versionados, manter o fluxo
+`scripts/export_requirements.py`.

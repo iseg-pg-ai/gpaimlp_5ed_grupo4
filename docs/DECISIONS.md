@@ -695,3 +695,139 @@ Estrutura/ligações, Markdown e whitespace aprovados. Árvore preparada
 `/tmp/blu-production-integration.patch`. Branch original e alterações locais
 preservados. Integração final, commit candidato, CI completo e deployment não
 foram executados.
+
+### Integração aplicada e ligação de Leads preparada — 2026-10-28
+
+O utilizador autorizou continuar as alterações sem commit pelo agente. A resolução
+já testada foi aplicada ao checkout original; os documentos locais e o staging
+anterior foram preservados numa cópia verificada antes do merge. O HEAD passou
+entretanto para `63a04e8`, commit de merge observado durante o trabalho e não
+criado pelo agente. As alterações seguintes permanecem sem commit.
+
+A revisão da entrega completa detetou que a stack de curadoria não fornecia ao
+portal as tabelas DynamoDB nem permissões para Leads. A stack aceita agora em
+conjunto `BLU_CONVERSATION_TABLE` e `BLU_INTELLIGENCE_TABLE`, injeta os nomes
+apenas no portal e permite Query nas duas tabelas e no FollowUpIndex, e UpdateItem
+apenas em intelligence. Sem configuração não concede acesso DynamoDB; nomes
+inválidos ou configuração parcial são recusados. Não cria outra tabela. A role
+ECS continua partilhada pela task: não se alega isolamento IAM por container.
+
+Evidência: 33 testes de infraestrutura aprovados, sem omissões; 197 testes
+Python com duas omissões (Cosign não selecionado e fontes privadas ausentes);
+26 testes Monitoring/tradução aprovados; check do portal com 210 testes aprovados
+e uma omissão CJK; build aprovado; catálogo/ETL até PDF aprovado em dados
+sintéticos temporários. Browser do portal: 12 cenários de apresentação em seis
+idiomas e oito de reabertura, com APIs simuladas, sobre build isolado. Duas
+falhas iniciais por warehouse ausente foram resolvidas usando a fixture do CI;
+a URL dos testes browser foi ajustada ao basePath SageMaker do build.
+
+Auditorias npm do portal, frontend e infraestrutura reportaram zero
+vulnerabilidades conhecidas. A auditoria Python e os alertas GitHub atuais não
+foram confirmados. Estes resultados não validam AWS real, identidade dos
+utilizadores, restauro entre máquinas, PDF CJK, assinatura ou deployment. Os
+parâmetros do ambiente-alvo e a aceitação operacional continuam pendentes.
+
+### Destino da entrega mantém SageMaker Code Editor — 2026-10-28
+
+O utilizador confirmou `eu-west-1` e execução no SageMaker Code Editor, com
+workspace atual por defeito e descoberta dinâmica de qualquer novo Space.
+O âmbito completo mantém Leads/concierge e Backoffice, cujos recursos AWS não
+se confundem com o hosting do portal. Não se exige nesta entrega domínio
+próprio, ACM, ECR ou ECS/ALB como destino do portal. As implementações cloud
+existentes são preservadas, sem deployment.
+
+O teste de apresentação ainda obtinha a expectativa diretamente de
+`config/studio.local.json`, embora o servidor já descobrisse o Space atual.
+Passou a invocar `scripts/studio_urls.py --port 3001`, como os launchers, evitando
+comparar o URL atual com um marcador ou domínio de uma instalação anterior.
+Validação: cinco testes de descoberta com mocks e o teste da apresentação
+local nas larguras 320, 768, 1440 e 2560 passaram. O browser verificou o link
+resolvido para o workspace atual; não foram reiniciados serviços nem alterados
+dados. Estrutura/ligações, Markdown e whitespace também passaram. A validação
+num novo workspace independente continua necessária.
+
+### Auditoria Python e validação CJK local — 2026-10-28
+
+A preparação para Code Editor avançou com auditoria do export Python base
+(nove pacotes) e export temporário de todos os grupos (98 entradas). Não foram
+reportadas vulnerabilidades nos pacotes analisáveis; `torch 2.14.0+cpu` foi
+omitido por indisponibilidade no PyPI. A omissão e os alertas GitHub atuais
+continuam pendentes; não se alteraram variantes, lockfiles ou o ambiente do
+projeto para obter um resultado artificialmente completo.
+
+Noto Sans CJK foi descarregada do repositório Ubuntu configurado e extraída em
+`.tools/pdf-cjk-validation`, fora do Git e sem instalação global. Os três testes
+PDF passaram sem omissões com `NotoSansCJKsc-Regular`. Um PDF sintético teve a
+primeira página inspecionada visualmente; o texto chinês foi extraído sem
+caracteres de substituição e o snapshot permaneceu inalterado. Foram acrescentadas
+ao `.env` local apenas as duas chaves CJK ausentes. Não se reiniciou o Portal;
+a aceitação pela interface com tradução real continua pendente.
+
+A consulta de metadados DescribeTable das duas tabelas Leads configuradas foi
+recusada pela role atual. Não se leram contactos nem se alteraram recursos ou
+IAM; esta recusa não comprova recusa de Query/UpdateItem, que usam permissões
+distintas. O mapa de componentes, acessos e critérios de aceitação foi registado
+em Operações, distinguindo o proxy Studio da identidade de utilizador do portal.
+
+O worker de tradução local foi ainda exercitado com uma frase sintética PT→ZH,
+sem fornecedor externo: devolveu `抵达酒店 15:30.` com o identificador esperado
+e preservou `15:30`. Isto comprova o modelo local nesse pedido, não conclui o
+fluxo da interface nem a revisão semântica de uma proposta real.
+
+### Validação funcional completa isolada e instalação independente — 2026-10-28
+
+O utilizador confirmou que é o único utilizador e responsável. A validação foi
+concluída num Portal isolado na porta 3027, com diretórios sintéticos, S3 desligado
+e tradução/fonte CJK locais reais. A origem do ensaio foi fixada ao endereço local;
+a primeira tentativa com origem incoerente foi recusada e repetida corretamente,
+sem relaxar a proteção de origem do produto.
+
+Passaram quatro cenários de downloads nativos com/sem JavaScript, três de Prompt
+TXT e os testes de Lixo/restauro, erros e recusa de origens externas. A interface
+exportou ZIP PT/ZH com tradução real; o PDF ZH foi extraído e inspecionado,
+com texto chinês extraível, sem caracteres de substituição nem a nota interna
+sintética. Isto valida fluxo e renderer; a tradução final para cliente exige
+revisão humana. Não foram escritos dados operacionais nem enviadas propostas.
+
+Uma cópia independente só do código atual instalou Python com todos os grupos
+e os três projetos npm pelos lockfiles, sem copiar credenciais, runtimes ou
+ambientes existentes. Os cinco manifests/lockfiles verificados mantiveram os
+hashes. Nessa cópia passaram 197 testes Python (duas omissões justificadas),
+211 testes do portal sem omissões, check/build do portal, build do frontend,
+quatro testes de packaging e 33 de infraestrutura. O ensaio não substitui
+outro Space SageMaker nem o CI Windows do futuro commit final.
+
+27 testes de checkpoints/operação/transporte passaram com S3 simulado. Uma cópia
+SQLite consistente dos dados sintéticos permitiu ao código anterior `e4c1332`
+ler sete versões do candidato, com igualdade de snapshots, relações parentais,
+hashes e bytes PDF. Não foi revertido código ou armazenamento operacional.
+
+A API GitHub confirmou `dev` como branch principal e 100 alertas Dependabot
+abertos. Foram confrontados 82 alertas Python e 18 npm com os lockfiles/exports
+atuais: nenhum corresponde a uma versão vulnerável do candidato. Os alertas
+continuam abertos até integração e reprocessamento; não foram dispensados.
+Consultas OSV de `torch 2.14.0+cpu` e `2.14.0` não devolveram advisories, complementando
+a omissão do pip-audit sem atestar o wheel CPU. CI consultado de `63a04e8`:
+Infrastructure e Documentation aprovados; não comprova o futuro candidato.
+
+As consultas DescribeStacks de Data/Frontend/Backoffice e DescribeTable das
+configurações Leads foram recusadas pela role atual. Não se alterou IAM nem se
+invocaram APIs pagas ou inferências reais. RPO/RTO aceites, orçamento total,
+monitoring fora da máquina, acesso ao segundo Space e aceitação AWS continuam
+pendentes de decisão, acesso ou validação real; não foram marcados como concluídos.
+
+### Plano reduzido exclusivamente ao trabalho aberto — 2026-10-28
+
+Por indicação do utilizador, foram retirados do `PLAN.md` os blocos de trabalho
+já concluído e a repetição detalhada de resultados. A evidência permanece neste
+histórico. Nova verificação em leitura confirmou descoberta dinâmica na região
+`eu-west-1` e HTTP 200 nos cinco serviços locais: portal, Monitoring,
+apresentação, Observatório e pré-visualização Leads/concierge. Não se reiniciou
+nenhum serviço nem se alteraram dados para esta verificação.
+
+O plano conserva apenas commit/CI/reprocessamento remoto, aceitação no segundo
+Space, aceitação AWS com sessão autorizada, decisões operacionais e monitoring
+externo. Os objetivos RPO de cinco minutos e RTO de sessenta minutos já constam
+da decisão cloud de 25 de outubro; falta confirmar a aplicabilidade ao destino
+Code Editor, em vez de os apresentar como decisões sem qualquer antecedente.
+Não foram eliminadas pendências por falta de acesso nem dadas como concluídas.

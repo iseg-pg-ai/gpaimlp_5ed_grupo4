@@ -1,18 +1,34 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 const require = createRequire(
   new URL("../dmc-workspace/package.json", import.meta.url),
 );
 const { chromium } = require("playwright");
-const browser = await chromium.launch();
 const origin =
   process.env.PRESENTATION_URL ??
   "http://127.0.0.1:3003/codeeditor/default/ports/3003/";
-const studioConfig = JSON.parse(
-  readFileSync(new URL("../config/studio.local.json", import.meta.url), "utf8"),
+const localPython = fileURLToPath(
+  new URL(
+    process.platform === "win32"
+      ? "../.venv/Scripts/python.exe"
+      : "../.venv/bin/python",
+    import.meta.url,
+  ),
 );
-const expectedPortalUrl = `${studioConfig.base_url.replace(/\/$/, "")}/ports/3001/`;
+// Usar a mesma descoberta do servidor, mesmo com configuração local antiga.
+const expectedPortalUrl = execFileSync(
+  process.env.BLU_PYTHON ?? (existsSync(localPython) ? localPython : "python3"),
+  [
+    fileURLToPath(new URL("../scripts/studio_urls.py", import.meta.url)),
+    "--port",
+    "3001",
+  ],
+  { encoding: "utf8", timeout: 20000 },
+).trim();
+const browser = await chromium.launch();
 try {
   for (const width of [320, 768, 1440, 2560]) {
     const context = await browser.newContext({

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -13,8 +13,7 @@ const environment = {
   TARGET_AWS_REGION: "eu-west-1",
   DEPLOY_ENVIRONMENT: "staging",
   BLU_PUBLIC_DOMAIN: "example.test",
-  BLU_CURATION_IMAGE_URI:
-    `650557269385.dkr.ecr.eu-west-1.amazonaws.com/blu-curation@sha256:${"a".repeat(64)}`,
+  BLU_CURATION_IMAGE_URI: `650557269385.dkr.ecr.eu-west-1.amazonaws.com/blu-curation@sha256:${"a".repeat(64)}`,
   BLU_CERTIFICATE_ARN:
     "arn:aws:acm:eu-west-1:650557269385:certificate/00000000-0000-4000-8000-000000000000",
   BLU_DATA_BUCKET_NAME: "blu-dmc-data-650557269385-eu-west-1",
@@ -29,15 +28,15 @@ const environment = {
   }),
 };
 
-function synth(t) {
+function synth(t, overrides = {}) {
   const workspace = mkdtempSync(path.join(tmpdir(), "blu-curation-cdk-"));
   const output = path.join(workspace, "assembly");
   t.after(() => rmSync(workspace, { recursive: true, force: true }));
   // Contexto de teste explícito: não depender do cache ou de credenciais locais.
   writeFileSync(path.join(workspace, "cdk.context.json"), JSON.stringify({
-    "availability-zones:account=650557269385:region=eu-west-1": [
+      "availability-zones:account=650557269385:region=eu-west-1": [
       "eu-west-1a", "eu-west-1b", "eu-west-1c",
-    ],
+      ],
   }));
   const result = spawnSync(
     cdk,
@@ -50,7 +49,13 @@ function synth(t) {
       output,
       "--quiet",
     ],
-    { cwd: workspace, env: environment, encoding: "utf8", timeout: 30_000 },
+    { cwd: workspace, env: {
+      ...environment,
+        BLU_CONVERSATION_TABLE: "",
+        BLU_INTELLIGENCE_TABLE: "",
+        ...overrides,
+      },
+      encoding: "utf8", timeout: 30_000},
   );
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const filename = readdirSync(output).find((name) =>
@@ -148,5 +153,80 @@ test("configuração recusa tags, digests inválidos e ECR fora da conta ou regi
     });
     assert.notEqual(result.status, 0, image);
     assert.match(result.stderr, /pinned by sha256 digest/);
+  }
+});
+
+test("Leads reutiliza tabelas existentes com Query e UpdateItem limitados", (t) => {
+  const template = synth(t, {
+    BLU_CONVERSATION_TABLE: "blu-test-messages",
+    BLU_INTELLIGENCE_TABLE: "blu-test-intelligence",
+  });
+  const resources = Object.values(template.Resources);
+  assert.equal(
+    resources.filter((resource) => resource.Type === "AWS::DynamoDB::Table")
+      .length,
+    0,
+  );
+  const task = resources.find(
+    (resource) => resource.Type === "AWS::ECS::TaskDefinition",
+  );
+  for (const container of task.Properties.ContainerDefinitions) {
+    const variables = Object.fromEntries(
+      container.Environment.map(({ Name, Value }) => [Name, Value]),
+    );
+    assert.equal(
+      variables.BLU_CONVERSATION_TABLE,
+      container.Name === "portal" ? "blu-test-messages" : undefined,
+    );
+    assert.equal(
+      variables.BLU_INTELLIGENCE_TABLE,
+      container.Name === "portal" ? "blu-test-intelligence" : undefined,
+    );
+  }
+  const statements = resources
+    .filter((resource) => resource.Type === "AWS::IAM::Policy")
+    .flatMap((resource) => resource.Properties.PolicyDocument.Statement)
+    .filter((statement) =>
+      JSON.stringify(statement.Action).includes("dynamodb:"),
+    );
+  const query = statements.find(
+    (statement) => statement.Action === "dynamodb:Query",
+  );
+  const update = statements.find(
+    (statement) => statement.Action === "dynamodb:UpdateItem",
+  );
+  assert.ok(query);
+  assert.ok(update);
+  const serialized = JSON.stringify(query.Resource);
+  assert.match(serialized, /blu-test-messages/);
+  assert.match(serialized, /blu-test-intelligence\/index\/FollowUpIndex/);
+  assert.doesNotMatch(serialized, /\*/);
+  assert.match(JSON.stringify(update.Resource), /blu-test-intelligence/);
+  assert.doesNotMatch(JSON.stringify(update.Resource), /blu-test-messages|\*/);
+  assert.equal(statements.length, 2);
+});
+
+test("Leads sem configuração não concede acesso e configuração parcial é recusada", (t) => {
+  const template = synth(t);
+  assert.doesNotMatch(JSON.stringify(template), /dynamodb:/);
+  for (const tables of [
+    { BLU_CONVERSATION_TABLE: "blu-messages", BLU_INTELLIGENCE_TABLE: "" },
+    { BLU_CONVERSATION_TABLE: "", BLU_INTELLIGENCE_TABLE: "blu-intelligence" },
+    {
+      BLU_CONVERSATION_TABLE: "invalid/name",
+      BLU_INTELLIGENCE_TABLE: "blu-intelligence",
+    },
+  ]) {
+    const result = spawnSync("node", ["curation-workspace.mjs"], {
+      cwd: infra,
+      env: { ...environment, ...tables },
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(
+      result.stderr,
+      /BLU_CONVERSATION_TABLE and BLU_INTELLIGENCE_TABLE/,
+    );
   }
 });

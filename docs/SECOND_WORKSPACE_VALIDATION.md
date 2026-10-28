@@ -390,6 +390,16 @@ não altera uma execução já em curso. A repetição visual, por si só, não 
 duplicação de dados ou de tarefas. O excerto recebido terminou aos 90% da
 recuperação e ainda não confirma a conclusão dessa execução.
 
+### Descoberta dinâmica — atualização de 28 de outubro de 2026
+
+O destino confirmado é o Code Editor em `eu-west-1`, com descoberta do Space
+atual. O teste da apresentação passou a obter o URL esperado através de
+`scripts/studio_urls.py --port 3001`, como o servidor, em vez de ler diretamente
+`config/studio.local.json`. No Code Editor, a descoberta por metadados e
+DescribeSpace prevalece sobre esse ficheiro. Fora desse ambiente, continua a ser
+necessário configurar uma URL real. Aplicar a correção ao clone em ensaio antes
+de repetir a etapa 11; uma execução já iniciada pode conservar o teste anterior.
+
 ### Falha de URL no novo ensaio — 27 de outubro de 2026
 
 A etapa 11 passou os cenários do Monitoring nas quatro larguras, mas o teste da
@@ -505,6 +515,38 @@ O Portal ainda conservava em memória um worker iniciado antes da instalação d
 modelos. Depois de parar apenas o serviço da porta 3001 e executar `just blu up`,
 a tradução na interface ficou disponível. Um refresh do navegador, por si só, não
 reinicia processos do servidor.
+
+### Preparar fonte CJK no Code Editor
+
+Num workspace sem fonte CJK, preparar Noto Sans CJK localmente, sem instalar
+pacotes globalmente. Os comandos seguintes usam o repositório de pacotes Ubuntu
+já configurado no Code Editor:
+
+```bash
+mkdir -p "$HOME/.tools/pdf-cjk-validation"
+(
+  cd "$HOME/.tools/pdf-cjk-validation"
+  apt-get download fonts-noto-cjk
+  for archive in fonts-noto-cjk_*.deb; do
+    dpkg-deb -x "$archive" extracted
+  done
+)
+export BLU_PDF_CJK_FONT="$HOME/.tools/pdf-cjk-validation/extracted/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+export BLU_PDF_CJK_FACE=NotoSansCJKsc-Regular
+node --experimental-strip-types --test dmc-workspace/tests/pdf-presentation.test.mjs
+```
+
+Executar o teste na raiz do projeto com Node suportado. Guardar os mesmos dois
+valores no `.env` local, preservando as outras chaves; os exports deste terminal
+não alteram um Portal já iniciado. A próxima inicialização do Portal pelo
+launcher carrega a configuração. Não repetir a recuperação S3 apenas para
+carregar a fonte. Fonte e `.env` permanecem fora do Git.
+
+Em 28 de outubro, os três testes PDF passaram com a fonte real, sem omissões.
+Um PDF sintético foi renderizado e a primeira página inspecionada visualmente;
+a extração confirmou texto chinês sem caracteres de substituição e o snapshot
+ficou inalterado. Este teste usa texto chinês sintético, não confirma a qualidade
+da tradução real de uma proposta de cliente.
 
 Para o PDF mandarim foi instalada localmente Noto Sans CJK. O ficheiro TTC inclui
 faces JP, KR, SC, TC, HK e respetivas variantes monoespaçadas; foi selecionada

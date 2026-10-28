@@ -50,6 +50,11 @@ ambiente de deployment.
 
 ## Escalação e fecho
 
-Antes de produção, preencher responsável primário, substituto, canal externo e tempo
-de resposta esperado. Fechar um incidente apenas depois da recuperação observada e,
-quando aplicável, de um restauro ou fluxo funcional controlado.
+Em 28 de outubro de 2026, o utilizador confirmou que é o único operador e
+responsável. Não foi indicado substituto. O canal externo e o prazo de resposta
+continuam por confirmar; não assumir cobertura contínua ou escalamento para
+outra pessoa.
+
+Fechar um incidente apenas depois da recuperação observada e, quando aplicável,
+de um restauro ou fluxo funcional controlado. A preparação local não inclui
+uma nova sonda fora do workspace nem um novo ensaio real de receção SNS.

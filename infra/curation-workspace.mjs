@@ -37,11 +37,23 @@ const certificateArn = required("BLU_CERTIFICATE_ARN");
 const dataBucketName = required("BLU_DATA_BUCKET_NAME");
 const backupBucketName = required("BLU_BACKUP_BUCKET_NAME");
 const notificationTopicArn = required("BLU_MONITORING_SNS_TOPIC_ARN");
-const agentProvider = process.env.BLU_AGENT_PROVIDER?.trim().toLowerCase() || "bedrock";
+const agentProvider =
+  process.env.BLU_AGENT_PROVIDER?.trim().toLowerCase() || "bedrock";
 const agentModel = required("BEDROCK_MODEL_ID");
 const agentBudget = required("BLU_AGENT_MONTHLY_BUDGET_USD");
 const agentRates = required("BLU_AGENT_RATES_JSON");
 const agentTimeout = process.env.BLU_AGENT_TIMEOUT_SECONDS?.trim() || "35";
+const conversationTable = process.env.BLU_CONVERSATION_TABLE?.trim() || "";
+const intelligenceTable = process.env.BLU_INTELLIGENCE_TABLE?.trim() || "";
+if (Boolean(conversationTable) !== Boolean(intelligenceTable))
+  throw new Error(
+    "BLU_CONVERSATION_TABLE and BLU_INTELLIGENCE_TABLE must be configured together",
+  );
+for (const table of [conversationTable, intelligenceTable].filter(Boolean))
+  if (!/^[A-Za-z0-9_.-]{3,255}$/.test(table))
+    throw new Error(
+      "BLU_CONVERSATION_TABLE and BLU_INTELLIGENCE_TABLE must be valid table names",
+    );
 
 if (!/^\d{12}$/.test(account))
   throw new Error("TARGET_AWS_ACCOUNT_ID must contain 12 digits");
@@ -73,7 +85,9 @@ if (
   !Number.isFinite(selectedRate.output) ||
   selectedRate.output < 0
 )
-  throw new Error("BLU_AGENT_RATES_JSON must include non-negative rates for the selected model");
+  throw new Error(
+    "BLU_AGENT_RATES_JSON must include non-negative rates for the selected model",
+  );
 if (!/^arn:aws(-[^:]+)?:acm:[^:]+:\d{12}:certificate\/.+/.test(certificateArn))
   throw new Error("BLU_CERTIFICATE_ARN is invalid");
 const imageMatch = imageUri.match(
@@ -224,6 +238,31 @@ class CurationWorkspaceStack extends Stack {
     });
     dataBucket.grantReadWrite(task.taskRole, `${environment}/*`);
     backupBucket.grantReadWrite(task.taskRole, `blu-backups/${environment}/*`);
+    // Reutilizar as tabelas da stack Data; não criar persistência paralela de Leads.
+    if (conversationTable) {
+      const tableArn = (name) =>
+        this.formatArn({
+          service: "dynamodb",
+          resource: "table",
+          resourceName: name,
+        });
+      task.addToTaskRolePolicy(
+        new iam.PolicyStatement({
+          actions: ["dynamodb:Query"],
+          resources: [
+            tableArn(conversationTable),
+            tableArn(intelligenceTable),
+            `${tableArn(intelligenceTable)}/index/FollowUpIndex`,
+          ],
+        }),
+      );
+      task.addToTaskRolePolicy(
+        new iam.PolicyStatement({
+          actions: ["dynamodb:UpdateItem"],
+          resources: [tableArn(intelligenceTable)],
+        }),
+      );
+    }
     notifications.grantPublish(task.taskRole);
     sessionSecret.grantRead(task.taskRole);
     task.addToTaskRolePolicy(
@@ -266,8 +305,16 @@ class CurationWorkspaceStack extends Stack {
       repository,
       imageMatch[2],
     );
-    const definitions = JSON.parse(readFileSync(new URL("../config/curation_services.json", import.meta.url), "utf8"));
-    if (definitions.schema_version !== 1 || !Array.isArray(definitions.services))
+    const definitions = JSON.parse(
+      readFileSync(
+        new URL("../config/curation_services.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    if (
+      definitions.schema_version !== 1 ||
+      !Array.isArray(definitions.services)
+    )
       throw new Error("Invalid curation services configuration");
     const containers = definitions.services.map(({ name, port, command }) => {
       const logGroup = new logs.LogGroup(this, `${name}Logs`, {
@@ -283,7 +330,15 @@ class CurationWorkspaceStack extends Stack {
         environment: {
           ...commonEnvironment,
           ...(name === "portal"
-            ? { BLU_PUBLIC_URL: `https://${hosts.portal}` }
+            ? {
+                BLU_PUBLIC_URL: `https://${hosts.portal}`,
+                ...(conversationTable
+                  ? {
+                      BLU_CONVERSATION_TABLE: conversationTable,
+                      BLU_INTELLIGENCE_TABLE: intelligenceTable,
+                    }
+                  : {}),
+              }
             : {}),
           ...(name === "monitoring"
             ? { BLU_MONITORING_PUBLIC_URL: `https://${hosts.monitoring}` }
@@ -363,10 +418,9 @@ class CurationWorkspaceStack extends Stack {
         securityGroup: loadBalancerSecurityGroup,
       },
     );
-    containers.find(({ name }) => name === "portal").container.addEnvironment(
-      "BLU_ALB_ARN",
-      loadBalancer.loadBalancerArn,
-    );
+    containers
+      .find(({ name }) => name === "portal")
+      .container.addEnvironment("BLU_ALB_ARN", loadBalancer.loadBalancerArn);
     const listener = loadBalancer.addListener("Https", {
       port: 443,
       certificates: [

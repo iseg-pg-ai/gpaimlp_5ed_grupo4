@@ -4,6 +4,42 @@ Estado revisto em 25 de outubro de 2026. O sistema funciona localmente no
 SageMaker Code Editor; ainda não existe um deployment de produção aprovado.
 Este documento separa o que está implementado das decisões ainda abertas.
 
+## Destino escolhido para esta entrega
+
+Em 28 de outubro de 2026, o utilizador confirmou execução no SageMaker Code
+Editor, em `eu-west-1`, com descoberta dinâmica do Space e uso do workspace atual
+por defeito. Esta decisão não aprova um novo hosting ECS/ALB nem exige domínio
+próprio. As stacks cloud existentes permanecem disponíveis, mas a sua existência
+não comprova publicação. A entrega inclui também Leads/concierge e Backoffice;
+os seus recursos e permissões AWS devem ser verificados separadamente.
+
+A descoberta em `scripts/studio_urls.py` usa metadados do Code Editor e
+`sagemaker:DescribeSpace`. Nesse ambiente, uma falha de descoberta interrompe a
+resolução: não se reutiliza uma URL guardada de outro workspace. Fora do Code
+Editor, `config/studio.local.json` é a alternativa de configuração. O teste de
+apresentação usa a mesma descoberta do servidor e dos launchers.
+
+## Mapa de aceitação da entrega completa
+
+| Componente | Execução e acesso | Critério de aceitação |
+| --- | --- | --- |
+| Portal DMC | Code Editor, proxy do Space, porta 3001 | Guardar/reabrir, aprovar, TXT/PDF e Lixo sem alterar histórico |
+| Agente | Subprocesso do portal; Bedrock com IAM | Propostas validadas e confirmação humana; falha do fornecedor permite edição manual |
+| Tradução | Worker e modelos locais do portal | Idiomas e números preservados; fonte CJK real no PDF mandarim |
+| Observatório | Code Editor, porta 8501, e vista nativa no portal | Leitura do warehouse publicado sem escritas |
+| Apresentação | Code Editor, porta 3003 | Navegação e link final resolvidos para o Space atual |
+| Monitoring | Code Editor, porta 3004, autenticação própria | Login, papéis, incidentes e backups; sonda externa validada separadamente |
+| ETL | CLI local, sem endpoint público | Publicação validada/atómica, rollback e fontes preservadas |
+| Site e concierge | Pré-visualização no Space, porta 5173; recursos AWS públicos separados | Consentimento, contexto, degradação e endpoints corretos para o ambiente |
+| Leads | Rotas servidor do portal e DynamoDB existente | Leitura/gestão autorizadas e isolamento dos dados de ensaio |
+| Backoffice | Recursos AWS e invocação IAM, sem interface pública local autónoma | Principais autorizados, conhecimento aprovado e confirmação humana |
+
+O proxy do Studio e a role AWS da sessão não fornecem por si só papéis de
+utilizador dentro do portal. No modo SageMaker, a identidade central do portal
+permanece desativada; Monitoring tem autenticação própria. A aceitação de acesso
+partilhado e a separação de utilizadores continuam a exigir uma decisão explícita.
+Não apresentar os testes ALB/Cognito como autenticação ativa no Code Editor.
+
 ## Estado operacional atual
 
 | Componente | Execução | Estado persistente |
@@ -325,12 +361,40 @@ privado ou criar sincronização autenticada com ownership, revisão e resoluç�
 conflitos; não se deve transformar o catálogo ou o S3 numa segunda fonte de
 rascunhos por acidente.
 
-O `Dockerfile.curation` prepara a entrega unificada dos cinco processos e exclui
-dados operacionais. Não executa por si só a materialização S3,
-ETL, Observatório, Monitoring, apresentação ou agente. Uma futura arquitetura com
-load balancer ou CDN terá de encaminhar as rotas dinâmicas e `/_next/static/*`
-para o mesmo build, validar APIs e assets e definir health checks, cache, TLS,
-rede e rollback. Essa infraestrutura ainda não existe neste repositório.
+O `Dockerfile.curation` prepara a imagem de curadoria e exclui dados
+operacionais. Os quatro serviços cloud (portal, Monitoring, apresentação e
+Observatório) partilham os comandos de `config/curation_services.json`.
+O agente é um subprocesso do portal; a declaração histórica da porta 8000 na
+imagem não corresponde a um serviço HTTP do agente.
+
+A infraestrutura existe em `infra/curation-workspace.mjs`: ECS com uma task
+escritora, EFS retido, ALB HTTPS e Cognito. A existência do código e a síntese
+local não comprovam deployment nem aceitação em staging/produção.
+
+### Ligação entre curadoria e Leads
+
+A entrega completa inclui também `BluCostaData`, `BluCostaFrontend` e
+`BluCostaBackoffice`, definidos em `infra/aws-split-app.mjs`. O portal consulta
+as tabelas existentes pelo servidor e aplica a identidade ALB/Cognito no modo
+cloud; não existe aqui uma API Cognito autónoma de Leads.
+
+Antes de sintetizar a stack de curadoria para a entrega completa, definir em
+conjunto `BLU_CONVERSATION_TABLE` e `BLU_INTELLIGENCE_TABLE` com os valores dos
+outputs `ConversationTableName` e `CustomerIntelligenceTableName` da stack Data
+no ambiente-alvo. Usar a mesma conta e região da curadoria. Não inferir nomes nem
+reutilizar tabelas de desenvolvimento em produção.
+
+A stack injeta os dois nomes apenas no container do portal e permite à task
+`dynamodb:Query` nessas tabelas e no `FollowUpIndex` da inteligência, além de
+`dynamodb:UpdateItem` apenas na tabela de inteligência. O papel IAM da task é
+partilhado pelos containers: esta configuração não constitui isolamento IAM por
+container. Não concede Scan, PutItem, DeleteItem ou criação de tabelas.
+
+Configuração parcial ou nomes inválidos impedem a síntese. Sem ambos os nomes,
+o deployment de curadoria isolada continua possível, mas Leads fica indisponível;
+esta opção não satisfaz o âmbito completo aprovado. Antes da promoção, confirmar
+no ambiente real 401/403, leitura e gestão por papel autorizado, conectividade e
+isolamento dos dados. Os testes de template não substituem essa aceitação.
 
 ## Fluxo de entrega pretendido
 
