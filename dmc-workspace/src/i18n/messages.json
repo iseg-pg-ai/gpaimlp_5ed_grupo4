@@ -1575,6 +1575,14 @@
     "de": "TXT exportieren",
     "zh": "导出 TXT"
   },
+  "Canva: dias (CSV)": {
+    "pt": "Canva: dias (CSV)",
+    "en": "Canva: days (CSV)",
+    "es": "Canva: días (CSV)",
+    "fr": "Canva : jours (CSV)",
+    "de": "Canva: Tage (CSV)",
+    "zh": "Canva：每日 (CSV)"
+  },
   "TXT para Canva": {
     "pt": "TXT para Canva",
     "en": "TXT for Canva",

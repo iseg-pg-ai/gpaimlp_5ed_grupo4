@@ -294,6 +294,8 @@ interface ItineraryWorkspaceProps {
   onExportPdf: () => void;
   onShare?: () => void;
   onExportPrompt: () => void;
+  /** Ficheiro da criação em massa do Canva: uma página do modelo BLU por dia. */
+  onExportCanvaCsv?: () => void;
   isExporting?: boolean;
   displayBudget: string;
   proposalTools?: React.ReactNode;
@@ -327,6 +329,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   onExportPdf,
   onShare,
   onExportPrompt,
+  onExportCanvaCsv,
   isExporting,
   displayBudget,
   proposalTools,
@@ -452,6 +455,20 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               <FileText aria-hidden="true" className="size-4" />
               <T text="Exportar TXT" source="pt" />
             </Button>
+            {onExportCanvaCsv && (
+              <Button
+                variant="outline"
+                onClick={onExportCanvaCsv}
+                disabled={isExporting}
+                className="min-h-11 text-sm"
+                data-testid="export-canva-csv"
+                style={{ minHeight: 44 }}
+                title="Uma página do modelo BLU por dia, com a criação em massa do Canva"
+              >
+                <FileText aria-hidden="true" className="size-4" />
+                <T text="Canva: dias (CSV)" source="pt" />
+              </Button>
+            )}
             <Button variant="outline" onClick={onEditBrief} className="min-h-11 text-sm">
               <SlidersHorizontal aria-hidden="true" className="size-4" />
               <T text="Edit Brief" />

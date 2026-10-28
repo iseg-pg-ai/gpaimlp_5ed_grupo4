@@ -259,6 +259,18 @@ As rotas continuam estimativas sujeitas a revisão; a meteorologia consultada
 dinamicamente não pertence ao snapshot e não é incluída no TXT.
 
 A partilha integrada continua a entregar o PDF DMC da versão selecionada.
+### Canva: criação em massa por dia
+
+O botão **Canva: dias (CSV)** guarda uma versão e descarrega um CSV com uma linha
+por dia (viagem, cliente, período, dia, data, título, local, resumo, programa com
+horas e locais, pendências e versão). No Canva, abrir uma cópia do
+[modelo BLU](https://canva.link/5u8zxudd1vkcbth), escolher **Apps › Criação em
+massa**, carregar o CSV e ligar cada campo a uma caixa de texto da página do dia:
+o Canva cria uma página por dia. Segue as regras do TXT: sem contactos,
+referências de reserva nem notas internas; células que pareçam fórmulas ficam
+como texto. O orçamento e as condições continuam no TXT/PDF. O texto vai no idioma
+em que a proposta foi guardada; a tradução continua a ser a do TXT/PDF.
+
 O PDF Canva é uma entrega independente aprovada pelo curador; não substitui
 artefactos históricos, não atualiza ligações públicas e não marca a versão
 como PDF exportado no portal. Alterar o roteiro exige exportar a nova versão

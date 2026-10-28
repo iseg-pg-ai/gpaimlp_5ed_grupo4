@@ -1,4 +1,5 @@
 import { validateSnapshot } from "@/lib/snapshot-validation";
+import { canvaBulkCsv } from "@/lib/canva-bulk";
 import { zipSync } from "fflate";
 import { TranslationError } from "@/lib/local-translation";
 import { isLocale } from "@/lib/locales";
@@ -104,6 +105,23 @@ export async function GET(request: Request) {
         headers: {
           ...noStoreHeaders,
           "Content-Type": "text/plain; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+        },
+      });
+    }
+    // Criação em massa do Canva: uma linha por dia da versão guardada (ver lib/canva-bulk).
+    if (params.get("format") === "canva-csv") {
+      if (row.trashedAt)
+        return jsonError(
+          "Restaure esta versão do Lixo antes de exportar para o Canva.",
+          409,
+          noStoreHeaders,
+        );
+      const filename = row.filename.replace(/\.pdf$/, "_Canva_dias.csv");
+      return new Response(canvaBulkCsv(JSON.parse(row.snapshot), row), {
+        headers: {
+          ...noStoreHeaders,
+          "Content-Type": "text/csv; charset=utf-8",
           "Content-Disposition": `attachment; filename="${filename}"`,
         },
       });

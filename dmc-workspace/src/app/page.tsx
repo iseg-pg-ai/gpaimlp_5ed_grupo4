@@ -42,6 +42,7 @@ export default function WorkspacePage() {
     update,
     exportPdf,
     exportPrompt,
+    exportCanvaCsv,
     reopenLatest,
     trashVersion,
     generate,
@@ -237,6 +238,7 @@ export default function WorkspacePage() {
                   onExportPdf={exportPdf}
                   onShare={() => setShareOpen(true)}
                   onExportPrompt={exportPrompt}
+                  onExportCanvaCsv={exportCanvaCsv}
                   isExporting={exporting || saving}
                   onEditBrief={editBrief}
                   onToggleLockActivity={(dayNumber, id) =>

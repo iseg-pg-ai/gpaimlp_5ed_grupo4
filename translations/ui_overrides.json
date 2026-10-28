@@ -230,5 +230,13 @@
     "fr": "La ligne relie les étapes dans l’ordre de l’itinéraire ; ce n’est pas le trajet routier. Des coordonnées valides ne certifient pas l’emplacement.",
     "de": "Die Linie verbindet die Halte in der Reihenfolge der Route; sie ist nicht der Straßenweg. Gültige Koordinaten bestätigen den Ort nicht.",
     "zh": "连线按行程顺序连接各地点，并非实际道路路线。有效坐标并不代表位置已核实。"
+  },
+  "Canva: dias (CSV)": {
+    "pt": "Canva: dias (CSV)",
+    "en": "Canva: days (CSV)",
+    "es": "Canva: días (CSV)",
+    "fr": "Canva : jours (CSV)",
+    "de": "Canva: Tage (CSV)",
+    "zh": "Canva：每日 (CSV)"
   }
 }

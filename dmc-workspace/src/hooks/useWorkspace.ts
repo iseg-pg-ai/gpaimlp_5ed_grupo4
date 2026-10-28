@@ -226,7 +226,7 @@ export function useWorkspace() {
       setSaving(false);
     }
   };
-  const exportProposal = async (format: "bundle" | "prompt") => {
+  const exportProposal = async (format: "bundle" | "prompt" | "canva-csv") => {
     if (!active || operation.current) return;
     operation.current = true;
     setExporting(true);
@@ -243,7 +243,7 @@ export function useWorkspace() {
       link.href = url;
       link.download =
         response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ??
-        (format === "prompt" ? "roteiro-canva.txt" : "roteiro.zip");
+        (format === "prompt" ? "roteiro-canva.txt" : format === "canva-csv" ? "roteiro-canva-dias.csv" : "roteiro.zip");
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -259,6 +259,7 @@ export function useWorkspace() {
   };
   const exportPdf = () => exportProposal("bundle");
   const exportPrompt = () => exportProposal("prompt");
+  const exportCanvaCsv = () => exportProposal("canva-csv");
   const reopenLatest = async () => {
     const latest = history.id === activeId ? history.versions[0] : undefined;
     if (!latest || !active || operation.current) return;
@@ -851,6 +852,7 @@ export function useWorkspace() {
     update,
     exportPdf,
     exportPrompt,
+    exportCanvaCsv,
     reopenLatest,
     trashVersion,
     generate,
