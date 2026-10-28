@@ -1,3 +1,4 @@
+// Combina classes de apresentação e resolve conflitos entre utilitários CSS.
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 

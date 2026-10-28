@@ -1,3 +1,5 @@
+// Comunica com o worker local por pedidos identificados e converte falhas em erros
+// controlados.
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -40,6 +42,7 @@ type Worker = {
   pending: Map<number, Pending>;
 };
 const globalWorker = globalThis as typeof globalThis & { bluTranslationWorker?: Worker };
+// Reutilizar o subprocesso e encaminhar as respostas pelo identificador do pedido.
 function getWorker(): Worker {
   if (
     globalWorker.bluTranslationWorker?.revision === 3 &&

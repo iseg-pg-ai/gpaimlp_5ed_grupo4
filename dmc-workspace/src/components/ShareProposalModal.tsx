@@ -1,3 +1,4 @@
+// Recolhe os parâmetros de partilha e deixa a validação do acesso ao servidor.
 "use client";
 import { portalFetch } from "@/lib/http-client";
 
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/form-controls";
 import { languages, type Locale } from "@/lib/locales";
 
-type ShareResult = { shareUrl: string; recipient: string };
+type ShareResult = { shareUrl: string; recipient: string; expiresAt: string };
 
 export function ShareProposalModal({
   tripId,
@@ -16,6 +17,7 @@ export function ShareProposalModal({
   versions,
   defaultLocale,
   defaultEmail,
+  defaultMethod = "link",
   customerName,
   destination,
   onClose,
@@ -25,6 +27,7 @@ export function ShareProposalModal({
   versions: Array<{ version: number; createdAt: string }>;
   defaultLocale: Locale;
   defaultEmail?: string;
+  defaultMethod?: "document" | "link";
   customerName: string;
   destination: string;
   onClose: () => void;
@@ -36,8 +39,10 @@ export function ShareProposalModal({
   ].sort((a, b) => b.version - a.version);
   const [version, setVersion] = useState(currentVersion);
   const [locale, setLocale] = useState<Locale>(defaultLocale);
-  const [method, setMethod] = useState<"document" | "link">("link");
+  const [method, setMethod] = useState<"document" | "link">(defaultMethod);
   const [recipient, setRecipient] = useState(defaultEmail ?? "");
+  const [retentionDays, setRetentionDays] = useState<7 | 30 | 90>(30);
+  const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<ShareResult | null>(null);
@@ -61,7 +66,15 @@ export function ShareProposalModal({
       const response = await portalFetch("/api/shares", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tripId, version, locale, method, recipient }),
+        body: JSON.stringify({
+          tripId,
+          version,
+          locale,
+          method,
+          recipient,
+          retentionDays,
+          consent,
+        }),
       });
       const payload = (await response.json()) as ShareResult & { error?: string };
       if (!response.ok) throw new Error(payload.error || "Não foi possível preparar a partilha.");
@@ -181,6 +194,35 @@ export function ShareProposalModal({
             </div>
           </fieldset>
 
+          <label className="block text-sm font-medium text-[var(--portal-text-143f4b)]">
+            Prazo de acesso
+            <select
+              name="shareRetention"
+              className="mt-1.5 h-11 w-full rounded-lg border border-[var(--portal-line-dfd9ce)] bg-[var(--portal-white)] px-3 text-sm"
+              value={retentionDays}
+              onChange={(event) => setRetentionDays(Number(event.target.value) as 7 | 30 | 90)}
+            >
+              <option value={7}>7 dias</option>
+              <option value={30}>30 dias</option>
+              <option value={90}>90 dias</option>
+            </select>
+          </label>
+
+          <label className="flex items-start gap-3 rounded-lg border border-[var(--portal-line-ddd8ce)] p-3 text-sm leading-5">
+            <input
+              className="mt-1"
+              type="checkbox"
+              name="shareConsent"
+              required
+              checked={consent}
+              onChange={(event) => setConsent(event.target.checked)}
+            />
+            <span>
+              Confirmo que o destinatário autorizou esta partilha e que o email, a versão e o prazo
+              acima estão corretos.
+            </span>
+          </label>
+
           <p className="rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900">
             <T
               text="O portal prepara a mensagem no programa de email deste computador. Confirme o envio nessa aplicação. Para acesso fora da rede local, configure BLU_PUBLIC_URL com o endereço público do portal."
@@ -197,6 +239,9 @@ export function ShareProposalModal({
             <div role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">
               <p className="font-semibold">
                 Partilha preparada. Confirme o envio no programa de email.
+              </p>
+              <p className="mt-1 text-xs">
+                Acesso válido até {new Date(result.expiresAt).toLocaleString()}.
               </p>
               <div className="mt-2 flex flex-wrap gap-3">
                 <button

@@ -1,4 +1,6 @@
+// Apresenta a atividade e os controlos de edição, mantendo visíveis condições e pendências.
 "use client";
+import { activitySource, presentationText } from "@/lib/presentation-text";
 import { T, useTranslated } from "@/components/LocaleProvider";
 
 import { ActivityConfirmationEditor } from "./ActivityConfirmationEditor";
@@ -63,7 +65,8 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   onRemove,
   saving,
 }) => {
-  const pending = outstandingChecks(activity);
+  const pending = outstandingChecks(activity).map(presentationText);
+  const source = activitySource(activity.source);
   const config = categoryConfig[activity.category] || categoryConfig.activity;
   const Icon = config.icon;
   const lockLabel = useTranslated(
@@ -71,8 +74,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
     "pt",
   );
   const hasDetails = Boolean(
-    activity.source ||
-      activity.appliedRules?.length ||
+    source ||
       activity.pendingChecks?.length ||
       activity.effortLevel ||
       activity.accessibilityNotes ||
@@ -181,17 +183,11 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             <T text="Fontes e detalhes de curadoria" source="pt" />
           </summary>
           <div className="mt-3 space-y-3">
-            {activity.source && (
+            {source && (
               <p>
-                <T text="Fonte" source="pt" />: {activity.source}
+                <T text="Fonte" source="pt" />: {source}
               </p>
             )}
-            {activity.appliedRules?.length ? (
-              <p>
-                <T text="Critérios" source="pt" />:{" "}
-                <T text={activity.appliedRules.join(" · ")} source="pt" />
-              </p>
-            ) : null}
             {pending.length ? (
               <p className="text-[var(--portal-text-765218)]">
                 <T text="Por confirmar:" source="pt" /> <T text={pending.join("; ")} source="pt" />

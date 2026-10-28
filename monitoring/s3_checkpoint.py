@@ -1,3 +1,5 @@
+# Transfere checkpoints verificados para S3 e controla a extração dos ficheiros recebidos no
+# restauro.
 """Transporte S3 opcional para checkpoints operacionais já validados localmente."""
 from __future__ import annotations
 
@@ -105,6 +107,8 @@ def upload(root: Path, snapshot: Path, config: S3Config, client=None) -> dict:
             raise
 
 
+# Controlar os destinos de extração para impedir que o arquivo escreva fora da área de
+# restauro.
 def _safe_extract(archive: Path, destination: Path) -> Path:
     with tarfile.open(archive, "r:gz") as bundle:
         members = bundle.getmembers()

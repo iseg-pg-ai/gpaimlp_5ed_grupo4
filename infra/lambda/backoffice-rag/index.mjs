@@ -1,3 +1,5 @@
+// Responde a pedidos internos com recuperação de conhecimento, sujeito à identidade e aos
+// recursos autorizados.
 import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
 import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';

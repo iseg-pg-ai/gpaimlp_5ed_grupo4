@@ -1,3 +1,4 @@
+// Controlos de formulário reutilizáveis para manter estados e apresentação consistentes.
 import * as React from "react";
 import { cn } from "@/lib/utils";
 

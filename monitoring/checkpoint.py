@@ -1,3 +1,5 @@
+# Captura o estado recuperável antes de uma intervenção e valida o conteúdo antes de o
+# restaurar.
 """Backups privados fora do projeto para os comandos de arranque BLU."""
 from __future__ import annotations
 
@@ -103,6 +105,7 @@ def _verify(snapshot: Path) -> dict:
     return manifest
 
 
+# Capturar e verificar o estado antes de declarar que existe um checkpoint recuperável.
 def create(root: Path, store: Path, backup_id: str | None = None) -> Path:
     created_at = datetime.now(timezone.utc).isoformat()
     backup_id = backup_id or (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ-")

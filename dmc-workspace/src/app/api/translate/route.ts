@@ -1,8 +1,11 @@
+// Endpoint: encaminha traduções para o worker local com validação e tratamento de falhas.
 import { translateLocal, TranslationError } from "@/lib/local-translation";
 import { isLocale } from "@/lib/locales";
-import { jsonError, noStoreHeaders } from "@/lib/server-http";
+import { jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";
 export const runtime = "nodejs";
 export async function POST(request: Request) {
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
   let body;
   try {
     const raw = await request.text();

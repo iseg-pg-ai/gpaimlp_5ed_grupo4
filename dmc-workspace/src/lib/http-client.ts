@@ -1,3 +1,5 @@
+// Centraliza pedidos do navegador e a resolução de caminhos compatíveis com o proxy do
+// portal.
 /** Prefix app URLs once; external URLs retain their original destination. */
 export function portalUrl(path: string): string {
   const prefix = process.env.NEXT_PUBLIC_PORTAL_BASE_PATH ?? "";

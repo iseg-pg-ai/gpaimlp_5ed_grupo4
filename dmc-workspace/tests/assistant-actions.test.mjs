@@ -8,6 +8,8 @@ import {
   simulatePlan,
   plannerContext,
   resolveAlternatives,
+  resolveRanking,
+  resolveDelivery,
 } from "../src/lib/assistant-actions.ts";
 import { recentConversation } from "../src/lib/assistant-conversation.ts";
 import { generateItinerary } from "../src/lib/curation.ts";
@@ -15,6 +17,20 @@ import { AgentAuditStore } from "../src/lib/agent-audit-store.ts";
 import { VersionStore } from "../src/lib/version-store.ts";
 import { agentFailure } from "../src/lib/agent-errors.ts";
 import { proposalImpact } from "../src/lib/assistant-impact.ts";
+import { briefQualityDiagnostics, proposalDiagnostics } from "../src/lib/proposal-diagnostics.ts";
+import { simulationFeedback } from "../src/lib/agent-simulation-feedback.ts";
+
+test("feedback de simulação não devolve texto bruto nem dados do itinerário", () => {
+  const secret = "atividade privada 123";
+  assert.deepEqual(
+    simulationFeedback(new Error(`A proposta excede a capacidade diária: ${secret}`)),
+    {
+      code: "CAPACITY_EXCEEDED",
+      instruction: "Reduz a carga do dia ou pede esclarecimento.",
+    },
+  );
+  assert.ok(!JSON.stringify(simulationFeedback(new Error(secret))).includes(secret));
+});
 
 test("uma resposta inválida do modelo não é apresentada como indisponibilidade AWS", () => {
   assert.equal(agentFailure("AGENT_INVALID_RESPONSE").status, 422);
@@ -124,6 +140,53 @@ test("impacto sem edição não inventa alterações nem chama fornecedores", ()
   assert.deepEqual(proposalImpact(snapshot, structuredClone(snapshot)).changes, []);
 });
 
+test("diagnóstico pré-exportação distingue bloqueios de avisos sem alterar a proposta", () => {
+  const { c, s } = alternativesSetup();
+  const item = s.itinerary[0].items[0];
+  item.time = "Por agendar";
+  item.priceNote = "Por confirmar";
+  s.itinerary[0].dailyCapacity = 0;
+  s.pending = ["Reconfirmar acesso"];
+  const before = JSON.stringify(s);
+  const diagnostics = proposalDiagnostics(s, c);
+  assert.ok(diagnostics.some((value) => value.code === "CAPACITY" && value.severity === "blocker"));
+  assert.ok(diagnostics.some((value) => value.code === "TIME_UNKNOWN"));
+  assert.ok(diagnostics.some((value) => value.code === "CONFIRMATION_PENDING"));
+  assert.ok(diagnostics.some((value) => value.code === "PRICE_UNKNOWN"));
+  assert.ok(diagnostics.some((value) => value.code === "PENDING"));
+  assert.equal(JSON.stringify(s), before);
+});
+
+test("qualidade do briefing sinaliza lacunas e contradições sem inventar correções", () => {
+  const snapshot = fixture();
+  Object.assign(snapshot.brief, {
+    children: 1,
+    childrenAges: "",
+    arrivalLocation: "",
+    arrivalFlightNumber: "TP123",
+    arrivalTime: "",
+    departureLocation: "LIS",
+    departureFlightNumber: "TP456",
+    departureTime: "",
+    interests: ["Museus"],
+    exclusions: ["museus"],
+    mobilityRestrictions: ["Outra"],
+    dietaryRestrictions: ["Alergia"],
+  });
+  const before = structuredClone(snapshot);
+  const diagnostics = briefQualityDiagnostics(snapshot);
+  for (const code of [
+    "CHILD_AGES",
+    "ARRIVAL_INCOMPLETE",
+    "DEPARTURE_INCOMPLETE",
+    "INTEREST_EXCLUDED",
+    "MOBILITY_DETAIL",
+    "DIETARY_DETAIL",
+  ])
+    assert.ok(diagnostics.some((item) => item.code === code));
+  assert.deepEqual(snapshot, before);
+});
+
 function alternativesSetup() {
   const brief = {
     ...fixture().brief,
@@ -219,6 +282,129 @@ test("alternativas são resolvidas no catálogo e não modificam o roteiro", () 
   assert.throws(() => resolveAlternatives(s, p, c), /protegida|confirmada/);
 });
 
+test("ranking ordena apenas candidatos elegíveis e não altera o roteiro", () => {
+  const { c, s } = alternativesSetup();
+  const before = JSON.stringify(s);
+  const ranked = resolveRanking(
+    s,
+    { ...plan([]), ranking: [{ dayNumber: 1, catalogIds: ["atracoes:Jardim", "atracoes:Museu"] }] },
+    c,
+  );
+  assert.deepEqual(
+    ranked[0].options.map((item) => item.id),
+    ["atracoes:Jardim", "atracoes:Museu"],
+  );
+  assert.ok(ranked[0].options.every((item) => item.baselinePosition > 0));
+  assert.equal(JSON.stringify(s), before);
+  assert.throws(() =>
+    resolveRanking(
+      s,
+      { ...plan([]), ranking: [{ dayNumber: 1, catalogIds: ["atracoes:fora"] }] },
+      c,
+    ),
+  );
+  assert.throws(() =>
+    validatePlan({
+      ...plan([]),
+      ranking: [{ dayNumber: 1, catalogIds: ["atracoes:Museu", "atracoes:Museu"] }],
+    }),
+  );
+});
+
+test("entrega é apenas preparada e fica bloqueada por diagnósticos impeditivos", () => {
+  const { c, s } = alternativesSetup();
+  const valid = {
+    ...plan([]),
+    delivery: { kind: "export_pdf", locale: "en" },
+  };
+  const before = structuredClone(s);
+  const preview = resolveDelivery(s, valid, c);
+  assert.equal(preview.kind, "export_pdf");
+  assert.equal(preview.locale, "en");
+  assert.deepEqual(s, before);
+
+  s.itinerary[0].dailyCapacity = 0;
+  assert.ok(resolveDelivery(s, valid, c).blockers.some((item) => item.code === "CAPACITY"));
+  assert.throws(
+    () =>
+      validatePlan({
+        ...valid,
+        actions: [{ type: "set_free_day", dayNumber: 1 }],
+      }),
+    /Guarde primeiro/,
+  );
+  assert.throws(
+    () => validatePlan({ ...plan([]), delivery: { kind: "share", locale: "pt" } }),
+    /Forma de entrega/,
+  );
+});
+
+test("Blu propõe campos permitidos do briefing sem alterar dados pessoais", () => {
+  const { c, s } = alternativesSetup();
+  const before = structuredClone(s);
+  const updated = simulatePlan(
+    s,
+    plan([{ type: "update_brief", dayNumber: 1, briefPatch: { budget: 1200 } }]),
+    c,
+  );
+  assert.equal(updated.brief.budget, 1200);
+  assert.equal(updated.brief.customerEmail, before.brief.customerEmail);
+  assert.deepEqual(updated.itinerary, before.itinerary);
+  assert.equal(s.brief.budget, before.brief.budget);
+  assert.throws(() =>
+    validatePlan(
+      plan([
+        {
+          type: "update_brief",
+          dayNumber: 1,
+          briefPatch: { customerEmail: "novo@example.com" },
+        },
+      ]),
+    ),
+  );
+});
+
+test("Blu prepara confirmação pendente sem confirmar nem aceitar campos sensíveis", () => {
+  const { c, s } = alternativesSetup();
+  const item = s.itinerary[0].items[0];
+  const updated = simulatePlan(
+    s,
+    plan([
+      {
+        type: "update_pending_confirmation",
+        dayNumber: 1,
+        itemId: item.id,
+        confirmationPatch: { time: "14:30", location: "Átrio principal" },
+      },
+    ]),
+    c,
+  );
+  const prepared = updated.itinerary[0].items[0];
+  assert.equal(prepared.confirmation.status, "pending");
+  assert.equal(prepared.confirmation.confirmedAt, null);
+  assert.equal(prepared.confirmation.time, "14:30");
+  assert.equal(prepared.confirmation.location, "Átrio principal");
+  assert.equal(prepared.lastModifiedBy, "assistant");
+  assert.equal(s.itinerary[0].items[0].confirmation, undefined);
+  item.isLocked = true;
+  assert.throws(
+    () =>
+      simulatePlan(
+        s,
+        plan([
+          {
+            type: "update_pending_confirmation",
+            dayNumber: 1,
+            itemId: item.id,
+            confirmationPatch: { supplier: "Fornecedor conhecido" },
+          },
+        ]),
+        c,
+      ),
+    /protegida|confirmada/,
+  );
+});
+
 test("o contexto não exclui os últimos dias quando o catálogo tem muitas opções", () => {
   const { c, s } = alternativesSetup();
   c.atracoes = Array.from({ length: 130 }, (_, i) => ({
@@ -272,6 +458,33 @@ test("escolher uma alternativa cria outra pré-visualização e só a aceitaçã
   }
 });
 
+test("escolher um candidato ranqueado prepara uma adição e só depois permite aceitar", () => {
+  const { c, s } = alternativesSetup();
+  const root = mkdtempSync(path.join(tmpdir(), "blu-agent-ranking-"));
+  const store = new VersionStore(root);
+  try {
+    store.save("ranking", s, "generated", null);
+    const audit = new AgentAuditStore(store);
+    const rankingPlan = {
+      ...plan([]),
+      ranking: [{ dayNumber: 1, catalogIds: ["atracoes:Museu", "atracoes:Jardim"] }],
+    };
+    const id = audit.propose("ranking", 1, "recomenda", rankingPlan, s, {
+      requestIntent: { kind: "add", dayNumber: 1, generic: true },
+    });
+    assert.throws(() => audit.selectAlternative(id, "ranking", 1, "", "atracoes:fora", c));
+    const proposal = audit.selectAlternative(id, "ranking", 1, "", "atracoes:Museu", c);
+    assert.equal(store.list("ranking").length, 1);
+    assert.equal(proposal.plan.actions[0].type, "add_catalog_item");
+    assert.ok(proposal.after[0].items.some((item) => item.id === "atracoes:Museu"));
+    const accepted = audit.decide(proposal.runId, "ranking", "accept", c);
+    assert.equal(accepted.version, 2);
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("contrato partilhado rejeita ações inventadas, argumentos adicionais e ausência de confirmação", () => {
   const p = plan([{ type: "remove_item", dayNumber: 1, itemId: "test" }]);
   assert.doesNotThrow(() => validatePlan(p));
@@ -312,13 +525,30 @@ test("simulação composta é atómica, preserva a entrada e recusa itens proteg
 
 test("contexto omite nomes, contactos, notas e referências de confirmação", () => {
   const s = fixture();
+  Object.assign(s.brief, {
+    arrivalLocation: "Aeroporto de Lisboa",
+    arrivalTime: "10:35",
+    arrivalFlightNumber: "TP 1363",
+    departureLocation: "Aeroporto do Porto",
+    departureTime: "17:20",
+    departureFlightNumber: "TP 1931",
+    specialOccasion: "Aniversário",
+  });
   s.brief.futureInternalField = "privado-futuro";
   s.itinerary[0].items[0].confirmation = {
     status: "pending",
     bookingReference: "SEGREDO",
     contact: "PRIVADO",
   };
-  const context = JSON.stringify(plannerContext(s, catalog));
+  const projected = plannerContext(s, catalog);
+  const context = JSON.stringify(projected);
+  assert.equal(projected.brief.arrivalLocation, "Aeroporto de Lisboa");
+  assert.equal(projected.brief.arrivalTime, "10:35");
+  assert.equal(projected.brief.arrivalFlightNumber, "TP 1363");
+  assert.equal(projected.brief.departureLocation, "Aeroporto do Porto");
+  assert.equal(projected.brief.departureTime, "17:20");
+  assert.equal(projected.brief.departureFlightNumber, "TP 1931");
+  assert.equal(projected.brief.specialOccasion, "Aniversário");
   assert.ok(!context.includes(s.brief.customerName));
   assert.ok(!context.includes("privado"));
   assert.ok(!context.includes("SEGREDO"));
@@ -504,14 +734,17 @@ test("regeneração ampla preserva edição manual sem impedir uma remoção Blu
   assert.equal(explicit.itinerary[0].lastModifiedBy, "assistant");
 });
 
-test("schema recusa campos adicionais, funcionalidades adiadas, valores inválidos e mais de oito ações", () => {
+test("schema recusa campos adicionais, campos sensíveis, valores inválidos e mais de oito ações", () => {
   const action = { type: "remove_item", dayNumber: 1, itemId: "a" };
   for (const invalid of [
     { ...plan([]), requestText: "não deve entrar" },
-    { ...plan([]), ranking: [] },
-    plan([{ type: "update_brief", dayNumber: 1, briefPatch: { budget: 1 } }]),
     plan([
-      { type: "update_pending_confirmation", dayNumber: 1, itemId: "a", confirmationPatch: {} },
+      {
+        type: "update_pending_confirmation",
+        dayNumber: 1,
+        itemId: "a",
+        confirmationPatch: { contact: "não autorizado" },
+      },
     ]),
     plan([{ ...action, dayNumber: 1.5 }]),
     plan([{ ...action, dayNumber: 0 }]),
@@ -643,6 +876,38 @@ test("contexto omite dados pessoais também em campos futuros e texto das confir
     assert.ok(!context.includes(secret), secret);
 });
 
+test("contexto de percursos preserva a distinção entre OSRM medido e estimativa", () => {
+  const { c, s } = alternativesSetup();
+  s.itinerary[0].items.push({
+    ...structuredClone(s.itinerary[0].items[0]),
+    id: "atracoes:Segundo",
+    title: "Segundo",
+  });
+  s.itinerary[0].items[0].transitToNext = {
+    id: "leg-1",
+    fromLocation: "Museu",
+    toLocation: "Jardim",
+    mode: "walk",
+    duration: "12 min",
+    distance: "850 m",
+    bufferMinutes: 5,
+    isAlgorithmOptimized: true,
+  };
+  s.itinerary[0].items[1].transitToNext = {
+    id: "leg-2",
+    fromLocation: "Jardim",
+    toLocation: "Hotel",
+    mode: "chauffeur",
+    duration: "20 min",
+    distance: "3.2 km (estimado)",
+    isAlgorithmOptimized: false,
+  };
+  const routes = plannerContext(s, c).routes[0];
+  assert.equal(routes.legs[0].evidence, "measured_osrm");
+  assert.equal(routes.legs[1].evidence, "estimate");
+  assert.equal(routes.summary, undefined);
+});
+
 test("auditoria guarda hash do pedido, nunca texto integral, e recusa outra viagem", () => {
   const { c, s } = alternativesSetup();
   const temporary = mkdtempSync(path.join(tmpdir(), "blu-agent-audit-private-"));
@@ -662,6 +927,29 @@ test("auditoria guarda hash do pedido, nunca texto integral, e recusa outra viag
   } finally {
     store.close();
     rmSync(temporary, { recursive: true, force: true });
+  }
+});
+
+test("propostas autenticadas pertencem ao utilizador que as criou", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "blu-agent-owner-"));
+  const store = new VersionStore(root);
+  try {
+    const s = fixture();
+    store.save("owned-trip", s, "generated", null);
+    const audit = new AgentAuditStore(store);
+    const p = plan([{ type: "remove_item", dayNumber: 1, itemId: s.itinerary[0].items.at(-1).id }]);
+    const after = simulatePlan(s, p, catalog);
+    const id = audit.propose("owned-trip", 1, "Explica o dia", p, after, {}, "cognito:owner-a");
+    assert.deepEqual(audit.pendingPlan("owned-trip", 1, id, "cognito:owner-a"), p);
+    assert.equal(audit.pendingPlan("owned-trip", 1, id, "cognito:owner-b"), undefined);
+    assert.throws(
+      () => audit.decide(id, "owned-trip", "reject", catalog, "", "cognito:owner-b"),
+      /não encontrada/,
+    );
+    assert.equal(audit.decide(id, "owned-trip", "reject", catalog, "", "cognito:owner-a"), null);
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
   }
 });
 

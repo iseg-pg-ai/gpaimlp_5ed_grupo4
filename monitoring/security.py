@@ -1,3 +1,5 @@
+# Gere credenciais, sessões e permissões próprias do Monitoring, separadas da identidade da
+# role AWS.
 """Contas locais, autorização e sessões do painel de operações."""
 from __future__ import annotations
 
@@ -15,6 +17,7 @@ import time
 ITERATIONS = 600_000
 
 
+# Derivar o registo de autenticação sem conservar a palavra-passe em texto simples.
 def password_record(password):
     if not 12 <= len(password) <= 128:
         raise ValueError("A palavra-passe deve ter entre 12 e 128 caracteres.")
@@ -63,6 +66,7 @@ def save_credentials(path: Path, username: str, password: str):
     write_users(path, users)
 
 
+# Reunir sessões, permissões e gestão de contas num único ponto de validação.
 class Security:
     def __init__(self, path: Path, clock=time.monotonic):
         self.path = path
@@ -103,6 +107,7 @@ class Security:
     def key(token):
         return hashlib.sha256(token.encode()).hexdigest()
 
+    # Revalidar a conta e os prazos em cada acesso, não apenas durante o login.
     def session(self, token):
         with self.lock:
             key = self.key(token)
@@ -132,6 +137,7 @@ class Security:
             return [{field: user[field] for field in ("username", "role", "enabled")}
                     for user in sorted(self.users.values(), key=lambda user: user["username"].casefold())]
 
+    # Preparar as alterações numa cópia e preservar pelo menos um administrador ativo.
     def manage(self, token, action, fields):
         with self.lock:
             actor = self.admin_session(token)

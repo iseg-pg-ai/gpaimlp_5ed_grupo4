@@ -1,3 +1,5 @@
+// Mantém a fila durável de escritas do catálogo e reenvia pendências sem perder o controlo
+// de versão.
 import { createHash } from "node:crypto";
 import {
   existsSync,
@@ -66,7 +68,7 @@ function enqueue(item: PendingCatalogWrite, root: string) {
   const directory = pendingRoot(root);
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const target = path.join(directory, `${item.operationId}.json`);
-  if (existsSync(target)) return;
+  if (existsSync(target)) return target;
   const temporary = path.join(directory, `.${item.operationId}.${process.pid}.tmp`);
   writeFileSync(temporary, `${JSON.stringify(item)}\n`, { flag: "wx", mode: 0o600 });
   try {
@@ -76,8 +78,10 @@ function enqueue(item: PendingCatalogWrite, root: string) {
   } finally {
     unlinkSync(temporary);
   }
+  return target;
 }
 
+// Sincronizar pendências com validação e controlo de revisão do catálogo.
 export async function syncPendingCatalog(store: CatalogStore, root = operationalRoot()) {
   const directory = pendingRoot(root);
   if (!existsSync(directory)) return 0;
@@ -111,6 +115,7 @@ export async function syncPendingCatalog(store: CatalogStore, root = operational
   return entries.length;
 }
 
+// Preservar a intenção de escrita quando o destino não permite concluir a operação.
 export async function persistCatalog(
   input: unknown,
   options: { catalogRoot?: string; operationalRoot?: string } = {},
@@ -118,31 +123,36 @@ export async function persistCatalog(
   validateCatalogInput(input);
   const id = operationId(input);
   const queueRoot = options.operationalRoot ?? operationalRoot();
+  const item: PendingCatalogWrite = {
+    schemaVersion: 2,
+    operationId: id,
+    operationType: "catalog.save",
+    entity: input.id ?? `new:${input.category}`,
+    syncState: "pending",
+    baseVersion: input.baseRevision,
+    createdAt: new Date().toISOString(),
+    input,
+  };
   const store = new CatalogStore(options.catalogRoot ?? catalogRoot());
+  let pendingFile: string | undefined;
   try {
     await syncPendingCatalog(store, queueRoot);
+    // O write-ahead persistente fecha a janela entre o commit SQL e a outbox S3.
+    pendingFile = enqueue(item, queueRoot);
     const record = await store.save(input, id);
     enqueueDataChange("catalog.save", id, input.id ?? record.id, input, queueRoot);
+    unlinkSync(pendingFile);
     return { queued: false, record };
   } catch (error) {
     if (
       error instanceof CatalogConflict ||
       (error instanceof PortalPythonError && error.code === "CATALOG_INVALID")
-    )
+    ) {
+      if (pendingFile && existsSync(/* turbopackIgnore: true */ pendingFile))
+        unlinkSync(pendingFile);
       throw error;
-    enqueue(
-      {
-        schemaVersion: 2,
-        operationId: id,
-        operationType: "catalog.save",
-        entity: input.id ?? `new:${input.category}`,
-        syncState: "pending",
-        baseVersion: input.baseRevision,
-        createdAt: new Date().toISOString(),
-        input,
-      },
-      queueRoot,
-    );
+    }
+    enqueue(item, queueRoot);
     return { queued: true, operationId: id };
   }
 }

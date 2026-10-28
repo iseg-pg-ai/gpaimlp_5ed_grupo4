@@ -96,6 +96,40 @@ class DashboardContractsTest(unittest.TestCase):
             self.assertEqual(frame.to_dict('records'), build_observatory(tables)['model_observatory_catalog'])
             self.assertEqual(database.read_bytes(), before)
 
+    def test_catalog_handles_sparse_and_complete_deliveries_without_writing(self):
+        from etl.pipeline import load_table
+        for complete in (False, True):
+            with self.subTest(complete=complete), tempfile.TemporaryDirectory() as temporary:
+                tables = {
+                    "atracoes": [{"id": "A1", "nome_da_atracao": "Jardim", "cidade": "Lisboa", "preco_da_atracao": 0}],
+                    "restaurantes": [{"id_blu": "R1", "estabelecimento": "Mesa", "cidade": "Porto"}],
+                    "experiencias": [{"nome_da_experiencia": "Prova", "localizacao": "Azeitão"}],
+                    "precos": [{"id": "P1"}],
+                }
+                if complete:
+                    for name in ("atracoes", "restaurantes", "experiencias"):
+                        tables[name][0].update(contactos="Contacto de teste", morada="Morada de teste",
+                                               latitude=38.7, longitude=-9.1, acessibilidade_nivel_de_confirmacao="Por confirmar")
+                database = Path(temporary) / "warehouse.sqlite"
+                with closing(sqlite3.connect(database)) as connection, connection:
+                    for name, rows in tables.items():
+                        load_table(connection, name, rows)
+                before = database.read_bytes()
+                with patch.object(app, "DATABASE", database):
+                    frame = app.catalog_data()
+                self.assertEqual(frame.Chave.tolist(), ["Atração:A1", "Restaurante:R1", "Experiência:Prova"])
+                self.assertEqual(frame.Destino.tolist(), ["Lisboa", "Porto", "Azeitão"])
+                self.assertEqual(frame.iloc[0]["Preço"], 0)
+                if complete:
+                    self.assertEqual(frame.Contactos.tolist(), ["Contacto de teste"] * 3)
+                    self.assertEqual(frame.Morada.tolist(), ["Morada de teste"] * 3)
+                else:
+                    self.assertTrue(frame.Contactos.isna().all())
+                    self.assertTrue(frame.Morada.isna().all())
+                    self.assertTrue(frame.Acessibilidade.isna().all())
+                    self.assertTrue(frame.iloc[1:]["Preço"].isna().all())
+                self.assertEqual(database.read_bytes(), before)
+
     def test_query_closes_connection_after_success_and_error(self):
         for sql, expected_error in (("SELECT 1 AS value", False), ("SELECT * FROM missing", True)):
             with self.subTest(sql=sql):

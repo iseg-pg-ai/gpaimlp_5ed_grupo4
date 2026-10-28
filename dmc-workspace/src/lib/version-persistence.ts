@@ -1,3 +1,5 @@
+// Regista escritas de versões numa fila durável e sincroniza-as com controlo da versão de
+// base.
 import { createHash } from "node:crypto";
 import {
   existsSync,
@@ -90,6 +92,7 @@ function validatePending(value: unknown): asserts value is PendingVersionWrite {
     throw new Error("Integridade da operação pendente inválida.");
 }
 
+// Registar a intenção de escrita de forma durável antes de tentar a sincronização.
 export function queuePendingVersion(item: PendingVersionWrite, root = operationalRoot()) {
   validatePending(item);
   const directory = pendingRoot(root);
@@ -108,6 +111,7 @@ export function queuePendingVersion(item: PendingVersionWrite, root = operationa
   return target;
 }
 
+// Reenviar pendências conservando a revisão de base e a identificação da operação.
 export function syncPendingVersions(store: VersionStore, root = operationalRoot()) {
   const directory = pendingRoot(root);
   if (!existsSync(directory)) return { synchronized: 0, pending: 0 };
@@ -142,6 +146,7 @@ export function syncPendingVersions(store: VersionStore, root = operationalRoot(
   return { synchronized, pending: entries.length - synchronized };
 }
 
+// Distinguir a versão efetivamente guardada de uma operação ainda em fila.
 export function persistVersion(
   input: Pick<PendingVersionWrite, "tripId" | "snapshot" | "reason" | "baseVersion">,
   options: { versionRoot?: string; operationalRoot?: string } = {},
@@ -159,9 +164,12 @@ export function persistVersion(
     ...input,
   };
   let store: VersionStore | undefined;
+  let pendingFile: string | undefined;
   try {
     store = new VersionStore(options.versionRoot ?? versionRoot());
     const synchronized = syncPendingVersions(store, options.operationalRoot);
+    // O write-ahead existe antes do commit; um reinício completa a outbox S3.
+    pendingFile = queuePendingVersion(item, options.operationalRoot);
     const record = store.save(
       input.tripId,
       input.snapshot,
@@ -177,9 +185,14 @@ export function persistVersion(
       item,
       options.operationalRoot ?? operationalRoot(),
     );
+    unlinkSync(pendingFile);
     return { queued: false, record, synchronized: synchronized.synchronized };
   } catch (error) {
-    if (error instanceof VersionConflict) throw error;
+    if (error instanceof VersionConflict) {
+      if (pendingFile && existsSync(/* turbopackIgnore: true */ pendingFile))
+        unlinkSync(pendingFile);
+      throw error;
+    }
     queuePendingVersion(item, options.operationalRoot);
     return {
       queued: true,

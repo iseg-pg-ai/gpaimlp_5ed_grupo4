@@ -1,3 +1,4 @@
+// Controlos de entrada da conversa; o texto continua sujeito à validação do servidor.
 "use client";
 
 import * as React from "react";

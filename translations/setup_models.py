@@ -1,3 +1,4 @@
+# Instala os modelos locais de tradução; este passo de preparação pode aceder à rede.
 """Download translation models once. Runtime translation never uses the network."""
 import os
 from pathlib import Path

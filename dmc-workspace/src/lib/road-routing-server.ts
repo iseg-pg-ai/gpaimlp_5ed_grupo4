@@ -1,13 +1,23 @@
+// Liga o itinerário ao cálculo rodoviário no servidor e atualiza os trajetos sujeitos às
+// regras de edição.
 import type { ItineraryDay, TransitLeg, TransitMode } from "../types/index";
 import { portalRequest } from "./python-portal.ts";
-import {
-  buildCoordMap,
-  extractCoords,
-  optimizeRouteSequence,
-  realignTimeSlots,
-  recomputeDailyRouteSummary,
-  type LocationCoords,
-} from "./road-routing.ts";
+import { buildCoordMap, extractCoords, type LocationCoords } from "./road-routing.ts";
+
+const optimizeRouteSequence = (
+  items: ItineraryDay["items"],
+  catalogRecords?: Array<Record<string, unknown>>,
+) => portalRequest<ItineraryDay["items"]>("routing-optimize", ".", { items, catalogRecords });
+
+const realignTimeSlots = (
+  items: ItineraryDay["items"],
+  catalogRecords?: Array<Record<string, unknown>>,
+) => portalRequest<ItineraryDay["items"]>("routing-realign", ".", { items, catalogRecords });
+
+const recomputeDailyRouteSummary = (items: ItineraryDay["items"]) =>
+  portalRequest<ItineraryDay["routeSummary"] | null>("routing-summary", ".", { items }).then(
+    (summary) => summary ?? undefined,
+  );
 
 export async function calculateRoadLeg(
   from: LocationCoords,
@@ -34,6 +44,8 @@ export async function calculateRoadLeg(
   });
 }
 
+// Adicionar contexto rodoviário ao itinerário sem tornar a indisponibilidade do fornecedor
+// um dado confirmado.
 export async function enrichItineraryWithRoadRouting(
   days: ItineraryDay[],
   catalogRecords?: Array<Record<string, unknown>>,
@@ -44,7 +56,7 @@ export async function enrichItineraryWithRoadRouting(
   for (const day of days) {
     let items = [...day.items];
     if (options?.optimizeSequence && items.length > 2)
-      items = optimizeRouteSequence(items, coordMap);
+      items = await optimizeRouteSequence(items, catalogRecords);
     for (let index = 0; index < items.length - 1; index++) {
       const current = items[index];
       const next = items[index + 1];
@@ -59,7 +71,7 @@ export async function enrichItineraryWithRoadRouting(
       );
       items[index] = { ...current, transitToNext: leg };
     }
-    enrichedDays.push({ ...day, items, routeSummary: recomputeDailyRouteSummary(items) });
+    enrichedDays.push({ ...day, items, routeSummary: await recomputeDailyRouteSummary(items) });
   }
   return enrichedDays;
 }
@@ -84,11 +96,11 @@ export async function updateDayTransitLeg(
       { preferredMode: newMode, bufferMinutes: customBufferMinutes },
     ),
   };
-  const realigned = realignTimeSlots(items, coordMap);
+  const realigned = await realignTimeSlots(items, catalogRecords);
   return {
     ...day,
     items: realigned,
-    routeSummary: recomputeDailyRouteSummary(realigned) ?? day.routeSummary,
+    routeSummary: (await recomputeDailyRouteSummary(realigned)) ?? day.routeSummary,
   };
 }
 

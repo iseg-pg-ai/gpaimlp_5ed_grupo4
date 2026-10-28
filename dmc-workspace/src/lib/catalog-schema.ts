@@ -1,3 +1,5 @@
+// Contrato e validação dos registos do catálogo, incluindo preços e progresso dos grupos de
+// campos.
 import { validateOperational, type Operational } from "./catalog-operational.ts";
 import { validateMatching, type MatchingProfile } from "./catalog-matching.ts";
 export const categories = ["atracoes", "restaurantes", "experiencias"] as const;

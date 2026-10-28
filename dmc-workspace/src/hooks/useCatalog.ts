@@ -1,3 +1,4 @@
+// Carrega o catálogo consumido pela interface e centraliza os estados de espera e falha.
 "use client";
 import { portalFetch, responseJson } from "@/lib/http-client";
 import { operationalFromSource } from "@/lib/catalog-operational";

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Executa o fluxo de infraestrutura AWS; a sua execução requer autorização de publicação.
 set -euo pipefail
 
 root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

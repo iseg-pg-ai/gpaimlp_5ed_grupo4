@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Arranca o portal a partir dos comandos definidos no respetivo projeto Node.
 # Build and start only the Next.js DMC Workspace portal.
 
 set -euo pipefail

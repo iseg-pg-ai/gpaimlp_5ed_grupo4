@@ -1,3 +1,4 @@
+// Fronteira Node/Python com protocolo, prazo de execução e erros públicos controlados.
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -16,6 +17,13 @@ export class PortalPythonError extends Error {
     super(message);
     this.code = code;
   }
+}
+
+function agentProcessTimeoutMs() {
+  const seconds = Number(process.env.BLU_AGENT_TIMEOUT_SECONDS ?? "35");
+  return Number.isFinite(seconds) && seconds >= 5 && seconds <= 120
+    ? (seconds + 20) * 1000
+    : 55_000;
 }
 
 // Processo local sem shell, serviço HTTP adicional ou dependências do agente.
@@ -37,12 +45,19 @@ export function portalRequest<T>(operation: string, root: string, params: object
   return new Promise((resolve, reject) => {
     const child = execFile(
       /* turbopackIgnore: true */ python,
-      operation === "agent-plan"
-        ? ["-X", "utf8", "-B", "-m", "blu_ai.planner"]
+      operation === "agent-plan" || operation === "agent-compile"
+        ? [
+            "-X",
+            "utf8",
+            "-B",
+            "-m",
+            "blu_ai.planner",
+            ...(operation === "agent-compile" ? ["--compile-only"] : []),
+          ]
         : ["-X", "utf8", "-B", "-m", "portal.data", operation, root],
       {
         cwd: repository,
-        timeout: operation === "agent-plan" ? 55000 : 15000,
+        timeout: operation === "agent-plan" ? agentProcessTimeoutMs() : 15_000,
         env: {
           ...process.env,
           PYTHONPATH: [path.join(repository, "src"), process.env.PYTHONPATH]
@@ -64,13 +79,13 @@ export function portalRequest<T>(operation: string, root: string, params: object
           });
           return reject(
             new PortalPythonError(
-              operation === "agent-plan"
+              operation === "agent-plan" || operation === "agent-compile"
                 ? error.killed
                   ? "AGENT_TIMEOUT"
                   : "AGENT_PROCESS_UNAVAILABLE"
                 : "DATASET_UNAVAILABLE",
-              operation === "agent-plan"
-                ? "Planeador AWS indisponível. Verifique o grupo agent e as permissões IAM."
+              operation === "agent-plan" || operation === "agent-compile"
+                ? "Planeador indisponível. Verifique o grupo agent e a configuração do serviço."
                 : "Python do portal indisponível. Verifique BLU_PYTHON e a instalação Python.",
             ),
           );
@@ -104,7 +119,9 @@ export function portalRequest<T>(operation: string, root: string, params: object
           });
           reject(
             new PortalPythonError(
-              operation === "agent-plan" ? "AGENT_INVALID_RESPONSE" : "DATASET_UNAVAILABLE",
+              operation === "agent-plan" || operation === "agent-compile"
+                ? "AGENT_INVALID_RESPONSE"
+                : "DATASET_UNAVAILABLE",
               "Resposta inválida do Python do portal.",
             ),
           );

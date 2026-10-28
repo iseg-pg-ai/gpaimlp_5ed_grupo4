@@ -1,3 +1,4 @@
+// Endpoint: calcula as opções elegíveis segundo o briefing e o estado da proposta.
 import { jsonError, noStoreHeaders } from "@/lib/server-http";
 import { editWithAssistant } from "@/lib/assistant-editing";
 import { validateBrief } from "@/lib/curation";

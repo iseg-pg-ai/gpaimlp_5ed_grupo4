@@ -1,3 +1,5 @@
+// Agrega custos conhecidos e pendências por moeda, sem converter valores desconhecidos em
+// custo zero.
 import { validatePricing, type CatalogPricing } from "./catalog-schema.ts";
 import type { Snapshot } from "./itinerary-pdf";
 
@@ -13,8 +15,8 @@ type BudgetLine = {
 };
 
 // Legacy prose is only calculated when the complete value has an unambiguous unit.
-function parsePrice(value: string): CatalogPricing | undefined {
-  const match = value
+function parsePrice(value: string | undefined): CatalogPricing | undefined {
+  const match = (value ?? "")
     .trim()
     .match(
       /^(\d{1,9}(?:[.,]\d{1,2})?)\s*(EUR|USD|GBP|CHF|CNY|€)\s*(?:·\s*)?(?:por |\/)(pessoa|grupo|serviço|hora)(?:\s*·\s*(Confirmado|Estimado|Por confirmar))?$/i,
@@ -30,6 +32,7 @@ function parsePrice(value: string): CatalogPricing | undefined {
   };
 }
 
+// Separar totais por moeda e explicitar custos pendentes em vez de os somar como zero.
 export function proposalBudget(snapshot: Snapshot) {
   const lines: BudgetLine[] = [];
   const terms: { description: string; inclusions: string; exclusions: string; taxes: string }[] =
@@ -38,7 +41,7 @@ export function proposalBudget(snapshot: Snapshot) {
     for (const item of day.items) {
       const details = item.catalogDetails;
       const raw = item.confirmation
-        ? item.confirmation.price
+        ? (item.confirmation.price ?? "")
         : (details?.price ?? item.priceNote ?? "");
       let pricing = parsePrice(raw);
       // A cleared or changed trip price must never fall back to the catalogue's old value.

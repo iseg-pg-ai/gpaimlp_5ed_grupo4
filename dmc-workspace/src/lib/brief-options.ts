@@ -1,3 +1,5 @@
+// Opções partilhadas do briefing para manter os mesmos valores nos formulários e na
+// validação.
 import type {
   CustomerBrief,
   PhysicalEffortLevel,

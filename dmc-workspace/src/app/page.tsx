@@ -1,5 +1,8 @@
+// Entrada do workspace de curadoria, que liga o estado da viagem aos controlos de edição e
+// revisão.
 "use client";
 
+import { presentationText } from "@/lib/presentation-text";
 import { portalUrl } from "@/lib/http-client";
 import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -21,6 +24,10 @@ export default function WorkspacePage() {
   const [desktopAssistantCollapsed, setDesktopAssistantCollapsed] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shareDefaults, setShareDefaults] = useState<{
+    locale: import("@/lib/locales").Locale;
+    method: "link" | "document";
+  } | null>(null);
   const assistantLabel = useTranslated("Curation Assistant");
   const assistantButton = useRef<HTMLButtonElement>(null);
   const {
@@ -32,6 +39,8 @@ export default function WorkspacePage() {
     draft,
     formKey,
     saving,
+    reopening,
+    reopenedVersion,
     exporting,
     error,
     storageError,
@@ -42,6 +51,7 @@ export default function WorkspacePage() {
     update,
     exportPdf,
     exportPrompt,
+    exportPrepared,
     reopenLatest,
     trashVersion,
     generate,
@@ -101,7 +111,7 @@ export default function WorkspacePage() {
       >
         {(error || storageError) && (
           <p role="alert" className="p-4 text-red-800">
-            <T text={error || storageError} source="pt" />
+            <T text={presentationText(error || storageError)} source="pt" />
           </p>
         )}
         {busy ? (
@@ -165,6 +175,18 @@ export default function WorkspacePage() {
                         >
                           <T text="Reabrir última versão guardada" source="pt" />
                         </button>
+                        {(reopening || reopenedVersion !== null) && (
+                          <p role="status" className="my-2">
+                            {reopening ? (
+                              <T text="A reabrir a última versão guardada…" source="pt" />
+                            ) : (
+                              <>
+                                <T text="Versão reaberta:" source="pt" /> v
+                                {String(reopenedVersion).padStart(3, "0")}
+                              </>
+                            )}
+                          </p>
+                        )}
                         {(history.id === activeId ? history.versions : []).map((v) => (
                           <div key={v.version} className="my-2 break-words">
                             <a
@@ -194,12 +216,12 @@ export default function WorkspacePage() {
                                 `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=prompt&locale=${active.clientLanguage ?? clientLanguage}`,
                               )}
                             >
-                              <T text="TXT para Canva" source="pt" />
+                              <T text="Exportar TXT" source="pt" />
                             </a>
                           </div>
                         ))}
                       </details>
-                      {saving && (
+                      {saving && !reopening && (
                         <p role="status" className="px-4">
                           <T text="A guardar nova versão…" source="pt" />
                         </p>
@@ -266,11 +288,15 @@ export default function WorkspacePage() {
                     tripId={active.id}
                     currentVersion={active.version}
                     versions={history.id === active.id ? history.versions : []}
-                    defaultLocale={active.clientLanguage ?? clientLanguage}
+                    defaultLocale={shareDefaults?.locale ?? active.clientLanguage ?? clientLanguage}
+                    defaultMethod={shareDefaults?.method ?? "link"}
                     defaultEmail={active.brief.customerEmail}
                     customerName={active.brief.customerName}
                     destination={active.brief.destination}
-                    onClose={() => setShareOpen(false)}
+                    onClose={() => {
+                      setShareOpen(false);
+                      setShareDefaults(null);
+                    }}
                   />
                 )}
                 <section
@@ -330,6 +356,17 @@ export default function WorkspacePage() {
                       onDecideProposal={decideAgentProposal}
                       onSelectAlternative={selectAgentAlternative}
                       onDismissProposal={dismissAgentProposal}
+                      onPrepareDelivery={(delivery) => {
+                        if (delivery.kind === "share") {
+                          setShareDefaults({ locale: delivery.locale, method: delivery.method! });
+                          setShareOpen(true);
+                        } else {
+                          void exportPrepared(
+                            delivery.kind === "export_pdf" ? "bundle" : "prompt",
+                            delivery.locale,
+                          );
+                        }
+                      }}
                       messages={active.messages}
                       onSendMessage={send}
                       isProcessing={assistantBusy}

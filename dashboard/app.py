@@ -1,3 +1,5 @@
+# Exploração analítica em Streamlit: consulta o warehouse e apresenta evidência sem editar o
+# catálogo operacional.
 """Observatório BLU: exploração só de leitura da entrega publicada pelo ETL."""
 from __future__ import annotations
 
@@ -62,29 +64,36 @@ def load_json(name: str) -> dict:
 
 
 def catalog_data() -> pd.DataFrame:
-    columns = set(query('PRAGMA table_info(experiencias)').name.tolist())
-    experience = {field: column_or_null(columns, field) for field in (
-        "latitude", "longitude", "horario", "morada", "contactos",
-        "acessibilidade_nivel_de_confirmacao",
-    )}
-    frame = query(f"""
-        SELECT id AS Identificador, 'Atração' AS Tipo, nome_da_atracao AS Nome,
-        cidade AS Localização, categoria AS Categoria, descricao_curada AS Descrição,
-        latitude, longitude, horario AS Horário, preco_da_atracao AS Preço,
-        site_fonte AS Fonte, morada AS Morada, contactos AS Contactos, tempo_medio_de_visita AS Duração,
-        necessidade_de_reserva AS Condições, acessibilidade_nivel_de_confirmacao AS Acessibilidade FROM atracoes
-        UNION ALL
-        SELECT id_blu, 'Restaurante', estabelecimento, cidade, tipo_gastronomia_base,
-        observacoes_da_base, latitude, longitude, horario_base_reconfirmar,
-        preco_nao_cotacao, fonte_indicada_na_base, morada, contactos, duracao_blu_estimativa,
-        reservas_condicoes_base, acessibilidade_nivel_de_confirmacao FROM restaurantes
-        UNION ALL
-        SELECT nome_da_experiencia, 'Experiência', nome_da_experiencia, localizacao,
-        categoria, descricao, {experience['latitude']}, {experience['longitude']},
-        {experience['horario']}, preco, site_fonte, {experience['morada']},
-        {experience['contactos']}, duracao, modalidade,
-        {experience['acessibilidade_nivel_de_confirmacao']} FROM experiencias
-    """)
+    # Os campos opcionais podem não existir em entregas anteriores ou esparsas.
+    # Só os identificadores e nomes são obrigatórios; nunca inventar valores.
+    labels = ("Identificador", "Tipo", "Nome", "Localização", "Categoria",
+              "Descrição", "latitude", "longitude", "Horário", "Preço", "Fonte",
+              "Morada", "Contactos", "Duração", "Condições", "Acessibilidade")
+    sources = (
+        ("atracoes", "Atração", ("id", "nome_da_atracao", "cidade", "categoria",
+         "descricao_curada", "latitude", "longitude", "horario", "preco_da_atracao",
+         "site_fonte", "morada", "contactos", "tempo_medio_de_visita",
+         "necessidade_de_reserva", "acessibilidade_nivel_de_confirmacao")),
+        ("restaurantes", "Restaurante", ("id_blu", "estabelecimento", "cidade",
+         "tipo_gastronomia_base", "observacoes_da_base", "latitude", "longitude",
+         "horario_base_reconfirmar", "preco_nao_cotacao", "fonte_indicada_na_base",
+         "morada", "contactos", "duracao_blu_estimativa", "reservas_condicoes_base",
+         "acessibilidade_nivel_de_confirmacao")),
+        ("experiencias", "Experiência", ("nome_da_experiencia", "nome_da_experiencia",
+         "localizacao", "categoria", "descricao", "latitude", "longitude", "horario",
+         "preco", "site_fonte", "morada", "contactos", "duracao", "modalidade",
+         "acessibilidade_nivel_de_confirmacao")),
+    )
+    selects = []
+    for table, kind, fields in sources:
+        columns = set(query(f'PRAGMA table_info("{table}")').name.tolist())
+        if not {fields[0], fields[1]}.issubset(columns):
+            raise ValueError("Entrega incompatível: faltam tabelas ou campos de identificação do catálogo.")
+        values = [f'"{name}"' if name in columns else "NULL" for name in fields]
+        values.insert(1, f"'{kind}'")
+        projection = ", ".join(f'{value} AS "{label}"' for value, label in zip(values, labels))
+        selects.append(f'SELECT {projection} FROM "{table}"')
+    frame = query(" UNION ALL ".join(selects))
     frame["Chave"] = frame.Tipo + ":" + frame.Identificador.astype(str)
     normalized = model_data("model_observatory_catalog").rename(columns={"entity_key": "Chave", "destination": "Destino", "geographic_scope": "Âmbito geográfico", "location_rule": "Regra geográfica"})
     frame = frame.merge(normalized[["Chave", "Destino", "Âmbito geográfico", "Regra geográfica"]], on="Chave", how="left", validate="one_to_one")
@@ -580,7 +589,11 @@ def main() -> None:
     if presentation:
         st.markdown('<style>[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display:none;} .block-container {max-width:none;}</style>', unsafe_allow_html=True)
         page = st.pills("Área em apresentação", pages, default=page, key="presentation_page") or page
-    frame = catalog_data()
+    try:
+        frame = catalog_data()
+    except (pd.errors.DatabaseError, sqlite3.Error, ValueError):
+        st.error("Entrega warehouse incompatível ou indisponível. Verifique a entrega validada e execute a recuperação pelo comando just blu it.")
+        st.stop()
     validation = load_json("validation_report.json")
     {"Panorama": lambda: overview(frame, validation), "Explorar oferta": lambda: explore(frame),
      "Destinos": lambda: destinations(frame), "Preços": pricing, "Histórico": history, "Qualidade": lambda: quality(validation)}[page]()

@@ -88,6 +88,8 @@ class PortalDataTest(unittest.TestCase):
         self.assertNotIn("PRIVATE_", text)
         self.assertEqual(json.dumps(payload), original)
         result = json.loads(text.split("\n\n", 1)[1])
+        self.assertEqual(result["formato"], "blu-roteiro-prompt/1.0.0")
+        self.assertNotIn("modeloVisual", result)
         self.assertEqual(result["dias"][0]["atividades"][0]["pendencias"], ["Disponibilidade"])
         self.assertTrue(result["orcamento"]["incompleto"])
         self.assertTrue(text.startswith("Instruções\n\n"))

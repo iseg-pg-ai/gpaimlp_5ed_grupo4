@@ -1,3 +1,4 @@
+// Mostra a ligação entre atividades e o estado conhecido do trajeto.
 "use client";
 import { T } from "@/components/LocaleProvider";
 

@@ -1,3 +1,5 @@
+# Obtém contexto meteorológico com validação de coordenadas e estados explícitos de
+# indisponibilidade.
 """Meteorologia do portal: coordenadas, previsão e histórico Open-Meteo."""
 from datetime import date
 import json

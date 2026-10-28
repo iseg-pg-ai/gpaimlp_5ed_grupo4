@@ -1,3 +1,4 @@
+// Valida e recebe eventos públicos antes de os encaminhar para o processamento persistente.
 import { randomUUID } from 'node:crypto';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
@@ -7,7 +8,7 @@ const text = (value, maximum) => String(value || '').trim().slice(0, maximum);
 
 function cleanContext(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
-  const allowed = ['journeyReference', 'socialSource', 'campaign', 'medium', 'content', 'destination', 'timeframe', 'party', 'pace', 'stage', 'outcome', 'feedback', 'rating', 'reason'];
+  const allowed = ['journeyReference', 'socialSource', 'campaign', 'medium', 'content', 'destination', 'timeframe', 'party', 'budget', 'interests', 'pace', 'stage', 'outcome', 'feedback', 'rating', 'reason'];
   const cleaned = Object.fromEntries(allowed.map(key => [key, text(value[key], 120)]).filter(([, item]) => item));
   return Object.keys(cleaned).length ? cleaned : undefined;
 }

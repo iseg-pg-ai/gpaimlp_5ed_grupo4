@@ -1,22 +1,16 @@
 # Dependências Python e exceção Argos
 
-Estado revisto em 20 de outubro de 2026. O `pyproject.toml` e o `uv.lock`
-definem o ambiente Python. `requirements.txt` e
-`translations/requirements.txt` são exports gerados por
-`scripts/export_requirements.py`; não devem ser editados manualmente.
+Estado revisto em 26 de outubro de 2026. O `pyproject.toml` e o `uv.lock` definem o ambiente Python. `requirements.txt` e `translations/requirements.txt` são exports gerados por `scripts/export_requirements.py`; não devem ser editados manualmente.
 
 ## Grupos ativos
 
 A instalação base contém o ETL. Os grupos opcionais são:
 
 - `dashboard`: Streamlit e Plotly;
-- `agent`: FastAPI, LangChain/LangGraph, integração Bedrock e respetivas
-  dependências;
+- `agent`: cliente boto3 usado pela integração transacional com Amazon Bedrock;
 - `translation`: Argos Translate e CTranslate2.
 
-SageMaker SDK, MLflow, pytest, sqlparse e cryptography não pertencem ao ambiente
-atual. O projeto usa a função IAM do ambiente AWS através de boto3; não precisa do
-SDK SageMaker.
+SageMaker SDK e MLflow não são dependências diretas deste projeto. O projeto usa a função IAM do ambiente AWS através de boto3; não precisa do SDK SageMaker.
 
 Preparar tudo com:
 
@@ -24,17 +18,19 @@ Preparar tudo com:
 uv sync --locked --all-groups
 ```
 
-`uv sync` sem `--all-groups` pode remover grupos opcionais que já estejam
-instalados. Para acrescentar um grupo preservando o ambiente existente, usar
-`--inexact --group NOME`.
+`uv sync` sem `--all-groups` pode remover grupos opcionais que já estejam instalados. Para acrescentar um grupo preservando o ambiente existente, usar `--inexact --group NOME`.
+
+## Tradução em CPU
+
+O grupo `translation` declara PyTorch explicitamente para selecionar wheels CPU em Linux e Windows. O índice oficial `https://download.pytorch.org/whl/cpu` é marcado como `explicit` no uv; os restantes pacotes continuam no PyPI. O worker usa CTranslate2 em CPU/int8; não necessita das dependências NVIDIA/CUDA do PyTorch Linux por omissão. A escolha segue o [guia oficial uv/PyTorch](https://docs.astral.sh/uv/guides/integration/pytorch/).
+
+O export de tradução inclui os índices para o pip encontrar `torch==2.14.0+cpu`.
+O formato requirements não preserva índices por pacote: o índice CPU aparece como `--extra-index-url` global. Preferir `uv sync --locked` para conservar a associação explícita de cada pacote à sua origem. Não editar os exports à mão.
 
 ## Exceção de compatibilidade do Argos
 
-Argos Translate 1.11.0 fixa `stanza==1.10.1` no seu metadata. Essa versão é
-afetada por
-[GHSA-v5jw-96jm-7h2c](https://github.com/advisories/GHSA-v5jw-96jm-7h2c).
-O projeto aplica `stanza>=1.12.2,<1.13` através de
-`override-dependencies` no `pyproject.toml`.
+Argos Translate 1.11.0 fixa `stanza==1.10.1` no seu metadata. Essa versão é afetada por [GHSA-v5jw-96jm-7h2c](https://github.com/advisories/GHSA-v5jw-96jm-7h2c).
+O projeto aplica `stanza>=1.12.2,<1.13` através de `override-dependencies` no `pyproject.toml`.
 
 Preferir o lockfile:
 
@@ -50,11 +46,16 @@ Quando `uv` não puder ser usado, instalar o export de tradução sem nova resol
 python -m pip install --no-deps -r translations/requirements.txt
 ```
 
-Sem `--no-deps`, o resolver pode rejeitar a diferença entre o metadata do Argos
-e a versão corrigida de Stanza. Reavaliar o override quando o Argos publicar um
-requisito corrigido.
+Sem `--no-deps`, o resolver pode rejeitar a diferença entre o metadata do Argos e a versão corrigida de Stanza. Reavaliar o override quando o Argos publicar um requisito corrigido.
 
 ## Manutenção e validação
+
+A correção dos alertas de 26 de outubro de 2026 fixa pypdf 6.21.2 e exige Pillow >=13, certifi >=2026.10.19, filelock >=4.2.1 e setuptools >=84.1.0.
+O dashboard usa Streamlit 1.66.1, cujo requisito permite Pillow 13; Streamlit 1.55.0 exigia Pillow <13. Esta atualização conserva o resolver normal, sem ignorar o requisito de Pillow. Referências: [Pillow](https://github.com/python-pillow/Pillow/security/advisories/GHSA-v9pv-5gc8-w2m6) e [metadata Streamlit 1.66.1](https://pypi.org/pypi/streamlit/1.66.1/json).
+
+As versões efetivas devem ser consultadas no lockfile. Auditorias são datadas e não comprovam disponibilidade de serviços ou ausência futura de vulnerabilidades.
+Os resultados e omissões devem identificar a revisão auditada. A fundamentação das escolhas pertence a [Decisões](DECISIONS.md#dependências-testes-e-identificação-da-entrega); o procedimento de auditoria está em [Testes](TESTING.md#auditoria-das-dependências-python).
+Os alertas GitHub só podem ser reprocessados após integração no branch predefinido; não os dispensar para substituir esse processo.
 
 Depois de alterar dependências:
 

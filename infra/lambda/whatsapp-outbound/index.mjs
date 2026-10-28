@@ -1,3 +1,4 @@
+// Obtém o segredo no servidor e envia as mensagens autorizadas para o canal WhatsApp.
 import { createHash } from 'node:crypto';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';

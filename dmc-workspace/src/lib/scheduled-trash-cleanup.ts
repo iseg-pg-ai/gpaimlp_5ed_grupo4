@@ -1,3 +1,5 @@
+// Coordena a limpeza periódica do Lixo para evitar que cada interação repita o trabalho de
+// retenção.
 import { portalFetch } from "@/lib/http-client";
 import {
   LAST_TRASH_CLEANUP_STORAGE,

@@ -1,3 +1,4 @@
+# Abre o Observatório no ambiente Windows usando os caminhos do projeto.
 <#
 .SYNOPSIS
 Starts the local Streamlit dashboard after confirming a warehouse exists.

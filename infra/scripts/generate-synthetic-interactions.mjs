@@ -1,3 +1,5 @@
+// Gera interações fictícias para ensaios; a publicação nos endpoints tem efeitos externos
+// reais.
 import { randomUUID } from 'node:crypto';
 
 const eventsEndpoint = process.env.CONVERSATION_EVENTS_ENDPOINT;

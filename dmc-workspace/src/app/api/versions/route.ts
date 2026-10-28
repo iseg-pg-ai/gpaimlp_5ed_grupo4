@@ -1,3 +1,5 @@
+// Endpoint: guarda e consulta versões autoritativas com validação do snapshot e da revisão
+// de base.
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { zipSync } from "fflate";
 import { TranslationError } from "@/lib/local-translation";
@@ -5,13 +7,15 @@ import { isLocale } from "@/lib/locales";
 import { VersionStore, VersionConflict, checkTripId } from "@/lib/version-store";
 import { persistVersion, syncPendingVersions } from "@/lib/version-persistence";
 import { syncOperationalState } from "@/lib/operational-s3";
-import { jsonError, noStoreHeaders } from "@/lib/server-http";
+import { jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { renderItineraryPrompt } from "@/lib/itinerary-prompt";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
   let body;
   try {
     const raw = await request.text();
@@ -88,7 +92,7 @@ export async function GET(request: Request) {
           noStoreHeaders,
         );
       const instructions = await readFile(
-        path.resolve(process.cwd(), "../config/prompts/roteiro-visual-canva.txt"),
+        path.resolve(process.cwd(), "../config/prompts/roteiro-exportacao.txt"),
         "utf8",
       );
       const text = await renderItineraryPrompt(
@@ -97,7 +101,7 @@ export async function GET(request: Request) {
         language,
         instructions,
       );
-      const filename = row.filename.replace(/\.pdf$/, `_Canva_${language.toUpperCase()}.txt`);
+      const filename = row.filename.replace(/\.pdf$/, `_Prompt_${language.toUpperCase()}.txt`);
       return new Response(text, {
         headers: {
           ...noStoreHeaders,

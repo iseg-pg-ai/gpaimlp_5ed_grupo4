@@ -1,3 +1,4 @@
+// Navegação lateral e acesso às áreas operacionais do portal.
 "use client";
 import { T } from "@/components/LocaleProvider";
 

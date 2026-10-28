@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
@@ -80,6 +81,27 @@ test("catálogo usa JSON, sincroniza e não duplica uma operação já confirmad
   assert.equal(await syncPendingCatalog(store, operations), 1);
   assert.equal((await store.list()).length, 1);
   assert.equal(readdirSync(path.dirname(pendingFile)).length, 0);
+});
+
+test("catálogo recupera falha entre commit SQL e outbox S3", async (t) => {
+  const { catalog, operations } = fixture(t);
+  mkdirSync(operations, { recursive: true });
+  const blockedOutbox = path.join(operations, "data-s3-outbox");
+  writeFileSync(blockedOutbox, "indisponível");
+  const result = await persistCatalog(input(), {
+    catalogRoot: catalog,
+    operationalRoot: operations,
+  });
+  assert.equal(result.queued, true);
+  const pending = path.join(operations, "pending-catalog", `${result.operationId}.json`);
+  assert.ok(readFileSync(pending, "utf8"));
+
+  unlinkSync(blockedOutbox);
+  const restarted = new CatalogStore(catalog);
+  assert.equal(await syncPendingCatalog(restarted, operations), 1);
+  assert.equal((await restarted.list()).length, 1);
+  assert.equal(readdirSync(path.join(operations, "data-s3-outbox")).length, 1);
+  assert.equal(readdirSync(path.dirname(pending)).length, 0);
 });
 
 test("interrupção prolongada preserva ordem, reinício, repetição e conflitos", async (t) => {

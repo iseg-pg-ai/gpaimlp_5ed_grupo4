@@ -1,3 +1,4 @@
+# Exige autenticação administrativa para autorizar os comandos de recuperação do workspace.
 """Confirma interativamente um administrador antes da recuperação do sistema."""
 from __future__ import annotations
 

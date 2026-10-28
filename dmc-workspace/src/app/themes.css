@@ -1,3 +1,4 @@
+/* Variáveis e variantes de tema partilhadas pelas páginas e componentes. */
 /* Paleta partilhada: a primeira cor preserva o tema claro original. */
 :root {
   color-scheme: light;

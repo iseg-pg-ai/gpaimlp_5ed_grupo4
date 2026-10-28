@@ -1,14 +1,6 @@
 // Contrato do portal → SQLite Python → ETL → geração, em diretórios isolados.
 import assert from "node:assert/strict";
-import {
-  mkdtempSync,
-  mkdirSync,
-  copyFileSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  existsSync,
-} from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,6 +9,8 @@ import { CatalogStore } from "../src/lib/catalog-store.ts";
 import { emptyMatching } from "../src/lib/catalog-matching.ts";
 import { emptyFields } from "../src/lib/catalog-schema.ts";
 import { generateItinerary } from "../src/lib/curation.ts";
+import { applyConfirmation, initialConfirmation } from "../src/lib/activity-confirmation.ts";
+import { VersionStore } from "../src/lib/version-store.ts";
 const project = fileURLToPath(new URL("../../", import.meta.url));
 const temporary = mkdtempSync(path.join(tmpdir(), "blu-catalog-etl-"));
 const data = path.join(temporary, "data");
@@ -29,8 +23,11 @@ const venv = path.join(
 );
 const python = process.env.BLU_PYTHON ?? (existsSync(venv) ? venv : "python");
 try {
-  const workbook = readdirSync(path.join(project, "data")).find((f) => f.endsWith(".xlsx"));
-  copyFileSync(path.join(project, "data", workbook), path.join(data, workbook));
+  execFileSync(python, ["scripts/create_ci_etl_fixture.py", "--output", data], {
+    cwd: project,
+    windowsHide: true,
+    stdio: "pipe",
+  });
   const store = new CatalogStore(path.join(data, "portal"));
   let record;
 
@@ -68,12 +65,18 @@ try {
     },
   });
 
-  const run = () =>
+  const run = () => {
     execFileSync(
       python,
       ["-B", "-m", "etl.pipeline", "--data-dir", data, "--output-dir", warehouse],
       { cwd: project, windowsHide: true, stdio: "pipe" },
     );
+    execFileSync(python, ["scripts/check_warehouse_release.py", "--warehouse", warehouse], {
+      cwd: project,
+      windowsHide: true,
+      stdio: "pipe",
+    });
+  };
   const readCatalog = () =>
     Object.fromEntries(
       ["atracoes", "experiencias", "restaurantes", "curation_rules"].map((name) => [
@@ -112,6 +115,33 @@ try {
     items.map((i) => i.id),
     [`atracoes:${record.id}`],
   );
+  const generated = generateItinerary(brief, catalog);
+  const snapshot = { brief, ...generated };
+  const confirmation = initialConfirmation(snapshot.itinerary[0].items[0]);
+  Object.assign(confirmation, {
+    status: "confirmed",
+    time: "10:00",
+    location: "Lisboa",
+    price: "12,50 EUR por pessoa",
+    notes: "Confirmação sintética do teste isolado",
+    confirmedAt: "2026-10-24T10:00:00Z",
+  });
+  confirmation.checks = confirmation.checks.map((check) => ({
+    ...check,
+    resolved: true,
+    details: "Validado no cenário sintético",
+  }));
+  snapshot.itinerary[0].items[0] = applyConfirmation(snapshot.itinerary[0].items[0], confirmation);
+  const versions = new VersionStore(path.join(temporary, "exports"));
+  try {
+    const saved = versions.save("ci-lifecycle", snapshot, "generated", null);
+    assert.equal(saved.version, 1);
+    const pdf = await versions.pdf("ci-lifecycle", 1);
+    assert.equal(pdf.bytes.subarray(0, 5).toString("ascii"), "%PDF-");
+    assert.deepEqual(versions.get("ci-lifecycle", 1).snapshotHash, saved.snapshotHash);
+  } finally {
+    versions.close();
+  }
   const reopened = new CatalogStore(path.join(data, "portal"));
 
   await reopened.save({ ...record, status: "inactive", baseRevision: 1, reason: "Inactive test" });
@@ -119,7 +149,9 @@ try {
 
   run();
   assert.equal(generateItinerary(brief, readCatalog()).itinerary.flatMap((d) => d.items).length, 0);
-  console.log("Catalog source -> ETL -> approved generation -> inactivation OK");
+  console.log(
+    "Approved catalog -> ETL -> generation -> confirmation -> version -> PDF -> inactivation OK",
+  );
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

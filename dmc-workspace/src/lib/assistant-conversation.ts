@@ -1,3 +1,5 @@
+// Seleciona o contexto recente da conversa sem confundir histórico com instruções do
+// sistema.
 export type ConversationTurn = { sender: "user" | "assistant"; text: string };
 
 // Só texto e papel; nunca copiar o objeto da viagem ou dados de confirmação.

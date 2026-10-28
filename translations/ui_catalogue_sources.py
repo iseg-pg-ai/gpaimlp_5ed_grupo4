@@ -1,3 +1,4 @@
+# Recolhe os textos de origem usados para gerar as traduções da interface.
 """Discover literal UI strings independently of JSX line wrapping."""
 import json
 import re

@@ -1,3 +1,4 @@
+// Solicita a passagem de uma versão para o Lixo através da operação autorizada no servidor.
 "use client";
 import { portalFetch } from "@/lib/http-client";
 

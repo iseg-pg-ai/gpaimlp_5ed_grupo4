@@ -1,3 +1,4 @@
+// Avalia sinais de acompanhamento a partir dos dados autorizados do fluxo comercial.
 import { DynamoDBClient, QueryCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';

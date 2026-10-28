@@ -1,26 +1,26 @@
 {
   "remote.autoForwardPorts": true,
   "remote.autoForwardPortsSource": "process",
-  "remote.restoreForwardedPorts": false,
+  "remote.restoreForwardedPorts": true,
   "remote.portsAttributes": {
     "3001": {
-      "label": "BLU · Curation Studio · AWS",
+      "label": "BLU · Curation Studio",
       "onAutoForward": "silent"
     },
     "3003": {
-      "label": "BLU · Presentation · AWS",
+      "label": "BLU · Presentation",
       "onAutoForward": "silent"
     },
     "3004": {
-      "label": "BLU Operations · Monitoring · AWS",
+      "label": "BLU Operations · Monitoring",
       "onAutoForward": "silent"
     },
-    "8000": {
-      "label": "BLU · Agente IA · endpoint técnico",
+    "5173": {
+      "label": "BLU · Leads / Concierge",
       "onAutoForward": "silent"
     },
     "8501": {
-      "label": "BLU Analytics · Observatório · AWS",
+      "label": "BLU Analytics · Observatório",
       "onAutoForward": "silent"
     }
   },

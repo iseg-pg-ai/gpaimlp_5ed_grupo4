@@ -1,3 +1,5 @@
+// Apresenta a conversa e as propostas do assistente para revisão, sem as tratar como
+// alterações já aprovadas.
 "use client";
 import { T, useTranslated } from "@/components/LocaleProvider";
 
@@ -5,6 +7,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Check, RotateCcw, Loader2, Copy, PanelRightClose } from "lucide-react";
 import { ChatMessage } from "@/types";
 import type { AgentProposal } from "@/lib/assistant-actions";
+import { presentationText } from "@/lib/presentation-text";
 import { canonicalSnapshot } from "@/lib/snapshot-validation";
 import {
   Conversation,
@@ -39,6 +42,7 @@ interface AIAssistantPanelProps {
   onDecideProposal: (decision: "accept" | "reject") => void;
   onSelectAlternative: (dayNumber: number, itemId: string, catalogId: string) => void;
   onDismissProposal: () => void;
+  onPrepareDelivery: (delivery: NonNullable<AgentProposal["plan"]["delivery"]>) => void;
   messages: ChatMessage[];
   onSendMessage: (text: string) => void;
   isProcessing: boolean;
@@ -70,6 +74,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   onDecideProposal,
   onSelectAlternative,
   onDismissProposal,
+  onPrepareDelivery,
   messages,
   onSendMessage,
   isProcessing,
@@ -200,7 +205,9 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                     }
                   >
                     <MessageResponse>
-                      <span lang={message.language ?? "pt"}>{message.text}</span>
+                      <span lang={message.language ?? "pt"}>
+                        {isAssistant ? presentationText(message.text) : message.text}
+                      </span>
                     </MessageResponse>
                   </MessageContent>
 
@@ -243,7 +250,9 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   text={
                     proposal.plan.actions.length
                       ? "Rever alterações antes de aceitar"
-                      : "Escolher alternativa de substituição"
+                      : proposal.deliveryPreview
+                        ? "Rever entrega antes de continuar"
+                        : "Escolher alternativa de substituição"
                   }
                   source="pt"
                 />
@@ -345,7 +354,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                               : "Preço por confirmar")}
                           {item.pendingChecks?.map((pending, index) => (
                             <p key={index} className="text-xs">
-                              {pending}
+                              {presentationText(pending)}
                             </p>
                           ))}
                         </li>
@@ -369,7 +378,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                         {option.time} · {option.price}
                       </p>
                       {option.pendingChecks.map((pending, index) => (
-                        <p key={index}>{pending}</p>
+                        <p key={index}>{presentationText(pending)}</p>
                       ))}
                       <Button
                         disabled={isProcessing}
@@ -383,6 +392,81 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   ))}
                 </div>
               ))}
+              {proposal.rankedCandidates?.map((group) => (
+                <div
+                  key={group.dayNumber}
+                  className="mt-3 border-t pt-2"
+                  data-testid="agent-ranking"
+                >
+                  <h5 className="font-semibold">
+                    <T text="Candidatos recomendados" source="pt" /> · <T text="Dia" source="pt" />{" "}
+                    {group.dayNumber}
+                  </h5>
+                  {group.options.map((option) => (
+                    <div key={option.id} className="mt-2 rounded border p-2">
+                      <p className="font-semibold">{option.title}</p>
+                      <p>
+                        {option.time} ·{" "}
+                        {option.price ??
+                          (language === "en" ? "Price pending" : "Preço por confirmar")}
+                      </p>
+                      {option.reasons.map((reason, index) => (
+                        <p className="text-xs" key={index}>
+                          {presentationText(reason)}
+                        </p>
+                      ))}
+                      <Button
+                        disabled={isProcessing}
+                        onClick={() => onSelectAlternative(group.dayNumber, "", option.id)}
+                      >
+                        <T text="Pré-visualizar adição" source="pt" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              {proposal.deliveryPreview && (
+                <div className="mt-3 border-t pt-3" data-testid="agent-delivery-preview">
+                  <h5 className="font-semibold">
+                    {proposal.deliveryPreview.kind === "export_pdf"
+                      ? "Exportar PDF"
+                      : proposal.deliveryPreview.kind === "export_prompt"
+                        ? "Exportar Prompt TXT"
+                        : "Preparar partilha"}
+                    {` · ${proposal.deliveryPreview.locale.toUpperCase()}`}
+                  </h5>
+                  {proposal.deliveryPreview.blockers.map((item) => (
+                    <p
+                      key={`${item.code}:${item.dayNumber ?? "trip"}`}
+                      className="mt-1 text-red-800"
+                    >
+                      {item.message}
+                    </p>
+                  ))}
+                  {proposal.deliveryPreview.warnings.map((item) => (
+                    <p
+                      key={`${item.code}:${item.dayNumber ?? "trip"}`}
+                      className="mt-1 text-amber-800"
+                    >
+                      {item.message}
+                    </p>
+                  ))}
+                  <p className="mt-2 text-xs text-[var(--portal-text-4a636b)]">
+                    {proposal.deliveryPreview.kind === "share"
+                      ? "O destinatário, o consentimento e o prazo são preenchidos apenas no formulário manual. O agente não envia mensagens."
+                      : "O ficheiro só será criado depois de confirmar este botão."}
+                  </p>
+                  <Button
+                    className="mt-3"
+                    disabled={isProcessing || proposal.deliveryPreview.blockers.length > 0}
+                    onClick={() => onPrepareDelivery(proposal.plan.delivery!)}
+                  >
+                    {proposal.deliveryPreview.kind === "share"
+                      ? "Abrir formulário de partilha"
+                      : "Criar e descarregar"}
+                  </Button>
+                </div>
+              )}
               {proposal.plan.actions.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button

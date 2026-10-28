@@ -1,0 +1,26 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "author": {
+    "email": "henriquecreduto@gmail.com",
+    "name": "Henrique Reduto"
+  },
+  "description": "Transforma o TXT de um roteiro guardado no DMC numa proposta no Canva e entrega exclusivamente a ligação editável, sem gerar PDF.",
+  "extensions": {
+    "com.openai": {
+      "apps": "./.app.json",
+      "interface": {
+        "category": "Productivity",
+        "defaultPrompt": [
+          "Transforma o TXT anexado numa proposta visual editável usando uma cópia do modelo Canva BLU. Avança até guardar e entregar apenas a ligação de edição verificada dessa cópia; nunca geres ou exportes PDF. Preserva todos os dados e verifica conteúdo e imagens. Se não conseguires recuperar a ligação editável, declara a entrega incompleta. Pede apenas aprovações obrigatórias da ferramenta.",
+          "Revê este roteiro exportado antes de o compor no Canva, preservando atividades, orçamento e pendências. Na composição, segue roteiro-visual-canva e entrega apenas a ligação editável verificada, sem gerar ou exportar PDF."
+        ],
+        "developerName": "Henrique Reduto",
+        "displayName": "BLU | Roteiros no Canva",
+        "longDescription": "Recebe um TXT exportado do DMC e adapta uma cópia do modelo Canva LISBON IN PERSPECTIVE. Preserva dias, atividades, preços e pendências do TXT e entrega apenas a ligação de edição da cópia guardada. Nunca gera ou exporta PDF. Sem ligação editável verificada, a entrega fica incompleta. Requer a ligação Canva e revisão do curador.",
+        "shortDescription": "Roteiros visuais no Canva"
+      }
+    }
+  },
+  "name": "blu-curadoria",
+  "version": "0.4.6"
+}

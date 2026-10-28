@@ -1,3 +1,5 @@
+# Prepara dependências, descoberta do Space e comandos locais sem tratar a configuração como
+# aceitação operacional.
 """Prepara um checkout BLU para um colega no SageMaker Code Editor."""
 from __future__ import annotations
 
@@ -8,24 +10,16 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 STUDIO_CONFIG = ROOT / "config/studio.local.json"
 
 
-def normalize_studio_url(raw: str) -> str:
-    """Aceitar a URL base do Code Editor sem guardar caminhos de portas."""
-    value = raw.strip().rstrip("/")
-    parsed = urlsplit(value)
-    if (parsed.scheme != "https" or not parsed.hostname or parsed.username
-            or parsed.password or parsed.query or parsed.fragment
-            or parsed.path != "/codeeditor/default"
-            or not parsed.hostname.endswith(".studio.eu-west-1.sagemaker.aws")):
-        raise ValueError(
-            "Usar a URL HTTPS terminada em /codeeditor/default, sem /ports ou parâmetros."
-        )
-    return value
+# Partilhar a mesma validação com os launchers e o frontend.
+try:
+    from scripts.studio_urls import normalize_studio_url, studio_base
+except ModuleNotFoundError:
+    from studio_urls import normalize_studio_url, studio_base
 
 
 def command_version(command: str, *arguments: str) -> str | None:
@@ -80,6 +74,8 @@ def ensure_launcher() -> None:
     destination.symlink_to(ROOT / "bin/just")
 
 
+# Criar acesso inicial apenas quando necessário, conservando as credenciais no runtime
+# privado.
 def ensure_monitoring_access() -> bool:
     credentials = ROOT / "monitoring/runtime/credentials.json"
     if credentials.exists():
@@ -102,6 +98,12 @@ def main() -> int:
         parser.error("--check-only não pode inicializar dados.")
 
     raw_url = args.studio_url
+    if not raw_url:
+        try:
+            raw_url = studio_base()
+        except ValueError as error:
+            if os.environ.get("SAGEMAKER_APP_TYPE") == "CodeEditor":
+                parser.error(str(error))
     if not raw_url and STUDIO_CONFIG.exists():
         raw_url = json.loads(STUDIO_CONFIG.read_text(encoding="utf-8"))["base_url"]
     if not raw_url and not args.check_only and sys.stdin.isatty():
@@ -156,6 +158,12 @@ def main() -> int:
     if not args.check_only:
         write_studio_config(studio_url)
         ensure_launcher()
+        try:
+            from scripts.install_code_editor_links import install
+        except ModuleNotFoundError:
+            from install_code_editor_links import install
+        if not install():
+            print("  ! CLI Code Editor ausente; instalar a integração BLU Workspace Links na sessão.")
         created_access = ensure_monitoring_access()
         if args.initialize_data:
             subprocess.run([str(ROOT / ".venv/bin/python"), "-B", "-m", "monitoring.recovery", "ensure"],

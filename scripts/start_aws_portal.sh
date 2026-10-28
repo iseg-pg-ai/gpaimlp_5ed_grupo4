@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Arranca o portal com a configuração do ambiente AWS e os caminhos de execução preparados.
 set -euo pipefail
 
 PORTAL_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -20,7 +21,10 @@ if [ -z "${PORTAL_PUBLIC_ORIGIN:-}" ]; then
 fi
 export PORTAL_PUBLIC_ORIGIN
 export PORT="${PORT:-3001}"
-export PORTAL_ASSET_PREFIX="${PORTAL_ASSET_PREFIX:-/codeeditor/default/ports/$PORT}"
+if [ -z "${PORTAL_ASSET_PREFIX:-}" ]; then
+    PORTAL_ASSET_PREFIX="$(python3 -B scripts/studio_urls.py --port "$PORT" | python3 -c 'import sys; from urllib.parse import urlsplit; print(urlsplit(sys.stdin.read().strip()).path.rstrip("/"))')"
+fi
+export PORTAL_ASSET_PREFIX
 node --input-type=module -e 'import {awsConfig} from "./dmc-workspace/scripts/aws-config.mjs"; awsConfig(process.env, [])'
 if [ ! -d dmc-workspace/node_modules/next ]; then
     echo "Dependências ausentes. Executar npm ci em dmc-workspace antes do arranque." >&2
@@ -29,27 +33,13 @@ fi
 # Detetar uma porta ocupada antes de recompilar um portal que está em execução.
 node --input-type=module -e 'import {createServer} from "node:net"; const s=createServer(); s.on("error",()=>{console.error("Porta indisponível. Encerrar o servidor anterior ou definir PORT com outra porta.");process.exit(1)});s.listen(Number(process.env.PORT),"0.0.0.0",()=>s.close())'
 
-PORTAL_AGENT_PID=""
 PORTAL_SERVER_PID=""
 stop_portal_services() {
     if [ -n "$PORTAL_SERVER_PID" ]; then kill "$PORTAL_SERVER_PID" 2>/dev/null || true; fi
-    if [ -n "$PORTAL_AGENT_PID" ]; then kill "$PORTAL_AGENT_PID" 2>/dev/null || true; fi
 }
 trap stop_portal_services EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-
-# O agente é opcional; ativar apenas quando o ambiente Python estiver preparado.
-if [ "${BLU_START_AGENT:-0}" = "1" ] && ! curl --fail --silent --max-time 3 http://127.0.0.1:8000/api/health >/dev/null; then
-    bash scripts/start_ai_agent.sh &
-    PORTAL_AGENT_PID=$!
-    for attempt in {1..30}; do
-        if curl --fail --silent --max-time 2 http://127.0.0.1:8000/api/health >/dev/null; then break; fi
-        if ! kill -0 "$PORTAL_AGENT_PID" 2>/dev/null; then exit 1; fi
-        sleep 1
-    done
-    curl --fail --silent --max-time 3 http://127.0.0.1:8000/api/health >/dev/null
-fi
 
 cd dmc-workspace
 npm run build

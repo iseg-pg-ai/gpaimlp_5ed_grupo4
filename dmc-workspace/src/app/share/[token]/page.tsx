@@ -1,3 +1,5 @@
+// Mostra uma proposta através do acesso de partilha, sujeito à validação do token no
+// servidor.
 import { portalUrl } from "@/lib/http-client";
 import { notFound } from "next/navigation";
 import { VersionStore } from "@/lib/version-store";
@@ -63,7 +65,8 @@ export default async function SharedProposalPage({
         </a>
         <p className="mt-6 text-sm leading-6 text-[var(--portal-text-4a636b)]">
           Esta ligação apresenta a versão indicada acima. Alterações posteriores ao roteiro ou ao
-          catálogo não modificam este documento.
+          catálogo não modificam este documento. O acesso termina em{" "}
+          {new Date(share.expiresAt).toLocaleDateString()} e pode ser revogado antes dessa data.
         </p>
       </article>
     </main>

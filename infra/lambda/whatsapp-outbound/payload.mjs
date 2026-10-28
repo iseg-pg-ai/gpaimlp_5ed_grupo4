@@ -1,3 +1,4 @@
+// Constrói o corpo do pedido WhatsApp sem aceder aos segredos do canal.
 const safe = (value, maximum) => String(value || '').trim().slice(0, maximum);
 
 export function buildWhatsAppPayload(input) {

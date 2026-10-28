@@ -1,0 +1,104 @@
+# Modelo inativo. Reativar apenas segundo infra/IMAGE_DELIVERY.md.
+# Destino de reativação: .github/workflows/curation-publish.yml
+# Publica o artefacto da imagem segundo as condições e permissões explícitas deste workflow.
+name: Publish signed curation image
+
+on:
+  workflow_dispatch:
+    inputs:
+      signed_run:
+        description: "ID da execução aprovada de Sign curation release"
+        required: true
+        type: string
+      digest:
+        description: "Digest SHA-256 aprovado"
+        required: true
+        type: string
+      revision:
+        description: "Commit aprovado com 40 caracteres hexadecimais"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: curation-ecr-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'iseg-pg-ai/gpaimlp_5ed_grupo4' && github.ref == 'refs/heads/dev' && vars.BLU_ECR_PUBLISH_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: curation-release
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      APPROVED_DIGEST: ${{ inputs.digest }}
+      APPROVED_REVISION: ${{ inputs.revision }}
+      TARGET_AWS_ACCOUNT_ID: ${{ vars.TARGET_AWS_ACCOUNT_ID }}
+      TARGET_AWS_REGION: ${{ vars.TARGET_AWS_REGION }}
+      REPOSITORY_URI: ${{ vars.BLU_ECR_REPOSITORY_URI }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.4
+      - name: Validate signing run and environment
+        env:
+          SIGNED_RUN: ${{ inputs.signed_run }}
+        run: |
+          [[ "$SIGNED_RUN" =~ ^[0-9]+$ ]]
+          [[ "$APPROVED_REVISION" =~ ^[0-9a-f]{40}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/environments/curation-release" > "$RUNNER_TEMP/environment.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SIGNED_RUN" > "$RUNNER_TEMP/signing-run.json"
+          python scripts/image_release.py source --signing --run "$RUNNER_TEMP/signing-run.json" --environment "$RUNNER_TEMP/environment.json"
+          gh run download "$SIGNED_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name "blu-signed-release-$APPROVED_REVISION" --dir "$RUNNER_TEMP/signed"
+      - name: Verify signature before retrieving the original OCI archive
+        run: |
+          python scripts/image_release.py verify \
+            --statement "$RUNNER_TEMP/signed/release.json" \
+            --bundle "$RUNNER_TEMP/signed/release.sigstore.json" \
+            --evidence "$RUNNER_TEMP/signed" --digest "$APPROVED_DIGEST" \
+            --revision "$APPROVED_REVISION" --output "$RUNNER_TEMP/verified-signature.json"
+          source_run=$(python -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/signed/release.json"))["source_run_id"])')
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$source_run" > "$RUNNER_TEMP/build-run.json"
+          source_revision=$(python scripts/image_release.py source --run "$RUNNER_TEMP/build-run.json" --environment "$RUNNER_TEMP/environment.json")
+          [[ "$source_revision" == "$APPROVED_REVISION" ]]
+          gh run download "$source_run" --repo "$GITHUB_REPOSITORY" \
+            --name "blu-curation-oci-$APPROVED_REVISION" --dir "$RUNNER_TEMP/oci"
+      - name: Preflight exact OCI bytes and approved destination before AWS credentials
+        run: |
+          python -m scripts.publish_image_release --archive "$RUNNER_TEMP/oci/blu-curation.oci.tar" \
+            --signed "$RUNNER_TEMP/signed" --digest "$APPROVED_DIGEST" --revision "$APPROVED_REVISION" \
+            --repository-uri "$REPOSITORY_URI" --account "$TARGET_AWS_ACCOUNT_ID" \
+            --region "$TARGET_AWS_REGION" --output "$RUNNER_TEMP/preflight.json"
+      - name: Install OCI transfer tool
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends skopeo
+      - name: Obtain short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.BLU_ECR_PUBLISH_ROLE_ARN }}
+          aws-region: ${{ vars.TARGET_AWS_REGION }}
+          allowed-account-ids: ${{ vars.TARGET_AWS_ACCOUNT_ID }}
+          role-session-name: blu-curation-publication
+      - name: Publish approved bytes and confirm registry digest
+        run: |
+          python -m scripts.publish_image_release --archive "$RUNNER_TEMP/oci/blu-curation.oci.tar" \
+            --signed "$RUNNER_TEMP/signed" --digest "$APPROVED_DIGEST" --revision "$APPROVED_REVISION" \
+            --repository-uri "$REPOSITORY_URI" --account "$TARGET_AWS_ACCOUNT_ID" \
+            --region "$TARGET_AWS_REGION" --execute --output "$RUNNER_TEMP/publication.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blu-publication-${{ inputs.revision }}
+          path: ${{ runner.temp }}/publication.json
+          if-no-files-found: error
+          retention-days: 90

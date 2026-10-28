@@ -1,3 +1,5 @@
+# Constrói indicadores e modelos analíticos a partir das tabelas extraídas, sem substituir os
+# dados de origem.
 """KPI generation and transparent analytical scoring models for BLU records."""
 
 from __future__ import annotations

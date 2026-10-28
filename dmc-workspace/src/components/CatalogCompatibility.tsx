@@ -1,3 +1,5 @@
+// Expõe a correspondência entre o catálogo e o perfil pedido, incluindo informação por
+// confirmar.
 "use client";
 import { selectStyle } from "./ui/form-controls";
 import { T } from "./LocaleProvider";

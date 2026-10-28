@@ -41,7 +41,7 @@ const steps = [
     "dataset",
     "trash",
     "workspace-recovery",
-    "canva-prompt",
+    "prompt-export",
     "export-downloads",
     "weather",
   ].map((name) => [
