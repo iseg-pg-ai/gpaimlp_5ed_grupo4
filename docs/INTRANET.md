@@ -491,3 +491,25 @@ aparece pela pontuação.
 
 Por fazer: confirmações dos parceiros por WhatsApp como indicador e ligação ao
 catálogo do portal para sugerir o parceiro em cada atividade da proposta.
+
+## Agenda editável e plano do dia (2026-10-29)
+
+Uma atividade passa a poder alterar-se: `POST /v1/leads/{id}/activities/{activityId}`
+recebe só os campos que mudam (data, hora, repetição, local, pessoas, parceiro,
+nota, canais, lembretes); o conjunto volta a ser validado por inteiro, os
+lembretes por enviar são cancelados (`NOTIFY_CANCELLED`, com o motivo) e
+planeados de novo com a revisão na chave (`…#r1`, `…#r2`), e os já enviados
+ficam como evidência. A alteração entra no feed («alterou recolha «…» (hora,
+nota)»). Uma atividade cancelada não se altera (`409`); sem nada a mudar, `400`.
+No detalhe do lead há «Editar»; na Agenda, «Reagendar» (data, hora e repetição).
+
+A Agenda deixa de ser só o calendário de lembretes: `GET /v1/agenda?days=7&scope=mine|team`
+devolve também `plan`, o plano por dia com tudo o que tem data: serviços (uma
+linha por ocorrência, com os seus lembretes, o resultado e o reagendamento),
+tarefas com prazo, seguimentos de leads (em risco, sem resposta no prazo ou
+com seguimento marcado), prazos de casos e lembretes preparados para enviar à
+mão. O que passou do prazo fica em «Em atraso», primeiro; dentro de cada dia a
+ordem é a de «O meu trabalho» (risco, atraso, bloqueio, prazo próximo, resto).
+`mine` é o trabalho da própria pessoa (responsável da tarefa, do lead ou do
+caso; quem agendou o serviço); `team` é o de toda a equipa, a vista por omissão
+dos fundadores. Leads sintéticos não entram. Testes locais com mocks.

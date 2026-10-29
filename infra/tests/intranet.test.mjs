@@ -317,6 +317,68 @@ test('curators schedule and cancel activities; the API never returns phone numbe
   assert.equal(updates.filter(u => u[2].followUpStatus === 'NOTIFY_CANCELLED').length, 4);
 });
 
+test('an activity can be changed: pending reminders are replaced, the change is announced, no-ops are refused', async () => {
+  const records = [];
+  const updates = [];
+  const { deps } = fakeDeps({
+    partners,
+    newId: () => 'act-12345678',
+    putRecords: async (id, list) => { records.push(...list.map(record => ({ conversationId: id, ...record }))); },
+    queryRecords: async (id, prefix) => records.filter(r => r.conversationId === id && r.recordKey.startsWith(prefix)).map(r => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, S(String(v))]))),
+    setRecord: async (...args) => { updates.push(args); },
+  });
+  const handler = createApp(deps);
+  const id = 'BLU-AAAAAAAA0001';
+  const update = (body, extra = {}) => handler({ ...request('POST /v1/leads/{id}/activities/{activityId}', { id, body, ...extra }), pathParameters: { id, activityId: 'act-12345678' } });
+  assert.equal((await handler(request('POST /v1/leads/{id}/activities', { id, body: morning }))).statusCode, 201);
+  const before = records.filter(r => r.recordKey.startsWith('NOTIFY#')).length;
+  assert.equal((await update({ time: '10:15' }, { groups: '[governance]' })).statusCode, 403);
+  assert.equal((await update({ time: morning.time })).statusCode, 400);
+  assert.equal((await update({ time: '25:00' })).statusCode, 400);
+  const changed = await update({ time: '10:15', notes: 'Chegar 10 min antes' });
+  assert.equal(changed.statusCode, 200);
+  assert.deepEqual(JSON.parse(changed.body).changed, ['time', 'notes']);
+  // Os lembretes por enviar foram cancelados e substituídos por novos, com revisão na chave.
+  assert.equal(updates.filter(u => u[2].followUpStatus === 'NOTIFY_CANCELLED').length, before);
+  const replaced = records.filter(r => r.recordKey.startsWith('NOTIFY#') && r.recordKey.endsWith('#r1'));
+  assert.equal(replaced.length, before);
+  assert.ok(replaced.every(r => r.text.includes('10:15')));
+  const activity = updates.find(u => u[1] === 'ACTIVITY#act-12345678')[2];
+  assert.equal(activity.time, '10:15');
+  assert.equal(activity.revision, '1');
+  assert.doesNotMatch(changed.body, /351912345678/);
+  const feed = records.find(r => r.conversationId === 'TEAM-FEED');
+  assert.match(feed.text, /alterou recolha «Recolha no hotel» \(hora, nota\)/);
+  assert.equal((await handler({ ...request('POST /v1/leads/{id}/activities/{activityId}', { id, body: { time: '11:00' } }), pathParameters: { id, activityId: 'act-00000000' } })).statusCode, 404);
+});
+
+test('the agenda day plan gathers services, tasks, follow-ups and hand-sent reminders by day and by scope', async () => {
+  const notify = (key, extra = {}) => ({
+    conversationId: S('BLU-AAAAAAAA0001'), recordKey: S(`NOTIFY#act-1#${key}`), activityId: S('act-1'), audience: S('traveller'), kind: S('pickup'), title: S('Recolha no hotel'),
+    followUpAt: S('2026-10-26T07:30:00Z'), occurrenceAt: S('2026-10-26T08:30:00Z'), followUpStatus: S('NOTIFY_PENDING'), place: S('Hotel'), people: S('2'), approvedBy: S('ana@blu.pt'), text: S('x'), channel: S('whatsapp'), ...extra,
+  });
+  const task = (id, owner, due) => ({ conversationId: S('TASKS-UNLINKED'), recordKey: S(`TASK#${id}`), taskId: S(id), title: S(`Tarefa ${id}`), owner: S(owner), due: S(due), taskStatus: S('todo'), followUpStatus: S('TASK_OPEN'), followUpAt: S(due) });
+  const { deps } = fakeDeps({
+    queryAgenda: async status => (status === 'NOTIFY_PENDING' ? [notify('traveller')] : status === 'NOTIFY_PREPARED' ? [notify('partner', { audience: S('partner'), followUpStatus: S('NOTIFY_PREPARED'), approvedBy: S('rui@blu.pt'), reason: S('Sem número.') })] : []),
+    queryStatus: async status => (status === 'TASK_OPEN' ? [task('t1', 'ana@blu.pt', '2026-10-25'), task('t2', 'rui@blu.pt', '2026-10-27'), task('t3', 'ana@blu.pt', '2026-12-01')]
+      : status === 'PENDING' ? [profile('BLU-AAAAAAAA0001', { assignedTo: S('ana@blu.pt') }), profile('BLU-AAAAAAAA0002', { assignedTo: S('rui@blu.pt'), synthetic: { BOOL: true } })] : []),
+  });
+  const handler = createApp(deps);
+  const ids = plan => Object.fromEntries(plan.items.map(day => [day.day, day.items.map(item => `${item.kind}:${item.id}`).sort()]));
+  const mine = JSON.parse((await handler(request('GET /v1/agenda', { query: { days: '7', scope: 'mine' } }))).body).plan;
+  assert.equal(mine.scope, 'mine');
+  assert.equal(mine.today, '2026-10-26');
+  // Em atraso primeiro; t3 está fora dos 7 dias; o serviço fica no seu dia; nada do Rui.
+  assert.deepEqual(ids(mine), { overdue: ['lead:BLU-AAAAAAAA0001', 'task:t1'], '2026-10-26': ['service:act-1|2026-10-26T08:30:00Z'] });
+  assert.equal(mine.items[0].items[0].urgency, 'overdue');
+  assert.doesNotMatch(JSON.stringify(mine), /351912345678/);
+  const team = JSON.parse((await handler(request('GET /v1/agenda', { query: { days: '7', scope: 'team' }, groups: '[founders]' }))).body).plan;
+  assert.deepEqual(ids(team)['2026-10-27'], ['task:t2']);
+  // O lembrete preparado do Rui entra como trabalho à mão; o lead sintético não entra.
+  assert.ok(ids(team).overdue.includes('reminder:NOTIFY#act-1#partner'));
+  assert.ok(!JSON.stringify(team).includes('BLU-AAAAAAAA0002'));
+});
+
 test('in test mode a sent WhatsApp reminder is marked as delivered to the test inbox', async () => {
   const finished = [];
   let evidence;
@@ -556,7 +618,7 @@ test('the intranet stack protects every route and grants no destructive data acc
     const template = JSON.parse(await readFile(path.join(outdir, 'BluCostaIntranet.template.json'), 'utf8'));
     const of = type => Object.values(template.Resources).filter(resource => resource.Type === type);
     const routes = of('AWS::ApiGatewayV2::Route');
-    assert.equal(routes.length, 44);
+    assert.equal(routes.length, 45);
     assert.ok(routes.some(route => route.Properties.RouteKey === 'GET /v1/control'));
     for (const route of routes) assert.equal(route.Properties.AuthorizationType, 'JWT', route.Properties.RouteKey);
     const [pool] = of('AWS::Cognito::UserPool');

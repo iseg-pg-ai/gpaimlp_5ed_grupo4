@@ -94,6 +94,12 @@ const toFeed = item => ({ at: str(item, 'followUpAt'), by: str(item, 'by'), byNa
 const URGENCY = { risk: 0, overdue: 1, blocked: 2, soon: 3, normal: 4 };
 const taskUrgency = task => (task.status === 'blocked' ? 'blocked' : task.dueState === 'overdue' ? 'overdue' : ['today', 'soon'].includes(task.dueState) ? 'soon' : 'normal');
 const byUrgency = (a, b) => URGENCY[a.urgency] - URGENCY[b.urgency] || (a.due || NO_DUE).localeCompare(b.due || NO_DUE);
+const plusDays = (date, days) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 864e5).toISOString().slice(0, 10);
+// Campos de uma atividade que a equipa pode alterar, com o nome que aparece no feed.
+const ACTIVITY_FIELDS = {
+  kind: 'tipo', title: 'título', place: 'local', date: 'data', time: 'hora', repeatUntil: 'repetição', people: 'pessoas',
+  partnerId: 'parceiro', notes: 'nota', travellerChannel: 'canal do viajante', partnerChannel: 'canal do parceiro', reminders: 'lembretes',
+};
 
 const reply = (statusCode, body, cache = 'no-store') => ({
   statusCode,
@@ -199,6 +205,22 @@ export function createApp(deps) {
       console.error(JSON.stringify({ feed: 'not-recorded', error: error?.name ?? 'Error' }));
     }
   }
+
+  // Registos NOTIFY# de uma atividade (criação ou alteração): com os lembretes automáticos
+  // desligados ficam preparados para a equipa enviar à mão.
+  const notificationRecords = (notifications, activity, partner, settings, user, at) => notifications.map(notification => ({
+    ...notification, followUpStatus: settings.auto.reminders ? NOTIFY.pending : NOTIFY.prepared, ...(settings.auto.reminders ? {} : { reason: 'Envio automático desligado: enviar à mão.' }),
+    followUpAt: notification.sendAt, kind: activity.kind, title: activity.title, place: activity.place, people: activity.people,
+    partnerName: activity.partnerId === 'bolt' ? 'Bolt' : partner?.name ?? '', approvedBy: user.email, createdAt: at,
+  }));
+  const activityWarnings = (notifications, activity, partner, lead, settings) => {
+    const warnings = [];
+    if (notifications.some(n => n.audience === 'traveller' && !n.to)) warnings.push(`O viajante não deixou ${activity.travellerChannel === 'email' ? 'email' : 'telefone'}: os lembretes ficam preparados para envio manual.`);
+    if (partner && !partner.whatsapp && notifications.some(n => n.audience === 'partner')) warnings.push(`${partner.name} não tem número WhatsApp: os lembretes ao parceiro ficam preparados.`);
+    if (!lead.consentAt) warnings.push('Sem consentimento registado: não foram agendados lembretes ao viajante.');
+    if (!settings.auto.reminders) warnings.push('Os lembretes automáticos estão desligados: ficam preparados para enviar à mão.');
+    return warnings;
+  };
 
   const routes = {
     'GET /v1/me': async ({ user }) => reply(200, user),
@@ -741,15 +763,44 @@ export function createApp(deps) {
       const at = now().toISOString();
       await deps.putRecords(id, [
         { recordKey: `ACTIVITY#${activityId}`, activityId, ...parsed.activity, reminders: parsed.activity.reminders.join(','), status: 'ACTIVE', createdBy: user.email, createdAt: at, notificationCount: String(notifications.length) },
-        // Com os lembretes automáticos desligados, ficam preparados para a equipa enviar à mão.
-        ...notifications.map(notification => ({ ...notification, followUpStatus: settings.auto.reminders ? NOTIFY.pending : NOTIFY.prepared, ...(settings.auto.reminders ? {} : { reason: 'Envio automático desligado: enviar à mão.' }), followUpAt: notification.sendAt, kind: parsed.activity.kind, title: parsed.activity.title, place: parsed.activity.place, people: parsed.activity.people, partnerName: parsed.activity.partnerId === 'bolt' ? 'Bolt' : partner?.name ?? '', approvedBy: user.email, createdAt: at })),
+        ...notificationRecords(notifications, parsed.activity, partner, settings, user, at),
       ]);
-      const warnings = [];
-      if (notifications.some(n => n.audience === 'traveller' && !n.to)) warnings.push(`O viajante não deixou ${parsed.activity.travellerChannel === 'email' ? 'email' : 'telefone'}: os lembretes ficam preparados para envio manual.`);
-      if (partner && !partner.whatsapp && notifications.some(n => n.audience === 'partner')) warnings.push(`${partner.name} não tem número WhatsApp: os lembretes ao parceiro ficam preparados.`);
-      if (!lead.consentAt) warnings.push('Sem consentimento registado: não foram agendados lembretes ao viajante.');
-      if (!settings.auto.reminders) warnings.push('Os lembretes automáticos estão desligados: ficam preparados para enviar à mão.');
-      return reply(201, { activityId, notifications: notifications.length, warnings });
+      return reply(201, { activityId, notifications: notifications.length, warnings: activityWarnings(notifications, parsed.activity, partner, lead, settings) });
+    },
+
+    // Alterar uma atividade: só os campos enviados mudam e o conjunto volta a ser validado por inteiro.
+    // Lembretes por enviar são cancelados e planeados de novo (com revisão na chave, para não
+    // colidir com os anteriores); os já enviados ficam como evidência.
+    'POST /v1/leads/{id}/activities/{activityId}': async ({ id, user, event, body }) => {
+      const activityId = event.pathParameters?.activityId ?? '';
+      if (!/^[A-Za-z0-9-]{8,64}$/.test(activityId)) return fail(400, 'Atividade inválida.');
+      const raw = (await deps.queryRecords(id, 'ACTIVITY#')).find(item => str(item, 'activityId') === activityId);
+      if (!raw) throw new NotFound();
+      const current = toActivity(raw);
+      if (current.status === 'CANCELLED') return fail(409, 'A atividade está cancelada: agende uma nova.');
+      const base = { ...current, repeatUntil: current.repeatUntil || current.date, travellerChannel: current.travellerChannel || 'whatsapp', partnerChannel: current.partnerChannel || 'whatsapp' };
+      const edits = Object.fromEntries(Object.entries(body).filter(([key, value]) => ACTIVITY_FIELDS[key] && value !== undefined));
+      const parsed = parseActivity({ ...base, ...edits }, deps.partners, now());
+      if (parsed.error) return fail(400, parsed.error);
+      const changed = Object.keys(ACTIVITY_FIELDS).filter(key => JSON.stringify(parsed.activity[key]) !== JSON.stringify(base[key]));
+      if (!changed.length) return fail(400, 'Nada para alterar.');
+      const [lead, settings, pending] = await Promise.all([
+        getLead(id), loadSettings(),
+        deps.queryRecords(id, 'NOTIFY#').then(items => items.filter(item => str(item, 'activityId') === activityId && [NOTIFY.pending, NOTIFY.prepared].includes(str(item, 'followUpStatus')))),
+      ]);
+      const partner = deps.partners.find(item => item.id === parsed.activity.partnerId);
+      const at = now().toISOString();
+      const revision = Number(str(raw, 'revision') || '0') + 1;
+      const notifications = plan(parsed.activity, { activityId, travellerPhone: digitsOnly(lead.phones[0]), travellerEmail: lead.emails[0] ?? '', partner, travellerConsent: Boolean(lead.consentAt), now: now() })
+        .map(notification => ({ ...notification, recordKey: `${notification.recordKey}#r${revision}` }));
+      await Promise.all(pending.map(item => deps.setRecord(id, str(item, 'recordKey'), { followUpStatus: NOTIFY.cancelled, reason: 'Atividade alterada: lembrete substituído.' }, str(item, 'followUpStatus'))));
+      await deps.setRecord(id, `ACTIVITY#${activityId}`, {
+        ...Object.fromEntries(Object.entries(parsed.activity).map(([key, value]) => [key, Array.isArray(value) ? value.join(',') : String(value)])),
+        revision: String(revision), updatedBy: user.email, updatedAt: at, notificationCount: String(notifications.length),
+      });
+      if (notifications.length) await deps.putRecords(id, notificationRecords(notifications, parsed.activity, partner, settings, user, at));
+      await announce(user, `alterou ${KINDS[parsed.activity.kind].toLowerCase()} «${parsed.activity.title}» (${changed.map(key => ACTIVITY_FIELDS[key]).join(', ')})`, { scope: 'agenda' });
+      return reply(200, { activityId, changed, notifications: notifications.length, warnings: activityWarnings(notifications, parsed.activity, partner, lead, settings) });
     },
 
     'POST /v1/leads/{id}/activities/{activityId}/cancel': async ({ id, event }) => {
@@ -761,20 +812,73 @@ export function createApp(deps) {
       return reply(204);
     },
 
-    'GET /v1/agenda': async ({ event }) => {
+    // Agenda: os lembretes (como antes) e o plano do dia, com tudo o que tem data: serviços,
+    // tarefas, seguimentos de leads, prazos de casos e lembretes para enviar à mão. «mine» é o
+    // trabalho da própria pessoa; «team» é o de toda a equipa. O que passou do prazo fica em «overdue».
+    'GET /v1/agenda': async ({ user, event }) => {
       const days = Math.min(Math.max(Number.parseInt(event.queryStringParameters?.days ?? '2', 10) || 2, 1), 14);
-      const start = new Date(now() - 864e5).toISOString();
-      const end = new Date(+now() + days * 864e5).toISOString();
+      const scope = event.queryStringParameters?.scope === 'team' ? 'team' : 'mine';
+      const me = user.email.toLowerCase();
+      const at = now();
+      const today = lisbonToday();
+      const horizon = plusDays(today, days);
+      const start = new Date(at - 864e5).toISOString();
+      const end = new Date(+at + days * 864e5).toISOString();
       const statuses = [NOTIFY.pending, NOTIFY.sent, NOTIFY.prepared, NOTIFY.failed, NOTIFY.missed];
-      const [items, outcomes] = await Promise.all([
+      const [items, outcomes, taskItems, leads, caseItems] = await Promise.all([
         Promise.all(statuses.map(status => deps.queryAgenda(status, start, end))).then(lists => lists.flat()),
         deps.queryAgenda(OUTCOME_STATUS, start, end).catch(() => []),
+        deps.queryStatus(TASK_STATE.open),
+        listLeads('open'),
+        allowed(user.groups, 'cases') ? deps.queryStatus(CASE_STATE.open) : Promise.resolve([]),
       ]);
-      return reply(200, { notifications: items.map(toNotification).sort((a, b) => a.sendAt.localeCompare(b.sendAt)), outcomes: outcomes.map(toOutcome), outcomeLabels: OUTCOMES });
+      const notifications = items.map(toNotification).sort((a, b) => a.sendAt.localeCompare(b.sendAt));
+      const mine = owner => scope === 'team' || (owner ?? '').toLowerCase() === me;
+      const dayOf = iso => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(new Date(iso));
+      const bucket = day => (day < today ? 'overdue' : day);
+      // Serviços: uma linha por ocorrência com os seus lembretes; quem agendou é o responsável.
+      const services = new Map();
+      for (const item of notifications) {
+        const key = `${item.activityId}|${item.occurrenceAt}`;
+        const service = services.get(key) ?? {
+          kind: 'service', id: key, partition: item.conversationId, activityId: item.activityId, occurrenceAt: item.occurrenceAt, day: dayOf(item.occurrenceAt),
+          title: `${KINDS[item.kind] ?? item.kind}: ${item.title}`, detail: [item.place, item.people ? `${item.people} pessoa(s)` : '', item.partnerName].filter(Boolean).join(' · '),
+          owner: item.approvedBy, urgency: 'normal', reminders: [],
+        };
+        service.reminders.push(item);
+        services.set(key, service);
+      }
+      const serviceItems = [...services.values()].filter(service => mine(service.owner)).map(service => ({
+        ...service, urgency: service.reminders.some(r => [NOTIFY.failed, NOTIFY.missed].includes(r.status)) ? 'overdue' : service.day === today ? 'soon' : 'normal',
+      }));
+      const tasks = taskItems.map(item => toTask(item, today)).filter(task => mine(task.owner) && task.due && task.due <= horizon).map(task => ({
+        kind: 'task', id: task.id, partition: task.partition, day: bucket(task.due), due: task.due, title: task.title,
+        detail: [TASK_STATUS[task.status], task.blockedReason, task.leadLabel].filter(Boolean).join(' · '), owner: task.owner, urgency: taskUrgency(task),
+      }));
+      const followUps = leads.filter(lead => !lead.synthetic && mine(lead.assignedTo)).map(lead => {
+        const due = (lead.replyLate && lead.replyDueAt ? lead.replyDueAt : lead.followUpAt).slice(0, 10);
+        const urgency = lead.atRisk ? 'risk' : lead.replyLate || isOverdue(lead, at) ? 'overdue' : 'normal';
+        return {
+          kind: 'lead', id: lead.id, partition: lead.id, day: urgency === 'normal' ? bucket(due) : 'overdue', due, title: lead.journey.destination || lead.id,
+          detail: lead.atRisk ? 'Disse que vai desistir: contactar já' : lead.replyLate ? 'Sem resposta dentro do prazo' : 'Seguimento marcado', owner: lead.assignedTo ?? '', urgency,
+        };
+      }).filter(item => item.urgency !== 'normal' || item.due <= horizon);
+      const cases = caseItems.map(item => toCase(item, today)).filter(item => mine(item.owner) && item.deadline && item.deadline <= horizon).map(item => ({
+        kind: 'case', id: item.id, partition: item.partition, day: bucket(item.deadline), due: item.deadline, title: item.title,
+        detail: CASE_TYPES[item.type]?.label ?? item.type, owner: item.owner, urgency: item.deadlineState === 'overdue' ? 'overdue' : item.deadlineState === 'due-soon' ? 'soon' : 'normal',
+      }));
+      const prepared = notifications.filter(item => item.status === NOTIFY.prepared && mine(item.approvedBy)).map(item => ({
+        kind: 'reminder', id: item.recordKey, partition: item.conversationId, day: Date.parse(item.sendAt) <= at ? 'overdue' : dayOf(item.sendAt), due: item.sendAt.slice(0, 10),
+        title: `Enviar à mão: ${item.title}`, detail: item.reason || 'Preparado: enviar à mão', owner: item.approvedBy, urgency: 'overdue',
+      }));
+      const all = [...serviceItems, ...tasks, ...followUps, ...cases, ...prepared];
+      const dayKeys = [...new Set(all.map(item => item.day))].sort((a, b) => (a === 'overdue' ? -1 : b === 'overdue' ? 1 : a.localeCompare(b)));
+      const byDay = dayKeys.map(day => ({ day, items: all.filter(item => item.day === day).sort((a, b) => byUrgency(a, b) || (a.occurrenceAt ?? '').localeCompare(b.occurrenceAt ?? '')) }));
+      return reply(200, { notifications, outcomes: outcomes.map(toOutcome), outcomeLabels: OUTCOMES, plan: { today, scope, days, items: byDay } });
     },
   };
 
-  const writes = new Set(['POST /v1/leads/{id}/activities/{activityId}/outcome', 'POST /v1/leads/{id}/contacted', 'POST /v1/leads/{id}/assign', 'PUT /v1/leads/{id}/tags', 'POST /v1/leads/{id}/ask', 'POST /v1/leads/{id}/activities', 'POST /v1/leads/{id}/activities/{activityId}/cancel']);
+  const writes = new Set(['POST /v1/leads/{id}/activities/{activityId}/outcome', 'POST /v1/leads/{id}/contacted', 'POST /v1/leads/{id}/assign', 'PUT /v1/leads/{id}/tags', 'POST /v1/leads/{id}/ask', 'POST /v1/leads/{id}/activities', 'POST /v1/leads/{id}/activities/{activityId}', 'POST /v1/leads/{id}/activities/{activityId}/cancel']);
   const admin = new Set(['POST /v1/team/invite', 'POST /v1/team/{username}/role', 'POST /v1/team/{username}/status']);
   const caseRoutes = new Set(['GET /v1/cases', 'POST /v1/cases', 'GET /v1/leads/{id}/cases', 'GET /v1/leads/{id}/cases/{caseId}', 'POST /v1/leads/{id}/cases/{caseId}']);
   const taskWrites = new Set(['POST /v1/tasks', 'POST /v1/leads/{id}/tasks/{taskId}']);

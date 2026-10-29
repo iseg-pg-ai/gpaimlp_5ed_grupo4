@@ -118,6 +118,8 @@ const TASK_TONE = { todo: '', doing: 'ok', blocked: 'warn', done: 'ok' };
 // Um toque avança a tarefa: o botão principal é o passo seguinte.
 const NEXT_STEP = { todo: ['doing', 'Começar'], doing: ['done', 'Feito'], blocked: ['doing', 'Desbloquear'], done: ['todo', 'Reabrir'] };
 const workState = { board: 'open', flash: '' };
+// Agenda: «mine» é o trabalho da própria pessoa; fundadores entram na vista da equipa.
+const agendaState = { scope: '', days: 7 };
 let taskPrefill = {};
 
 async function api(method, path, body) {
@@ -500,52 +502,70 @@ const views = {
     if (state.selected) select(state.selected);
   },
 
-  async agenda(view) {
-    const { notifications, outcomes = [], outcomeLabels = {} } = await api('GET', '/v1/agenda?days=7');
-    // Agrupa por dia da atividade e, dentro do dia, por atividade: cada cartão diz em
-    // linguagem simples quem recebe o quê, por que canal e quando.
+  // Agenda: o plano do dia. Tudo o que tem data, em atraso primeiro e, dentro de cada dia, por
+  // urgência: serviços (com lembretes, resultado e reagendamento), tarefas, seguimentos, casos e
+  // lembretes para enviar à mão. «Só o meu» ou «Equipa»; fundadores entram na equipa.
+  async agenda(view, state = agendaState) {
+    state.scope ||= can('team-admin') ? 'team' : 'mine';
+    const { notifications, outcomes = [], outcomeLabels = {}, plan = { items: [] } } = await api('GET', `/v1/agenda?days=${state.days}&scope=${state.scope}`);
+    const rerender = () => { view.replaceChildren(); views.agenda(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
     const dayKey = iso => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(new Date(iso));
-    const today = dayKey(new Date().toISOString());
+    const today = plan.today ?? dayKey(new Date().toISOString());
     const tomorrow = dayKey(new Date(Date.now() + 864e5).toISOString());
     const relative = iso => {
       const key = dayKey(iso);
       const prefix = key === today ? 'hoje' : key === tomorrow ? 'amanhã' : key < today ? 'ontem' : lisbonDay(iso);
       return `${prefix} às ${lisbonTime(iso)}`;
     };
-    const days = new Map();
-    for (const item of notifications) {
-      const day = dayKey(item.occurrenceAt);
-      const slots = days.get(day) ?? new Map();
-      const key = `${item.activityId}|${item.occurrenceAt}`;
-      slots.set(key, [...(slots.get(key) ?? []), item]);
-      days.set(day, slots);
-    }
-    const heading = day => (day === today ? 'Hoje' : day === tomorrow ? 'Amanhã' : lisbonDay(`${day}T12:00:00Z`));
+    const heading = day => (day === 'overdue' ? 'Em atraso' : day === today ? 'Hoje' : day === tomorrow ? 'Amanhã' : lisbonDay(`${day}T12:00:00Z`));
     const counts = Object.groupBy ? Object.groupBy(notifications, n => n.status) : {};
+    const urgencyPill = urgency => (URGENCY[urgency] ? pill(...URGENCY[urgency]) : null);
+    const toggle = (key, value, label) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state[key] === value), onclick: () => { state[key] = value; rerender(); } }, label);
+    const KINDS_PT = { service: 'Serviço', task: 'Tarefa', lead: 'Lead', case: 'Caso', reminder: 'Lembrete' };
+    const openItem = item => {
+      if (['lead', 'reminder', 'service'].includes(item.kind)) { leadsState.filter = 'all'; leadsState.selected = item.partition; show('leads'); }
+      if (item.kind === 'task') show('work');
+      if (item.kind === 'case') show('cases');
+    };
+    // Serviço: hora, lembretes, resultado e reagendamento no próprio cartão.
+    const serviceCard = item => {
+      const first = item.reminders[0];
+      const editor = h('div', { hidden: true });
+      return h('article', { class: `slot ${item.urgency}` },
+        h('div', { class: 'slot-time' }, lisbonTime(item.occurrenceAt)),
+        h('div', { class: 'slot-body' },
+          h('div', {}, h('strong', {}, item.title), ' ', urgencyPill(item.urgency)),
+          h('div', { class: 'muted' }, [item.detail, state.scope === 'team' ? item.owner : '', item.partition].filter(Boolean).join(' · ')),
+          outcomeBlock(first, outcomes, outcomeLabels, rerender),
+          h('ul', { class: 'reminders' }, [...item.reminders].sort((a, b) => a.sendAt.localeCompare(b.sendAt)).map(r => h('li', {},
+            h('span', {}, `${CHANNEL[r.channel] ?? r.channel} ao ${(AUDIENCE[r.audience] ?? r.audience).toLowerCase()}, ${relative(r.sendAt)}`), ' ',
+            notifyPill(r.status), r.delivery === 'test-inbox' ? [' ', pill('teste')] : null,
+            r.reason ? h('div', { class: 'muted' }, r.reason) : null,
+            h('details', {}, h('summary', { class: 'muted' }, 'Ver mensagem'), h('p', { class: 'message' }, r.text))))),
+          isCurator() ? h('div', { class: 'actions' },
+            h('button', { type: 'button', class: 'secondary', onclick: () => { editor.hidden = !editor.hidden; if (!editor.hidden && !editor.childElementCount) editor.append(activityEditor(item.partition, item.activityId, { compact: true, onSaved: rerender })); } }, 'Reagendar'),
+            h('button', { type: 'button', class: 'link', onclick: () => openItem(item) }, 'Abrir lead')) : null,
+          editor));
+    };
+    const line = item => h('li', { class: `work-item ${item.urgency}` },
+      h('div', {}, pill(KINDS_PT[item.kind] ?? item.kind), ' ', urgencyPill(item.urgency), state.scope === 'team' && item.owner ? h('span', { class: 'muted' }, ` · ${item.owner}`) : null),
+      h('strong', {}, item.title),
+      item.detail ? h('div', { class: 'muted' }, item.detail) : null,
+      h('div', { class: 'actions task-actions' }, h('button', { type: 'button', class: 'link', onclick: () => openItem(item) }, 'Abrir')));
     view.append(
       h('h2', {}, 'Agenda'),
-      h('p', { class: 'muted' }, 'Recolhas e excursões dos próximos 7 dias e os lembretes de cada uma (hora de Lisboa). Os lembretes saem sozinhos à hora marcada; os "preparados" têm de ser enviados à mão.'),
+      h('p', { class: 'muted' }, 'Tudo o que tem data (hora de Lisboa): recolhas e excursões com os seus lembretes, tarefas, seguimentos de leads, prazos de casos e lembretes para enviar à mão. Em atraso primeiro; dentro de cada dia, por urgência. Os lembretes saem sozinhos à hora marcada.'),
+      h('div', { class: 'filters' }, toggle('scope', 'mine', 'Só o meu'), toggle('scope', 'team', 'Equipa'), ' ', toggle('days', 7, '7 dias'), toggle('days', 14, '14 dias')),
       h('div', { class: 'cards' },
         h('div', { class: 'card' }, h('div', { class: 'value' }, (counts.NOTIFY_PENDING ?? []).length), h('div', { class: 'label' }, 'Lembretes agendados')),
         h('div', { class: 'card' }, h('div', { class: 'value' }, (counts.NOTIFY_SENT ?? []).length), h('div', { class: 'label' }, 'Enviados (24 h)')),
         h('div', { class: 'card' }, h('div', { class: 'value' }, (counts.NOTIFY_PREPARED ?? []).length), h('div', { class: 'label' }, 'Para enviar à mão')),
         h('div', { class: 'card' }, h('div', { class: 'value' }, [...(counts.NOTIFY_FAILED ?? []), ...(counts.NOTIFY_MISSED ?? [])].length), h('div', { class: 'label' }, 'Falhados ou atrasados'))),
-      ...(notifications.length ? [...days].sort(([a], [b]) => a.localeCompare(b)).map(([day, slots]) => h('section', { class: 'day spaced' },
-        h('h3', { class: 'day-title' }, heading(day)),
-        ...[...slots.values()].sort((a, b) => a[0].occurrenceAt.localeCompare(b[0].occurrenceAt)).map(items => {
-          const first = items[0];
-          return h('article', { class: 'slot' },
-            h('div', { class: 'slot-time' }, lisbonTime(first.occurrenceAt)),
-            h('div', { class: 'slot-body' },
-              h('strong', {}, `${KIND[first.kind] ?? first.kind}: ${first.title}`),
-              h('div', { class: 'muted' }, [first.place, first.people ? `${first.people} pessoa(s)` : '', first.partnerName, first.conversationId].filter(Boolean).join(' · ')),
-              outcomeBlock(first, outcomes, outcomeLabels, () => { view.replaceChildren(); views.agenda(view).catch(error => view.append(h('p', { class: 'error' }, error.message))); }),
-              h('ul', { class: 'reminders' }, items.sort((a, b) => a.sendAt.localeCompare(b.sendAt)).map(item => h('li', {},
-                h('span', {}, `${CHANNEL[item.channel] ?? item.channel} ao ${(AUDIENCE[item.audience] ?? item.audience).toLowerCase()}, ${relative(item.sendAt)}`), ' ',
-                notifyPill(item.status), item.delivery === 'test-inbox' ? [' ', pill('teste')] : null,
-                item.reason ? h('div', { class: 'muted' }, item.reason) : null,
-                h('details', {}, h('summary', { class: 'muted' }, 'Ver mensagem'), h('p', { class: 'message' }, item.text)))))));
-        }))) : [h('p', { class: 'muted' }, 'Nada agendado. Abra um lead em Seguimento e use "Agendar recolha ou excursão".')]),
+      ...(plan.items.length ? plan.items.map(({ day, items }) => h('section', { class: 'day spaced' },
+        h('h3', { class: 'day-title' }, `${heading(day)} · ${items.length}`),
+        ...items.filter(item => item.kind === 'service').map(serviceCard),
+        items.some(item => item.kind !== 'service') ? h('ul', { class: 'work-list' }, items.filter(item => item.kind !== 'service').map(line)) : null))
+        : [h('p', { class: 'muted' }, state.scope === 'mine' ? 'Nada com data para si neste período. Veja «Equipa» ou agende em Seguimento.' : 'Nada agendado. Abra um lead em Seguimento e use "Agendar recolha ou excursão".')]),
     );
   },
 
@@ -1315,6 +1335,51 @@ function leadCases(id) {
   return box;
 }
 
+// Alterar uma atividade: data, hora e repetição; no detalhe do lead também local, pessoas,
+// parceiro e nota. Só os campos alterados são enviados; a API planeia de novo os lembretes por enviar.
+function activityEditor(leadId, activityId, { compact = false, onSaved = () => {}, activity = null } = {}) {
+  const box = h('div', { class: 'panel' }, h('p', { class: 'muted' }, 'A carregar…'));
+  const build = current => {
+    const field = (label, input) => h('label', { class: 'field' }, h('span', {}, label), input);
+    const date = h('input', { type: 'date', value: current.date, required: true });
+    const time = h('input', { type: 'time', value: current.time, required: true });
+    const until = h('input', { type: 'date', value: current.repeatUntil && current.repeatUntil !== current.date ? current.repeatUntil : '' });
+    const place = h('input', { type: 'text', maxlength: '200', value: current.place });
+    const people = h('input', { type: 'number', min: '1', max: '30', value: String(current.people) });
+    const partner = h('select', {}, h('option', { value: '' }, 'Sem parceiro'), h('option', { value: 'bolt' }, 'Bolt (o viajante reserva)'));
+    const notes = h('input', { type: 'text', maxlength: '500', value: current.notes });
+    if (!compact) loadPartners().then(({ partners }) => { partner.append(...partners.map(item => h('option', { value: item.id }, item.name))); partner.value = current.partnerId; }).catch(() => {});
+    const status = h('p', { class: 'muted', role: 'status' });
+    const form = h('form', { class: 'activity-form', onsubmit: async event => {
+      event.preventDefault();
+      const next = { date: date.value, time: time.value, repeatUntil: until.value || date.value, ...(compact ? {} : { place: place.value, people: people.value, partnerId: partner.value, notes: notes.value }) };
+      const before = { date: current.date, time: current.time, repeatUntil: current.repeatUntil || current.date, place: current.place, people: String(current.people), partnerId: current.partnerId, notes: current.notes };
+      const changes = Object.fromEntries(Object.entries(next).filter(([key, value]) => String(value) !== String(before[key])));
+      if (!Object.keys(changes).length) { status.textContent = 'Nada alterado.'; return; }
+      const button = form.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        const result = await api('POST', `/v1/leads/${encodeURIComponent(leadId)}/activities/${encodeURIComponent(activityId)}`, changes);
+        status.textContent = [`Alterado: ${result.notifications} lembrete(s) planeado(s) de novo.`, ...result.warnings].join(' ');
+        onSaved(result);
+      } catch (error) {
+        status.textContent = error.message;
+      }
+      button.disabled = false;
+    } },
+      field('Data', date), field('Hora', time), field('Todos os dias até (opcional)', until),
+      ...(compact ? [] : [field('Local de encontro', place), field('Pessoas', people), field('Parceiro', partner), field('Nota para o parceiro', notes)]),
+      h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, compact ? 'Reagendar' : 'Guardar alterações')), status);
+    box.replaceChildren(form);
+  };
+  if (activity) build(activity);
+  else api('GET', `/v1/leads/${encodeURIComponent(leadId)}/activities`).then(({ activities }) => {
+    const found = activities.find(item => item.id === activityId);
+    if (found) build(found); else box.replaceChildren(h('p', { class: 'error' }, 'Atividade não encontrada.'));
+  }).catch(error => box.replaceChildren(h('p', { class: 'error' }, error.message)));
+  return box;
+}
+
 function activityPanel(id, lead) {
   const list = h('div', {}, h('p', { class: 'muted' }, 'A carregar…'));
   const status = h('p', { class: 'muted', role: 'status' });
@@ -1326,19 +1391,23 @@ function activityPanel(id, lead) {
         const count = state => own.filter(n => n.status === state).length;
         const repeat = activity.repeatUntil && activity.repeatUntil !== activity.date ? ` · todos os dias até ${activity.repeatUntil}` : '';
         const who = activity.partnerId === 'bolt' ? 'Bolt' : activity.partnerId || 'sem parceiro';
+        const editor = h('div', { hidden: true });
         return h('div', { class: 'activity' },
           h('div', {}, h('strong', {}, `${KIND[activity.kind] ?? activity.kind}: ${activity.title}`), ' ', activity.status === 'CANCELLED' ? pill('Cancelada') : null),
           h('div', { class: 'muted' }, `${activity.date} às ${activity.time}${repeat} · ${activity.place} · ${activity.people} pessoa(s) · ${who}`),
           h('div', { class: 'muted' }, `${count('NOTIFY_PENDING')} lembrete(s) por enviar, ${count('NOTIFY_SENT')} enviado(s), ${count('NOTIFY_PREPARED')} preparado(s)`),
-          activity.status === 'CANCELLED' || !isCurator() ? null : h('button', { type: 'button', class: 'secondary', onclick: async () => {
-            try {
-              await api('POST', `/v1/leads/${id}/activities/${activity.id}/cancel`);
-              status.textContent = 'Atividade cancelada; lembretes por enviar cancelados.';
-              refresh();
-            } catch (error) {
-              status.textContent = error.message;
-            }
-          } }, 'Cancelar'));
+          activity.status === 'CANCELLED' || !isCurator() ? null : h('div', { class: 'actions' },
+            h('button', { type: 'button', class: 'secondary', onclick: () => { editor.hidden = !editor.hidden; if (!editor.hidden && !editor.childElementCount) editor.append(activityEditor(id, activity.id, { activity, onSaved: () => { status.textContent = 'Atividade alterada; lembretes por enviar planeados de novo.'; refresh(); } })); } }, 'Editar'),
+            h('button', { type: 'button', class: 'secondary', onclick: async () => {
+              try {
+                await api('POST', `/v1/leads/${id}/activities/${activity.id}/cancel`);
+                status.textContent = 'Atividade cancelada; lembretes por enviar cancelados.';
+                refresh();
+              } catch (error) {
+                status.textContent = error.message;
+              }
+            } }, 'Cancelar')),
+          editor);
       }) : [h('p', { class: 'muted' }, 'Sem recolhas nem excursões agendadas.')]));
     } catch (error) {
       list.replaceChildren(h('p', { class: 'error' }, error.message));

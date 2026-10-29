@@ -45,6 +45,12 @@ um de cada vez:
 - [x] Avaliação dos parceiros: resultado de cada serviço na Agenda e pontuação,
   posição por tipo, pontualidade, clientes, fiabilidade, margem, ROI e preço por
   pessoa no separador Parceiros; ordem pela pontuação ao agendar (por publicar).
+- [x] Agenda editável e plano do dia (2026-10-29): atividades alteram-se (lembretes
+  por enviar planeados de novo) e a Agenda junta, por dia e por urgência, serviços,
+  tarefas, seguimentos, prazos de casos e lembretes à mão, «Só o meu» ou «Equipa».
+- [ ] Agenda: prioridade nas tarefas (alta/normal/baixa) e checklist de prontidão
+  por serviço (parceiro, contacto, consentimento, lembretes, resultado), com
+  «em risco» a menos de 48 h quando falta um pré-requisito.
 - [ ] Parceiros no portal: sugerir o parceiro mais bem avaliado em cada atividade
   da proposta (ligação ao catálogo) e confirmações por WhatsApp como indicador.
 - [ ] Testes do percurso do lead, de fornecedores válidos e de parceiros com licença.
