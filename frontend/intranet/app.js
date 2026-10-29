@@ -927,7 +927,8 @@ const views = {
       h('p', { class: 'muted' }, `Verificado em ${when(ops.checkedAt)}.`),
       h('div', { class: 'cards' },
         queueCard(q.conversationEvents, 'Eventos por processar'), queueCard(q.failedEvents, 'Eventos falhados (DLQ)', true),
-        h('div', { class: 'card' }, h('div', { class: 'value' }, q.curatorTasks.waiting), h('div', { class: 'label' }, 'Cópias para análise do backoffice'), h('div', { class: 'muted' }, 'Cópias de cada mensagem para a análise externa; as conversas para rever estão abaixo.')),
+        // Fila de cópias para um analista externo: sem ninguém ligado, acumulam e expiram ao fim de 14 dias. Não é trabalho da equipa.
+        h('div', { class: 'card' }, h('div', { class: 'value' }, q.curatorTasks.waiting), h('div', { class: 'label' }, 'Cópias à espera do analista externo'), h('div', { class: 'muted' }, 'Cópia de cada mensagem para análise externa; sem analista ligado, expiram ao fim de 14 dias. Não há nada a fazer aqui; as conversas para rever estão abaixo.')),
         h('div', { class: 'card' }, h('div', { class: 'value' }, ops.churnReview ? ops.churnReview.queued : '—'), h('div', { class: 'label' }, 'Revisão diária: leads em atraso'), h('div', { class: 'muted' }, ops.churnReview ? `Última execução ${when(ops.churnReview.evaluatedAt)}` : 'Sem execução nos últimos 3 dias'))),
       h('div', { class: 'panel' }, h('h3', {}, 'Workers (últimas 24 h)'), h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Função'), h('th', {}, 'Stack'), h('th', {}, 'Execuções'), h('th', {}, 'Erros'), h('th', {}, 'Limitações'), h('th', {}, 'Estado'), h('th', {}, 'Atualizada'))),
