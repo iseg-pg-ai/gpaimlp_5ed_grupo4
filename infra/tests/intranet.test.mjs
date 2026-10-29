@@ -359,7 +359,9 @@ test('the agenda day plan gathers services, tasks, follow-ups and hand-sent remi
   });
   const task = (id, owner, due) => ({ conversationId: S('TASKS-UNLINKED'), recordKey: S(`TASK#${id}`), taskId: S(id), title: S(`Tarefa ${id}`), owner: S(owner), due: S(due), taskStatus: S('todo'), followUpStatus: S('TASK_OPEN'), followUpAt: S(due) });
   const { deps } = fakeDeps({
-    queryAgenda: async status => (status === 'NOTIFY_PENDING' ? [notify('traveller')] : status === 'NOTIFY_PREPARED' ? [notify('partner', { audience: S('partner'), followUpStatus: S('NOTIFY_PREPARED'), approvedBy: S('rui@blu.pt'), reason: S('Sem número.') })] : []),
+    // Um registo antigo sem ocorrência nem data válida não pode rebentar o plano: fica no dia do envio.
+    queryAgenda: async status => (status === 'NOTIFY_PENDING' ? [notify('traveller')] : status === 'NOTIFY_PREPARED' ? [notify('partner', { audience: S('partner'), followUpStatus: S('NOTIFY_PREPARED'), approvedBy: S('rui@blu.pt'), reason: S('Sem número.') })]
+      : status === 'NOTIFY_SENT' ? [notify('legacy', { recordKey: S('NOTIFY#legacy'), activityId: S('act-0'), occurrenceAt: S(''), followUpAt: S('2026-10-25T18:00:00Z'), followUpStatus: S('NOTIFY_SENT') }), notify('broken', { recordKey: S('NOTIFY#broken'), activityId: S('act-9'), occurrenceAt: S('not-a-date'), followUpAt: S('x'), followUpStatus: S('NOTIFY_SENT') })] : []),
     queryStatus: async status => (status === 'TASK_OPEN' ? [task('t1', 'ana@blu.pt', '2026-10-25'), task('t2', 'rui@blu.pt', '2026-10-27'), task('t3', 'ana@blu.pt', '2026-12-01')]
       : status === 'PENDING' ? [profile('BLU-AAAAAAAA0001', { assignedTo: S('ana@blu.pt') }), profile('BLU-AAAAAAAA0002', { assignedTo: S('rui@blu.pt'), synthetic: { BOOL: true } })] : []),
   });
@@ -369,7 +371,7 @@ test('the agenda day plan gathers services, tasks, follow-ups and hand-sent remi
   assert.equal(mine.scope, 'mine');
   assert.equal(mine.today, '2026-10-26');
   // Em atraso primeiro; t3 está fora dos 7 dias; o serviço fica no seu dia; nada do Rui.
-  assert.deepEqual(ids(mine), { overdue: ['lead:BLU-AAAAAAAA0001', 'task:t1'], '2026-10-26': ['service:act-1|2026-10-26T08:30:00Z'] });
+  assert.deepEqual(ids(mine), { overdue: ['lead:BLU-AAAAAAAA0001', 'task:t1'], '2026-10-25': ['service:act-0|'], '2026-10-26': ['service:act-1|2026-10-26T08:30:00Z', 'service:act-9|not-a-date'] });
   assert.equal(mine.items[0].items[0].urgency, 'overdue');
   assert.doesNotMatch(JSON.stringify(mine), /351912345678/);
   const team = JSON.parse((await handler(request('GET /v1/agenda', { query: { days: '7', scope: 'team' }, groups: '[founders]' }))).body).plan;

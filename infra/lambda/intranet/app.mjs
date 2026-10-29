@@ -834,14 +834,16 @@ export function createApp(deps) {
       ]);
       const notifications = items.map(toNotification).sort((a, b) => a.sendAt.localeCompare(b.sendAt));
       const mine = owner => scope === 'team' || (owner ?? '').toLowerCase() === me;
-      const dayOf = iso => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(new Date(iso));
+      // Registos antigos podem não ter ocorrência ou data válida: nunca rebentar por isso.
+      const lisbon = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' });
+      const dayOf = iso => (Number.isNaN(Date.parse(iso ?? '')) ? '' : lisbon.format(Date.parse(iso)));
       const bucket = day => (day < today ? 'overdue' : day);
       // Serviços: uma linha por ocorrência com os seus lembretes; quem agendou é o responsável.
       const services = new Map();
       for (const item of notifications) {
         const key = `${item.activityId}|${item.occurrenceAt}`;
         const service = services.get(key) ?? {
-          kind: 'service', id: key, partition: item.conversationId, activityId: item.activityId, occurrenceAt: item.occurrenceAt, day: dayOf(item.occurrenceAt),
+          kind: 'service', id: key, partition: item.conversationId, activityId: item.activityId, occurrenceAt: item.occurrenceAt || item.sendAt, day: dayOf(item.occurrenceAt) || dayOf(item.sendAt) || today,
           title: `${KINDS[item.kind] ?? item.kind}: ${item.title}`, detail: [item.place, item.people ? `${item.people} pessoa(s)` : '', item.partnerName].filter(Boolean).join(' · '),
           owner: item.approvedBy, urgency: 'normal', reminders: [],
         };
@@ -862,13 +864,13 @@ export function createApp(deps) {
           kind: 'lead', id: lead.id, partition: lead.id, day: urgency === 'normal' ? bucket(due) : 'overdue', due, title: lead.journey.destination || lead.id,
           detail: lead.atRisk ? 'Disse que vai desistir: contactar já' : lead.replyLate ? 'Sem resposta dentro do prazo' : 'Seguimento marcado', owner: lead.assignedTo ?? '', urgency,
         };
-      }).filter(item => item.urgency !== 'normal' || item.due <= horizon);
+      }).filter(item => item.urgency !== 'normal' || (item.due && item.due <= horizon));
       const cases = caseItems.map(item => toCase(item, today)).filter(item => mine(item.owner) && item.deadline && item.deadline <= horizon).map(item => ({
         kind: 'case', id: item.id, partition: item.partition, day: bucket(item.deadline), due: item.deadline, title: item.title,
         detail: CASE_TYPES[item.type]?.label ?? item.type, owner: item.owner, urgency: item.deadlineState === 'overdue' ? 'overdue' : item.deadlineState === 'due-soon' ? 'soon' : 'normal',
       }));
       const prepared = notifications.filter(item => item.status === NOTIFY.prepared && mine(item.approvedBy)).map(item => ({
-        kind: 'reminder', id: item.recordKey, partition: item.conversationId, day: Date.parse(item.sendAt) <= at ? 'overdue' : dayOf(item.sendAt), due: item.sendAt.slice(0, 10),
+        kind: 'reminder', id: item.recordKey, partition: item.conversationId, day: !(Date.parse(item.sendAt) > at) ? 'overdue' : dayOf(item.sendAt), due: item.sendAt.slice(0, 10),
         title: `Enviar à mão: ${item.title}`, detail: item.reason || 'Preparado: enviar à mão', owner: item.approvedBy, urgency: 'overdue',
       }));
       const all = [...serviceItems, ...tasks, ...followUps, ...cases, ...prepared];
