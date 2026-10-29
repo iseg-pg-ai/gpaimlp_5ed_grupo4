@@ -2,10 +2,8 @@ import { challengeFor, claimsOf, expired, loginUrl, logoutUrl, randomString, ref
 
 // Intranet da equipa. Todo o texto vindo da API é inserido com textContent (nunca HTML).
 const config = window.BLU_INTRANET;
-// O mesmo código serve os dois sites: o backoffice mostra só o trabalho com clientes; a intranet mantém tudo.
-const SITE = config?.site === 'backoffice'
-  ? { name: 'Backoffice BLU', start: 'leads', tabs: ['dashboard', 'leads', 'agenda', 'whatsapp', 'cases', 'operations', 'governance'], other: config.intranetUrl && { label: 'Intranet ↗', url: config.intranetUrl } }
-  : { name: 'Intranet BLU', start: 'work', tabs: null, other: null };
+// Um só site para a equipa; os grupos Cognito decidem o que cada pessoa vê (aqui e na API).
+const SITE = { name: 'Intranet BLU', start: 'work' };
 // Perfis sem leitura geral (marketing) veem só estes separadores; a API aplica a mesma regra.
 const LIMITED_TABS = ['work', 'assistant', 'dashboard'];
 const session = { idToken: '', refreshToken: '', claims: null };
@@ -143,7 +141,7 @@ async function api(method, path, body) {
 async function login() {
   const state = randomString(16);
   const verifier = randomString(48);
-  sessionStorage.setItem('blu-intranet-auth', JSON.stringify({ state, verifier }));
+  sessionStorage.setItem('blu-intranet-auth', JSON.stringify({ state, verifier, hash: location.hash }));
   location.assign(loginUrl(config, { state, challenge: await challengeFor(verifier) }));
   return new Promise(() => {});
 }
@@ -155,7 +153,8 @@ async function finishLogin() {
   if (!code) return false;
   const saved = JSON.parse(sessionStorage.getItem('blu-intranet-auth') || '{}');
   sessionStorage.removeItem('blu-intranet-auth');
-  history.replaceState(null, '', location.pathname);
+  // Depois do login volta-se à secção pedida (ligação partilhada), não ao início.
+  history.replaceState(null, '', `${location.pathname}${/^#[\w-]+$/.test(saved.hash ?? '') ? saved.hash : ''}`);
   if (!saved.state || saved.state !== params.get('state')) throw new Error('Sessão de login inválida. Entre novamente.');
   const { url, init } = tokenRequest(config, { code, verifier: saved.verifier });
   const response = await fetch(url, init);
@@ -313,6 +312,8 @@ const views = {
     note, h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Criar tarefa')));
 
     const mine = items.filter(item => item.kind === 'task');
+    const myEmail = session.claims?.email?.toLowerCase() ?? '';
+    const teamTasks = state.board === 'open' ? tasks.filter(task => task.owner !== myEmail) : tasks;
     const boardButton = (key, label) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.board === key), onclick: () => { state.board = key; rerender(); } }, label);
     const card = (value, label) => h('div', { class: 'card' }, h('div', { class: 'value' }, value), h('div', { class: 'label' }, label));
     view.append(
@@ -330,11 +331,11 @@ const views = {
             : h('p', { class: 'muted' }, 'Nada pendente. Assuma um lead em Seguimento ou crie uma tarefa.')),
           h('div', { class: 'panel spaced' }, h('h3', {}, 'Tarefas da equipa'),
             h('div', { class: 'filters' }, boardButton('open', 'Em aberto'), boardButton('done', 'Feitas (arquivo)')),
-            tasks.length
-              ? h('ul', { class: 'work-list' }, tasks.map(task => h('li', { class: `work-item ${task.urgency ?? ''}` },
+            teamTasks.length
+              ? h('ul', { class: 'work-list' }, teamTasks.map(task => h('li', { class: `work-item ${task.urgency ?? ''}` },
                 h('div', {}, pill(statuses[task.status] ?? task.status, TASK_TONE[task.status]), ' ', urgencyPill(task.urgency)),
                 h('strong', {}, task.title), ...taskBlock(task))))
-              : h('p', { class: 'muted' }, state.board === 'open' ? 'Sem tarefas em aberto.' : 'Sem tarefas feitas.'))),
+              : h('p', { class: 'muted' }, state.board === 'open' ? 'Sem outras tarefas em aberto na equipa.' : 'Sem tarefas feitas.'))),
         h('div', { class: 'panel' }, h('h3', {}, 'O que se passa'),
           h('p', { class: 'muted' }, 'Últimos 7 dias. Atualiza ao voltar ao separador ou em «Atualizar».'),
           feed.length
@@ -1389,14 +1390,12 @@ function activityPanel(id, lead) {
 }
 
 let current = SITE.start;
-// Secções do backoffice, grupos vazios escondidos e ligação para o outro site.
+// Separadores por grupo e grupos de menu vazios escondidos.
 function applySite() {
   const nav = $('tabs');
-  if (SITE.tabs) for (const button of nav.querySelectorAll('button[data-tab]')) if (!SITE.tabs.includes(button.dataset.tab)) button.hidden = true;
   for (const button of nav.querySelectorAll('button[data-tab]')) if (!tabVisible(button.dataset.tab)) button.hidden = true;
   // Ligações para outros sites só para quem lá pode entrar (data-groups).
   for (const link of nav.querySelectorAll('a[data-groups]')) link.hidden = !link.dataset.groups.split(' ').some(group => groupsNow().includes(group));
-  if (SITE.other) nav.append(h('span', { class: 'nav-group' }, 'Equipa BLU'), h('a', { href: SITE.other.url, target: '_blank', rel: 'noopener' }, SITE.other.label));
   for (const group of nav.querySelectorAll('.nav-group')) {
     let item = group.nextElementSibling;
     let visible = false;
@@ -1405,8 +1404,15 @@ function applySite() {
   }
 }
 
+// A secção vai no #hash: ligações partilhadas e o botão «anterior» do navegador funcionam.
+const tabFromHash = () => {
+  const tab = decodeURIComponent(location.hash.slice(1));
+  return views[tab] && tabVisible(tab) ? tab : '';
+};
+
 async function show(tab) {
   current = tab;
+  if (location.hash.slice(1) !== tab) history.pushState(null, '', `#${tab}`);
   for (const button of $('tabs').querySelectorAll('button')) {
     if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
@@ -1425,7 +1431,6 @@ async function show(tab) {
 async function start() {
   document.title = SITE.name;
   document.querySelector('.brand span:last-child').textContent = SITE.name;
-  if (SITE.tabs) document.querySelector('#signin h1').textContent = 'Backoffice da equipa BLU';
   $('login').addEventListener('click', () => login());
   if (!config) {
     $('signin-error').textContent = 'Configuração em falta: esta página só funciona depois do deploy.';
@@ -1468,7 +1473,8 @@ async function start() {
     if (document.hidden) hiddenAt = Date.now();
     else if (hiddenAt && Date.now() - hiddenAt > 60_000) show(current);
   });
-  show(SITE.start);
+  window.addEventListener('popstate', () => { const tab = tabFromHash(); if (tab && tab !== current) show(tab); });
+  show(tabFromHash() || SITE.start);
   watchLeads();
   setInterval(watchLeads, 60_000);
 }

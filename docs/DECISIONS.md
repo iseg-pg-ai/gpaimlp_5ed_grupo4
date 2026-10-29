@@ -1107,3 +1107,24 @@ Evidência antes da publicação: 83 testes Node da infraestrutura, incluindo 7 
 portão (assinatura, emissor, cliente, validade, grupos, origem e cookie) e um
 teste do template (rede isolada, entrada só do CloudFront, saída só para S3 e
 DynamoDB, disco retido e permissões sem escrita no S3).
+
+## Um só site da equipa: a intranet absorve o backoffice — 2026-10-29
+
+O backoffice (`d1x28h8mbkgn1v.cloudfront.net`, 2026-10-26) era a mesma SPA, a
+mesma API e o mesmo login da intranet, com quatro separadores escondidos por um
+interruptor `site: 'backoffice'` no `config.js`: «O meu trabalho», «Equipa e
+acessos», «Parceiros» e «Segurança». Mantinha um segundo bucket, uma segunda
+distribuição CloudFront, um segundo `BucketDeployment`, uma origem CORS extra e
+uma pré-visualização própria, sem nenhuma funcionalidade a mais.
+
+Decisão: fica só a intranet (`IntranetUrl`), com todos os separadores; os grupos
+Cognito continuam a decidir o que cada pessoa vê, na SPA e na API. Saem do código
+o interruptor `SITE`, a ligação «Equipa BLU → Intranet», os recursos
+`BackofficeSite`/`BackofficeDistribution`/`DeployBackoffice`, a saída
+`BackofficeUrl` e `frontend/intranet-preview/backoffice*`. O portal lê
+`IntranetUrl`, por isso manter o backoffice e retirar a intranet partiria a
+ligação do portal e toda a documentação.
+
+Efeito no próximo `cdk deploy BluCostaIntranet`: a distribuição do backoffice é
+apagada e o endereço deixa de responder; o bucket fica retido e pode ser
+removido à mão. Avisar a equipa antes do deploy por causa de favoritos.

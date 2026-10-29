@@ -61,13 +61,16 @@ um de cada vez:
 - [ ] Ambiente local: sem `node_modules` no portal nem `.venv`; `npm run check/build`
   e testes Python ainda por correr (o synth CDK já corre em `infra/`).
 
-## Portal, backoffice e intranet com endereços próprios — 2026-10-26
+## Portal e intranet com endereços próprios — 2026-10-26
 
-Cada parte tem a sua distribuição CloudFront: site público, intranet,
-backoffice (mesmo código e login da intranet, só trabalho com clientes) e portal
+Cada parte tem a sua distribuição CloudFront: site público, intranet e portal
 DMC (stack `BluCostaPortal`). Detalhes em [Portal](docs/PORTAL.md#servidor-privado-com-cloudfront-piloto).
 
 - [x] Backoffice em `d1x28h8mbkgn1v.cloudfront.net`, publicado e verificado (2026-10-26).
+- [x] Backoffice retirado do código (2026-10-29): era a intranet com quatro
+  separadores escondidos num segundo endereço. A intranet é o único site da
+  equipa; o endereço do backoffice desaparece no próximo deploy de
+  `BluCostaIntranet` (bucket retido). Ver [Decisões](docs/DECISIONS.md).
 - [x] Stack `BluCostaPortal`: servidor privado, portão de login, build no CodeBuild e cópia diária.
 - [ ] Publicar `BluCostaPortal` e validar o login, o catálogo e uma exportação PDF na AWS.
 - [ ] Publicar o estado do portal na release operacional S3 (`BLU_DATA_S3_BUCKET`);

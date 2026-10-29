@@ -514,16 +514,6 @@ class IntranetStack extends Stack {
     });
     const distribution = new cloudfront.Distribution(this, 'IntranetDistribution', siteOn(siteBucket));
     const siteUrl = `https://${distribution.distributionDomainName}/`;
-    // Backoffice: endereço próprio para o trabalho com clientes, com o mesmo login, API e código da intranet.
-    const backofficeBucket = new s3.Bucket(this, 'BackofficeSite', {
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      enforceSSL: true,
-      removalPolicy: RemovalPolicy.RETAIN,
-      autoDeleteObjects: false,
-    });
-    const backofficeDistribution = new cloudfront.Distribution(this, 'BackofficeDistribution', siteOn(backofficeBucket));
-    const backofficeUrl = `https://${backofficeDistribution.distributionDomainName}/`;
     const extraCallbacks = (process.env.INTRANET_CALLBACK_URLS ?? '').split(',').map(url => url.trim()).filter(Boolean);
     const client = userPool.addClient('IntranetWeb', {
       generateSecret: false,
@@ -531,8 +521,8 @@ class IntranetStack extends Stack {
       oAuth: {
         flows: { authorizationCodeGrant: true },
         scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
-        callbackUrls: [siteUrl, backofficeUrl, ...extraCallbacks],
-        logoutUrls: [siteUrl, backofficeUrl, ...extraCallbacks],
+        callbackUrls: [siteUrl, ...extraCallbacks],
+        logoutUrls: [siteUrl, ...extraCallbacks],
       },
       supportedIdentityProviders: [cognito.UserPoolClientIdentityProvider.COGNITO],
       idTokenValidity: Duration.hours(1),
@@ -599,9 +589,9 @@ class IntranetStack extends Stack {
     for (const [method, routePath] of routes) {
       api.addRoutes({ path: routePath, methods: [apigatewayv2.HttpMethod[method]], integration, authorizer });
     }
-    // CORS só dos domínios da intranet e do backoffice; limite de pedidos para conter abusos com um token roubado.
+    // CORS só do domínio da intranet; limite de pedidos para conter abusos com um token roubado.
     const cfnApi = api.node.defaultChild;
-    cfnApi.corsConfiguration = { allowOrigins: [`https://${distribution.distributionDomainName}`, `https://${backofficeDistribution.distributionDomainName}`], allowHeaders: ['authorization', 'content-type'], allowMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], maxAge: 600 };
+    cfnApi.corsConfiguration = { allowOrigins: [`https://${distribution.distributionDomainName}`], allowHeaders: ['authorization', 'content-type'], allowMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], maxAge: 600 };
     api.defaultStage.node.defaultChild.defaultRouteSettings = { throttlingBurstLimit: 40, throttlingRateLimit: 20 };
 
     // Lembretes agendados pelo curador: verificados a cada 5 minutos e enviados pelo
@@ -658,19 +648,8 @@ class IntranetStack extends Stack {
         s3deploy.Source.data('config.js', `window.BLU_INTRANET=${JSON.stringify({ api: api.apiEndpoint, authDomain: `https://${authHost}`, clientId: client.userPoolClientId, redirectUri: siteUrl })};`),
       ],
     });
-    new s3deploy.BucketDeployment(this, 'DeployBackoffice', {
-      destinationBucket: backofficeBucket,
-      distribution: backofficeDistribution,
-      distributionPaths: ['/*'],
-      cacheControl: [s3deploy.CacheControl.noCache()],
-      sources: [
-        s3deploy.Source.asset(intranetAsset, { exclude: ['package.json'] }),
-        s3deploy.Source.data('config.js', `window.BLU_INTRANET=${JSON.stringify({ api: api.apiEndpoint, authDomain: `https://${authHost}`, clientId: client.userPoolClientId, redirectUri: backofficeUrl, site: 'backoffice', intranetUrl: siteUrl })};`),
-      ],
-    });
 
     new CfnOutput(this, 'IntranetUrl', { value: siteUrl });
-    new CfnOutput(this, 'BackofficeUrl', { value: backofficeUrl });
     new CfnOutput(this, 'IntranetApiUrl', { value: api.apiEndpoint });
     new CfnOutput(this, 'IntranetUserPoolId', { value: userPool.userPoolId });
     new CfnOutput(this, 'IntranetClientId', { value: client.userPoolClientId });
