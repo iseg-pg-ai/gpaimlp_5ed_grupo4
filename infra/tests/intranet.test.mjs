@@ -414,7 +414,9 @@ test('alerts point each problem to the screen that fixes it', async () => {
   const tabs = Object.fromEntries(alerts.map(alert => [alert.text.split(' ')[1], alert.tab]));
   assert.equal(alerts[0].level, 'bad');
   assert.ok(alerts.some(alert => alert.tab === 'operations' && /fila de erros/.test(alert.text)));
-  assert.ok(alerts.some(alert => alert.tab === 'operations' && /BedrockChat/.test(alert.text)));
+  // O nome técnico da função AWS não aparece: a equipa lê um nome legível.
+  assert.ok(alerts.some(alert => alert.tab === 'operations' && /Chatbot e conversas teve 3 erro/.test(alert.text)));
+  assert.ok(!alerts.some(alert => /BluCosta|BedrockChat/.test(alert.text)));
   assert.ok(alerts.some(alert => alert.tab === 'operations' && /redes sociais/.test(alert.text)));
   assert.ok(alerts.some(alert => alert.tab === 'agenda'));
   assert.ok(alerts.some(alert => alert.tab === 'governance'));
@@ -591,4 +593,31 @@ test('leads that signal quitting come first, raise an alert and clear once conta
   assert.ok(alerts.some(alert => alert.level === 'bad' && alert.tab === 'leads' && /desistir/.test(alert.text)));
   assert.equal(atRisk(toLead({ ...churning, contactedAt: S('2026-10-26T11:30:00Z') })), false);
   assert.equal(atRisk(toLead({ ...churning, contactedAt: S('2026-10-20T11:30:00Z') })), true);
+});
+
+test('test sources count as demo data and stay out of the business numbers', async () => {
+  const { toLead, metrics } = await import('../lambda/intranet/model.mjs');
+  const lead = source => toLead({ conversationId: { S: `lead-${source}` }, followUpStatus: { S: 'PENDING' }, journeyJson: { S: JSON.stringify({ socialSource: source }) } });
+  assert.equal(lead('claude-test').synthetic, true);
+  assert.equal(lead('Demo').synthetic, true);
+  assert.equal(lead('instagram').synthetic, false);
+  const m = metrics([lead('claude-test'), lead('instagram')]);
+  assert.equal(m.open, 1);
+  assert.equal(m.synthetic, 1);
+});
+
+test('phones with an international 00 prefix are stored as +country', async () => {
+  const { contactDetails, normalizePhone } = await import('../lambda/intranet/model.mjs');
+  assert.equal(normalizePhone('+0035191065023'), '+35191065023');
+  assert.equal(normalizePhone('00351 910 650 230'), '+351910650230');
+  assert.equal(normalizePhone('+351 910-650-230'), '+351910650230');
+  const { phones } = contactDetails([{ actor: 'customer', text: 'Liguem para +0035191065023 ou 00351910650230' }]);
+  assert.deepEqual(phones, ['+35191065023', '+351910650230']);
+});
+
+test('AWS function names become plain names for the team', async () => {
+  const { workerLabel } = await import('../lambda/intranet/model.mjs');
+  assert.equal(workerLabel('ChurnReview'), 'Revisão diária de leads');
+  assert.equal(workerLabel('ReminderDispatch'), 'Envio de lembretes');
+  assert.equal(workerLabel('XyzAbc'), 'Processo automático');
 });

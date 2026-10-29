@@ -23,8 +23,22 @@ function journeyOf(item) {
   }
 }
 
+// Origens de teste: contam como demonstração mesmo sem a marca synthetic (ex.: «claude-test»).
+export const DEMO_SOURCES = ['demo', 'claude-test', 'test'];
+const isDemoSource = journey => ['socialSource', 'campaign', 'medium']
+  .some(key => DEMO_SOURCES.includes(String(journey[key] ?? '').trim().toLowerCase()));
+
+/** Telefone em formato E.164: «00351…» e «+00351…» passam a «+351…». */
+export const normalizePhone = raw => {
+  const digits = String(raw ?? '').replace(/[^\d+]/g, '');
+  const plus = digits.startsWith('+') || digits.startsWith('00');
+  const body = digits.replace(/^\+/, '').replace(/^00/, '');
+  return plus ? `+${body}` : body;
+};
+
 export function toLead(item) {
   const optional = key => (s(item, key) ? s(item, key) : undefined);
+  const journey = journeyOf(item);
   return {
     id: s(item, 'conversationId'),
     status: s(item, 'followUpStatus'),
@@ -32,13 +46,13 @@ export function toLead(item) {
     lastActivityAt: s(item, 'lastActivityAt'),
     channel: s(item, 'lastChannel'),
     messageCount: Number(item?.messageCount?.N ?? 0),
-    synthetic: item?.synthetic?.BOOL === true,
+    synthetic: item?.synthetic?.BOOL === true || isDemoSource(journey),
     contactedAt: optional('contactedAt'),
     stage: optional('journeyStage'),
     consentAt: optional('consentAt'),
     assignedTo: optional('assignedTo'),
     assignedAt: optional('assignedAt'),
-    journey: journeyOf(item),
+    journey,
     tags: cleanTags(item?.tags?.SS ?? []),
     curatorNote: optional('curatorNote'),
     churnSignalAt: optional('churnSignalAt'),
@@ -66,7 +80,7 @@ export function contactDetails(messages) {
   const emails = unique(said.flatMap(text => text.match(/[^\s@<>()]+@[^\s@<>()]+\.[a-z]{2,}/gi) ?? []));
   const phones = unique(said
     .flatMap(text => text.match(/\+?\d[\d\s().-]{7,}\d/g) ?? [])
-    .map(phone => phone.replace(/[^\d+]/g, ''))
+    .map(normalizePhone)
     .filter(phone => phone.replace('+', '').length >= 9));
   return { emails, phones };
 }
@@ -106,3 +120,11 @@ export function groupsOf(claims = {}) {
   if (typeof raw !== 'string') return [];
   return raw.replace(/^\[|\]$/g, '').split(/[\s,]+/).filter(Boolean);
 }
+
+// Nome legível para a equipa: o nome técnico da função AWS nunca aparece nos alertas.
+const WORKER_LABELS = [
+  [/churn/i, 'Revisão diária de leads'], [/dispatch|notif|remind/i, 'Envio de lembretes'], [/whatsapp/i, 'WhatsApp'],
+  [/rag|assistant|agent/i, 'Assistente interno'], [/crm/i, 'Ligação ao CRM'], [/chat|conversation|event/i, 'Chatbot e conversas'],
+  [/intranet|api/i, 'Servidor da intranet'], [/portal/i, 'Portal de propostas'],
+];
+export const workerLabel = name => WORKER_LABELS.find(([pattern]) => pattern.test(name))?.[1] ?? 'Processo automático';

@@ -127,7 +127,7 @@ async function api(method, path, body) {
 async function login() {
   const state = randomString(16);
   const verifier = randomString(48);
-  sessionStorage.setItem('blu-intranet-auth', JSON.stringify({ state, verifier }));
+  sessionStorage.setItem('blu-intranet-auth', JSON.stringify({ state, verifier, hash: location.hash }));
   location.assign(loginUrl(config, { state, challenge: await challengeFor(verifier) }));
   return new Promise(() => {});
 }
@@ -139,7 +139,8 @@ async function finishLogin() {
   if (!code) return false;
   const saved = JSON.parse(sessionStorage.getItem('blu-intranet-auth') || '{}');
   sessionStorage.removeItem('blu-intranet-auth');
-  history.replaceState(null, '', location.pathname);
+  // Depois do login volta-se à secção pedida (ligação partilhada), não ao início.
+  history.replaceState(null, '', `${location.pathname}${/^#[\w-]+$/.test(saved.hash ?? '') ? saved.hash : ''}`);
   if (!saved.state || saved.state !== params.get('state')) throw new Error('Sessão de login inválida. Entre novamente.');
   const { url, init } = tokenRequest(config, { code, verifier: saved.verifier });
   const response = await fetch(url, init);
@@ -292,13 +293,15 @@ const views = {
     note, h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Criar tarefa')));
 
     const mine = items.filter(item => item.kind === 'task');
+    const myEmail = session.claims?.email?.toLowerCase() ?? '';
+    const teamTasks = state.board === 'open' ? tasks.filter(task => task.owner !== myEmail) : tasks;
     const boardButton = (key, label) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.board === key), onclick: () => { state.board = key; rerender(); } }, label);
     const card = (value, label) => h('div', { class: 'card' }, h('div', { class: 'value' }, value), h('div', { class: 'label' }, label));
     view.append(
       h('h2', {}, 'O meu trabalho'),
       h('p', { class: 'muted' }, 'Tudo o que é seu, por ordem de urgência. Cada alteração aparece no feed da equipa; nada é apagado e só há mensagens automáticas a clientes se estiverem ligadas nas regras de seguimento.'),
       h('div', { class: 'cards' },
-        card(items.length, 'Na minha lista'), card(items.filter(item => ['risk', 'overdue'].includes(item.urgency)).length, 'Urgentes ou em atraso'),
+        card(items.length, 'Na minha lista'), card(items.filter(item => ['risk', 'overdue'].includes(item.urgency)).length, 'Meus urgentes ou em atraso'),
         card(mine.filter(item => item.task.status === 'blocked').length, 'Tarefas bloqueadas'), card(items.filter(item => item.kind === 'lead').length, 'Leads que assumi')),
       status,
       can('tasks') ? h('details', { class: 'panel', open: prefilled }, h('summary', {}, 'Nova tarefa'), create) : h('p', { class: 'muted' }, 'Pode ver as tarefas e o feed; só curadores, governança e fundadores as alteram.'),
@@ -309,11 +312,11 @@ const views = {
             : h('p', { class: 'muted' }, 'Nada pendente. Assuma um lead em Seguimento ou crie uma tarefa.')),
           h('div', { class: 'panel spaced' }, h('h3', {}, 'Tarefas da equipa'),
             h('div', { class: 'filters' }, boardButton('open', 'Em aberto'), boardButton('done', 'Feitas (arquivo)')),
-            tasks.length
-              ? h('ul', { class: 'work-list' }, tasks.map(task => h('li', { class: `work-item ${task.urgency ?? ''}` },
+            teamTasks.length
+              ? h('ul', { class: 'work-list' }, teamTasks.map(task => h('li', { class: `work-item ${task.urgency ?? ''}` },
                 h('div', {}, pill(statuses[task.status] ?? task.status, TASK_TONE[task.status]), ' ', urgencyPill(task.urgency)),
                 h('strong', {}, task.title), ...taskBlock(task))))
-              : h('p', { class: 'muted' }, state.board === 'open' ? 'Sem tarefas em aberto.' : 'Sem tarefas feitas.'))),
+              : h('p', { class: 'muted' }, state.board === 'open' ? 'Sem outras tarefas em aberto na equipa.' : 'Sem tarefas feitas.'))),
         h('div', { class: 'panel' }, h('h3', {}, 'O que se passa'),
           h('p', { class: 'muted' }, 'Últimos 7 dias. Atualiza ao voltar ao separador ou em «Atualizar».'),
           feed.length
@@ -343,7 +346,7 @@ const views = {
         : h('p', { class: 'muted' }, 'Tudo em ordem no pipeline.')),
       h('p', { class: 'muted' }, `Conversas com consentimento. ${m.synthetic} registo(s) de demonstração excluídos dos indicadores.`),
       h('div', { class: 'cards' },
-        card(m.open, 'Leads em aberto'), card(m.replyLate ?? 0, `Sem resposta há mais de ${m.replyHours ?? '—'} h`), card(m.overdue, 'Clientes em silêncio há 3 dias'), card(m.unassigned, 'Sem responsável'),
+        card(m.open, 'Leads em aberto'), card(m.replyLate ?? 0, `Sem resposta há mais de ${m.replyHours ?? '—'} h`), card(m.overdue, 'Seguimento em atraso'), card(m.unassigned, 'Sem responsável'),
         card(m.contacted, 'Contactados'), card(m.medianHoursToContact === null ? '—' : `${m.medianHoursToContact} h`, 'Mediana até ao contacto')),
       load.length ? h('div', { class: 'panel' }, h('h3', {}, 'Carga da equipa'), h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Pessoa'), h('th', {}, 'Tarefas'), h('th', {}, 'Em atraso'), h('th', {}, 'Bloqueadas'), h('th', {}, 'Leads'))),
@@ -909,6 +912,7 @@ async function watchLeads() {
   if (document.hidden) return;
   try {
     const { leads } = await api('GET', '/v1/leads?status=open');
+    openLeads = leads;
     if (!seenLeads) return rememberLeads(leads);
     const fresh = leads.filter(lead => !seenLeads.has(lead.id) && !lead.synthetic);
     rememberLeads(leads);
@@ -942,8 +946,6 @@ async function showLead(panel, id, refreshList) {
   const chosen = new Set(lead.tags);
   const note = h('textarea', { rows: '3', maxlength: '1000', 'aria-label': 'Nota interna' });
   note.value = lead.curatorNote ?? '';
-  const question = h('input', { type: 'text', maxlength: '1000', 'aria-label': 'Pergunta ao assistente interno', value: 'Resume o que este viajante procura e sugere o próximo passo.' });
-  const answer = h('div');
   const journey = Object.entries({ ...lead.journey, stage: STAGES[lead.stage] ?? lead.stage }).filter(([, value]) => value);
 
   // replaceChildren escreveria null como texto; os blocos opcionais são filtrados.
@@ -980,21 +982,7 @@ async function showLead(panel, id, refreshList) {
     can('cases') ? leadCases(id) : null,
     h('h3', { class: 'spaced' }, 'Agenda do viajante'),
     activityPanel(id, lead),
-    h('h3', { class: 'spaced' }, 'Perguntar ao assistente interno'),
-    question,
-    h('div', { class: 'actions' }, h('button', { type: 'button', class: 'secondary', disabled: !isCurator(), onclick: async event => {
-      const button = event.currentTarget;
-      button.disabled = true;
-      answer.replaceChildren(h('p', { class: 'muted' }, 'A pensar…'));
-      try {
-        const result = await api('POST', `/v1/leads/${id}/ask`, { question: question.value });
-        answer.replaceChildren(h('div', { class: 'answer' }, result.answer), h('p', { class: 'muted' }, 'Sugestão gerada por IA: confirme antes de agir ou contactar o cliente.'));
-      } catch (error) {
-        answer.replaceChildren(h('p', { class: 'error' }, error.message));
-      }
-      button.disabled = false;
-    } }, 'Perguntar')),
-    answer,
+    isCurator() ? h('p', { class: 'muted spaced' }, 'Dúvidas sobre este lead? Use o botão «Assistente» no canto inferior direito.') : null,
   ].filter(Boolean));
 }
 
@@ -1152,6 +1140,76 @@ function activityPanel(id, lead) {
 }
 
 let current = SITE.start;
+let openLeads = [];
+
+// Texto do assistente sem markdown à vista: listas e negrito simples, sempre como texto (nunca HTML).
+function plainAnswer(text) {
+  const blocks = [];
+  let list = null;
+  for (const raw of String(text ?? '').split('\n')) {
+    const line = raw.replace(/\*\*(.+?)\*\*/g, '$1').replace(/^#{1,6}\s+/, '').trimEnd();
+    const item = line.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)$/);
+    if (item) { list ??= h('ul'); list.append(h('li', {}, item[1])); continue; }
+    if (list) { blocks.push(list); list = null; }
+    if (line.trim()) blocks.push(h('p', {}, line));
+  }
+  if (list) blocks.push(list);
+  return blocks;
+}
+
+// Assistente num botão fixo no canto inferior direito, em todas as secções; abre para cima.
+// Sabe em que página está: usa o lead aberto em Seguimento ou na conversa de WhatsApp.
+function mountAssistant() {
+  if (!isCurator()) return;
+  const SUGGESTIONS = [
+    ['Resumo e próximo passo', 'Resume o que este viajante procura e sugere o próximo passo.'],
+    ['O que falta?', 'Que informação falta para preparar a proposta?'],
+    ['Rascunho de resposta', 'Escreve um rascunho de resposta curta e cordial.'],
+  ];
+  const contextLead = () => (current === 'leads' && leadsState.selected) || (current === 'whatsapp' && whatsappState.leadId) || '';
+  const nameOf = lead => lead.journey?.destination || lead.id;
+  const picker = h('select', { 'aria-label': 'Lead' });
+  const about = h('p', { class: 'muted' });
+  const question = h('textarea', { rows: '3', maxlength: '1000', 'aria-label': 'Pergunta ao assistente', placeholder: 'Pergunte sobre este lead…' });
+  const answer = h('div', { class: 'assistant-answer', 'aria-live': 'polite' });
+  const ask = h('button', { type: 'submit', class: 'primary' }, 'Perguntar');
+  const refreshContext = () => {
+    const id = contextLead();
+    const known = [...openLeads].sort((a, b) => a.synthetic - b.synthetic);
+    picker.replaceChildren(h('option', { value: '' }, 'Escolha um lead…'), ...known.map(lead => h('option', { value: lead.id, selected: lead.id === id }, `${nameOf(lead)}${lead.synthetic ? ' (demo)' : ''}`)));
+    if (id && !known.some(lead => lead.id === id)) picker.prepend(h('option', { value: id, selected: true }, id));
+    about.textContent = id ? 'Sobre o lead aberto nesta página.' : 'Escolha o lead sobre o qual quer perguntar.';
+  };
+  const form = h('form', { onsubmit: async event => {
+    event.preventDefault();
+    const id = picker.value;
+    if (!id) { answer.replaceChildren(h('p', { class: 'error' }, 'Escolha um lead primeiro.')); picker.focus(); return; }
+    if (!question.value.trim()) { question.focus(); return; }
+    ask.disabled = true;
+    answer.replaceChildren(h('p', { class: 'muted' }, 'A pensar…'));
+    try {
+      const result = await api('POST', `/v1/leads/${encodeURIComponent(id)}/ask`, { question: question.value });
+      answer.replaceChildren(...plainAnswer(result.answer), h('p', { class: 'muted' }, 'Sugestão gerada por IA: confirme antes de agir ou contactar o cliente.'));
+    } catch (error) {
+      answer.replaceChildren(h('p', { class: 'error' }, error.message));
+    }
+    ask.disabled = false;
+  } },
+  h('label', { class: 'field' }, h('span', {}, 'Lead'), picker), about,
+  h('div', { class: 'assistant-chips' }, SUGGESTIONS.map(([label, text]) => h('button', { type: 'button', class: 'secondary', onclick: () => { question.value = text; question.focus(); } }, label))),
+  question, h('div', { class: 'actions' }, ask), answer);
+  const panel = h('section', { class: 'assistant-panel', id: 'assistant-panel', role: 'dialog', 'aria-label': 'Assistente interno', hidden: true },
+    h('div', { class: 'assistant-head' }, h('strong', {}, 'Assistente'), h('button', { type: 'button', class: 'link', onclick: () => toggle(false) }, 'Fechar')), form);
+  const fab = h('button', { type: 'button', class: 'assistant-fab primary', 'aria-expanded': 'false', 'aria-controls': 'assistant-panel', onclick: () => toggle(panel.hidden) }, 'Assistente');
+  function toggle(open) {
+    panel.hidden = !open;
+    fab.setAttribute('aria-expanded', String(open));
+    if (open) { refreshContext(); question.focus(); } else fab.focus();
+  }
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && !panel.hidden) toggle(false); });
+  document.addEventListener('blu:section', () => { if (!panel.hidden) refreshContext(); });
+  document.body.append(panel, fab);
+}
 // Secções do backoffice, grupos vazios escondidos e ligação para o outro site.
 function applySite() {
   const nav = $('tabs');
@@ -1168,12 +1226,19 @@ function applySite() {
   }
 }
 
+const tabFromHash = () => {
+  const tab = decodeURIComponent(location.hash.slice(1));
+  return views[tab] && tabVisible(tab) && (!SITE.tabs || SITE.tabs.includes(tab)) ? tab : '';
+};
+
 async function show(tab) {
   current = tab;
+  if (location.hash.slice(1) !== tab) history.pushState(null, '', `#${tab}`);
   for (const button of $('tabs').querySelectorAll('button')) {
     if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   }
+  document.dispatchEvent(new Event('blu:section'));
   const view = $('view');
   view.replaceChildren(h('p', { class: 'muted' }, 'A carregar…'));
   const fresh = h('div');
@@ -1231,7 +1296,9 @@ async function start() {
     if (document.hidden) hiddenAt = Date.now();
     else if (hiddenAt && Date.now() - hiddenAt > 60_000) show(current);
   });
-  show(SITE.start);
+  window.addEventListener('popstate', () => { const tab = tabFromHash(); if (tab && tab !== current) show(tab); });
+  show(tabFromHash() || SITE.start);
+  mountAssistant();
   watchLeads();
   setInterval(watchLeads, 60_000);
 }

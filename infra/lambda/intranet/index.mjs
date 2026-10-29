@@ -11,6 +11,7 @@ import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/clien
 import { GetQueueAttributesCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { randomUUID } from 'node:crypto';
 import { NotFound, createApp } from './app.mjs';
+import { workerLabel } from './model.mjs';
 
 const db = new DynamoDBClient({});
 const s3 = new S3Client({});
@@ -126,6 +127,7 @@ async function workers(end) {
   }
   return functions.map((fn, index) => ({
     name: fn.FunctionName.replace(/-[A-Za-z0-9]{8,}$/, '').replace(/[0-9A-F]{8}$/, ''),
+    label: workerLabel(fn.FunctionName.split('-').slice(1).join('-') || fn.FunctionName),
     stack: fn.FunctionName.split('-')[0],
     runtime: fn.Runtime ?? '',
     lastModified: fn.LastModified ?? '',

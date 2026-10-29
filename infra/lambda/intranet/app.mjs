@@ -1,6 +1,6 @@
 import {
   CONTACTED, NOTE_LIMIT, OPEN_STATUSES, QUESTION_LIMIT,
-  atRisk, cleanTags, contactDetails, groupsOf, isOverdue, metrics, toLead, toMessage, validLeadId,
+  atRisk, cleanTags, contactDetails, groupsOf, isOverdue, metrics, toLead, toMessage, validLeadId, workerLabel,
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, parseActivity, plan } from './schedule.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
@@ -472,11 +472,13 @@ export function createApp(deps) {
       });
       const myLeads = leads.filter(lead => lead.assignedTo?.toLowerCase() === me);
       const myLeadIds = new Set(myLeads.map(lead => lead.id));
+      // Uma linha por lead: se já há uma mensagem à espera desse lead, a linha do lead sai da lista.
+      const waitingLeadIds = new Set(waiting.map(item => item.message.leadId).filter(Boolean));
       const items = [
         ...waiting,
         ...taskItems.map(item => toTask(item, today)).filter(task => task.owner === me)
           .map(task => ({ kind: 'task', id: task.id, partition: task.partition, title: task.title, due: task.due, urgency: taskUrgency(task), task })),
-        ...myLeads.map(lead => ({
+        ...myLeads.filter(lead => !waitingLeadIds.has(lead.id)).map(lead => ({
           kind: 'lead', id: lead.id, partition: lead.id, title: lead.journey.destination || lead.id, due: lead.followUpAt.slice(0, 10),
           detail: [lead.journey.timeframe, lead.journey.party].filter(Boolean).join(' · '), urgency: lead.atRisk ? 'risk' : lead.replyLate || isOverdue(lead, at) ? 'overdue' : 'normal',
         })),
@@ -581,7 +583,7 @@ export function createApp(deps) {
       if (!ops) add('warn', 'Não foi possível ler o estado do pipeline.', 'operations');
       if (ops?.queues.failedEvents.waiting) add('bad', `${ops.queues.failedEvents.waiting} evento(s) do chat falharam e estão na fila de erros: verificar o processamento.`, 'operations');
       if (ops?.queues.conversationEvents.waiting > 50) add('warn', `${ops.queues.conversationEvents.waiting} eventos à espera de processamento.`, 'operations');
-      for (const worker of ops?.workers.filter(item => item.errors24h) ?? []) add('bad', `${worker.name.replace(/^BluCosta\w+-/, '')} teve ${worker.errors24h} erro(s) nas últimas 24 h.`, 'operations');
+      for (const worker of ops?.workers.filter(item => item.errors24h) ?? []) add('bad', `${worker.label ?? workerLabel(worker.name.split('-').slice(1).join('-') || worker.name)} teve ${worker.errors24h} erro(s) nas últimas 24 h.`, 'operations');
       if (ops && (!ops.churnReview || at - new Date(ops.churnReview.evaluatedAt) > 36 * 36e5)) add('warn', 'A revisão diária de leads não corre há mais de 36 h.', 'operations');
       const social = leads?.filter(lead => lead.journey.socialSource && at - new Date(lead.lastActivityAt) < 7 * 864e5).length ?? null;
       if (social === 0) add('warn', 'Nenhum lead das redes sociais nos últimos 7 dias: verificar as ligações das campanhas e a ponte /connect.', 'operations');
@@ -594,7 +596,8 @@ export function createApp(deps) {
       if (report?.summary.fail) add('warn', `${report.summary.fail} política(s) legal(is) em falta.`, 'governance');
       const churning = leads?.filter(lead => !lead.synthetic && lead.atRisk).length ?? 0;
       if (churning) add('bad', `${churning} lead(s) disseram que vão desistir: contactar já.`, 'leads');
-      const late = leads?.filter(lead => !lead.synthetic && lead.replyLate) ?? [];
+      // Um alerta por lead: quem está em risco de desistência já tem o alerta acima.
+      const late = leads?.filter(lead => !lead.synthetic && lead.replyLate && !lead.atRisk) ?? [];
       if (late.length) add('bad', `${late.length} lead(s) passaram o prazo de resposta: responder já.`, 'leads');
       const order = { bad: 0, warn: 1 };
       return reply(200, { alerts: alerts.sort((a, b) => order[a.level] - order[b.level]), checkedAt: at.toISOString() }, 'private, max-age=60');
