@@ -465,7 +465,9 @@ seguimento e, para fundadores, a visão geral) e um guia curto da intranet
 
 Depois de publicar, a partir de `infra/` e no mesmo commit que foi publicado:
 
-    node scripts/live-check.mjs --seed
+```sh
+node scripts/live-check.mjs --seed
+```
 
 Confirma que as stacks estão estáveis, que os ficheiros da intranet e do backoffice
 publicados são os do commit atual, que a API recusa pedidos sem login, que o portal

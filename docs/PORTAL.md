@@ -259,6 +259,7 @@ As rotas continuam estimativas sujeitas a revisão; a meteorologia consultada
 dinamicamente não pertence ao snapshot e não é incluída no TXT.
 
 A partilha integrada continua a entregar o PDF DMC da versão selecionada.
+
 ### Canva: criação em massa por dia
 
 O botão **Canva: dias (CSV)** guarda uma versão e descarrega um CSV com uma linha
