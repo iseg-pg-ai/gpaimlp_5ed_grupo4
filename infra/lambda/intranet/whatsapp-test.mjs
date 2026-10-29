@@ -25,8 +25,12 @@ export const inboxRecord = ({ at, id, direction, to = '', partnerId = '', text, 
   decision, reason, suggestion: suggestion.slice(0, WHATSAPP_TEST.textLimit),
 });
 
+// Número canónico: só dígitos, sem o prefixo internacional «00» («00351…» e «351…» são a mesma conversa).
+export const canonicalNumber = value => String(value ?? '').replace(/\D/g, '').replace(/^00/, '');
+
+// Registos antigos guardados com «00» juntam-se à conversa certa ao serem lidos.
 export const toInboxMessage = item => ({
-  at: s(item, 'createdAt'), direction: s(item, 'direction'), to: s(item, 'to'), partnerId: s(item, 'partnerId'), text: s(item, 'text'),
+  at: s(item, 'createdAt'), direction: s(item, 'direction'), to: canonicalNumber(s(item, 'to')), partnerId: s(item, 'partnerId'), text: s(item, 'text'),
   title: s(item, 'title'), leadId: s(item, 'leadId'), author: s(item, 'author'), authorName: s(item, 'authorName'),
   decision: s(item, 'decision'), reason: s(item, 'reason'), suggestion: s(item, 'suggestion'),
 });
@@ -65,13 +69,14 @@ export function parseInboxPost(body, validLeadId, partners = []) {
   const direction = body.direction === 'in' ? 'in' : body.direction === 'out' ? 'out' : '';
   const partnerId = typeof body.partnerId === 'string' && body.partnerId ? body.partnerId : '';
   const partner = partners.find(item => item.id === partnerId);
-  const to = String(body.to ?? partner?.whatsapp ?? '').replace(/\D/g, '');
+  const to = canonicalNumber(body.to ?? partner?.whatsapp ?? '');
   const text = typeof body.text === 'string' ? body.text.trim() : '';
   const leadId = typeof body.leadId === 'string' && body.leadId ? body.leadId : '';
   if (!direction) return { error: 'Escolha quem escreve a mensagem.' };
   if (partnerId && !partner) return { error: 'Parceiro desconhecido.' };
-  if (!partner && !/^\d{7,20}$/.test(to)) return { error: 'Número inválido: use dígitos internacionais, por exemplo 351912345678.' };
-  if (to && !/^\d{7,20}$/.test(to)) return { error: 'Número do parceiro inválido.' };
+  // Um número internacional (E.164) tem 9 a 15 dígitos com o indicativo do país.
+  if (!partner && !/^\d{9,15}$/.test(to)) return { error: 'Número inválido: use o indicativo do país e 9 a 15 dígitos, por exemplo 351912345678.' };
+  if (to && !/^\d{9,15}$/.test(to)) return { error: 'Número do parceiro inválido.' };
   if (!text) return { error: 'Escreva a mensagem.' };
   if (leadId && !validLeadId(leadId)) return { error: 'Referência de lead inválida.' };
   return { message: { direction, to, partnerId: partner?.id ?? '', text: text.slice(0, WHATSAPP_TEST.textLimit), leadId } };

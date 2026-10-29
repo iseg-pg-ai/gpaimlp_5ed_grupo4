@@ -13,7 +13,7 @@ import { createAlerter, createAnalyser, createDispatcher } from '../lambda/intra
 import { needsAnalysis, parseSignals, profileFields, signalPrompt } from '../lambda/intranet/signals.mjs';
 import { cleanHistory, parseAssistant } from '../lambda/intranet/assistant.mjs';
 import { TEAM_ALERTS, alertRecord, controlSummary, teamAlerts } from '../lambda/intranet/team-alerts.mjs';
-import { WHATSAPP_TEST } from '../lambda/intranet/whatsapp-test.mjs';
+import { WHATSAPP_TEST, parseInboxPost, threads, toInboxMessage } from '../lambda/intranet/whatsapp-test.mjs';
 import { lisbonToUtc, outcome, parseActivity, plan } from '../lambda/intranet/schedule.mjs';
 import { addWorkingDays, deadlineState, parseCase, parseCaseUpdate, portugueseHolidays } from '../lambda/intranet/cases.mjs';
 import { dueState, parseTask, parseTaskUpdate } from '../lambda/intranet/tasks.mjs';
@@ -996,6 +996,18 @@ test('phones with an international 00 prefix are stored as +country', async () =
   // Datas de viagem não viram telefones (antes davam «+2026113020261209»).
   const dates = contactDetails([{ actor: 'customer', text: 'From 2026-11-30 to 2026-12-09, or 30/11/2026 - 09/12/2026. WhatsApp +351 912 345 678' }]);
   assert.deepEqual(dates.phones, ['+351912345678']);
+});
+
+test('WhatsApp: «00351…» and «351…» are one conversation, and impossible numbers are refused', () => {
+  const stored = (to, at) => ({ createdAt: S(at), direction: S('out'), to: S(to), text: S('Olá') });
+  const merged = threads([stored('00351910650253', '2026-10-29T20:25:00Z'), stored('351910650253', '2026-10-29T21:46:00Z')].map(toInboxMessage));
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0].to, '351910650253');
+  assert.equal(merged[0].messages.length, 2);
+  const valid = () => true;
+  assert.equal(parseInboxPost({ direction: 'out', to: '+00351 910 650 253', text: 'Olá' }, valid).message.to, '351910650253');
+  assert.match(parseInboxPost({ direction: 'out', to: '2026113020261209', text: 'Olá' }, valid).error, /9 a 15 dígitos/);
+  assert.match(parseInboxPost({ direction: 'out', to: '1234567', text: 'Olá' }, valid).error, /Número inválido/);
 });
 
 test('AWS function names become plain names for the team', async () => {
