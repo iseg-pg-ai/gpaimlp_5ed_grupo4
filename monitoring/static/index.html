@@ -1,0 +1,372 @@
+<!doctype html>
+<!-- Estrutura do painel operacional; os dados e ações são carregados pela sessão autenticada. -->
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <base href="{{BASE}}" />
+    <title>BLU Operations · Monitoring</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="./"
+          ><span class="brand-mark">b.</span
+          ><span>BLU <strong>OPERATIONS</strong></span></a
+        >
+        <div class="top-actions">
+          <span class="private-tag">ACESSO PRIVADO</span
+          ><span class="current-user">{{USERNAME}}</span>{{ADMIN_LINK}}
+          <form action="logout" method="post">
+            <input type="hidden" name="csrf" value="{{CSRF}}" /><button
+              class="subtle"
+              type="submit"
+            >
+              Terminar sessão ↗
+            </button>
+          </form>
+        </div>
+      </header>
+      <main>
+        <section class="intro">
+          <div>
+            <p class="eyebrow">CENTRO DE OPERAÇÕES / 01</p>
+            <h1>O sistema, <em>à vista.</em></h1>
+            <p class="muted">
+              Serviços, publicação de dados e sinais de degradação num único
+              lugar.
+            </p>
+          </div>
+          <div class="sync">
+            <span id="live-indicator" class="live-dot"></span>
+            <div>
+              <strong id="sync-label">A ligar à recolha</strong>
+              <p id="checked-at">À espera da primeira amostra</p>
+            </div>
+            <button id="refresh" class="subtle" type="button">
+              Atualizar ↻
+            </button>
+          </div>
+        </section>
+        <p
+          id="connection-error"
+          class="connection-error"
+          role="alert"
+          hidden
+        ></p>
+        <section class="summary" aria-label="Resumo operacional">
+          <article>
+            <span class="eyebrow">SERVIÇOS</span
+            ><strong id="service-count">—</strong>
+            <p id="service-note">A recolher disponibilidade</p>
+          </article>
+          <article>
+            <span class="eyebrow">PUBLICAÇÃO ETL</span
+            ><strong id="etl-state">—</strong>
+            <p id="etl-note">A consultar metadados</p>
+          </article>
+          <article>
+            <span class="eyebrow">DISCO DISPONÍVEL</span
+            ><strong id="disk-free">—</strong>
+            <p id="disk-note">Sistema de ficheiros do projeto</p>
+            <p id="cleanup-note" class="cleanup-note">
+              Política de limpeza a carregar
+            </p>
+            {{CLEANUP_ACTION}}
+          </article>
+          <article>
+            <span class="eyebrow">INCIDENTES ATUAIS</span
+            ><strong id="incident-count">—</strong>
+            <p>Serviços obrigatórios e publicação</p>
+          </article>
+        </section>
+        <section class="services-section">
+          <div class="section-heading">
+            <h2>Disponibilidade dos serviços</h2>
+            <span>Sondas HTTP locais · leitura</span>
+          </div>
+          <div id="services" class="services-grid" aria-live="polite"></div>
+        </section>
+        <div class="detail-grid">
+          <section class="panel">
+            <div class="section-heading">
+              <h2>Latência observada</h2>
+              <span id="history-window">Histórico desta execução</span>
+            </div>
+            <p class="muted small">
+              Tempo de resposta da sonda do portal, em milissegundos.
+            </p>
+            <div
+              id="chart"
+              class="chart"
+              role="img"
+              aria-label="Ainda não existem amostras de latência"
+            ></div>
+            <div class="chart-footer">
+              <span id="chart-start">—</span><span id="chart-end">—</span>
+            </div>
+          </section>
+          <section class="panel publication">
+            <div class="section-heading">
+              <h2>Entrega publicada</h2>
+              <span id="warehouse-badge" class="badge">A aguardar</span>
+            </div>
+            <dl>
+              <div>
+                <dt>Data da publicação</dt>
+                <dd id="published-at">—</dd>
+              </div>
+              <div>
+                <dt>Idade da entrega</dt>
+                <dd id="warehouse-age">—</dd>
+              </div>
+              <div>
+                <dt>Validação da entrega</dt>
+                <dd id="validation">—</dd>
+              </div>
+              <div>
+                <dt>Tabelas / registos</dt>
+                <dd id="table-count">—</dd>
+              </div>
+              <div>
+                <dt>Atualidade dos dados</dt>
+                <dd id="freshness">Cadência por definir</dd>
+              </div>
+            </dl>
+            <p class="footnote">
+              A entrega publicada não revela tentativas ETL que falharam antes
+              da publicação.
+            </p>
+          </section>
+        </div>
+        <div class="detail-grid lower">
+          <section class="panel state-changes">
+            <div class="section-heading">
+              <h2>Alterações de estado</h2>
+              <span>Últimas 100 · nesta execução</span>
+            </div>
+            <div id="events" class="event-list" aria-live="polite">
+              <p class="muted">Ainda sem eventos.</p>
+            </div>
+          </section>
+          <section class="panel limits">
+            <div class="ops-heading">
+              <div>
+                <p class="eyebrow">SINAIS OPERACIONAIS / 24 H</p>
+                <h2>Execução e proteção</h2>
+              </div>
+              <span id="ops-health" class="badge">A recolher</span>
+            </div>
+            <div class="ops-grid">
+              <button
+                type="button"
+                id="portal-signal"
+                class="signal-card"
+                data-signal="portal"
+              >
+                <div class="signal-top">
+                  <span class="signal-icon" aria-hidden="true">P</span
+                  ><span id="portal-signal-state" class="signal-state">—</span>
+                </div>
+                <strong id="portal-ops">—</strong>
+                <h3>Portal</h3>
+                <p id="portal-ops-note">
+                  Eventos processados e erros detetados
+                </p>
+              </button>
+              <button
+                type="button"
+                id="ai-signal"
+                class="signal-card"
+                data-signal="ai"
+              >
+                <div class="signal-top">
+                  <span class="signal-icon" aria-hidden="true">AI</span
+                  ><span id="ai-signal-state" class="signal-state">—</span>
+                </div>
+                <strong id="ai-ops">—</strong>
+                <h3>Assistência IA</h3>
+                <p id="ai-tokens">A aguardar métricas</p>
+              </button>
+              <button
+                type="button"
+                id="backup-signal"
+                class="signal-card"
+                data-signal="backup"
+              >
+                <div class="signal-top">
+                  <span class="signal-icon" aria-hidden="true">B</span
+                  ><span id="backup-signal-state" class="signal-state">—</span>
+                </div>
+                <strong id="backup-artifacts">—</strong>
+                <h3>Backup verificado</h3>
+                <p id="backup-restore">A aguardar ensaio</p>
+              </button>
+              <button
+                type="button"
+                id="alert-signal"
+                class="signal-card"
+                data-signal="alerts"
+              >
+                <div class="signal-top">
+                  <span class="signal-icon" aria-hidden="true">!</span
+                  ><span id="alert-signal-state" class="signal-state">—</span>
+                </div>
+                <strong id="alert-state">—</strong>
+                <h3>Incidentes ativos</h3>
+                <p id="alert-delivery">Fila local · envio externo desativado</p>
+              </button>
+            </div>
+            <div class="agent-metrics" aria-label="Métricas consolidadas do agente">
+              <div>
+                <span>Propostas</span><strong id="agent-proposals">—</strong>
+              </div>
+              <div>
+                <span>Decisões</span><strong id="agent-decisions">—</strong>
+              </div>
+              <div>
+                <span>Conflitos · 24 h</span
+                ><strong id="agent-conflicts">—</strong>
+              </div>
+              <div>
+                <span>Expiradas</span><strong id="agent-expired">—</strong>
+              </div>
+              <div>
+                <span>Tokens E / S</span><strong id="agent-tokens">—</strong>
+              </div>
+              <div>
+                <span>Latência média</span
+                ><strong id="agent-latency">—</strong>
+              </div>
+              <div>
+                <span>Custo configurado</span
+                ><strong id="agent-cost">—</strong>
+              </div>
+            </div>
+            <div class="ops-footer">
+              <p>
+                Telemetria reduzida, sem prompts, respostas ou dados de
+                clientes.
+              </p>
+              <p id="host-load">Carga do anfitrião: —</p>
+            </div>
+          </section>
+        </div>
+        <aside class="panel portal-logs" data-log-table data-module="portal">
+          <div class="logs-heading">
+            <div>
+              <p class="eyebrow">ATIVIDADE EM TEMPO REAL</p>
+              <h2>Logs do Portal</h2>
+            </div>
+            <span class="live-dot" aria-hidden="true"></span>
+          </div>
+          <div class="logs-toolbar portal-log-controls">
+            <div class="log-mode-filter" role="group" aria-label="Filtrar erros do Portal">
+              <button type="button" class="active" data-log-mode="" aria-pressed="true">
+                Todos <strong data-log-count="all">0</strong>
+              </button>
+              <button type="button" data-log-mode="ERRORS" aria-pressed="false">
+                Apenas erros <strong data-log-count="errors">0</strong>
+              </button>
+              <input data-log-severity type="hidden" value="" />
+            </div>
+          </div>
+          <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
+          <div class="log-table-wrap" data-log-results aria-live="polite"></div>
+        </aside>
+        <section class="service-log-grid" aria-label="Logs dos restantes dashboards">
+          <article class="panel service-log-card" data-log-table data-module="observatory">
+            <div class="logs-heading"><div><p class="eyebrow">DASHBOARD / 01</p><h2>Observatório analítico</h2></div><span class="live-dot" aria-hidden="true"></span></div>
+            <div class="log-mode-filter" role="group" aria-label="Filtrar erros do Observatório">
+              <button type="button" class="active" data-log-mode="" aria-pressed="true">Todos <strong data-log-count="all">0</strong></button>
+              <button type="button" data-log-mode="ERRORS" aria-pressed="false">Apenas erros <strong data-log-count="errors">0</strong></button>
+              <input data-log-severity type="hidden" value="" />
+            </div>
+            <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
+            <div class="log-table-wrap compact" data-log-results aria-live="polite"></div>
+          </article>
+          <article class="panel service-log-card" data-log-table data-module="presentation">
+            <div class="logs-heading"><div><p class="eyebrow">DASHBOARD / 02</p><h2>Apresentação</h2></div><span class="live-dot" aria-hidden="true"></span></div>
+            <div class="log-mode-filter" role="group" aria-label="Filtrar erros da Apresentação">
+              <button type="button" class="active" data-log-mode="" aria-pressed="true">Todos <strong data-log-count="all">0</strong></button>
+              <button type="button" data-log-mode="ERRORS" aria-pressed="false">Apenas erros <strong data-log-count="errors">0</strong></button>
+              <input data-log-severity type="hidden" value="" />
+            </div>
+            <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
+            <div class="log-table-wrap compact" data-log-results aria-live="polite"></div>
+          </article>
+          <article class="panel service-log-card" data-log-table data-module="ai">
+            <div class="logs-heading"><div><p class="eyebrow">DASHBOARD / 03</p><h2>Agente IA</h2></div><span class="live-dot" aria-hidden="true"></span></div>
+            <div class="log-mode-filter" role="group" aria-label="Filtrar erros do Agente IA">
+              <button type="button" class="active" data-log-mode="" aria-pressed="true">Todos <strong data-log-count="all">0</strong></button>
+              <button type="button" data-log-mode="ERRORS" aria-pressed="false">Apenas erros <strong data-log-count="errors">0</strong></button>
+              <input data-log-severity type="hidden" value="" />
+            </div>
+            <p class="log-summary" data-log-summary>A carregar eventos persistentes…</p>
+            <div class="log-table-wrap compact" data-log-results aria-live="polite"></div>
+          </article>
+        </section>
+        <dialog
+          id="operations-dialog"
+          class="operations-dialog"
+          aria-labelledby="operations-title"
+        >
+          <div class="dialog-heading">
+            <div>
+              <p class="eyebrow">DIAGNÓSTICO OPERACIONAL</p>
+              <h2 id="operations-title">Detalhe técnico</h2>
+            </div>
+            <button
+              type="button"
+              id="operations-close"
+              class="dialog-close"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+          </div>
+          <p id="operations-description" class="dialog-description"></p>
+          <div class="log-filters" role="group" aria-label="Filtrar registos">
+            <button
+              type="button"
+              id="logs-all"
+              class="active"
+              aria-pressed="true"
+            >
+              Todos <span id="logs-all-count">0</span>
+            </button>
+            <button type="button" id="logs-errors" aria-pressed="false">
+              Apenas erros <span id="logs-error-count">0</span>
+            </button>
+          </div>
+          <div
+            id="operations-logs"
+            class="operations-logs"
+            aria-live="polite"
+          ></div>
+          <p class="footnote">
+            Campos técnicos reduzidos; sem prompts, respostas, dados de clientes
+            ou segredos.
+          </p>
+        </dialog>
+        <dialog id="log-detail-dialog" class="operations-dialog" aria-labelledby="log-detail-title">
+          <div class="dialog-heading">
+            <div><p class="eyebrow">EVENTO PERSISTENTE</p><h2 id="log-detail-title">Detalhes do evento</h2></div>
+            <button type="button" class="dialog-close" data-log-detail-close aria-label="Fechar">×</button>
+          </div>
+          <div id="log-detail-summary" class="log-detail-summary"></div>
+          <dl id="log-detail-fields" class="log-detail-fields"></dl>
+          <div id="log-detail-stack" class="log-stack" hidden><h3>Stack trace</h3><pre></pre></div>
+          <p class="footnote">Dados técnicos reduzidos; segredos e conteúdo de clientes não são recolhidos.</p>
+        </dialog>
+      </main>
+      <footer>
+        <span>BLU / OPERATIONAL INTELLIGENCE</span
+        ><span>Histórico limitado · sem conteúdo de clientes</span>
+      </footer>
+    </div>
+  </body>
+</html>

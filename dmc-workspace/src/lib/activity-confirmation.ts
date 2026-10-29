@@ -1,3 +1,5 @@
+// Separa condições conhecidas, pendências e confirmação humana antes de alterar o estado de
+// uma atividade.
 import { validateCatalogDetails } from "./catalog-details.ts";
 import type { ActivityItem } from "../types/index";
 export type ActivityConfirmation = {

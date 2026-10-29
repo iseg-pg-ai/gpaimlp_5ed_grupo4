@@ -1,3 +1,5 @@
+// Prepara o servidor de desenvolvimento e a configuração necessária ao acesso pelo proxy do
+// workspace.
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 

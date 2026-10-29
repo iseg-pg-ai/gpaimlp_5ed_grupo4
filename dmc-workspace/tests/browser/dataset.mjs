@@ -1,43 +1,25 @@
-import { chromium } from "playwright";
+import { launchBrowser } from "./helpers.mjs";
 import assert from "node:assert/strict";
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}),
-});
+const browser = await launchBrowser();
+const base = (process.env.PORTAL_URL ?? "http://127.0.0.1:3001").replace(/\/$/, "");
 try {
-  for (const width of [360, 1440]) {
-    const page = await browser.newPage({ viewport: { width, height: 900 } });
-    await page.addInitScript(() => localStorage.setItem("blu-portal-language", "pt"));
-    await page.goto((process.env.PORTAL_URL ?? "http://127.0.0.1:3001") + "/references");
-    const section = page.getByTestId("dataset-explorer");
-    await section
-      .locator('select option[value="structured_atracoes_base"]')
-      .waitFor({ state: "attached" });
-    await section.locator("select").selectOption("structured_atracoes_base");
-    await section.locator("input").fill("Castelo de São Jorge");
-    await section.locator("details summary").filter({ hasText: "Castelo de São Jorge" }).click();
-    await section.getByText("latitude", { exact: true }).waitFor();
-    assert.equal(await section.evaluate((e) => e.scrollWidth > e.clientWidth + 1), false);
-    const response = await page.request.get(
-      (process.env.PORTAL_URL ?? "http://127.0.0.1:3001") +
-        "/api/dataset?table=structured_precos_base",
-    );
-    assert.ok(response.ok());
+  for (const javaScriptEnabled of [true, false]) {
+    const context = await browser.newContext({ javaScriptEnabled });
+    const page = await context.newPage();
+    await page.goto(`${base}/references`);
+    assert.ok(new URL(page.url()).pathname.endsWith("/catalog"));
+    assert.equal(await page.getByTestId("dataset-explorer").count(), 0);
+    const response = await page.request.get(`${base}/api/dataset?table=structured_precos_base`);
+    assert.equal(response.status(), 200);
     const data = await response.json();
     assert.ok(data.total > 25);
     assert.equal(data.rows.length, 25);
-    assert.ok(data.tables.includes("structured_fontes_enriquecimento"));
-    assert.equal(
-      (
-        await page.request.get(
-          (process.env.PORTAL_URL ?? "http://127.0.0.1:3001") + "/api/dataset?table=../secret",
-        )
-      ).status(),
-      400,
-    );
-    console.log(width, "dataset search, complete fields, pagination and table allowlist OK");
-    await page.close();
+    assert.equal((await page.request.get(`${base}/api/dataset?table=../secret`)).status(), 400);
+    await context.close();
   }
+  console.log(
+    "Referências antigas encaminhadas para o Catálogo; API de fontes e allowlist preservadas.",
+  );
 } finally {
   await browser.close();
 }

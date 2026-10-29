@@ -1,30 +1,18 @@
-import { datasetTables, sourceRows } from "@/lib/dataset-source";
+// Endpoint: disponibiliza consultas do dataset através da fronteira Node/Python.
+import { PortalPythonError, queryDataset } from "@/lib/python-portal";
 import { warehouseRoot } from "@/lib/catalog-store";
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+import { jsonError, noStoreHeaders } from "@/lib/server-http";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
-    const params = new URL(request.url).searchParams;
-    const root = warehouseRoot();
-    const tables = datasetTables(root);
-    const table = params.get("table") ?? tables[0];
-    if (!table) return Response.json({ tables, rows: [], total: 0, page: 1 });
-    if (!tables.includes(table)) return jsonError("Folha indisponível.", 400);
-    const query = (params.get("q") ?? "").slice(0, 200).toLocaleLowerCase();
-    const rows = sourceRows(root, table).filter(
-      (row) => !query || JSON.stringify(row).toLocaleLowerCase().includes(query),
+    const search = new URL(request.url).searchParams;
+    const params = Object.fromEntries([...search.keys()].map((key) => [key, search.get(key)]));
+    return Response.json(await queryDataset(warehouseRoot(), params), { headers: noStoreHeaders });
+  } catch (error) {
+    return jsonError(
+      error instanceof PortalPythonError ? error.message : "Dataset indisponível. Execute o ETL.",
+      error instanceof PortalPythonError && error.code === "UNKNOWN_TABLE" ? 400 : 503,
     );
-    const requested = Number(params.get("page") ?? 1);
-    const page = Math.min(
-      Math.max(1, Math.ceil(rows.length / 25)),
-      Number.isSafeInteger(requested) && requested > 0 ? requested : 1,
-    );
-    return Response.json(
-      { tables, table, rows: rows.slice((page - 1) * 25, page * 25), total: rows.length, page },
-      { headers: noStoreHeaders },
-    );
-  } catch {
-    return jsonError("Dataset indisponível. Execute o ETL.", 503);
   }
 }

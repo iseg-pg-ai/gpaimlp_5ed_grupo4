@@ -1,3 +1,4 @@
+// Resume o estado da proposta e as condições ainda pendentes de revisão.
 "use client";
 
 import { T } from "@/components/LocaleProvider";
@@ -7,27 +8,32 @@ const states = {
   confirmed: {
     label: "Confirmada",
     icon: CheckCircle,
-    style: "border-[#98BCAA] bg-[#EAF5EF] text-[#245C49]",
+    style:
+      "border-[var(--portal-line-98bcaa)] bg-[var(--portal-bg-eaf5ef)] text-[var(--portal-text-245c49)]",
   },
   draft: {
     label: "Rascunho",
     icon: FileText,
-    style: "border-[#C5D4D8] bg-[#EDF3F4] text-[#143F4B]",
+    style:
+      "border-[var(--portal-line-c5d4d8)] bg-[var(--portal-bg-edf3f4)] text-[var(--portal-text-143f4b)]",
   },
   pending: {
     label: "Por confirmar",
     icon: Clock,
-    style: "border-[#E4D1AD] bg-[#FFF8EB] text-[#765218]",
+    style:
+      "border-[var(--portal-line-e4d1ad)] bg-[var(--portal-bg-fff8eb)] text-[var(--portal-text-765218)]",
   },
   protected: {
     label: "Protegida",
     icon: Lock,
-    style: "border-[#BBCBCD] bg-[#E7EEEF] text-[#143F4B]",
+    style:
+      "border-[var(--portal-line-bbcbcd)] bg-[var(--portal-bg-e7eeef)] text-[var(--portal-text-143f4b)]",
   },
   exported: {
     label: "Exportada",
     icon: Download,
-    style: "border-[#C7C9DE] bg-[#F0F0F8] text-[#454466]",
+    style:
+      "border-[var(--portal-line-c7c9de)] bg-[var(--portal-bg-f0f0f8)] text-[var(--portal-text-454466)]",
   },
 };
 

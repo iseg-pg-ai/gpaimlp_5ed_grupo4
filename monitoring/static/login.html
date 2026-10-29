@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- Formulário de entrada no Monitoring, separado do acesso ao próprio workspace AWS. -->
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <base href="{{BASE}}" />
+    <title>BLU Operations · Monitoring</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="login-page">
+    <main class="login-shell">
+      <a class="brand" href="./" aria-label="BLU Operations"
+        ><span class="brand-mark">b.</span
+        ><span>BLU <strong>OPERATIONS</strong></span></a
+      >
+      <div class="login-orbit" aria-hidden="true"><span></span><i></i></div>
+      <p class="eyebrow">ACESSO RESERVADO</p>
+      <h1>Conhecer o estado.<br /><em>Antecipar a falha.</em></h1>
+      <p class="muted">Monitoring independente do ecossistema BLU.</p>
+      <form action="login" method="post" class="login-form">
+        <label for="username">Utilizador</label
+        ><input
+          id="username"
+          name="username"
+          autocomplete="username"
+          required
+          maxlength="80"
+        /><label for="password">Palavra-passe</label
+        ><input
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          required
+          maxlength="1024"
+        />
+        <p class="form-error" role="alert">{{ERROR}}</p>
+        <button type="submit" class="primary">
+          Entrar no centro de operações <span aria-hidden="true">→</span>
+        </button>
+      </form>
+      <p class="login-foot">Sessão privada · acesso apenas de leitura</p>
+    </main>
+  </body>
+</html>

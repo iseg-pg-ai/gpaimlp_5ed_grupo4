@@ -1,0 +1,326 @@
+/* Enquadramento do pitch: texto legível e passos laterais quando o ecrã é compacto. */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+#experience {
+  height: 100dvh;
+  min-height: 0;
+  padding: 0 clamp(12px, 2.5vw, 56px);
+}
+.show-header {
+  min-height: 56px;
+  padding-block: 8px;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.show-brand {
+  font-size: 2.4rem;
+}
+.show-header-actions {
+  gap: 6px;
+}
+.show-chapters {
+  margin-block: 12px;
+  gap: 12px;
+  padding: 0;
+}
+.show-chapters button {
+  min-height: 44px;
+  padding-block: 6px;
+  font-size: 13px;
+}
+.show-stage {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-block: 12px;
+  gap: 12px;
+}
+.show-scene-heading {
+  margin: 0;
+  flex-shrink: 0;
+}
+.show-scene-heading .show-eyebrow {
+  margin: 0;
+}
+.show-scene-heading h1 {
+  font-size: clamp(26px, 3.4vw, 54px);
+  margin: 6px 0;
+}
+.show-intro {
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 8px 0;
+  max-width: 860px;
+}
+#scene-window {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+#scene {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: none;
+  gap: 24px;
+  align-items: start;
+  --reading-size: clamp(14px, 1.05vw, 18px);
+}
+#scene::-webkit-scrollbar {
+  display: none;
+}
+#scene.is-paged {
+  display: block;
+  column-width: var(--frame-width);
+  column-gap: 24px;
+  column-fill: auto;
+  overflow-y: hidden;
+  touch-action: pan-x;
+}
+#scene.is-paged > * {
+  margin-bottom: 16px;
+}
+#scene.is-paged :is(h2, h3, .show-panel-title, .show-day-heading) {
+  break-after: avoid;
+}
+#scene.is-paged :is(button, li, .pitch-pillars > div) {
+  break-inside: avoid;
+}
+#scene :is(.show-mission, .show-map) {
+  min-height: 0;
+  height: min(390px, var(--frame-height));
+  max-height: var(--frame-height);
+  break-inside: avoid;
+}
+#scene .show-document {
+  padding: 20px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+#scene :is(.show-decision, .show-delivery-detail) h2 {
+  font-size: clamp(26px, 2.6vw, 40px);
+  margin-block: 10px;
+}
+#scene p {
+  font-size: var(--reading-size);
+  line-height: 1.55;
+  orphans: 2;
+  widows: 2;
+}
+#scene .show-context {
+  font-size: 12px;
+  line-height: 1.5;
+  margin-block: 10px;
+}
+#scene .show-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+#scene .show-day {
+  margin-bottom: 12px;
+}
+#scene .show-day li {
+  padding-block: 12px;
+}
+#scene.is-paged .show-document-days {
+  display: block;
+}
+#scene.is-paged .show-document-days > div {
+  margin-bottom: 12px;
+}
+#scene.is-paged :is(.show-place-detail, .show-document) {
+  overflow: visible;
+}
+#content-pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 36px;
+  flex-shrink: 0;
+}
+#content-pages button {
+  min-width: 44px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #14313a66;
+}
+#content-counter {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+#content-pages[data-active="false"] button {
+  visibility: hidden;
+}
+.show-footer {
+  padding-block: 10px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+.show-footer-note p,
+.show-keyboard {
+  display: none;
+}
+.show-footer-note {
+  flex-shrink: 0;
+}
+.show-controls {
+  gap: 8px;
+}
+.show-primary {
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+.show-footer .show-primary {
+  max-width: 280px;
+}
+.show-footer .show-previous {
+  min-height: 44px;
+}
+.show-bottom-note {
+  display: block;
+  font-size: 10px;
+  line-height: 1.4;
+  margin: 0 0 6px;
+  letter-spacing: 0.025em;
+}
+.show-compact-navigation {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .show-brand small,
+  .show-demo {
+    display: none;
+  }
+  .show-chapters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px 10px;
+  }
+  .show-chapters button {
+    font-size: 12px;
+    gap: 4px;
+    flex-direction: row;
+  }
+  .show-chapters button > span {
+    display: none;
+  }
+  .show-intro {
+    display: none;
+  }
+  .show-scene-heading h1 br {
+    display: none;
+  }
+  .show-scene-heading h1 {
+    font-size: clamp(24px, 3.5vw, 36px);
+  }
+  .show-scene-heading .show-eyebrow {
+    font-size: 9px;
+  }
+  .show-footer-note {
+    display: none;
+  }
+  .show-footer .show-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+@media (max-height: 700px) {
+  .show-header {
+    min-height: 48px;
+    padding-block: 4px;
+  }
+  .show-brand {
+    font-size: 2rem;
+  }
+  .show-brand small,
+  .show-demo,
+  .show-chapters,
+  .show-intro {
+    display: none;
+  }
+  .show-compact-navigation {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    min-height: 44px;
+    flex-shrink: 0;
+  }
+  .show-compact-navigation select {
+    flex: 1;
+    min-width: 0;
+    min-height: 40px;
+    padding: 6px;
+    color: inherit;
+    background: #102832;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 14px;
+  }
+  .show-scene-heading h1 {
+    font-size: 24px;
+  }
+  .show-scene-heading h1 br {
+    display: none;
+  }
+  .show-scene-heading .show-eyebrow {
+    display: none;
+  }
+  .show-stage {
+    padding-block: 6px;
+    gap: 6px;
+  }
+  .show-footer {
+    padding-block: 4px;
+  }
+}
+@media print {
+  html,
+  body,
+  #experience {
+    height: auto;
+    overflow: visible;
+  }
+  #scene-window,
+  #scene {
+    height: auto;
+    overflow: visible;
+  }
+  #scene.is-paged {
+    columns: auto;
+    display: block;
+  }
+  #content-pages,
+  .show-compact-navigation {
+    display: none;
+  }
+}
+/* Em janelas muito baixas, a decoração cede espaço à leitura sem cortar a promessa. */
+#scene.is-paged.is-short-frame .show-detail-number {
+  display: none;
+}
+#scene.is-paged.is-short-frame .pitch-hero {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  break-inside: auto;
+}
+#scene.is-paged.is-short-frame .pitch-hero :is(.show-orbit, .show-coordinate) {
+  display: none;
+}
+#scene.is-paged.is-short-frame .pitch-hero .show-mission-label {
+  position: static;
+  padding: 12px;
+}
+#scene.is-paged.is-short-frame .pitch-hero .show-mission-label > strong {
+  font-size: 32px;
+  margin-block: 10px;
+}

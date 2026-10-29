@@ -1,3 +1,4 @@
+// Estrutura visual da conversa e do seu estado de apresentação.
 "use client";
 
 import * as React from "react";
@@ -67,10 +68,12 @@ export const ConversationEmptyState: React.FC<ConversationEmptyStateProps> = ({
       )}
       {...props}
     >
-      <div className="text-[#8F8B82]">{icon || <MessageSquare className="size-8" />}</div>
+      <div className="text-[var(--portal-text-8f8b82)]">
+        {icon || <MessageSquare className="size-8" />}
+      </div>
       <div className="space-y-1">
-        <h3 className="font-semibold text-sm text-[#1A1917]">{title}</h3>
-        <p className="text-xs text-[#6B6861] max-w-xs">{description}</p>
+        <h3 className="font-semibold text-sm text-[var(--portal-text-1a1917)]">{title}</h3>
+        <p className="text-xs text-[var(--portal-text-6b6861)] max-w-xs">{description}</p>
       </div>
       {children}
     </div>
@@ -92,13 +95,13 @@ export const ConversationScrollButton: React.FC<ConversationScrollButtonProps> =
       variant="outline"
       size="iconSm"
       className={cn(
-        "absolute bottom-3 right-3 rounded-full shadow-md bg-white border-[#DFD9CE] hover:bg-[#F8F6F1] z-10",
+        "absolute bottom-3 right-3 rounded-full shadow-md bg-[var(--portal-white)] border-[var(--portal-line-dfd9ce)] hover:bg-[var(--portal-bg-f8f6f1)] z-10",
         className,
       )}
       onClick={onClick}
       {...props}
     >
-      <ArrowDown className="size-3.5 text-[#1A1917]" />
+      <ArrowDown className="size-3.5 text-[var(--portal-text-1a1917)]" />
     </Button>
   );
 };
@@ -134,7 +137,10 @@ export const ConversationDownload: React.FC<ConversationDownloadProps> = ({
       size="iconSm"
       onClick={handleDownload}
       title="Download chat history"
-      className={cn("text-[#8F8B82] hover:text-[#1A1917]", className)}
+      className={cn(
+        "text-[var(--portal-text-8f8b82)] hover:text-[var(--portal-text-1a1917)]",
+        className,
+      )}
       {...props}
     >
       <Download className="size-3.5" />

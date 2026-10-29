@@ -1,3 +1,5 @@
+// Motor determinístico de elegibilidade e composição do itinerário; os comandos continuam
+// sujeitos às mesmas regras.
 import {
   closureState,
   transferEstimate,
@@ -47,6 +49,21 @@ export function validateBrief(value: unknown): asserts value is CustomerBrief {
   ] as const)
     if (typeof b[field] !== "string" || b[field].length > 4000)
       throw new Error(`Campo inválido: ${field}`);
+  for (const field of [
+    "arrivalTime",
+    "arrivalFlightNumber",
+    "departureTime",
+    "departureFlightNumber",
+  ] as const) {
+    const value = b[field];
+    if (value !== undefined && (typeof value !== "string" || value.length > 100))
+      throw new Error(`Campo inválido: ${field}`);
+  }
+  for (const field of ["arrivalTime", "departureTime"] as const) {
+    const value = b[field]?.trim();
+    if (value && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value))
+      throw new Error(`Hora inválida: ${field}`);
+  }
   if (!b.customerName.trim() || !b.destination.trim())
     throw new Error("Indique cliente e destino.");
   if (
@@ -135,6 +152,7 @@ export function mentioned(value: string, aliases: string[]) {
   return aliases.some((a) => new RegExp(`\\b${a}\\b`).test(norm(value)));
 }
 
+// Combinar as regras de elegibilidade e composição sem dispensar as pendências de revisão.
 export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
   validateBrief(brief);
   const requiredRules = [
@@ -384,6 +402,9 @@ export function generateItinerary(brief: CustomerBrief, catalog: Catalog) {
         : source;
       return {
         id,
+        ...(Number.isSafeInteger(row._catalog_revision)
+          ? { catalogRevision: Number(row._catalog_revision) }
+          : {}),
         time:
           slot.kind === "scheduled"
             ? `${clockTime(slot.start)}–${clockTime(slot.end)} (proposto)`

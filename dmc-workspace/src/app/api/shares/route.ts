@@ -1,7 +1,10 @@
-import { publicUrl } from "@/lib/public-url";
+// Endpoint: cria e revoga acessos de partilha segundo o contrato e as permissões do
+// servidor.
+import { publicUrl, jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";
 import { isLocale } from "@/lib/locales";
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+
 import { checkTripId, VersionStore, type ShareMethod } from "@/lib/version-store";
+import { syncOperationalState } from "@/lib/operational-s3";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,12 +12,16 @@ export const dynamic = "force-dynamic";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
   let body: {
     tripId: string;
     version: number;
     locale: string;
     method: ShareMethod;
     recipient: string;
+    consent: boolean;
+    retentionDays: 7 | 30 | 90;
   };
   try {
     const raw = await request.text();
@@ -29,6 +36,8 @@ export async function POST(request: Request) {
     body.recipient = body.recipient.trim();
     if (body.recipient.length > 320 || !emailPattern.test(body.recipient))
       throw new Error("Email do destinatário inválido.");
+    if (body.consent !== true) throw new Error("Confirme a autorização para partilhar.");
+    if (![7, 30, 90].includes(body.retentionDays)) throw new Error("Prazo de acesso inválido.");
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : "Pedido inválido.", 400);
   }
@@ -42,7 +51,9 @@ export async function POST(request: Request) {
       body.locale,
       body.method,
       body.recipient,
+      body.retentionDays,
     );
+    await syncOperationalState();
     const path =
       share.method === "document" ? `/api/shares/${share.token}/document` : `/share/${share.token}`;
     return Response.json(
@@ -52,6 +63,7 @@ export async function POST(request: Request) {
         version: share.version,
         locale: share.locale,
         method: share.method,
+        expiresAt: share.expiresAt,
       },
       { status: 201, headers: noStoreHeaders },
     );
@@ -66,5 +78,30 @@ export async function POST(request: Request) {
     );
   } finally {
     store.close();
+  }
+}
+
+export async function DELETE(request: Request) {
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
+  try {
+    const raw = await request.text();
+    if (raw.length > 1000) return jsonError("Pedido demasiado grande.", 413, noStoreHeaders);
+    const token = (JSON.parse(raw) as { token?: unknown }).token;
+    if (typeof token !== "string") throw new Error("Partilha inválida.");
+    const store = new VersionStore();
+    try {
+      const share = store.revokeShare(token);
+      await syncOperationalState();
+      return Response.json(share, { headers: noStoreHeaders });
+    } finally {
+      store.close();
+    }
+  } catch (error) {
+    return jsonError(
+      error instanceof Error ? error.message : "Pedido inválido.",
+      400,
+      noStoreHeaders,
+    );
   }
 }

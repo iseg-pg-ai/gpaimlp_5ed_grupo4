@@ -1,0 +1,115 @@
+<!doctype html>
+<!-- Estrutura das cenas da apresentação e da demonstração, separada da aplicação operacional. -->
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#091b23" />
+    <meta
+      name="description"
+      content="Conhecer quem viaja. Escolher com intenção. Descubra a curadoria BLU numa experiência ilustrativa para viajantes e parceiros."
+    />
+    <base href="./" />
+    <title>BLU · Viajar com intenção</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css?v=20261028-pitch" />
+    <link rel="stylesheet" href="viewport.css?v=20261028-pitch" />
+    <script src="viewport.js?v=20261028-pitch" defer></script>
+    <script src="app.js?v=20261028-pitch" defer></script>
+  </head>
+  <body>
+    <main id="experience">
+      <header class="show-header">
+        <a href="./" class="show-brand" aria-label="BLU · Voltar ao início"
+          >blu<span>.</span
+          ><small>COSTA TRAVEL<br />THE CURATION EXPERIENCE</small></a
+        >
+        <span class="show-demo"
+          ><span></span> CURADORIA DE VIAGENS / PORTUGAL</span
+        >
+        <div class="show-header-actions">
+          <button
+            type="button"
+            id="fullscreen"
+            aria-label="Apresentar em ecrã inteiro"
+            title="Ecrã inteiro"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5" />
+            </svg></button
+          ><button
+            type="button"
+            id="motion-toggle"
+            aria-label="Pausar animações"
+            aria-pressed="false"
+            title="Pausar animações"
+          >
+            Ⅱ</button
+          ><button id="contact-jump" type="button">
+            Vamos conversar <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+      </header>
+      <p
+        id="fullscreen-note"
+        class="show-fullscreen-note"
+        role="status"
+        hidden
+      ></p>
+      <label class="show-compact-navigation"
+        >Capítulo
+        <select id="chapter-select" aria-label="Escolher capítulo"></select
+      ></label>
+      <nav class="show-chapters" aria-label="Capítulos da apresentação"></nav>
+      <section class="show-stage" aria-labelledby="show-title">
+        <div class="show-scene-heading">
+          <p id="eyebrow" class="show-eyebrow"></p>
+          <h1 id="show-title" tabindex="-1"></h1>
+          <p id="intro" class="show-intro"></p>
+        </div>
+        <div id="scene-window"><div id="scene"></div></div>
+        <nav id="content-pages" aria-label="Passos deste capítulo">
+          <button
+            type="button"
+            id="content-previous"
+            aria-label="Passo anterior"
+          >
+            ←
+          </button>
+          <span id="content-counter" role="status" aria-live="polite"></span>
+          <button type="button" id="content-next" aria-label="Passo seguinte">
+            →
+          </button>
+        </nav>
+      </section>
+      <footer class="show-footer">
+        <div class="show-footer-note">
+          <span id="counter"></span>
+          <p id="conclusion"></p>
+        </div>
+        <div class="show-controls">
+          <span class="show-keyboard" aria-hidden="true">← → PARA NAVEGAR</span
+          ><button type="button" id="previous" class="show-previous">
+            ← <span>Anterior</span></button
+          ><button type="button" id="next" class="show-primary"></button>
+        </div>
+      </footer>
+      <p class="show-bottom-note">
+        EXPERIÊNCIA ILUSTRATIVA · preços e disponibilidade por confirmar · sem
+        reservas
+      </p>
+      <noscript
+        >Ative JavaScript para explorar a apresentação interativa. O guião está
+        disponível em docs/APRESENTACAO.md no projeto.</noscript
+      >
+    </main>
+  </body>
+</html>

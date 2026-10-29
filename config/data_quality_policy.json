@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "warehouseManifest": {
+    "acceptedSchemaVersions": [1],
+    "requiredFiles": [
+      "blu_etl.sqlite",
+      "manifest.json",
+      "validation_report.json"
+    ]
+  },
+  "quality": {
+    "maxIssues": 0,
+    "maxPdfErrors": 0
+  },
+  "conflictExceptions": []
+}

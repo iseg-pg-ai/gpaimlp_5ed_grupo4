@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "services": [
+    {
+      "name": "portal",
+      "port": 3001,
+      "health_path": "/",
+      "command": ["bash", "-lc", "cd dmc-workspace && npm run start -- --hostname 0.0.0.0 --port 3001"]
+    },
+    {
+      "name": "monitoring",
+      "port": 3004,
+      "health_path": "/health",
+      "command": [".venv/bin/python", "-B", "-m", "monitoring.server", "--host", "0.0.0.0"]
+    },
+    {
+      "name": "presentation",
+      "port": 3003,
+      "health_path": "/",
+      "command": [".venv/bin/python", "-B", "presentation/serve.py", "--host", "0.0.0.0", "--port", "3003"]
+    },
+    {
+      "name": "observatory",
+      "port": 8501,
+      "health_path": "/_stcore/health",
+      "command": ["bash", "scripts/start_dashboard.sh"]
+    }
+  ]
+}

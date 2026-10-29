@@ -1,3 +1,5 @@
+// Contratos partilhados entre briefing, catálogo e itinerário; os tipos não substituem
+// validação em runtime.
 export type ActivityCategory = "hotel" | "activity" | "restaurant" | "transport" | "free_time";
 
 export type TransitMode =
@@ -21,6 +23,7 @@ export interface TransitLeg {
 }
 
 export interface ActivityItem {
+  catalogRevision?: number;
   catalogDetails?: import("../lib/catalog-details").CatalogDetails;
   confirmation?: import("../lib/activity-confirmation").ActivityConfirmation;
   id: string;
@@ -38,6 +41,7 @@ export interface ActivityItem {
   accessibilityNotes?: string;
   isRecentlyModified?: boolean;
   isLocked?: boolean;
+  lastModifiedBy?: "user" | "assistant";
   transitToNext?: TransitLeg;
   source?: string;
   appliedRules?: string[];
@@ -69,6 +73,7 @@ export interface ItineraryDay {
   items: ActivityItem[];
   routeSummary?: DailyRouteSummary;
   isRecentlyModified?: boolean;
+  lastModifiedBy?: "user" | "assistant";
   dailyCapacity?: number;
 }
 
@@ -91,7 +96,11 @@ export interface CustomerBrief {
   startDate: string;
   endDate: string;
   arrivalLocation: string;
+  arrivalTime?: string;
+  arrivalFlightNumber?: string;
   departureLocation: string;
+  departureTime?: string;
+  departureFlightNumber?: string;
   budget: number;
   currency: string;
   interests: string[];
@@ -110,6 +119,7 @@ export interface CustomerBrief {
 }
 
 export interface ChatMessage {
+  language?: "pt" | "en";
   id: string;
   sender: "user" | "assistant";
   text: string;

@@ -1,3 +1,4 @@
+// Configura o runtime Next.js e as opções partilhadas pelo desenvolvimento e pela build.
 import type { NextConfig } from "next";
 
 const portalPrefix =
@@ -12,6 +13,23 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: Boolean(portalPrefix),
   assetPrefix: portalPrefix,
   env: { NEXT_PUBLIC_PORTAL_BASE_PATH: portalPrefix },
+  turbopack: {
+    rules: portalPrefix
+      ? Object.fromEntries(
+          ["**/next-devtools/index.js", "**/next-devtools/shared/stack-frame.js"].map((pattern) => [
+            pattern,
+            {
+              loaders: [
+                {
+                  loader: "./scripts/devtools-prefix-loader.cjs",
+                  options: { prefix: portalPrefix },
+                },
+              ],
+            },
+          ]),
+        )
+      : {},
+  },
   async rewrites() {
     // Resolve locally: SageMaker rewrites Location headers in HTTP redirects.
     return [{ source: "/docs", destination: "/" }];

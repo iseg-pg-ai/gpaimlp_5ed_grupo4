@@ -1,7 +1,10 @@
+// Endpoint: calcula trajetos e alterações de sequência através do serviço de routing do
+// servidor.
 import { validateSnapshot } from "@/lib/snapshot-validation";
-import { loadPublishedCatalog } from "@/lib/published-catalog";
-import { jsonError } from "@/lib/api-response";
-import { updateDayTransitLeg, optimizeDayRouteOrder } from "@/lib/road-routing";
+import { loadPublishedCatalog } from "@/lib/catalog-store";
+import { jsonError } from "@/lib/server-http";
+import { updateDayTransitLeg, optimizeDayRouteOrder } from "@/lib/road-routing-server";
+import { markEditOrigin } from "@/lib/assistant-editing";
 import type { TransitMode, ItineraryDay } from "@/types";
 
 export const runtime = "nodejs";
@@ -52,7 +55,9 @@ export async function POST(request: Request) {
       d.dayNumber === body.dayNumber ? updatedDay : d,
     );
 
-    return Response.json({ itinerary: updatedItinerary });
+    return Response.json({
+      itinerary: markEditOrigin(body.snapshot.itinerary, updatedItinerary, "user"),
+    });
   } catch (err) {
     return jsonError(
       err instanceof Error ? err.message : "Falha ao processar o cálculo rodoviário OSRM.",

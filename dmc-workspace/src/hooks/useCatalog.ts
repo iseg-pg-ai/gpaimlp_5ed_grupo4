@@ -1,8 +1,9 @@
+// Carrega o catálogo consumido pela interface e centraliza os estados de espera e falha.
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch, responseJson } from "@/lib/http-client";
 import { operationalFromSource } from "@/lib/catalog-operational";
 import { useEffect, useRef, useState } from "react";
-import { responseJson } from "@/lib/http-client";
+
 import { emptyMatching } from "@/lib/catalog-matching";
 import {
   emptyFields,
@@ -126,10 +127,16 @@ export function useCatalog() {
       });
       // Preserve the draft on conflict, but refresh the list so reopening uses the current revision.
       if (response.status === 409) await load();
-      await responseJson(response);
+      const result = await responseJson<{ queued?: boolean }>(response);
       setCategory(input.category);
       setEditing(null);
       setHistory(null);
+      if (result.queued) {
+        setNotice(
+          "A base operacional está temporariamente indisponível. O registo ficou protegido e será sincronizado automaticamente.",
+        );
+        return;
+      }
       setNotice(
         "Registo guardado. Atualize o catálogo para disponibilizar a revisão aprovada nos novos roteiros.",
       );

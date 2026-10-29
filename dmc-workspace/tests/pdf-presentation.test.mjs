@@ -15,6 +15,12 @@ const meta = {
   chainHash: "b".repeat(64),
 };
 test("presentation retains identity, proposal status and day sequence in every layout", async () => {
+  Object.assign(snapshot.brief, {
+    arrivalTime: "10:35",
+    arrivalFlightNumber: "TP 1363",
+    departureTime: "17:20",
+    departureFlightNumber: "TP 1931",
+  });
   const capture = [];
   await renderPdf(snapshot, meta, { capture });
   for (const text of [
@@ -23,9 +29,12 @@ test("presentation retains identity, proposal status and day sequence in every l
     "ROTEIRO · PROPOSTA PRELIMINAR",
     "Versão v003",
     "A sua viagem",
-    "Identificação da versão",
+    `Chegada: ${snapshot.brief.arrivalLocation} | Hora: 10:35 | Voo: TP 1363`,
+    `Partida: ${snapshot.brief.departureLocation} | Hora: 17:20 | Voo: TP 1931`,
   ])
     assert.ok(capture.includes(text), text);
+  assert.ok(!capture.join("\n").includes(meta.tripId));
+  assert.ok(!capture.join("\n").includes("SHA-256"));
   for (const day of snapshot.itinerary)
     for (const item of day.items) assert.ok(capture.includes(item.title));
   for (const locale of ["pt", "en", "es", "fr", "de"]) {

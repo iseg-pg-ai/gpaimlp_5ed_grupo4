@@ -1,0 +1,166 @@
+# BLU Operations — monitoring privado
+
+Painel independente do portal, Observatório e apresentação, na porta **3004**.
+O servidor/painel usa Python 3.12/3.13 e a biblioteca padrão; integrações AWS usam boto3 quando ativadas. Não depende do planeador do agente.
+Interface e API de estado exigem login próprio; o CSS da página de login é público.
+
+## Preparar e iniciar
+
+Na raiz do repositório, usar o Python do projeto. No Windows, substituir `.venv/bin/python` por `.venv\Scripts\python.exe`. Definir credenciais interativamente:
+
+```bash
+.venv/bin/python -B -m monitoring.setup
+.venv/bin/python -B -m monitoring.server
+```
+
+Para um primeiro acesso gerado localmente:
+
+```bash
+.venv/bin/python -B -m monitoring.setup --generate
+```
+
+Esse modo cria o utilizador `admin` e uma palavra-passe aleatória em `monitoring/runtime/initial-password.txt`, com permissões 600. Consultar o ficheiro no editor local; não o copiar para chats ou logs. Substituir a palavra-passe na página **Gerir utilizadores** depois de entrar.
+A recuperação pelo modo interativo continua disponível e exige reinício do servidor; esse modo elimina o ficheiro inicial.
+Não existe palavra-passe fixa no código ou no README.
+
+A pasta `runtime/` fica fora do Git e do contexto Docker do portal. Contém credenciais derivadas, acesso inicial temporário, logs técnicos, fila local de alertas, métricas de IA e cópias de segurança. O serviço recusa arrancar sem credenciais. Não disponibiliza esses ficheiros por HTTP.
+
+O endereço HTTPS é descoberto para o Space atual por `DescribeSpace`, acrescentando `/ports/3004/`; fora do SageMaker, usa `config/studio.local.json`. O servidor escuta apenas em `127.0.0.1`. **BLU · Interfaces → Monitoring** usa o encaminhamento nativo do Code Editor. Ver [onboarding](../docs/ONBOARDING.md) para a ativação da integração.
+
+O login do painel é adicional ao acesso Studio. Acesso HTTP direto não suporta os cookies Secure da configuração normal: usar o endereço HTTPS anunciado.
+
+## Gerir utilizadores na página
+
+Entrar no painel e selecionar **Gerir utilizadores**, ou abrir `/users` no caminho do monitoring. A conta da primeira versão é reconhecida como **administrador**, mantendo o mesmo nome e palavra-passe. Na primeira alteração administrativa guardada, o ficheiro local passa para o formato com várias contas, sem guardar palavras-passe em texto simples.
+
+A página permite:
+
+- Criar contas de administrador ou leitor, com nome único sem distinguir maiúsculas/minúsculas, e palavra-passe de 12–128 caracteres confirmada.
+- Alterar a palavra-passe, o perfil e o estado de uma conta.
+- Desativar/reabilitar contas e remover outras contas com confirmação explícita.
+
+Administradores gerem acessos; leitores apenas consultam o painel. A autorização é verificada no servidor, mesmo que alguém tente enviar os formulários diretamente.
+Todas as alterações exigem origem autorizada e token CSRF da sessão.
+
+Alterar palavra-passe, perfil ou estado termina as sessões da conta afetada.
+Ao alterar a própria palavra-passe ou perfil, é necessário entrar novamente.
+Não é possível desativar/remover a conta em uso nem deixar de existir um administrador ativo, incluindo com pedidos concorrentes. As alterações são imediatas e persistem no reinício do serviço. Limite: 100 contas locais.
+
+As palavras-passe existentes não podem ser consultadas. Para dar acesso a outra pessoa, definir uma palavra-passe e transmiti-la por um canal privado próprio; o painel não envia emails nem convites. As contas são exclusivas do monitoring e não dão acesso ao portal ou a uma sessão SageMaker.
+
+O comando `.venv/bin/python -B -m monitoring.setup` passa a criar/recuperar o administrador indicado, preservando as restantes contas. Usar com o serviço parado e reiniciar; não executar recuperação CLI em paralelo com alterações na página. O ficheiro local e as sessões em memória destinam-se a um único processo servidor.
+
+Os ficheiros runtime tinham sido incluídos num commit anterior apesar da regra de exclusão. Foram retirados do índice, mantendo cópias locais. Isso não apaga o histórico Git: alterar a palavra-passe inicial se ainda estiver em uso. A alteração da palavra-passe de `admin` elimina também o ficheiro inicial local, quando possível.
+
+## Logs centralizados
+
+O painel principal apresenta os logs do Portal numa coluna lateral em ecrãs largos e numa secção própria em ecrãs menores. Os controlos mostram **Todos** e **Apenas erros**, com as respetivas contagens. Selecionar um evento abre o detalhe com timestamp, utilizador técnico, ação, módulo, estado, severidade, mensagem e stack reduzida quando existe.
+
+Observatório, Apresentação e Agente IA aparecem em três colunas próprias, com os mesmos controlos e detalhe. O Portal usa os eventos persistentes de `monitoring/runtime/portal-events.jsonl`; os restantes painéis combinam sondas, incidentes e métricas de IA aplicáveis. A API exige uma sessão válida e nunca disponibiliza os ficheiros diretamente.
+
+O Next.js regista visualizações, navegações, interações com botões/ligações, chamadas às APIs e erros não tratados no browser e no servidor. Operações já instrumentadas, como a assistência IA, continuam a escrever no mesmo runtime. Eventos repetidos pela mesma interação são suprimidos durante 750 ms e as escritas no processo Node são serializadas. A atualização das tabelas ocorre a cada 15 segundos.
+
+No modo Code Editor, o portal não tem login próprio. A coluna **Utilizador** distingue `server`, `system` ou um identificador aleatório limitado à sessão do separador, sem o associar a uma pessoa. Não são recolhidos valores de formulários, corpos HTTP, labels visíveis, prompts ou respostas. Mensagens e stacks passam por limites e redação de segredos, emails, URLs, valores entre aspas e números longos antes da persistência.
+
+## Sinais operacionais e alertas
+
+O portal e o agente escrevem eventos JSON-lines com campos técnicos limitados. Não são guardados prompts, respostas, corpos HTTP, nomes de clientes ou valores de formulários. Os cartões apresentam agregados das últimas 24 horas; as tabelas usam uma janela máxima de sete dias dentro dos ficheiros rotativos disponíveis.
+
+O coletor transforma falhas em incidentes locais, deduplica estados repetidos e regista uma recuperação quando a condição desaparece. A fila está em `monitoring/runtime/notifications.jsonl`.
+
+O transporte externo por Amazon SNS está implementado, mas permanece desativado por defeito. Quando ativo, apenas transições técnicas de abertura e recuperação são copiadas para `external-notifications.jsonl`; o estado de entrega fica em `notification-delivery.json`. Uma falha conserva a fila e repete com atraso exponencial entre 60 segundos e uma hora. Eventos entregues não são reenviados e o histórico local nunca é eliminado. Não são incluídos prompts, respostas, dados de clientes, URLs ou exceções livres.
+
+Para ativar depois de existir um tópico SNS **Standard** privado, uma subscrição confirmada e autorização IAM limitada a esse tópico:
+
+```bash
+BLU_MONITORING_NOTIFICATIONS_ENABLED=true
+BLU_MONITORING_SNS_TOPIC_ARN=arn:aws:sns:eu-west-1:CONTA:blu-monitoring
+```
+
+Guardar estas chaves no `.env` local e reiniciar o Monitoring. A aplicação usa a role da sessão, nunca access keys. A role precisa apenas de:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "sns:Publish",
+    "Resource": "arn:aws:sns:eu-west-1:CONTA:blu-monitoring"
+  }]
+}
+```
+
+Os destinatários são administrados como subscrições do tópico e não ficam no repositório. Uma subscrição por email só recebe mensagens depois de ser confirmada.
+Consultar a documentação AWS sobre [notificações SNS por email](https://docs.aws.amazon.com/sns/latest/dg/sns-email-notifications.html).
+
+Em 2026-10-25, o ambiente de desenvolvimento validou a publicação real pela role IAM: uma abertura e uma recuperação foram entregues, uma abertura repetida foi deduplicada e a fila terminou sem pendências. O teste de falha e repetição é feito com falha injetada, para não retirar permissões à infraestrutura real durante uma validação operacional.
+
+## Libertação automática de espaço
+
+O monitoring executa uma limpeza conservadora quando a ocupação do disco atinge 85%, no máximo uma vez em cada 24 horas. Administradores também podem usar **Libertar espaço agora** no cartão do disco. O painel mostra data, resultado e volume libertado pela última execução.
+
+A limpeza está limitada a caches regeneráveis do Next.js e dos testes, diretórios Python `__pycache__` nas áreas de código e backups completos que excedam a retenção.
+São preservados pelo menos os cinco backups mais recentes; um backup adicional só pode ser removido depois de sete dias. Temporários de backup incompletos podem ser retirados depois de 24 horas.
+
+Nunca são abrangidos o catálogo, fontes, warehouse publicado, itinerários, PDFs, credenciais, ambientes Python, `node_modules` ou ficheiros Git. A limpeza não tenta desinstalar dependências, porque isso poderia impedir o arranque dos serviços.
+Os limites podem ser ajustados no bloco `cleanup` de `monitoring/config.json` e exigem reinício do monitoring.
+
+## Backups e ensaio de restauro
+
+Com `backup.enabled`, o coletor cria e verifica uma cópia local a cada 24 horas.
+O resultado da tentativa fica em `monitoring/runtime/backup-schedule.json`. Esta rotina permite ensaios frequentes; o checkpoint remoto obrigatório antes de uma paragem controlada pertence ao `just blu it` e usa `BLU_BACKUP_S3_BUCKET`.
+
+Para criar uma cópia local do catálogo SQLite, warehouse, itinerários e operações JSON pendentes, e validar imediatamente hashes, integridade SQLite e restauro num diretório temporário:
+
+```bash
+.venv/bin/python -B -m monitoring.backup create-and-verify
+```
+
+Também é possível repetir a verificação sem alterar as fontes:
+
+```bash
+.venv/bin/python -B -m monitoring.backup verify monitoring/runtime/backups/IDENTIFICADOR
+```
+
+O manifesto inclui hashes SHA-256 e tamanhos. A evidência mais recente fica em `monitoring/runtime/restore-evidence.json` e alimenta o painel. A retenção remota não elimina backups válidos; a regra proposta apenas aborta uploads multipart incompletos após sete dias e requer aplicação administrativa na consola AWS.
+
+## Cobertura
+
+- Sondas a cada 30 segundos: portal `/catalog`, saúde Streamlit e apresentação.
+- Leitura dos agregados de `manifest.json` e `validation_report.json` publicados.
+- Espaço disponível, ocupação do disco e carga média do anfitrião.
+- Até 240 amostras e 100 alterações de estado em memória, reiniciadas no arranque.
+- Logs JSON-lines das sondas com rotação de 1 MB e três cópias; sem corpos de respostas, fontes, contactos, pedidos de clientes ou exceções detalhadas.
+- Erros internos do portal, subprocessos e dependências em eventos reduzidos.
+- Consumo de IA com chamadas, falhas, latência e tokens quando reportados.
+- Incidentes deduplicados, recuperações e fila SNS persistente; envio externo desativado até existir tópico, subscrição, IAM e ensaio autorizados.
+
+`monitoring/config.json` define intervalo (10–300 segundos), backups, limpeza, limiares de alerta e idade máxima aceitável do warehouse. As métricas do agente são recolhidas dos eventos do fluxo integrado no portal, sem uma sonda ou porta própria. O valor preliminar de 168 horas deve ser revisto quando existir uma cadência operacional acordada. Reiniciar para aplicar alterações.
+A ocupação de disco a partir de 90% conta como incidente local preliminar, a rever com a equipa. As contagens das tabelas incluem entidades de vários tipos; não representam um total de clientes ou de experiências únicas.
+
+O painel identifica recolha atrasada e perda de ligação. Um HTTP 200 não prova prontidão funcional, acesso Bedrock ou um fluxo completo de curadoria. A validação publicada não mostra tentativas ETL que falharam antes de substituir a entrega.
+Tradução, memória e traces distribuídos continuam sem instrumentação. Tokens não reportados pelo fornecedor aparecem como desconhecidos e nunca são estimados.
+
+## Autenticação e fronteira de operação
+
+- PBKDF2-HMAC-SHA256 com sal aleatório e 600 000 iterações; comparação constante.
+- Sessões aleatórias no servidor, cookies HttpOnly/Secure/SameSite Strict limitados ao caminho do painel. Máximo oito horas e 30 minutos de inatividade.
+- Logout invalida a sessão e exige token CSRF; POST exige a origem pública exata.
+- Cinco tentativas falhadas por IP em cinco minutos. O proxy pode partilhar IP, pelo que o bloqueio pode afetar outros utilizadores; não confiar em headers de encaminhamento fornecidos pelo cliente.
+- Sem acesso a URLs arbitrários, sem redirects nas sondas, sem endpoints de escrita operacional, sem listagem de diretórios ou entrega de ficheiros fora da whitelist.
+
+Este servidor é para utilização interna no Studio, o destino escolhido para operação individual. Exposição independente do Studio exigiria outra decisão de hosting, proxy, identidade e revisão operacional. Sessões e limitação de tentativas são locais ao processo. Outros portais sob a mesma origem Studio não constituem uma fronteira de segurança por domínio; para isolamento de produção, usar origem própria.
+Se o próprio ambiente Studio cair, este monitor também deixa de recolher: uma sonda externa independente é uma etapa posterior.
+
+Referências de desenho: [sessões OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) e [armazenamento de palavras-passe](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+
+## Verificação
+
+```bash
+.venv/bin/python -B -m unittest monitoring.test_monitoring -v
+node monitoring/test-browser.mjs
+```
+
+Para checkpoints, recuperação e transporte com mocks, executar também `PYTHONPATH=src .venv/bin/.venv/bin/python -B -m unittest monitoring.test_checkpoint monitoring.test_operations -v`.
+
+O teste de navegador usa o Playwright já instalado no portal, credenciais de fixture e servidor temporário em loopback, sem ler credenciais reais. Os testes usam diretórios temporários e não modificam o catálogo nem o warehouse real.

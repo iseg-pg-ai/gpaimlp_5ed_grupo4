@@ -1,3 +1,4 @@
+// Apresenta as revisões do catálogo para permitir auditar alterações anteriores.
 "use client";
 import { SourceFields } from "../SourceFields";
 import type { RefObject } from "react";
@@ -21,7 +22,7 @@ export function CatalogHistory({ history, onClose, historyRef }: Props) {
     <section
       ref={historyRef}
       data-testid="catalog-history"
-      className="my-6 rounded-2xl border bg-white p-4 sm:p-6"
+      className="my-6 rounded-2xl border bg-[var(--portal-white)] p-4 sm:p-6"
     >
       <div className="flex flex-wrap justify-between gap-3">
         <h2 className="text-xl">
@@ -40,7 +41,6 @@ export function CatalogHistory({ history, onClose, historyRef }: Props) {
             <p className="my-2 text-sm">
               {new Date(h.updatedAt).toLocaleString()} · {h.reason}
             </p>
-            <p className="break-all text-xs">{h.id}</p>
             <details className="mt-2 text-sm">
               <summary className="cursor-pointer py-2">
                 <T text="Ver dados desta revisão" source="pt" />

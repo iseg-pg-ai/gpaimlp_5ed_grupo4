@@ -1,5 +1,7 @@
-import { jsonError, noStoreHeaders } from "@/lib/api-response";
+// Endpoint: executa a limpeza elegível segundo a política de retenção e a data operacional.
+import { jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";
 import { checkTripId, VersionStore } from "@/lib/version-store";
+import { syncOperationalState } from "@/lib/operational-s3";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +11,8 @@ function todayInPortugal() {
 }
 
 export async function POST(request: Request) {
+  const forbidden = rejectForeignOrigin(request);
+  if (forbidden) return forbidden;
   let tripIds: string[];
   let confirmedTripIds: string[];
   let confirmedVersions: Array<{ tripId: string; version: number }>;
@@ -38,12 +42,16 @@ export async function POST(request: Request) {
 
   const store = new VersionStore();
   try {
-    return Response.json(
-      store.cleanupExpiredTrash(tripIds, todayInPortugal(), confirmedTripIds, confirmedVersions),
-      {
-        headers: noStoreHeaders,
-      },
+    const result = store.cleanupExpiredTrash(
+      tripIds,
+      todayInPortugal(),
+      confirmedTripIds,
+      confirmedVersions,
     );
+    await syncOperationalState();
+    return Response.json(result, {
+      headers: noStoreHeaders,
+    });
   } catch (error) {
     console.error("Trash cleanup failed", error);
     return jsonError("Não foi possível concluir a limpeza automática.", 500, noStoreHeaders);

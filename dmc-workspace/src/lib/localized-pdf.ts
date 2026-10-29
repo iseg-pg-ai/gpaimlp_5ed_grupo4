@@ -1,7 +1,14 @@
+// Prepara os textos localizados antes da renderização, preservando o snapshot guardado.
 import { renderPdf, type Snapshot, type VersionMeta } from "./itinerary-pdf.ts";
 import { translateLocal } from "./local-translation.ts";
 import type { Locale } from "./locales";
-export async function renderLocalizedPdf(snapshot: Snapshot, meta: VersionMeta, locale: Locale) {
+// Preparar a tradução da entrega sem reescrever o snapshot autoritativo.
+export async function renderLocalizedPdf(
+  snapshot: Snapshot,
+  meta: VersionMeta,
+  locale: Locale,
+  translator = translateLocal,
+) {
   const b = snapshot.brief;
   const english = [
     ...new Set(
@@ -16,7 +23,7 @@ export async function renderLocalizedPdf(snapshot: Snapshot, meta: VersionMeta, 
       ].filter(Boolean),
     ),
   ].sort((a, b) => b.length - a.length);
-  const portuguese = await translateLocal(
+  const portuguese = await translator(
     english.map((text) => ({ text, source: "en" })),
     "pt",
   );
@@ -34,7 +41,7 @@ export async function renderLocalizedPdf(snapshot: Snapshot, meta: VersionMeta, 
         text.startsWith(prefix),
       ),
   );
-  const values = await translateLocal(
+  const values = await translator(
     texts.map((text) => ({ text, source: "pt" })),
     locale,
   );
@@ -64,15 +71,12 @@ export async function renderLocalizedPdf(snapshot: Snapshot, meta: VersionMeta, 
   const labels = [
     "Versão",
     "Criada em",
-    "Viagem",
-    "SHA-256 do conteúdo",
-    "SHA-256 da cadeia",
     "Fonte",
     "Referência da reserva",
     "Contacto",
     "Fornecedor",
   ];
-  const translatedLabels = await translateLocal(
+  const translatedLabels = await translator(
     labels.map((text) => ({ text, source: "pt" })),
     locale,
   );

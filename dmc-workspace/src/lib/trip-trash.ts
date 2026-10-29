@@ -1,3 +1,5 @@
+// Gere o Lixo dos rascunhos no navegador, separado do histórico autoritativo das versões no
+// servidor.
 import type { Locale } from "./locales";
 import type { ChatMessage, CustomerBrief, ItineraryDay } from "../types/index";
 

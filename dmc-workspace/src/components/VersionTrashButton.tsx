@@ -1,5 +1,6 @@
+// Solicita a passagem de uma versão para o Lixo através da operação autorizada no servidor.
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch } from "@/lib/http-client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -46,7 +47,7 @@ export function VersionTrashButton({
         type="button"
         onClick={run}
         disabled={busy}
-        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#D5D1C7] px-3 py-2 text-sm text-[#70443E] hover:bg-[#F7E9E6] disabled:opacity-50"
+        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[var(--portal-line-d5d1c7)] px-3 py-2 text-sm text-[var(--portal-text-70443e)] hover:bg-[var(--portal-bg-f7e9e6)] disabled:opacity-50"
       >
         {restore ? <RotateCcw className="size-4" /> : <Trash2 className="size-4" />}
         <T

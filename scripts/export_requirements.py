@@ -1,3 +1,5 @@
+# Exporta os requirements a partir dos lockfiles; estes ficheiros não são uma segunda fonte
+# de dependências.
 """Export pip requirements from uv.lock; --check detects stale exports in CI."""
 import argparse
 from pathlib import Path
@@ -7,7 +9,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 EXPORTS = {
     "requirements.txt": [],
-    "translations/requirements.txt": ["--only-group", "translation"],
+    "translations/requirements.txt": ["--only-group", "translation", "--emit-index-url"],
 }
 
 

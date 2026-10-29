@@ -102,6 +102,8 @@ for (const method of ["document", "link"])
       locale: "pt",
       method,
       recipient: "validation@example.com",
+      consent: true,
+      retentionDays: 7,
     });
     const data = await r.json();
     assert.equal(r.status, 201, JSON.stringify(data));
@@ -142,10 +144,6 @@ await check("Version trash and restore", async () => {
       action === "trash",
     );
   }
-});
-await check("AI agent service", async () => {
-  const r = await fetch("http://127.0.0.1:8000/docs", { signal: AbortSignal.timeout(5000) });
-  assert.equal(r.status, 200);
 });
 process.exitCode = results.some((result) => !result.ok) ? 1 : 0;
 console.log(

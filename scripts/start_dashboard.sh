@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Arranca o Observatório no ambiente Python do projeto, separado do editor operacional.
 #
 # Starts the local Streamlit dashboard after confirming a warehouse exists.
 
@@ -14,13 +15,14 @@ REPOSITORY_ROOT="$(dirname "$SCRIPT_DIR")"
 # Locate the project-local interpreter and its dashboard source.
 PYTHON="$REPOSITORY_ROOT/.venv/bin/python"
 APPLICATION="$REPOSITORY_ROOT/dashboard/app.py"
-WAREHOUSE="$REPOSITORY_ROOT/warehouse/blu_etl.sqlite"
+WAREHOUSE_ROOT="${BLU_WAREHOUSE_DIR:-$REPOSITORY_ROOT/warehouse}"
+WAREHOUSE="$WAREHOUSE_ROOT/blu_etl.sqlite"
 
 cd "$REPOSITORY_ROOT"
 
 # A dashboard without a warehouse would only show an error state.
 if [[ ! -f "$WAREHOUSE" ]]; then
-    echo "Error: Warehouse missing. Run ./scripts/run_full_pipeline.sh first." >&2
+    echo "Warehouse ausente. Executar: uv run --no-default-groups python -m etl.pipeline --data-dir data --output-dir warehouse" >&2
     exit 1
 fi
 
@@ -31,7 +33,24 @@ if [[ ! -x "$PYTHON" ]]; then
     exit 1
 fi
 
+if ! "$PYTHON" -c 'import streamlit, plotly' >/dev/null 2>&1; then
+    echo "Instalar o dashboard: uv sync --locked --inexact --group dashboard" >&2
+    exit 1
+fi
+
+# Endereço público configurado; a porta local continua independente do proxy.
+DASHBOARD_URL="${BLU_DASHBOARD_PUBLIC_URL:-}"
+if [[ -z "$DASHBOARD_URL" ]]; then
+    DASHBOARD_ORIGIN="$("$PYTHON" -B scripts/studio_urls.py --origin)"
+    DASHBOARD_URL="$("$PYTHON" -B scripts/studio_urls.py --port "$PORT")"
+else
+    DASHBOARD_ORIGIN="${DASHBOARD_URL%/}"
+fi
+printf 'Dashboard analítico: %s\n' "$DASHBOARD_URL"
+
 # Start Streamlit in the foreground so the operator sees logs and can stop it with Ctrl+C.
 exec "$PYTHON" -m streamlit run "$APPLICATION" \
     --server.headless true \
-    --server.port "$PORT"
+    --server.address "${BLU_BIND_HOST:-127.0.0.1}" \
+    --server.port "$PORT" \
+    --browser.serverAddress "${DASHBOARD_ORIGIN#https://}"

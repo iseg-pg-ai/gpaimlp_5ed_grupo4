@@ -1,5 +1,6 @@
+// Recolhe os detalhes da confirmação humana sem os deduzir da existência de uma proposta.
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch } from "@/lib/http-client";
 
 import { useEffect, useRef, useState } from "react";
 import type { ActivityItem } from "@/types";
@@ -104,7 +105,7 @@ export function ActivityConfirmationEditor({
   return (
     <details
       data-testid="activity-confirmations"
-      className="mt-4 rounded-xl border border-[#C5D4D8] bg-[#F5F8F8] p-4"
+      className="mt-4 rounded-xl border border-[var(--portal-line-c5d4d8)] bg-[var(--portal-bg-f5f8f8)] p-4"
     >
       <summary className="cursor-pointer text-sm font-semibold">
         <T text="Dados e confirmações" source="pt" /> ·{" "}
@@ -131,7 +132,7 @@ export function ActivityConfirmationEditor({
         </div>
       )}
       {catalog && (
-        <div className="mb-4 space-y-2 rounded-lg border bg-white p-3 text-sm">
+        <div className="mb-4 space-y-2 rounded-lg border bg-[var(--portal-white)] p-3 text-sm">
           <p className="font-semibold">
             <T text="Informação do catálogo" source="pt" />
           </p>
@@ -175,7 +176,7 @@ export function ActivityConfirmationEditor({
         </p>
       )}
       {notice && (
-        <p role="status" className="my-3 text-sm text-[#245C49]">
+        <p role="status" className="my-3 text-sm text-[var(--portal-text-245c49)]">
           <T text={notice} source="pt" />
         </p>
       )}
@@ -191,7 +192,7 @@ export function ActivityConfirmationEditor({
                 <textarea
                   name={`confirmation-${key}`}
                   maxLength={4000}
-                  className="mt-1 w-full rounded-lg border bg-white p-3"
+                  className="mt-1 w-full rounded-lg border bg-[var(--portal-white)] p-3"
                   value={value[key]}
                   onChange={(e) => change({ [key]: e.target.value })}
                 />
@@ -200,7 +201,7 @@ export function ActivityConfirmationEditor({
                   name={`confirmation-${key}`}
                   type={key === "time" ? "time" : "text"}
                   maxLength={4000}
-                  className="mt-1 w-full min-w-0 rounded-lg border bg-white p-3"
+                  className="mt-1 w-full min-w-0 rounded-lg border bg-[var(--portal-white)] p-3"
                   value={value[key]}
                   onChange={(e) => change({ [key]: e.target.value })}
                 />
@@ -209,10 +210,11 @@ export function ActivityConfirmationEditor({
           ))}
         </div>
         {value.checks.map((check, index) => (
-          <div key={check.label} className="rounded-lg border bg-white p-3">
+          <div key={check.label} className="rounded-lg border bg-[var(--portal-white)] p-3">
             <label className="block text-sm">
               <T text={check.label} source="pt" />
               <textarea
+                name="confirmationDetails"
                 aria-label={check.label}
                 maxLength={4000}
                 value={check.details}
@@ -228,6 +230,7 @@ export function ActivityConfirmationEditor({
             </label>
             <label className="mt-2 flex items-center gap-2 text-sm">
               <input
+                name="confirmationResolved"
                 type="checkbox"
                 checked={check.resolved}
                 onChange={(e) =>
@@ -245,7 +248,7 @@ export function ActivityConfirmationEditor({
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
-            className="min-h-11 rounded-lg border bg-white px-4 py-2 text-sm"
+            className="min-h-11 rounded-lg border bg-[var(--portal-white)] px-4 py-2 text-sm"
             onClick={() => save(false)}
           >
             <T
@@ -259,7 +262,7 @@ export function ActivityConfirmationEditor({
           </button>
           <button
             type="button"
-            className="min-h-11 rounded-lg bg-[#2D5B67] px-4 py-2 text-sm text-white"
+            className="min-h-11 rounded-lg bg-[var(--portal-bg-2d5b67)] px-4 py-2 text-sm text-white"
             onClick={() => save(true)}
           >
             <T text="Confirmar atividade" source="pt" />

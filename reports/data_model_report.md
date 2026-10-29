@@ -1,11 +1,11 @@
 # Modelo de dados do warehouse BLU
 
+Este guia descreve o modelo publicado pelo ETL, não uma medição do volume de dados atual. O inventário completo de uma release pertence ao seu manifesto.
+O catálogo operacional editável e o histórico de versões são bases distintas.
+
 ## Abordagem
 
-O warehouse usa um modelo analítico pragmático. Cada folha das fontes representa
-uma entidade de negócio; o corpus de PDFs é representado pela relação entre
-documentos e páginas. Os ficheiros JSONL preservam entregas portáteis por registo e
-o SQLite fornece a camada de consulta usada pelo dashboard.
+O warehouse usa um modelo analítico pragmático. Cada folha das fontes representa uma entidade de negócio; o corpus de PDFs é representado pela relação entre documentos e páginas. Os ficheiros JSONL preservam entregas portáteis por registo e o SQLite fornece a camada de consulta usada pelo dashboard.
 
 | Entidade | Grão | Chave de negócio | Finalidade |
 | --- | --- | --- | --- |
@@ -21,35 +21,28 @@ o SQLite fornece a camada de consulta usada pelo dashboard.
 
 ## Relações e linhagem
 
-`proposal_documents` tem uma relação de um para muitos com `proposal_pages` por
-`document_id`. Cada registo de uma folha mantém `_source_sheet` e `_source_row`.
-Cada PDF mantém `source_file` e cada página mantém `page_number`. O ETL valida que
-não existem páginas órfãs.
+`proposal_documents` tem uma relação de um para muitos com `proposal_pages` por `document_id`. Cada registo de uma folha mantém `_source_sheet` e `_source_row`.
+Cada PDF mantém `source_file` e cada página mantém `page_number`. O ETL valida que não existem páginas órfãs.
 
-O identificador do documento representa uma instância do ficheiro fornecido. O
-`content_sha256` permite detetar conteúdo duplicado sem fundir ficheiros entregues
-separadamente.
+O identificador do documento representa uma instância do ficheiro fornecido. O `content_sha256` permite detetar conteúdo duplicado sem fundir ficheiros entregues separadamente.
+
+## Complementos e evidência
+
+As tabelas `structured_*` preservam as folhas do suplemento. O cruzamento por chave exata conserva conflitos e alterações em tabelas próprias, sem substituir silenciosamente valores conhecidos. Ver [Dataset complementar](../docs/DATA_PIPELINE.md#dataset-estruturado-complementar).
+
+`model_observatory_catalog`, `model_observatory_prices` e `model_field_evidence` acrescentam normalização e evidência por campo. Estado temporal é reavaliado na consulta; não equivale a preço ou disponibilidade confirmados. O contrato está em [Observatório](../docs/OBSERVATORY.md).
 
 ## Camada analítica
 
 São publicados dois modelos explicáveis:
 
-1. `model_catalog_readiness` calcula a percentagem de campos necessários à
-   curadoria que estão preenchidos em cada atração, restaurante e experiência.
-2. `model_proposal_complexity` estima o esforço de processamento da proposta com
-   45% do número de páginas, 45% do volume de texto extraído e 10% da densidade de
-   referências a preços.
+1. `model_catalog_readiness` calcula a percentagem de campos necessários à curadoria que estão preenchidos em cada atração, restaurante e experiência.
+2. `model_proposal_complexity` estima o esforço de processamento da proposta com 45% do número de páginas, 45% do volume de texto extraído e 10% da densidade de referências a preços.
 
-Os scores são normalizados dentro do corpus atual. Não são modelos preditivos: as
-fontes não incluem uma variável de resultado observada, como conversão, receita,
-satisfação ou aceitação do itinerário.
+Os scores são normalizados dentro do corpus atual. Não são modelos preditivos: as fontes não incluem uma variável de resultado observada, como conversão, receita, satisfação ou aceitação do itinerário.
 
 ## Qualidade dos dados
 
-A validação estrutural verifica chaves obrigatórias e únicas, intervalos válidos de
-coordenadas e a relação entre documentos e páginas. O relatório de validação também
-mantém a completude dos campos opcionais para orientar o enriquecimento de atributos
-geográficos, operacionais e comerciais.
+A validação estrutural verifica chaves obrigatórias e únicas, intervalos válidos de coordenadas e a relação entre documentos e páginas. O relatório de validação também mantém a completude dos campos opcionais para orientar o enriquecimento de atributos geográficos, operacionais e comerciais.
 
-Consulte o [contrato do ETL](../README_ETL.md) para os artefactos publicados e as
-regras de substituição do warehouse.
+Consulte o [contrato do ETL](../docs/DATA_PIPELINE.md) para os artefactos publicados e as regras de substituição do warehouse.

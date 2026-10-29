@@ -1,9 +1,34 @@
+// Comunica com o worker local por pedidos identificados e converte falhas em erros
+// controlados.
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync } from "node:fs";
-import { TranslationError } from "./translation-error.ts";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import type { Locale } from "./locales";
+const messages = {
+  PYTHON_UNAVAILABLE:
+    "Python da tradução indisponível. Crie o ambiente .venv na raiz do projeto ou configure BLU_TRANSLATION_PYTHON e reinicie o portal.",
+  TRANSLATION_DEPENDENCIES_MISSING:
+    "Faltam bibliotecas da tradução local. No Python usado pelo portal, execute: python -m pip install --no-deps -r translations/requirements.txt (na raiz do projeto).",
+  TRANSLATION_MODELS_MISSING:
+    "Faltam modelos de tradução. No Python usado pelo portal, execute: python translations/setup_models.py (na raiz do projeto). A instalação inicial requer internet.",
+  TRANSLATION_TIMEOUT:
+    "A tradução excedeu o tempo disponível. Tente novamente; o roteiro guardado foi preservado.",
+  TRANSLATION_FAILED:
+    "A tradução local falhou. Consulte o terminal do servidor para o diagnóstico; o roteiro guardado foi preservado.",
+} as const;
+type TranslationErrorCode = keyof typeof messages;
+export class TranslationError extends Error {
+  code: TranslationErrorCode;
+  constructor(code: string) {
+    const known = Object.hasOwn(messages, code)
+      ? (code as TranslationErrorCode)
+      : "TRANSLATION_FAILED";
+    super(messages[known]);
+    this.code = known;
+  }
+}
+
 type TranslationItem = { text: string; source: "pt" | "en" };
 type Pending = {
   resolve: (texts: string[]) => void;
@@ -17,6 +42,7 @@ type Worker = {
   pending: Map<number, Pending>;
 };
 const globalWorker = globalThis as typeof globalThis & { bluTranslationWorker?: Worker };
+// Reutilizar o subprocesso e encaminhar as respostas pelo identificador do pedido.
 function getWorker(): Worker {
   if (
     globalWorker.bluTranslationWorker?.revision === 3 &&

@@ -1,5 +1,6 @@
+// Permite escolher uma atividade elegível para acrescentar ao dia em revisão.
 "use client";
-import { portalFetch } from "@/lib/portal-url";
+import { portalFetch } from "@/lib/http-client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { T } from "@/components/LocaleProvider";
@@ -183,26 +184,26 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-xs animate-in fade-in"
     >
-      <div className="bg-[#FAF8F3] border border-[#DDD8CE] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-[var(--portal-bg-faf8f3)] border border-[var(--portal-line-ddd8ce)] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-[#DDD8CE] bg-white flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-[var(--portal-line-ddd8ce)] bg-[var(--portal-white)] flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <Badge variant="teal" className="text-xs font-semibold">
                 Dia {dayNumber}
               </Badge>
-              <span className="text-xs text-[#4A636B] flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-[#A8A49C]" />
+              <span className="text-xs text-[var(--portal-text-4a636b)] flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-[var(--portal-text-a8a49c)]" />
                 {dayLocation}
               </span>
             </div>
-            <h2 className="mt-1 font-serif-blu text-xl font-bold text-[#143F4B]">
+            <h2 className="mt-1 font-serif-blu text-xl font-bold text-[var(--portal-text-143f4b)]">
               <T text="Adicionar Atividade ao Dia" source="pt" /> {dayNumber}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-[#4A636B] hover:text-[#143F4B] hover:bg-[#F4F0E7] rounded-lg transition-colors"
+            className="p-2 text-[var(--portal-text-4a636b)] hover:text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-f4f0e7)] rounded-lg transition-colors"
             aria-label="Fechar modal"
           >
             <X className="w-5 h-5" />
@@ -210,12 +211,12 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
         </div>
 
         {/* Capacity status & adjuster */}
-        <div className="px-4 sm:px-5 py-3 bg-[#F4F0E7]/80 border-b border-[#E6E1D5] flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
+        <div className="px-4 sm:px-5 py-3 bg-[var(--portal-bg-f4f0e7)]/80 border-b border-[var(--portal-line-e6e1d5)] flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-[#143F4B]">
+            <span className="font-medium text-[var(--portal-text-143f4b)]">
               <T text="Capacidade deste dia:" source="pt" />
             </span>
-            <span className="text-[#4A636B]">
+            <span className="text-[var(--portal-text-4a636b)]">
               {currentPoiCount} / {dayCapacity} <T text="atividades" source="pt" />
             </span>
             {isAtCapacity ? (
@@ -224,14 +225,14 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
                 <T text="Capacidade será aumentada automaticamente ao adicionar" source="pt" />
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[#2D5B67] bg-[#E7EEF0] px-2 py-0.5 rounded text-xs font-medium">
+              <span className="inline-flex items-center gap-1 text-[var(--portal-text-2d5b67)] bg-[var(--portal-bg-e7eef0)] px-2 py-0.5 rounded text-xs font-medium">
                 {dayCapacity - currentPoiCount} <T text="vagas disponíveis" source="pt" />
               </span>
             )}
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-[#6A8288]">
+            <span className="text-xs text-[var(--portal-text-6a8288)]">
               <T text="Ajustar limite:" source="pt" />
             </span>
             <Button
@@ -244,7 +245,9 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
             >
               -
             </Button>
-            <span className="px-1.5 font-semibold text-[#143F4B]">{dayCapacity}</span>
+            <span className="px-1.5 font-semibold text-[var(--portal-text-143f4b)]">
+              {dayCapacity}
+            </span>
             <Button
               variant="outline"
               size="sm"
@@ -272,21 +275,23 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
         )}
 
         {/* Search and Filters */}
-        <div className="p-4 sm:p-5 border-b border-[#DDD8CE] bg-white space-y-3">
-          <p className="text-xs text-[#4A636B]">
+        <div className="p-4 sm:p-5 border-b border-[var(--portal-line-ddd8ce)] bg-[var(--portal-white)] space-y-3">
+          <p className="text-xs text-[var(--portal-text-4a636b)]">
             <T
               text="São apresentadas apenas ofertas compatíveis com o briefing, a data, o orçamento, os horários e as regras de curadoria."
               source="pt"
             />
           </p>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A49C]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--portal-text-a8a49c)]" />
             <input
+              name="poiSearch"
+              aria-label="Pesquisar experiências"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Pesquisar por nome, atração, restaurante ou experiência…"
-              className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-[#D5D1C7] bg-[#FAF8F3] focus:outline-hidden focus:ring-2 focus:ring-[#143F4B]/20 text-[#143F4B]"
+              className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-[var(--portal-line-d5d1c7)] bg-[var(--portal-bg-faf8f3)] focus:outline-hidden focus:ring-2 focus:ring-[var(--portal-line-143f4b)]/20 text-[var(--portal-text-143f4b)]"
             />
           </div>
 
@@ -295,8 +300,8 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
               onClick={() => setCategoryFilter("all")}
               className={`px-3 py-1.5 rounded-lg border transition-colors ${
                 categoryFilter === "all"
-                  ? "bg-[#143F4B] text-white border-[#143F4B]"
-                  : "bg-white text-[#4A636B] border-[#D5D1C7] hover:bg-[#FAF8F3]"
+                  ? "bg-[var(--portal-bg-143f4b)] text-white border-[var(--portal-line-143f4b)]"
+                  : "bg-[var(--portal-white)] text-[var(--portal-text-4a636b)] border-[var(--portal-line-d5d1c7)] hover:bg-[var(--portal-bg-faf8f3)]"
               }`}
             >
               <T text="Todas as Categorias" source="pt" />
@@ -305,8 +310,8 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
               onClick={() => setCategoryFilter("atracoes")}
               className={`px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 ${
                 categoryFilter === "atracoes"
-                  ? "bg-[#143F4B] text-white border-[#143F4B]"
-                  : "bg-white text-[#4A636B] border-[#D5D1C7] hover:bg-[#FAF8F3]"
+                  ? "bg-[var(--portal-bg-143f4b)] text-white border-[var(--portal-line-143f4b)]"
+                  : "bg-[var(--portal-white)] text-[var(--portal-text-4a636b)] border-[var(--portal-line-d5d1c7)] hover:bg-[var(--portal-bg-faf8f3)]"
               }`}
             >
               <Compass className="w-3.5 h-3.5" />
@@ -316,8 +321,8 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
               onClick={() => setCategoryFilter("restaurantes")}
               className={`px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 ${
                 categoryFilter === "restaurantes"
-                  ? "bg-[#143F4B] text-white border-[#143F4B]"
-                  : "bg-white text-[#4A636B] border-[#D5D1C7] hover:bg-[#FAF8F3]"
+                  ? "bg-[var(--portal-bg-143f4b)] text-white border-[var(--portal-line-143f4b)]"
+                  : "bg-[var(--portal-white)] text-[var(--portal-text-4a636b)] border-[var(--portal-line-d5d1c7)] hover:bg-[var(--portal-bg-faf8f3)]"
               }`}
             >
               <UtensilsCrossed className="w-3.5 h-3.5" />
@@ -327,8 +332,8 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
               onClick={() => setCategoryFilter("experiencias")}
               className={`px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 ${
                 categoryFilter === "experiencias"
-                  ? "bg-[#143F4B] text-white border-[#143F4B]"
-                  : "bg-white text-[#4A636B] border-[#D5D1C7] hover:bg-[#FAF8F3]"
+                  ? "bg-[var(--portal-bg-143f4b)] text-white border-[var(--portal-line-143f4b)]"
+                  : "bg-[var(--portal-white)] text-[var(--portal-text-4a636b)] border-[var(--portal-line-d5d1c7)] hover:bg-[var(--portal-bg-faf8f3)]"
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -340,14 +345,14 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
         {/* POI List */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
           {loading ? (
-            <p className="text-center py-10 text-sm text-[#4A636B]">
+            <p className="text-center py-10 text-sm text-[var(--portal-text-4a636b)]">
               <T text="A carregar ofertas do catálogo…" source="pt" />
             </p>
           ) : error ? (
             <p className="text-center py-10 text-sm text-red-700">{error}</p>
           ) : filteredRecords.length === 0 ? (
-            <div className="text-center py-12 text-[#4A636B]">
-              <p className="text-base font-medium text-[#143F4B]">
+            <div className="text-center py-12 text-[var(--portal-text-4a636b)]">
+              <p className="text-base font-medium text-[var(--portal-text-143f4b)]">
                 <T text="Nenhuma oferta encontrada" source="pt" />
               </p>
               <p className="text-xs mt-1">
@@ -364,11 +369,11 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
               const compatIssue = getCompatibilityIssue(rec);
               const catIcon =
                 rec.category === "restaurantes" ? (
-                  <UtensilsCrossed className="w-3.5 h-3.5 text-[#D8A65C]" />
+                  <UtensilsCrossed className="w-3.5 h-3.5 text-[var(--portal-text-d8a65c)]" />
                 ) : rec.category === "experiencias" ? (
-                  <Sparkles className="w-3.5 h-3.5 text-[#2D5B67]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--portal-text-2d5b67)]" />
                 ) : (
-                  <Compass className="w-3.5 h-3.5 text-[#4A636B]" />
+                  <Compass className="w-3.5 h-3.5 text-[var(--portal-text-4a636b)]" />
                 );
 
               const catLabel =
@@ -381,26 +386,26 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
               return (
                 <div
                   key={rec.id}
-                  className={`p-3.5 sm:p-4 rounded-xl border bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                  className={`p-3.5 sm:p-4 rounded-xl border bg-[var(--portal-white)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
                     isAlreadyAdded
-                      ? "border-[#DDD8CE] opacity-60"
-                      : "border-[#E2DED5] hover:border-[#143F4B]"
+                      ? "border-[var(--portal-line-ddd8ce)] opacity-60"
+                      : "border-[var(--portal-line-e2ded5)] hover:border-[var(--portal-line-143f4b)]"
                   }`}
                 >
                   <div className="space-y-1 min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#143F4B]">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--portal-text-143f4b)]">
                         {catIcon}
                         {catLabel}
                       </span>
                       {rec.fields.duration && (
-                        <span className="text-xs text-[#6A8288] flex items-center gap-1">
+                        <span className="text-xs text-[var(--portal-text-6a8288)] flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {rec.fields.duration}
                         </span>
                       )}
                       {rec.fields.price && (
-                        <span className="text-xs text-[#765218] bg-amber-50/80 px-2 py-0.5 rounded">
+                        <span className="text-xs text-[var(--portal-text-765218)] bg-amber-50/80 px-2 py-0.5 rounded">
                           {rec.fields.price}
                         </span>
                       )}
@@ -414,9 +419,11 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
                         </span>
                       )}
                     </div>
-                    <h3 className="font-semibold text-base text-[#143F4B] truncate">{name}</h3>
+                    <h3 className="font-semibold text-base text-[var(--portal-text-143f4b)] truncate">
+                      {name}
+                    </h3>
                     {rec.fields.description && (
-                      <p className="text-xs text-[#4A636B] line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-[var(--portal-text-4a636b)] line-clamp-2 leading-relaxed">
                         {rec.fields.description}
                       </p>
                     )}
@@ -424,7 +431,10 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
 
                   <div className="shrink-0 flex items-center gap-2">
                     {isAlreadyAdded ? (
-                      <Badge variant="outline" className="text-xs gap-1 text-[#4A636B]">
+                      <Badge
+                        variant="outline"
+                        className="text-xs gap-1 text-[var(--portal-text-4a636b)]"
+                      >
                         <Check className="w-3 h-3 text-emerald-600" />
                         <T text="No roteiro" source="pt" />
                       </Badge>
@@ -455,7 +465,7 @@ export const AddPoiModal: React.FC<AddPoiModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-3 sm:p-4 border-t border-[#DDD8CE] bg-white flex justify-end">
+        <div className="p-3 sm:p-4 border-t border-[var(--portal-line-ddd8ce)] bg-[var(--portal-white)] flex justify-end">
           <Button variant="outline" size="sm" onClick={onClose} className="text-xs">
             <T text="Fechar" source="pt" />
           </Button>

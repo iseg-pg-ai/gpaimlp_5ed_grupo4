@@ -1,3 +1,4 @@
+// Define as verificações estáticas do portal e as exclusões dos artefactos gerados.
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";

@@ -1,3 +1,4 @@
+// Controlos de entrada da conversa; o texto continua sujeito à validação do servidor.
 "use client";
 
 import * as React from "react";
@@ -19,7 +20,7 @@ export const PromptInput = React.forwardRef<HTMLFormElement, PromptInputProps>(
         ref={ref}
         onSubmit={handleFormSubmit}
         className={cn(
-          "relative flex flex-col rounded-xl border border-[#DFD9CE] bg-white shadow-2xs focus-within:border-[#E27151] focus-within:ring-1 focus-within:ring-[#E27151] transition-all",
+          "relative flex flex-col rounded-xl border border-[var(--portal-line-dfd9ce)] bg-[var(--portal-white)] shadow-2xs focus-within:border-[var(--portal-line-e27151)] focus-within:ring-1 focus-within:ring-[var(--portal-line-e27151)] transition-all",
           className,
         )}
         {...props}
@@ -67,7 +68,7 @@ export const PromptInputTextarea = React.forwardRef<HTMLInputElement, PromptInpu
         type="text"
         onKeyDown={handleKeyDown}
         className={cn(
-          "w-full bg-transparent px-2.5 py-1.5 text-xs text-[#1A1917] placeholder:text-[#8F8B82] focus:outline-hidden",
+          "w-full bg-transparent px-2.5 py-1.5 text-xs text-[var(--portal-text-1a1917)] placeholder:text-[var(--portal-text-8f8b82)] focus:outline-hidden",
           className,
         )}
         {...props}
@@ -130,7 +131,7 @@ export const PromptInputFooter: React.FC<React.HTMLAttributes<HTMLDivElement>> =
   return (
     <div
       className={cn(
-        "flex items-center justify-between px-3 py-1.5 text-[10px] text-[#8F8B82] border-t border-[#F0ECE4] bg-[#FFFEF9]/60 rounded-b-xl",
+        "flex items-center justify-between px-3 py-1.5 text-[10px] text-[var(--portal-text-8f8b82)] border-t border-[var(--portal-line-f0ece4)] bg-[var(--portal-bg-fffef9)]/60 rounded-b-xl",
         className,
       )}
       {...props}

@@ -1,3 +1,5 @@
+# Constrói indicadores e modelos analíticos a partir das tabelas extraídas, sem substituir os
+# dados de origem.
 """KPI generation and transparent analytical scoring models for BLU records."""
 
 from __future__ import annotations
@@ -75,7 +77,11 @@ def build_analytics(tables: dict[str, list[dict[str, Any]]], validation_report: 
         "catalog_readiness": {"description": "Percent of itinerary-curation fields populated; no predictive assumptions.", "records": len(readiness)},
         "proposal_complexity": {"description": "45% page count, 45% text volume, 10% price-reference density; scores are normalized within this corpus.", "records": len(complexity)},
     }
-    return kpis, models, {"model_catalog_readiness": readiness, "model_proposal_complexity": complexity}
+    from etl.observatory import build_observatory, rules, CONFIG
+    import hashlib
+    observatory = build_observatory(tables)
+    models["observatory"] = {"description": "Normalização explícita e evidência por campo; valores das fontes preservados.", "contract_version": rules()["version"], "rules_sha256": hashlib.sha256(CONFIG.read_bytes()).hexdigest()}
+    return kpis, models, {"model_catalog_readiness": readiness, "model_proposal_complexity": complexity, **observatory}
 
 
 def level(score: float) -> str:

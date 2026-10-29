@@ -1,6 +1,9 @@
+// Entrada do workspace de curadoria, que liga o estado da viagem aos controlos de edição e
+// revisão.
 "use client";
 
-import { portalUrl } from "@/lib/portal-url";
+import { presentationText } from "@/lib/presentation-text";
+import { portalUrl } from "@/lib/http-client";
 import { T, useLocale, LanguagePicker, useTranslated } from "@/components/LocaleProvider";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
@@ -21,6 +24,10 @@ export default function WorkspacePage() {
   const [desktopAssistantCollapsed, setDesktopAssistantCollapsed] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shareDefaults, setShareDefaults] = useState<{
+    locale: import("@/lib/locales").Locale;
+    method: "link" | "document";
+  } | null>(null);
   const assistantLabel = useTranslated("Curation Assistant");
   const assistantButton = useRef<HTMLButtonElement>(null);
   const {
@@ -32,6 +39,8 @@ export default function WorkspacePage() {
     draft,
     formKey,
     saving,
+    reopening,
+    reopenedVersion,
     exporting,
     error,
     storageError,
@@ -42,11 +51,18 @@ export default function WorkspacePage() {
     update,
     exportPdf,
     exportPrompt,
+    exportPrepared,
     reopenLatest,
     trashVersion,
     generate,
     send,
     assistantBusy,
+    assistantLanguage,
+    changeAssistantLanguage,
+    agentProposal,
+    decideAgentProposal,
+    selectAgentAlternative,
+    dismissAgentProposal,
     setEditing,
     startNewTrip,
     selectTrip,
@@ -61,10 +77,10 @@ export default function WorkspacePage() {
     adjustDayCapacity,
   } = useWorkspace();
   return (
-    <div className="responsive-workspace relative flex flex-col lg:flex-row h-full bg-[#F4F0E7]">
+    <div className="responsive-workspace portal-frame relative flex flex-col lg:flex-row h-full bg-[var(--portal-bg-f4f0e7)]">
       <button
         type="button"
-        className="lg:hidden shrink-0 min-h-11 px-4 py-2 border-b text-left text-sm bg-[#EBE5DA]"
+        className="lg:hidden shrink-0 min-h-11 px-4 py-2 border-b text-left text-sm bg-[var(--portal-bg-ebe5da)]"
         aria-expanded={navigationOpen}
         aria-controls="trip-navigation"
         onClick={() => setNavigationOpen((v) => !v)}
@@ -95,7 +111,7 @@ export default function WorkspacePage() {
       >
         {(error || storageError) && (
           <p role="alert" className="p-4 text-red-800">
-            <T text={error || storageError} source="pt" />
+            <T text={presentationText(error || storageError)} source="pt" />
           </p>
         )}
         {busy ? (
@@ -159,6 +175,18 @@ export default function WorkspacePage() {
                         >
                           <T text="Reabrir última versão guardada" source="pt" />
                         </button>
+                        {(reopening || reopenedVersion !== null) && (
+                          <p role="status" className="my-2">
+                            {reopening ? (
+                              <T text="A reabrir a última versão guardada…" source="pt" />
+                            ) : (
+                              <>
+                                <T text="Versão reaberta:" source="pt" /> v
+                                {String(reopenedVersion).padStart(3, "0")}
+                              </>
+                            )}
+                          </p>
+                        )}
                         {(history.id === activeId ? history.versions : []).map((v) => (
                           <div key={v.version} className="my-2 break-words">
                             <a
@@ -176,7 +204,7 @@ export default function WorkspacePage() {
                               type="button"
                               onClick={() => trashVersion(v.version)}
                               disabled={saving || exporting}
-                              className="ml-2 inline-flex min-h-9 items-center gap-1 rounded-lg border border-[#D5D1C7] px-2 py-1 text-xs text-[#70443E] hover:bg-[#F7E9E6] disabled:opacity-50"
+                              className="ml-2 inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--portal-line-d5d1c7)] px-2 py-1 text-xs text-[var(--portal-text-70443e)] hover:bg-[var(--portal-bg-f7e9e6)] disabled:opacity-50"
                               title="Enviar apenas esta versão para o Lixo"
                             >
                               <Trash2 className="size-3.5" />
@@ -188,12 +216,12 @@ export default function WorkspacePage() {
                                 `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${v.version}&format=prompt&locale=${active.clientLanguage ?? clientLanguage}`,
                               )}
                             >
-                              <T text="TXT para Canva" source="pt" />
+                              <T text="Exportar TXT" source="pt" />
                             </a>
                           </div>
                         ))}
                       </details>
-                      {saving && (
+                      {saving && !reopening && (
                         <p role="status" className="px-4">
                           <T text="A guardar nova versão…" source="pt" />
                         </p>
@@ -260,11 +288,15 @@ export default function WorkspacePage() {
                     tripId={active.id}
                     currentVersion={active.version}
                     versions={history.id === active.id ? history.versions : []}
-                    defaultLocale={active.clientLanguage ?? clientLanguage}
+                    defaultLocale={shareDefaults?.locale ?? active.clientLanguage ?? clientLanguage}
+                    defaultMethod={shareDefaults?.method ?? "link"}
                     defaultEmail={active.brief.customerEmail}
                     customerName={active.brief.customerName}
                     destination={active.brief.destination}
-                    onClose={() => setShareOpen(false)}
+                    onClose={() => {
+                      setShareOpen(false);
+                      setShareDefaults(null);
+                    }}
                   />
                 )}
                 <section
@@ -281,7 +313,7 @@ export default function WorkspacePage() {
                     type="button"
                     aria-label={assistantLabel}
                     title={assistantLabel}
-                    className={`${desktopAssistantCollapsed ? "" : "xl:hidden"} fixed right-4 z-40 rounded-full bg-[#143F4B] text-[#F4F0E7] border border-[#D8A65C] shadow-xl flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D8A65C]`}
+                    className={`${desktopAssistantCollapsed ? "" : "xl:hidden"} fixed right-4 z-40 rounded-full bg-[var(--portal-bg-143f4b)] text-[#F4F0E7] border border-[var(--portal-line-d8a65c)] shadow-xl flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D8A65C]`}
                     style={{
                       width: 56,
                       height: 56,
@@ -310,12 +342,30 @@ export default function WorkspacePage() {
                     tabIndex={-1}
                     role="region"
                     aria-label={assistantLabel}
-                    className={`fixed right-4 bottom-20 z-40 w-[calc(100%-2rem)] max-w-sm h-[min(70dvh,36rem)] overflow-hidden rounded-2xl border border-[#D5D1C7] shadow-xl [&>aside]:h-full xl:static xl:w-full xl:max-w-none xl:h-full xl:rounded-none xl:border-0 xl:shadow-none ${assistantOpen ? "block" : "hidden"} ${desktopAssistantCollapsed ? "xl:hidden" : "xl:block"}`}
+                    className={`fixed right-4 bottom-20 z-40 w-[calc(100%-2rem)] max-w-sm h-[min(70dvh,36rem)] overflow-hidden rounded-2xl border border-[var(--portal-line-d5d1c7)] shadow-xl [&>aside]:h-full xl:static xl:w-full xl:max-w-none xl:h-full xl:rounded-none xl:border-0 xl:shadow-none ${assistantOpen ? "block" : "hidden"} ${desktopAssistantCollapsed ? "xl:hidden" : "xl:block"}`}
                   >
                     <AIAssistantPanel
+                      key={active.id}
                       onCollapse={() => {
                         setDesktopAssistantCollapsed(true);
                         requestAnimationFrame(() => assistantButton.current?.focus());
+                      }}
+                      language={assistantLanguage}
+                      onLanguageChange={changeAssistantLanguage}
+                      proposal={agentProposal}
+                      onDecideProposal={decideAgentProposal}
+                      onSelectAlternative={selectAgentAlternative}
+                      onDismissProposal={dismissAgentProposal}
+                      onPrepareDelivery={(delivery) => {
+                        if (delivery.kind === "share") {
+                          setShareDefaults({ locale: delivery.locale, method: delivery.method! });
+                          setShareOpen(true);
+                        } else {
+                          void exportPrepared(
+                            delivery.kind === "export_pdf" ? "bundle" : "prompt",
+                            delivery.locale,
+                          );
+                        }
                       }}
                       messages={active.messages}
                       onSendMessage={send}

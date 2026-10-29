@@ -1,8 +1,22 @@
+// Valida e canonicaliza o snapshot antes de o usar em versões, hashes ou entregas.
 import { validateConfirmation } from "./activity-confirmation.ts";
 import { validateCatalogDetails } from "./catalog-details.ts";
 import { validateBrief } from "./curation.ts";
 import type { Snapshot } from "./itinerary-pdf";
 
+// A mesma representação no navegador e no histórico, sem alterar hashes existentes.
+export function canonicalSnapshot(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalSnapshot).join(",")}]`;
+  if (value && typeof value === "object")
+    return `{${Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${JSON.stringify(k)}:${canonicalSnapshot(v)}`)
+      .join(",")}}`;
+  return JSON.stringify(value);
+}
+
+// Verificar a estrutura recebida antes de persistir ou renderizar uma versão.
 export function validateSnapshot(value: unknown): asserts value is Snapshot {
   if (!value || typeof value !== "object") throw new Error("Roteiro inválido.");
   const s = value as Snapshot;
@@ -25,12 +39,25 @@ export function validateSnapshot(value: unknown): asserts value is Snapshot {
       !string(day.location) ||
       (day.summary !== undefined && !string(day.summary)) ||
       !Array.isArray(day.items) ||
-      day.items.length > 100
+      day.items.length > 100 ||
+      (day.isRecentlyModified !== undefined && typeof day.isRecentlyModified !== "boolean") ||
+      (day.lastModifiedBy !== undefined && !["user", "assistant"].includes(day.lastModifiedBy))
     )
       throw new Error("Dia inválido.");
     for (const item of day.items) {
+      if (
+        item.catalogRevision !== undefined &&
+        (!Number.isSafeInteger(item.catalogRevision) || item.catalogRevision < 1)
+      )
+        throw new Error("Revisão de catálogo inválida.");
       if (!item || !string(item.id) || !string(item.time) || !string(item.title))
         throw new Error("Atividade inválida.");
+      if (
+        (item.isLocked !== undefined && typeof item.isLocked !== "boolean") ||
+        (item.isRecentlyModified !== undefined && typeof item.isRecentlyModified !== "boolean") ||
+        (item.lastModifiedBy !== undefined && !["user", "assistant"].includes(item.lastModifiedBy))
+      )
+        throw new Error("Estado de edição da atividade inválido.");
       for (const key of [
         "description",
         "location",

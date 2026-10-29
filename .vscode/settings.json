@@ -1,0 +1,28 @@
+{
+  "remote.autoForwardPorts": true,
+  "remote.autoForwardPortsSource": "process",
+  "remote.restoreForwardedPorts": true,
+  "remote.portsAttributes": {
+    "3001": {
+      "label": "BLU · Curation Studio",
+      "onAutoForward": "silent"
+    },
+    "3003": {
+      "label": "BLU · Presentation",
+      "onAutoForward": "silent"
+    },
+    "3004": {
+      "label": "BLU Operations · Monitoring",
+      "onAutoForward": "silent"
+    },
+    "5173": {
+      "label": "BLU · Leads / Concierge",
+      "onAutoForward": "silent"
+    },
+    "8501": {
+      "label": "BLU Analytics · Observatório",
+      "onAutoForward": "silent"
+    }
+  },
+  "python.terminal.useEnvFile": true
+}

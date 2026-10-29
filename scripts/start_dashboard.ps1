@@ -1,3 +1,4 @@
+# Abre o Observatório no ambiente Windows usando os caminhos do projeto.
 <#
 .SYNOPSIS
 Starts the local Streamlit dashboard after confirming a warehouse exists.
@@ -20,4 +21,8 @@ if (-not (Test-Path -LiteralPath $Warehouse)) {
 }
 
 # Start Streamlit in the foreground so the operator sees logs and can stop it with Ctrl+C.
+& $Python -c "import streamlit, plotly"
+if ($LASTEXITCODE -ne 0) {
+    throw "Instalar o dashboard: uv sync --locked --inexact --group dashboard"
+}
 & $Python -m streamlit run $Application --server.headless true --server.port $Port

@@ -1,9 +1,9 @@
+import { launchBrowser } from "./helpers.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
 
 const prefix = "/codeeditor/default/ports/3001";
 const origin = process.env.PORTAL_PUBLIC_ORIGIN ?? "https://portal.test";
-const browser = await chromium.launch({ headless: true });
+const browser = await launchBrowser();
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   const escaped = [];
@@ -59,7 +59,7 @@ try {
     return response.status;
   }, `${prefix}/?_rsc=invalid-test-key`);
   assert.equal(rscStatus, 200, "RSC correction should remain inside the public proxy");
-  for (const path of ["/catalog", "/exports", "/references", "/trash", "/"]) {
+  for (const path of ["/catalog", "/exports", "/trash", "/"]) {
     const publicPath = path === "/" ? prefix : `${prefix}${path}`;
     const selector =
       path === "/"
