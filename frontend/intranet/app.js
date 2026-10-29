@@ -1107,6 +1107,7 @@ async function watchLeads() {
   if (document.hidden) return;
   try {
     const { leads } = await api('GET', '/v1/leads?status=open');
+    openLeads = leads;
     if (!seenLeads) return rememberLeads(leads);
     const fresh = leads.filter(lead => !seenLeads.has(lead.id) && !lead.synthetic);
     rememberLeads(leads);
@@ -1183,8 +1184,6 @@ async function showLead(panel, id, refreshList) {
   const mine = lead.assignedTo && lead.assignedTo === session.claims?.email;
   const note = h('textarea', { rows: '3', maxlength: '1000', 'aria-label': 'Nota interna' });
   note.value = lead.curatorNote ?? '';
-  const question = h('input', { type: 'text', maxlength: '1000', 'aria-label': 'Pergunta ao assistente interno', value: 'Resume o que este viajante procura e sugere o próximo passo.' });
-  const answer = h('div');
   const journey = Object.entries({ ...lead.journey, stage: STAGES[lead.stage] ?? lead.stage }).filter(([, value]) => value);
 
   // replaceChildren escreveria null como texto; os blocos opcionais são filtrados.
@@ -1222,21 +1221,7 @@ async function showLead(panel, id, refreshList) {
     can('cases') ? leadCases(id) : null,
     h('h3', { class: 'spaced' }, 'Agenda do viajante'),
     activityPanel(id, lead),
-    h('h3', { class: 'spaced' }, 'Perguntar ao assistente interno'),
-    question,
-    h('div', { class: 'actions' }, h('button', { type: 'button', class: 'secondary', disabled: !isCurator(), onclick: async event => {
-      const button = event.currentTarget;
-      button.disabled = true;
-      answer.replaceChildren(h('p', { class: 'muted' }, 'A pensar…'));
-      try {
-        const result = await api('POST', `/v1/leads/${id}/ask`, { question: question.value });
-        answer.replaceChildren(h('div', { class: 'answer' }, result.answer), h('p', { class: 'muted' }, 'Sugestão gerada por IA: confirme antes de agir ou contactar o cliente.'));
-      } catch (error) {
-        answer.replaceChildren(h('p', { class: 'error' }, error.message));
-      }
-      button.disabled = false;
-    } }, 'Perguntar')),
-    answer,
+    isCurator() ? h('p', { class: 'muted spaced' }, 'Dúvidas sobre este lead? Use o botão «Assistente» no canto inferior direito.') : null,
   ].filter(Boolean));
 }
 
@@ -1407,6 +1392,76 @@ function activityPanel(id, lead) {
 }
 
 let current = SITE.start;
+let openLeads = [];
+
+// Texto do assistente sem markdown à vista: listas e negrito simples, sempre como texto (nunca HTML).
+function plainAnswer(text) {
+  const blocks = [];
+  let list = null;
+  for (const raw of String(text ?? '').split('\n')) {
+    const line = raw.replace(/\*\*(.+?)\*\*/g, '$1').replace(/^#{1,6}\s+/, '').trimEnd();
+    const item = line.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)$/);
+    if (item) { list ??= h('ul'); list.append(h('li', {}, item[1])); continue; }
+    if (list) { blocks.push(list); list = null; }
+    if (line.trim()) blocks.push(h('p', {}, line));
+  }
+  if (list) blocks.push(list);
+  return blocks;
+}
+
+// Assistente num botão fixo no canto inferior direito, em todas as secções; abre para cima.
+// Sabe em que página está: usa o lead aberto em Seguimento ou na conversa de WhatsApp.
+function mountAssistant() {
+  if (!isCurator()) return;
+  const SUGGESTIONS = [
+    ['Resumo e próximo passo', 'Resume o que este viajante procura e sugere o próximo passo.'],
+    ['O que falta?', 'Que informação falta para preparar a proposta?'],
+    ['Rascunho de resposta', 'Escreve um rascunho de resposta curta e cordial.'],
+  ];
+  const contextLead = () => (current === 'leads' && leadsState.selected) || (current === 'whatsapp' && whatsappState.leadId) || '';
+  const nameOf = lead => lead.journey?.destination || lead.id;
+  const picker = h('select', { 'aria-label': 'Lead' });
+  const about = h('p', { class: 'muted' });
+  const question = h('textarea', { rows: '3', maxlength: '1000', 'aria-label': 'Pergunta ao assistente', placeholder: 'Pergunte sobre este lead…' });
+  const answer = h('div', { class: 'assistant-answer', 'aria-live': 'polite' });
+  const ask = h('button', { type: 'submit', class: 'primary' }, 'Perguntar');
+  const refreshContext = () => {
+    const id = contextLead();
+    const known = [...openLeads].sort((a, b) => a.synthetic - b.synthetic);
+    picker.replaceChildren(h('option', { value: '' }, 'Escolha um lead…'), ...known.map(lead => h('option', { value: lead.id, selected: lead.id === id }, `${nameOf(lead)}${lead.synthetic ? ' (demo)' : ''}`)));
+    if (id && !known.some(lead => lead.id === id)) picker.prepend(h('option', { value: id, selected: true }, id));
+    about.textContent = id ? 'Sobre o lead aberto nesta página.' : 'Escolha o lead sobre o qual quer perguntar.';
+  };
+  const form = h('form', { onsubmit: async event => {
+    event.preventDefault();
+    const id = picker.value;
+    if (!id) { answer.replaceChildren(h('p', { class: 'error' }, 'Escolha um lead primeiro.')); picker.focus(); return; }
+    if (!question.value.trim()) { question.focus(); return; }
+    ask.disabled = true;
+    answer.replaceChildren(h('p', { class: 'muted' }, 'A pensar…'));
+    try {
+      const result = await api('POST', `/v1/leads/${encodeURIComponent(id)}/ask`, { question: question.value });
+      answer.replaceChildren(...plainAnswer(result.answer), h('p', { class: 'muted' }, 'Sugestão gerada por IA: confirme antes de agir ou contactar o cliente.'));
+    } catch (error) {
+      answer.replaceChildren(h('p', { class: 'error' }, error.message));
+    }
+    ask.disabled = false;
+  } },
+  h('label', { class: 'field' }, h('span', {}, 'Lead'), picker), about,
+  h('div', { class: 'assistant-chips' }, SUGGESTIONS.map(([label, text]) => h('button', { type: 'button', class: 'secondary', onclick: () => { question.value = text; question.focus(); } }, label))),
+  question, h('div', { class: 'actions' }, ask), answer);
+  const panel = h('section', { class: 'assistant-panel', id: 'assistant-panel', role: 'dialog', 'aria-label': 'Assistente interno', hidden: true },
+    h('div', { class: 'assistant-head' }, h('strong', {}, 'Assistente'), h('button', { type: 'button', class: 'link', onclick: () => toggle(false) }, 'Fechar')), form);
+  const fab = h('button', { type: 'button', class: 'assistant-fab primary', 'aria-expanded': 'false', 'aria-controls': 'assistant-panel', onclick: () => toggle(panel.hidden) }, 'Assistente');
+  function toggle(open) {
+    panel.hidden = !open;
+    fab.setAttribute('aria-expanded', String(open));
+    if (open) { refreshContext(); question.focus(); } else fab.focus();
+  }
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && !panel.hidden) toggle(false); });
+  document.addEventListener('blu:section', () => { if (!panel.hidden) refreshContext(); });
+  document.body.append(panel, fab);
+}
 // Separadores por grupo e grupos de menu vazios escondidos.
 function applySite() {
   const nav = $('tabs');
@@ -1434,6 +1489,7 @@ async function show(tab) {
     if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   }
+  document.dispatchEvent(new Event('blu:section'));
   const view = $('view');
   view.replaceChildren(h('p', { class: 'muted' }, 'A carregar…'));
   const fresh = h('div');
@@ -1493,6 +1549,7 @@ async function start() {
   window.addEventListener('popstate', () => { const tab = tabFromHash(); if (tab && tab !== current) show(tab); });
   // Quem tem a visão geral entra por ela; os restantes pelo seu trabalho.
   show(tabFromHash() || (can('team-admin') ? 'control' : SITE.start));
+  mountAssistant();
   watchLeads();
   setInterval(watchLeads, 60_000);
 }
