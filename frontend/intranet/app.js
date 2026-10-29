@@ -836,16 +836,33 @@ const views = {
     const phone = h('input', { name: 'to', inputmode: 'tel', placeholder: '+351 912 345 678' });
     const number = h('label', { hidden: true }, 'Número do cliente', phone);
     const hint = h('p', { class: 'muted', role: 'status' });
+    // O número do cliente nunca se escreve à mão quando já é conhecido: vem da conversa de WhatsApp
+    // já aberta com esse lead ou do que ele deixou no chat. O campo só aparece quando não há número.
+    const fix = h('button', { type: 'button', class: 'link', hidden: true, onclick: () => { number.hidden = false; fix.hidden = true; phone.focus(); } }, 'Corrigir número');
+    const openExisting = h('button', { type: 'button', class: 'link', hidden: true }, 'Abrir a conversa existente');
     who.addEventListener('change', async () => {
-      const [kind, id] = who.value.split(':');
-      number.hidden = !['lead', 'client'].includes(kind);
+      const pick = who.value;
+      const [kind, id] = pick.split(':');
+      const existing = kind === 'lead' ? threads.find(thread => thread.leadId === id && thread.to) : null;
+      number.hidden = kind !== 'client';
+      fix.hidden = true;
+      openExisting.hidden = !existing;
       phone.value = '';
       hint.textContent = '';
       if (kind !== 'lead') return;
+      if (existing) {
+        phone.value = `+${existing.to}`;
+        hint.textContent = `Número já usado com este cliente: ${phone.value}.`;
+        openExisting.onclick = () => { state.selected = existing.key; rerender(); };
+        fix.hidden = false;
+        return;
+      }
       hint.textContent = 'A procurar o telefone do cliente…';
       const detail = await api('GET', `/v1/leads/${encodeURIComponent(id)}`).catch(() => null);
+      if (who.value !== pick) return;
       phone.value = detail?.phones?.[0] ?? '';
-      hint.textContent = phone.value ? 'Número do cliente preenchido a partir da conversa.' : 'Este cliente não deixou telefone: escreva o número.';
+      if (phone.value) { hint.textContent = `Número deixado pelo cliente na conversa: ${phone.value}.`; fix.hidden = false; }
+      else { hint.textContent = 'Este cliente não deixou telefone na conversa: escreva o número.'; number.hidden = false; }
     });
     const newThread = h('form', { class: 'verify', onsubmit: event => {
       event.preventDefault();
@@ -853,10 +870,10 @@ const views = {
       const [kind, id] = String(data.who).split(':');
       const partner = kind === 'partner' ? partners.find(item => item.id === id) : null;
       const digits = String(data.to ?? '').replace(/\D/g, '');
-      if (!partner && digits.length < 9) { hint.textContent = 'Indique o número do cliente.'; return; }
+      if (!partner && digits.length < 9) { number.hidden = false; hint.textContent = 'Indique o número do cliente.'; phone.focus(); return; }
       write({ direction: 'out', ...(partner ? { partnerId: partner.id } : { to: digits }), leadId: kind === 'lead' ? id : '', text: data.text }, partner ? (partner.whatsapp || `partner:${partner.id}`) : digits);
     } },
-      h('label', {}, 'Para', who), number, hint,
+      h('label', {}, 'Para', who), number, hint, h('div', { class: 'actions' }, openExisting, fix),
       h('label', {}, 'Primeira mensagem da BLU', h('textarea', { name: 'text', required: true, maxlength: '1000', rows: '2' })),
       h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Começar conversa')));
     // Parceiro: nome e número. Cliente: destino da viagem (ou número) e número; nada do outro lado.
