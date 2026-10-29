@@ -1474,7 +1474,8 @@ async function start() {
     else if (hiddenAt && Date.now() - hiddenAt > 60_000) show(current);
   });
   window.addEventListener('popstate', () => { const tab = tabFromHash(); if (tab && tab !== current) show(tab); });
-  show(tabFromHash() || SITE.start);
+  // Quem tem a visão geral entra por ela; os restantes pelo seu trabalho.
+  show(tabFromHash() || (can('team-admin') ? 'control' : SITE.start));
   watchLeads();
   setInterval(watchLeads, 60_000);
 }
