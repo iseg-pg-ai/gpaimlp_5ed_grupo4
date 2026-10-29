@@ -1460,8 +1460,11 @@ function mountAssistant() {
     if (open) { refreshContext(); question.focus(); } else fab.focus();
   }
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !panel.hidden) toggle(false); });
-  document.addEventListener('blu:section', () => { if (!panel.hidden) refreshContext(); });
+  // No separador «Assistente» o botão flutuante é redundante: esconde-se e fecha o painel.
+  const place = () => { fab.hidden = current === 'assistant'; if (fab.hidden && !panel.hidden) toggle(false); else if (!panel.hidden) refreshContext(); };
+  document.addEventListener('blu:section', place);
   document.body.append(panel, fab);
+  place();
 }
 // Separadores por grupo e grupos de menu vazios escondidos.
 function applySite() {
