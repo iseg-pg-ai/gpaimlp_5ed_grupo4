@@ -5,7 +5,7 @@ const config = window.BLU_INTRANET;
 // Um só site para a equipa; os grupos Cognito decidem o que cada pessoa vê (aqui e na API).
 const SITE = { name: 'Intranet BLU', start: 'work' };
 // Perfis sem leitura geral (marketing) veem só estes separadores; a API aplica a mesma regra.
-const LIMITED_TABS = ['work', 'assistant', 'dashboard'];
+const LIMITED_TABS = ['work', 'dashboard'];
 const session = { idToken: '', refreshToken: '', claims: null };
 const $ = id => document.getElementById(id);
 
@@ -107,7 +107,6 @@ let casePrefill = {};
 // Filtro e lead aberto sobrevivem a «Atualizar» e ao regresso ao separador.
 const leadsState = { filter: 'open', selected: '' };
 // Conversa com o assistente: só em memória, apaga-se ao recarregar a página.
-const assistantState = { history: [] };
 const whatsappState = { selected: '', leadId: '' };
 let teamCache;
 const loadTeam = async () => (teamCache ??= (await api('GET', '/v1/team')).members);
@@ -344,57 +343,6 @@ const views = {
             ? h('ul', { class: 'feed' }, feed.map(entry => h('li', {}, h('strong', {}, entry.byName || entry.by), ` ${entry.text}`, h('time', {}, when(entry.at)))))
             : h('p', { class: 'muted' }, 'Ainda sem movimento.'))),
     );
-  },
-
-  // Assistente: responde a partir do que a pessoa já pode ver e sugere ações que ela própria clica.
-  async assistant(view, state = assistantState) {
-    const SOURCES = { work: 'O meu trabalho', alerts: 'Alertas', metrics: 'Painel', leads: 'Seguimento', control: 'Visão geral', settings: 'Regras de seguimento', guide: 'Guia da intranet' };
-    const log = h('div', { class: 'chat assistant-log', 'aria-live': 'polite' });
-    const status = h('p', { class: 'muted', role: 'status' });
-    const actionButton = action => {
-      if (action.type === 'open') return h('button', { type: 'button', class: 'secondary', onclick: () => goTo(action.tab, action.leadId ? { filter: 'all', lead: action.leadId } : {}) }, action.leadId ? `Abrir o lead ${action.leadId}` : `Abrir ${$('tabs').querySelector(`[data-tab="${action.tab}"]`)?.textContent ?? action.tab}`);
-      if (action.type === 'task') return h('button', { type: 'button', class: 'secondary', onclick: () => { taskPrefill = { title: action.title, leadId: action.leadId }; show('work'); } }, `Preparar tarefa: ${action.title}`);
-      // Rascunho de resposta: copiado para a área de transferência e o lead aberto; nada é enviado.
-      return h('div', { class: 'draft' }, h('div', { class: 'muted' }, `Rascunho para ${action.leadId}`), h('p', {}, action.text),
-        h('button', { type: 'button', class: 'secondary', onclick: async event => {
-          await navigator.clipboard?.writeText(action.text).catch(() => {});
-          event.currentTarget.textContent = 'Copiado';
-          goTo('leads', { filter: 'all', lead: action.leadId });
-        } }, 'Copiar e abrir o lead'));
-    };
-    const render = () => log.replaceChildren(...(state.history.length ? state.history.map(turn => h('div', { class: `bubble ${turn.role === 'user' ? 'customer' : 'assistant'}` },
-      turn.text,
-      turn.actions?.length ? h('div', { class: 'actions' }, turn.actions.map(actionButton)) : null,
-      turn.sources?.length ? h('time', {}, `Fontes: ${turn.sources.map(source => SOURCES[source] ?? source).join(', ')}`) : null))
-      : [h('p', { class: 'muted' }, 'Pergunte, por exemplo: «O que devo fazer primeiro hoje?», «Que leads estão em risco?» ou «Como agendo uma recolha?»')]));
-    const input = h('textarea', { name: 'question', rows: '2', maxlength: '1000', required: true, 'aria-label': 'Pergunta ao assistente' });
-    const form = h('form', { class: 'verify', onsubmit: async event => {
-      event.preventDefault();
-      const question = input.value.trim();
-      if (!question) return;
-      const history = state.history.map(turn => ({ role: turn.role, text: turn.text }));
-      state.history.push({ role: 'user', text: question });
-      input.value = '';
-      render();
-      status.textContent = 'A pensar…';
-      try {
-        const result = await api('POST', '/v1/assistant', { question, history });
-        state.history.push({ role: 'assistant', text: result.answer, actions: result.actions, sources: result.sources });
-        status.textContent = '';
-      } catch (error) {
-        status.textContent = error.message;
-      }
-      render();
-      log.lastElementChild?.scrollIntoView({ block: 'nearest' });
-    } },
-      input,
-      h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Perguntar'),
-        h('button', { type: 'button', class: 'link', onclick: () => { state.history = []; render(); } }, 'Nova conversa'), status));
-    render();
-    view.append(
-      h('h2', {}, 'Assistente'),
-      h('p', { class: 'muted' }, 'Responde a partir do que o seu perfil já vê na intranet e sugere ações. Nada é feito nem enviado sem o seu clique; sem contactos de clientes.'),
-      h('div', { class: 'panel' }, log, form));
   },
 
   async dashboard(view) {
@@ -1479,49 +1427,85 @@ function plainAnswer(text) {
   return blocks;
 }
 
-// Assistente num botão fixo no canto inferior direito, em todas as secções; abre para cima.
-// Sabe em que página está: usa o lead aberto em Seguimento ou na conversa de WhatsApp.
+// Assistente: um só, num botão fixo no canto inferior direito, em todas as secções.
+// Sem lead escolhido responde sobre todo o trabalho que o perfil vê (POST /v1/assistant), com
+// histórico e ações que a pessoa clica; com um lead (curadores e fundadores) responde sobre esse
+// lead (/v1/leads/{id}/ask). Abre já no lead aberto em Seguimento ou no WhatsApp. Nada é enviado.
 function mountAssistant() {
-  if (!isCurator()) return;
-  const SUGGESTIONS = [
-    ['Resumo e próximo passo', 'Resume o que este viajante procura e sugere o próximo passo.'],
-    ['O que falta?', 'Que informação falta para preparar a proposta?'],
-    ['Rascunho de resposta', 'Escreve um rascunho de resposta curta e cordial.'],
-  ];
+  const SOURCES = { work: 'O meu trabalho', alerts: 'Alertas', metrics: 'Painel', leads: 'Seguimento', control: 'Visão geral', settings: 'Regras de seguimento', guide: 'Guia da intranet' };
+  const SUGGESTIONS = {
+    general: [['O que faço primeiro?', 'O que devo fazer primeiro hoje?'], ['Leads em risco', 'Que leads estão em risco e o que faço com cada um?'], ['Como agendar', 'Como agendo uma recolha ou excursão?']],
+    lead: [['Resumo e próximo passo', 'Resume o que este viajante procura e sugere o próximo passo.'], ['O que falta?', 'Que informação falta para preparar a proposta?'], ['Rascunho de resposta', 'Escreve um rascunho de resposta curta e cordial.']],
+  };
+  const history = [];
   const contextLead = () => (current === 'leads' && leadsState.selected) || (current === 'whatsapp' && whatsappState.leadId) || '';
   const nameOf = lead => lead.journey?.destination || lead.id;
-  const picker = h('select', { 'aria-label': 'Lead' });
-  const about = h('p', { class: 'muted' });
-  const question = h('textarea', { rows: '3', maxlength: '1000', 'aria-label': 'Pergunta ao assistente', placeholder: 'Pergunte sobre este lead…' });
-  const answer = h('div', { class: 'assistant-answer', 'aria-live': 'polite' });
+  const picker = h('select', { 'aria-label': 'Sobre' });
+  const chips = h('div', { class: 'assistant-chips' });
+  const log = h('div', { class: 'chat assistant-log', 'aria-live': 'polite' });
+  const status = h('p', { class: 'muted', role: 'status' });
+  const question = h('textarea', { rows: '3', maxlength: '1000', 'aria-label': 'Pergunta ao assistente' });
   const ask = h('button', { type: 'submit', class: 'primary' }, 'Perguntar');
+  const actionButton = action => {
+    if (action.type === 'open') return h('button', { type: 'button', class: 'secondary', onclick: () => goTo(action.tab, action.leadId ? { filter: 'all', lead: action.leadId } : {}) }, action.leadId ? `Abrir o lead ${action.leadId}` : `Abrir ${$('tabs').querySelector(`[data-tab="${action.tab}"]`)?.textContent ?? action.tab}`);
+    if (action.type === 'task') return h('button', { type: 'button', class: 'secondary', onclick: () => { taskPrefill = { title: action.title, leadId: action.leadId }; show('work'); } }, `Preparar tarefa: ${action.title}`);
+    // Rascunho de resposta: copiado e o lead aberto; nada é enviado.
+    return h('div', { class: 'draft' }, h('div', { class: 'muted' }, `Rascunho para ${action.leadId}`), h('p', {}, action.text),
+      h('button', { type: 'button', class: 'secondary', onclick: async event => {
+        await navigator.clipboard?.writeText(action.text).catch(() => {});
+        event.currentTarget.textContent = 'Copiado';
+        goTo('leads', { filter: 'all', lead: action.leadId });
+      } }, 'Copiar e abrir o lead'));
+  };
+  const render = () => log.replaceChildren(...history.map(turn => turn.role === 'user'
+    ? h('div', { class: 'bubble customer' }, turn.about ? `${turn.text} (${turn.about})` : turn.text)
+    : h('div', { class: 'bubble assistant' }, ...plainAnswer(turn.text),
+      turn.actions?.length ? h('div', { class: 'actions' }, turn.actions.map(actionButton)) : null,
+      turn.sources?.length ? h('time', {}, `Fontes: ${turn.sources.map(source => SOURCES[source] ?? source).join(', ')}`) : null,
+      turn.lead ? h('time', {}, 'Sugestão gerada por IA: confirme antes de agir ou contactar o cliente.') : null)));
+  const setMode = () => {
+    const mode = picker.value ? 'lead' : 'general';
+    question.placeholder = mode === 'lead' ? 'Pergunte sobre este lead…' : 'Pergunte sobre o seu trabalho, leads, prazos ou a intranet…';
+    chips.replaceChildren(...SUGGESTIONS[mode].map(([label, text]) => h('button', { type: 'button', class: 'secondary', onclick: () => { question.value = text; question.focus(); } }, label)));
+  };
   const refreshContext = () => {
+    if (!isCurator()) { picker.closest('label').hidden = true; setMode(); return; }
     const id = contextLead();
     const known = [...openLeads].sort((a, b) => a.synthetic - b.synthetic);
-    picker.replaceChildren(h('option', { value: '' }, 'Escolha um lead…'), ...known.map(lead => h('option', { value: lead.id, selected: lead.id === id }, `${nameOf(lead)}${lead.synthetic ? ' (demo)' : ''}`)));
-    if (id && !known.some(lead => lead.id === id)) picker.prepend(h('option', { value: id, selected: true }, id));
-    about.textContent = id ? 'Sobre o lead aberto nesta página.' : 'Escolha o lead sobre o qual quer perguntar.';
+    picker.replaceChildren(h('option', { value: '' }, 'Todo o meu trabalho'), ...known.map(lead => h('option', { value: lead.id, selected: lead.id === id }, `${nameOf(lead)}${lead.synthetic ? ' (demo)' : ''}`)));
+    if (id && !known.some(lead => lead.id === id)) picker.append(h('option', { value: id, selected: true }, id));
+    setMode();
   };
+  picker.addEventListener('change', setMode);
   const form = h('form', { onsubmit: async event => {
     event.preventDefault();
+    const text = question.value.trim();
+    if (!text) { question.focus(); return; }
     const id = picker.value;
-    if (!id) { answer.replaceChildren(h('p', { class: 'error' }, 'Escolha um lead primeiro.')); picker.focus(); return; }
-    if (!question.value.trim()) { question.focus(); return; }
+    const earlier = history.filter(turn => !turn.lead && !turn.about).map(turn => ({ role: turn.role, text: turn.text }));
+    history.push({ role: 'user', text, about: id ? nameOf(openLeads.find(lead => lead.id === id) ?? { id }) : '' });
+    question.value = '';
+    render();
     ask.disabled = true;
-    answer.replaceChildren(h('p', { class: 'muted' }, 'A pensar…'));
+    status.textContent = 'A pensar…';
     try {
-      const result = await api('POST', `/v1/leads/${encodeURIComponent(id)}/ask`, { question: question.value });
-      answer.replaceChildren(...plainAnswer(result.answer), h('p', { class: 'muted' }, 'Sugestão gerada por IA: confirme antes de agir ou contactar o cliente.'));
+      const result = id
+        ? await api('POST', `/v1/leads/${encodeURIComponent(id)}/ask`, { question: text })
+        : await api('POST', '/v1/assistant', { question: text, history: earlier });
+      history.push({ role: 'assistant', text: result.answer, actions: result.actions, sources: result.sources, lead: Boolean(id) });
+      status.textContent = '';
     } catch (error) {
-      answer.replaceChildren(h('p', { class: 'error' }, error.message));
+      status.textContent = error.message;
     }
     ask.disabled = false;
+    render();
+    log.lastElementChild?.scrollIntoView({ block: 'nearest' });
   } },
-  h('label', { class: 'field' }, h('span', {}, 'Lead'), picker), about,
-  h('div', { class: 'assistant-chips' }, SUGGESTIONS.map(([label, text]) => h('button', { type: 'button', class: 'secondary', onclick: () => { question.value = text; question.focus(); } }, label))),
-  question, h('div', { class: 'actions' }, ask), answer);
-  const panel = h('section', { class: 'assistant-panel', id: 'assistant-panel', role: 'dialog', 'aria-label': 'Assistente interno', hidden: true },
-    h('div', { class: 'assistant-head' }, h('strong', {}, 'Assistente'), h('button', { type: 'button', class: 'link', onclick: () => toggle(false) }, 'Fechar')), form);
+  h('label', { class: 'field' }, h('span', {}, 'Sobre'), picker), chips, log, question,
+  h('div', { class: 'actions' }, ask, h('button', { type: 'button', class: 'link', onclick: () => { history.length = 0; status.textContent = ''; render(); } }, 'Nova conversa')), status);
+  const panel = h('section', { class: 'assistant-panel', id: 'assistant-panel', role: 'dialog', 'aria-label': 'Assistente', hidden: true },
+    h('div', { class: 'assistant-head' }, h('strong', {}, 'Assistente'), h('button', { type: 'button', class: 'link', onclick: () => toggle(false) }, 'Fechar')),
+    h('p', { class: 'muted' }, 'Responde com o que o seu perfil já vê e sugere ações que clica; nada é enviado sozinho e sem contactos de clientes.'), form);
   const fab = h('button', { type: 'button', class: 'assistant-fab primary', 'aria-expanded': 'false', 'aria-controls': 'assistant-panel', onclick: () => toggle(panel.hidden) }, 'Assistente');
   function toggle(open) {
     panel.hidden = !open;
@@ -1529,11 +1513,8 @@ function mountAssistant() {
     if (open) { refreshContext(); question.focus(); } else fab.focus();
   }
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !panel.hidden) toggle(false); });
-  // No separador «Assistente» o botão flutuante é redundante: esconde-se e fecha o painel.
-  const place = () => { fab.hidden = current === 'assistant'; if (fab.hidden && !panel.hidden) toggle(false); else if (!panel.hidden) refreshContext(); };
-  document.addEventListener('blu:section', place);
+  document.addEventListener('blu:section', () => { if (!panel.hidden) refreshContext(); });
   document.body.append(panel, fab);
-  place();
 }
 // Separadores por grupo e grupos de menu vazios escondidos.
 function applySite() {

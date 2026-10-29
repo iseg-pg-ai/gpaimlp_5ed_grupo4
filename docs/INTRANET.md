@@ -439,7 +439,14 @@ mudaria os indicadores e os dados que um modelo viesse a usar.
 
 ## Assistente (2026-10-28)
 
-Separador «Assistente», para todos os perfis (`POST /v1/assistant`). Junta o que
+Desde 2026-10-29 há um só assistente: o botão «Assistente» no canto inferior
+direito, em todas as secções e para todos os perfis (o separador saiu). Em
+«Sobre», «Todo o meu trabalho» faz a pergunta geral descrita abaixo; escolher um
+lead (curadores e fundadores; vem já escolhido quando há um lead aberto em
+Seguimento ou no WhatsApp) pergunta sobre esse lead (`POST /v1/leads/{id}/ask`,
+Backoffice RAG). As sugestões prontas mudam com o modo.
+
+Pergunta geral (`POST /v1/assistant`), para todos os perfis. Junta o que
 a pessoa já vê (o seu trabalho, alertas, totais, leads em aberto, regras de
 seguimento e, para fundadores, a visão geral) e um guia curto da intranet
 (`assistant.mjs`), e pede ao modelo da intranet uma resposta em JSON.
