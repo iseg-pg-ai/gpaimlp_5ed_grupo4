@@ -70,8 +70,10 @@ Cognito (MFA, grupos) ◀── JWT ── HTTP API (autorizador JWT, CORS só d
 
 O menu mostra o portal de propostas (`BluCostaPortal`, output `PortalUrl`) a
 fundadores, curadores e marketing, os mesmos grupos que o portão do portal deixa
-entrar. A ligação para o backoffice saiu da intranet (2026-10-27): a intranet já
-cobre esse trabalho. Em cada lead, curadores e fundadores têm «Proposta no
+entrar. O site «backoffice» (a mesma intranet com quatro separadores escondidos,
+num segundo endereço) foi retirado em 2026-10-29: a intranet é o único site da
+equipa e os grupos Cognito já decidem o que cada pessoa vê. Em cada lead,
+curadores e fundadores têm «Proposta no
 portal», que abre o portal já nesse lead; o mapa é uma secção da proposta, sem
 ligação própria. O endereço do portal vive só na ligação `#portal-link` do menu.
 

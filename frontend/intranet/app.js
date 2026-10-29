@@ -2,10 +2,8 @@ import { challengeFor, claimsOf, expired, loginUrl, logoutUrl, randomString, ref
 
 // Intranet da equipa. Todo o texto vindo da API é inserido com textContent (nunca HTML).
 const config = window.BLU_INTRANET;
-// O mesmo código serve os dois sites: o backoffice mostra só o trabalho com clientes; a intranet mantém tudo.
-const SITE = config?.site === 'backoffice'
-  ? { name: 'Backoffice BLU', start: 'leads', tabs: ['dashboard', 'leads', 'agenda', 'whatsapp', 'cases', 'operations', 'governance'], other: config.intranetUrl && { label: 'Intranet ↗', url: config.intranetUrl } }
-  : { name: 'Intranet BLU', start: 'work', tabs: null, other: null };
+// Um só site para a equipa; os grupos Cognito decidem o que cada pessoa vê (aqui e na API).
+const SITE = { name: 'Intranet BLU', start: 'work' };
 // Perfis sem leitura geral (marketing) veem só estes separadores; a API aplica a mesma regra.
 const LIMITED_TABS = ['work', 'dashboard'];
 const session = { idToken: '', refreshToken: '', claims: null };
@@ -1210,14 +1208,12 @@ function mountAssistant() {
   document.addEventListener('blu:section', () => { if (!panel.hidden) refreshContext(); });
   document.body.append(panel, fab);
 }
-// Secções do backoffice, grupos vazios escondidos e ligação para o outro site.
+// Separadores por grupo e grupos de menu vazios escondidos.
 function applySite() {
   const nav = $('tabs');
-  if (SITE.tabs) for (const button of nav.querySelectorAll('button[data-tab]')) if (!SITE.tabs.includes(button.dataset.tab)) button.hidden = true;
   for (const button of nav.querySelectorAll('button[data-tab]')) if (!tabVisible(button.dataset.tab)) button.hidden = true;
   // Ligações para outros sites só para quem lá pode entrar (data-groups).
   for (const link of nav.querySelectorAll('a[data-groups]')) link.hidden = !link.dataset.groups.split(' ').some(group => groupsNow().includes(group));
-  if (SITE.other) nav.append(h('span', { class: 'nav-group' }, 'Equipa BLU'), h('a', { href: SITE.other.url, target: '_blank', rel: 'noopener' }, SITE.other.label));
   for (const group of nav.querySelectorAll('.nav-group')) {
     let item = group.nextElementSibling;
     let visible = false;
@@ -1228,7 +1224,7 @@ function applySite() {
 
 const tabFromHash = () => {
   const tab = decodeURIComponent(location.hash.slice(1));
-  return views[tab] && tabVisible(tab) && (!SITE.tabs || SITE.tabs.includes(tab)) ? tab : '';
+  return views[tab] && tabVisible(tab) ? tab : '';
 };
 
 async function show(tab) {
@@ -1253,7 +1249,6 @@ async function show(tab) {
 async function start() {
   document.title = SITE.name;
   document.querySelector('.brand span:last-child').textContent = SITE.name;
-  if (SITE.tabs) document.querySelector('#signin h1').textContent = 'Backoffice da equipa BLU';
   $('login').addEventListener('click', () => login());
   if (!config) {
     $('signin-error').textContent = 'Configuração em falta: esta página só funciona depois do deploy.';
