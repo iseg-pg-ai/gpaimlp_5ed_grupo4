@@ -8,12 +8,14 @@ export const BOLT = 'bolt';
 export const MAX_DAYS = 31;
 export const TIME_ZONE = 'Europe/Lisbon';
 
-// Lembretes disponíveis: "evening" é na véspera às 18:00; os restantes são minutos antes.
+// Lembretes disponíveis: "evening" é na véspera às 18:00; "after" é o pedido de avaliação, uma vez
+// por atividade, no dia seguinte ao último dia às 10:00; os restantes são minutos antes.
 export const REMINDERS = [
   { id: 'traveller-evening', audience: 'traveller', evening: true, label: 'Viajante: véspera às 18:00' },
   { id: 'traveller-1h', audience: 'traveller', minutes: 60, label: 'Viajante: 1 h antes' },
   { id: 'partner-evening', audience: 'partner', evening: true, label: 'Parceiro: véspera às 18:00' },
   { id: 'partner-2h', audience: 'partner', minutes: 120, label: 'Parceiro: 2 h antes' },
+  { id: 'traveller-rating', audience: 'traveller', after: '10:00', label: 'Viajante: pedir avaliação no dia seguinte às 10:00' },
 ];
 export const DEFAULT_REMINDERS = REMINDERS.map(reminder => reminder.id);
 // Canais por destinatário: o parceiro recebe por WhatsApp ou SMS; o viajante também por email (SES).
@@ -92,6 +94,7 @@ export function plan(activity, { activityId, travellerPhone, travellerEmail = ''
     const date = addDays(activity.date, day);
     const startsAt = lisbonToUtc(date, activity.time);
     for (const reminder of REMINDERS.filter(r => activity.reminders.includes(r.id))) {
+      if (reminder.after) continue;
       if (reminder.audience === 'partner' && (activity.partnerId === BOLT || !activity.partnerId)) continue;
       if (reminder.audience === 'traveller' && !travellerConsent) continue;
       const sendAt = reminder.evening ? lisbonToUtc(addDays(date, -1), '18:00') : new Date(startsAt - reminder.minutes * 6e4);
@@ -105,7 +108,30 @@ export function plan(activity, { activityId, travellerPhone, travellerEmail = ''
       });
     }
   }
+  // Pedido de avaliação: uma vez, no dia seguinte ao último dia, só com consentimento.
+  const rating = REMINDERS.find(r => r.after && activity.reminders.includes(r.id));
+  if (rating && travellerConsent) {
+    const last = activity.repeatUntil || activity.date;
+    const sendAt = lisbonToUtc(addDays(last, 1), rating.after);
+    if (sendAt > now) {
+      notifications.push({
+        recordKey: `NOTIFY#${sendAt.toISOString()}#${activityId}#rating`,
+        activityId, reminder: rating.id, audience: 'traveller', occurrenceAt: lisbonToUtc(last, activity.time).toISOString(), sendAt: sendAt.toISOString(),
+        channel: activity.travellerChannel,
+        to: activity.travellerChannel === 'email' ? travellerEmail : travellerPhone ?? '',
+        text: ratingMessage(activity, partner),
+      });
+    }
+  }
   return notifications;
+}
+
+// Pedido de avaliação ao viajante (em inglês, como os outros lembretes ao viajante). A resposta
+// chega à caixa de WhatsApp e regista-se em «Registar resultado» na Agenda (avaliação 1 a 5).
+function ratingMessage(activity, partner) {
+  const what = activity.kind === 'pickup' ? `pickup "${activity.title}"` : `excursion "${activity.title}"`;
+  const withWhom = partner && activity.partnerId !== BOLT ? ` with ${partner.name}` : '';
+  return `BLU Costa: thank you for travelling with us! How was your ${what}${withWhom}? Please reply with a number from 1 (poor) to 5 (excellent), and any comment you'd like to share. Reply STOP to stop these messages.`;
 }
 
 /** Decide o estado depois de uma tentativa de envio. */

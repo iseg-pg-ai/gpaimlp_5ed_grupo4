@@ -227,7 +227,14 @@ test('daily pickups plan one reminder set per day for traveller and partner', ()
   const now = new Date('2026-10-26T12:00:00Z');
   const { activity } = parseActivity({ ...morning, repeatUntil: '2026-11-03' }, partners, now);
   const notifications = plan(activity, { activityId: 'act-12345678', travellerPhone: '351912345678', partner: partners[0], now });
-  assert.equal(notifications.length, 8);
+  // 2 dias × 4 lembretes + 1 pedido de avaliação no dia seguinte ao último dia.
+  assert.equal(notifications.length, 9);
+  const rating = notifications.filter(n => n.reminder === 'traveller-rating');
+  assert.equal(rating.length, 1);
+  assert.equal(rating[0].sendAt, '2026-11-04T10:00:00.000Z');
+  assert.equal(rating[0].to, '351912345678');
+  assert.match(rating[0].text, /from 1 \(poor\) to 5 \(excellent\).*Tuk-tuk Alfama|Tuk-tuk Alfama.*from 1 \(poor\) to 5/s);
+  assert.match(rating[0].text, /Reply STOP/);
   const first = notifications.filter(n => n.occurrenceAt === '2026-11-02T09:30:00.000Z');
   assert.deepEqual(first.map(n => n.sendAt).sort(), ['2026-11-01T18:00:00.000Z', '2026-11-01T18:00:00.000Z', '2026-11-02T07:30:00.000Z', '2026-11-02T08:30:00.000Z']);
   assert.match(first.find(n => n.audience === 'partner').text, /Responda OK/);
@@ -244,6 +251,10 @@ test('travellers can get reminders by email or SMS and never without consent', (
   assert.equal(parseActivity({ ...morning, travellerChannel: 'pigeon' }, partners, now).activity.travellerChannel, 'whatsapp');
   const noConsent = plan(activity, { activityId: 'act-12345678', travellerEmail: 'ana@example.com', partner: partners[0], travellerConsent: false, now });
   assert.ok(noConsent.every(n => n.audience === 'partner'));
+  // O pedido de avaliação segue o canal escolhido e pode ser desligado por atividade.
+  assert.equal(notifications.find(n => n.reminder === 'traveller-rating').channel, 'email');
+  const { activity: noRating } = parseActivity({ ...morning, reminders: ['traveller-evening', 'partner-evening'] }, partners, now);
+  assert.ok(!plan(noRating, { activityId: 'act-12345678', travellerPhone: '351912345678', partner: partners[0], now }).some(n => n.reminder === 'traveller-rating'));
 });
 
 test('real partners without a licence cannot be booked', () => {
@@ -307,14 +318,15 @@ test('curators schedule and cancel activities; the API never returns phone numbe
   assert.equal((await handler(request('POST /v1/leads/{id}/activities', { id, body: { ...morning, title: '' } }))).statusCode, 400);
   const created = await handler(request('POST /v1/leads/{id}/activities', { id, body: morning }));
   assert.equal(created.statusCode, 201);
-  assert.equal(JSON.parse(created.body).notifications, 4);
+  // 4 lembretes + o pedido de avaliação ao viajante.
+  assert.equal(JSON.parse(created.body).notifications, 5);
   assert.equal(records.find(r => r.recordKey.startsWith('NOTIFY#') && r.audience === 'traveller').to, '351912345678');
   const listed = (await handler(request('GET /v1/leads/{id}/activities', { id }))).body;
   assert.doesNotMatch(listed, /351912345678|351910000000/);
   assert.equal(JSON.parse(listed).activities[0].title, 'Recolha no hotel');
   const cancel = await handler({ ...request('POST /v1/leads/{id}/activities/{activityId}/cancel', { id }), pathParameters: { id, activityId: 'act-12345678' } });
   assert.equal(cancel.statusCode, 204);
-  assert.equal(updates.filter(u => u[2].followUpStatus === 'NOTIFY_CANCELLED').length, 4);
+  assert.equal(updates.filter(u => u[2].followUpStatus === 'NOTIFY_CANCELLED').length, 5);
 });
 
 test('an activity can be changed: pending reminders are replaced, the change is announced, no-ops are refused', async () => {
@@ -342,7 +354,7 @@ test('an activity can be changed: pending reminders are replaced, the change is 
   assert.equal(updates.filter(u => u[2].followUpStatus === 'NOTIFY_CANCELLED').length, before);
   const replaced = records.filter(r => r.recordKey.startsWith('NOTIFY#') && r.recordKey.endsWith('#r1'));
   assert.equal(replaced.length, before);
-  assert.ok(replaced.every(r => r.text.includes('10:15')));
+  assert.ok(replaced.filter(r => r.reminder !== 'traveller-rating').every(r => r.text.includes('10:15')));
   const activity = updates.find(u => u[1] === 'ACTIVITY#act-12345678')[2];
   assert.equal(activity.time, '10:15');
   assert.equal(activity.revision, '1');
