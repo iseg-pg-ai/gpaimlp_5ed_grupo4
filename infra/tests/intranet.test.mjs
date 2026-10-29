@@ -993,6 +993,9 @@ test('phones with an international 00 prefix are stored as +country', async () =
   assert.equal(normalizePhone('+351 910-650-230'), '+351910650230');
   const { phones } = contactDetails([{ actor: 'customer', text: 'Liguem para +0035191065023 ou 00351910650230' }]);
   assert.deepEqual(phones, ['+35191065023', '+351910650230']);
+  // Datas de viagem não viram telefones (antes davam «+2026113020261209»).
+  const dates = contactDetails([{ actor: 'customer', text: 'From 2026-11-30 to 2026-12-09, or 30/11/2026 - 09/12/2026. WhatsApp +351 912 345 678' }]);
+  assert.deepEqual(dates.phones, ['+351912345678']);
 });
 
 test('AWS function names become plain names for the team', async () => {

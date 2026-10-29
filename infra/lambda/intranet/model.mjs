@@ -91,10 +91,13 @@ export function contactDetails(messages) {
   const said = messages.filter(message => message.actor === 'customer').map(message => message.text);
   const unique = values => [...new Set(values)];
   const emails = unique(said.flatMap(text => text.match(/[^\s@<>()]+@[^\s@<>()]+\.[a-z]{2,}/gi) ?? []));
+  // Datas («2026-11-30 a 2026-12-09», «30/11/2026») não são telefones; um número E.164 tem 9 a 15 dígitos.
+  const DATE = /\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{4}/;
   const phones = unique(said
     .flatMap(text => text.match(/\+?\d[\d\s().-]{7,}\d/g) ?? [])
+    .filter(match => !DATE.test(match))
     .map(normalizePhone)
-    .filter(phone => phone.replace('+', '').length >= 9));
+    .filter(phone => { const digits = phone.replace('+', '').length; return digits >= 9 && digits <= 15; }));
   return { emails, phones };
 }
 
