@@ -614,4 +614,3 @@ de hoje.
   pode desbloquear, ligada ao lead, com prazo hoje; aparece em «O meu trabalho» e
   no feed, e «Feito» fecha o pedido.
 - «Só o meu» mostra o que é da pessoa e o que ela pode desbloquear.
-
