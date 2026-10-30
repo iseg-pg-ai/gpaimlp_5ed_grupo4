@@ -87,16 +87,18 @@ test('a simple question is answered automatically from the booking; a wrong mode
   assert.equal(threads[0].waiting, false);
 });
 
-test('money questions wait for a person in «O meu trabalho» with a suggested reply; STOP blocks further messages', async () => {
+test('money questions wait for a person with a suggested reply; STOP blocks further messages', async () => {
   const { call, messages } = inbox({ draft: async () => 'It is 40 euros.' });
   await call('POST /v1/whatsapp-test', { direction: 'in', to: '351912345678', text: 'How much does the Sintra day cost?', leadId: 'BLU-AAAAAAAA0001' });
   assert.equal(messages().length, 1);
   assert.equal(messages()[0].decision, 'person');
-  const { items } = JSON.parse((await call('GET /v1/work')).body);
-  const waiting = items.find(item => item.kind === 'message');
-  assert.equal(waiting.message.to, '351912345678');
-  assert.match(waiting.detail, /preço ou pagamento/);
-  assert.doesNotMatch(waiting.message.suggestion, /40/);
+  // O lead não tem responsável: a mensagem fica na caixa e na Visão geral, não em «O meu trabalho».
+  const { threads } = JSON.parse((await call('GET /v1/whatsapp-test')).body);
+  const thread = threads.find(item => item.to === '351912345678');
+  assert.equal(thread.waiting, true);
+  assert.match(thread.messages.at(-1).reason, /preço ou pagamento/);
+  assert.doesNotMatch(thread.messages.at(-1).suggestion, /40/);
+  assert.equal(JSON.parse((await call('GET /v1/work')).body).items.some(item => item.kind === 'message'), false);
 
   await call('POST /v1/whatsapp-test', { direction: 'in', to: '351912345678', text: 'STOP' });
   assert.equal((await call('POST /v1/whatsapp-test', { direction: 'out', to: '351912345678', text: 'Olá de novo' })).statusCode, 409);

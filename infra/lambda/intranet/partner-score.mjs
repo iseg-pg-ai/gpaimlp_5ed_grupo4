@@ -27,12 +27,15 @@ export function parseOutcome(body, activity, occurrenceAt, now = new Date()) {
   if (result === 'late' && !(delayMinutes >= 1 && delayMinutes <= 600)) return { error: 'Indique o atraso em minutos (1 a 600).' };
   const rating = body.rating === undefined || body.rating === '' ? null : Number.parseInt(body.rating, 10);
   if (rating !== null && !(rating >= 1 && rating <= 5)) return { error: 'A avaliação do cliente vai de 1 a 5.' };
+  // Recomendação (NPS): «de 0 a 10, recomendaria?», a resposta ao pedido enviado no dia seguinte.
+  const recommend = body.recommend === undefined || body.recommend === '' ? null : Number.parseInt(body.recommend, 10);
+  if (recommend !== null && !(recommend >= 0 && recommend <= 10)) return { error: 'A recomendação do cliente vai de 0 a 10.' };
   const cost = money(body.cost);
   const price = money(body.price);
   if (Number.isNaN(cost) || Number.isNaN(price)) return { error: 'Custo e preço têm de ser valores positivos.' };
   const currency = /^[A-Z]{3}$/.test(body.currency ?? '') ? body.currency : 'EUR';
   const comment = typeof body.comment === 'string' ? body.comment.trim().slice(0, 500) : '';
-  return { outcome: { result, delayMinutes, rating, cost, price, currency, comment } };
+  return { outcome: { result, delayMinutes, rating, recommend, cost, price, currency, comment } };
 }
 
 /** Campos guardados: um registo por ocorrência, encontrado pelo índice como os lembretes. */
@@ -42,7 +45,7 @@ export function outcomeRecord({ activityId, date, occurrenceAt, activity, outcom
     recordKey: `OUTCOME#${activityId}#${date}`, activityId, date, followUpStatus: OUTCOME_STATUS, followUpAt: occurrenceAt.toISOString(),
     partnerId: activity.partnerId, kind: activity.kind, title: activity.title, people: String(activity.people ?? ''),
     result: outcome.result, delayMinutes: String(outcome.delayMinutes), currency: outcome.currency,
-    ...optional('rating', outcome.rating), ...optional('cost', outcome.cost), ...optional('price', outcome.price), ...optional('comment', outcome.comment),
+    ...optional('rating', outcome.rating), ...optional('recommend', outcome.recommend), ...optional('cost', outcome.cost), ...optional('price', outcome.price), ...optional('comment', outcome.comment),
     recordedBy: user.email, recordedAt: now.toISOString(),
   };
 }
@@ -52,13 +55,25 @@ const num = (item, key) => (str(item, key) === '' ? null : Number(str(item, key)
 export const toOutcome = item => ({
   conversationId: str(item, 'conversationId'), activityId: str(item, 'activityId'), date: str(item, 'date'), at: str(item, 'followUpAt'),
   partnerId: str(item, 'partnerId'), kind: str(item, 'kind'), title: str(item, 'title'), people: num(item, 'people') ?? 0,
-  result: str(item, 'result'), delayMinutes: num(item, 'delayMinutes') ?? 0, rating: num(item, 'rating'), cost: num(item, 'cost'), price: num(item, 'price'),
+  result: str(item, 'result'), delayMinutes: num(item, 'delayMinutes') ?? 0, rating: num(item, 'rating'), recommend: num(item, 'recommend'), cost: num(item, 'cost'), price: num(item, 'price'),
   currency: str(item, 'currency') || 'EUR', comment: str(item, 'comment'), recordedBy: str(item, 'recordedBy'),
 });
 
 const share = (part, whole) => (whole ? part / whole : null);
 const round = (value, digits = 2) => (value === null ? null : Math.round(value * 10 ** digits) / 10 ** digits);
 const average = values => (values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null);
+
+/**
+ * Net Promoter Score das respostas de 0 a 10: % promotores (9–10) menos % detratores (0–6),
+ * de −100 a 100. Sem respostas não há NPS: desconhecido não é zero.
+ */
+export function netPromoter(values) {
+  const answers = values.filter(value => value !== null && value !== undefined);
+  if (!answers.length) return { nps: null, responses: 0, promoters: 0, passives: 0, detractors: 0 };
+  const promoters = answers.filter(value => value >= 9).length;
+  const detractors = answers.filter(value => value <= 6).length;
+  return { nps: Math.round((promoters - detractors) / answers.length * 100), responses: answers.length, promoters, passives: answers.length - promoters - detractors, detractors };
+}
 
 /** Indicadores e pontuação de cada parceiro na janela; ordenados por tipo e pontuação. */
 export function scorecards(partners, outcomes, now = new Date()) {
@@ -69,6 +84,7 @@ export function scorecards(partners, outcomes, now = new Date()) {
     const happened = own.length - count('cancelled');
     const late = own.filter(item => item.result === 'late');
     const ratings = own.map(item => item.rating).filter(value => value !== null);
+    const promoter = netPromoter(own.map(item => item.recommend));
     const priced = own.filter(item => item.price !== null && item.cost !== null && item.price > 0);
     const margins = priced.map(item => (item.price - item.cost) / item.price);
     const withCost = priced.filter(item => item.cost > 0);
@@ -92,6 +108,8 @@ export function scorecards(partners, outcomes, now = new Date()) {
       reliability: round(share(own.length - count('no-show') - count('cancelled'), own.length)),
       rating: round(average(ratings), 1),
       ratings: ratings.length,
+      nps: promoter.nps,
+      npsResponses: promoter.responses,
       margin: round(average(margins)),
       roi: round(withCost.length ? average(withCost.map(item => (item.price - item.cost) / item.cost)) : null),
       pricePerPerson: people && new Set(charged.map(item => item.currency)).size === 1 ? round(charged.reduce((sum, item) => sum + item.price, 0) / people) : null,
@@ -101,7 +119,8 @@ export function scorecards(partners, outcomes, now = new Date()) {
     // Componentes em falta (sem avaliações ou sem preços) não contam: o peso divide-se pelos outros.
     const parts = {
       punctuality: metrics.punctuality,
-      rating: metrics.rating === null ? null : (metrics.rating - 1) / 4,
+      // Avaliação do cliente: estrelas (1–5) quando registadas; senão a média da recomendação (0–10).
+      rating: metrics.rating !== null ? (metrics.rating - 1) / 4 : promoter.responses ? average(own.map(item => item.recommend).filter(value => value !== null)) / 10 : null,
       reliability: metrics.reliability,
       margin: metrics.margin === null ? null : Math.max(0, Math.min(1, metrics.margin / SCORE.fullMargin)),
     };

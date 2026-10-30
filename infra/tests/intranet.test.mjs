@@ -236,7 +236,7 @@ test('daily pickups plan one reminder set per day for traveller and partner', ()
   assert.equal(rating.length, 1);
   assert.equal(rating[0].sendAt, '2026-11-04T10:00:00.000Z');
   assert.equal(rating[0].to, '351912345678');
-  assert.match(rating[0].text, /from 1 \(poor\) to 5 \(excellent\).*Tuk-tuk Alfama|Tuk-tuk Alfama.*from 1 \(poor\) to 5/s);
+  assert.match(rating[0].text, /Tuk-tuk Alfama.*recommend BLU Costa.*from 0 \(not at all\) to 10 \(extremely likely\)/s);
   assert.match(rating[0].text, /Reply STOP/);
   const first = notifications.filter(n => n.occurrenceAt === '2026-11-02T09:30:00.000Z');
   assert.deepEqual(first.map(n => n.sendAt).sort(), ['2026-11-01T18:00:00.000Z', '2026-11-01T18:00:00.000Z', '2026-11-02T07:30:00.000Z', '2026-11-02T08:30:00.000Z']);
@@ -830,17 +830,16 @@ test('the auto-assigner runs only when switched on, never overwrites a fresh own
   assert.equal(parseSettings({ autoAssign: true }, currentSettings([])).settings.autoAssign, true);
 });
 
-test('my work lists unowned late leads to curators and the alerts addressed to me', async () => {
+test('my work is only mine: unowned late leads stay in the team view; alerts addressed to me appear', async () => {
   const escalation = alertRecord({ key: 'escalate#BLU-AAAAAAAA0001#2026-10-25T14:00:00.000Z', at: '2026-10-26T11:00:00.000Z', level: 'bad', tab: 'leads', leadId: 'BLU-AAAAAAAA0001', text: 'O lead está sem resposta.', to: ['gisela@blu.pt'] }, 'email');
   const asItem = record => Object.fromEntries(Object.entries({ conversationId: TEAM_ALERTS.partition, ...record }).map(([key, value]) => [key, S(value)]));
   const { deps } = fakeDeps({ queryAgenda: async status => (status === TEAM_ALERTS.status ? [asItem(escalation)] : []) });
   const handler = createApp(deps);
   const curator = JSON.parse((await handler(request('GET /v1/work'))).body).items;
-  assert.deepEqual(curator.map(item => [item.kind, item.detail, item.unassigned]), [['lead', 'Sem responsável: assumir', true]]);
+  assert.deepEqual(curator, []);
   const founder = JSON.parse((await handler(request('GET /v1/work', { email: 'gisela@blu.pt', groups: '[founders]' }))).body).items;
-  assert.deepEqual(founder.map(item => item.kind).sort(), ['alert', 'lead']);
+  assert.deepEqual(founder.map(item => item.kind), ['alert']);
   assert.equal(founder.find(item => item.kind === 'alert').detail, 'leads');
-  // Marketing não segue leads: não vê leads sem responsável.
   const marketing = JSON.parse((await handler(request('GET /v1/work', { email: 'mia@blu.pt', groups: '[marketing]' }))).body).items;
   assert.equal(marketing.length, 0);
 });
