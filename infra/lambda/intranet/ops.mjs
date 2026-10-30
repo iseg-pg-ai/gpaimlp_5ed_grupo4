@@ -3,9 +3,24 @@
 // quanto tempo espera, quem é o responsável e quem pode desbloquear. As regras são fixas e
 // explicadas em `why`; não há modelo a decidir. Leads de demonstração já vêm filtrados em loadWork.
 import { isOverdue } from './model.mjs';
+import { BLOCKERS } from './tasks.mjs';
 
 export const OPS_STATES = {
   blocked: 'Bloqueado', overdue: 'Em atraso', unassigned: 'Sem responsável', risk: 'Cliente a desistir', today: 'Hoje', failed: 'Falha de envio',
+};
+// Onde se concentram os bloqueios: os tipos das tarefas e os que se deduzem dos outros itens.
+export const OPS_BLOCKERS = {
+  ...BLOCKERS, owner: 'Sem responsável', response: 'Resposta da equipa', late: 'Tarefa em atraso', case: 'Prazo de reclamação',
+};
+// Bloqueios antigos sem tipo: deduz-se do motivo escrito, sem adivinhar mais do que isto.
+export const guessBlocker = reason => {
+  const text = (reason ?? '').toLowerCase();
+  if (/parceir|partner|fornecedor|hotel|guia|motorista|transfer/.test(text)) return 'partner';
+  if (/client|viajante/.test(text)) return 'client';
+  if (/propost|orçament|orcament|preço|preco/.test(text)) return 'proposal';
+  if (/agenda|horári|horari|conflit|disponib/.test(text)) return 'schedule';
+  if (/whatsapp|mensagem|sms|email|envio/.test(text)) return 'whatsapp';
+  return 'other';
 };
 export const OPS_KINDS = { lead: 'Lead', task: 'Tarefa', message: 'Mensagem', reminder: 'Lembrete', case: 'Caso', service: 'Serviço' };
 
@@ -58,6 +73,7 @@ export function opsItems({ work, failed = [], services = [], members = [], partn
         : late ? 'Passou o prazo de resposta ao cliente.' : 'Responder hoje.',
       since: (owned ? lead.replyDueAt : lead.lastActivityAt) || lead.followUpAt, due: lead.replyDueAt || lead.followUpAt,
       resolver: owned ? person(lead.assignedTo, 'responsável pelo lead') : leastLoaded(['curators', 'founders'], 'curador(a) ou fundador(a) com menos trabalho em aberto'),
+      blocker: lead.atRisk ? 'client' : !owned ? 'owner' : late ? 'response' : '',
     });
   }
 
@@ -75,6 +91,7 @@ export function opsItems({ work, failed = [], services = [], members = [], partn
       reason: task.status === 'blocked' ? task.blockedReason || 'Bloqueada sem motivo.' : task.dueState === 'overdue' ? `Prazo ${task.due} passou.` : !owned ? 'Sem responsável ativo.' : 'Prazo hoje.',
       since: task.status === 'blocked' ? task.updatedAt : task.due ? `${task.due}T00:00:00Z` : task.createdAt, due: task.due,
       resolver, task: { status: task.status, createdBy: lower(task.createdBy), createdByName: nameOf(task.createdBy) },
+      blocker: task.status === 'blocked' ? (BLOCKERS[task.blockerType] ? task.blockerType : guessBlocker(task.blockedReason)) : !owned ? 'owner' : task.dueState === 'overdue' ? 'late' : '',
     });
   }
 
@@ -89,6 +106,7 @@ export function opsItems({ work, failed = [], services = [], members = [], partn
       reason: last.reason || 'Mensagem por responder.', since: last.at, due: '', partnerId: thread.partnerId,
       resolver: owned ? person(owner, 'responsável pelo lead') : leastLoaded(['curators', 'founders'], 'curador(a) ou fundador(a) com menos trabalho em aberto'),
       message: { key: thread.key, leadId: thread.leadId, suggestion: last.suggestion ?? '' },
+      blocker: owned ? 'response' : 'owner',
     });
   }
 
@@ -105,6 +123,7 @@ export function opsItems({ work, failed = [], services = [], members = [], partn
       reason: item.reason || 'Enviar à mão.', since: item.sendAt, due: item.occurrenceAt, partnerName: item.partnerName,
       resolver: isActive(owner) ? person(owner, isActive(item.approvedBy) ? 'agendou o serviço' : 'responsável pelo lead') : leastLoaded(['curators', 'founders'], 'curador(a) ou fundador(a) com menos trabalho em aberto'),
       reminder: { text: item.text ?? '', activityId: item.activityId },
+      blocker: 'whatsapp',
     });
   }
 
@@ -118,6 +137,7 @@ export function opsItems({ work, failed = [], services = [], members = [], partn
       reason: item.deadlineState === 'overdue' ? `Prazo legal ${item.deadline} passou.` : !owned ? 'Caso sem responsável.' : 'Prazo hoje.',
       since: item.receivedOn ? `${item.receivedOn}T00:00:00Z` : '', due: item.deadline,
       resolver: owned ? person(item.owner, 'responsável pelo caso') : leastLoaded(['governance', 'founders'], 'governança ou fundador(a) com menos trabalho em aberto'),
+      blocker: item.deadlineState === 'overdue' ? 'case' : !owned ? 'owner' : '',
     });
   }
 
@@ -149,7 +169,7 @@ export function opsView(items, { scope, me, members = [] }) {
   const shown = scope === 'team' ? items : items.filter(item => item.owner === mine || item.resolver?.email === mine);
   const totals = Object.fromEntries(Object.keys(OPS_STATES).map(state => [state, shown.filter(item => item.states.includes(state)).length]));
   return {
-    scope, items: shown, totals, states: OPS_STATES, kinds: OPS_KINDS,
+    scope, items: shown, totals, states: OPS_STATES, kinds: OPS_KINDS, blockers: OPS_BLOCKERS,
     people: members.filter(member => member.enabled).map(member => ({ email: lower(member.email), name: member.name, groups: member.groups })),
   };
 }

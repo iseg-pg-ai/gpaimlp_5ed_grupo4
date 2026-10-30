@@ -5,6 +5,11 @@
 export const UNLINKED_TASKS = 'TASKS-UNLINKED';
 export const TASK_STATE = { open: 'TASK_OPEN', done: 'TASK_DONE' };
 export const TASK_STATUS = { todo: 'Por fazer', doing: 'Em curso', blocked: 'Bloqueado', done: 'Feito' };
+// Tipo de bloqueio, para ver onde se concentram os bloqueios (Operações); o motivo continua livre.
+export const BLOCKERS = {
+  partner: 'Confirmação do parceiro', client: 'Resposta do cliente', proposal: 'Aprovação da proposta',
+  schedule: 'Conflito de agenda', whatsapp: 'Entrega WhatsApp', internal: 'Decisão interna', other: 'Outro',
+};
 export const FEED = { partition: 'TEAM-FEED', status: 'FEED', days: 7, limit: 100 };
 // FollowUpIndex precisa de followUpAt; tarefas sem prazo ficam no fim da ordenação.
 export const NO_DUE = '9999-12-31';
@@ -37,7 +42,8 @@ export function parseTaskUpdate(body, current, { staff }) {
       const reason = text(body.blockedReason, 280);
       if (!reason) return { error: 'Diga o que está a bloquear a tarefa.' };
       set.blockedReason = reason;
-    } else if (current.blockedReason) set.blockedReason = '';
+      set.blockerType = BLOCKERS[body.blockerType] ? body.blockerType : 'other';
+    } else if (current.blockedReason) Object.assign(set, { blockedReason: '', blockerType: '' });
   }
   if (body.owner !== undefined) {
     const owner = text(body.owner, 254).toLowerCase();

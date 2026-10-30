@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { NotFound, createApp } from '../lambda/intranet/app.mjs';
+import { guessBlocker } from '../lambda/intranet/ops.mjs';
 import { CONTACTED, LEAD_TAGS, OPEN_STATUSES, atRisk, groupsOf, metrics, toLead } from '../lambda/intranet/model.mjs';
 import { createAlerter, createAnalyser, createAssigner, createDispatcher } from '../lambda/intranet/dispatch-core.mjs';
 import { needsAnalysis, parseSignals, profileFields, signalPrompt } from '../lambda/intranet/signals.mjs';
@@ -547,7 +548,7 @@ test('tasks validate owner, due date and the reason for a block', () => {
   assert.deepEqual(parseTask({ title: 'Confirmar tuk-tuk' }, { staff, user }).record, { title: 'Confirmar tuk-tuk', note: '', owner: 'ana@blu.pt', due: '', caseId: '', taskStatus: 'todo' });
   const current = { title: 'x', owner: 'ana@blu.pt', due: '', status: 'blocked', blockedReason: 'À espera do hotel' };
   assert.equal(parseTaskUpdate({ status: 'blocked' }, { ...current, status: 'todo', blockedReason: '' }, { staff }).error, 'Diga o que está a bloquear a tarefa.');
-  assert.deepEqual(parseTaskUpdate({ status: 'doing' }, current, { staff }).set, { taskStatus: 'doing', blockedReason: '' });
+  assert.deepEqual(parseTaskUpdate({ status: 'doing' }, current, { staff }).set, { taskStatus: 'doing', blockedReason: '', blockerType: '' });
   assert.equal(parseTaskUpdate({}, current, { staff }).error, 'Nada para atualizar.');
   assert.equal(dueState({ status: 'todo', due: '2026-10-25' }, '2026-10-26'), 'overdue');
   assert.equal(dueState({ status: 'todo', due: '2026-10-28' }, '2026-10-26'), 'soon');
@@ -1182,4 +1183,27 @@ test('new roles see their own area: cloud and security never reach client data, 
   assert.equal((await auditor('POST /v1/governance/attestations', { body: {} })).statusCode, 403);
   assert.notEqual((await as('[legal]')('POST /v1/governance/attestations', { body: {} })).statusCode, 403);
   assert.equal((await as('[finance]')('POST /v1/leads/{id}/assign', { id: 'BLU-AAAAAAAA0001', body: {} })).statusCode, 403);
+});
+
+test('blocks have a type, old reasons are classified, and every stuck item says where it is blocked', async () => {
+  const { handler } = taskTable();
+  const gisela = { email: 'gisela@blu.pt', name: 'Gisela', groups: '[founders]' };
+  const { taskId } = JSON.parse((await handler(request('POST /v1/tasks', { ...gisela, body: { title: 'Confirmar guia', owner: 'ana@blu.pt' } }))).body);
+  const block = body => handler(request('POST /v1/leads/{id}/tasks/{taskId}', { params: { id: 'TASKS-UNLINKED', taskId }, body }));
+  assert.equal((await block({ status: 'blocked', blockerType: 'proposal', blockedReason: 'O cliente ainda não aprovou' })).statusCode, 204);
+  const ops = async () => JSON.parse((await handler(request('GET /v1/agenda', { ...gisela, query: { view: 'ops', scope: 'team' } }))).body);
+  let data = await ops();
+  assert.equal(data.items.find(item => item.kind === 'task').blocker, 'proposal');
+  assert.equal(data.blockers.proposal, 'Aprovação da proposta');
+  assert.equal(data.items.find(item => item.kind === 'lead').blocker, 'owner');
+  // Sem tipo válido fica «Outro»; desbloquear limpa o tipo.
+  await block({ status: 'doing' });
+  await block({ status: 'blocked', blockerType: 'nope', blockedReason: 'x' });
+  data = await ops();
+  assert.equal(data.items.find(item => item.kind === 'task').blocker, 'other');
+});
+
+test('old blocks without a type are classified from the written reason', () => {
+  assert.deepEqual(['À espera do hotel', 'O cliente não responde', 'Falta o orçamento', 'Conflito de horário', 'WhatsApp falhou', 'Sem decisão'].map(guessBlocker),
+    ['partner', 'client', 'proposal', 'schedule', 'whatsapp', 'other']);
 });

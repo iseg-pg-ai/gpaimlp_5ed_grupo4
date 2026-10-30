@@ -214,3 +214,12 @@ p.message { margin: .3rem 0; white-space: pre-wrap; font-size: .85rem; color: va
 li.ops-item { cursor: pointer; }
 li.ops-item.selected { background: #f3ecdf; outline: 2px solid var(--ink); }
 @media (max-width: 640px) { .ops-bar { grid-template-columns: minmax(5rem, 9rem) 1fr 2rem; } }
+
+/* Operações › Inteligência: colunas da concentração de bloqueios (a maior em destaque). */
+.ops-columns { display: flex; align-items: flex-end; gap: 10px; height: 220px; padding-top: 8px; overflow-x: auto; }
+.ops-column { flex: 1 0 72px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; gap: 4px; padding: 4px; border: 1px solid transparent; border-radius: var(--radius); background: none; color: inherit; text-align: center; }
+.ops-column:hover, .ops-column:focus-visible { border-color: var(--accent); }
+.ops-column[aria-pressed="true"] { border-color: var(--ink); background: #f3ecdf; }
+.ops-column-bar { display: block; min-height: 6px; border-radius: 6px 6px 0 0; background: var(--ink-soft); }
+.ops-column.top .ops-column-bar { background: var(--bad); }
+.ops-column-label { font-size: 12px; line-height: 1.2; min-height: 2.4em; }

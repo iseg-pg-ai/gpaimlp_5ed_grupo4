@@ -103,7 +103,7 @@ export const toTask = (item, today) => {
   const record = {
     id: str(item, 'taskId'), partition, leadId: partition === UNLINKED_TASKS ? '' : partition, leadLabel: str(item, 'leadLabel'),
     title: str(item, 'title'), note: str(item, 'note'), owner: str(item, 'owner'), due: str(item, 'due'), status: str(item, 'taskStatus'),
-    blockedReason: str(item, 'blockedReason'), caseId: str(item, 'caseId'), casePartition: str(item, 'casePartition'), caseTitle: str(item, 'caseTitle'),
+    blockedReason: str(item, 'blockedReason'), blockerType: str(item, 'blockerType'), caseId: str(item, 'caseId'), casePartition: str(item, 'casePartition'), caseTitle: str(item, 'caseTitle'),
     createdBy: str(item, 'createdBy'), createdAt: str(item, 'createdAt'), updatedBy: str(item, 'updatedBy'), updatedAt: str(item, 'updatedAt'),
   };
   return { ...record, dueState: dueState(record, today) };
