@@ -639,3 +639,12 @@ sugestões por lead. Testes locais com respostas na forma da especificação.
   há integração por API: os casos do Livro continuam a ser registados à mão.
 - **Novo parceiro:** pedido (tarefa) a partir de Parceiros, porque a lista vem de
   `config/partners.json` e exige licença verificada.
+
+## Proposta do portal para o WhatsApp (2026-10-30)
+
+No Histórico do portal, «Enviar por WhatsApp (Mission Control)» cria a partilha com prazo (7, 30 ou
+90 dias, a mesma do email) e abre a Mission Control em `#whatsapp?link=…&v=…&dest=…`. O fragmento
+fica no navegador e só aceita ligações de partilha https do portal. A Mission Control mostra a
+mensagem já preparada, com o lead sugerido pelo destino e a assinatura «Proposta v00N · BLU Costa
+Travel · Curation Studio»; uma pessoa revê e envia. No modo de teste, a mensagem fica registada na
+conversa e nada sai para um telefone. O PDF em si não é alterado.

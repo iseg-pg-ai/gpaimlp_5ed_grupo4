@@ -53,7 +53,7 @@ export function TopBar({ locale, children }: { locale: Locale; children: ReactNo
             className="studio-nav-link flex min-h-11 items-center rounded-lg px-3 py-2 text-sm break-words transition-colors text-[var(--portal-text-143f4b)] hover:bg-[var(--portal-bg-e3dcd0)]"
           >
             <LayoutGrid aria-hidden="true" className="size-4 shrink-0" />
-            Intranet ↗
+            Mission Control ↗
           </a>
         ) : (
           []

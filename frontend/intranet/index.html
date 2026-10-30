@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Intranet BLU</title>
+    <title>BLU Mission Control</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
     <script src="config.js"></script>
@@ -12,7 +12,7 @@
   </head>
   <body>
     <header class="topbar">
-      <div class="brand"><span class="mark">BC</span><span>Intranet BLU</span></div>
+      <div class="brand"><span class="mark">BC</span><span>BLU Mission Control</span></div>
       <button type="button" id="menu" class="menu-toggle" aria-controls="tabs" aria-expanded="false" hidden>Menu</button>
       <!-- Árvore por finalidade: cada grupo dobra; a equipa primeiro. Contadores em data-count (CSS). -->
       <nav id="tabs" class="tabs" aria-label="Secções" hidden>
@@ -24,7 +24,7 @@
           <summary>Operações</summary>
           <button type="button" data-tab="operations">Inteligência</button>
           <button type="button" data-tab="agenda">Agenda</button>
-          <button type="button" data-tab="overdue">Atrasos críticos</button>
+          <button type="button" data-tab="overdue" data-badge="overdue">Atrasos críticos</button>
         </details>
         <details class="nav-tree" data-group="mine" open>
           <summary>O meu trabalho</summary>
@@ -65,7 +65,7 @@
     </header>
     <main id="main">
       <section id="signin" class="signin" hidden>
-        <h1>Intranet da equipa BLU</h1>
+        <h1>BLU Mission Control</h1>
         <p>Acesso reservado à equipa, com autenticação de dois fatores.</p>
         <button type="button" id="login" class="primary">Entrar</button>
         <p id="signin-error" class="error" role="alert"></p>

@@ -1,9 +1,10 @@
+import { proposalShareUrl, embedProposalLink, proposalPayload } from './proposal-links.js';
 import { challengeFor, claimsOf, expired, loginUrl, logoutUrl, randomString, refreshRequest, tokenRequest } from './auth.js';
 
 // Intranet da equipa. Todo o texto vindo da API é inserido com textContent (nunca HTML).
 const config = window.BLU_INTRANET;
 // Um só site para a equipa; os grupos Cognito decidem o que cada pessoa vê (aqui e na API).
-const SITE = { name: 'Intranet BLU', start: 'work' };
+const SITE = { name: 'BLU Mission Control', start: 'work' };
 // Perfis sem leitura geral (marketing) veem só estes separadores; a API aplica a mesma regra.
 const LIMITED_TABS = ['work', 'dashboard'];
 const session = { idToken: '', refreshToken: '', claims: null };
@@ -119,7 +120,41 @@ let casePrefill = {};
 // Os leads de demonstração ficam escondidos por defeito, como nos números da Visão geral e do Painel.
 const leadsState = { filter: 'open', selected: '', demo: false };
 // Conversa com o assistente: só em memória, apaga-se ao recarregar a página.
-const whatsappState = { selected: '', leadId: '' };
+const whatsappState = { selected: '', leadId: '', proposal: null };
+
+// Proposta enviada pelo portal: #whatsapp?link=…&v=1&dest=… (o fragmento nunca sai do navegador).
+// Só aceita ligações de partilha https do portal; o resto é ignorado.
+function proposalHandoff() {
+  const [tab, query = ''] = location.hash.slice(1).split('?');
+  if (tab !== 'whatsapp' || !query) return null;
+  const params = new URLSearchParams(query);
+  const link = params.get('link') ?? '';
+  if (!proposalShareUrl(link, portalUrl())) return null;
+  return { link, leadId: (params.get('lead') ?? '').slice(0, 100), version: Math.min(Math.max(Number.parseInt(params.get('v') ?? '1', 10) || 1, 1), 999), destination: (params.get('dest') ?? '').slice(0, 80) };
+}
+
+// A mensagem fica preparada para rever: escolhe-se o lead (já sugerido pelo destino) e envia-se.
+function handoffPanel(state, leads, rerender) {
+  const { proposal } = state;
+  const candidates = leads.filter(lead => proposal.destination && lead.journey?.destination?.toLowerCase().includes(proposal.destination.toLowerCase()));
+  const guess = proposal.leadId ? leads.find(lead => lead.id === proposal.leadId) : candidates.length === 1 ? candidates[0] : null;
+  const holder = h('div', {});
+  const who = h('select', { 'aria-label': 'Lead da proposta' }, h('option', { value: '' }, 'Escolher o lead…'),
+    leads.filter(lead => !lead.synthetic || intelDemo.on).map(lead => h('option', { value: lead.id, selected: lead.id === guess?.id }, `${lead.journey?.destination || 'Sem destino'} · ${lead.id}`)));
+  const load = async () => {
+    holder.replaceChildren();
+    if (!who.value) return;
+    const lead = await api('GET', `/v1/leads/${encodeURIComponent(who.value)}`).catch(() => null);
+    if (lead) holder.append(proposalComposer(lead, proposal));
+  };
+  who.addEventListener('change', load);
+  load();
+  return h('div', { class: 'panel' },
+    h('h3', {}, `Proposta v${String(proposal.version).padStart(3, '0')} recebida do portal`),
+    h('p', { class: 'muted' }, 'A mensagem está preparada com o link de acesso temporário. Reveja e envie; se o cliente não responder, escreva uma versão personalizada.'),
+    h('label', {}, 'Para o lead', who), holder,
+    h('div', { class: 'actions' }, h('button', { type: 'button', class: 'link', onclick: () => { state.proposal = null; rerender(); } }, 'Descartar')));
+}
 let teamCache;
 const loadTeam = async () => (teamCache ??= (await api('GET', '/v1/team')).members);
 // «Bloqueado» já aparece no estado da tarefa; a urgência só o usa para ordenar e colorir.
@@ -529,31 +564,90 @@ function proposalMessage({ name, destination, party, dates, link, curator }) {
   ].join('\n');
 }
 
-function proposalComposer(lead) {
+// Link da proposta dentro da mensagem: cola-se o link de partilha do portal (Histórico › Partilhar) e
+// entra no texto com a assinatura. Só aceita links de partilha https do próprio portal.
+function proposalLinkField(getText, leadId = '') {
+  const link = h('input', { type: 'url', placeholder: 'Link da proposta (portal)', 'aria-label': 'Link da proposta' });
+  const note = h('span', { class: 'muted', role: 'status' });
+  const insert = h('button', { type: 'button', class: 'secondary', onclick: () => {
+    const value = link.value.trim();
+    if (!proposalShareUrl(value, portalUrl())) { note.textContent = 'Use o link de partilha do portal (Histórico › Partilhar).'; return; }
+    const text = getText();
+    try { text.value = proposalPayload(text.value, value); } catch (error) { note.textContent = error.message; return; }
+    link.value = '';
+    note.textContent = 'Link inserido na mensagem.';
+  } }, 'Inserir link');
+  // Biblioteca: até duas propostas genéricas aprovadas que servem o lead. O link abre o PDF para
+  // rever (temporário, dura horas); para o cliente use o link de partilha do portal.
+  const library = h('div', { class: 'muted' });
+  if (leadId) api('GET', `/v1/leads/${encodeURIComponent(leadId)}/library`).then(({ matches }) => {
+    if (!matches.length) return;
+    library.append('Da biblioteca (rever antes de enviar): ', ...matches.flatMap(match => [
+      match.url ? h('a', { href: match.url, target: '_blank', rel: 'noopener' }, `${match.title} ↗`) : match.title,
+      ` (${match.score}% · ${match.reasons.join(' · ')}) `]));
+  }).catch(() => {});
+  return h('div', {}, h('div', { class: 'actions' }, link, insert, h('a', { href: 'https://d3804amye1jw31.cloudfront.net/exports', target: '_blank', rel: 'noopener' }, 'Histórico do portal ↗'), note), library);
+}
+
+function proposalComposer(lead, preset = null) {
   const curator = (session.claims?.name || session.claims?.email || 'BLU').split(/[\s@(]/)[0];
   const phone = String(lead.phones?.[0] ?? '').replace(/\D/g, '').replace(/^00/, '');
-  const link = h('input', { type: 'url', placeholder: 'Link da proposta (portal)', 'aria-label': 'Link da proposta' });
+  const link = h('input', { type: 'url', placeholder: 'Link da proposta (portal)', 'aria-label': 'Link da proposta', value: preset?.link ?? '' });
   const name = h('input', { type: 'text', maxlength: '60', placeholder: 'Nome do cliente (opcional)', 'aria-label': 'Nome do cliente' });
   const text = h('textarea', { rows: '12', maxlength: '1000', 'aria-label': 'Mensagem' });
   const status = h('p', { class: 'muted', role: 'status' });
   let edited = false;
+  let insertedLink = preset?.link ?? '';
+  const insertLink = () => {
+    const value = proposalShareUrl(link.value.trim(), portalUrl());
+    if (!value) { status.textContent = 'Crie uma ligação de partilha no portal ou cole uma ligação válida da proposta.'; return false; }
+    text.value = embedProposalLink(text.value, value, insertedLink);
+    insertedLink = value;
+    status.textContent = 'Link clicável inserido na mensagem. Reveja antes de enviar.';
+    return true;
+  };
   const fill = () => {
     if (edited) return;
-    text.value = proposalMessage({ name: name.value.trim(), destination: lead.journey.destination, party: lead.journey.party, dates: lead.journey.timeframe, link: link.value.trim(), curator });
+    text.value = proposalMessage({ name: name.value.trim(), destination: lead.journey.destination, party: lead.journey.party, dates: lead.journey.timeframe, link: link.value.trim(), curator })
+      + (preset ? `
+
+Proposta v${String(preset.version).padStart(3, '0')} · BLU Costa Travel · Curation Studio` : '');
   };
   text.addEventListener('input', () => { edited = true; });
-  link.addEventListener('input', fill);
+  link.addEventListener('input', () => { if (!edited) fill(); });
+  link.addEventListener('change', insertLink);
   name.addEventListener('input', fill);
   fill();
+  // Biblioteca de propostas genéricas: só para rever. O link dura horas e não segue para o cliente;
+  // a mensagem só leva o link de partilha do portal.
+  const libraryBox = h('div', { class: 'muted' });
+  api('GET', `/v1/leads/${encodeURIComponent(lead.id)}/library`).then(({ matches }) => {
+    const usable = matches.filter(match => match.url);
+    if (usable.length) libraryBox.append('Da biblioteca (só para rever, não vai ao cliente): ', ...usable.flatMap(match => [
+      h('a', { href: match.url, target: '_blank', rel: 'noopener' }, `${match.title} ↗`), ` (${match.score}%) `]));
+  }).catch(() => {});
+  // Os dois serviços que melhor servem a viagem, com o motivo; a pessoa escolhe quais entram na mensagem.
+  let picks = [];
+  const recommendations = h('div', { class: 'reco' });
+  api('GET', `/v1/partners?lead=${encodeURIComponent(lead.id)}`).then(({ items, basis, outcomes }) => {
+    if (!items.length) return;
+    picks = items.map(item => ({ item, box: h('input', { type: 'checkbox', checked: true, 'aria-label': `Incluir ${item.name}` }) }));
+    recommendations.append(h('h4', {}, 'Sugestões para este cliente'),
+      ...picks.map(({ item, box }) => h('label', { class: 'reco-item' }, box, ' ', h('strong', {}, item.name), ' ', pill(`${item.score}%`, 'ok'), h('div', { class: 'muted' }, item.reasons.join(' · ')))),
+      h('p', { class: 'muted' }, basis === 'learned' ? `Ordem aprendida com ${outcomes} propostas enviadas.` : 'Ordem por regras (zona, lugares e qualidade medida). Passa a aprender depois de 10 propostas com resultado.'));
+  }).catch(() => {});
   const send = h('button', { type: 'submit', class: 'primary' }, 'Enviar pelo WhatsApp');
   const form = h('form', { class: 'proposal', onsubmit: async event => {
     event.preventDefault();
-    if (!/^https?:\/\/\S+$/.test(link.value.trim())) { status.textContent = 'Indique o link da proposta.'; link.focus(); return; }
-    if (text.value.includes('[link da proposta]')) text.value = text.value.replace('[link da proposta]', link.value.trim());
+    if (!insertLink()) { link.focus(); return; }
     send.disabled = true;
     status.textContent = 'A enviar…';
+    const chosen = picks.filter(({ box }) => box.checked).map(({ item }) => item);
+    const extra = chosen.length && !text.value.includes(chosen[0].name) ? `
+
+Sugerimos também: ${chosen.map(item => `${item.name} (${item.area})`).join(' · ')}` : '';
     try {
-      await api('POST', '/v1/whatsapp-test', { direction: 'out', leadId: lead.id, ...(phone.length >= 9 ? { to: phone } : {}), text: text.value });
+      await api('POST', '/v1/whatsapp-test', { direction: 'out', leadId: lead.id, ...(phone.length >= 9 ? { to: phone } : {}), text: proposalPayload(text.value, insertedLink, extra), recommended: chosen.map(item => item.partnerId) });
       whatsappState.selected = phone.length >= 9 ? phone : `lead:${lead.id}`;
       status.replaceChildren('Proposta enviada para a caixa de WhatsApp. ', h('button', { type: 'button', class: 'link', onclick: () => show('whatsapp') }, 'Abrir a conversa'));
     } catch (error) {
@@ -562,10 +656,15 @@ function proposalComposer(lead) {
     }
   } },
     h('div', { class: 'form-grid' }, link, name),
+    h('div', { class: 'actions' },
+      h('a', { href: portalUrl(`/exports?lead=${encodeURIComponent(lead.id)}`), target: '_blank', rel: 'noopener' }, 'Escolher proposta no portal ↗'),
+      h('button', { type: 'button', class: 'secondary', onclick: insertLink }, 'Inserir link na mensagem')),
+    h('p', { class: 'muted' }, 'No portal: escolha a versão, confirme a partilha e use WhatsApp. A mensagem regressa com o link para este lead.'),
+    libraryBox, recommendations,
     h('label', {}, 'Mensagem (pode editar)', text),
     h('p', { class: 'muted' }, phone.length >= 9 ? `Para +${phone}, o número que o cliente deixou no chat.` : 'Sem telefone no chat: a conversa fica com a referência do lead.'),
     h('div', { class: 'actions' }, send), status);
-  return h('details', { class: 'panel fold proposal-fold' }, h('summary', {}, h('span', { class: 'fold-title' }, 'Enviar proposta por WhatsApp')), form);
+  return h('details', { class: 'panel fold proposal-fold', ...(preset ? { open: true } : {}) }, h('summary', {}, h('span', { class: 'fold-title' }, preset ? `Proposta v${String(preset.version).padStart(3, '0')} do portal, pronta a rever` : 'Enviar proposta por WhatsApp')), form);
 }
 
 // Novo parceiro: a lista vem de config/partners.json (com licença verificada), por isso o pedido é
@@ -1353,6 +1452,7 @@ const views = {
         write({ direction, ...target(thread), leadId: thread.leadId, text: new FormData(form).get('text') }, thread.key);
       } },
         h('label', {}, 'Mensagem', h('textarea', { name: 'text', required: true, maxlength: '1000', rows: '2', placeholder: 'Escreva como BLU, ou simule o que o outro lado responde…' })),
+        proposalLinkField(() => form.querySelector('textarea'), thread.leadId),
         h('div', { class: 'actions' },
           h('button', { type: 'submit', class: 'primary', value: 'out' }, 'Enviar como BLU'),
           h('button', { type: 'submit', class: 'secondary', value: 'in' }, thread.audience === 'partner' ? 'Simular resposta do parceiro' : 'Simular resposta do cliente'), status));
@@ -1425,8 +1525,9 @@ const views = {
       message.direction === 'in' && message.decision === 'person' ? h('div', { class: 'muted' }, `Para uma pessoa: ${message.reason}`) : null,
       h('time', {}, `${when(message.at)} · ${message.direction === 'in' ? (thread.audience === 'partner' ? 'parceiro (simulado)' : 'cliente (simulado)') : message.authorName || message.author}`),
       message.author === 'auto-assistant' ? [' ', pill('automática', 'ok')] : null);
-    view.append(
+    view.append(...[
       h('h2', {}, 'WhatsApp'),
+      state.proposal && isCurator() ? handoffPanel(state, leads, rerender) : null,
       mode === 'test'
         ? h('div', { class: 'panel warn-note', role: 'note' }, h('strong', {}, 'Modo de teste: nenhuma mensagem sai para o WhatsApp.'), h('p', {}, 'Os lembretes e mensagens automáticas que iriam por WhatsApp aparecem aqui, à hora marcada. Pode responder como BLU ou simular a resposta do cliente ou do parceiro para testar o circuito.'))
         : h('div', { class: 'panel', role: 'note' }, h('strong', {}, 'Modo real: as mensagens saem pelo WhatsApp Business.'), h('p', { class: 'muted' }, 'Esta caixa mostra só o histórico dos testes.')),
@@ -1454,7 +1555,7 @@ const views = {
             : mode === 'test' && isCurator() ? composer(current) : null,
         ] : h('p', { class: 'muted' }, 'Escolha uma conversa.')),
       ),
-    );
+    ].filter(Boolean));
   },
 
   async operations(view, state = operationsState) {
@@ -2093,14 +2194,17 @@ async function updateBadges() {
     if (count) button.dataset.count = count > 99 ? '99+' : String(count);
     else delete button.dataset.count;
   };
-  const [work, metrics, inbox, security] = await Promise.all([
+  const [work, metrics, inbox, security, stuck] = await Promise.all([
     api('GET', '/v1/work').catch(() => null),
     can('read') ? api('GET', '/v1/metrics').catch(() => null) : null,
     isCurator() ? api('GET', '/v1/whatsapp-test').catch(() => null) : null,
     can('security') ? api('GET', '/v1/security').catch(() => null) : null,
+    can('read') ? api('GET', `/v1/agenda?view=ops&scope=team&${demoQuery()}`).catch(() => null) : null,
   ]);
   set('work', work?.items.filter(item => ['risk', 'overdue'].includes(item.urgency)).length);
   set('control', metrics?.unassigned);
+  // Atrasos críticos: itens com bloqueio parados há 7 dias ou mais (o mesmo critério da própria secção).
+  set('overdue', stuck?.items.filter(item => item.blocker && item.since && (Date.now() - Date.parse(item.since)) / DAY_MS >= overdueState.days).length);
   set('whatsapp', inbox?.threads?.filter(thread => thread.waiting).length);
   // Regras legais por preencher (Governança): a bola vermelha mostra quantas faltam.
   set('governance', security?.policies?.fail);
@@ -2121,7 +2225,7 @@ function applySite() {
 
 // A secção vai no #hash: ligações partilhadas e o botão «anterior» do navegador funcionam.
 const tabFromHash = () => {
-  const tab = decodeURIComponent(location.hash.slice(1));
+  const tab = decodeURIComponent(location.hash.slice(1).split('?')[0]);
   return views[tab] && tabVisible(tab) ? tab : '';
 };
 
@@ -2215,8 +2319,10 @@ async function start() {
     else if (hiddenAt && Date.now() - hiddenAt > 60_000) show(current);
   });
   window.addEventListener('popstate', () => { const tab = tabFromHash(); if (tab && tab !== current) show(tab); });
-  // Quem tem a visão geral entra por ela; os restantes pelo seu trabalho.
-  show(tabFromHash() || (can('team-admin') ? 'control' : SITE.start));
+  // Proposta vinda do portal: abre o WhatsApp com a mensagem preparada.
+  whatsappState.proposal = proposalHandoff();
+  // A Mission Control abre no Seguimento de leads; quem não vê clientes entra pelo seu trabalho.
+  show(tabFromHash() || (can('leads') ? 'leads' : SITE.start));
   mountAssistant();
   watchLeads();
   updateBadges();
