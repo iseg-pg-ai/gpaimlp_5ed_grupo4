@@ -522,3 +522,26 @@ ordem é a de «O meu trabalho» (risco, atraso, bloqueio, prazo próximo, resto
 `mine` é o trabalho da própria pessoa (responsável da tarefa, do lead ou do
 caso; quem agendou o serviço); `team` é o de toda a equipa, a vista por omissão
 dos fundadores. Leads sintéticos não entram. Testes locais com mocks.
+
+## Ligação à GetYourGuide, só leitura (2026-10-30)
+
+`infra/lambda/intranet/getyourguide.mjs` liga-se à Partner API da GetYourGuide,
+seguindo a especificação pública (Apache-2.0,
+<https://github.com/getyourguide/partner-api-spec>): procurar atividades por
+lugar ou coordenadas, com filtros de avaliação, preço, datas, categorias e
+idioma (`GET /1/tours`), e a distribuição das avaliações de uma atividade
+(`GET /1/reviews/tour/{id}`). Serve para sugerir atividades de terceiros quando
+o catálogo não tem resposta e para sinais de avaliação no ranking.
+
+- Só leitura: não reserva nem envia dados de clientes. Sem token fica desligada
+  e nunca inventa atividades.
+- O preço é «a partir de»; o preço final ao cliente é sempre da curadora.
+  Preço ou avaliação desconhecidos ficam `null`, nunca zero.
+- Das avaliações fica só a distribuição (1 a 5); nomes e comentários de quem
+  avaliou não saem do módulo.
+- Servidor de testes (`api.gygtest.net`) por omissão; o token vai no cabeçalho
+  `X-ACCESS-TOKEN` e nunca aparece nas mensagens de erro.
+
+Ainda não está ligada a nenhuma rota nem ecrã: falta o acordo de parceiro
+(partner.getyourguide.com), guardar o token no Secrets Manager e a rota de
+sugestões por lead. Testes locais com respostas na forma da especificação.
