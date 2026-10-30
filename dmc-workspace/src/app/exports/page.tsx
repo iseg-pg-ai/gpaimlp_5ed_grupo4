@@ -16,7 +16,10 @@ export default async function ExportHistory({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const leadId = typeof params.lead === "string" && /^BLU-[A-Za-z0-9_-]{1,80}$/.test(params.lead) ? params.lead : undefined;
+  const leadId =
+    typeof params.lead === "string" && /^BLU-[A-Za-z0-9_-]{1,80}$/.test(params.lead)
+      ? params.lead
+      : undefined;
   const error = params.versionActionError;
   const actionError =
     error === "invalid"
@@ -47,7 +50,12 @@ export default async function ExportHistory({
           <T text={actionError} source="pt" />
         </p>
       )}
-      {leadId && <p className="my-4">Escolha a versão da proposta para o lead {leadId}. Confirme o conteúdo antes de preparar o WhatsApp.</p>}
+      {leadId && (
+        <p className="my-4">
+          Escolha a versão da proposta para o lead {leadId}. Confirme o conteúdo antes de preparar o
+          WhatsApp.
+        </p>
+      )}
       <ShareAccessManager initialShares={shares} />
       {!versions.length && (
         <p>
@@ -160,4 +168,3 @@ export default async function ExportHistory({
     </main>
   );
 }
-

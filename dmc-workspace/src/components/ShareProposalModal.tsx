@@ -271,9 +271,15 @@ export function ShareProposalModal({
                 >
                   <Copy className="size-4" /> Copiar ligação
                 </button>
-                {missionControlUrl && <button type="button" className="inline-flex items-center gap-1 underline" onClick={() => openMissionControl(result)}>
-                  <MessageCircle className="size-4" /> Abrir no WhatsApp (Mission Control)
-                </button>}
+                {missionControlUrl && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 underline"
+                    onClick={() => openMissionControl(result)}
+                  >
+                    <MessageCircle className="size-4" /> Abrir no WhatsApp (Mission Control)
+                  </button>
+                )}
                 <button
                   type="button"
                   className="inline-flex items-center gap-1 underline"
@@ -311,4 +317,3 @@ export function ShareProposalModal({
     </div>
   );
 }
-

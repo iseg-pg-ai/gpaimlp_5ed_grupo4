@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { proposalShareUrl, embedProposalLink, proposalPayload } from './frontend/intranet/proposal-links.mjs';
+import { proposalShareUrl, embedProposalLink, proposalPayload } from '../../frontend/intranet/proposal-links.js';
 const portal = 'https://d3804amye1jw31.cloudfront.net/';
 const link = `${portal}share/test-token`;
 test('only real share routes on the configured HTTPS portal are accepted', () => {

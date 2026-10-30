@@ -1,4 +1,4 @@
-import { proposalShareUrl, embedProposalLink, proposalPayload } from './proposal-links.mjs';
+import { proposalShareUrl, embedProposalLink, proposalPayload } from './proposal-links.js';
 import { challengeFor, claimsOf, expired, loginUrl, logoutUrl, randomString, refreshRequest, tokenRequest } from './auth.js';
 
 // Intranet da equipa. Todo o texto vindo da API é inserido com textContent (nunca HTML).
@@ -566,7 +566,6 @@ function proposalMessage({ name, destination, party, dates, link, curator }) {
 
 // Link da proposta dentro da mensagem: cola-se o link de partilha do portal (Histórico › Partilhar) e
 // entra no texto com a assinatura. Só aceita links de partilha https do próprio portal.
-const PORTAL_SHARE = /^https:\/\/[^\s/?#]+\/(share\/[\w-]+|api\/shares\/[\w-]+\/document)$/;
 function proposalLinkField(getText, leadId = '') {
   const link = h('input', { type: 'url', placeholder: 'Link da proposta (portal)', 'aria-label': 'Link da proposta' });
   const note = h('span', { class: 'muted', role: 'status' });
@@ -619,6 +618,14 @@ Proposta v${String(preset.version).padStart(3, '0')} · BLU Costa Travel · Cura
   link.addEventListener('change', insertLink);
   name.addEventListener('input', fill);
   fill();
+  // Biblioteca de propostas genéricas: só para rever. O link dura horas e não segue para o cliente;
+  // a mensagem só leva o link de partilha do portal.
+  const libraryBox = h('div', { class: 'muted' });
+  api('GET', `/v1/leads/${encodeURIComponent(lead.id)}/library`).then(({ matches }) => {
+    const usable = matches.filter(match => match.url);
+    if (usable.length) libraryBox.append('Da biblioteca (só para rever, não vai ao cliente): ', ...usable.flatMap(match => [
+      h('a', { href: match.url, target: '_blank', rel: 'noopener' }, `${match.title} ↗`), ` (${match.score}%) `]));
+  }).catch(() => {});
   // Os dois serviços que melhor servem a viagem, com o motivo; a pessoa escolhe quais entram na mensagem.
   let picks = [];
   const recommendations = h('div', { class: 'reco' });
@@ -653,7 +660,7 @@ Sugerimos também: ${chosen.map(item => `${item.name} (${item.area})`).join(' ·
       h('a', { href: portalUrl(`/exports?lead=${encodeURIComponent(lead.id)}`), target: '_blank', rel: 'noopener' }, 'Escolher proposta no portal ↗'),
       h('button', { type: 'button', class: 'secondary', onclick: insertLink }, 'Inserir link na mensagem')),
     h('p', { class: 'muted' }, 'No portal: escolha a versão, confirme a partilha e use WhatsApp. A mensagem regressa com o link para este lead.'),
-    recommendations,
+    libraryBox, recommendations,
     h('label', {}, 'Mensagem (pode editar)', text),
     h('p', { class: 'muted' }, phone.length >= 9 ? `Para +${phone}, o número que o cliente deixou no chat.` : 'Sem telefone no chat: a conversa fica com a referência do lead.'),
     h('div', { class: 'actions' }, send), status);
@@ -2323,4 +2330,3 @@ async function start() {
 }
 
 start();
-
