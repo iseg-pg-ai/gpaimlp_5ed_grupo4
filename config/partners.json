@@ -1,9 +1,5115 @@
 {
   "note": "Parceiros de demonstração (fictícios, sem número WhatsApp). Substituir pelos parceiros reais com o número em dígitos internacionais, por exemplo 3519XXXXXXXX, e voltar a publicar BluCostaIntranet.",
   "partners": [
-    { "id": "tuk-alfama", "name": "Tuk-tuk Alfama (demo)", "kind": "tuk-tuk", "area": "Lisboa: Alfama, Baixa, Graça", "seats": 6, "whatsapp": "", "demo": true },
-    { "id": "tuk-belem", "name": "Tuk-tuk Belém (demo)", "kind": "tuk-tuk", "area": "Lisboa: Belém, Ajuda", "seats": 6, "whatsapp": "", "demo": true },
-    { "id": "transfer-sintra", "name": "Transfer Sintra (demo)", "kind": "transfer", "area": "Sintra, Cascais, aeroporto", "seats": 8, "whatsapp": "", "demo": true },
-    { "id": "guide-porto", "name": "Guia Porto e Douro (demo)", "kind": "guide", "area": "Porto, Vale do Douro", "seats": 12, "whatsapp": "", "demo": true }
+{
+  "schema_version": "1.0.0",
+  "fixture": "synthetic-only",
+  "note": "Enriched TEST-ONLY catalogue; has additional fields and is NOT a direct replacement for config/partners.json without updating consumer schema. For drop-in use existing partners.json.",
+  "partners": [
+    {
+      "id": "tuk-alfama",
+      "name": "Tuk-tuk Alfama (demo)",
+      "kind": "tuk-tuk",
+      "area": "Lisboa: Alfama, Baixa, Graça",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "classic",
+        "service": "tuk-tuk",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 100,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "original-fixture"
+      }
+    },
+    {
+      "id": "tuk-belem",
+      "name": "Tuk-tuk Belém (demo)",
+      "kind": "tuk-tuk",
+      "area": "Lisboa: Belém, Ajuda",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "classic",
+        "service": "tuk-tuk",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 50,
+        "estimated_eur_max": 120,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "original-fixture"
+      }
+    },
+    {
+      "id": "transfer-sintra",
+      "name": "Transfer Sintra (demo)",
+      "kind": "transfer",
+      "area": "Sintra, Cascais, aeroporto",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "classic",
+        "service": "transfer",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "original-fixture"
+      }
+    },
+    {
+      "id": "guide-porto",
+      "name": "Guia Porto e Douro (demo)",
+      "kind": "guide",
+      "area": "Porto, Vale do Douro",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "classic",
+        "service": "guide",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 70,
+        "estimated_eur_max": 160,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "original-fixture"
+      }
+    },
+    {
+      "id": "syn-lisboa-tuk-tuk-0101",
+      "name": "[SYNTHETIC] Lisboa Circuitos urbanos Lab 01",
+      "kind": "tuk-tuk",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "classic",
+        "service": "Circuitos urbanos",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 95,
+        "lead_time_hours": 4,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-lisboa-wine-tour-0102",
+      "name": "[SYNTHETIC] Lisboa Enoturismo Lab 02",
+      "kind": "wine-tour",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "premium",
+        "service": "Enoturismo",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 195,
+        "lead_time_hours": 12,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-lisboa-hiking-0103",
+      "name": "[SYNTHETIC] Lisboa Trilhos e natureza Lab 03",
+      "kind": "hiking",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "budget",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 115,
+        "lead_time_hours": 24,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-lisboa-adventure-0104",
+      "name": "[SYNTHETIC] Lisboa Aventura supervisionada Lab 04",
+      "kind": "adventure",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "adventure",
+        "service": "Aventura supervisionada",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 245,
+        "lead_time_hours": 48,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-lisboa-guide-0105",
+      "name": "[SYNTHETIC] Lisboa Guia cultural Lab 05",
+      "kind": "guide",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "families",
+        "service": "Guia cultural",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 220,
+        "lead_time_hours": 72,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-lisboa-kayak-0106",
+      "name": "[SYNTHETIC] Lisboa Caiaque e SUP Lab 06",
+      "kind": "kayak",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "corporate",
+        "service": "Caiaque e SUP",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 95,
+        "lead_time_hours": 4,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-lisboa-photography-0107",
+      "name": "[SYNTHETIC] Lisboa Fotografia e vídeo Lab 07",
+      "kind": "photography",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "classic",
+        "service": "Fotografia e vídeo",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 95,
+        "estimated_eur_max": 320,
+        "lead_time_hours": 12,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-lisboa-transport-0108",
+      "name": "[SYNTHETIC] Lisboa Mobilidade turística Lab 08",
+      "kind": "transport",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "premium",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 24,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-lisboa-food-tour-0109",
+      "name": "[SYNTHETIC] Lisboa Experiências gastronómicas Lab 09",
+      "kind": "food-tour",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 10,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "budget",
+        "service": "Experiências gastronómicas",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 145,
+        "lead_time_hours": 48,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-lisboa-cycling-0110",
+      "name": "[SYNTHETIC] Lisboa Ciclismo e e-bike Lab 10",
+      "kind": "cycling",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "adventure",
+        "service": "Ciclismo e e-bike",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 72,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-lisboa-accessibility-0111",
+      "name": "[SYNTHETIC] Lisboa Turismo acessível Lab 11",
+      "kind": "accessibility",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "families",
+        "service": "Turismo acessível",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 70,
+        "estimated_eur_max": 230,
+        "lead_time_hours": 4,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-lisboa-transfer-0112",
+      "name": "[SYNTHETIC] Lisboa Transfer privado Lab 12",
+      "kind": "transfer",
+      "area": "Lisboa: Baixa, Alfama, Belém",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "corporate",
+        "service": "Transfer privado",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 175,
+        "lead_time_hours": 12,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-sintra-kayak-0201",
+      "name": "[SYNTHETIC] Sintra Caiaque e SUP Lab 01",
+      "kind": "kayak",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "classic",
+        "service": "Caiaque e SUP",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 110,
+        "lead_time_hours": 12,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-sintra-photography-0202",
+      "name": "[SYNTHETIC] Sintra Fotografia e vídeo Lab 02",
+      "kind": "photography",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "premium",
+        "service": "Fotografia e vídeo",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 105,
+        "estimated_eur_max": 335,
+        "lead_time_hours": 24,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-sintra-transport-0203",
+      "name": "[SYNTHETIC] Sintra Mobilidade turística Lab 03",
+      "kind": "transport",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "budget",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 205,
+        "lead_time_hours": 48,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-sintra-food-tour-0204",
+      "name": "[SYNTHETIC] Sintra Experiências gastronómicas Lab 04",
+      "kind": "food-tour",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "adventure",
+        "service": "Experiências gastronómicas",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 160,
+        "lead_time_hours": 72,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-sintra-cycling-0205",
+      "name": "[SYNTHETIC] Sintra Ciclismo e e-bike Lab 05",
+      "kind": "cycling",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "families",
+        "service": "Ciclismo e e-bike",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 50,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 4,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-sintra-accessibility-0206",
+      "name": "[SYNTHETIC] Sintra Turismo acessível Lab 06",
+      "kind": "accessibility",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "corporate",
+        "service": "Turismo acessível",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 80,
+        "estimated_eur_max": 245,
+        "lead_time_hours": 12,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-sintra-transfer-0207",
+      "name": "[SYNTHETIC] Sintra Transfer privado Lab 07",
+      "kind": "transfer",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "classic",
+        "service": "Transfer privado",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 24,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-sintra-boat-tour-0208",
+      "name": "[SYNTHETIC] Sintra Passeio de barco Lab 08",
+      "kind": "boat-tour",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "premium",
+        "service": "Passeio de barco",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 235,
+        "lead_time_hours": 48,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-sintra-wellness-0209",
+      "name": "[SYNTHETIC] Sintra Bem-estar Lab 09",
+      "kind": "wellness",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 2,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "budget",
+        "service": "Bem-estar",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 195,
+        "lead_time_hours": 72,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-sintra-lodging-0210",
+      "name": "[SYNTHETIC] Sintra Alojamento boutique Lab 10",
+      "kind": "lodging",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "adventure",
+        "service": "Alojamento boutique",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 100,
+        "estimated_eur_max": 305,
+        "lead_time_hours": 4,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-sintra-walking-tour-0211",
+      "name": "[SYNTHETIC] Sintra Walking tour Lab 11",
+      "kind": "walking-tour",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 13,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "families",
+        "service": "Walking tour",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 30,
+        "estimated_eur_max": 80,
+        "lead_time_hours": 12,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-sintra-surf-0212",
+      "name": "[SYNTHETIC] Sintra Surf e bodyboard Lab 12",
+      "kind": "surf",
+      "area": "Sintra, Cascais, Estoril",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Lisboa",
+        "segment": "corporate",
+        "service": "Surf e bodyboard",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 50,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 24,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-porto-accessibility-0301",
+      "name": "[SYNTHETIC] Porto Turismo acessível Lab 01",
+      "kind": "accessibility",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "classic",
+        "service": "Turismo acessível",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 90,
+        "estimated_eur_max": 260,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-porto-transfer-0302",
+      "name": "[SYNTHETIC] Porto Transfer privado Lab 02",
+      "kind": "transfer",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "premium",
+        "service": "Transfer privado",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 205,
+        "lead_time_hours": 48,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-porto-boat-tour-0303",
+      "name": "[SYNTHETIC] Porto Passeio de barco Lab 03",
+      "kind": "boat-tour",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "budget",
+        "service": "Passeio de barco",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 250,
+        "lead_time_hours": 72,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-porto-wellness-0304",
+      "name": "[SYNTHETIC] Porto Bem-estar Lab 04",
+      "kind": "wellness",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "adventure",
+        "service": "Bem-estar",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 210,
+        "lead_time_hours": 4,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-porto-lodging-0305",
+      "name": "[SYNTHETIC] Porto Alojamento boutique Lab 05",
+      "kind": "lodging",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "families",
+        "service": "Alojamento boutique",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 110,
+        "estimated_eur_max": 320,
+        "lead_time_hours": 12,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-porto-walking-tour-0306",
+      "name": "[SYNTHETIC] Porto Walking tour Lab 06",
+      "kind": "walking-tour",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 9,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "corporate",
+        "service": "Walking tour",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 95,
+        "lead_time_hours": 24,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-porto-surf-0307",
+      "name": "[SYNTHETIC] Porto Surf e bodyboard Lab 07",
+      "kind": "surf",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 10,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "classic",
+        "service": "Surf e bodyboard",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 48,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-porto-events-0308",
+      "name": "[SYNTHETIC] Porto Eventos e experiências Lab 08",
+      "kind": "events",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 17,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "premium",
+        "service": "Eventos e experiências",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 100,
+        "estimated_eur_max": 310,
+        "lead_time_hours": 72,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-porto-tuk-tuk-0309",
+      "name": "[SYNTHETIC] Porto Circuitos urbanos Lab 09",
+      "kind": "tuk-tuk",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "budget",
+        "service": "Circuitos urbanos",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 4,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-porto-wine-tour-0310",
+      "name": "[SYNTHETIC] Porto Enoturismo Lab 10",
+      "kind": "wine-tour",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 2,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "adventure",
+        "service": "Enoturismo",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 95,
+        "estimated_eur_max": 225,
+        "lead_time_hours": 12,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-porto-hiking-0311",
+      "name": "[SYNTHETIC] Porto Trilhos e natureza Lab 11",
+      "kind": "hiking",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 14,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "families",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 145,
+        "lead_time_hours": 24,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-porto-adventure-0312",
+      "name": "[SYNTHETIC] Porto Aventura supervisionada Lab 12",
+      "kind": "adventure",
+      "area": "Porto: Ribeira, Foz, Gaia",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "corporate",
+        "service": "Aventura supervisionada",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 95,
+        "estimated_eur_max": 275,
+        "lead_time_hours": 48,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-douro-walking-tour-0401",
+      "name": "[SYNTHETIC] Douro Walking tour Lab 01",
+      "kind": "walking-tour",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "classic",
+        "service": "Walking tour",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 20,
+        "estimated_eur_max": 110,
+        "lead_time_hours": 48,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-douro-surf-0402",
+      "name": "[SYNTHETIC] Douro Surf e bodyboard Lab 02",
+      "kind": "surf",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "premium",
+        "service": "Surf e bodyboard",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 155,
+        "lead_time_hours": 72,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-douro-events-0403",
+      "name": "[SYNTHETIC] Douro Eventos e experiências Lab 03",
+      "kind": "events",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 13,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "budget",
+        "service": "Eventos e experiências",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 80,
+        "estimated_eur_max": 325,
+        "lead_time_hours": 4,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-douro-tuk-tuk-0404",
+      "name": "[SYNTHETIC] Douro Circuitos urbanos Lab 04",
+      "kind": "tuk-tuk",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "adventure",
+        "service": "Circuitos urbanos",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 12,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-douro-wine-tour-0405",
+      "name": "[SYNTHETIC] Douro Enoturismo Lab 05",
+      "kind": "wine-tour",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 9,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "families",
+        "service": "Enoturismo",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 240,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-douro-hiking-0406",
+      "name": "[SYNTHETIC] Douro Trilhos e natureza Lab 06",
+      "kind": "hiking",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 10,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "corporate",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 160,
+        "lead_time_hours": 48,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-douro-adventure-0407",
+      "name": "[SYNTHETIC] Douro Aventura supervisionada Lab 07",
+      "kind": "adventure",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "classic",
+        "service": "Aventura supervisionada",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 290,
+        "lead_time_hours": 72,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-douro-guide-0408",
+      "name": "[SYNTHETIC] Douro Guia cultural Lab 08",
+      "kind": "guide",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "premium",
+        "service": "Guia cultural",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 265,
+        "lead_time_hours": 4,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-douro-kayak-0409",
+      "name": "[SYNTHETIC] Douro Caiaque e SUP Lab 09",
+      "kind": "kayak",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 2,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "budget",
+        "service": "Caiaque e SUP",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 12,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-douro-photography-0410",
+      "name": "[SYNTHETIC] Douro Fotografia e vídeo Lab 10",
+      "kind": "photography",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 1,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "adventure",
+        "service": "Fotografia e vídeo",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 95,
+        "estimated_eur_max": 365,
+        "lead_time_hours": 24,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-douro-transport-0411",
+      "name": "[SYNTHETIC] Douro Mobilidade turística Lab 11",
+      "kind": "transport",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 17,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "families",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 235,
+        "lead_time_hours": 48,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-douro-food-tour-0412",
+      "name": "[SYNTHETIC] Douro Experiências gastronómicas Lab 12",
+      "kind": "food-tour",
+      "area": "Peso da Régua, Pinhão, Douro",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "corporate",
+        "service": "Experiências gastronómicas",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 72,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-braga-hiking-0501",
+      "name": "[SYNTHETIC] Braga Trilhos e natureza Lab 01",
+      "kind": "hiking",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "classic",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 115,
+        "lead_time_hours": 72,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-braga-adventure-0502",
+      "name": "[SYNTHETIC] Braga Aventura supervisionada Lab 02",
+      "kind": "adventure",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "premium",
+        "service": "Aventura supervisionada",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 245,
+        "lead_time_hours": 4,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-braga-guide-0503",
+      "name": "[SYNTHETIC] Braga Guia cultural Lab 03",
+      "kind": "guide",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "budget",
+        "service": "Guia cultural",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 70,
+        "estimated_eur_max": 220,
+        "lead_time_hours": 12,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-braga-kayak-0504",
+      "name": "[SYNTHETIC] Braga Caiaque e SUP Lab 04",
+      "kind": "kayak",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 9,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "adventure",
+        "service": "Caiaque e SUP",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 95,
+        "lead_time_hours": 24,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-braga-photography-0505",
+      "name": "[SYNTHETIC] Braga Fotografia e vídeo Lab 05",
+      "kind": "photography",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 9,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "families",
+        "service": "Fotografia e vídeo",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 105,
+        "estimated_eur_max": 320,
+        "lead_time_hours": 48,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-braga-transport-0506",
+      "name": "[SYNTHETIC] Braga Mobilidade turística Lab 06",
+      "kind": "transport",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 13,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "corporate",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 72,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-braga-food-tour-0507",
+      "name": "[SYNTHETIC] Braga Experiências gastronómicas Lab 07",
+      "kind": "food-tour",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "classic",
+        "service": "Experiências gastronómicas",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 145,
+        "lead_time_hours": 4,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-braga-cycling-0508",
+      "name": "[SYNTHETIC] Braga Ciclismo e e-bike Lab 08",
+      "kind": "cycling",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 13,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "premium",
+        "service": "Ciclismo e e-bike",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 50,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 12,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-braga-accessibility-0509",
+      "name": "[SYNTHETIC] Braga Turismo acessível Lab 09",
+      "kind": "accessibility",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "budget",
+        "service": "Turismo acessível",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 80,
+        "estimated_eur_max": 230,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-braga-transfer-0510",
+      "name": "[SYNTHETIC] Braga Transfer privado Lab 10",
+      "kind": "transfer",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "adventure",
+        "service": "Transfer privado",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 175,
+        "lead_time_hours": 48,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-braga-boat-tour-0511",
+      "name": "[SYNTHETIC] Braga Passeio de barco Lab 11",
+      "kind": "boat-tour",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 18,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "families",
+        "service": "Passeio de barco",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 220,
+        "lead_time_hours": 72,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-braga-wellness-0512",
+      "name": "[SYNTHETIC] Braga Bem-estar Lab 12",
+      "kind": "wellness",
+      "area": "Braga, Guimarães, Gerês",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Norte",
+        "segment": "corporate",
+        "service": "Bem-estar",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 180,
+        "lead_time_hours": 4,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-coimbra-transport-0601",
+      "name": "[SYNTHETIC] Coimbra Mobilidade turística Lab 01",
+      "kind": "transport",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 9,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "classic",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 205,
+        "lead_time_hours": 4,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-coimbra-food-tour-0602",
+      "name": "[SYNTHETIC] Coimbra Experiências gastronómicas Lab 02",
+      "kind": "food-tour",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "premium",
+        "service": "Experiências gastronómicas",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 160,
+        "lead_time_hours": 12,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-coimbra-cycling-0603",
+      "name": "[SYNTHETIC] Coimbra Ciclismo e e-bike Lab 03",
+      "kind": "cycling",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 9,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "budget",
+        "service": "Ciclismo e e-bike",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 24,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-coimbra-accessibility-0604",
+      "name": "[SYNTHETIC] Coimbra Turismo acessível Lab 04",
+      "kind": "accessibility",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "adventure",
+        "service": "Turismo acessível",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 90,
+        "estimated_eur_max": 245,
+        "lead_time_hours": 48,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-coimbra-transfer-0605",
+      "name": "[SYNTHETIC] Coimbra Transfer privado Lab 05",
+      "kind": "transfer",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "families",
+        "service": "Transfer privado",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 72,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-coimbra-boat-tour-0606",
+      "name": "[SYNTHETIC] Coimbra Passeio de barco Lab 06",
+      "kind": "boat-tour",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 14,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "corporate",
+        "service": "Passeio de barco",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 235,
+        "lead_time_hours": 4,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-coimbra-wellness-0607",
+      "name": "[SYNTHETIC] Coimbra Bem-estar Lab 07",
+      "kind": "wellness",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "classic",
+        "service": "Bem-estar",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 195,
+        "lead_time_hours": 12,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-coimbra-lodging-0608",
+      "name": "[SYNTHETIC] Coimbra Alojamento boutique Lab 08",
+      "kind": "lodging",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 14,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "premium",
+        "service": "Alojamento boutique",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 110,
+        "estimated_eur_max": 305,
+        "lead_time_hours": 24,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-coimbra-walking-tour-0609",
+      "name": "[SYNTHETIC] Coimbra Walking tour Lab 09",
+      "kind": "walking-tour",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 15,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "budget",
+        "service": "Walking tour",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 80,
+        "lead_time_hours": 48,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-coimbra-surf-0610",
+      "name": "[SYNTHETIC] Coimbra Surf e bodyboard Lab 10",
+      "kind": "surf",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "adventure",
+        "service": "Surf e bodyboard",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 72,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-coimbra-events-0611",
+      "name": "[SYNTHETIC] Coimbra Eventos e experiências Lab 11",
+      "kind": "events",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 23,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "families",
+        "service": "Eventos e experiências",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 100,
+        "estimated_eur_max": 295,
+        "lead_time_hours": 4,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-coimbra-tuk-tuk-0612",
+      "name": "[SYNTHETIC] Coimbra Circuitos urbanos Lab 12",
+      "kind": "tuk-tuk",
+      "area": "Coimbra, Lousã, Buçaco",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "corporate",
+        "service": "Circuitos urbanos",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 110,
+        "lead_time_hours": 12,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-aveiro-boat-tour-0701",
+      "name": "[SYNTHETIC] Aveiro Passeio de barco Lab 01",
+      "kind": "boat-tour",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 10,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "classic",
+        "service": "Passeio de barco",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 250,
+        "lead_time_hours": 12,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-aveiro-wellness-0702",
+      "name": "[SYNTHETIC] Aveiro Bem-estar Lab 02",
+      "kind": "wellness",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "premium",
+        "service": "Bem-estar",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 210,
+        "lead_time_hours": 24,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-aveiro-lodging-0703",
+      "name": "[SYNTHETIC] Aveiro Alojamento boutique Lab 03",
+      "kind": "lodging",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 10,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "budget",
+        "service": "Alojamento boutique",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 90,
+        "estimated_eur_max": 320,
+        "lead_time_hours": 48,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-aveiro-walking-tour-0704",
+      "name": "[SYNTHETIC] Aveiro Walking tour Lab 04",
+      "kind": "walking-tour",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "adventure",
+        "service": "Walking tour",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 20,
+        "estimated_eur_max": 95,
+        "lead_time_hours": 72,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-aveiro-surf-0705",
+      "name": "[SYNTHETIC] Aveiro Surf e bodyboard Lab 05",
+      "kind": "surf",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "families",
+        "service": "Surf e bodyboard",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 4,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-aveiro-events-0706",
+      "name": "[SYNTHETIC] Aveiro Eventos e experiências Lab 06",
+      "kind": "events",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 19,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "corporate",
+        "service": "Eventos e experiências",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 80,
+        "estimated_eur_max": 310,
+        "lead_time_hours": 12,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-aveiro-tuk-tuk-0707",
+      "name": "[SYNTHETIC] Aveiro Circuitos urbanos Lab 07",
+      "kind": "tuk-tuk",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "classic",
+        "service": "Circuitos urbanos",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 24,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-aveiro-wine-tour-0708",
+      "name": "[SYNTHETIC] Aveiro Enoturismo Lab 08",
+      "kind": "wine-tour",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "premium",
+        "service": "Enoturismo",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 225,
+        "lead_time_hours": 48,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-aveiro-hiking-0709",
+      "name": "[SYNTHETIC] Aveiro Trilhos e natureza Lab 09",
+      "kind": "hiking",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "budget",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 145,
+        "lead_time_hours": 72,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-aveiro-adventure-0710",
+      "name": "[SYNTHETIC] Aveiro Aventura supervisionada Lab 10",
+      "kind": "adventure",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "adventure",
+        "service": "Aventura supervisionada",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 275,
+        "lead_time_hours": 4,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-aveiro-guide-0711",
+      "name": "[SYNTHETIC] Aveiro Guia cultural Lab 11",
+      "kind": "guide",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "families",
+        "service": "Guia cultural",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 250,
+        "lead_time_hours": 12,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-aveiro-kayak-0712",
+      "name": "[SYNTHETIC] Aveiro Caiaque e SUP Lab 12",
+      "kind": "kayak",
+      "area": "Aveiro, Costa Nova, Ílhavo",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "corporate",
+        "service": "Caiaque e SUP",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 24,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-events-0801",
+      "name": "[SYNTHETIC] Serra Estrela Eventos e experiências Lab 01",
+      "kind": "events",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 15,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "classic",
+        "service": "Eventos e experiências",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 90,
+        "estimated_eur_max": 325,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-tuk-tuk-0802",
+      "name": "[SYNTHETIC] Serra Estrela Circuitos urbanos Lab 02",
+      "kind": "tuk-tuk",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "premium",
+        "service": "Circuitos urbanos",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 48,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-wine-tour-0803",
+      "name": "[SYNTHETIC] Serra Estrela Enoturismo Lab 03",
+      "kind": "wine-tour",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "budget",
+        "service": "Enoturismo",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 240,
+        "lead_time_hours": 72,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-hiking-0804",
+      "name": "[SYNTHETIC] Serra Estrela Trilhos e natureza Lab 04",
+      "kind": "hiking",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "adventure",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 160,
+        "lead_time_hours": 4,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-adventure-0805",
+      "name": "[SYNTHETIC] Serra Estrela Aventura supervisionada Lab 05",
+      "kind": "adventure",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 2,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "families",
+        "service": "Aventura supervisionada",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 290,
+        "lead_time_hours": 12,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-guide-0806",
+      "name": "[SYNTHETIC] Serra Estrela Guia cultural Lab 06",
+      "kind": "guide",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 14,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "corporate",
+        "service": "Guia cultural",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 70,
+        "estimated_eur_max": 265,
+        "lead_time_hours": 24,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-kayak-0807",
+      "name": "[SYNTHETIC] Serra Estrela Caiaque e SUP Lab 07",
+      "kind": "kayak",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "classic",
+        "service": "Caiaque e SUP",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 48,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-photography-0808",
+      "name": "[SYNTHETIC] Serra Estrela Fotografia e vídeo Lab 08",
+      "kind": "photography",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "premium",
+        "service": "Fotografia e vídeo",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 105,
+        "estimated_eur_max": 365,
+        "lead_time_hours": 72,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-transport-0809",
+      "name": "[SYNTHETIC] Serra Estrela Mobilidade turística Lab 09",
+      "kind": "transport",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "budget",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 235,
+        "lead_time_hours": 4,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-food-tour-0810",
+      "name": "[SYNTHETIC] Serra Estrela Experiências gastronómicas Lab 10",
+      "kind": "food-tour",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "adventure",
+        "service": "Experiências gastronómicas",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 12,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-cycling-0811",
+      "name": "[SYNTHETIC] Serra Estrela Ciclismo e e-bike Lab 11",
+      "kind": "cycling",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "families",
+        "service": "Ciclismo e e-bike",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 50,
+        "estimated_eur_max": 170,
+        "lead_time_hours": 24,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-serra-estrela-accessibility-0812",
+      "name": "[SYNTHETIC] Serra Estrela Turismo acessível Lab 12",
+      "kind": "accessibility",
+      "area": "Covilhã, Manteigas, Seia",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Centro",
+        "segment": "corporate",
+        "service": "Turismo acessível",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 80,
+        "estimated_eur_max": 275,
+        "lead_time_hours": 48,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn--vora-guide-0901",
+      "name": "[SYNTHETIC] Évora Guia cultural Lab 01",
+      "kind": "guide",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 10,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "classic",
+        "service": "Guia cultural",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 80,
+        "estimated_eur_max": 220,
+        "lead_time_hours": 48,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn--vora-kayak-0902",
+      "name": "[SYNTHETIC] Évora Caiaque e SUP Lab 02",
+      "kind": "kayak",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "premium",
+        "service": "Caiaque e SUP",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 95,
+        "lead_time_hours": 72,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn--vora-photography-0903",
+      "name": "[SYNTHETIC] Évora Fotografia e vídeo Lab 03",
+      "kind": "photography",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "budget",
+        "service": "Fotografia e vídeo",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 115,
+        "estimated_eur_max": 320,
+        "lead_time_hours": 4,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn--vora-transport-0904",
+      "name": "[SYNTHETIC] Évora Mobilidade turística Lab 04",
+      "kind": "transport",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 15,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "adventure",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 12,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn--vora-food-tour-0905",
+      "name": "[SYNTHETIC] Évora Experiências gastronómicas Lab 05",
+      "kind": "food-tour",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "families",
+        "service": "Experiências gastronómicas",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 145,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn--vora-cycling-0906",
+      "name": "[SYNTHETIC] Évora Ciclismo e e-bike Lab 06",
+      "kind": "cycling",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 2,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "corporate",
+        "service": "Ciclismo e e-bike",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 48,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn--vora-accessibility-0907",
+      "name": "[SYNTHETIC] Évora Turismo acessível Lab 07",
+      "kind": "accessibility",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 2,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "classic",
+        "service": "Turismo acessível",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 90,
+        "estimated_eur_max": 230,
+        "lead_time_hours": 72,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn--vora-transfer-0908",
+      "name": "[SYNTHETIC] Évora Transfer privado Lab 08",
+      "kind": "transfer",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "premium",
+        "service": "Transfer privado",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 175,
+        "lead_time_hours": 4,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn--vora-boat-tour-0909",
+      "name": "[SYNTHETIC] Évora Passeio de barco Lab 09",
+      "kind": "boat-tour",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "budget",
+        "service": "Passeio de barco",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 220,
+        "lead_time_hours": 12,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn--vora-wellness-0910",
+      "name": "[SYNTHETIC] Évora Bem-estar Lab 10",
+      "kind": "wellness",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 2,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "adventure",
+        "service": "Bem-estar",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 180,
+        "lead_time_hours": 24,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn--vora-lodging-0911",
+      "name": "[SYNTHETIC] Évora Alojamento boutique Lab 11",
+      "kind": "lodging",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "families",
+        "service": "Alojamento boutique",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 110,
+        "estimated_eur_max": 290,
+        "lead_time_hours": 48,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn--vora-walking-tour-0912",
+      "name": "[SYNTHETIC] Évora Walking tour Lab 12",
+      "kind": "walking-tour",
+      "area": "Évora, Monsaraz, Redondo",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "corporate",
+        "service": "Walking tour",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 65,
+        "lead_time_hours": 72,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-comporta-cycling-1001",
+      "name": "[SYNTHETIC] Comporta Ciclismo e e-bike Lab 01",
+      "kind": "cycling",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "classic",
+        "service": "Ciclismo e e-bike",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 72,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-comporta-accessibility-1002",
+      "name": "[SYNTHETIC] Comporta Turismo acessível Lab 02",
+      "kind": "accessibility",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "premium",
+        "service": "Turismo acessível",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 70,
+        "estimated_eur_max": 245,
+        "lead_time_hours": 4,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-comporta-transfer-1003",
+      "name": "[SYNTHETIC] Comporta Transfer privado Lab 03",
+      "kind": "transfer",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "budget",
+        "service": "Transfer privado",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 12,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-comporta-boat-tour-1004",
+      "name": "[SYNTHETIC] Comporta Passeio de barco Lab 04",
+      "kind": "boat-tour",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 16,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "adventure",
+        "service": "Passeio de barco",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 235,
+        "lead_time_hours": 24,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-comporta-wellness-1005",
+      "name": "[SYNTHETIC] Comporta Bem-estar Lab 05",
+      "kind": "wellness",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "families",
+        "service": "Bem-estar",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 195,
+        "lead_time_hours": 48,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-comporta-lodging-1006",
+      "name": "[SYNTHETIC] Comporta Alojamento boutique Lab 06",
+      "kind": "lodging",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 16,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "corporate",
+        "service": "Alojamento boutique",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 90,
+        "estimated_eur_max": 305,
+        "lead_time_hours": 72,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-comporta-walking-tour-1007",
+      "name": "[SYNTHETIC] Comporta Walking tour Lab 07",
+      "kind": "walking-tour",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 17,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "classic",
+        "service": "Walking tour",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 20,
+        "estimated_eur_max": 80,
+        "lead_time_hours": 4,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-comporta-surf-1008",
+      "name": "[SYNTHETIC] Comporta Surf e bodyboard Lab 08",
+      "kind": "surf",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "premium",
+        "service": "Surf e bodyboard",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 12,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-comporta-events-1009",
+      "name": "[SYNTHETIC] Comporta Eventos e experiências Lab 09",
+      "kind": "events",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 25,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "budget",
+        "service": "Eventos e experiências",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 80,
+        "estimated_eur_max": 295,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-comporta-tuk-tuk-1010",
+      "name": "[SYNTHETIC] Comporta Circuitos urbanos Lab 10",
+      "kind": "tuk-tuk",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "adventure",
+        "service": "Circuitos urbanos",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 110,
+        "lead_time_hours": 48,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-comporta-wine-tour-1011",
+      "name": "[SYNTHETIC] Comporta Enoturismo Lab 11",
+      "kind": "wine-tour",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 10,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "families",
+        "service": "Enoturismo",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 210,
+        "lead_time_hours": 72,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-comporta-hiking-1012",
+      "name": "[SYNTHETIC] Comporta Trilhos e natureza Lab 12",
+      "kind": "hiking",
+      "area": "Comporta, Tróia, Alcácer",
+      "seats": 9,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Alentejo",
+        "segment": "corporate",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 35,
+        "estimated_eur_max": 130,
+        "lead_time_hours": 4,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-lagos-lodging-1101",
+      "name": "[SYNTHETIC] Lagos Alojamento boutique Lab 01",
+      "kind": "lodging",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "classic",
+        "service": "Alojamento boutique",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 100,
+        "estimated_eur_max": 320,
+        "lead_time_hours": 4,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-lagos-walking-tour-1102",
+      "name": "[SYNTHETIC] Lagos Walking tour Lab 02",
+      "kind": "walking-tour",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 13,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "premium",
+        "service": "Walking tour",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 30,
+        "estimated_eur_max": 95,
+        "lead_time_hours": 12,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-lagos-surf-1103",
+      "name": "[SYNTHETIC] Lagos Surf e bodyboard Lab 03",
+      "kind": "surf",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "budget",
+        "service": "Surf e bodyboard",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 50,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 24,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-lagos-events-1104",
+      "name": "[SYNTHETIC] Lagos Eventos e experiências Lab 04",
+      "kind": "events",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 21,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "adventure",
+        "service": "Eventos e experiências",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 90,
+        "estimated_eur_max": 310,
+        "lead_time_hours": 48,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-lagos-tuk-tuk-1105",
+      "name": "[SYNTHETIC] Lagos Circuitos urbanos Lab 05",
+      "kind": "tuk-tuk",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "families",
+        "service": "Circuitos urbanos",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 72,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-lagos-wine-tour-1106",
+      "name": "[SYNTHETIC] Lagos Enoturismo Lab 06",
+      "kind": "wine-tour",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "corporate",
+        "service": "Enoturismo",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 225,
+        "lead_time_hours": 4,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-lagos-hiking-1107",
+      "name": "[SYNTHETIC] Lagos Trilhos e natureza Lab 07",
+      "kind": "hiking",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "classic",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 145,
+        "lead_time_hours": 12,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-lagos-adventure-1108",
+      "name": "[SYNTHETIC] Lagos Aventura supervisionada Lab 08",
+      "kind": "adventure",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "premium",
+        "service": "Aventura supervisionada",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 275,
+        "lead_time_hours": 24,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-lagos-guide-1109",
+      "name": "[SYNTHETIC] Lagos Guia cultural Lab 09",
+      "kind": "guide",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "budget",
+        "service": "Guia cultural",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 70,
+        "estimated_eur_max": 250,
+        "lead_time_hours": 48,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-lagos-kayak-1110",
+      "name": "[SYNTHETIC] Lagos Caiaque e SUP Lab 10",
+      "kind": "kayak",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 10,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "adventure",
+        "service": "Caiaque e SUP",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 72,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-lagos-photography-1111",
+      "name": "[SYNTHETIC] Lagos Fotografia e vídeo Lab 11",
+      "kind": "photography",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 9,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "families",
+        "service": "Fotografia e vídeo",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 105,
+        "estimated_eur_max": 350,
+        "lead_time_hours": 4,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-lagos-transport-1112",
+      "name": "[SYNTHETIC] Lagos Mobilidade turística Lab 12",
+      "kind": "transport",
+      "area": "Lagos, Sagres, Portimão",
+      "seats": 10,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "corporate",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 220,
+        "lead_time_hours": 12,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-faro-wine-tour-1201",
+      "name": "[SYNTHETIC] Faro Enoturismo Lab 01",
+      "kind": "wine-tour",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 2,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "classic",
+        "service": "Enoturismo",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 95,
+        "estimated_eur_max": 240,
+        "lead_time_hours": 12,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-faro-hiking-1202",
+      "name": "[SYNTHETIC] Faro Trilhos e natureza Lab 02",
+      "kind": "hiking",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 14,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "premium",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 160,
+        "lead_time_hours": 24,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-faro-adventure-1203",
+      "name": "[SYNTHETIC] Faro Aventura supervisionada Lab 03",
+      "kind": "adventure",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "budget",
+        "service": "Aventura supervisionada",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 95,
+        "estimated_eur_max": 290,
+        "lead_time_hours": 48,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-faro-guide-1204",
+      "name": "[SYNTHETIC] Faro Guia cultural Lab 04",
+      "kind": "guide",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 16,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "adventure",
+        "service": "Guia cultural",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 80,
+        "estimated_eur_max": 265,
+        "lead_time_hours": 72,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-faro-kayak-1205",
+      "name": "[SYNTHETIC] Faro Caiaque e SUP Lab 05",
+      "kind": "kayak",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "families",
+        "service": "Caiaque e SUP",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 4,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-faro-photography-1206",
+      "name": "[SYNTHETIC] Faro Fotografia e vídeo Lab 06",
+      "kind": "photography",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "corporate",
+        "service": "Fotografia e vídeo",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 115,
+        "estimated_eur_max": 365,
+        "lead_time_hours": 12,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-faro-transport-1207",
+      "name": "[SYNTHETIC] Faro Mobilidade turística Lab 07",
+      "kind": "transport",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "classic",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 235,
+        "lead_time_hours": 24,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-faro-food-tour-1208",
+      "name": "[SYNTHETIC] Faro Experiências gastronómicas Lab 08",
+      "kind": "food-tour",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 9,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "premium",
+        "service": "Experiências gastronómicas",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 48,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-faro-cycling-1209",
+      "name": "[SYNTHETIC] Faro Ciclismo e e-bike Lab 09",
+      "kind": "cycling",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "budget",
+        "service": "Ciclismo e e-bike",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 170,
+        "lead_time_hours": 72,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-faro-accessibility-1210",
+      "name": "[SYNTHETIC] Faro Turismo acessível Lab 10",
+      "kind": "accessibility",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "adventure",
+        "service": "Turismo acessível",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 90,
+        "estimated_eur_max": 275,
+        "lead_time_hours": 4,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-faro-transfer-1211",
+      "name": "[SYNTHETIC] Faro Transfer privado Lab 11",
+      "kind": "transfer",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "families",
+        "service": "Transfer privado",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 220,
+        "lead_time_hours": 12,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-faro-boat-tour-1212",
+      "name": "[SYNTHETIC] Faro Passeio de barco Lab 12",
+      "kind": "boat-tour",
+      "area": "Faro, Olhão, Tavira",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Algarve",
+        "segment": "corporate",
+        "service": "Passeio de barco",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 265,
+        "lead_time_hours": 24,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-madeira-photography-1301",
+      "name": "[SYNTHETIC] Madeira Fotografia e vídeo Lab 01",
+      "kind": "photography",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 1,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "classic",
+        "service": "Fotografia e vídeo",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 95,
+        "estimated_eur_max": 320,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-madeira-transport-1302",
+      "name": "[SYNTHETIC] Madeira Mobilidade turística Lab 02",
+      "kind": "transport",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 17,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "premium",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 48,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-madeira-food-tour-1303",
+      "name": "[SYNTHETIC] Madeira Experiências gastronómicas Lab 03",
+      "kind": "food-tour",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "budget",
+        "service": "Experiências gastronómicas",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 145,
+        "lead_time_hours": 72,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-madeira-cycling-1304",
+      "name": "[SYNTHETIC] Madeira Ciclismo e e-bike Lab 04",
+      "kind": "cycling",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "adventure",
+        "service": "Ciclismo e e-bike",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 4,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-madeira-accessibility-1305",
+      "name": "[SYNTHETIC] Madeira Turismo acessível Lab 05",
+      "kind": "accessibility",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "families",
+        "service": "Turismo acessível",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 70,
+        "estimated_eur_max": 230,
+        "lead_time_hours": 12,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-madeira-transfer-1306",
+      "name": "[SYNTHETIC] Madeira Transfer privado Lab 06",
+      "kind": "transfer",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "corporate",
+        "service": "Transfer privado",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 175,
+        "lead_time_hours": 24,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-madeira-boat-tour-1307",
+      "name": "[SYNTHETIC] Madeira Passeio de barco Lab 07",
+      "kind": "boat-tour",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "classic",
+        "service": "Passeio de barco",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 220,
+        "lead_time_hours": 48,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-madeira-wellness-1308",
+      "name": "[SYNTHETIC] Madeira Bem-estar Lab 08",
+      "kind": "wellness",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "premium",
+        "service": "Bem-estar",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 65,
+        "estimated_eur_max": 180,
+        "lead_time_hours": 72,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-madeira-lodging-1309",
+      "name": "[SYNTHETIC] Madeira Alojamento boutique Lab 09",
+      "kind": "lodging",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "budget",
+        "service": "Alojamento boutique",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 90,
+        "estimated_eur_max": 290,
+        "lead_time_hours": 4,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-madeira-walking-tour-1310",
+      "name": "[SYNTHETIC] Madeira Walking tour Lab 10",
+      "kind": "walking-tour",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "adventure",
+        "service": "Walking tour",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 20,
+        "estimated_eur_max": 65,
+        "lead_time_hours": 12,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-madeira-surf-1311",
+      "name": "[SYNTHETIC] Madeira Surf e bodyboard Lab 11",
+      "kind": "surf",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 2,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "families",
+        "service": "Surf e bodyboard",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 40,
+        "estimated_eur_max": 110,
+        "lead_time_hours": 24,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-madeira-events-1312",
+      "name": "[SYNTHETIC] Madeira Eventos e experiências Lab 12",
+      "kind": "events",
+      "area": "Funchal, Câmara de Lobos, Santana",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Madeira",
+        "segment": "corporate",
+        "service": "Eventos e experiências",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 80,
+        "estimated_eur_max": 280,
+        "lead_time_hours": 48,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-transfer-1401",
+      "name": "[SYNTHETIC] São Miguel Transfer privado Lab 01",
+      "kind": "transfer",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "classic",
+        "service": "Transfer privado",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 190,
+        "lead_time_hours": 48,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-boat-tour-1402",
+      "name": "[SYNTHETIC] São Miguel Passeio de barco Lab 02",
+      "kind": "boat-tour",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 18,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "premium",
+        "service": "Passeio de barco",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 235,
+        "lead_time_hours": 72,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-wellness-1403",
+      "name": "[SYNTHETIC] São Miguel Bem-estar Lab 03",
+      "kind": "wellness",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "budget",
+        "service": "Bem-estar",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 195,
+        "lead_time_hours": 4,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-lodging-1404",
+      "name": "[SYNTHETIC] São Miguel Alojamento boutique Lab 04",
+      "kind": "lodging",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "adventure",
+        "service": "Alojamento boutique",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 100,
+        "estimated_eur_max": 305,
+        "lead_time_hours": 12,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-walking-tour-1405",
+      "name": "[SYNTHETIC] São Miguel Walking tour Lab 05",
+      "kind": "walking-tour",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 2,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "families",
+        "service": "Walking tour",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 30,
+        "estimated_eur_max": 80,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-surf-1406",
+      "name": "[SYNTHETIC] São Miguel Surf e bodyboard Lab 06",
+      "kind": "surf",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 9,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "corporate",
+        "service": "Surf e bodyboard",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 50,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 48,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-events-1407",
+      "name": "[SYNTHETIC] São Miguel Eventos e experiências Lab 07",
+      "kind": "events",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 27,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "classic",
+        "service": "Eventos e experiências",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 90,
+        "estimated_eur_max": 295,
+        "lead_time_hours": 72,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-tuk-tuk-1408",
+      "name": "[SYNTHETIC] São Miguel Circuitos urbanos Lab 08",
+      "kind": "tuk-tuk",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 6,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "premium",
+        "service": "Circuitos urbanos",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 110,
+        "lead_time_hours": 4,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-wine-tour-1409",
+      "name": "[SYNTHETIC] São Miguel Enoturismo Lab 09",
+      "kind": "wine-tour",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "budget",
+        "service": "Enoturismo",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 210,
+        "lead_time_hours": 12,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-hiking-1410",
+      "name": "[SYNTHETIC] São Miguel Trilhos e natureza Lab 10",
+      "kind": "hiking",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "adventure",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 45,
+        "estimated_eur_max": 130,
+        "lead_time_hours": 24,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-adventure-1411",
+      "name": "[SYNTHETIC] São Miguel Aventura supervisionada Lab 11",
+      "kind": "adventure",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 3,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "families",
+        "service": "Aventura supervisionada",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 85,
+        "estimated_eur_max": 260,
+        "lead_time_hours": 48,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-s-o-miguel-guide-1412",
+      "name": "[SYNTHETIC] São Miguel Guia cultural Lab 12",
+      "kind": "guide",
+      "area": "Ponta Delgada, Furnas, Sete Cidades",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "corporate",
+        "service": "Guia cultural",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 70,
+        "estimated_eur_max": 235,
+        "lead_time_hours": 72,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    },
+    {
+      "id": "syn-terceira-surf-1501",
+      "name": "[SYNTHETIC] Terceira Surf e bodyboard Lab 01",
+      "kind": "surf",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "classic",
+        "service": "Surf e bodyboard",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 140,
+        "lead_time_hours": 72,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "standard"
+      }
+    },
+    {
+      "id": "syn-terceira-events-1502",
+      "name": "[SYNTHETIC] Terceira Eventos e experiências Lab 02",
+      "kind": "events",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 23,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "premium",
+        "service": "Eventos e experiências",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 100,
+        "estimated_eur_max": 310,
+        "lead_time_hours": 4,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "urgent"
+      }
+    },
+    {
+      "id": "syn-terceira-tuk-tuk-1503",
+      "name": "[SYNTHETIC] Terceira Circuitos urbanos Lab 03",
+      "kind": "tuk-tuk",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 5,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "budget",
+        "service": "Circuitos urbanos",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 12,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weekend"
+      }
+    },
+    {
+      "id": "syn-terceira-wine-tour-1504",
+      "name": "[SYNTHETIC] Terceira Enoturismo Lab 04",
+      "kind": "wine-tour",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 8,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "adventure",
+        "service": "Enoturismo",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 95,
+        "estimated_eur_max": 225,
+        "lead_time_hours": 24,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "seasonal"
+      }
+    },
+    {
+      "id": "syn-terceira-hiking-1505",
+      "name": "[SYNTHETIC] Terceira Trilhos e natureza Lab 05",
+      "kind": "hiking",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "families",
+        "service": "Trilhos e natureza",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 145,
+        "lead_time_hours": 48,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "capacity-limited"
+      }
+    },
+    {
+      "id": "syn-terceira-adventure-1506",
+      "name": "[SYNTHETIC] Terceira Aventura supervisionada Lab 06",
+      "kind": "adventure",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 10,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "corporate",
+        "service": "Aventura supervisionada",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 95,
+        "estimated_eur_max": 275,
+        "lead_time_hours": 72,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "quote-required"
+      }
+    },
+    {
+      "id": "syn-terceira-guide-1507",
+      "name": "[SYNTHETIC] Terceira Guia cultural Lab 07",
+      "kind": "guide",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 7,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "classic",
+        "service": "Guia cultural",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 80,
+        "estimated_eur_max": 250,
+        "lead_time_hours": 4,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "manual-confirmation"
+      }
+    },
+    {
+      "id": "syn-terceira-kayak-1508",
+      "name": "[SYNTHETIC] Terceira Caiaque e SUP Lab 08",
+      "kind": "kayak",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "premium",
+        "service": "Caiaque e SUP",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 55,
+        "estimated_eur_max": 125,
+        "lead_time_hours": 12,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "accessible-request"
+      }
+    },
+    {
+      "id": "syn-terceira-photography-1509",
+      "name": "[SYNTHETIC] Terceira Fotografia e vídeo Lab 09",
+      "kind": "photography",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 11,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "budget",
+        "service": "Fotografia e vídeo",
+        "languages": [
+          "pt",
+          "en"
+        ],
+        "estimated_eur_min": 115,
+        "estimated_eur_max": 350,
+        "lead_time_hours": 24,
+        "seasonality": "year-round",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "multilingual"
+      }
+    },
+    {
+      "id": "syn-terceira-transport-1510",
+      "name": "[SYNTHETIC] Terceira Mobilidade turística Lab 10",
+      "kind": "transport",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 12,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "adventure",
+        "service": "Mobilidade turística",
+        "languages": [
+          "pt",
+          "en",
+          "es"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 220,
+        "lead_time_hours": 48,
+        "seasonality": "summer",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "unknown",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "cancellation"
+      }
+    },
+    {
+      "id": "syn-terceira-food-tour-1511",
+      "name": "[SYNTHETIC] Terceira Experiências gastronómicas Lab 11",
+      "kind": "food-tour",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 4,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "families",
+        "service": "Experiências gastronómicas",
+        "languages": [
+          "pt",
+          "en",
+          "fr"
+        ],
+        "estimated_eur_min": 75,
+        "estimated_eur_max": 175,
+        "lead_time_hours": 72,
+        "seasonality": "winter",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "request-only",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "complaint"
+      }
+    },
+    {
+      "id": "syn-terceira-cycling-1512",
+      "name": "[SYNTHETIC] Terceira Ciclismo e e-bike Lab 12",
+      "kind": "cycling",
+      "area": "Angra do Heroísmo, Praia da Vitória",
+      "seats": 14,
+      "whatsapp": "",
+      "demo": true,
+      "metadata": {
+        "region": "Açores",
+        "segment": "corporate",
+        "service": "Ciclismo e e-bike",
+        "languages": [
+          "pt",
+          "en",
+          "de"
+        ],
+        "estimated_eur_min": 60,
+        "estimated_eur_max": 155,
+        "lead_time_hours": 4,
+        "seasonality": "spring-autumn",
+        "availability_status": "SYNTHETIC_UNKNOWN",
+        "accessibility": "scenario-supported",
+        "legal_verification": "NOT_VERIFIED",
+        "contact_status": "NO_REAL_CONTACT",
+        "test_scenario": "weather-dependent"
+      }
+    }
+  ]
+}
   ]
 }
