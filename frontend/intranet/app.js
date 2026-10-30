@@ -206,7 +206,7 @@ function renew() {
 // problemas e o funil. Cada barra ou número abre os itens desse bloqueio, com o detalhe e as ações
 // (atribuir, pedir desbloqueio) na mesma página; os pedidos de desbloqueio mostram o resultado.
 const OPS_TONE = { blocked: 'bad', overdue: 'bad', risk: 'bad', failed: 'warn', unassigned: 'warn', today: '' };
-const operationsState = { mode: 'intel', drill: null, selected: '', scroll: false };
+const operationsState = { focus: '', drill: null, selected: '', scroll: false };
 const DAY_MS = 864e5;
 
 async function opsIntelligence(view, state) {
@@ -273,9 +273,7 @@ async function opsIntelligence(view, state) {
     detail);
 
   view.append(
-    h('div', { class: 'heading-row' }, h('h2', {}, 'Operações'), h('div', { class: 'filters' },
-      h('button', { type: 'button', class: 'secondary', 'aria-pressed': 'true' }, 'Inteligência'),
-      h('button', { type: 'button', class: 'secondary', 'aria-pressed': 'false', onclick: () => { state.mode = 'pipeline'; rerender(); } }, 'Pipeline técnico'))),
+    h('h2', {}, 'Operações'),
     h('div', { class: 'cards' },
       card(stuck.length, 'Itens parados', 'warn', () => drillTo(null)),
       card(stuck.filter(item => age(item) > DAY_MS).length, 'Parados há mais de 24 h', 'bad', () => drillTo({ by: 'old', label: 'Parados há mais de 24 h' })),
@@ -291,30 +289,56 @@ async function opsIntelligence(view, state) {
           h('button', { type: 'button', class: 'ops-bar', 'aria-pressed': String(drill.by === 'person' && drill.value === email), onclick: () => drillTo({ by: 'person', value: email, label: email ? `Parado de ${nameOf(email)}` : 'Parado sem responsável' }) },
             h('span', { class: 'ops-bar-label' }, email ? nameOf(email) : 'Sem responsável'), h('span', { class: 'ops-bar-track' }, h('span', { class: 'ops-bar-fill', style: { width: `${Math.max(4, Math.round(count / widest * 100))}%` } })), h('strong', {}, count)))))
           : h('p', { class: 'muted' }, 'Ninguém com trabalho parado.'))),
+    h('div', { class: 'grid2 spaced' },
+      fold('ops-partners', 'Parceiros com problemas', [goLink('partners', {}, 'Abrir Parceiros'),
+        troubled.length ? h('table', {},
+          h('thead', {}, h('tr', {}, h('th', {}, 'Parceiro'), h('th', {}, 'Pontualidade'), h('th', {}, 'Faltas'), h('th', {}, 'NPS'), h('th', {}, 'A verificar'))),
+          h('tbody', {}, troubled.map(partner => h('tr', {}, h('td', {}, partner.name), h('td', {}, percent(partner.metrics.punctuality)), h('td', {}, partner.metrics.noShows),
+            h('td', {}, partner.metrics.nps === null || partner.metrics.nps === undefined ? '—' : partner.metrics.nps), h('td', {}, toCheck.filter(item => item.partnerId === partner.id).length)))))
+          : h('p', { class: 'muted' }, 'Sem problemas registados nos últimos 90 dias.')], { open: troubled.length > 0, count: troubled.length, tone: 'warn' }),
+      fold('ops-funnel', 'Funil',
+        funnel.length ? h('ul', { class: 'ops-bars' }, funnel.map(([label, value], index) => h('li', {}, h('div', { class: 'ops-bar' },
+          h('span', { class: 'ops-bar-label' }, label), h('span', { class: 'ops-bar-track' }, h('span', { class: 'ops-bar-fill', style: { width: `${Math.max(2, Math.round(value / funnelTop * 100))}%` } })),
+          h('strong', {}, index && funnel[0][1] ? `${value} · ${Math.round(value / funnel[0][1] * 100)}%` : value)))))
+          : h('p', { class: 'muted' }, 'Sem dados.'))),
     drillPanel,
-    h('div', { class: 'panel spaced', id: 'ops-requests' }, h('h3', {}, `Pedidos de desbloqueio · ${waitingRequests.length} em aberto`),
+    fold('ops-requests', 'Pedidos de desbloqueio', [
       requests.length ? h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Pedido'), h('th', {}, 'Para'), h('th', {}, 'Pedido por'), h('th', {}, 'Há'), h('th', {}, 'Estado'))),
         h('tbody', {}, requests.sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(task => h('tr', {},
           h('td', {}, task.title.replace(/^Desbloquear:\s*/, '')), h('td', {}, nameOf(task.owner)), h('td', {}, nameOf(task.createdBy)),
           h('td', {}, lateBy(task.createdAt)), h('td', {}, pill(...requestState(task)))))))
-        : h('p', { class: 'muted' }, 'Ainda sem pedidos.')),
-    h('div', { class: 'grid2 spaced' },
-      h('div', { class: 'panel' }, h('div', { class: 'heading-row' }, h('h3', {}, 'Parceiros com problemas'), goLink('partners', {}, 'Abrir Parceiros')),
-        troubled.length ? h('table', {},
-          h('thead', {}, h('tr', {}, h('th', {}, 'Parceiro'), h('th', {}, 'Pontualidade'), h('th', {}, 'Faltas'), h('th', {}, 'NPS'), h('th', {}, 'A verificar'))),
-          h('tbody', {}, troubled.map(partner => h('tr', {}, h('td', {}, partner.name), h('td', {}, percent(partner.metrics.punctuality)), h('td', {}, partner.metrics.noShows),
-            h('td', {}, partner.metrics.nps === null || partner.metrics.nps === undefined ? '—' : partner.metrics.nps), h('td', {}, toCheck.filter(item => item.partnerId === partner.id).length)))))
-          : h('p', { class: 'muted' }, 'Sem problemas registados nos últimos 90 dias.')),
-      h('div', { class: 'panel' }, h('h3', {}, 'Funil'),
-        funnel.length ? h('ul', { class: 'ops-bars' }, funnel.map(([label, value], index) => h('li', {}, h('div', { class: 'ops-bar' },
-          h('span', { class: 'ops-bar-label' }, label), h('span', { class: 'ops-bar-track' }, h('span', { class: 'ops-bar-fill', style: { width: `${Math.max(2, Math.round(value / funnelTop * 100))}%` } })),
-          h('strong', {}, index && funnel[0][1] ? `${value} · ${Math.round(value / funnel[0][1] * 100)}%` : value)))))
-          : h('p', { class: 'muted' }, 'Sem dados.'))),
+        : h('p', { class: 'muted' }, 'Ainda sem pedidos.')], { id: 'ops-requests', open: waitingRequests.length > 0, count: waitingRequests.length, tone: unanswered.length ? 'bad' : 'warn' }),
+    pipelineFold(state),
+    lazyFold('ops-review', 'Conversas do chatbot para rever', async () => conversationReview(await api('GET', '/v1/conversations'), state)),
   );
   const chosen = queue.find(item => item.key === state.selected) ?? queue[0];
   if (chosen) select(chosen); else detail.append(h('p', { class: 'muted' }, 'Escolha um item.'));
   if (state.scroll) { state.scroll = false; drillPanel.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  if (state.focus === 'pipeline') view.querySelector('#ops-pipeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Pipeline técnico: filas, falhas e workers. Dobrado por defeito; aberto quando se entra por
+// «Pipeline técnico» na navegação ou para quem só vê esta área (sem dados de clientes).
+function pipelineFold(state, open = false) {
+  return lazyFold('ops-pipeline', 'Pipeline técnico', async () => {
+    const ops = await api('GET', '/v1/operations');
+    const q = ops.queues;
+    const queueCard = (depth, label, badWhen) => h('div', { class: 'card' }, h('div', { class: 'value' }, depth.waiting), h('div', { class: 'label' }, label), depth.inFlight ? h('div', { class: 'muted' }, `${depth.inFlight} em processamento`) : null, badWhen && depth.waiting ? pill('Requer atenção', 'bad') : null);
+    return [
+      h('p', { class: 'muted' }, `Verificado em ${when(ops.checkedAt)}.`),
+      h('div', { class: 'cards' },
+        queueCard(q.conversationEvents, 'Eventos por processar'), queueCard(q.failedEvents, 'Eventos falhados (DLQ)', true),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, ops.churnReview ? ops.churnReview.queued : '—'), h('div', { class: 'label' }, 'Revisão diária: leads em atraso'))),
+      h('div', { class: 'table-scroll' }, h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'Função'), h('th', {}, 'Stack'), h('th', {}, 'Execuções'), h('th', {}, 'Erros'), h('th', {}, 'Limitações'), h('th', {}, 'Estado'), h('th', {}, 'Atualizada'))),
+        h('tbody', {}, ops.workers.map(worker => h('tr', {},
+          h('td', {}, worker.name.replace(/^BluCosta\w+-/, '')), h('td', {}, worker.stack.replace('BluCosta', '')),
+          h('td', {}, worker.invocations24h), h('td', {}, worker.errors24h), h('td', {}, worker.throttles24h),
+          h('td', {}, worker.errors24h ? pill('Com erros', 'bad') : worker.invocations24h ? pill('OK', 'ok') : pill('Sem atividade')),
+          h('td', {}, when(worker.lastModified))))))),
+    ];
+  }, { id: 'ops-pipeline', open: open || state.focus === 'pipeline' });
 }
 
 // Detalhe de um item: porquê está parado, de quem é, quem desbloqueia e as ações possíveis ali mesmo.
@@ -415,6 +439,30 @@ function showOpsItem(panel, item, data, { me, nameOf, refresh }) {
     status,
   // replaceChildren escreve «null» como texto: só os nós que existem.
   ].filter(Boolean));
+}
+
+// Painel dobrável: aberto é branco, dobrado fica sombreado com o título e a contagem à vista.
+// O estado de cada painel fica neste navegador; sem armazenamento, vale o que o código pede.
+const foldState = (() => { try { return JSON.parse(localStorage.getItem('blu-folds') || '{}'); } catch { return {}; } })();
+function fold(key, title, body, { open = true, count = null, tone = '', id } = {}) {
+  const box = h('details', { class: 'panel fold', id, open: foldState[key] ?? open },
+    h('summary', {}, h('span', { class: 'fold-title' }, title), count === null || count === undefined ? null : pill(String(count), count ? tone : '')), ...[body].flat());
+  box.addEventListener('toggle', () => { foldState[key] = box.open; try { localStorage.setItem('blu-folds', JSON.stringify(foldState)); } catch { /* sem armazenamento */ } });
+  return box;
+}
+// O conteúdo só é pedido quando o painel abre (o pipeline técnico e a revisão de conversas).
+function lazyFold(key, title, load, options = {}) {
+  const body = h('div', {}, h('p', { class: 'muted' }, 'A carregar…'));
+  const box = fold(key, title, body, { open: false, ...options });
+  let loaded = false;
+  const fill = () => {
+    if (loaded || !box.open) return;
+    loaded = true;
+    load().then(nodes => body.replaceChildren(...[nodes].flat().filter(Boolean))).catch(error => body.replaceChildren(h('p', { class: 'error' }, error.message)));
+  };
+  box.addEventListener('toggle', fill);
+  queueMicrotask(fill);
+  return box;
 }
 
 const views = {
@@ -615,9 +663,10 @@ const views = {
     const countCell = (n, tone) => h('td', {}, n ? pill(String(n), tone) : h('span', { class: 'muted' }, '0'));
     const roles = groups => groups.map(group => ROLE_LABEL[group] ?? group).join(', ');
     const DELIVERY = { email: 'Email', 'in-app': 'Só na intranet', 'email-failed': 'Email falhou' };
-    view.append(
-      h('h2', {}, 'Visão geral da equipa'),
-      h('p', { class: 'muted' }, `Trabalho operacional de toda a equipa: seguimentos, pontos de falha e quem tem o quê. Atualizado ${when(c.checkedAt)}; os alertas saem sozinhos a cada 5 minutos.`),
+    const reminderIssues = c.reminders.prepared + c.reminders.failed + c.reminders.missed;
+    // append escreve «null» como texto: só os painéis que existem.
+    view.append(...[
+      h('div', { class: 'heading-row' }, h('h2', {}, 'Visão geral da equipa'), h('span', { class: 'muted' }, `Atualizado ${when(c.checkedAt)}`)),
       // Trabalho da equipa com as regras de «O meu trabalho»: cada item conta uma vez, com ou sem responsável.
       w ? h('div', { class: 'cards' },
         h('div', { class: `card ${w.unowned ? 'warn' : ''}` }, h('div', { class: 'value' }, w.total), h('div', { class: 'label' }, 'Trabalho em aberto da equipa'), h('div', { class: 'muted' }, `${w.unowned} sem responsável`)),
@@ -625,18 +674,12 @@ const views = {
           const part = w.team[kind];
           return goCard(part.total, label, tab, options, part.unowned ? 'warn' : '');
         })) : null,
-      h('h3', { class: 'spaced' }, 'Leads'),
-      h('div', { class: 'cards' },
-        goCard(c.followUps.open, 'Leads em aberto', 'leads', { filter: 'open' }), goCard(c.followUps.onTime, 'Dentro do prazo', 'leads', { filter: 'open' }),
-        goCard(c.followUps.late, 'Fora do prazo', 'leads', { filter: 'open' }, 'bad'), goCard(c.followUps.atRisk, 'Clientes a desistir', 'leads', { filter: 'all' }, 'bad'),
-        goCard(c.followUps.unassigned, 'Sem responsável', 'leads', { filter: 'open' }, 'warn')),
-      h('div', { class: 'panel alerts' }, h('h3', {}, 'Pontos de falha'), c.breaking.length
+      fold('control-breaking', 'Pontos de falha', c.breaking.length
         ? h('ul', { class: 'reminders' }, c.breaking.map(item => h('li', {},
-          pill(item.level === 'bad' ? 'Urgente' : 'Atenção', item.level === 'bad' ? 'bad' : 'warn'), ' ', item.text, ' ',
-          goLink(item.tab))))
-        : h('p', { class: 'muted' }, 'Nenhum ponto de falha: o seguimento não depende de uma só pessoa.')),
+          pill(item.level === 'bad' ? 'Urgente' : 'Atenção', item.level === 'bad' ? 'bad' : 'warn'), ' ', item.text, ' ', goLink(item.tab))))
+        : h('p', { class: 'muted' }, 'Nenhum ponto de falha.'), { open: c.breaking.length > 0, count: c.breaking.length, tone: 'bad' }),
       // Uma linha por pessoa ativa: a sua lista de «O meu trabalho», por tipo; no fim, o que não é de ninguém.
-      w ? h('div', { class: 'panel' }, h('h3', {}, 'Quem tem o quê'), h('table', {},
+      w ? fold('control-people', 'Quem tem o quê', h('div', { class: 'table-scroll' }, h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Pessoa'), h('th', {}, 'Papel'), ...WORK_KINDS.map(([, label]) => h('th', {}, label)), h('th', {}, 'Alertas'), h('th', {}, 'Urgentes'), h('th', {}, 'Total'))),
         h('tbody', {},
           w.people.map(person => h('tr', {},
@@ -644,21 +687,26 @@ const views = {
             ...WORK_KINDS.map(([kind]) => h('td', {}, person[kind])), h('td', {}, person.alert),
             countCell(person.urgent, 'bad'), h('td', {}, h('strong', {}, person.total)))),
           h('tr', {}, h('td', {}, h('strong', {}, 'Sem responsável')), h('td', {}, '—'),
-            ...WORK_KINDS.map(([kind]) => countCell(w.team[kind].unowned, 'warn')), h('td', {}, '—'), h('td', {}, '—'), h('td', {}, h('strong', {}, w.unowned))))),
-      ) : null,
-      h('div', { class: 'grid2 spaced' },
-        h('div', { class: 'panel' }, h('h3', {}, 'Lembretes (7 dias)'), h('table', {}, h('tbody', {},
+            ...WORK_KINDS.map(([kind]) => countCell(w.team[kind].unowned, 'warn')), h('td', {}, '—'), h('td', {}, '—'), h('td', {}, h('strong', {}, w.unowned)))))),
+      { count: w.people.length }) : null,
+      fold('control-leads', 'Leads', h('div', { class: 'cards' },
+        goCard(c.followUps.open, 'Leads em aberto', 'leads', { filter: 'open' }), goCard(c.followUps.onTime, 'Dentro do prazo', 'leads', { filter: 'open' }),
+        goCard(c.followUps.late, 'Fora do prazo', 'leads', { filter: 'open' }, 'bad'), goCard(c.followUps.atRisk, 'Clientes a desistir', 'leads', { filter: 'all' }, 'bad'),
+        goCard(c.followUps.unassigned, 'Sem responsável', 'leads', { filter: 'open' }, 'warn')), { count: c.followUps.open }),
+      h('div', { class: 'grid2' },
+        fold('control-reminders', 'Lembretes (7 dias)', h('table', {}, h('tbody', {},
           // Os lembretes vivem na Agenda; os enviados por WhatsApp em teste também na caixa do WhatsApp.
           h('tr', {}, h('td', {}, 'Enviados'), h('td', {}, c.reminders.sent), h('td', {}, goLink('agenda', { scope: 'team' }, 'Agenda'), ' ', goLink('whatsapp', {}, 'WhatsApp'))),
           h('tr', {}, h('td', {}, 'Preparados para enviar à mão'), countCell(c.reminders.prepared, 'warn'), h('td', {}, goLink('agenda', { scope: 'team' }, 'Agenda'))),
           h('tr', {}, h('td', {}, 'Falharam'), countCell(c.reminders.failed, 'bad'), h('td', {}, goLink('agenda', { scope: 'team' }, 'Agenda'))),
-          h('tr', {}, h('td', {}, 'Não saíram a tempo'), countCell(c.reminders.missed, 'bad'), h('td', {}, goLink('agenda', { scope: 'team' }, 'Agenda')))))),
-        h('div', { class: 'panel' }, h('h3', {}, 'Alertas enviados à equipa (7 dias)'), c.alerts.length
+          h('tr', {}, h('td', {}, 'Não saíram a tempo'), countCell(c.reminders.missed, 'bad'), h('td', {}, goLink('agenda', { scope: 'team' }, 'Agenda'))))),
+        { open: reminderIssues > 0, count: reminderIssues, tone: 'warn' }),
+        fold('control-alerts', 'Alertas enviados (7 dias)', c.alerts.length
           ? h('ul', { class: 'feed' }, c.alerts.map(alert => h('li', {}, pill(alert.level === 'bad' ? 'Urgente' : 'Atenção', alert.level === 'bad' ? 'bad' : 'warn'), ' ', alert.text,
             h('div', { class: 'muted' }, `${alert.to.length ? `Para ${alert.to.join(', ')}` : 'Sem destinatário'} · ${DELIVERY[alert.delivery] ?? alert.delivery} · `,
               goLink(alert.tab, alert.leadId ? { filter: 'all', lead: alert.leadId } : {}, alert.leadId ? 'Abrir o lead' : 'Abrir')), h('time', {}, when(alert.at)))))
-          : h('p', { class: 'muted' }, 'Ainda sem alertas.'))),
-    );
+          : h('p', { class: 'muted' }, 'Ainda sem alertas.'), { open: false, count: c.alerts.length })),
+    ].filter(Boolean));
   },
 
   async leads(view, state = leadsState) {
@@ -1200,27 +1248,8 @@ const views = {
   },
 
   async operations(view, state = operationsState) {
-    if (state.mode !== 'pipeline' && can('read')) return opsIntelligence(view, state);
-    const [ops, review] = await Promise.all([api('GET', '/v1/operations'), api('GET', '/v1/conversations').catch(error => ({ error: error.message }))]);
-    const q = ops.queues;
-    const queueCard = (depth, label, badWhen) => h('div', { class: 'card' }, h('div', { class: 'value' }, depth.waiting), h('div', { class: 'label' }, label), depth.inFlight ? h('div', { class: 'muted' }, `${depth.inFlight} em processamento`) : null, badWhen && depth.waiting ? pill('Requer atenção', 'bad') : null);
-    view.append(
-      h('div', { class: 'heading-row' }, h('h2', {}, 'Operações'), can('read') ? h('div', { class: 'filters' },
-        h('button', { type: 'button', class: 'secondary', 'aria-pressed': 'false', onclick: () => { state.mode = 'intel'; view.replaceChildren(); views.operations(view, state); } }, 'Inteligência'),
-        h('button', { type: 'button', class: 'secondary', 'aria-pressed': 'true' }, 'Pipeline técnico')) : null),
-      h('p', { class: 'muted' }, `Verificado em ${when(ops.checkedAt)}.`),
-      h('div', { class: 'cards' },
-        queueCard(q.conversationEvents, 'Eventos por processar'), queueCard(q.failedEvents, 'Eventos falhados (DLQ)', true),
-        h('div', { class: 'card' }, h('div', { class: 'value' }, ops.churnReview ? ops.churnReview.queued : '—'), h('div', { class: 'label' }, 'Revisão diária: leads em atraso'), h('div', { class: 'muted' }, ops.churnReview ? `Última execução ${when(ops.churnReview.evaluatedAt)}` : 'Sem execução nos últimos 3 dias'))),
-      h('div', { class: 'panel' }, h('h3', {}, 'Workers (últimas 24 h)'), h('table', {},
-        h('thead', {}, h('tr', {}, h('th', {}, 'Função'), h('th', {}, 'Stack'), h('th', {}, 'Execuções'), h('th', {}, 'Erros'), h('th', {}, 'Limitações'), h('th', {}, 'Estado'), h('th', {}, 'Atualizada'))),
-        h('tbody', {}, ops.workers.map(worker => h('tr', {},
-          h('td', {}, worker.name.replace(/^BluCosta\w+-/, '')), h('td', {}, worker.stack.replace('BluCosta', '')),
-          h('td', {}, worker.invocations24h), h('td', {}, worker.errors24h), h('td', {}, worker.throttles24h),
-          h('td', {}, worker.errors24h ? pill('Com erros', 'bad') : worker.invocations24h ? pill('OK', 'ok') : pill('Sem atividade')),
-          h('td', {}, when(worker.lastModified))))))),
-      conversationReview(review, state),
-    );
+    if (can('read')) return opsIntelligence(view, state);
+    view.append(h('h2', {}, 'Operações'), pipelineFold(state, true));
   },
 
   // Escrito para a fundadora: linguagem simples primeiro, ações à mão, detalhe técnico dobrado.
@@ -1837,17 +1866,30 @@ function mountAssistant() {
   document.body.append(panel, fab);
 }
 // Separadores por grupo e grupos de menu vazios escondidos.
+// Contadores na árvore: urgentes em «O meu trabalho», leads sem responsável e mensagens à espera.
+async function updateBadges() {
+  const set = (key, count) => {
+    const button = $('tabs').querySelector(`[data-badge="${key}"]`);
+    if (!button) return;
+    if (count) button.dataset.count = count > 99 ? '99+' : String(count);
+    else delete button.dataset.count;
+  };
+  const [work, metrics, inbox] = await Promise.all([
+    api('GET', '/v1/work').catch(() => null),
+    can('read') ? api('GET', '/v1/metrics').catch(() => null) : null,
+    isCurator() ? api('GET', '/v1/whatsapp-test').catch(() => null) : null,
+  ]);
+  set('work', work?.items.filter(item => ['risk', 'overdue'].includes(item.urgency)).length);
+  set('control', metrics?.unassigned);
+  set('whatsapp', inbox?.threads?.filter(thread => thread.waiting).length);
+}
+
 function applySite() {
   const nav = $('tabs');
   for (const button of nav.querySelectorAll('button[data-tab]')) if (!tabVisible(button.dataset.tab)) button.hidden = true;
   // Ligações para outros sites só para quem lá pode entrar (data-groups).
   for (const link of nav.querySelectorAll('a[data-groups]')) link.hidden = !link.dataset.groups.split(' ').some(group => groupsNow().includes(group));
-  for (const group of nav.querySelectorAll('.nav-group')) {
-    let item = group.nextElementSibling;
-    let visible = false;
-    for (; item && !item.classList.contains('nav-group'); item = item.nextElementSibling) visible ||= !item.hidden;
-    group.hidden = !visible;
-  }
+  for (const group of nav.querySelectorAll('details[data-group]')) group.hidden = ![...group.querySelectorAll('button, a')].some(item => !item.hidden);
 }
 
 // A secção vai no #hash: ligações partilhadas e o botão «anterior» do navegador funcionam.
@@ -1859,9 +1901,12 @@ const tabFromHash = () => {
 async function show(tab) {
   current = tab;
   if (location.hash.slice(1) !== tab) history.pushState(null, '', `#${tab}`);
-  for (const button of $('tabs').querySelectorAll('button')) {
-    if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
-    else button.removeAttribute('aria-current');
+  const sub = tab === 'operations' ? operationsState.focus || '' : '';
+  for (const button of $('tabs').querySelectorAll('button[data-tab]')) {
+    if (button.dataset.tab === tab && (button.dataset.sub || '') === sub) {
+      button.setAttribute('aria-current', 'page');
+      button.closest('details')?.setAttribute('open', '');
+    } else button.removeAttribute('aria-current');
   }
   document.dispatchEvent(new Event('blu:section'));
   const view = $('view');
@@ -1915,9 +1960,27 @@ async function start() {
     sessionStorage.setItem('blu-intranet-signed-out', '1');
     location.assign(logoutUrl(config));
   });
-  $('tabs').addEventListener('click', event => event.target.dataset?.tab && show(event.target.dataset.tab));
+  $('tabs').addEventListener('click', event => {
+    const button = event.target.closest('button[data-tab]');
+    if (!button) return;
+    if (button.dataset.tab === 'operations') operationsState.focus = button.dataset.sub || '';
+    show(button.dataset.tab);
+    setMenu(false);
+  });
+  // Grupos da árvore: cada pessoa dobra os que não usa; fica guardado neste navegador.
+  const navState = (() => { try { return JSON.parse(localStorage.getItem('blu-nav') || '{}'); } catch { return {}; } })();
+  for (const group of $('tabs').querySelectorAll('details[data-group]')) {
+    if (group.dataset.group in navState) group.open = navState[group.dataset.group];
+    group.addEventListener('toggle', () => { navState[group.dataset.group] = group.open; try { localStorage.setItem('blu-nav', JSON.stringify(navState)); } catch { /* sem armazenamento */ } });
+  }
+  // Telemóvel: a árvore abre como gaveta a partir de «Menu».
+  const setMenu = open => { document.body.classList.toggle('nav-open', open); $('menu').setAttribute('aria-expanded', String(open)); };
+  $('menu').hidden = false;
+  $('menu').addEventListener('click', () => setMenu(!document.body.classList.contains('nav-open')));
+  document.addEventListener('click', event => { if (document.body.classList.contains('nav-open') && !event.target.closest('#tabs, #menu')) setMenu(false); });
+  document.addEventListener('keydown', event => event.key === 'Escape' && setMenu(false));
   $('refresh').hidden = false;
-  $('refresh').addEventListener('click', () => show(current));
+  $('refresh').addEventListener('click', () => { show(current); updateBadges(); });
   // Ao voltar ao separador depois de um minuto fora, recarrega a secção aberta.
   let hiddenAt = 0;
   document.addEventListener('visibilitychange', () => {
@@ -1929,7 +1992,8 @@ async function start() {
   show(tabFromHash() || (can('team-admin') ? 'control' : SITE.start));
   mountAssistant();
   watchLeads();
-  setInterval(watchLeads, 60_000);
+  updateBadges();
+  setInterval(() => { watchLeads(); updateBadges(); }, 60_000);
 }
 
 start();
