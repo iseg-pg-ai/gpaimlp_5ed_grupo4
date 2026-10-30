@@ -3,7 +3,7 @@ import { challengeFor, claimsOf, expired, loginUrl, logoutUrl, randomString, ref
 // Intranet da equipa. Todo o texto vindo da API é inserido com textContent (nunca HTML).
 const config = window.BLU_INTRANET;
 // Um só site para a equipa; os grupos Cognito decidem o que cada pessoa vê (aqui e na API).
-const SITE = { name: 'Intranet BLU', start: 'work' };
+const SITE = { name: 'BLU Mission Control', start: 'work' };
 // Perfis sem leitura geral (marketing) veem só estes separadores; a API aplica a mesma regra.
 const LIMITED_TABS = ['work', 'dashboard'];
 const session = { idToken: '', refreshToken: '', claims: null };
