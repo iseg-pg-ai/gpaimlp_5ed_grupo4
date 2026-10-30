@@ -1,3 +1,4 @@
+// Agrupa e projeta os registos com localização, sem inventar coordenadas para os restantes.
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, RotateCcw, Move } from "lucide-react";

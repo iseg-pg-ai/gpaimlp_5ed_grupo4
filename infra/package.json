@@ -7,7 +7,9 @@
     "synth:aws": "node aws-split-app.mjs",
     "synth:split": "node aws-split-app.mjs",
     "synth:cloud": "node aws-split-app.mjs",
+    "synth:curation": "cdk synth --app \"node curation-workspace.mjs\"",
     "deploy:cloud": "cdk deploy --all --app \"node aws-split-app.mjs\"",
+    "deploy:curation": "cdk deploy --app \"node curation-workspace.mjs\"",
     "synthetic:cloud": "node scripts/generate-synthetic-interactions.mjs",
     "test": "node --test tests/*.test.mjs",
     "deploy:local": "node aws-split-app.mjs"

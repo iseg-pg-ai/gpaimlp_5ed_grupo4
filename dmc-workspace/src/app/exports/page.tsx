@@ -1,9 +1,12 @@
+// Apresenta o histórico das versões guardadas e os respetivos acessos de exportação.
 import { portalUrl } from "@/lib/http-client";
 import { T } from "@/components/LocaleProvider";
 import Link from "next/link";
 import { languages } from "@/lib/locales";
 import { VersionStore } from "@/lib/version-store";
 import { Trash2 } from "lucide-react";
+import { ShareAccessManager } from "@/components/ShareAccessManager";
+import { FeedbackManager } from "@/components/FeedbackManager";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export default async function ExportHistory({
@@ -20,6 +23,7 @@ export default async function ExportHistory({
         : "";
   const store = new VersionStore();
   const versions = store.list();
+  const shares = store.listShares();
   store.close();
   return (
     <main className="portal-page min-h-full bg-[var(--portal-bg-f4f0e7)] text-[var(--portal-text-143f4b)]">
@@ -40,6 +44,7 @@ export default async function ExportHistory({
           <T text={actionError} source="pt" />
         </p>
       )}
+      <ShareAccessManager initialShares={shares} />
       {!versions.length && (
         <p>
           <T text="Ainda não existem versões guardadas." source="pt" />
@@ -120,16 +125,12 @@ export default async function ExportHistory({
                 value="prompt"
                 className="underline cursor-pointer"
               >
-                <T text="TXT para Canva" source="pt" />
+                <T text="Exportar TXT" source="pt" />
               </button>
             </form>
-            <a
-              className="underline"
-              href={portalUrl(`/api/versions?tripId=${v.tripId}&version=${v.version}`)}
-              target="_blank"
-            >
-              <T text="Consultar conteúdo guardado" source="pt" />
-            </a>
+            <div>
+              <FeedbackManager tripId={v.tripId} version={v.version} />
+            </div>
           </div>
           <div className="flex shrink-0 items-center sm:border-l sm:border-[var(--portal-line-e6e1d5)] sm:pl-4">
             <form

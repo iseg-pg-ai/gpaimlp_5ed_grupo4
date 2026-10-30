@@ -1,3 +1,4 @@
+// Normaliza os registos de conversas e acompanhamento para o modelo apresentado no portal.
 // Contrato partilhado com infra/lambda/event-processor e churn-evaluator: o registo
 // PROFILE de cada conversa guarda o estado de seguimento indexado em FollowUpIndex.
 export const OPEN_STATUSES = ["PENDING", "QUEUED_FOR_REVIEW"] as const;

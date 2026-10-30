@@ -1,139 +1,91 @@
 # DMC Workspace
 
-O DMC Workspace é o portal operacional usado pelo consultor ou curador para recolher o
-briefing, consultar e manter o catálogo, gerar itinerários, acompanhar
-confirmações e exportar propostas versionadas.
+O DMC Workspace é o portal operacional usado pelo consultor ou curador para recolher o briefing, consultar e manter o catálogo, gerar itinerários, acompanhar confirmações e exportar propostas versionadas.
 
 ## Instalação e execução
 
-Executar primeiro o ETL na raiz do repositório. Depois:
+No SageMaker Code Editor, preparar o ambiente pelo [onboarding](ONBOARDING.md) e usar os launchers na raiz. `./bin/just blu it` recupera/materializa dados e constrói o sistema; `./bin/just blu up` inicia o ambiente já preparado.
+Não regenerar o warehouse manualmente para contornar uma cache ausente.
 
-```powershell
-cd dmc-workspace
+Para desenvolvimento local fora do proxy, com dados válidos selecionados por `BLU_*_DIR`, em `dmc-workspace/`:
+
+```bash
 npm ci
 npm run dev -- -p 3001
 ```
 
-Abrir [http://localhost:3001](http://localhost:3001).
+Abrir [http://localhost:3001](http://localhost:3001). O portal exige Node >=22.13 e <25 e Python 3.12/3.13 para a ponte local.
 
-Para exportar PDFs traduzidos, preparar também o ambiente Python na raiz:
-
-```powershell
-python -m uv sync --locked --inexact --group translation
-python translations/setup_models.py
-```
-
-Os modelos são executados localmente. Não é necessário iniciar um serviço Python
-separado nem fornecer credenciais externas.
+PDFs traduzidos exigem o grupo Python `translation`, modelos locais instalados com autorização e, para mandarim, fonte CJK. Os passos estão no [guia de preparação da tradução e fonte CJK](ONBOARDING.md#7-preparar-tradução-e-fonte-cjk).
+A tradução não precisa de um servidor Python adicional nem de fornecedor externo.
 
 ## Aparência
 
 O botão com lua/sol no cabeçalho alterna entre os temas claro e escuro.
-O tema claro é o padrão; a preferência fica guardada neste navegador e
-sincroniza entre separadores. A impressão e os PDFs mantêm a apresentação
-clara. O tema do portal não altera o dashboard Streamlit original.
+O tema claro é o padrão; a preferência fica guardada neste navegador e sincroniza entre separadores. A impressão e os PDFs mantêm a apresentação clara. O tema do portal não altera o dashboard Streamlit original.
 
-Validar a alternância, persistência, contraste e adaptação ao ecrã com
-`npm run test:theme` em `dmc-workspace/`, com o portal em execução.
+Validar a alternância, persistência, contraste e adaptação ao ecrã com `npm run test:theme` em `dmc-workspace/`, com o portal em execução.
 
 ## Fluxo funcional
 
-1. Criar uma viagem e completar as etapas Cliente, Viagem, Preferências,
-   Restrições e Rever.
+1. Criar uma viagem e completar as etapas Cliente, Viagem, Preferências, Restrições e Rever.
 2. Gerar uma proposta a partir dos registos aprovados e das regras de curadoria.
 3. Rever os dias, os horários propostos, as fontes e as pendências.
 4. Completar e guardar os dados de confirmação de cada atividade.
-5. Usar o assistente para alterações explícitas que respeitam atividades
-   protegidas ou confirmadas.
-6. Escolher o idioma do cliente e exportar a versão portuguesa e a variante
-   traduzida.
+5. Usar o assistente para alterações explícitas que respeitam atividades protegidas ou confirmadas.
+6. Escolher o idioma do cliente e exportar a versão portuguesa e a variante traduzida.
 
 ## Catálogo
 
-O **Observatório interativo** é uma versão nativa da análise, com o estilo do
-portal: Panorama, Explorar oferta, Destinos, Preços, Histórico e Qualidade.
-Usa `/api/observatory` e a ponte Python existente para ler o warehouse numa
-transação SQLite, sem nova persistência e sem depender do serviço Streamlit.
+O **Observatório interativo** é uma versão nativa da análise, com o estilo do portal: Panorama, Explorar oferta, Destinos, Preços, Histórico e Qualidade.
+Usa `/api/observatory` e a ponte Python existente para ler o warehouse numa transação SQLite, sem nova persistência e sem depender do serviço Streamlit.
 A aplicação original em `dashboard/` e o seu arranque permanecem inalterados.
 
-O mapa permite deslocação, zoom, camadas, nomes dos lugares e agrupamento visual
-que se adapta ao zoom. Selecionar um ponto abre a ficha; os membros de um grupo
-podem ser escolhidos individualmente. Registos sem coordenadas continuam na
-lista. Os contornos reutilizam o recurso Natural Earth existente, em domínio
-público, sem pedidos a fornecedores cartográficos.
+O mapa permite deslocação, zoom, camadas, nomes dos lugares e agrupamento visual que se adapta ao zoom. Selecionar um ponto abre a ficha; os membros de um grupo podem ser escolhidos individualmente. Registos sem coordenadas continuam na lista. Os contornos reutilizam o recurso Natural Earth existente, em domínio público, sem pedidos a fornecedores cartográficos.
 
-A comparação aceita duas a quatro ofertas, sem calcular um vencedor ou somar
-preços. A mediana de preços exige a mesma categoria, unidade harmonizada,
-condições originais, natureza comercial e moeda. Ausências não são zeros.
-O histórico conta roteiros distintos e liga atrações apenas pelo identificador
-explícito, sem inferir correspondências por nome. Não representa vendas.
+A comparação aceita duas a quatro ofertas, sem calcular um vencedor ou somar preços. A mediana de preços exige a mesma categoria, unidade harmonizada, condições originais, natureza comercial e moeda. Ausências não são zeros.
+O histórico conta roteiros distintos e liga atrações apenas pelo identificador explícito, sem inferir correspondências por nome. Não representa vendas.
 
-A confirmação e a validade dos campos são reavaliadas através dos contratos
-partilhados do ETL à data da consulta. Os indicadores distinguem preenchimento,
-evidência e integridade; nenhum certifica disponibilidade ou compatibilidade.
+A confirmação e a validade dos campos são reavaliadas através dos contratos partilhados do ETL à data da consulta. Os indicadores distinguem preenchimento, evidência e integridade; nenhum certifica disponibilidade ou compatibilidade.
 As análises representam a entrega publicada e não as edições por publicar.
 **Atualizar análise** relê a entrega após uma publicação, preservando os filtros.
 
-**Gerir catálogo** mantém o editor operacional. Alternar entre as duas vistas
-preserva a sessão de exploração e o formulário em curso enquanto a página
-permanecer aberta. Em caso de indisponibilidade analítica, é possível tentar
-novamente ou continuar no editor.
+**Gerir catálogo** mantém o editor operacional. Alternar entre as duas vistas preserva a sessão de exploração e o formulário em curso enquanto a página permanecer aberta. Em caso de indisponibilidade analítica, é possível tentar novamente ou continuar no editor.
 
-Validação: `npm run test:observatory`, com o portal iniciado, verifica as seis
-áreas e as interações com o warehouse local. O teste usa tradução simulada e
-simula uma falha do endpoint para verificar a recuperação; não guarda registos.
+Validação: `npm run test:observatory`, com o portal iniciado, verifica as seis áreas e as interações com o warehouse local. O teste usa tradução simulada e simula uma falha do endpoint para verificar a recuperação; não guarda registos.
 
-A página `/catalog` permite pesquisar, filtrar, criar, editar e inativar
-atividades, restaurantes e experiências. Os registos seguem os estados Rascunho,
+A página `/catalog` permite pesquisar, filtrar, criar, editar e inativar atividades, restaurantes e experiências. Os registos seguem os estados Rascunho,
 Em revisão, Aprovado e Inativo. Apenas os aprovados podem entrar na geração.
 
 A persistência do catálogo usa SQLite Python e mantém o esquema existente.
-As validações de entrada são partilhadas com o editor em TypeScript; cada edição
-é guardada com verificação de revisão numa transação. Uma edição concorrente
-obsoleta devolve conflito 409 e exige reabrir o registo.
+As validações de entrada são partilhadas com o editor em TypeScript; cada edição é guardada com verificação de revisão numa transação. Uma edição concorrente obsoleta devolve conflito 409 e exige reabrir o registo.
 
-O editor guarda a oferta e o histórico em `data/portal/catalog.sqlite`. O ETL
-publica os registos aprovados no warehouse; não se deve editar `warehouse/`
-manualmente. Os preços estruturados incluem valor, moeda, unidade e estado
-Confirmado, Estimado ou Por confirmar. Zero representa explicitamente um serviço
-gratuito.
+O editor guarda a oferta e o histórico em `data/portal/catalog.sqlite`. O ETL publica os registos aprovados no warehouse; não se deve editar `warehouse/` manualmente. Os preços estruturados incluem valor, moeda, unidade e estado
+Confirmado, Estimado ou Por confirmar. Zero representa explicitamente um serviço gratuito.
 
-Os campos de compatibilidade ligam a oferta às respostas estruturadas do
-briefing. Correspondências desconhecidas não são convertidas em compatibilidade
-automática.
+Os campos de compatibilidade ligam a oferta às respostas estruturadas do briefing. Correspondências desconhecidas não são convertidas em compatibilidade automática.
 
 ## Geração e horários
 
-A geração usa o destino, as datas, o ritmo, os interesses, as exclusões, o esforço,
-o nível da proposta e a personalização. Distribui a oferta entre as três categorias
-quando existem registos elegíveis.
+A geração usa o destino, as datas, o ritmo, os interesses, as exclusões, o esforço, o nível da proposta e a personalização. Distribui a oferta entre as três categorias quando existem registos elegíveis.
 
-Horários de funcionamento e durações reconhecidos permitem propor intervalos sem
-sobreposição. Encerramentos ou formatos ambíguos deixam a atividade Por agendar.
+Horários de funcionamento e durações reconhecidos permitem propor intervalos sem sobreposição. Encerramentos ou formatos ambíguos deixam a atividade Por agendar.
 As margens de deslocação são estimativas e não correspondem a percursos medidos.
 Uma proposta não equivale a reserva ou confirmação do fornecedor.
 
 ## Confirmações
 
-Em **Dados e confirmações**, o curador pode registar horário, local, preço,
-fornecedor, referência, contacto e evidência. Os dados existentes no catálogo são
-preenchidos automaticamente; alterações específicas da viagem têm precedência.
+Em **Dados e confirmações**, o curador pode registar horário, local, preço, fornecedor, referência, contacto e evidência. Os dados existentes no catálogo são preenchidos automaticamente; alterações específicas da viagem têm precedência.
 
-**Guardar progresso** cria uma versão com os dados parciais. **Confirmar
-atividade** exige os campos e evidências aplicáveis. A confirmação é manual e não
-contacta o fornecedor. Atividades protegidas ou confirmadas não podem ser removidas
-pelo assistente.
+**Guardar progresso** cria uma versão com os dados parciais. **Confirmar atividade** exige os campos e evidências aplicáveis. A confirmação é manual e não contacta o fornecedor. Atividades protegidas ou confirmadas não podem ser removidas pelo assistente.
 
 ## Logística da viagem
 
-O briefing guarda o ponto, a hora e o número de voo de chegada e partida. Horas
-e voos são opcionais para preservar propostas antigas e podem ser completados
-mais tarde. Estes dados acompanham o snapshot da versão, o resumo de revisão e o
-PDF; não são inferidos nem substituídos pelo ETL ou pelo assistente.
+O briefing guarda o ponto, a hora e o número de voo de chegada e partida. Horas e voos são opcionais para preservar propostas antigas e podem ser completados mais tarde. Estes dados acompanham o snapshot da versão, o resumo de revisão e o PDF; não são inferidos nem substituídos pelo ETL ou pelo assistente.
 
 ## Assistente
 
-O assistente aceita comandos explícitos em português:
+O assistente aceita pedidos em português e inglês. Exemplos em português:
 
 ```text
 adicionar "nome exato ou identificador do catálogo" ao dia 1
@@ -144,41 +96,35 @@ remover atividade 1 do dia 1
 remover última atividade do dia 1
 ```
 
-O comando `Ajuda` apresenta os formatos disponíveis. Pedidos incompatíveis com o
-briefing, o orçamento, os horários ou as proteções são recusados com uma explicação.
-As alterações manuais e as propostas aceites do Blu guardam a respetiva origem,
-sem bloquear o dia. O bloqueio continua a ser uma escolha explícita do curador.
-Regenerar um dia preserva atividades alteradas manualmente; remover, substituir,
-reagendar ou mover uma atividade específica continua sujeito à revisão e aceitação.
+O comando `Ajuda` apresenta os formatos disponíveis. Pedidos incompatíveis com o briefing, o orçamento, os horários ou as proteções são recusados com uma explicação.
+As alterações manuais e as propostas aceites do Blu guardam a respetiva origem, sem bloquear o dia. O bloqueio continua a ser uma escolha explícita do curador.
+Regenerar um dia preserva atividades alteradas manualmente; remover, substituir, reagendar ou mover uma atividade específica continua sujeito à revisão e aceitação.
 
 ## Exportação e versões
 
-As versões são imutáveis e sequenciais por viagem. Durante a execução, o histórico
-é materializado em `BLU_EXPORT_DIR/history.sqlite`; os PDFs e JSON de suporte ficam
-sob o mesmo diretório. A release operacional ativa no S3 é a persistência
-permanente, e os checkpoints do `just blu it` protegem a recuperação integral.
+As versões são imutáveis e sequenciais por viagem. Durante a execução, o histórico é materializado em `BLU_EXPORT_DIR/history.sqlite`; os PDFs e JSON de suporte ficam sob o mesmo diretório. A release operacional ativa no S3 é a persistência permanente, e os checkpoints do `just blu it` protegem a recuperação integral.
 
-O painel reúne a versão atual, o idioma do cliente, a exportação e o histórico. A
-exportação entrega português e o idioma escolhido no mesmo ZIP. Variantes
-linguísticas pertencem à mesma versão e reutilizam os bytes já guardados.
+O painel reúne a versão atual, o idioma do cliente, a exportação e o histórico. A exportação entrega português e o idioma escolhido no mesmo ZIP. Variantes linguísticas pertencem à mesma versão e reutilizam os bytes já guardados.
 Alterações posteriores ao catálogo não modificam snapshots ou PDFs antigos.
 
-O orçamento discriminado apresenta preços calculáveis, valores por confirmar e
-totais separados por moeda. O orçamento disponível do cliente aparece separado do
-custo conhecido da proposta. Valores desconhecidos não são apresentados como zero.
+O orçamento discriminado apresenta preços calculáveis, valores por confirmar e totais separados por moeda. O orçamento disponível do cliente aparece separado do custo conhecido da proposta. Valores desconhecidos não são apresentados como zero.
 
 ## Partilha com o cliente
 
-O botão **Partilhar** abre um painel para escolher a versão, o idioma e a forma de
-entrega. A ligação de acesso apresenta uma página simples da proposta; a opção
-Documento PDF abre diretamente o PDF imutável dessa versão e idioma. O email do
-cliente vem do briefing e pode ser alterado antes de preparar a mensagem.
+O botão **Partilhar** abre um painel para escolher a versão, o idioma e a forma de entrega. A ligação de acesso apresenta uma página simples da proposta; a opção Documento PDF abre diretamente o PDF imutável dessa versão e idioma. O email do cliente vem do briefing e pode ser alterado antes de preparar a mensagem.
 
-O portal abre o programa de email do computador com destinatário, assunto, texto e
-ligação preenchidos. O envio é confirmado nessa aplicação. As ligações ficam
-guardadas no histórico SQLite de exportações. Em instalações acessíveis fora do
-computador local, `BLU_PUBLIC_URL` deve conter a origem pública do portal, por
-exemplo `https://propostas.example.com`.
+O portal abre o programa de email do computador com destinatário, assunto, texto e ligação preenchidos. O envio é confirmado nessa aplicação. Antes de criar o acesso, o curador confirma a autorização do destinatário e escolhe uma validade
+de 7, 30 ou 90 dias. Sem consentimento ou prazo, incluindo partilhas antigas, o
+acesso falha fechado.
+
+As ligações ficam guardadas no histórico SQLite de exportações com versão,
+idioma, destinatário, instante de consentimento, validade e estado de revogação.
+A página **Histórico** permite consultar e revogar cada acesso. A expiração
+impede novas consultas; enviar a respetiva versão para o Lixo revoga a ligação de
+forma atómica e restaurar a versão não a reativa. Os metadados permanecem para
+auditoria até à eliminação definitiva da versão ou viagem. Em instalações
+acessíveis fora do computador local, `BLU_PUBLIC_URL` deve conter a origem pública
+do portal, por exemplo `https://propostas.example.com`.
 
 ## Planos ativos e Lixo
 
@@ -190,9 +136,10 @@ fim seja anterior ao dia atual.
 
 Cada versão no histórico tem uma ação própria para a enviar para o Lixo. Isto não
 remove a viagem nem uma atividade do roteiro. As versões removidas deixam de surgir
-no histórico ativo, mas os snapshots, PDFs e variantes linguísticas permanecem no
-SQLite e podem ser restaurados na página Lixo. A remoção de uma atividade continua
-a ser feita no cartão do respetivo dia e cria uma nova versão do roteiro.
+no histórico ativo e as respetivas partilhas são revogadas, mas os snapshots,
+PDFs e variantes linguísticas permanecem no SQLite e podem ser restaurados na
+página Lixo. A remoção de uma atividade continua a ser feita no cartão do
+respetivo dia e cria uma nova versão do roteiro.
 
 A limpeza definitiva é verificada uma vez a cada 24 horas, ao abrir o portal ou a
 página Lixo. Uma viagem ou versão no Lixo expira quando a data de fim guardada na
@@ -209,7 +156,7 @@ conservação não são alteradas.
 Com o portal em execução, `npm run test:trash` valida no navegador a remoção e o
 restauro de uma viagem e de uma versão.
 
-### Apresentação dos PDFs BLU
+## Apresentação dos PDFs BLU
 
 As novas exportações têm capa em azul-petróleo e creme, apontamentos dourados,
 cliente e destino em destaque, datas, versão e estado preliminar. O resumo da
@@ -224,33 +171,26 @@ conforme o comprimento dos textos. Mandarim mantém a configuração
 arquivados não são redesenhados: continuam a ser entregues com os bytes
 originais; o novo desenho aplica-se a PDFs ainda não gerados.
 
-Não foram incluídas fotografias: o repositório não contém fotografias de destinos
-com autorização documentada. A introdução de fotografias fica dependente desses
-materiais e respetivos créditos. A decoração geométrica da capa é desenhada
-diretamente no PDF.
+O PDF DMC não inclui fotografias de atividades. As imagens licenciadas do
+dashboard são enquadramento de destino e não comprovam associação a cada oferta.
+Introduzir fotografias no PDF exige seleção, licença e créditos aprovados para
+essa utilização. A decoração geométrica da capa é desenhada diretamente no PDF.
 
-## TXT para Canva
+## Prompt TXT
 
-O contrato atual é `blu-roteiro-canva/1.1.0`; o plugin local 0.4.0 aceita também
-TXT 1.0.0. O idioma escolhido aplica-se ao TXT e aos PDFs.
+O contrato atual é `blu-roteiro-prompt/1.0.0`. O idioma escolhido aplica-se ao
+prompt e aos PDFs.
 
 1. Rever o roteiro e escolher o idioma do cliente.
-2. Clicar **Exportar TXT para Canva**. O portal guarda uma versão antes do download.
-   As versões anteriores também têm ligação TXT no histórico.
-3. Abrir [BLU | Roteiros no Canva](https://chatgpt.com/plugins/Plugin_600e0d208a74819191cafc6c69a90579)
-   e anexar o TXT. A ligação ao Canva deve estar autorizada.
-4. Rever a composição numa cópia do
-   [modelo BLU](https://canva.link/5u8zxudd1vkcbth), mantendo o original intacto.
-5. Aprovar a pré-visualização e exportar o PDF com as ferramentas disponíveis no
-   Canva; caso não exista exportação na integração, usar o editor Canva.
+2. Clicar **Exportar TXT**. O portal guarda uma versão antes do download.
+   As versões anteriores também disponibilizam o respetivo prompt.
+3. Rever o TXT antes de o usar numa ferramenta externa autorizada.
 
-O TXT contém instruções e dados JSON da versão guardada, não um PDF nem uma
-tradução já realizada. O plugin recebe a orientação do idioma e compõe o texto.
-Mantém preços, moedas, restrições e pendências; exclui contactos, referências de
-reserva e notas internas, mas inclui o nome do cliente. A partilha é manual.
-Descarregar TXT não altera os PDFs persistidos nem o estado de exportação PDF.
-O visual segue LISBON IN PERSPECTIVE (672 x 1056), com os PDFs atuais como base
-de estrutura. Os exemplos do modelo não são dados da nova proposta.
+O ficheiro contém instruções neutras e dados JSON da versão guardada. Não está
+associado a uma aplicação, integração ou modelo visual. Mantém preços, moedas,
+restrições e pendências; exclui contactos, referências de reserva e notas
+internas, mas inclui o nome do cliente. Descarregar o TXT não altera os PDFs
+persistidos nem o estado de exportação PDF.
 
 O histórico global de versões também oferece TXT por idioma. Versões no Lixo
 devem ser restauradas antes da exportação. O TXT inclui períodos livres,
@@ -258,7 +198,10 @@ personalização estruturada, capacidade diária e resumos de deslocações guar
 As rotas continuam estimativas sujeitas a revisão; a meteorologia consultada
 dinamicamente não pertence ao snapshot e não é incluída no TXT.
 
-A partilha integrada continua a entregar o PDF DMC da versão selecionada.
+A partilha integrada continua a entregar o PDF DMC da versão selecionada. Um
+documento criado externamente a partir do prompt não substitui artefactos
+históricos, não atualiza ligações públicas e não marca a versão como PDF exportado
+no portal. Alterar o roteiro exige exportar novamente o prompt da versão correta.
 
 ### Canva: criação em massa por dia
 
@@ -272,17 +215,16 @@ referências de reserva nem notas internas; células que pareçam fórmulas fica
 como texto. O orçamento e as condições continuam no TXT/PDF. O texto vai no idioma
 em que a proposta foi guardada; a tradução continua a ser a do TXT/PDF.
 
-O PDF Canva é uma entrega independente aprovada pelo curador; não substitui
-artefactos históricos, não atualiza ligações públicas e não marca a versão
-como PDF exportado no portal. Alterar o roteiro exige exportar a nova versão
-antes de adaptar a composição Canva. Atualizar instruções do plugin exige
-reconstruir/importar o pacote; anexar um novo TXT não atualiza a instalação.
-
 ## Idiomas
 
 A interface suporta português, inglês, mandarim, espanhol, francês e alemão. Os
 textos livres dos PDFs são traduzidos localmente. Para mandarim, pode ser necessário
 configurar `BLU_PDF_CJK_FONT` e, para ficheiros TTC, `BLU_PDF_CJK_FACE`.
+
+Cada instalação deve preparar os seus modelos e fonte CJK. A aprovação de um
+PDF exige verificar texto, números, paginação e legibilidade na versão exportada;
+a estrutura válida do ficheiro não substitui revisão semântica. A fundamentação
+e os limites estão em [Decisões](DECISIONS.md#entregas-tradução-e-apresentação-ao-utilizador).
 
 ## Arquitetura resumida
 
@@ -297,8 +239,9 @@ tests/            testes unitários, integração e navegador
 O portal lê os caminhos indicados por `BLU_WAREHOUSE_DIR`, `BLU_DATA_DIR`,
 `BLU_EXPORT_DIR` e `BLU_OPERATIONAL_DIR`. No SageMaker, estes caminhos pertencem
 à cache efémera materializada a partir do S3. As viagens em edição também são
-mantidas no `localStorage` do navegador. Não existe autenticação própria nem
-sincronização multiutilizador.
+mantidas no `localStorage` do navegador. No modo Code Editor não há login próprio
+do portal nem sincronização de rascunhos entre utilizadores. O modo ALB/Cognito
+implementado depende de configuração e identidade cloud verificadas.
 
 ## Validação
 
@@ -315,27 +258,22 @@ npm run build
 
 ### SageMaker Studio Code Editor
 
-A base pública local está em `config/studio.local.json`. Sem override,
-`scripts/start_aws_portal.sh` usa essa origem; `PORTAL_PUBLIC_ORIGIN` explícito
-continua a ter prioridade. Listar as ligações dos dashboards com
-`python -B scripts/studio_urls.py` na raiz.
+O endereço do Space é descoberto pelos metadados e `sagemaker:DescribeSpace`.
+`config/studio.local.json` é a alternativa fora do SageMaker. Um override explícito
+`PORTAL_PUBLIC_ORIGIN` tem prioridade; não o copiar de outro workspace.
 
-O proxy do Code Editor acrescenta um prefixo ao endereço. Usar o script
-específico, a partir da raiz, com a origem HTTPS da instância do utilizador:
+Para uso normal, iniciar pela raiz com `./bin/just blu up`. Para diagnóstico
+isolado, com dependências e caminhos de dados já preparados:
 
 ```bash
-cd dmc-workspace
-npm ci
-cd ..
-PORTAL_PUBLIC_ORIGIN=https://DOMINIO-DO-TEU-STUDIO bash scripts/start_aws_portal.sh
+bash scripts/start_aws_portal.sh
 ```
 
-Abrir `https://DOMINIO-DO-TEU-STUDIO/codeeditor/default/ports/3001/`.
-Substituir o domínio pelo da própria instância. O script recompila com o prefixo
-antes de iniciar; um build criado sem esse prefixo não serve para este proxy.
-Requer Node 22.13 a 24.x; preserva uma versão compatível já selecionada.
-O serviço HTTP do agente Python é opcional. Para o iniciar com o portal, acrescentar
-`BLU_START_AGENT=1` ao comando, depois de preparar as dependências Python.
+Listar os endereços resolvidos com `python3 -B scripts/studio_urls.py`.
+O launcher configura origem e prefixo do proxy e recompila quando necessário.
+Usar **BLU · Interfaces** no editor web para abrir a porta 3001; um túnel SSH
+`localhost` não equivale a acesso HTTPS no Studio. O agente continua subprocesso
+Python do portal, sem serviço HTTP próprio.
 
 O arranque valida a origem (apenas HTTPS, sem caminho), a porta e o prefixo.
 Se a porta estiver ocupada, termina antes de recompilar: encerrar o processo
@@ -401,6 +339,9 @@ fica presa à instância e o disco de dados só liga a uma de cada vez. A conta 
 curso para todas as instâncias de 6 em 6 horas e as inativas de hora a hora
 (`iseg-ec2-autoshutdown-cleaner`); sem exceção aprovada, o portal só responde
 depois de alguém voltar a ligar o servidor.
+O `Dockerfile.curation` e a stack ECS definem uma alternativa de hosting,
+sem dados operacionais na imagem. Não são o destino da operação individual no
+Code Editor. Ver [Operações](OPERATIONS.md#alternativa-de-hosting-cloud).
 
 `npm run check` acrescenta `format:check` a estas verificações e deve terminar sem
 avisos antes de integrar alterações no portal.
@@ -449,24 +390,34 @@ JavaScript. Após o POST, o histórico é recarregado; erros aparecem no própri
 histórico. Os formulários exigem origem válida. A API JSON e o restauro no Lixo
 interativo continuam disponíveis.
 
-Em `/exports`, escolher o idioma e carregar em **Descarregar PDFs** ou **TXT para
-Canva**. O formulário transmite versão, idioma e formato sem estado React e
+Em `/exports`, escolher o idioma e carregar em **Descarregar PDFs** ou **Exportar
+TXT**. O formulário transmite versão, idioma e formato sem estado React e
 funciona sem JavaScript. O ZIP preserva os PDFs da versão; o TXT continua a
 excluir notas internas e contactos. PDF traduzido requer os modelos locais.
 
-## Consulta das fontes em HTML
+## Apresentação para utilização normal
 
-Em `/references`, escolher a folha, escrever a pesquisa e carregar em **Filtrar**.
-A seleção e a pesquisa ficam no URL; os links Anterior/Seguinte conservam os
-filtros. O formulário, a paginação e os detalhes funcionam sem JavaScript.
-A tradução da interface continua disponível quando JavaScript está ativo.
+A interface apresenta nomes, condições, fontes públicas e confirmações pendentes.
+Códigos de regras, IDs do catálogo/viagem, posição do algoritmo de seleção, hashes
+e ligações ao JSON de diagnóstico ficam fora dos ecrãs normais. Identificadores,
+revisões e regras continuam nos contratos internos e nos snapshots. Os resumos
+antigos gerados com códigos de regras são filtrados apenas na apresentação.
 
-A pesquisa e o enriquecimento de fontes usam `portal/data.py`; a composição
-TXT/Canva usa `portal/prompt.py`. Ambos usam apenas a biblioteca
-padrão Python. O portal usa `BLU_PYTHON`, o ambiente `.venv` ou o Python do sistema,
-por esta ordem. Não é necessário iniciar o agente ou outro servidor. Os registos
-são renderizados pelo template `dmc-workspace/templates/dataset-row.html`, com
-escaping das fontes; valores vazios aparecem como «—».
+A página Referências misturava exploração técnica do dataset, linhagem de fontes e
+referências históricas. Foi retirada da navegação; `/references` encaminha para
+`/catalog`, conservando o prefixo SageMaker. O catálogo continua a apresentar
+informação histórica útil e avisos de validade. A API de consulta de fontes e a
+sua allowlist mantêm-se para os contratos e ferramentas internas; isto não altera
+os controlos de acesso nem elimina os dados de origem.
+
+Os novos PDFs apresentam versão legível, roteiro, condições e orçamento, sem os
+IDs internos, hashes ou códigos das regras. PDFs já guardados continuam a ser
+repetidos com os mesmos bytes. O contrato da ferramenta Prompt TXT permanece
+independente e continua a excluir contactos e notas internas.
+
+As traduções explícitas da interface são geradas a partir de `ui_sources.json` e
+`ui_overrides.json`. `python3 translations/build_ui_catalogue.py --overrides-only`
+atualiza as traduções explícitas sem executar modelos ou alterar as restantes.
 
 ### Isolar dados de testes
 
@@ -475,13 +426,19 @@ escaping das fontes; valores vazios aparecem como «—».
 mesmos caminhos, permitindo testar edição e ETL sem tocar nas pastas reais.
 Para versões e PDFs temporários, definir também `BLU_EXPORT_DIR`. As fontes
 necessárias devem existir no diretório de dados escolhido.
-`BLU_OPERATIONAL_DIR` pode colocar a fila temporária de versões noutro volume;
-sem configuração, usa `exports/portal-persistence/`. Em produção, estes três
-diretórios operacionais devem ser montados fora do filesystem efémero do
-container. O JSON pendente é removido apenas depois de a operação ficar registada
-no SQLite e pode ser restaurado pelos backups do Monitoring.
+`BLU_OPERATIONAL_DIR` pode colocar a fila temporária de versões noutra pasta;
+sem configuração, usa `exports/portal-persistence/`. No SageMaker atual, estes
+caminhos apontam para a cache reconstruível em `/tmp`; releases operacionais e
+checkpoints S3 constituem a persistência permanente. No futuro deployment cloud,
+o EFS previsto reduz a janela entre uma escrita local e a publicação S3. O JSON
+pendente é removido apenas depois de a operação ficar registada no SQLite e pode
+ser restaurado pelos backups do Monitoring.
 
 ## Resolução de problemas
+
+O percurso preparado para demonstrações, incluindo os campos do botão
+**Preencher exemplo**, os prompts do assistente e os resultados esperados, está
+no [guião de demonstração](DEMO_CHATBOT_SCRIPT.md).
 
 - **Warehouse indisponível:** executar o ETL a partir da raiz.
 - **Catálogo vazio na geração:** aprovar registos e atualizar o catálogo para os

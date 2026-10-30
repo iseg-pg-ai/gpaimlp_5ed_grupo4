@@ -1,3 +1,4 @@
+// Interações do site, incluindo navegação responsiva e estados do formulário de subscrição.
 const button=document.querySelector('.menu');
 const nav=document.querySelector('#nav');
 button?.addEventListener('click',()=>{const open=button.getAttribute('aria-expanded')==='true';button.setAttribute('aria-expanded',String(!open));nav.classList.toggle('open',!open)});

@@ -1,3 +1,4 @@
+// Endpoint: executa a limpeza elegível segundo a política de retenção e a data operacional.
 import { jsonError, noStoreHeaders, rejectForeignOrigin } from "@/lib/server-http";
 import { checkTripId, VersionStore } from "@/lib/version-store";
 import { syncOperationalState } from "@/lib/operational-s3";

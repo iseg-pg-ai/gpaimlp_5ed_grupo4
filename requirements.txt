@@ -8,7 +8,7 @@ openpyxl==3.1.5
     # via gpaimlp-5ed-grupo4
 pandas==2.3.3
     # via gpaimlp-5ed-grupo4
-pypdf==6.19.0
+pypdf==6.21.2
     # via gpaimlp-5ed-grupo4
 python-dateutil==2.9.0.post0
     # via pandas

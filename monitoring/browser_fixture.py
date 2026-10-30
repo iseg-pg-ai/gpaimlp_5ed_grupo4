@@ -1,3 +1,5 @@
+# Prepara um ambiente de ensaio do Monitoring com dados controlados para os cenários de
+# navegador.
 """Serve fixtures de UI isoladas; não lê credenciais nem dados operacionais."""
 from datetime import datetime, timezone
 import json
@@ -42,7 +44,25 @@ def main():
                                      "warehouse": {"state": "up", "published_at": now, "age_hours": 1,
                                                    "validation": "passed", "tables": 28, "records": 420,
                                                    "freshness": "not_configured"},
-                                     "system": {"disk_free_gb": 42.2, "disk_used_pct": 34.5, "load_1m": 0.3}},
+                                     "system": {"disk_free_gb": 42.2, "disk_used_pct": 34.5, "load_1m": 0.3},
+                                     "alerts": {"active": 1, "external": "disabled", "recent": []},
+                                     "operations": {
+                                         "portal": {"events_24h": 2, "errors_24h": 1},
+                                         "ai": {"calls_24h": 3, "failures_24h": 0,
+                                                "tokens_reported": 180, "calls_with_tokens": 3},
+                                         "agent_metrics": {"state": "up", "proposals": 4,
+                                                           "accepted": 2, "rejected": 1,
+                                                           "expired": 1, "conflicts_24h": 1,
+                                                           "input_tokens": 150,
+                                                           "output_tokens": 30,
+                                                           "average_latency_ms": 120,
+                                                           "cost_state": "configured",
+                                                           "cost_usd": 0.0012},
+                                         "backup": {"state": "up", "artifacts": 3,
+                                                    "last_restore_at": now,
+                                                    "s3_state": "passed",
+                                                    "data_s3_state": "passed"},
+                                         "persistence": {"pending_total": 0, "state": "up"}}},
                         "history": [{"at": now, "services": services} for _ in range(24)],
                         "events": [{"at": now, "component": item["name"], "state": item["state"]} for item in services]}
         url = f"http://127.0.0.1:{port}/codeeditor/default/ports/3004"

@@ -1,7 +1,8 @@
 """Testes do cálculo rodoviário sem pedidos externos."""
 import unittest
 
-from portal.routing import calculate_road_leg
+from portal.routing import (calculate_road_leg, optimize_route_sequence,
+                            realign_time_slots, route_summary)
 
 
 class RoutingTest(unittest.TestCase):
@@ -48,6 +49,34 @@ class RoutingTest(unittest.TestCase):
         leg = calculate_road_leg({"title": "A", "latitude": True, "longitude": 0},
                                  {"title": "B", "latitude": 0, "longitude": 0})
         self.assertEqual(leg["distance"], "Por confirmar")
+
+    def test_python_optimizes_route_while_preserving_lunch_anchor(self):
+        items = [
+            {"id": "a", "title": "A", "category": "activity", "latitude": 0, "longitude": 0, "time": "09:00–10:00"},
+            {"id": "c", "title": "C", "category": "activity", "latitude": 0, "longitude": 3, "time": "10:00–11:00"},
+            {"id": "l", "title": "Almoço", "category": "restaurant", "latitude": 0, "longitude": 2, "time": "12:30–14:00"},
+            {"id": "b", "title": "B", "category": "activity", "latitude": 0, "longitude": 1, "time": "14:00–15:00"},
+        ]
+        optimized = optimize_route_sequence(items)
+        self.assertEqual(optimized[2]["id"], "l")
+        self.assertEqual({item["id"] for item in optimized}, {"a", "b", "c", "l"})
+        self.assertTrue(all("(proposto)" in item["time"] for item in optimized))
+
+    def test_python_realigns_and_summarizes_real_legs(self):
+        items = [
+            {"id": "a", "title": "A", "category": "activity", "time": "09:00–10:00",
+             "transitToNext": {"toLocation": "B", "duration": "12 min", "distance": "800 m", "mode": "walk", "bufferMinutes": 5}},
+            {"id": "b", "title": "B", "category": "activity", "time": "10:00–11:00",
+             "transitToNext": {"toLocation": "C", "duration": "18 min", "distance": "2.5 km", "mode": "chauffeur", "bufferMinutes": 10}},
+            {"id": "c", "title": "C", "category": "activity", "time": "11:00–12:00"},
+        ]
+        aligned = realign_time_slots(items)
+        self.assertEqual(aligned[1]["time"], "10:17–11:17 (proposto)")
+        self.assertEqual(route_summary(aligned), {
+            "totalTransitTime": "30 min", "totalDistance": "3.3 km", "legsCount": 2,
+            "walkingDistance": "800 m", "routePath": ["A", "B", "C"],
+            "algorithmStatus": "Viável e Otimizado",
+        })
 
 
 if __name__ == "__main__":

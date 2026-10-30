@@ -1,3 +1,5 @@
+# Mantém o ciclo de vida dos incidentes e a evidência técnica necessária para acompanhar a
+# recuperação.
 """Fila local de incidentes deduplicados e respetivas recuperações."""
 from __future__ import annotations
 

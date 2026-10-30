@@ -48,8 +48,13 @@ dist/
 cdk.out/
 cdk.aws.out/
 cdk.split.out/
-# Lookups locais do CDK (IDs de conta e zonas); regenerados no synth
+# Contexto local de lookups CDK, regenerado na síntese
 cdk.context.json
+.cdk/
+infra/cdk.context.json
+
+# Cache local de confiança Sigstore
+/.sigstore/
 
 # Segredos e configuração local
 .env

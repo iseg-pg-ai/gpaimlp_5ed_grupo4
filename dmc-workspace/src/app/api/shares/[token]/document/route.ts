@@ -1,3 +1,4 @@
+// Endpoint: entrega o documento permitido pelo token após verificar as condições de acesso.
 import { noStoreHeaders } from "@/lib/server-http";
 import { VersionStore } from "@/lib/version-store";
 

@@ -1,3 +1,4 @@
+# Avalia propostas do agente com os casos definidos e torna explícitas as falhas do contrato.
 """Avaliação explícita com casos sintéticos; listar nunca chama o Bedrock."""
 import argparse
 import json
@@ -44,16 +45,22 @@ def main():
     if args.model:
         os.environ["BEDROCK_MODEL_ID"] = args.model
     sys.path.insert(0, str(ROOT / "src"))
-    from blu_ai.planner import failure_code, plan_actions
+    from blu_ai.planner import AgentResponseError, failure_code, plan_actions
+    from blu_ai.providers import ProviderResponseError
     results = []
     for case in cases:
         metadata = {key: case[key] for key in ("name", "category", "operation", "language")}
         try:
             result = plan_actions(case["request"])
-            results.append({**metadata, "passed": evaluate(result, case["expected"]),
-                            **{key: result[key] for key in ("modelId", "latencyMs", "inputTokens", "outputTokens")}})
+            passed = evaluate(result, case["expected"])
+            results.append({**metadata, "passed": passed,
+                            **({"diagnosticPlan": result["plan"]} if not passed else {}),
+                            **{key: result[key] for key in ("provider", "modelId", "latencyMs", "inputTokens", "outputTokens")}})
         except Exception as error:
-            results.append({**metadata, "passed": False, "code": failure_code(error)})
+            results.append({**metadata, "passed": False, "code": failure_code(error),
+                            **({"diagnostic": str(error.__cause__ or error)}
+                               if isinstance(error, (AgentResponseError, ProviderResponseError))
+                               else {})})
     print(json.dumps(results, ensure_ascii=False))
     return 0 if all(result["passed"] for result in results) else 1
 

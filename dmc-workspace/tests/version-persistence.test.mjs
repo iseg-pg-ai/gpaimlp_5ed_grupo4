@@ -1,6 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -127,6 +135,28 @@ test("a repetição após commit SQL não duplica a versão e só então remove 
   assert.equal(store.list("idempotente").length, 1);
   assert.equal(readdirSync(path.dirname(pendingFile)).length, 0);
   store.close();
+});
+
+test("falha entre commit SQL e outbox S3 é recuperada pelo write-ahead", (t) => {
+  const { versions, operations } = fixture(t);
+  mkdirSync(operations, { recursive: true });
+  const blockedOutbox = path.join(operations, "data-s3-outbox");
+  writeFileSync(blockedOutbox, "indisponível");
+  const result = persistVersion(
+    { tripId: "commit-sem-outbox", snapshot, reason: "generated", baseVersion: null },
+    { versionRoot: versions, operationalRoot: operations },
+  );
+  assert.equal(result.queued, true);
+  const pending = path.join(operations, "pending-versions", `${result.operationId}.json`);
+  assert.ok(readFileSync(pending, "utf8"));
+  const committed = new VersionStore(versions);
+  assert.equal(committed.list("commit-sem-outbox").length, 1);
+  unlinkSync(blockedOutbox);
+  assert.equal(syncPendingVersions(committed, operations).synchronized, 1);
+  assert.equal(committed.list("commit-sem-outbox").length, 1);
+  assert.equal(readdirSync(path.join(operations, "data-s3-outbox")).length, 1);
+  assert.equal(readdirSync(path.dirname(pending)).length, 0);
+  committed.close();
 });
 
 test("várias versões sobrevivem à interrupção e sincronizam por dependência", (t) => {

@@ -1,3 +1,5 @@
+// Endpoint: gera uma proposta a partir do briefing e do catálogo sujeito às regras de
+// curadoria.
 import { generateItinerary, validateBrief, type Catalog } from "@/lib/curation";
 import { loadPublishedCatalog } from "@/lib/catalog-store";
 import { jsonError } from "@/lib/server-http";

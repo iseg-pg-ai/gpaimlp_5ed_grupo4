@@ -1,3 +1,5 @@
+// Transformações analíticas partilhadas pelo Observatório integrado, sem escrita no
+// warehouse.
 export type ObservatoryRecord = {
   key: string;
   name: string | null;

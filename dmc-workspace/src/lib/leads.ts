@@ -1,3 +1,5 @@
+// Consulta e atualiza as tabelas DynamoDB autorizadas apenas no servidor, recusando
+// configuração parcial.
 import {
   ConditionalCheckFailedException,
   DynamoDBClient,
@@ -21,12 +23,13 @@ import {
 export class LeadsNotConfigured extends Error {}
 export class LeadNotFound extends Error {}
 
+// Recusar nomes incompletos ou inválidos antes de construir pedidos DynamoDB.
 function tables() {
   const messages = process.env.BLU_CONVERSATION_TABLE;
   const intelligence = process.env.BLU_INTELLIGENCE_TABLE;
   if (!messages || !intelligence)
     throw new LeadsNotConfigured(
-      "Defina BLU_CONVERSATION_TABLE e BLU_INTELLIGENCE_TABLE (saídas da stack BluCostaData).",
+      "O serviço de contactos não está disponível. Contacte o administrador.",
     );
   return { messages, intelligence };
 }
@@ -34,6 +37,7 @@ function tables() {
 let client: DynamoDBClient | undefined;
 const db = () => (client ??= new DynamoDBClient({}));
 
+// Percorrer as páginas devolvidas pela consulta para não truncar o conjunto de resultados.
 async function queryAll(input: ConstructorParameters<typeof QueryCommand>[0]) {
   const items: Item[] = [];
   let start: QueryCommand["input"]["ExclusiveStartKey"];

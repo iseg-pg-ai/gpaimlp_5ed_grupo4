@@ -1,13 +1,12 @@
 import { queryDataset } from "../src/lib/python-portal.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path, { join } from "node:path";
 import { createRequire } from "node:module";
 import { awsConfig, validateBuild } from "../scripts/aws-config.mjs";
 import { publicUrl, publicOrigin, rejectForeignOrigin } from "../src/lib/server-http.ts";
-import { readFileSync } from "node:fs";
 
 const origin = "https://colega.studio.example.com";
 test("AWS: validar origem, porta e prefixo em ambientes distintos", () => {

@@ -1,3 +1,5 @@
+// Permite consultar e restaurar elementos no Lixo antes de uma eliminação conforme a
+// retenção.
 "use client";
 import { portalFetch } from "@/lib/http-client";
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Prepara as dependências locais necessárias aos ensaios de navegador.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

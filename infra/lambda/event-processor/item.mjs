@@ -1,3 +1,5 @@
+// Converte eventos em registos e atualizações do perfil, separados do conteúdo de
+// apresentação.
 // leadId is the LeadIndex key: DynamoDB rejects empty strings in index keys, so the
 // attribute is omitted (a sparse index) until a lead is known.
 export function messageItem(record, occurredAtId) {

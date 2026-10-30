@@ -1,3 +1,5 @@
+# Recolhe sondas e sinais locais para o painel; não substitui uma sonda independente da
+# máquina.
 """Sondas de leitura limitadas a serviços locais e metadados publicados."""
 from __future__ import annotations
 
@@ -18,6 +20,7 @@ from urllib.request import build_opener, HTTPRedirectHandler, ProxyHandler, Requ
 from monitoring.alerts import AlertStore
 from monitoring.backup import BackupScheduler
 from monitoring.cleanup import CleanupManager
+from monitoring.notifications import NotificationDispatcher
 from monitoring.signals import operational_signals
 from etl.s3_outbox import flush as flush_s3_outbox
 
@@ -116,6 +119,8 @@ class Collector:
         runtime.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.runtime = runtime
         self.alerts = AlertStore(runtime)
+        self.notifications = NotificationDispatcher(
+            runtime, config, environment=os.environ.get("BLU_ENVIRONMENT", "development"))
         self.cleanup = CleanupManager(root, runtime, config)
         self.backups = BackupScheduler(root, runtime, config)
         self.logger = logging.Logger("blu-monitor-probes")
@@ -127,9 +132,8 @@ class Collector:
     def collect(self):
         definitions = [("Portal BLU", "http://127.0.0.1:3001/catalog", True),
                        ("Observatório analítico", "http://127.0.0.1:8501/_stcore/health", True),
-                       ("Apresentação", "http://127.0.0.1:3003/", True),
-                       ("Agente IA", "http://127.0.0.1:8000/api/health", self.config["agent_enabled"])]
-        with ThreadPoolExecutor(max_workers=4) as pool:
+                       ("Apresentação", "http://127.0.0.1:3003/", True)]
+        with ThreadPoolExecutor(max_workers=3) as pool:
             services = list(pool.map(lambda args: probe(*args), definitions))
         now = datetime.now(timezone.utc).isoformat()
         warehouse = warehouse_status(self.root / "warehouse", self.config["warehouse_max_age_hours"])
@@ -169,6 +173,8 @@ class Collector:
                            "ai-failures": snapshot["operations"]["ai"]["failures_24h"] >= thresholds.get("ai_failures_24h", 3),
                            "backup": snapshot["operations"]["backup"]["state"] == "down"})
         snapshot["alerts"] = self.alerts.reconcile(conditions)
+        snapshot["alerts"].update(
+            self.notifications.flush(snapshot["alerts"]["recent"]))
         entities = [(x["name"], x["state"]) for x in services] + [("Warehouse", warehouse["state"])]
         with self.lock:
             for name, state in entities:

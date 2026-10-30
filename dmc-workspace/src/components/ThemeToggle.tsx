@@ -1,3 +1,4 @@
+// Altera a preferência visual e sincroniza a escolha com o estado local do tema.
 "use client";
 
 import { useSyncExternalStore } from "react";

@@ -1,3 +1,4 @@
+// Inicializa a instrumentação do servidor sem executar trabalho operacional no navegador.
 import type { Instrumentation } from "next";
 
 export async function register() {

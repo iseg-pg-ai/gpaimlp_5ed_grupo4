@@ -1,3 +1,5 @@
+// Coordena rascunhos e ações da interface; as versões autoritativas e os conflitos são
+// tratados no servidor.
 "use client";
 import { portalFetch, responseJson } from "@/lib/http-client";
 import { useEffect, useRef, useState } from "react";
@@ -42,6 +44,8 @@ const message = (
   text,
   timestamp: new Date().toLocaleTimeString(),
 });
+// Concentrar o ciclo do rascunho e a comunicação com o servidor sem duplicar a persistência
+// autoritativa.
 export function useWorkspace() {
   const [clientLanguage, setClientLanguage] = useState<Locale>("en");
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -54,6 +58,8 @@ export function useWorkspace() {
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [reopening, setReopening] = useState(false);
+  const [reopenedVersion, setReopenedVersion] = useState<number | null>(null);
   const [assistantBusy, setAssistantBusy] = useState(false);
   const [agentProposal, setAgentProposal] = useState<AgentProposal | null>(null);
   const operation = useRef(false);
@@ -215,6 +221,7 @@ export function useWorkspace() {
     setError("");
     try {
       const changed = await saveVersion(await fn(active), "edited");
+      setReopenedVersion(null);
       setAgentProposal(null);
       setTrips((prev) => prev.map((t) => (t.id === changed.id ? changed : t)));
       return true;
@@ -226,7 +233,10 @@ export function useWorkspace() {
       setSaving(false);
     }
   };
-  const exportProposal = async (format: "bundle" | "prompt" | "canva-csv") => {
+  const exportProposal = async (
+    format: "bundle" | "prompt" | "canva-csv",
+    selectedLocale?: Locale,
+  ) => {
     if (!active || operation.current) return;
     operation.current = true;
     setExporting(true);
@@ -235,7 +245,7 @@ export function useWorkspace() {
       const saved = await saveVersion(active, "export");
       setTrips((prev) => prev.map((t) => (t.id === saved.id ? saved : t)));
       const response = await portalFetch(
-        `/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=${format}&locale=${active.clientLanguage ?? clientLanguage}`,
+        `/api/versions?tripId=${encodeURIComponent(saved.id)}&version=${saved.version}&format=${format}&locale=${selectedLocale ?? active.clientLanguage ?? clientLanguage}`,
       );
       if (!response.ok) await responseJson(response);
       const url = URL.createObjectURL(await response.blob());
@@ -243,7 +253,11 @@ export function useWorkspace() {
       link.href = url;
       link.download =
         response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ??
-        (format === "prompt" ? "roteiro-canva.txt" : format === "canva-csv" ? "roteiro-canva-dias.csv" : "roteiro.zip");
+        (format === "prompt"
+          ? "roteiro-canva.txt"
+          : format === "canva-csv"
+            ? "roteiro-canva-dias.csv"
+            : "roteiro.zip");
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -260,12 +274,31 @@ export function useWorkspace() {
   const exportPdf = () => exportProposal("bundle");
   const exportPrompt = () => exportProposal("prompt");
   const exportCanvaCsv = () => exportProposal("canva-csv");
+  const exportPrepared = (format: "bundle" | "prompt", locale: Locale) =>
+    exportProposal(format, locale);
   const reopenLatest = async () => {
-    const latest = history.id === activeId ? history.versions[0] : undefined;
-    if (!latest || !active || operation.current) return;
+    if (!active || operation.current) return;
     operation.current = true;
     setSaving(true);
+    setReopening(true);
+    setReopenedVersion(null);
+    setError("");
     try {
+      // Consultar o servidor no clique: o histórico local pode estar vazio ou desatualizado.
+      const versions = await responseJson<HistoryVersion[]>(
+        await portalFetch(`/api/versions?tripId=${encodeURIComponent(activeId)}`),
+      );
+      if (
+        !Array.isArray(versions) ||
+        versions.some((v) => !Number.isSafeInteger(v?.version) || v.version < 1)
+      )
+        throw new Error("Histórico inválido recebido do servidor.");
+      setHistory({ id: activeId, versions });
+      const latest = versions.reduce<HistoryVersion | undefined>(
+        (current, version) => (!current || version.version > current.version ? version : current),
+        undefined,
+      );
+      if (!latest) throw new Error("Ainda não existem versões guardadas.");
       const response = await portalFetch(
         `/api/versions?tripId=${encodeURIComponent(activeId)}&version=${latest.version}`,
       );
@@ -276,13 +309,22 @@ export function useWorkspace() {
       validateSnapshot(result?.snapshot);
       if (result?.meta?.version !== latest.version)
         throw new Error("Versão inválida recebida do servidor.");
-      const restored = { ...active, ...result.snapshot, version: result.meta.version };
+      const restored = {
+        ...active,
+        brief: result.snapshot.brief,
+        itinerary: result.snapshot.itinerary,
+        pending: result.snapshot.pending,
+        version: result.meta.version,
+      };
       setTrips((prev) => prev.map((t) => (t.id === restored.id ? restored : t)));
+      setAgentProposal(null);
+      setReopenedVersion(result.meta.version);
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao reabrir.");
     } finally {
       operation.current = false;
+      setReopening(false);
       setSaving(false);
     }
   };
@@ -475,7 +517,14 @@ export function useWorkspace() {
       });
       const result = await responseJson<AgentProposal>(response);
       validateAgentProposal(result, active);
-      setAgentProposal(result.plan.actions.length || result.alternatives?.length ? result : null);
+      setAgentProposal(
+        result.plan.actions.length ||
+          result.alternatives?.length ||
+          result.rankedCandidates?.length ||
+          result.deliveryPreview
+          ? result
+          : null,
+      );
       appendAssistantMessage(
         active.id,
         result.plan.summary +
@@ -486,15 +535,25 @@ export function useWorkspace() {
                 "Reveja a pré-visualização e escolha aceitar ou rejeitar. O roteiro ainda não foi alterado.",
                 "Review the preview and choose accept or reject. The itinerary has not changed yet.",
               )
-            : result.alternatives?.length
+            : result.rankedCandidates?.length
               ? say(
-                  "Escolha uma alternativa para preparar a substituição. O roteiro permanece igual.",
-                  "Choose an alternative to preview its replacement. The itinerary remains unchanged.",
+                  "Escolha um candidato para pré-visualizar a adição. O roteiro permanece igual.",
+                  "Choose a candidate to preview the addition. The itinerary remains unchanged.",
                 )
-              : say(
-                  "Esta resposta não contém alterações para aceitar. O roteiro permanece igual.",
-                  "This response contains no changes to accept. The itinerary remains unchanged.",
-                )),
+              : result.alternatives?.length
+                ? say(
+                    "Escolha uma alternativa para preparar a substituição. O roteiro permanece igual.",
+                    "Choose an alternative to preview its replacement. The itinerary remains unchanged.",
+                  )
+                : result.deliveryPreview
+                  ? say(
+                      "Reveja o diagnóstico e confirme a criação ou abra o formulário de partilha. Nada foi enviado.",
+                      "Review the diagnostics and confirm creation or open the sharing form. Nothing was sent.",
+                    )
+                  : say(
+                      "Esta resposta não contém alterações para aceitar. O roteiro permanece igual.",
+                      "This response contains no changes to accept. The itinerary remains unchanged.",
+                    )),
         language,
       );
       return true;
@@ -650,6 +709,7 @@ export function useWorkspace() {
   const selectTrip = (id: string) => {
     if (busy || operation.current) return;
     setActiveId(id);
+    setReopenedVersion(null);
     setEditing(false);
     setError("");
   };
@@ -821,6 +881,8 @@ export function useWorkspace() {
 
   return {
     activeId,
+    reopening,
+    reopenedVersion,
     active,
     busy,
     assistantBusy,
@@ -853,6 +915,7 @@ export function useWorkspace() {
     exportPdf,
     exportPrompt,
     exportCanvaCsv,
+    exportPrepared,
     reopenLatest,
     trashVersion,
     generate,

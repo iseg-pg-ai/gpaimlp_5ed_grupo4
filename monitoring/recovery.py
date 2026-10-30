@@ -1,3 +1,5 @@
+# Avalia o estado existente e recupera o necessário, preservando instalações e dados que
+# continuam válidos.
 """Valida dados autoritativos e restaura apenas conjuntos ausentes ou inválidos."""
 from __future__ import annotations
 

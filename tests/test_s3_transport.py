@@ -6,7 +6,7 @@ import unittest
 
 from openpyxl import Workbook
 
-from etl.s3_transport import fetch_latest, publish, restore_missing
+from etl.s3_transport import fetch_latest, inventory_releases, publish, restore_missing
 
 
 class FakeS3:
@@ -36,6 +36,31 @@ class FakeS3:
 
 
 class S3TransportTests(unittest.TestCase):
+    def test_inventory_identifies_active_superseded_and_invalid_without_deleting(self):
+        with tempfile.TemporaryDirectory() as directory:
+            warehouse = Path(directory)
+            (warehouse / "validation_report.json").write_text('{"status":"passed"}')
+            (warehouse / "manifest.json").write_text(
+                '{"validation":{"status":"passed"}}')
+            client = FakeS3()
+            first = publish("warehouse", warehouse, "bucket", "test", client)
+            second = publish("warehouse", warehouse, "bucket", "test", client)
+            manifests = sorted(key for bucket, key in client.objects
+                               if bucket == "bucket" and key.endswith("/manifest.json"))
+            client.objects[("bucket", manifests[-1])]["body"] = b"corrompido"
+            before = set(client.objects)
+
+            inventory = inventory_releases("warehouse", "bucket", "test", client)
+
+            self.assertEqual(set(client.objects), before)
+            self.assertEqual(inventory["release_count"], 2)
+            states = {item.get("release_id"): item["retention_state"]
+                      for item in inventory["releases"]}
+            self.assertEqual(states[first["release_id"]], "active")
+            self.assertNotIn(second["release_id"], states)
+            self.assertEqual(sum(item["retention_state"] == "invalid"
+                                 for item in inventory["releases"]), 1)
+
     def test_validated_warehouse_roundtrip_is_immutable_and_complete(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

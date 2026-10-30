@@ -1,3 +1,4 @@
+# Atalhos de desenvolvimento para executar os comandos do projeto a partir da raiz.
 .DEFAULT_GOAL := help
 .PHONY: help frontend-install build-frontend frontend-test infra-install infra-test synth-cloud deploy-cloud synthetic-cloud
 

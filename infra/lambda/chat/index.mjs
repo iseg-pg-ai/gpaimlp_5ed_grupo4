@@ -1,3 +1,5 @@
+// Coordena a resposta do concierge e a extração de contexto, mantendo estados de falha
+// separados.
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
 import { conversationMessages } from './conversation.mjs';
 import { extractionPrompt, journeyStage, journeyTool, mergeJourney, missingDetails, toolInput } from './journey.mjs';
@@ -13,6 +15,7 @@ function journeyBody(journey) {
   return { journey, stage: journeyStage(journey), missing: missingDetails(journey) };
 }
 
+// Validar a mensagem antes de executar a resposta e a extração de contexto em paralelo.
 export async function handler(event) {
   try {
     const body = JSON.parse(event.body || '{}');

@@ -1,3 +1,4 @@
+// Executa a sincronização das operações persistentes pendentes fora do ciclo de interface.
 import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { CatalogStore } from "../src/lib/catalog-store.ts";

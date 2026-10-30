@@ -1,4 +1,7 @@
+// Compõe os dias, atividades e controlos da proposta a partir do estado gerido pelo
+// workspace.
 "use client";
+import { dayDescription } from "@/lib/presentation-text";
 import { T, useLocale, useTranslated } from "@/components/LocaleProvider";
 
 import type { ActivityConfirmation } from "@/lib/activity-confirmation";
@@ -449,7 +452,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               onClick={onExportPrompt}
               disabled={isExporting}
               className="min-h-11 text-sm"
-              data-testid="export-canva-prompt"
+              data-testid="export-prompt-txt"
               style={{ minHeight: 44 }}
             >
               <FileText aria-hidden="true" className="size-4" />
@@ -686,10 +689,10 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                 }
               />
 
-              {day.summary && (
+              {dayDescription(day.summary) && (
                 <p className="text-sm leading-7 text-[var(--portal-text-4a636b)] mb-4">
                   &quot;
-                  <T text={day.summary} source="pt" />
+                  <T text={dayDescription(day.summary)} source="pt" />
                   &quot;
                 </p>
               )}

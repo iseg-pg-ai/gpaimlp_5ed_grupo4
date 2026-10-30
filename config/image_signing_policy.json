@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "repository": "iseg-pg-ai/gpaimlp_5ed_grupo4",
+  "branch": "dev",
+  "source_workflow": ".github/workflows/portal.yml",
+  "oidc_issuer": "https://token.actions.githubusercontent.com",
+  "signing_workflow": ".github/workflows/curation-sign.yml"
+}

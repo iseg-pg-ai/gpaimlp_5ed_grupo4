@@ -1,3 +1,4 @@
+// Primitiva de botão com variantes de apresentação partilhadas.
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";

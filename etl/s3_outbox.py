@@ -1,3 +1,5 @@
+# Reenvia alterações pendentes para S3 com identificação e verificação das operações já
+# publicadas.
 """Envio idempotente das alterações operacionais confirmadas para o bucket de dados."""
 from __future__ import annotations
 
@@ -29,6 +31,34 @@ def _validate(path: Path) -> dict:
     return event
 
 
+def _semantic_event(event: dict) -> dict:
+    """Exclui apenas timestamps de transporte de uma repetição idempotente."""
+    payload = event["payload"]
+    if event["operationType"] == "version.save":
+        payload = {key: value for key, value in payload.items() if key != "createdAt"}
+    return {
+        "operationId": event["operationId"],
+        "operationType": event["operationType"],
+        "entity": event["entity"],
+        "payload": payload,
+    }
+
+
+def _existing_matches(client, bucket: str, key: str, local: dict) -> bool:
+    """Confirma integridade e equivalência de um objeto já publicado."""
+    response = client.get_object(Bucket=bucket, Key=key)
+    body = response["Body"].read()
+    metadata = response.get("Metadata", {})
+    digest = hashlib.sha256(body).hexdigest()
+    if metadata.get("sha256") != digest:
+        return False
+    try:
+        remote = json.loads(body)
+    except (TypeError, UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    return _semantic_event(remote) == _semantic_event(local)
+
+
 def flush(root: Path, bucket: str, environment: str, client=None) -> dict:
     """Confirma cada objeto no S3 antes de remover o respetivo evento local."""
     directory = root / "data-s3-outbox"
@@ -50,23 +80,26 @@ def flush(root: Path, bucket: str, environment: str, client=None) -> dict:
         digest = _hash(path)
         metadata = {"sha256": digest, "operation-id": event["operationId"],
                     "operation-type": event["operationType"]}
+        created = False
         try:
             with path.open("rb") as body:
                 client.put_object(Bucket=bucket, Key=key, Body=body,
                                   ContentLength=path.stat().st_size,
                                   ServerSideEncryption="AES256", IfNoneMatch="*",
                                   Metadata=metadata)
+            created = True
         except Exception:
             # Uma repetição após confirmação remota é sucesso apenas se o objeto
-            # existente corresponder exatamente ao evento local.
-            remote = client.head_object(Bucket=bucket, Key=key)
-            if (remote.get("ContentLength") != path.stat().st_size
-                    or remote.get("Metadata", {}).get("sha256") != digest):
+            # existente tiver conteúdo operacional equivalente. Os timestamps
+            # de transporte podem mudar quando um checkpoint é restaurado.
+            if not _existing_matches(client, bucket, key, event):
                 raise
         remote = client.head_object(Bucket=bucket, Key=key)
-        if (remote.get("ContentLength") != path.stat().st_size
-                or remote.get("Metadata", {}).get("sha256") != digest
-                or remote.get("ServerSideEncryption") != "AES256"):
+        if ((created and (remote.get("ContentLength") != path.stat().st_size
+                         or remote.get("Metadata", {}).get("sha256") != digest))
+                or remote.get("ServerSideEncryption") != "AES256"
+                or remote.get("Metadata", {}).get("operation-id") != event["operationId"]
+                or remote.get("Metadata", {}).get("operation-type") != event["operationType"]):
             raise ValueError("A alteração operacional não foi confirmada no S3.")
         path.unlink()
         uploaded += 1

@@ -1,3 +1,5 @@
+# Integra o suplemento por correspondência de chaves e regista conflitos sem substituir
+# silenciosamente as fontes.
 """Import the complementary workbook without promoting historical proposals to inventory."""
 from __future__ import annotations
 

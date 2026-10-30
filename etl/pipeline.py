@@ -1,3 +1,5 @@
+# Extrai Excel e PDF, conserva a linhagem e prepara uma entrega validada antes de substituir
+# o warehouse anterior.
 """Extract, transform and load all files placed in the data directory.
 
 The pipeline deliberately keeps the source payload (including PDF page text) while
@@ -273,6 +275,7 @@ def _build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
 
     # Publish run metadata so consumers can verify data coverage and quality.
     manifest = {
+        "schema_version": 1,
         "pipeline": "blu-local-etl", "ran_at_utc": datetime.now(UTC).isoformat(),
         "input_directory": data_dir.as_posix(), "workbook": workbook.as_posix(), "source": source_manifest,
         "tables": {table: len(records) for table, records in tables.items()},
@@ -319,6 +322,7 @@ def run(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     assert stage.parent == target.parent and backup.parent == target.parent
     try:
         manifest = _build(data_dir, stage)
+        # Manter o diretório anterior até a promoção da área de preparação ter sucesso.
         if target.exists():
             _rename_with_retry(target, backup)
         try:

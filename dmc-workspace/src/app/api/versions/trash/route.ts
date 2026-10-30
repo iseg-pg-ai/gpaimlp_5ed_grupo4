@@ -1,3 +1,5 @@
+// Endpoint: consulta, coloca e restaura versões no Lixo sem substituir os bytes PDF
+// guardados.
 import { jsonError, noStoreHeaders, publicOrigin, publicUrl } from "@/lib/server-http";
 import { checkTripId, VersionStore } from "@/lib/version-store";
 import { syncOperationalState } from "@/lib/operational-s3";

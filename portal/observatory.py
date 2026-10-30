@@ -1,3 +1,4 @@
+# Prepara uma fotografia analítica do warehouse para o Observatório integrado no portal.
 """Leitura do Observatório nativo do portal; não altera a aplicação Streamlit."""
 from __future__ import annotations
 

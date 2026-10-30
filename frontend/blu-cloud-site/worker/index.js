@@ -1,3 +1,5 @@
+// Serve os recursos estáticos e o fallback da aplicação sem encaminhar pedidos de API para o
+// HTML.
 export default {
   async fetch(request, env) {
     const response = await env.ASSETS.fetch(request);

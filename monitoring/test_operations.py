@@ -286,6 +286,43 @@ class OperationsTest(unittest.TestCase):
             self.assertTrue(any(entry["fields"].get("operation") == "Cópia remota S3"
                                 for entry in details["entries"]))
 
+    def test_signals_consolidate_agent_audit_without_prompts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            runtime = root / "monitoring/runtime"
+            exports = root / "exports/itineraries"
+            runtime.mkdir(parents=True)
+            exports.mkdir(parents=True)
+            now = datetime.now(timezone.utc)
+            with sqlite3.connect(exports / "history.sqlite") as database:
+                database.execute("CREATE TABLE agent_runs(status TEXT,metadata TEXT,createdAt TEXT)")
+                database.executemany(
+                    "INSERT INTO agent_runs VALUES(?,?,?)",
+                    [("accepted", json.dumps({"modelId": "nova", "inputTokens": 100,
+                                               "outputTokens": 20, "latencyMs": 120}),
+                      now.isoformat()),
+                     ("rejected", json.dumps({"modelId": "nova", "inputTokens": 50,
+                                               "outputTokens": 10, "latencyMs": 80}),
+                      now.isoformat()),
+                     ("proposed", json.dumps({"modelId": "nova"}),
+                      (now - timedelta(hours=1)).isoformat())])
+            (runtime / "portal-events.jsonl").write_text(json.dumps({
+                "at": now.isoformat(), "operation": "assistant_decision",
+                "module": "api:assistant", "outcome": "failed", "http_status": 409,
+            }) + "\n")
+            with patch.dict(os.environ, {
+                "BLU_EXPORT_DIR": str(exports),
+                "BLU_AGENT_RATES_JSON": json.dumps({"nova": {"input": 1, "output": 2}}),
+            }, clear=False):
+                agent = operational_signals(runtime, now)["agent_metrics"]
+            self.assertEqual(agent["proposals"], 3)
+            self.assertEqual((agent["accepted"], agent["rejected"], agent["expired"]), (1, 1, 1))
+            self.assertEqual(agent["conflicts_24h"], 1)
+            self.assertEqual((agent["input_tokens"], agent["output_tokens"]), (150, 30))
+            self.assertEqual(agent["average_latency_ms"], 100)
+            self.assertAlmostEqual(agent["cost_usd"], 0.00021)
+            self.assertNotIn("plan", json.dumps(agent))
+
     def test_log_query_normalizes_filters_and_orders_persistent_events(self):
         with tempfile.TemporaryDirectory() as directory:
             runtime = Path(directory)
@@ -310,8 +347,6 @@ class OperationsTest(unittest.TestCase):
                      "latency_ms": 12, "http_status": 200},
                     {"name": "Apresentação", "state": "down",
                      "latency_ms": None, "http_status": 503},
-                    {"name": "Agente IA", "state": "up",
-                     "latency_ms": 8, "http_status": 200},
                 ]}) + "\n")
             result = query_logs(runtime, "portal", "ERROR", "catalog", "desc", 20)
             self.assertEqual(result["total"], 1)
@@ -328,7 +363,7 @@ class OperationsTest(unittest.TestCase):
             presentation = query_logs(runtime, "presentation", "ERRORS")
             self.assertEqual(presentation["total"], 1)
             self.assertEqual(presentation["entries"][0]["http_status"], 503)
-            self.assertEqual(query_logs(runtime, "ai")["entries"][0]["status"], "up")
+            self.assertEqual(query_logs(runtime, "ai")["entries"], [])
             ascending = query_logs(runtime, "portal", order="asc")
             self.assertEqual(ascending["entries"][0]["action"], "navigation")
             with self.assertRaises(ValueError):

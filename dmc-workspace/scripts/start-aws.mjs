@@ -1,3 +1,4 @@
+// Coordena o arranque AWS com a configuração do proxy e o estado operacional preparado.
 import { createServer } from "node:http";
 import next from "next";
 import { awsConfig, validateBuild } from "./aws-config.mjs";
@@ -9,7 +10,10 @@ const dev = process.argv.includes("--dev");
 if (!dev) validateBuild(prefix);
 process.env.PORTAL_ASSET_PREFIX = prefix;
 process.env.PORTAL_PUBLIC_ORIGIN = origin;
-const app = next({ dev, hostname: "0.0.0.0", port });
+// Tal como as restantes interfaces, expor apenas no loopback. O proxy HTTPS do
+// SageMaker encaminha a porta sem tornar o servidor acessível noutras interfaces.
+const hostname = "127.0.0.1";
+const app = next({ dev, hostname, port });
 await app.prepare();
 const handle = app.getRequestHandler();
 createServer((req, res) => {
@@ -50,4 +54,4 @@ createServer((req, res) => {
     );
     process.exit(1);
   })
-  .listen(port, "0.0.0.0", () => console.log(`Portal disponível em ${origin}${prefix}/`));
+  .listen(port, hostname, () => console.log(`Portal disponível em ${origin}${prefix}/`));

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Prepara os artefactos exigidos pelo packaging do site sem alterar o contrato do worker.
 import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

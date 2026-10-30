@@ -1,3 +1,5 @@
+# Transforma estado e eventos técnicos em sinais operacionais, sem disponibilizar os
+# ficheiros privados por HTTP.
 """Leitura limitada e agregada dos sinais operacionais locais."""
 from __future__ import annotations
 
@@ -53,6 +55,104 @@ def _persistence(runtime: Path) -> dict:
             "pending_total": sum(pending.values()), "last_sync_at": sync.get("at"),
             "sync_state": sync.get("status", "unknown"),
             "sync_error_code": sync.get("errorCode")}
+
+
+def _agent_metrics(runtime: Path, portal: list[dict], now: datetime) -> dict:
+    """Agrega a auditoria do agente sem ler prompts, planos ou dados de clientes."""
+    root = runtime.parents[1]
+    export_root = Path(os.environ.get(
+        "BLU_EXPORT_DIR", str(root / "exports/itineraries")))
+    database_path = export_root / "history.sqlite"
+    result = {"state": "unavailable", "runs": 0, "proposals": 0, "answers": 0,
+              "accepted": 0, "rejected": 0, "pending": 0, "expired": 0,
+              "conflicts_24h": 0, "input_tokens": 0, "output_tokens": 0,
+              "average_latency_ms": None, "cost_usd": None,
+              "cost_state": "not_configured", "models": []}
+    result["conflicts_24h"] = sum(
+        row.get("http_status") == 409 or row.get("error_code") in {
+            "VERSION_CONFLICT", "AGENT_CONFLICT", "CONFLICT"}
+        for row in portal
+        if str(row.get("module", "")).startswith("api:assistant")
+        or "assistant" in str(row.get("operation", ""))
+    )
+    if not database_path.is_file():
+        return result
+    try:
+        with sqlite3.connect(database_path.resolve().as_uri() + "?mode=ro", uri=True,
+                             timeout=1) as database:
+            rows = database.execute(
+                "SELECT status,metadata,createdAt FROM agent_runs ORDER BY createdAt DESC"
+            ).fetchall()
+    except sqlite3.Error:
+        return result
+    metadata = []
+    statuses = []
+    expired = 0
+    for status, raw, created_at in rows:
+        try:
+            item = json.loads(raw)
+            item = item if isinstance(item, dict) else {}
+        except (TypeError, ValueError, json.JSONDecodeError):
+            item = {}
+        metadata.append(item)
+        statuses.append(str(status))
+        try:
+            created = datetime.fromisoformat(str(created_at))
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            expired += status == "proposed" and now - created > timedelta(minutes=30)
+        except (TypeError, ValueError):
+            pass
+    latencies = [float(item["latencyMs"]) for item in metadata
+                 if isinstance(item.get("latencyMs"), (int, float))
+                 and not isinstance(item.get("latencyMs"), bool)
+                 and item["latencyMs"] >= 0]
+    input_tokens = sum(item.get("inputTokens", 0) for item in metadata
+                       if isinstance(item.get("inputTokens"), int)
+                       and not isinstance(item.get("inputTokens"), bool)
+                       and item["inputTokens"] >= 0)
+    output_tokens = sum(item.get("outputTokens", 0) for item in metadata
+                        if isinstance(item.get("outputTokens"), int)
+                        and not isinstance(item.get("outputTokens"), bool)
+                        and item["outputTokens"] >= 0)
+    models = sorted({str(item.get("modelId")) for item in metadata if item.get("modelId")})
+    costs = None
+    cost_state = "not_configured"
+    try:
+        rates = json.loads(os.environ.get("BLU_AGENT_RATES_JSON", "{}"))
+        if not isinstance(rates, dict):
+            raise ValueError
+        known_cost = 0.0
+        priced = bool(metadata)
+        for item in metadata:
+            rate = rates.get(str(item.get("modelId", "")))
+            if not isinstance(rate, dict) or not all(
+                    isinstance(rate.get(key), (int, float))
+                    and not isinstance(rate.get(key), bool) and rate[key] >= 0
+                    for key in ("input", "output")):
+                priced = False
+                break
+            input_value = item.get("inputTokens", 0)
+            output_value = item.get("outputTokens", 0)
+            safe_input = input_value if isinstance(input_value, int) \
+                and not isinstance(input_value, bool) and input_value >= 0 else 0
+            safe_output = output_value if isinstance(output_value, int) \
+                and not isinstance(output_value, bool) and output_value >= 0 else 0
+            known_cost += ((safe_input * rate["input"]
+                            + safe_output * rate["output"]) / 1_000_000)
+        if priced:
+            costs, cost_state = round(known_cost, 6), "configured"
+    except (TypeError, ValueError, json.JSONDecodeError):
+        cost_state = "invalid_configuration"
+    return {**result, "state": "up", "runs": len(rows),
+            "proposals": sum(status in {"proposed", "accepted", "rejected"} for status in statuses),
+            "answers": statuses.count("answered"), "accepted": statuses.count("accepted"),
+            "rejected": statuses.count("rejected"),
+            "pending": sum(status == "proposed" for status in statuses) - expired,
+            "expired": expired, "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "average_latency_ms": round(sum(latencies) / len(latencies)) if latencies else None,
+            "cost_usd": costs, "cost_state": cost_state, "models": models}
 
 
 def _events(path: Path, since: datetime) -> list[dict]:
@@ -117,6 +217,7 @@ def operational_signals(runtime: Path, now: datetime | None = None) -> dict:
                "calls_24h": len(ai), "failures_24h": sum(row.get("outcome") != "success" for row in ai),
                "tokens_reported": sum(row["total_tokens"] for row in token_rows),
                "calls_with_tokens": len(token_rows)},
+        "agent_metrics": _agent_metrics(runtime, portal, now),
         "backup": backup,
         "persistence": _persistence(runtime),
     }

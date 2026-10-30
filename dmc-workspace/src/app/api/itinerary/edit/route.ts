@@ -1,3 +1,4 @@
+// Endpoint: aplica uma edição validada sem dispensar as proteções dos itens existentes.
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { loadPublishedCatalog } from "@/lib/catalog-store";
 import { editWithAssistant } from "@/lib/assistant-editing";

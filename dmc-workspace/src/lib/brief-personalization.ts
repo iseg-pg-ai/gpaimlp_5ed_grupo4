@@ -1,3 +1,5 @@
+// Valida os critérios de personalização e a sua correspondência com o perfil de
+// acompanhamento.
 import { subcategories } from "./catalog-schema.ts";
 export type Personalization = {
   mustHave: string[];

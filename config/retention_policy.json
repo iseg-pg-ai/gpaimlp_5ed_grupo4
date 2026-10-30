@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "draft_inactivity_days": 90,
+  "agent_conversation_days": 30,
+  "agent_audit_days": 365,
+  "expired_share_grace_days": 30,
+  "legal_hold_overrides_deletion": true,
+  "authoritative_versions_auto_delete": false,
+  "exports_follow_version_lifecycle": true
+}

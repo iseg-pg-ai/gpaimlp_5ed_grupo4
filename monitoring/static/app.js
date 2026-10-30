@@ -1,3 +1,5 @@
+// Atualiza o painel a partir das APIs autenticadas e apresenta incidentes, serviços e
+// detalhe dos eventos.
 const $ = (id) => document.getElementById(id);
 const labels = {
   up: "Disponível",
@@ -310,6 +312,21 @@ function render(data) {
         ? `${ops.ai.tokens_reported.toLocaleString("pt-PT")} tokens reportados`
         : `${ops.ai.failures_24h} falhas · tokens ainda sem dados`,
     );
+    const agent = ops.agent_metrics;
+    if (agent) {
+      text("agent-proposals", agent.state === "up" ? agent.proposals.toLocaleString("pt-PT") : "—");
+      text("agent-decisions", agent.state === "up" ? `${agent.accepted} / ${agent.rejected}` : "—");
+      text("agent-conflicts", agent.conflicts_24h.toLocaleString("pt-PT"));
+      text("agent-expired", agent.state === "up" ? agent.expired.toLocaleString("pt-PT") : "—");
+      text(
+        "agent-tokens",
+        agent.state === "up"
+          ? `${agent.input_tokens.toLocaleString("pt-PT")} / ${agent.output_tokens.toLocaleString("pt-PT")}`
+          : "—",
+      );
+      text("agent-latency", agent.average_latency_ms === null ? "—" : `${agent.average_latency_ms} ms`);
+      text("agent-cost", agent.cost_state === "configured" ? `$${agent.cost_usd.toFixed(4)}` : "Por configurar");
+    }
     text(
       "backup-artifacts",
       ops.backup.artifacts === null
@@ -329,6 +346,12 @@ function render(data) {
       ].join(" · "),
     );
     text("alert-state", s.alerts.active.toLocaleString("pt-PT"));
+    text(
+      "alert-delivery",
+      (s.alerts.external ?? "disabled") === "disabled"
+        ? "Fila local · envio externo desativado"
+        : `SNS · ${s.alerts.external_delivered} entregues · ${s.alerts.external_pending} pendentes`,
+    );
     const health = s.alerts.active ? "degraded" : "up";
     text(
       "ops-health",

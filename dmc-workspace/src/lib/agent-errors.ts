@@ -1,3 +1,4 @@
+// Traduz falhas do agente em categorias públicas sem expor detalhes internos do fornecedor.
 // Mensagens públicas controladas; nunca apresentar exceções brutas do fornecedor.
 const errors: Record<string, { status: number; message: string }> = {
   AGENT_INVALID_RESPONSE: {

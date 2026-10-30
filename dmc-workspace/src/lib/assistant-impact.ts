@@ -1,3 +1,4 @@
+// Compara os efeitos da proposta para permitir revisão antes da alteração efetiva.
 import { proposalBudget } from "./proposal-budget.ts";
 import { canonicalSnapshot } from "./snapshot-validation.ts";
 import type { Snapshot } from "./itinerary-pdf";

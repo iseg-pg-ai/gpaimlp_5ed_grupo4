@@ -1,9 +1,18 @@
+// Valida e simula planos do assistente sobre o snapshot antes de permitir a sua aprovação.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { editWithAssistant, markEditOrigin, moveWithAssistant } from "./assistant-editing.ts";
 import { generateItinerary, type Catalog } from "./curation.ts";
 import { canonicalSnapshot, validateSnapshot } from "./snapshot-validation.ts";
 import type { Snapshot } from "./itinerary-pdf";
+import {
+  applyConfirmation,
+  initialConfirmation,
+  validateConfirmation,
+} from "./activity-confirmation.ts";
+import { proposalBudget } from "./proposal-budget.ts";
+import { proposalDiagnostics } from "./proposal-diagnostics.ts";
+import { isLocale, type Locale } from "./locales.ts";
 
 export type AgentAction = {
   type: string;
@@ -15,6 +24,13 @@ export type AgentAction = {
   capacity?: number;
   period?: string;
   targetDayNumber?: number;
+  briefPatch?: Partial<Snapshot["brief"]>;
+  confirmationPatch?: Partial<
+    Pick<
+      import("./activity-confirmation.ts").ActivityConfirmation,
+      "time" | "location" | "price" | "supplier"
+    >
+  >;
 };
 export type AgentPlan = {
   summary: string;
@@ -22,6 +38,12 @@ export type AgentPlan = {
   warnings: string[];
   requiresConfirmation: true;
   alternatives?: Array<{ dayNumber: number; itemId: string; catalogIds: string[] }>;
+  ranking?: Array<{ dayNumber: number; catalogIds: string[] }>;
+  delivery?: {
+    kind: "export_pdf" | "export_prompt" | "share";
+    locale: Locale;
+    method?: "link" | "document";
+  };
 };
 export type AgentAlternatives = {
   dayNumber: number;
@@ -46,6 +68,8 @@ export type AgentProposal = {
   provider: string;
   modelId: string;
   alternatives?: AgentAlternatives[];
+  rankedCandidates?: ReturnType<typeof resolveRanking>;
+  deliveryPreview?: ReturnType<typeof resolveDelivery>;
 };
 type Schema = {
   type: string;
@@ -106,6 +130,7 @@ function validate(value: unknown, rule: Schema): void {
       fail();
   } else if (rule.type === "boolean" && typeof value !== "boolean") fail();
 }
+// Verificar o contrato completo antes de considerar qualquer ação da proposta.
 export function validatePlan(value: unknown): asserts value is AgentPlan {
   validate(value, schema);
   const seen = new Set<string>();
@@ -124,9 +149,39 @@ export function validatePlan(value: unknown): asserts value is AgentPlan {
     )
       throw new Error("Argumentos da ação inválidos.");
   }
+  const rankingDays = new Set<number>();
+  for (const group of (value as AgentPlan).ranking ?? []) {
+    if (
+      rankingDays.has(group.dayNumber) ||
+      new Set(group.catalogIds).size !== group.catalogIds.length
+    )
+      throw new Error("Ranking duplicado.");
+    rankingDays.add(group.dayNumber);
+  }
+  const plan = value as AgentPlan;
+  if (plan.delivery) {
+    if (!isLocale(plan.delivery.locale)) throw new Error("Idioma de entrega inválido.");
+    if (plan.delivery.kind === "share" ? !plan.delivery.method : plan.delivery.method !== undefined)
+      throw new Error("Forma de entrega inválida.");
+    if (plan.actions.length || (plan.alternatives?.length ?? 0) || (plan.ranking?.length ?? 0))
+      throw new Error("Guarde primeiro as alterações antes de preparar a entrega.");
+  }
+}
+
+/** Resolve a intenção de entrega sem gerar ficheiros, links ou mensagens. */
+export function resolveDelivery(snapshot: Snapshot, plan: AgentPlan, catalog: Catalog) {
+  validatePlan(plan);
+  if (!plan.delivery) return undefined;
+  const diagnostics = proposalDiagnostics(snapshot, catalog);
+  return {
+    ...plan.delivery,
+    blockers: diagnostics.filter((item) => item.severity === "blocker"),
+    warnings: diagnostics.filter((item) => item.severity === "warning"),
+  };
 }
 const protectedItem = (item: Snapshot["itinerary"][number]["items"][number]) =>
   item.isLocked || item.confirmation?.status === "confirmed";
+// Aplicar as ações à simulação para expor incompatibilidades antes da aceitação humana.
 export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catalog): Snapshot {
   validatePlan(plan);
   resolveAlternatives(snapshot, plan, catalog);
@@ -139,6 +194,71 @@ export function simulatePlan(snapshot: Snapshot, plan: AgentPlan, catalog: Catal
     if (action.itemId && index < 0) throw new Error("A proposta refere uma atividade inexistente.");
     const n = day.dayNumber;
     const position = index + 1;
+    if (action.type === "update_brief") {
+      const patch = action.briefPatch ?? {};
+      if (!Object.keys(patch).length) throw new Error("O briefing não contém alterações.");
+      const previousItinerary = current.itinerary;
+      current.brief = { ...current.brief, ...patch };
+      validateSnapshot(current);
+      for (const existingDay of current.itinerary)
+        for (const item of existingDay.items.filter(
+          (candidate) => candidate.category !== "free_time",
+        )) {
+          const isolated: Catalog = {
+            ...catalog,
+            atracoes: [],
+            restaurantes: [],
+            experiencias: [],
+          };
+          for (const table of ["atracoes", "restaurantes", "experiencias"] as const)
+            isolated[table] = catalog[table].filter(
+              (row) =>
+                item.id ===
+                `${table}:${row._catalog_id ?? row.id ?? row.id_blu ?? row.nome_da_experiencia ?? row._source_row}`,
+            );
+          const eligible = generateItinerary(
+            {
+              ...current.brief,
+              startDate: existingDay.date,
+              endDate: existingDay.date,
+              destination: existingDay.location,
+            },
+            isolated,
+          ).itinerary[0]?.items.some((candidate) => candidate.id === item.id);
+          if (!eligible)
+            throw new Error(
+              "O novo briefing é incompatível com uma atividade existente. Reveja primeiro essa atividade.",
+            );
+        }
+      const total = proposalBudget(current).totals[current.brief.currency];
+      if (
+        total &&
+        total.confirmed + total.estimated >
+          current.brief.budget * 100 * (1 + (current.brief.personalization?.budgetFlex ?? 0) / 100)
+      )
+        throw new Error("O novo orçamento é inferior aos custos conhecidos.");
+      current.itinerary = markEditOrigin(previousItinerary, current.itinerary, "assistant");
+      continue;
+    }
+    if (action.type === "update_pending_confirmation") {
+      const item = day.items[index];
+      if (protectedItem(item))
+        throw new Error("Uma atividade protegida ou confirmada não pode ser alterada pelo agente.");
+      const patch = action.confirmationPatch ?? {};
+      if (!Object.keys(patch).length)
+        throw new Error("A confirmação não contém campos para preparar.");
+      const previousItinerary = structuredClone(current.itinerary);
+      const confirmation = {
+        ...initialConfirmation(item),
+        ...patch,
+        status: "pending" as const,
+        confirmedAt: null,
+      };
+      validateConfirmation(item, confirmation);
+      day.items[index] = applyConfirmation(item, confirmation);
+      current.itinerary = markEditOrigin(previousItinerary, current.itinerary, "assistant");
+      continue;
+    }
     if (action.type === "regenerate_day") {
       // Uma regeneração ampla preserva trabalho manual sem o transformar num
       // bloqueio: ações explícitas continuam a poder alterar estes cartões.
@@ -345,6 +465,34 @@ export function resolveAlternatives(
   });
 }
 
+/** Resolve apenas IDs já elegíveis; não altera nem volta a gerar o itinerário. */
+export function resolveRanking(snapshot: Snapshot, plan: AgentPlan, catalog: Catalog) {
+  validatePlan(plan);
+  const context = plan.ranking?.length ? plannerContext(snapshot, catalog) : undefined;
+  const seen = new Set<number>();
+  return (plan.ranking ?? []).map((group) => {
+    if (seen.has(group.dayNumber) || new Set(group.catalogIds).size !== group.catalogIds.length)
+      throw new Error("Ranking duplicado.");
+    seen.add(group.dayNumber);
+    return {
+      dayNumber: group.dayNumber,
+      options: group.catalogIds.map((id) => {
+        const dayCandidates = context!.candidates.filter(
+          (candidate) => candidate.dayNumber === group.dayNumber,
+        );
+        const candidate = dayCandidates.find((item) => item.id === id);
+        if (!candidate)
+          throw new Error("O ranking contém uma oferta fora dos candidatos elegíveis.");
+        return {
+          ...candidate,
+          baselinePosition: dayCandidates.findIndex((item) => item.id === id) + 1,
+        };
+      }),
+    };
+  });
+}
+
+// Selecionar o contexto necessário ao planeamento sem lhe conceder autoridade de escrita.
 export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
   // Lista explícita: campos futuros do briefing não são enviados implicitamente.
   const brief: Record<string, unknown> = Object.fromEntries(
@@ -356,6 +504,12 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
         "childrenAges",
         "startDate",
         "endDate",
+        "arrivalLocation",
+        "arrivalTime",
+        "arrivalFlightNumber",
+        "departureLocation",
+        "departureTime",
+        "departureFlightNumber",
         "budget",
         "currency",
         "interests",
@@ -368,6 +522,7 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
         "diningPace",
         "morningPreference",
         "exclusions",
+        "specialOccasion",
       ] as const
     ).map((key) => [key, snapshot.brief[key]]),
   );
@@ -438,6 +593,7 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
   }
   return {
     brief,
+    diagnostics: proposalDiagnostics(snapshot, catalog),
     itinerary: snapshot.itinerary.map((day) => ({
       dayNumber: day.dayNumber,
       date: day.date,
@@ -450,6 +606,34 @@ export function plannerContext(snapshot: Snapshot, catalog: Catalog) {
         category: item.category,
         locked: Boolean(protectedItem(item)),
       })),
+    })),
+    routes: snapshot.itinerary.map((day) => ({
+      dayNumber: day.dayNumber,
+      summary: day.routeSummary
+        ? {
+            totalTransitTime: day.routeSummary.totalTransitTime,
+            totalDistance: day.routeSummary.totalDistance,
+            legsCount: day.routeSummary.legsCount,
+            evidence: day.items.some((item) => item.transitToNext?.isAlgorithmOptimized === false)
+              ? "contains_estimates"
+              : "measured_or_empty",
+          }
+        : undefined,
+      legs: day.items.flatMap((item) =>
+        item.transitToNext
+          ? [
+              {
+                from: item.transitToNext.fromLocation,
+                to: item.transitToNext.toLocation,
+                mode: item.transitToNext.mode,
+                duration: item.transitToNext.duration,
+                distance: item.transitToNext.distance ?? "Por confirmar",
+                bufferMinutes: item.transitToNext.bufferMinutes,
+                evidence: item.transitToNext.isAlgorithmOptimized ? "measured_osrm" : "estimate",
+              },
+            ]
+          : [],
+      ),
     })),
     candidates: selected,
     candidatesTruncated: candidates.length > 120,

@@ -1,3 +1,5 @@
+# Fornece consultas do dataset ao portal e conserva a distinção entre inventário atual e
+# referências históricas.
 """Fontes do portal: pesquisa, paginação e enriquecimento sem alterar o warehouse."""
 
 from contextlib import closing
@@ -160,6 +162,17 @@ def main() -> None:
             from portal.routing import calculate_road_leg
             result = calculate_road_leg(params.get("from"), params.get("to"),
                                         params.get("options"))
+        elif operation == "routing-optimize":
+            from portal.routing import optimize_route_sequence
+            result = optimize_route_sequence(params.get("items", []),
+                                             params.get("catalogRecords"))
+        elif operation == "routing-realign":
+            from portal.routing import realign_time_slots
+            result = realign_time_slots(params.get("items", []),
+                                        params.get("catalogRecords"))
+        elif operation == "routing-summary":
+            from portal.routing import route_summary
+            result = route_summary(params.get("items", []))
         elif operation == "query":
             result = query_dataset(root, params)
         elif operation == "observatory":

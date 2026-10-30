@@ -1,12 +1,12 @@
 {
   "interval_seconds": 30,
   "warehouse_max_age_hours": 168,
-  "agent_enabled": false,
   "notifications": {
-    "mode": "local",
     "external_enabled": false,
-    "channel": null,
-    "recipients": []
+    "channel": "sns",
+    "topic_arn_env": "BLU_MONITORING_SNS_TOPIC_ARN",
+    "retry_initial_seconds": 60,
+    "retry_max_seconds": 3600
   },
   "cleanup": {
     "enabled": true,

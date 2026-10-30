@@ -1,3 +1,5 @@
+// Define as stacks de dados, frontend e Backoffice com responsabilidades e permissões
+// separadas.
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -94,6 +96,7 @@ function brandLogin(scope, id, userPool, client) {
   });
 }
 
+// Concentrar persistência e processamento dos eventos na stack de dados.
 class DataStack extends Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
@@ -172,6 +175,7 @@ class DataStack extends Stack {
   }
 }
 
+// Publicar os pontos de entrada públicos sem colocar segredos na configuração do navegador.
 class FrontendStack extends Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
@@ -284,12 +288,11 @@ class FrontendStack extends Stack {
     api.addRoutes({ path: '/v1/conversation-events', methods: [apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('ConversationIngestIntegration', ingest) });
     api.addRoutes({ path: '/v1/chat', methods: [apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('BedrockChatIntegration', chat) });
     api.addRoutes({ path: '/v1/channels/whatsapp', methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('WhatsAppWebhookIntegration', whatsappWebhook) });
-    // The routes are public, so cap request rates on the existing default stage
-    // (updated in place). Chat is tighter because every call is a paid Bedrock invocation.
+    // Limites agregados no stage existente; o chat tem um limite inferior por custo.
     const defaultStage = api.defaultStage.node.defaultChild;
     defaultStage.defaultRouteSettings = { throttlingRateLimit: 10, throttlingBurstLimit: 20 };
+    // RouteSettings usa JSON CloudFormation, com propriedades em PascalCase.
     defaultStage.routeSettings = {
-      // routeSettings is untyped JSON, so CloudFormation property casing is required here.
       'POST /v1/chat': { ThrottlingRateLimit: 2, ThrottlingBurstLimit: 5 },
     };
 
@@ -350,6 +353,7 @@ class FrontendStack extends Stack {
   }
 }
 
+// Manter o acesso interno ao conhecimento e ao modelo numa fronteira própria.
 class BackofficeStack extends Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
@@ -390,8 +394,8 @@ class BackofficeStack extends Stack {
     props.data.archive.grantRead(rag, 'curated/approved/*');
     rag.addToRolePolicy(new iam.PolicyStatement({ actions: ['bedrock:InvokeModel'], resources: ['*'] }));
 
-    // Only named BLU principals may assume the analysis role: trusting the whole account
-    // would also admit shared roles such as the course's SageMaker execution role.
+    // Apenas identidades BLU explícitas podem assumir o papel de análise; confiar
+    // na conta inteira admitiria também papéis partilhados do curso.
     const trustedPrincipals = (process.env.BACKOFFICE_TRUSTED_PRINCIPAL_ARNS ?? '').split(',').map(arn => arn.trim()).filter(Boolean);
     const principalPattern = new RegExp(`^arn:aws:iam::${account}:(role|user)/[\\w+=,.@/-]+$`);
     const invalidPrincipal = trustedPrincipals.find(arn => !principalPattern.test(arn));

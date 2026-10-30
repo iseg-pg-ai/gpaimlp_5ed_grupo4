@@ -1,21 +1,23 @@
-import { CustomerBrief } from "@/types";
+// Valores iniciais do formulário; os dados finais continuam sujeitos à validação do
+// briefing.
+import type { CustomerBrief } from "@/types";
 
 export const initialBrief: CustomerBrief = {
-  customerName: "Sarah & James",
-  customerEmail: "sarah.james@example.com",
+  customerName: "Marta & Miguel",
+  customerEmail: "marta.miguel@example.com",
   adults: 2,
   children: 0,
   childrenAges: "",
   destination: "Portugal",
-  startDate: "2026-10-10",
-  endDate: "2026-10-17",
+  startDate: "2027-05-18",
+  endDate: "2027-05-23",
   arrivalLocation: "Lisbon Humberto Delgado Airport (LIS)",
-  arrivalTime: "10:35",
-  arrivalFlightNumber: "TP 1363",
+  arrivalTime: "09:40",
+  arrivalFlightNumber: "TP 1021",
   departureLocation: "Porto Francisco Sá Carneiro Airport (OPO)",
-  departureTime: "17:20",
-  departureFlightNumber: "TP 1931",
-  budget: 6000,
+  departureTime: "18:15",
+  departureFlightNumber: "TP 1935",
+  budget: 4800,
   currency: "EUR",
   interests: [
     "Culture & Heritage",
@@ -27,15 +29,15 @@ export const initialBrief: CustomerBrief = {
   accommodation: "Boutique",
   // BLU Curation Criteria
   proposalTier: "Signature",
-  physicalEffort: "Baixo (Low)",
-  mobilityRestrictions: ["Avoid Steep Stairs (Lisbon/Porto Calçada)"],
-  dietaryRestrictions: ["Shellfish Allergy", "Gluten-Free (Celiac)"],
+  physicalEffort: "Moderado (Moderate)",
+  mobilityRestrictions: [],
+  dietaryRestrictions: [],
   diningPace: "Relaxed Dining (~90m)",
-  morningPreference: "Late Start (10:30+)",
+  morningPreference: "Standard (09:30)",
   exclusions: ["No Crowded Tour Buses", "No Commercial Souvenir Shops"],
-  specialOccasion: "10th Wedding Anniversary",
+  specialOccasion: "5th Wedding Anniversary",
   notes:
-    "Celebrating 10th anniversary. James has a diagnosed shellfish allergy (requires kitchen cross-contamination check, especially in marisqueiras). Sarah prefers step-free or elevator routes to avoid steep Lisbon calçada hills. They value deep wine immersion in Douro and relaxed morning starts.",
+    "Surprise journey. They value Portuguese heritage, local artisans, gastronomy and one memorable final experience in Porto. Keep internal planning notes out of customer-facing exports.",
 };
 
 // Briefing vazio de uma viagem nova (e base dos rascunhos a partir de leads):

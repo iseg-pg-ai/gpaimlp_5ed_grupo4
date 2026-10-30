@@ -1,3 +1,4 @@
+// Define os idiomas suportados e valida os valores recebidos em runtime.
 export const languages = [
   { code: "pt", name: "Português", flag: "PT", html: "pt-PT" },
   { code: "en", name: "English", flag: "GB", html: "en" },

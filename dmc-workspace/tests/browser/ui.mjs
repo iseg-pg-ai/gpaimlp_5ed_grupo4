@@ -19,7 +19,7 @@ async function navigation(browser) {
         (locale) => document.documentElement.lang.startsWith(locale),
         locale,
       );
-      for (const route of ["/catalog", "/exports", "/references", "/trash", "/"]) {
+      for (const route of ["/catalog", "/exports", "/trash", "/"]) {
         const bar = page.getByTestId("top-bar");
         if (width < 1024) await bar.locator("details").first().locator("summary").click();
         const href = route === "/" ? prefix || "/" : `${prefix}${route}`;

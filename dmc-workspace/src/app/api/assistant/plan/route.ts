@@ -1,9 +1,13 @@
+// Endpoint: recebe o pedido de planeamento e devolve uma proposta validada para revisão
+// humana.
 import { loadPublishedCatalog } from "@/lib/catalog-store";
 import {
   plannerContext,
   simulatePlan,
   validatePlan,
   resolveAlternatives,
+  resolveRanking,
+  resolveDelivery,
   type AgentPlan,
 } from "@/lib/assistant-actions";
 import { AgentAuditStore } from "@/lib/agent-audit-store";
@@ -18,9 +22,29 @@ import { jsonError, noStoreHeaders, publicOrigin } from "@/lib/server-http";
 import { validateSnapshot } from "@/lib/snapshot-validation";
 import { agentFailure } from "@/lib/agent-errors";
 import { recentConversation } from "@/lib/assistant-conversation";
+import { AgentConversationStore } from "@/lib/agent-conversation-store";
+import { authorizeAgentTool, type AgentToolName } from "@/lib/agent-tool-registry";
+import {
+  AgentBudgetExceeded,
+  AgentRuntimeConfigurationError,
+  enforceAgentRuntimePolicy,
+} from "@/lib/agent-runtime-policy";
 import { proposalImpact } from "@/lib/assistant-impact";
+import { simulationFeedback } from "@/lib/agent-simulation-feedback";
 import { requestIntent, assertPlanIntent, IntentConflict } from "@/lib/assistant-intent";
 import { syncOperationalState } from "@/lib/operational-s3";
+import { publicAgentConversation, publicAgentText } from "@/lib/agent-public-input";
+import { cachedServerDayWeather } from "@/lib/weather-server-cache";
+import { agentSupervisionSignals } from "@/lib/agent-supervision-signals";
+import { FeedbackStore } from "@/lib/feedback-store";
+import { HistoricalCaseStore } from "@/lib/historical-cases";
+import {
+  IdentityConfigurationError,
+  IdentityDenied,
+  IdentityRequired,
+  type AuthenticatedPrincipal,
+  requestPrincipal,
+} from "@/lib/server-principal";
 
 export const runtime = "nodejs";
 type Language = "pt" | "en";
@@ -29,6 +53,7 @@ const message = (language: Language, pt: string, en: string) => (language === "e
 export async function POST(request: Request) {
   let body;
   let language: Language = "pt";
+  let principal: AuthenticatedPrincipal | null = null;
   try {
     const origin = request.headers.get("origin");
     if (origin && origin !== publicOrigin(request.url))
@@ -65,13 +90,20 @@ export async function POST(request: Request) {
     )
       throw new Error();
     if (!body.runId) validateSnapshot(body.snapshot);
-    recentConversation(body.conversation);
     if (
       body.pendingRunId !== undefined &&
       (typeof body.pendingRunId !== "string" || body.pendingRunId.length > 80)
     )
       throw new Error();
-  } catch {
+    principal = await requestPrincipal(request);
+    if (!principal) recentConversation(body.conversation);
+  } catch (error) {
+    if (error instanceof IdentityRequired)
+      return jsonError("Autenticação necessária. / Authentication required.", 401, noStoreHeaders);
+    if (error instanceof IdentityDenied)
+      return jsonError("Identidade inválida. / Invalid identity.", 403, noStoreHeaders);
+    if (error instanceof IdentityConfigurationError)
+      return jsonError("Identidade indisponível. / Identity unavailable.", 503, noStoreHeaders);
     return jsonError(
       message(
         language,
@@ -82,9 +114,29 @@ export async function POST(request: Request) {
       noStoreHeaders,
     );
   }
+  try {
+    if (principal) {
+      const tool: AgentToolName = !body.runId
+        ? "itinerary.propose"
+        : body.decision === "select"
+          ? "itinerary.select_alternative"
+          : body.decision === "reject"
+            ? "itinerary.reject"
+            : "itinerary.accept";
+      authorizeAgentTool(principal, tool, Boolean(body.runId));
+    }
+  } catch (error) {
+    if (error instanceof IdentityDenied)
+      return jsonError("Permissão insuficiente. / Insufficient permission.", 403, noStoreHeaders);
+    throw error;
+  }
   const store = new VersionStore();
   try {
     const audit = new AgentAuditStore(store);
+    const feedback = new FeedbackStore(store);
+    const historicalCases = new HistoricalCaseStore(feedback);
+    const conversations = principal ? new AgentConversationStore(store) : null;
+    const ownerId = principal?.id ?? null;
     if (body.runId) {
       // A versão enviada não é autoridade; a base é sempre recuperada do registo do servidor.
       const catalog =
@@ -101,6 +153,7 @@ export async function POST(request: Request) {
             body.catalogId,
             catalog,
             language,
+            ownerId,
           ),
           { headers: noStoreHeaders },
         );
@@ -111,6 +164,7 @@ export async function POST(request: Request) {
           body.decision,
           catalog,
           body.rejectionReason ?? "",
+          ownerId,
         ) ?? { rejected: true },
         { headers: noStoreHeaders },
       );
@@ -128,15 +182,67 @@ export async function POST(request: Request) {
         "Há alterações locais por guardar. Guarde ou reabra a versão antes de pedir uma proposta.",
       );
     const catalog = await loadPublishedCatalog();
-    const intent = requestIntent(body.input);
+    const providerInput = publicAgentText(body.input);
+    const intent = requestIntent(providerInput);
+    const remembered = conversations?.get(ownerId!, body.tripId, body.baseVersion);
+    const relevantIds = new Set([
+      ...snapshot.itinerary.flatMap((day) => day.items.map((item) => item.id)),
+      ...plannerContext(snapshot, catalog).candidates.map((candidate) => candidate.id),
+    ]);
+    const weatherObservations = snapshot.itinerary.flatMap((day) => {
+      const weather = cachedServerDayWeather({
+        date: day.date,
+        location: day.location,
+        items: day.items.map(({ latitude, longitude }) => ({ latitude, longitude })),
+      });
+      return weather
+        ? [
+            {
+              dayNumber: day.dayNumber,
+              date: day.date,
+              conditionPt: weather.conditionPt,
+              conditionEn: weather.conditionEn,
+              maxTemp: weather.maxTemp,
+              minTemp: weather.minTemp,
+              precipitationProbability: weather.precipitationProbability,
+              precipitationSum: weather.precipitationSum,
+              isRainy: weather.isRainy,
+              evidence: weather.isHistorical ? "historical_reference" : "forecast",
+              historicalReferenceYear: weather.historicalReferenceYear,
+            },
+          ]
+        : [];
+    });
     const context = {
       ...plannerContext(snapshot, catalog),
+      weatherObservations,
+      supervisionSignals: agentSupervisionSignals(
+        snapshot,
+        catalog,
+        weatherObservations,
+        providerInput,
+      ),
+      qualitySignals: feedback
+        .qualitySignals()
+        .filter((signal) => relevantIds.has(signal.catalogId)),
+      historicalCases: historicalCases.search({
+        destination: snapshot.brief.destination,
+        proposalTier: snapshot.brief.proposalTier,
+        pace: snapshot.brief.pace,
+        adults: snapshot.brief.adults,
+        children: snapshot.brief.children,
+        interests: snapshot.brief.interests,
+        limit: 5,
+      }),
       requestIntent: intent,
-      conversation: recentConversation(body.conversation),
+      conversation: publicAgentConversation(
+        remembered?.turns ?? recentConversation(body.conversation),
+      ),
+      conversationSummary: remembered?.summary || undefined,
       conversationLanguage: language,
       currentView: "itinerary",
       pendingPlan: body.pendingRunId
-        ? audit.pendingPlan(body.tripId, body.baseVersion, body.pendingRunId)
+        ? audit.pendingPlan(body.tripId, body.baseVersion, body.pendingRunId, ownerId)
         : undefined,
     };
     type PlannerResult = {
@@ -147,23 +253,66 @@ export async function POST(request: Request) {
       inputTokens: number;
       outputTokens: number;
     };
-    const result = await portalRequest<PlannerResult>("agent-plan", "", {
-      instruction: body.input,
+    const requestBytes = Buffer.byteLength(
+      JSON.stringify({ instruction: providerInput, context }),
+      "utf8",
+    );
+    const plannerPayload = {
+      instruction: providerInput,
       context,
-    });
-    validatePlan(result.plan);
-    assertPlanIntent(result.plan, intent);
-    if (
-      result.provider !== "bedrock" ||
-      typeof result.modelId !== "string" ||
-      !result.modelId ||
-      result.modelId.length > 250 ||
-      ![result.latencyMs, result.inputTokens, result.outputTokens].every(
-        (value) => typeof value === "number" && Number.isFinite(value) && value >= 0,
+    };
+    // Comandos inequívocos são compilados localmente antes de reservar custo.
+    // Apenas linguagem que exige interpretação chega ao fornecedor externo.
+    let result = await portalRequest<PlannerResult | null>("agent-compile", "", plannerPayload);
+    if (!result) {
+      // Reserva no máximo duas chamadas: proposta inicial e uma única correção
+      // após falha determinística sanitizada.
+      enforceAgentRuntimePolicy(audit, requestBytes, 2);
+      result = await portalRequest<PlannerResult>("agent-plan", "", plannerPayload);
+    }
+    const validateResult = (value: PlannerResult) => {
+      validatePlan(value.plan);
+      assertPlanIntent(value.plan, intent);
+      if (
+        !["bedrock", "deterministic"].includes(value.provider) ||
+        typeof value.modelId !== "string" ||
+        !value.modelId ||
+        value.modelId.length > 250 ||
+        ![value.latencyMs, value.inputTokens, value.outputTokens].every(
+          (metric) => typeof metric === "number" && Number.isFinite(metric) && metric >= 0,
+        )
       )
-    )
-      throw new PortalPythonError("AGENT_INVALID_RESPONSE", "Resposta inválida do planeador.");
-    const preview = simulatePlan(snapshot, result.plan, catalog);
+        throw new PortalPythonError("AGENT_INVALID_RESPONSE", "Resposta inválida do planeador.");
+    };
+    validateResult(result);
+    let preview;
+    let alternatives;
+    let rankedCandidates;
+    let deliveryPreview;
+    try {
+      preview = simulatePlan(snapshot, result.plan, catalog);
+      alternatives = resolveAlternatives(snapshot, result.plan, catalog);
+      rankedCandidates = resolveRanking(snapshot, result.plan, catalog);
+      deliveryPreview = resolveDelivery(snapshot, result.plan, catalog);
+    } catch (error) {
+      const corrected = await portalRequest<PlannerResult>("agent-plan", "", {
+        instruction: providerInput,
+        context: { ...context, simulationFeedback: simulationFeedback(error) },
+      });
+      validateResult(corrected);
+      if (corrected.provider !== result.provider || corrected.modelId !== result.modelId)
+        throw new PortalPythonError("AGENT_INVALID_RESPONSE", "Fornecedor mudou durante o pedido.");
+      preview = simulatePlan(snapshot, corrected.plan, catalog);
+      alternatives = resolveAlternatives(snapshot, corrected.plan, catalog);
+      rankedCandidates = resolveRanking(snapshot, corrected.plan, catalog);
+      deliveryPreview = resolveDelivery(snapshot, corrected.plan, catalog);
+      result = {
+        ...corrected,
+        latencyMs: result.latencyMs + corrected.latencyMs,
+        inputTokens: result.inputTokens + corrected.inputTokens,
+        outputTokens: result.outputTokens + corrected.outputTokens,
+      };
+    }
     if (result.plan.actions.some((action) => action.type === "optimize_route")) {
       const warning = message(
         language,
@@ -194,7 +343,6 @@ export async function POST(request: Request) {
         10,
       );
     }
-    const alternatives = resolveAlternatives(snapshot, result.plan, catalog);
     const metadata = {
       provider: result.provider,
       modelId: result.modelId,
@@ -211,7 +359,22 @@ export async function POST(request: Request) {
       result.plan,
       preview,
       metadata,
+      ownerId,
     );
+    if (conversations) {
+      try {
+        conversations.append(ownerId!, body.tripId, body.baseVersion, "user", body.input);
+        conversations.append(
+          ownerId!,
+          body.tripId,
+          body.baseVersion,
+          "assistant",
+          result.plan.summary,
+        );
+      } catch {
+        console.warn("[assistant] AGENT_MEMORY_UNAVAILABLE");
+      }
+    }
     return Response.json(
       {
         runId,
@@ -219,6 +382,8 @@ export async function POST(request: Request) {
         baseVersion: body.baseVersion,
         plan: result.plan,
         alternatives,
+        rankedCandidates,
+        deliveryPreview,
         before: snapshot.itinerary,
         after: preview.itinerary,
         impact: proposalImpact(snapshot, preview),
@@ -228,6 +393,26 @@ export async function POST(request: Request) {
       { headers: noStoreHeaders },
     );
   } catch (error) {
+    if (error instanceof AgentBudgetExceeded)
+      return jsonError(
+        message(
+          language,
+          "O orçamento mensal do assistente foi atingido. Nada foi alterado.",
+          "The assistant monthly budget has been reached. Nothing was changed.",
+        ),
+        429,
+        noStoreHeaders,
+      );
+    if (error instanceof AgentRuntimeConfigurationError)
+      return jsonError(
+        message(
+          language,
+          "A política operacional do assistente está incompleta. Nada foi alterado.",
+          "The assistant operational policy is incomplete. Nothing was changed.",
+        ),
+        503,
+        noStoreHeaders,
+      );
     if (error instanceof IntentConflict)
       return jsonError(
         message(
@@ -263,6 +448,10 @@ export async function POST(request: Request) {
         { status: failure.status, headers: noStoreHeaders },
       );
     }
+    console.error(
+      "[assistant] AGENT_PLAN_VALIDATION_FAILED",
+      error instanceof Error ? `${error.name}: ${error.message}` : "Unknown error",
+    );
     return jsonError(
       message(
         language,
