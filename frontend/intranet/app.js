@@ -592,10 +592,14 @@ const views = {
     const [{ members }, access] = await Promise.all([api('GET', '/v1/team'), api('GET', '/v1/access')]);
     const status = h('p', { class: 'muted', role: 'status' });
     const reload = () => show('team');
+    // Aviso em toast: a linha de estado fica no topo, fora de vista na tabela, e o reload apagava-a.
+    // Em erro também se recarrega, para o seletor voltar ao papel que a pessoa tem de facto.
     const run = async (fn, done) => {
-      try { await fn(); status.textContent = done; reload(); } catch (error) { status.textContent = error.message; }
+      try { await fn(); toast(done); } catch (error) { toast(error.message); }
+      teamCache = undefined;
+      reload();
     };
-    const roleOf = member => ['founders', 'curators', 'governance', 'testers'].find(role => member.groups.includes(role)) ?? '';
+    const roleOf = member => Object.keys(ROLE_LABEL).find(role => member.groups.includes(role)) ?? '';
     const memberRow = member => h('tr', {},
       h('td', {}, h('strong', {}, member.name), h('div', { class: 'muted' }, member.email)),
       h('td', {}, isFounder()
