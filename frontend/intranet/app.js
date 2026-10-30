@@ -1,3 +1,4 @@
+import { proposalShareUrl, embedProposalLink, proposalPayload } from './proposal-links.mjs';
 import { challengeFor, claimsOf, expired, loginUrl, logoutUrl, randomString, refreshRequest, tokenRequest } from './auth.js';
 
 // Intranet da equipa. Todo o texto vindo da API é inserido com textContent (nunca HTML).
@@ -128,14 +129,15 @@ function proposalHandoff() {
   if (tab !== 'whatsapp' || !query) return null;
   const params = new URLSearchParams(query);
   const link = params.get('link') ?? '';
-  if (!/^https:\/\/[^\s/?#]+\/(share\/[\w-]+|api\/shares\/[\w-]+\/document)$/.test(link)) return null;
-  return { link, version: Math.min(Math.max(Number.parseInt(params.get('v') ?? '1', 10) || 1, 1), 999), destination: (params.get('dest') ?? '').slice(0, 80) };
+  if (!proposalShareUrl(link, portalUrl())) return null;
+  return { link, leadId: (params.get('lead') ?? '').slice(0, 100), version: Math.min(Math.max(Number.parseInt(params.get('v') ?? '1', 10) || 1, 1), 999), destination: (params.get('dest') ?? '').slice(0, 80) };
 }
 
 // A mensagem fica preparada para rever: escolhe-se o lead (já sugerido pelo destino) e envia-se.
 function handoffPanel(state, leads, rerender) {
   const { proposal } = state;
-  const guess = leads.find(lead => proposal.destination && lead.journey?.destination?.toLowerCase().includes(proposal.destination.toLowerCase()));
+  const candidates = leads.filter(lead => proposal.destination && lead.journey?.destination?.toLowerCase().includes(proposal.destination.toLowerCase()));
+  const guess = proposal.leadId ? leads.find(lead => lead.id === proposal.leadId) : candidates.length === 1 ? candidates[0] : null;
   const holder = h('div', {});
   const who = h('select', { 'aria-label': 'Lead da proposta' }, h('option', { value: '' }, 'Escolher o lead…'),
     leads.filter(lead => !lead.synthetic || intelDemo.on).map(lead => h('option', { value: lead.id, selected: lead.id === guess?.id }, `${lead.journey?.destination || 'Sem destino'} · ${lead.id}`)));
@@ -570,9 +572,9 @@ function proposalLinkField(getText, leadId = '') {
   const note = h('span', { class: 'muted', role: 'status' });
   const insert = h('button', { type: 'button', class: 'secondary', onclick: () => {
     const value = link.value.trim();
-    if (!PORTAL_SHARE.test(value)) { note.textContent = 'Use o link de partilha do portal (Histórico › Partilhar).'; return; }
+    if (!proposalShareUrl(value, portalUrl())) { note.textContent = 'Use o link de partilha do portal (Histórico › Partilhar).'; return; }
     const text = getText();
-    if (!text.value.includes(value)) text.value = `${text.value.trimEnd()}${text.value.trim() ? '\n\n' : ''}A sua proposta: ${value}\nBLU Costa Travel · Curation Studio`.slice(0, 1000);
+    try { text.value = proposalPayload(text.value, value); } catch (error) { note.textContent = error.message; return; }
     link.value = '';
     note.textContent = 'Link inserido na mensagem.';
   } }, 'Inserir link');
@@ -596,6 +598,15 @@ function proposalComposer(lead, preset = null) {
   const text = h('textarea', { rows: '12', maxlength: '1000', 'aria-label': 'Mensagem' });
   const status = h('p', { class: 'muted', role: 'status' });
   let edited = false;
+  let insertedLink = preset?.link ?? '';
+  const insertLink = () => {
+    const value = proposalShareUrl(link.value.trim(), portalUrl());
+    if (!value) { status.textContent = 'Crie uma ligação de partilha no portal ou cole uma ligação válida da proposta.'; return false; }
+    text.value = embedProposalLink(text.value, value, insertedLink);
+    insertedLink = value;
+    status.textContent = 'Link clicável inserido na mensagem. Reveja antes de enviar.';
+    return true;
+  };
   const fill = () => {
     if (edited) return;
     text.value = proposalMessage({ name: name.value.trim(), destination: lead.journey.destination, party: lead.journey.party, dates: lead.journey.timeframe, link: link.value.trim(), curator })
@@ -604,7 +615,8 @@ function proposalComposer(lead, preset = null) {
 Proposta v${String(preset.version).padStart(3, '0')} · BLU Costa Travel · Curation Studio` : '');
   };
   text.addEventListener('input', () => { edited = true; });
-  link.addEventListener('input', fill);
+  link.addEventListener('input', () => { if (!edited) fill(); });
+  link.addEventListener('change', insertLink);
   name.addEventListener('input', fill);
   fill();
   // Os dois serviços que melhor servem a viagem, com o motivo; a pessoa escolhe quais entram na mensagem.
@@ -620,8 +632,7 @@ Proposta v${String(preset.version).padStart(3, '0')} · BLU Costa Travel · Cura
   const send = h('button', { type: 'submit', class: 'primary' }, 'Enviar pelo WhatsApp');
   const form = h('form', { class: 'proposal', onsubmit: async event => {
     event.preventDefault();
-    if (!/^https?:\/\/\S+$/.test(link.value.trim())) { status.textContent = 'Indique o link da proposta.'; link.focus(); return; }
-    if (text.value.includes('[link da proposta]')) text.value = text.value.replace('[link da proposta]', link.value.trim());
+    if (!insertLink()) { link.focus(); return; }
     send.disabled = true;
     status.textContent = 'A enviar…';
     const chosen = picks.filter(({ box }) => box.checked).map(({ item }) => item);
@@ -629,7 +640,7 @@ Proposta v${String(preset.version).padStart(3, '0')} · BLU Costa Travel · Cura
 
 Sugerimos também: ${chosen.map(item => `${item.name} (${item.area})`).join(' · ')}` : '';
     try {
-      await api('POST', '/v1/whatsapp-test', { direction: 'out', leadId: lead.id, ...(phone.length >= 9 ? { to: phone } : {}), text: (text.value + extra).slice(0, 1000), recommended: chosen.map(item => item.partnerId) });
+      await api('POST', '/v1/whatsapp-test', { direction: 'out', leadId: lead.id, ...(phone.length >= 9 ? { to: phone } : {}), text: proposalPayload(text.value, insertedLink, extra), recommended: chosen.map(item => item.partnerId) });
       whatsappState.selected = phone.length >= 9 ? phone : `lead:${lead.id}`;
       status.replaceChildren('Proposta enviada para a caixa de WhatsApp. ', h('button', { type: 'button', class: 'link', onclick: () => show('whatsapp') }, 'Abrir a conversa'));
     } catch (error) {
@@ -638,6 +649,10 @@ Sugerimos também: ${chosen.map(item => `${item.name} (${item.area})`).join(' ·
     }
   } },
     h('div', { class: 'form-grid' }, link, name),
+    h('div', { class: 'actions' },
+      h('a', { href: portalUrl(`/exports?lead=${encodeURIComponent(lead.id)}`), target: '_blank', rel: 'noopener' }, 'Escolher proposta no portal ↗'),
+      h('button', { type: 'button', class: 'secondary', onclick: insertLink }, 'Inserir link na mensagem')),
+    h('p', { class: 'muted' }, 'No portal: escolha a versão, confirme a partilha e use WhatsApp. A mensagem regressa com o link para este lead.'),
     recommendations,
     h('label', {}, 'Mensagem (pode editar)', text),
     h('p', { class: 'muted' }, phone.length >= 9 ? `Para +${phone}, o número que o cliente deixou no chat.` : 'Sem telefone no chat: a conversa fica com a referência do lead.'),
@@ -2308,3 +2323,4 @@ async function start() {
 }
 
 start();
+
