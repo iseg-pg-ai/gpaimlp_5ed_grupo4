@@ -644,6 +644,22 @@ test('my work puts a lead who wants to quit before overdue tasks', async () => {
   assert.deepEqual(items.map(item => [item.kind, item.urgency]), [['lead', 'risk'], ['task', 'overdue'], ['task', 'normal']]);
 });
 
+test('the team overview counts every open item once and each person exactly as their own list', async () => {
+  const { handler } = taskTable({ profile: { assignedTo: S('ana@blu.pt') } });
+  await handler(request('POST /v1/tasks', { body: { title: 'Pedir resposta ao hotel', due: '2026-10-20' } }));
+  await handler(request('POST /v1/tasks', { body: { title: 'Confirmar guia', owner: 'gisela@blu.pt' } }));
+  const { work } = JSON.parse((await handler(request('GET /v1/control', { email: 'gisela@blu.pt', groups: '[founders]' }))).body);
+  const own = async (email, groups) => JSON.parse((await handler(request('GET /v1/work', { email, groups }))).body).items.length;
+  const row = name => work.people.find(person => person.name === name);
+  assert.equal(row('Ana').total, await own('ana@blu.pt', '[curators]'));
+  assert.equal(row('Gisela').total, await own('gisela@blu.pt', '[founders]'));
+  assert.deepEqual([row('Ana').lead, row('Ana').task, row('Gisela').task], [1, 1, 1]);
+  // A equipa conta cada item uma vez: 1 lead e 2 tarefas, todos com responsável.
+  assert.deepEqual([work.team.lead, work.team.task], [{ total: 1, unowned: 0 }, { total: 2, unowned: 0 }]);
+  assert.deepEqual([work.total, work.unowned], [3, 0]);
+  assert.ok(work.total >= Math.max(...work.people.map(person => person.total - person.alert)));
+});
+
 const siteBuilt = existsSync(path.join(infraDir, '../frontend/blu-cloud-site/dist/client'));
 
 test('the intranet stack protects every route and grants no destructive data access', { skip: !siteBuilt && 'build frontend/blu-cloud-site first' }, async () => {
