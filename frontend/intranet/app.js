@@ -119,6 +119,11 @@ const TASK_TONE = { todo: '', doing: 'ok', blocked: 'warn', done: 'ok' };
 // Um toque avança a tarefa: o botão principal é o passo seguinte.
 const NEXT_STEP = { todo: ['doing', 'Começar'], doing: ['done', 'Feito'], blocked: ['doing', 'Desbloquear'], done: ['todo', 'Reabrir'] };
 const workState = { board: 'open', flash: '' };
+// Tipos de trabalho da Visão geral, pela mesma ordem nas contas da equipa e na tabela por pessoa.
+const WORK_KINDS = [
+  ['lead', 'Leads', 'leads', { filter: 'open' }], ['task', 'Tarefas', 'agenda', { scope: 'team' }], ['message', 'Mensagens por responder', 'whatsapp', {}],
+  ['reminder', 'Lembretes para enviar à mão', 'agenda', { scope: 'team' }], ['case', 'Casos', 'cases', {}],
+];
 // Agenda: «mine» é o trabalho da própria pessoa; fundadores entram na vista da equipa.
 const agendaState = { scope: '', days: 7 };
 let taskPrefill = {};
@@ -382,14 +387,24 @@ const views = {
   // O trabalho de cada pessoa fica em «O meu trabalho»; daqui só se abre a vista da equipa.
   async control(view) {
     const c = await api('GET', '/v1/control');
+    const w = c.work;
     const countCell = (n, tone) => h('td', {}, n ? pill(String(n), tone) : h('span', { class: 'muted' }, '0'));
     const roles = groups => groups.map(group => ROLE_LABEL[group] ?? group).join(', ');
     const DELIVERY = { email: 'Email', 'in-app': 'Só na intranet', 'email-failed': 'Email falhou' };
     view.append(
       h('h2', {}, 'Visão geral da equipa'),
       h('p', { class: 'muted' }, `Trabalho operacional de toda a equipa: seguimentos, pontos de falha e quem tem o quê. Atualizado ${when(c.checkedAt)}; os alertas saem sozinhos a cada 5 minutos.`),
+      // Trabalho da equipa com as regras de «O meu trabalho»: cada item conta uma vez, com ou sem responsável.
+      w ? h('div', { class: 'cards' },
+        h('div', { class: `card ${w.unowned ? 'warn' : ''}` }, h('div', { class: 'value' }, w.total), h('div', { class: 'label' }, 'Trabalho em aberto da equipa'), h('div', { class: 'muted' }, `${w.unowned} sem responsável`)),
+        ...WORK_KINDS.map(([kind, label, tab, options]) => {
+          const part = w.team[kind];
+          return goCard(part.total, label, tab, options, part.unowned ? 'warn' : '');
+        })) : null,
+      w ? h('p', { class: 'muted' }, `Sem responsável: ${WORK_KINDS.map(([kind, label]) => `${w.team[kind].unowned} ${label.toLowerCase()}`).join(' · ')}. Os alertas não contam no total: apontam para trabalho que já está contado.`) : null,
+      h('h3', { class: 'spaced' }, 'Leads'),
       h('div', { class: 'cards' },
-        goCard(c.followUps.open, 'Seguimentos em aberto', 'leads', { filter: 'open' }), goCard(c.followUps.onTime, 'Dentro do prazo', 'leads', { filter: 'open' }),
+        goCard(c.followUps.open, 'Leads em aberto', 'leads', { filter: 'open' }), goCard(c.followUps.onTime, 'Dentro do prazo', 'leads', { filter: 'open' }),
         goCard(c.followUps.late, 'Fora do prazo', 'leads', { filter: 'open' }, 'bad'), goCard(c.followUps.atRisk, 'Clientes a desistir', 'leads', { filter: 'all' }, 'bad'),
         goCard(c.followUps.unassigned, 'Sem responsável', 'leads', { filter: 'open' }, 'warn')),
       h('div', { class: 'panel alerts' }, h('h3', {}, 'Pontos de falha'), c.breaking.length
@@ -397,13 +412,17 @@ const views = {
           pill(item.level === 'bad' ? 'Urgente' : 'Atenção', item.level === 'bad' ? 'bad' : 'warn'), ' ', item.text, ' ',
           goLink(item.tab))))
         : h('p', { class: 'muted' }, 'Nenhum ponto de falha: o seguimento não depende de uma só pessoa.')),
-      h('div', { class: 'panel' }, h('h3', {}, 'Quem tem o quê'), c.people.length ? h('table', {},
-        h('thead', {}, h('tr', {}, h('th', {}, 'Pessoa'), h('th', {}, 'Papel'), h('th', {}, 'Leads'), h('th', {}, 'Atrasados'), h('th', {}, 'Tarefas'), h('th', {}, 'Em atraso'), h('th', {}, 'Bloqueadas'), h('th', {}, 'Casos fora do prazo'), h('th', {}, ''))),
-        h('tbody', {}, c.people.map(person => h('tr', {},
-          h('td', {}, person.name, person.enabled ? null : [' ', pill('Desativada', 'bad')]), h('td', {}, roles(person.groups)),
-          h('td', {}, person.openLeads), countCell(person.lateLeads, 'bad'), h('td', {}, person.openTasks), countCell(person.overdueTasks, 'bad'), countCell(person.blockedTasks, 'warn'), countCell(person.overdueCases, 'bad'),
-          // Leads na lista de seguimento; tarefas na Agenda da equipa; casos no separador respetivo.
-          h('td', {}, person.openLeads ? goLink('leads', { filter: 'open' }, 'Leads') : null, ' ', person.openTasks ? goLink('agenda', { scope: 'team' }, 'Tarefas') : null, ' ', person.overdueCases ? goLink('cases', {}, 'Casos') : null))))) : h('p', { class: 'muted' }, 'Sem equipa registada.')),
+      // Uma linha por pessoa ativa: a sua lista de «O meu trabalho», por tipo; no fim, o que não é de ninguém.
+      w ? h('div', { class: 'panel' }, h('h3', {}, 'Quem tem o quê'), h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'Pessoa'), h('th', {}, 'Papel'), ...WORK_KINDS.map(([, label]) => h('th', {}, label)), h('th', {}, 'Alertas'), h('th', {}, 'Urgentes'), h('th', {}, 'Total'))),
+        h('tbody', {},
+          w.people.map(person => h('tr', {},
+            h('td', {}, person.name), h('td', {}, roles(person.groups)),
+            ...WORK_KINDS.map(([kind]) => h('td', {}, person[kind])), h('td', {}, person.alert),
+            countCell(person.urgent, 'bad'), h('td', {}, h('strong', {}, person.total)))),
+          h('tr', {}, h('td', {}, h('strong', {}, 'Sem responsável')), h('td', {}, '—'),
+            ...WORK_KINDS.map(([kind]) => countCell(w.team[kind].unowned, 'warn')), h('td', {}, '—'), h('td', {}, '—'), h('td', {}, h('strong', {}, w.unowned))))),
+        h('p', { class: 'muted' }, 'Cada linha é a lista de «O meu trabalho» dessa pessoa. Uma mensagem por responder substitui a linha do lead a que pertence; os alertas também aparecem na lista da pessoa.')) : null,
       h('div', { class: 'grid2 spaced' },
         h('div', { class: 'panel' }, h('h3', {}, 'Lembretes (7 dias)'), h('table', {}, h('tbody', {},
           // Os lembretes vivem na Agenda; os enviados por WhatsApp em teste também na caixa do WhatsApp.

@@ -222,6 +222,67 @@ export function createApp(deps) {
     return warnings;
   };
 
+  // «O meu trabalho» e a Visão geral contam com as mesmas regras: os dados carregam-se uma vez
+  // e a lista de cada pessoa sai de workItems, que a Visão geral aplica a cada membro.
+  const loadWork = async ({ cases = true, inbox = true } = {}) => {
+    const at = now();
+    const today = lisbonToday();
+    const [taskItems, leads, prepared, openCases, inboxItems, settings, alertItems] = await Promise.all([
+      deps.queryStatus(TASK_STATE.open),
+      listLeads('open'),
+      deps.queryAgenda(NOTIFY.prepared, new Date(at - 7 * 864e5).toISOString(), at.toISOString()),
+      cases ? deps.queryStatus(CASE_STATE.open) : Promise.resolve([]),
+      inbox ? deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix) : Promise.resolve([]),
+      loadSettings(),
+      Promise.resolve().then(() => deps.queryAgenda(TEAM_ALERTS.status, new Date(at - 864e5).toISOString(), at.toISOString())).catch(() => []),
+    ]);
+    return {
+      at, today, settings, leads,
+      tasks: taskItems.map(item => toTask(item, today)),
+      prepared: prepared.map(toNotification),
+      cases: openCases.map(item => toCase(item, today)),
+      threads: threads(inboxItems.map(toInboxMessage), deps.partners),
+      alerts: alertItems.map(toAlert),
+    };
+  };
+
+  // A lista de uma pessoa: só o que é dela. Leads de demonstração e trabalho sem dono ficam na
+  // Visão geral da equipa (mensagens sem responsável, leads sem responsável).
+  const workItems = (email, groups, { at, settings, leads, tasks, prepared, cases, threads: inbox, alerts }) => {
+    const me = email.toLowerCase();
+    const myLeads = leads.filter(lead => !lead.synthetic && lead.assignedTo?.toLowerCase() === me);
+    const myLeadIds = new Set(myLeads.map(lead => lead.id));
+    // Mensagens à espera de resposta nos leads da pessoa, com a resposta sugerida pronta.
+    const waiting = (allowed(groups, 'leads') ? inbox : []).filter(thread => thread.waiting && myLeadIds.has(thread.leadId)).map(thread => {
+      const last = thread.messages.at(-1);
+      const late = at - Date.parse(last.at) >= settings.replyHours * 36e5;
+      return {
+        kind: 'message', id: thread.key, partition: thread.leadId, title: thread.name || thread.leadId || `+${thread.to}`, due: last.at.slice(0, 10),
+        detail: last.reason || 'Mensagem por responder.', urgency: late ? 'overdue' : 'soon',
+        message: { key: thread.key, to: thread.to, partnerId: thread.partnerId, leadId: thread.leadId, audience: thread.audience, text: last.text, at: last.at, suggestion: last.suggestion },
+      };
+    });
+    const myCases = allowed(groups, 'cases') ? cases.filter(item => item.owner === me) : [];
+    // Uma linha por lead: se já há uma mensagem à espera desse lead, a linha do lead sai da lista.
+    const waitingLeadIds = new Set(waiting.map(item => item.message.leadId).filter(Boolean));
+    return [
+      ...waiting,
+      ...tasks.filter(task => task.owner === me)
+        .map(task => ({ kind: 'task', id: task.id, partition: task.partition, title: task.title, due: task.due, urgency: taskUrgency(task), task })),
+      ...myLeads.filter(lead => !waitingLeadIds.has(lead.id)).map(lead => ({
+        kind: 'lead', id: lead.id, partition: lead.id, title: lead.journey.destination || lead.id, due: lead.followUpAt.slice(0, 10),
+        detail: [lead.journey.timeframe, lead.journey.party].filter(Boolean).join(' · '), urgency: lead.atRisk ? 'risk' : lead.replyLate || isOverdue(lead, at) ? 'overdue' : 'normal',
+      })),
+      ...prepared.filter(item => (item.approvedBy ?? '').toLowerCase() === me || myLeadIds.has(item.conversationId))
+        .map(item => ({ kind: 'reminder', id: item.recordKey, partition: item.conversationId, title: item.title, due: item.sendAt.slice(0, 10), detail: `${item.reason || 'Preparado: enviar à mão'}`, urgency: 'overdue' })),
+      // Alertas que não têm já um item próprio acima: escalamentos, bloqueios, lembretes e casos de outros.
+      ...alerts.filter(alert => alert.to.includes(me) && /^(escalate|blocked|reminder|case)#/.test(alert.key))
+        .filter(alert => !(alert.key.startsWith('case#') && myCases.some(item => alert.key.startsWith(`case#${item.id}#`))))
+        .map(alert => ({ kind: 'alert', id: alert.key, partition: alert.leadId, title: alert.text, due: alert.at.slice(0, 10), detail: alert.tab, urgency: alert.level === 'bad' ? 'overdue' : 'soon' })),
+      ...myCases.map(item => ({ kind: 'case', id: item.id, partition: item.partition, title: item.title, due: item.deadline, detail: CASE_TYPES[item.type]?.label ?? item.type, urgency: item.deadlineState === 'overdue' ? 'overdue' : item.deadlineState === 'due-soon' ? 'soon' : 'normal' })),
+    ].sort(byUrgency);
+  };
+
   const routes = {
     'GET /v1/me': async ({ user }) => reply(200, user),
 
@@ -520,52 +581,8 @@ export function createApp(deps) {
     // Tudo o que é da pessoa num só sítio: tarefas, leads assumidos, lembretes para enviar
     // à mão e casos de que é responsável, por ordem de urgência.
     'GET /v1/work': async ({ user }) => {
-      const me = user.email.toLowerCase();
-      const at = now();
-      const today = lisbonToday();
-      const [taskItems, leads, prepared, openCases, inbox, settings, alertItems] = await Promise.all([
-        deps.queryStatus(TASK_STATE.open),
-        listLeads('open'),
-        deps.queryAgenda(NOTIFY.prepared, new Date(at - 7 * 864e5).toISOString(), at.toISOString()),
-        allowed(user.groups, 'cases') ? deps.queryStatus(CASE_STATE.open) : Promise.resolve([]),
-        allowed(user.groups, 'leads') ? deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix) : Promise.resolve([]),
-        loadSettings(),
-        Promise.resolve().then(() => deps.queryAgenda(TEAM_ALERTS.status, new Date(at - 864e5).toISOString(), at.toISOString())).catch(() => []),
-      ]);
-      // «O meu trabalho» é só da pessoa: leads de demonstração e trabalho sem dono ficam na
-      // Visão geral da equipa (mensagens sem responsável, leads sem responsável).
-      const myLeads = leads.filter(lead => !lead.synthetic && lead.assignedTo?.toLowerCase() === me);
-      const myLeadIds = new Set(myLeads.map(lead => lead.id));
-      // Mensagens à espera de resposta nos leads da pessoa, com a resposta sugerida pronta.
-      const waiting = threads(inbox.map(toInboxMessage), deps.partners).filter(thread => thread.waiting && myLeadIds.has(thread.leadId)).map(thread => {
-        const last = thread.messages.at(-1);
-        const late = at - Date.parse(last.at) >= settings.replyHours * 36e5;
-        return {
-          kind: 'message', id: thread.key, partition: thread.leadId, title: thread.name || thread.leadId || `+${thread.to}`, due: last.at.slice(0, 10),
-          detail: last.reason || 'Mensagem por responder.', urgency: late ? 'overdue' : 'soon',
-          message: { key: thread.key, to: thread.to, partnerId: thread.partnerId, leadId: thread.leadId, audience: thread.audience, text: last.text, at: last.at, suggestion: last.suggestion },
-        };
-      });
-      // Uma linha por lead: se já há uma mensagem à espera desse lead, a linha do lead sai da lista.
-      const waitingLeadIds = new Set(waiting.map(item => item.message.leadId).filter(Boolean));
-      const items = [
-        ...waiting,
-        ...taskItems.map(item => toTask(item, today)).filter(task => task.owner === me)
-          .map(task => ({ kind: 'task', id: task.id, partition: task.partition, title: task.title, due: task.due, urgency: taskUrgency(task), task })),
-        ...myLeads.filter(lead => !waitingLeadIds.has(lead.id)).map(lead => ({
-          kind: 'lead', id: lead.id, partition: lead.id, title: lead.journey.destination || lead.id, due: lead.followUpAt.slice(0, 10),
-          detail: [lead.journey.timeframe, lead.journey.party].filter(Boolean).join(' · '), urgency: lead.atRisk ? 'risk' : lead.replyLate || isOverdue(lead, at) ? 'overdue' : 'normal',
-        })),
-        ...prepared.filter(item => str(item, 'approvedBy').toLowerCase() === me || myLeadIds.has(str(item, 'conversationId'))).map(toNotification)
-          .map(item => ({ kind: 'reminder', id: item.recordKey, partition: item.conversationId, title: item.title, due: item.sendAt.slice(0, 10), detail: `${item.reason || 'Preparado: enviar à mão'}`, urgency: 'overdue' })),
-        // Alertas que não têm já um item próprio acima: escalamentos, bloqueios, lembretes e casos de outros.
-        ...alertItems.map(toAlert).filter(alert => alert.to.includes(me) && /^(escalate|blocked|reminder|case)#/.test(alert.key))
-          .filter(alert => !(alert.key.startsWith('case#') && (openCases ?? []).some(item => str(item, 'owner') === me && alert.key.startsWith(`case#${str(item, 'caseId')}#`))))
-          .map(alert => ({ kind: 'alert', id: alert.key, partition: alert.leadId, title: alert.text, due: alert.at.slice(0, 10), detail: alert.tab, urgency: alert.level === 'bad' ? 'overdue' : 'soon' })),
-        ...(openCases ?? []).map(item => toCase(item, today)).filter(item => item.owner === me)
-          .map(item => ({ kind: 'case', id: item.id, partition: item.partition, title: item.title, due: item.deadline, detail: CASE_TYPES[item.type]?.label ?? item.type, urgency: item.deadlineState === 'overdue' ? 'overdue' : item.deadlineState === 'due-soon' ? 'soon' : 'normal' })),
-      ].sort(byUrgency);
-      return reply(200, { items, statuses: TASK_STATUS, today });
+      const data = await loadWork({ cases: allowed(user.groups, 'cases'), inbox: allowed(user.groups, 'leads') });
+      return reply(200, { items: workItems(user.email, user.groups, data), statuses: TASK_STATUS, today: data.today });
     },
 
     'GET /v1/tasks': async ({ event }) => {
@@ -690,9 +707,8 @@ export function createApp(deps) {
       const today = lisbonToday();
       const week = new Date(at - 7 * 864e5).toISOString();
       const settle = promise => Promise.resolve().then(() => promise).catch(() => []);
-      const [members, leads, taskItems, caseItems, inbox, alertItems, ...reminderLists] = await Promise.all([
-        deps.listTeam(), listLeads('all'), deps.queryStatus(TASK_STATE.open), deps.queryStatus(CASE_STATE.open),
-        settle(deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix)),
+      const [members, leads, work, taskItems, caseItems, alertItems, ...reminderLists] = await Promise.all([
+        deps.listTeam(), listLeads('all'), loadWork(), deps.queryStatus(TASK_STATE.open), deps.queryStatus(CASE_STATE.open),
         settle(deps.queryAgenda(TEAM_ALERTS.status, week, at.toISOString())),
         ...['sent', 'prepared', 'failed', 'missed'].map(status => settle(deps.queryAgenda(NOTIFY[status], week, at.toISOString()))),
       ]);
@@ -702,11 +718,35 @@ export function createApp(deps) {
         alerts: alertItems.map(toAlert),
         reminders: Object.fromEntries(['sent', 'prepared', 'failed', 'missed'].map((status, index) => [status, reminderLists[index].filter(item => !demo.has(str(item, 'conversationId'))).length])),
       });
-      // Mensagens por responder fora dos leads de alguém: saíram de «O meu trabalho», ficam aqui.
-      const owned = new Set(leads.filter(lead => lead.assignedTo && members.some(member => member.enabled && member.email.toLowerCase() === lead.assignedTo.toLowerCase())).map(lead => lead.id));
-      const unowned = threads(inbox.map(toInboxMessage), deps.partners).filter(thread => thread.waiting && !owned.has(thread.leadId)).length;
-      if (unowned) summary.breaking.unshift({ level: 'warn', text: `${unowned} mensagem(ns) por responder sem responsável.`, tab: 'whatsapp' });
-      return reply(200, { ...summary, unansweredMessages: unowned, checkedAt: at.toISOString() }, 'private, max-age=60');
+      // Trabalho em aberto da equipa, com as regras de «O meu trabalho»: cada pessoa vê aqui a sua lista,
+      // e a equipa conta cada item uma vez, tenha ou não responsável. Os alertas não somam: apontam para
+      // trabalho que já está contado.
+      const active = new Set(members.filter(member => member.enabled).map(member => member.email.toLowerCase()));
+      const ownedBy = email => Boolean(email) && active.has(email.toLowerCase());
+      const realOpen = work.leads.filter(lead => !lead.synthetic);
+      const ownedLeads = new Set(realOpen.filter(lead => ownedBy(lead.assignedTo)).map(lead => lead.id));
+      const waiting = work.threads.filter(thread => thread.waiting);
+      const kinds = ['lead', 'task', 'message', 'reminder', 'case'];
+      const count = (total, unowned) => ({ total: total.length, unowned: unowned.length });
+      const team = {
+        lead: count(realOpen, realOpen.filter(lead => !ownedLeads.has(lead.id))),
+        task: count(work.tasks, work.tasks.filter(task => !ownedBy(task.owner))),
+        message: count(waiting, waiting.filter(thread => !ownedLeads.has(thread.leadId))),
+        reminder: count(work.prepared, work.prepared.filter(item => !ownedBy(item.approvedBy) && !ownedLeads.has(item.conversationId))),
+        case: count(work.cases, work.cases.filter(item => !ownedBy(item.owner))),
+      };
+      const people = members.filter(member => member.enabled).map(member => {
+        const items = workItems(member.email, member.groups, work);
+        return {
+          name: member.name, groups: member.groups, total: items.length,
+          urgent: items.filter(item => ['risk', 'overdue'].includes(item.urgency)).length,
+          ...Object.fromEntries([...kinds, 'alert'].map(kind => [kind, items.filter(item => item.kind === kind).length])),
+        };
+      }).sort((a, b) => b.urgent - a.urgent || b.total - a.total || a.name.localeCompare(b.name));
+      const total = kinds.reduce((sum, kind) => sum + team[kind].total, 0);
+      const unowned = kinds.reduce((sum, kind) => sum + team[kind].unowned, 0);
+      if (team.message.unowned) summary.breaking.unshift({ level: 'warn', text: `${team.message.unowned} mensagem(ns) por responder sem responsável.`, tab: 'whatsapp' });
+      return reply(200, { ...summary, work: { total, unowned, team, people }, unansweredMessages: team.message.unowned, checkedAt: at.toISOString() }, 'private, max-age=60');
     },
 
     'GET /v1/security': async () => {

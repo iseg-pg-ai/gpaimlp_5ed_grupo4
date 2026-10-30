@@ -567,6 +567,12 @@ sugestões por lead. Testes locais com respostas na forma da especificação.
 
 ## Revisão da intranet (2026-10-30)
 
+- **Visão geral, trabalho da equipa:** os cartões de cima somam todo o trabalho em
+  aberto (leads, tarefas, mensagens por responder, lembretes para enviar à mão e
+  casos), cada item uma vez, com quantos estão sem responsável. «Quem tem o quê»
+  mostra, por pessoa, a mesma lista de «O meu trabalho» (a mesma função,
+  `workItems`), mais a linha «Sem responsável». Os alertas aparecem na lista da
+  pessoa mas não somam no total da equipa.
 - **Agenda:** os totais seguem a vista; «Só o meu» conta só os lembretes que a
   pessoa aprovou ou dos seus leads.
 - **Equipa e acessos:** leads em aberto com as mesmas regras da Visão geral.
