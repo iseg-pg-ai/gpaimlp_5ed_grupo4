@@ -210,13 +210,17 @@ const operationsState = { focus: '', drill: null, selected: '', scroll: false };
 const DAY_MS = 864e5;
 
 async function opsIntelligence(view, state) {
-  const [data, metrics, partnerData, open, done] = await Promise.all([
-    api('GET', '/v1/agenda?view=ops&scope=team'),
-    api('GET', '/v1/metrics').catch(() => null),
+  // Fundadores começam na equipa; os outros no que é seu ou podem desbloquear.
+  state.scope ||= can('team-admin') ? 'team' : 'mine';
+  const [data, metrics, partnerData, open, done, work] = await Promise.all([
+    api('GET', `/v1/agenda?view=ops&scope=${state.scope}&${demoQuery()}`),
+    api('GET', `/v1/metrics?${demoQuery()}`).catch(() => null),
     loadPartners().catch(() => null),
     api('GET', '/v1/tasks?status=open').catch(() => ({ tasks: [] })),
     api('GET', '/v1/tasks?status=done').catch(() => ({ tasks: [] })),
+    api('GET', '/v1/work').catch(() => ({ items: [] })),
   ]);
+  const alerts = work.items.filter(item => item.kind === 'alert');
   const rerender = () => { view.replaceChildren(); views.operations(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
   const drillTo = drill => { Object.assign(state, { drill, selected: '', scroll: true }); rerender(); };
   const me = session.claims?.email?.toLowerCase() ?? '';
@@ -264,16 +268,26 @@ async function opsIntelligence(view, state) {
   };
   const drillPanel = h('div', { class: 'split spaced', id: 'ops-drill' },
     h('div', { class: 'panel' },
-      h('div', { class: 'heading-row' }, h('h3', {}, `${drill.label} · ${queue.length}`), state.drill ? h('button', { type: 'button', class: 'link', onclick: () => drillTo(null) }, 'Ver todos') : null),
+      h('div', { class: 'heading-row' }, h('h3', {}, `${drill.label} · ${queue.length}`), h('div', { class: 'actions' },
+        queue.length ? h('button', { type: 'button', class: 'link', onclick: () => askAssistant(`Em «${drill.label}» há ${queue.length} item(ns) parado(s): ${queue.slice(0, 8).map(item => `${item.title} (${item.reason})`).join('; ')}. Qual a melhor ordem para os resolver e quem deve agir?`, state.scope) }, 'Perguntar ao assistente') : null,
+        state.drill ? h('button', { type: 'button', class: 'link', onclick: () => drillTo(null) }, 'Ver todos') : null)),
       queue.length ? h('ul', { class: 'work-list' }, queue.map(item => h('li', { class: `work-item ops-item clickable${item.key === state.selected ? ' selected' : ''}`, 'data-key': item.key, tabindex: '0', onclick: () => select(item), onkeydown: event => event.key === 'Enter' && select(item) },
-        h('div', {}, pill(data.kinds[item.kind] ?? item.kind), ' ', pill(data.blockers[item.blocker] ?? item.blocker, 'warn')),
+        h('div', {}, pill(data.kinds[item.kind] ?? item.kind), ' ', pill(data.blockers[item.blocker] ?? item.blocker, 'warn'), item.demo ? [' ', pill('demo')] : null),
         h('strong', {}, item.title),
         h('div', { class: 'muted' }, [item.ownerName || 'sem responsável', item.since ? `há ${lateBy(item.since)}` : '', item.resolver ? `desbloqueia: ${item.resolver.name}` : ''].filter(Boolean).join(' · ')))))
         : h('p', { class: 'muted' }, 'Nada parado aqui.')),
     detail);
 
   view.append(
-    h('h2', {}, 'Operações'),
+    h('div', { class: 'heading-row' }, h('h2', {}, 'Operações'), h('div', { class: 'filters' },
+      demoToggle(rerender),
+      ...[['mine', 'Só o meu'], ['team', 'Equipa']].map(([key, label]) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.scope === key), onclick: () => { Object.assign(state, { scope: key, drill: null, selected: '' }); rerender(); } }, label)),
+      h('button', { type: 'button', class: 'secondary', onclick: () => askAssistant(`Tenho ${stuck.length} item(ns) parado(s)${blockers.length ? `, sobretudo por «${data.blockers[blockers[0][0]] ?? blockers[0][0]}» (${blockers[0][1]})` : ''}. Qual resolvo primeiro, quem deve agir e qual é o próximo passo?`, state.scope) }, 'Perguntar ao assistente'))),
+    // Os alertas da pessoa primeiro: escalamentos, bloqueios, lembretes e casos que lhe foram enviados.
+    alerts.length ? fold('ops-alerts', 'Alertas para si', h('ul', { class: 'reminders' }, alerts.map(alert => h('li', {},
+      pill(alert.urgency === 'overdue' ? 'Urgente' : 'Atenção', alert.urgency === 'overdue' ? 'bad' : 'warn'), ' ', alert.title, ' ',
+      alert.partition && /^BLU-/.test(alert.partition) ? goLink('leads', { filter: 'all', lead: alert.partition }, 'Abrir o lead') : goLink(alert.detail || 'work')))),
+    { open: true, count: alerts.length, tone: 'bad' }) : null,
     h('div', { class: 'cards' },
       card(stuck.length, 'Itens parados', 'warn', () => drillTo(null)),
       card(stuck.filter(item => age(item) > DAY_MS).length, 'Parados há mais de 24 h', 'bad', () => drillTo({ by: 'old', label: 'Parados há mais de 24 h' })),
@@ -423,9 +437,10 @@ function showOpsItem(panel, item, data, { me, nameOf, refresh }) {
   if (leadId && item.kind !== 'lead') actions.push(h('button', { type: 'button', class: 'link', onclick: () => goTo('leads', { filter: 'all', lead: leadId }) }, 'Ficha do lead'));
 
   panel.replaceChildren(...[
-    h('div', {}, pill(data.kinds[item.kind] ?? item.kind), ' ', item.states.map(key => pill(data.states[key], OPS_TONE[key]))),
+    h('div', {}, pill(data.kinds[item.kind] ?? item.kind), ' ', item.states.map(key => pill(data.states[key], OPS_TONE[key])), item.demo ? [' ', pill('demo')] : null),
     h('h3', {}, item.title),
     item.detail ? h('p', { class: 'muted' }, item.detail) : null,
+    h('button', { type: 'button', class: 'link', onclick: () => askAssistant(`Como desbloqueio «${item.title}»${leadId ? ` (${leadId})` : ''}? Está parado porque: ${item.reason}. Responsável: ${item.ownerName || 'ninguém'}. Pode desbloquear: ${item.resolver?.name ?? 'ninguém ativo'}. Diz o próximo passo e, se for para o cliente, um rascunho.`, can('team-admin') ? 'team' : 'mine') }, 'Perguntar ao assistente sobre este item'),
     h('dl', { class: 'facts' },
       h('dt', {}, 'Porque está parado'), h('dd', {}, item.reason),
       h('dt', {}, 'Responsável'), h('dd', {}, item.ownerName || pill('Sem responsável', 'warn')),
@@ -464,6 +479,39 @@ function lazyFold(key, title, load, options = {}) {
   queueMicrotask(fill);
   return box;
 }
+
+// Árvore que se desdobra: cada nível agrega o de baixo com a contagem; o último nível são os
+// itens, que abrem o detalhe. Os grupos mais cheios primeiro; `order` fixa a ordem de um nível.
+function drillTree(items, levels, leaf, depth = 0) {
+  if (!levels.length) return h('ul', { class: 'tree-leaves' }, items.map(item => h('li', {}, leaf(item))));
+  const [name, groupOf, order] = levels[0];
+  const groups = new Map();
+  for (const item of items) {
+    const key = groupOf(item);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  const rank = key => (order ? order.indexOf(key) : -1);
+  const entries = [...groups].sort((a, b) => (order ? rank(a[0]) - rank(b[0]) : 0) || b[1].length - a[1].length);
+  return h('ul', { class: 'tree', 'aria-label': name }, entries.map(([key, list]) => h('li', {},
+    h('details', { class: 'tree-node', open: depth === 0 && entries.length === 1 },
+      h('summary', {}, h('span', {}, key), h('span', { class: 'tree-count' }, list.length)),
+      drillTree(list, levels.slice(1), leaf, depth + 1)))));
+}
+const treeLeaf = (label, onclick, sub = '') => h('button', { type: 'button', class: 'tree-leaf', onclick }, h('span', {}, label), sub ? h('span', { class: 'muted' }, sub) : null);
+
+// Inteligência com dados de demonstração (por defeito): os números batem com o que se vê em
+// Seguimento; cada item de demonstração leva a etiqueta «demo». Fica guardado neste navegador.
+const intelDemo = { on: (() => { try { return localStorage.getItem('blu-intel-demo') !== '0'; } catch { return true; } })() };
+const demoQuery = () => `demo=${intelDemo.on ? 1 : 0}`;
+const demoToggle = rerender => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(intelDemo.on), onclick: () => {
+  intelDemo.on = !intelDemo.on;
+  try { localStorage.setItem('blu-intel-demo', intelDemo.on ? '1' : '0'); } catch { /* sem armazenamento */ }
+  rerender();
+} }, intelDemo.on ? 'Demonstração incluída' : 'Só dados reais');
+
+// Apoio do assistente: abre o painel com uma pergunta já feita sobre o que está no ecrã.
+let askAssistant = () => {};
 
 const views = {
   async work(view, state = workState) {
@@ -658,7 +706,8 @@ const views = {
   // Vista operacional da equipa: todos os seguimentos, onde está a falhar e quem tem o quê.
   // O trabalho de cada pessoa fica em «O meu trabalho»; daqui só se abre a vista da equipa.
   async control(view) {
-    const c = await api('GET', '/v1/control');
+    const c = await api('GET', `/v1/control?${demoQuery()}`);
+    const rerender = () => { view.replaceChildren(); views.control(view).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
     const w = c.work;
     const countCell = (n, tone) => h('td', {}, n ? pill(String(n), tone) : h('span', { class: 'muted' }, '0'));
     const roles = groups => groups.map(group => ROLE_LABEL[group] ?? group).join(', ');
@@ -666,7 +715,7 @@ const views = {
     const reminderIssues = c.reminders.prepared + c.reminders.failed + c.reminders.missed;
     // append escreve «null» como texto: só os painéis que existem.
     view.append(...[
-      h('div', { class: 'heading-row' }, h('h2', {}, 'Visão geral da equipa'), h('span', { class: 'muted' }, `Atualizado ${when(c.checkedAt)}`)),
+      h('div', { class: 'heading-row' }, h('h2', {}, 'Visão geral da equipa'), h('div', { class: 'filters' }, h('span', { class: 'muted' }, [`Atualizado ${when(c.checkedAt)}`, c.demoLeads ? `inclui ${c.demoLeads} lead(s) de demonstração` : ''].filter(Boolean).join(' · ')), demoToggle(rerender))),
       // Trabalho da equipa com as regras de «O meu trabalho»: cada item conta uma vez, com ou sem responsável.
       w ? h('div', { class: 'cards' },
         h('div', { class: `card ${w.unowned ? 'warn' : ''}` }, h('div', { class: 'value' }, w.total), h('div', { class: 'label' }, 'Trabalho em aberto da equipa'), h('div', { class: 'muted' }, `${w.unowned} sem responsável`)),
@@ -738,6 +787,10 @@ const views = {
       h('div', { class: 'filters' }, filterButton('open', 'Em aberto'), filterButton('contacted', 'Contactados'), filterButton('all', 'Todos'),
         demoCount ? [' ', h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.demo), onclick: () => { state.demo = !state.demo; rerender(); } }, `Demonstração (${demoCount})`)] : null),
       h('p', { class: 'muted' }, tally),
+      fold('leads-tree', 'Por estado e responsável', drillTree(real, [
+        ['Estado', lead => (lead.atRisk ? 'Cliente a desistir' : lead.status === 'CONTACTED' ? 'Contactados' : lead.replyLate ? 'Fora do prazo' : 'Dentro do prazo'), ['Cliente a desistir', 'Fora do prazo', 'Dentro do prazo', 'Contactados']],
+        ['Responsável', lead => lead.assignedTo || 'Sem responsável'],
+      ], lead => treeLeaf(lead.journey.destination || lead.id, () => select(lead.id), [lead.journey.timeframe, when(lead.lastActivityAt)].filter(Boolean).join(' · '))), { open: false, count: real.length }),
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, rows.length ? h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Lead'), h('th', {}, 'Última mensagem'), h('th', {}, 'Estado'), h('th', {}, 'Responder até'), h('th', {}, 'Responsável'))),
@@ -906,6 +959,11 @@ const views = {
           h('button', { type: 'button', class: 'link', onclick: () => goTo('leads', { filter: 'all', lead: item.conversationId }) }, 'Abrir lead'),
           can('cases') ? h('button', { type: 'button', class: 'link', onclick: () => { casePrefill = { leadId: item.conversationId }; show('cases'); } }, 'Abrir reclamação') : null) : null)))
         : h('p', { class: 'muted' }, 'Nada a verificar.')),
+      fold('partners-tree', 'Por tipo e situação', drillTree(cards, [
+        ['Tipo', card => card.kind || 'Outro'],
+        ['Situação', card => (toCheck.some(item => item.partnerId === card.id) || card.metrics.noShows || (card.metrics.nps !== null && card.metrics.nps !== undefined && card.metrics.nps < 0) ? 'A verificar'
+          : card.score === null ? 'Dados insuficientes' : 'Em ordem'), ['A verificar', 'Em ordem', 'Dados insuficientes']],
+      ], card => treeLeaf(card.name, () => showDetail(card), card.score === null ? 'sem pontuação' : `pontuação ${card.score}`)), { open: false, count: cards.length }),
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Parceiro'), h('th', {}, 'Tipo'), h('th', {}, 'Pontuação'), h('th', {}, 'Serviços'), h('th', {}, 'Pontualidade'), h('th', {}, 'Clientes'), h('th', {}, 'NPS'), h('th', {}, 'Margem'), h('th', {}, 'Preço/pessoa'))),
@@ -1076,6 +1134,10 @@ const views = {
       status,
       h('details', { class: 'panel', open: Boolean(leadId.value) }, h('summary', {}, 'Abrir novo caso'), create),
       h('div', { class: 'filters spaced' }, filterButton('open', 'Abertos'), filterButton('closed', 'Fechados')),
+      data.cases.length ? fold('cases-tree', 'Por prazo e tipo', drillTree(data.cases, [
+        ['Prazo', item => DEADLINE[item.deadlineState]?.[0] ?? item.deadlineState, ['Fora do prazo', 'Prazo próximo', 'No prazo', 'Fechado']],
+        ['Tipo', item => data.types[item.type]?.label ?? item.type],
+      ], item => treeLeaf(item.title, () => openCase(item), `prazo ${item.deadline}`)), { open: false, count: data.cases.length }) : null,
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, data.cases.length ? h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Prazo'), h('th', {}, 'Caso'), h('th', {}, 'Responsável'), h('th', {}, 'Estado'))),
@@ -1229,6 +1291,10 @@ const views = {
         : 'Respostas automáticas desligadas: cada mensagem recebida vai para «O meu trabalho» com uma resposta sugerida. Uma fundadora liga-as em Seguimento › Regras de seguimento.'),
       flash,
       h('div', { class: 'filters' }, filterButton('all', 'Todas'), filterButton('waiting', 'À espera de resposta'), filterButton('traveller', 'Clientes'), filterButton('partner', 'Parceiros')),
+      fold('whatsapp-tree', 'Por destinatário e estado', drillTree(threads, [
+        ['Destinatário', thread => (thread.audience === 'partner' ? 'Parceiros' : 'Clientes'), ['Clientes', 'Parceiros']],
+        ['Estado', thread => (thread.stopped ? 'Pediu para parar' : thread.waiting ? 'À espera de resposta' : 'Respondida'), ['À espera de resposta', 'Respondida', 'Pediu para parar']],
+      ], thread => treeLeaf(label(thread), () => open(thread), when(thread.messages.at(-1)?.at))), { open: false, count: threads.length }),
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, visible.length ? h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Conversa'), h('th', {}, 'Última mensagem'), h('th', {}, 'Mensagens'))),
@@ -1864,6 +1930,14 @@ function mountAssistant() {
   }
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !panel.hidden) toggle(false); });
   document.body.append(panel, fab);
+  askAssistant = (text, wanted = 'mine') => {
+    toggle(true);
+    scope = can('read') ? wanted : 'mine';
+    for (const button of switcher.children) button.setAttribute('aria-pressed', String(button.textContent === (scope === 'team' ? 'Equipa' : 'O meu assistente')));
+    render();
+    question.value = text.slice(0, 1000);
+    form.requestSubmit();
+  };
 }
 // Separadores por grupo e grupos de menu vazios escondidos.
 // Contadores na árvore: urgentes em «O meu trabalho», leads sem responsável e mensagens à espera.

@@ -1207,3 +1207,17 @@ test('old blocks without a type are classified from the written reason', () => {
   assert.deepEqual(['À espera do hotel', 'O cliente não responde', 'Falta o orçamento', 'Conflito de horário', 'WhatsApp falhou', 'Sem decisão'].map(guessBlocker),
     ['partner', 'client', 'proposal', 'schedule', 'whatsapp', 'other']);
 });
+
+test('intelligence can include demo leads on request, tagged as demo, so the numbers match Seguimento', async () => {
+  const demoLead = profile('BLU-AAAAAAAA0009', { synthetic: { BOOL: true } });
+  const { deps } = fakeDeps({ queryStatus: async status => (status === 'PENDING' ? [profile('BLU-AAAAAAAA0001'), demoLead] : []), queryAgenda: async () => [] });
+  const handler = createApp(deps);
+  const get = async (routeKey, query) => JSON.parse((await handler(request(routeKey, { email: 'ana@blu.pt', groups: '[founders]', query }))).body);
+  const real = await get('GET /v1/control', {});
+  const all = await get('GET /v1/control', { demo: '1' });
+  assert.deepEqual([real.followUps.open, real.demoLeads, all.followUps.open, all.demoLeads], [1, 0, 2, 1]);
+  const ops = await get('GET /v1/agenda', { view: 'ops', scope: 'team', demo: '1' });
+  assert.deepEqual(ops.items.filter(item => item.kind === 'lead').map(item => [item.id, item.demo]).sort(), [['BLU-AAAAAAAA0001', false], ['BLU-AAAAAAAA0009', true]]);
+  assert.equal((await get('GET /v1/agenda', { view: 'ops', scope: 'team' })).items.some(item => item.demo), false);
+  assert.equal((await get('GET /v1/metrics', { demo: '1' })).open, 2);
+});
