@@ -2093,14 +2093,17 @@ async function updateBadges() {
     if (count) button.dataset.count = count > 99 ? '99+' : String(count);
     else delete button.dataset.count;
   };
-  const [work, metrics, inbox, security] = await Promise.all([
+  const [work, metrics, inbox, security, stuck] = await Promise.all([
     api('GET', '/v1/work').catch(() => null),
     can('read') ? api('GET', '/v1/metrics').catch(() => null) : null,
     isCurator() ? api('GET', '/v1/whatsapp-test').catch(() => null) : null,
     can('security') ? api('GET', '/v1/security').catch(() => null) : null,
+    can('read') ? api('GET', `/v1/agenda?view=ops&scope=team&${demoQuery()}`).catch(() => null) : null,
   ]);
   set('work', work?.items.filter(item => ['risk', 'overdue'].includes(item.urgency)).length);
   set('control', metrics?.unassigned);
+  // Atrasos críticos: itens com bloqueio parados há 7 dias ou mais (o mesmo critério da própria secção).
+  set('overdue', stuck?.items.filter(item => item.blocker && item.since && (Date.now() - Date.parse(item.since)) / DAY_MS >= overdueState.days).length);
   set('whatsapp', inbox?.threads?.filter(thread => thread.waiting).length);
   // Regras legais por preencher (Governança): a bola vermelha mostra quantas faltam.
   set('governance', security?.policies?.fail);
