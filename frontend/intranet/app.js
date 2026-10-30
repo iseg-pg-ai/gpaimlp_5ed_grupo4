@@ -50,8 +50,9 @@ const when = iso => (iso ? new Intl.DateTimeFormat('pt-PT', { dateStyle: 'short'
 const pill = (text, tone = '') => h('span', { class: `pill ${tone}` }, text);
 // Atalhos: cada número ou linha abre o separador certo (no lead, se houver). Sem acesso ao
 // separador, fica só o número.
-const goTo = (tab, { filter, lead } = {}) => {
+const goTo = (tab, { filter, lead, scope } = {}) => {
   if (tab === 'leads') { if (filter) leadsState.filter = filter; leadsState.selected = lead ?? ''; }
+  if (tab === 'agenda' && scope) agendaState.scope = scope;
   show(tab);
 };
 const goCard = (value, label, tab, options = {}, tone = '') => {
@@ -377,15 +378,16 @@ const views = {
     );
   },
 
-  // Painel da fundadora: o estado de todos os seguimentos, onde está a falhar e quem tem o quê.
+  // Vista operacional da equipa: todos os seguimentos, onde está a falhar e quem tem o quê.
+  // O trabalho de cada pessoa fica em «O meu trabalho»; daqui só se abre a vista da equipa.
   async control(view) {
     const c = await api('GET', '/v1/control');
     const countCell = (n, tone) => h('td', {}, n ? pill(String(n), tone) : h('span', { class: 'muted' }, '0'));
     const roles = groups => groups.map(group => ROLE_LABEL[group] ?? group).join(', ');
     const DELIVERY = { email: 'Email', 'in-app': 'Só na intranet', 'email-failed': 'Email falhou' };
     view.append(
-      h('h2', {}, 'Visão geral da fundadora'),
-      h('p', { class: 'muted' }, `Seguimentos, pontos de falha e quem tem o quê. Atualizado ${when(c.checkedAt)}; os alertas saem sozinhos a cada 5 minutos.`),
+      h('h2', {}, 'Visão geral da equipa'),
+      h('p', { class: 'muted' }, `Trabalho operacional de toda a equipa: seguimentos, pontos de falha e quem tem o quê. Atualizado ${when(c.checkedAt)}; os alertas saem sozinhos a cada 5 minutos.`),
       h('div', { class: 'cards' },
         goCard(c.followUps.open, 'Seguimentos em aberto', 'leads', { filter: 'open' }), goCard(c.followUps.onTime, 'Dentro do prazo', 'leads', { filter: 'open' }),
         goCard(c.followUps.late, 'Fora do prazo', 'leads', { filter: 'open' }, 'bad'), goCard(c.followUps.atRisk, 'Clientes a desistir', 'leads', { filter: 'all' }, 'bad'),
@@ -400,15 +402,15 @@ const views = {
         h('tbody', {}, c.people.map(person => h('tr', {},
           h('td', {}, person.name, person.enabled ? null : [' ', pill('Desativada', 'bad')]), h('td', {}, roles(person.groups)),
           h('td', {}, person.openLeads), countCell(person.lateLeads, 'bad'), h('td', {}, person.openTasks), countCell(person.overdueTasks, 'bad'), countCell(person.blockedTasks, 'warn'), countCell(person.overdueCases, 'bad'),
-          // Leads na lista de seguimento; tarefas em «O meu trabalho»; casos no separador respetivo.
-          h('td', {}, person.openLeads ? goLink('leads', { filter: 'open' }, 'Leads') : null, ' ', person.openTasks ? goLink('work', {}, 'Tarefas') : null, ' ', person.overdueCases ? goLink('cases', {}, 'Casos') : null))))) : h('p', { class: 'muted' }, 'Sem equipa registada.')),
+          // Leads na lista de seguimento; tarefas na Agenda da equipa; casos no separador respetivo.
+          h('td', {}, person.openLeads ? goLink('leads', { filter: 'open' }, 'Leads') : null, ' ', person.openTasks ? goLink('agenda', { scope: 'team' }, 'Tarefas') : null, ' ', person.overdueCases ? goLink('cases', {}, 'Casos') : null))))) : h('p', { class: 'muted' }, 'Sem equipa registada.')),
       h('div', { class: 'grid2 spaced' },
         h('div', { class: 'panel' }, h('h3', {}, 'Lembretes (7 dias)'), h('table', {}, h('tbody', {},
           // Os lembretes vivem na Agenda; os enviados por WhatsApp em teste também na caixa do WhatsApp.
-          h('tr', {}, h('td', {}, 'Enviados'), h('td', {}, c.reminders.sent), h('td', {}, goLink('agenda', {}, 'Agenda'), ' ', goLink('whatsapp', {}, 'WhatsApp'))),
-          h('tr', {}, h('td', {}, 'Preparados para enviar à mão'), countCell(c.reminders.prepared, 'warn'), h('td', {}, goLink('work', {}, 'O meu trabalho'))),
-          h('tr', {}, h('td', {}, 'Falharam'), countCell(c.reminders.failed, 'bad'), h('td', {}, goLink('agenda', {}, 'Agenda'))),
-          h('tr', {}, h('td', {}, 'Não saíram a tempo'), countCell(c.reminders.missed, 'bad'), h('td', {}, goLink('agenda', {}, 'Agenda')))))),
+          h('tr', {}, h('td', {}, 'Enviados'), h('td', {}, c.reminders.sent), h('td', {}, goLink('agenda', { scope: 'team' }, 'Agenda'), ' ', goLink('whatsapp', {}, 'WhatsApp'))),
+          h('tr', {}, h('td', {}, 'Preparados para enviar à mão'), countCell(c.reminders.prepared, 'warn'), h('td', {}, goLink('agenda', { scope: 'team' }, 'Agenda'))),
+          h('tr', {}, h('td', {}, 'Falharam'), countCell(c.reminders.failed, 'bad'), h('td', {}, goLink('agenda', { scope: 'team' }, 'Agenda'))),
+          h('tr', {}, h('td', {}, 'Não saíram a tempo'), countCell(c.reminders.missed, 'bad'), h('td', {}, goLink('agenda', { scope: 'team' }, 'Agenda')))))),
         h('div', { class: 'panel' }, h('h3', {}, 'Alertas enviados à equipa (7 dias)'), c.alerts.length
           ? h('ul', { class: 'feed' }, c.alerts.map(alert => h('li', {}, pill(alert.level === 'bad' ? 'Urgente' : 'Atenção', alert.level === 'bad' ? 'bad' : 'warn'), ' ', alert.text,
             h('div', { class: 'muted' }, `${alert.to.length ? `Para ${alert.to.join(', ')}` : 'Sem destinatário'} · ${DELIVERY[alert.delivery] ?? alert.delivery} · `,
