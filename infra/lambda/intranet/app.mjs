@@ -3,6 +3,7 @@ import {
   atRisk, cleanTags, contactDetails, groupsOf, isOverdue, metrics, toLead, toMessage, validLeadId, workerLabel,
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, lisbonToUtc, parseActivity, plan } from './schedule.mjs';
+import { opsItems, opsView } from './ops.mjs';
 import { OUTCOMES, OUTCOME_STATUS, SCORE, netPromoter, outcomeRecord, parseOutcome, scorecards, toOutcome } from './partner-score.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
 import { ATTESTATIONS, AUTO_TYPES, SETTINGS, VALUE_RULES, applyAttestations, currentSettings, parseAttestation, parseSettings, replyState } from './settings.mjs';
@@ -239,7 +240,7 @@ export function createApp(deps) {
     // Leads de demonstração não contam em nenhuma vista, nem os lembretes e mensagens desses leads.
     const demo = new Set(allLeads.filter(lead => lead.synthetic).map(lead => lead.id));
     return {
-      at, today, settings,
+      at, today, settings, demo,
       leads: allLeads.filter(lead => lead.status !== CONTACTED),
       tasks: taskItems.map(item => toTask(item, today)),
       prepared: prepared.map(toNotification).filter(item => !demo.has(item.conversationId)),
@@ -307,9 +308,23 @@ export function createApp(deps) {
     'POST /v1/leads/{id}/assign': async ({ id, user, body }) => {
       const at = now().toISOString();
       // Libertar marca releasedAt: a atribuição automática volta a contar 1h30 a partir daqui.
-      if (body.release === true) await deps.updateProfile(id, { releasedAt: at, updatedAt: at }, ['assignedTo', 'assignedAt', 'assignedBy']);
-      else await deps.updateProfile(id, { assignedTo: user.email, assignedAt: at, updatedAt: at }, ['assignedBy']);
-      await announce(user, body.release === true ? `libertou o lead ${id}` : `assumiu o lead ${id}`);
+      if (body.release === true) {
+        await deps.updateProfile(id, { releasedAt: at, updatedAt: at }, ['assignedTo', 'assignedAt', 'assignedBy']);
+        await announce(user, `libertou o lead ${id}`);
+        return reply(204);
+      }
+      // Atribuir a outra pessoa (centro de operações): só fundadores, e só a quem segue leads.
+      const to = typeof body.to === 'string' ? body.to.trim().toLowerCase() : '';
+      if (to && to !== user.email.toLowerCase()) {
+        if (!allowed(user.groups, 'team-admin')) return fail(403, 'Só fundadores atribuem leads a outra pessoa.');
+        const member = (await deps.listTeam()).find(item => item.enabled && item.email.toLowerCase() === to);
+        if (!member || !allowed(member.groups, 'leads')) return fail(400, 'Escolha um curador ou fundador ativo.');
+        await deps.updateProfile(id, { assignedTo: member.email, assignedAt: at, assignedBy: user.email, updatedAt: at });
+        await announce(user, `atribuiu o lead ${id} a ${member.name}`);
+        return reply(204);
+      }
+      await deps.updateProfile(id, { assignedTo: user.email, assignedAt: at, updatedAt: at }, ['assignedBy']);
+      await announce(user, `assumiu o lead ${id}`);
       return reply(204);
     },
 
@@ -873,6 +888,24 @@ export function createApp(deps) {
     // tarefas, seguimentos de leads, prazos de casos e lembretes para enviar à mão. «mine» é o
     // trabalho da própria pessoa; «team» é o de toda a equipa. O que passou do prazo fica em «overdue».
     'GET /v1/agenda': async ({ user, event }) => {
+      // Centro de operações: o mesmo trabalho de «O meu trabalho» e da Visão geral, com estado, motivo e quem desbloqueia.
+      if (event.queryStringParameters?.view === 'ops') {
+        const at = now();
+        const week = new Date(at - 7 * 864e5).toISOString();
+        const dayEnd = new Date(+at + 864e5).toISOString();
+        const settle = promise => Promise.resolve().then(() => promise).catch(() => []);
+        const [work, members, failedLists, services] = await Promise.all([
+          loadWork({ cases: allowed(user.groups, 'cases'), inbox: allowed(user.groups, 'leads') }), deps.listTeam(),
+          Promise.all([NOTIFY.failed, NOTIFY.missed].map(status => settle(deps.queryAgenda(status, week, at.toISOString())))),
+          settle(deps.queryAgenda(NOTIFY.pending, new Date(at - 864e5).toISOString(), dayEnd)),
+        ]);
+        const { demo } = work;
+        const real = { ...work, leads: work.leads.filter(lead => !lead.synthetic) };
+        const failed = failedLists.flat().map(toNotification).filter(item => !demo.has(item.conversationId));
+        const items = opsItems({ work: real, failed, services: services.map(toNotification).filter(item => !demo.has(item.conversationId)), members, partners: deps.partners });
+        const scope = event.queryStringParameters?.scope === 'team' ? 'team' : 'mine';
+        return reply(200, { ...opsView(items, { scope, me: user.email, members }), today: work.today, checkedAt: at.toISOString() });
+      }
       const days = Math.min(Math.max(Number.parseInt(event.queryStringParameters?.days ?? '2', 10) || 2, 1), 14);
       const scope = event.queryStringParameters?.scope === 'team' ? 'team' : 'mine';
       const me = user.email.toLowerCase();

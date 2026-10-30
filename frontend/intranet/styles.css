@@ -200,3 +200,17 @@ p.message { margin: .3rem 0; white-space: pre-wrap; font-size: .85rem; color: va
 .assistant-answer ul { padding-left: 1.2rem; margin: .25rem 0; }
 .assistant-answer p { margin: .35rem 0; }
 .assistant-panel .assistant-log { max-height: 38vh; overflow: auto; margin: .5rem 0; }
+
+/* Centro de operações: cartão escolhido, barras de onde se acumula o trabalho e item da fila escolhido. */
+.card.go[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.ops-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ops-bar { display: grid; grid-template-columns: minmax(7rem, 18rem) 1fr 2.5rem; gap: 10px; align-items: center; width: 100%; min-height: 40px; padding: 4px 8px; border: 1px solid transparent; border-radius: var(--radius); background: none; color: inherit; text-align: left; }
+.ops-bar:hover, .ops-bar:focus-visible { border-color: var(--accent); }
+.ops-bar[aria-pressed="true"] { border-color: var(--ink); background: #f3ecdf; }
+.ops-bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-bar-track { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.ops-bar-fill { display: block; height: 100%; background: var(--ink); }
+.ops-bar strong { text-align: right; }
+li.ops-item { cursor: pointer; }
+li.ops-item.selected { background: #f3ecdf; outline: 2px solid var(--ink); }
+@media (max-width: 640px) { .ops-bar { grid-template-columns: minmax(5rem, 9rem) 1fr 2rem; } }

@@ -660,6 +660,46 @@ test('the team overview counts every open item once and each person exactly as t
   assert.ok(work.total >= Math.max(...work.people.map(person => person.total - person.alert)));
 });
 
+test('the operations view shows why work is stuck, whose it is and who can unblock it', async () => {
+  const { handler } = taskTable();
+  const gisela = { email: 'gisela@blu.pt', name: 'Gisela', groups: '[founders]' };
+  // Gisela pede uma tarefa à Ana; a Ana bloqueia-a: quem desbloqueia é quem a pediu.
+  const { taskId } = JSON.parse((await handler(request('POST /v1/tasks', { ...gisela, body: { title: 'Confirmar guia', owner: 'ana@blu.pt' } }))).body);
+  assert.equal((await handler(request('POST /v1/leads/{id}/tasks/{taskId}', { params: { id: 'TASKS-UNLINKED', taskId }, body: { status: 'blocked', blockedReason: 'À espera do preço do parceiro' } }))).statusCode, 204);
+  const ops = async (who, scope) => JSON.parse((await handler(request('GET /v1/agenda', { ...who, query: { view: 'ops', scope } }))).body);
+  const team = await ops(gisela, 'team');
+  const task = team.items.find(item => item.kind === 'task');
+  assert.deepEqual([task.states, task.reason, task.ownerName], [['blocked'], 'À espera do preço do parceiro', 'Ana']);
+  assert.deepEqual([task.resolver.email, task.resolver.why], ['gisela@blu.pt', 'pediu esta tarefa']);
+  // O lead sem responsável vai para quem tem menos trabalho em aberto (a Gisela não tem nada).
+  const lead = team.items.find(item => item.kind === 'lead');
+  assert.ok(lead.states.includes('unassigned'));
+  assert.equal(lead.resolver.email, 'gisela@blu.pt');
+  assert.equal(team.totals.blocked, 1);
+  // «Só o meu» da Gisela: o que pode desbloquear, mesmo não sendo dela.
+  const mine = await ops(gisela, 'mine');
+  assert.ok(mine.items.some(item => item.key === task.key));
+  assert.ok(mine.items.every(item => item.owner === 'gisela@blu.pt' || item.resolver?.email === 'gisela@blu.pt'));
+});
+
+test('founders can assign a lead to another curator; curators can only take it themselves', async () => {
+  const updates = [];
+  const { deps } = fakeDeps({
+    updateProfile: async (...args) => { updates.push(args); },
+    listTeam: async () => [
+      { email: 'ana@blu.pt', name: 'Ana', groups: ['curators'], enabled: true },
+      { email: 'gisela@blu.pt', name: 'Gisela', groups: ['founders'], enabled: true },
+      { email: 'mia@blu.pt', name: 'Mia', groups: ['marketing'], enabled: true },
+    ],
+  });
+  const handler = createApp(deps);
+  const assign = (body, who = {}) => handler(request('POST /v1/leads/{id}/assign', { id: 'BLU-AAAAAAAA0001', body, ...who }));
+  assert.equal((await assign({ to: 'gisela@blu.pt' })).statusCode, 403);
+  assert.equal((await assign({ to: 'mia@blu.pt' }, { email: 'gisela@blu.pt', groups: '[founders]' })).statusCode, 400);
+  assert.equal((await assign({ to: 'ana@blu.pt' }, { email: 'gisela@blu.pt', groups: '[founders]' })).statusCode, 204);
+  assert.deepEqual([updates.at(-1)[1].assignedTo, updates.at(-1)[1].assignedBy], ['ana@blu.pt', 'gisela@blu.pt']);
+});
+
 const siteBuilt = existsSync(path.join(infraDir, '../frontend/blu-cloud-site/dist/client'));
 
 test('the intranet stack protects every route and grants no destructive data access', { skip: !siteBuilt && 'build frontend/blu-cloud-site first' }, async () => {

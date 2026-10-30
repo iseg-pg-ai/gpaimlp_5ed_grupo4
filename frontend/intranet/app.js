@@ -125,7 +125,7 @@ const WORK_KINDS = [
   ['reminder', 'Lembretes para enviar à mão', 'agenda', { scope: 'team' }], ['case', 'Casos', 'cases', {}],
 ];
 // Agenda: «mine» é o trabalho da própria pessoa; fundadores entram na vista da equipa.
-const agendaState = { scope: '', days: 7 };
+const agendaState = { scope: '', days: 7, mode: 'ops', opsState: '', group: 'person', groupValue: '', search: '', selected: '' };
 let taskPrefill = {};
 
 async function api(method, path, body) {
@@ -192,6 +192,166 @@ function renew() {
 }
 
 // ---------- Secções ----------
+
+// Centro de operações (Agenda › Operações): totais que filtram, onde se acumula o trabalho, a fila e o
+// detalhe com as ações, sem sair da página. Os itens, estados e quem desbloqueia vêm da API (ops.mjs).
+const OPS_GROUPS = {
+  person: ['Responsável', item => item.ownerName || 'Sem responsável'],
+  reason: ['Motivo', item => (item.states.includes('blocked') ? `Bloqueio: ${item.reason.slice(0, 60)}`
+    : item.states.includes('risk') ? 'Cliente a desistir' : item.states.includes('failed') ? `Envio: ${item.reason.slice(0, 50)}`
+    : item.states.includes('unassigned') ? 'Sem responsável' : item.states.includes('overdue') ? 'Prazo passou' : 'Para hoje')],
+  kind: ['Tipo', (item, kinds) => kinds[item.kind] ?? item.kind],
+  partner: ['Parceiro', item => item.partnerName || 'Sem parceiro'],
+  resolver: ['Quem pode desbloquear', item => item.resolver?.name || 'Ninguém disponível'],
+};
+const OPS_TONE = { blocked: 'bad', overdue: 'bad', risk: 'bad', failed: 'warn', unassigned: 'warn', today: '' };
+
+async function opsCockpit(view, state) {
+  const data = await api('GET', `/v1/agenda?view=ops&scope=${state.scope}`);
+  const rerender = () => { view.replaceChildren(); views.agenda(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
+  const set = changes => { Object.assign(state, changes); rerender(); };
+  const me = session.claims?.email?.toLowerCase() ?? '';
+  const nameOf = email => data.people.find(person => person.email === email)?.name ?? email;
+  const [groupLabel, groupOf] = OPS_GROUPS[state.group] ?? OPS_GROUPS.person;
+  const words = state.search.trim().toLowerCase();
+  const matches = item => !words || [item.title, item.detail, item.reason, item.ownerName, item.partnerName, item.resolver?.name, item.partition].join(' ').toLowerCase().includes(words);
+  // Os totais e as barras seguem a pesquisa; a fila segue também o cartão e a barra escolhidos.
+  const searched = data.items.filter(matches);
+  const byState = searched.filter(item => !state.opsState || item.states.includes(state.opsState));
+  const queue = byState.filter(item => !state.groupValue || groupOf(item, data.kinds) === state.groupValue);
+  const groups = Object.entries(byState.reduce((all, item) => { const key = groupOf(item, data.kinds); all[key] = (all[key] ?? 0) + 1; return all; }, {})).sort((a, b) => b[1] - a[1]);
+  const widest = groups[0]?.[1] ?? 1;
+  const toggle = (key, value, label) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state[key] === value), onclick: () => set({ [key]: value, groupValue: '', selected: '' }) }, label);
+  const search = h('input', { type: 'search', placeholder: 'Procurar lead, pessoa, parceiro, motivo…', value: state.search, 'aria-label': 'Procurar' });
+  search.addEventListener('change', () => set({ search: search.value, selected: '' }));
+  const statePills = item => item.states.map(key => pill(data.states[key], OPS_TONE[key]));
+  const detail = h('div', { class: 'panel ops-detail' });
+  const select = item => {
+    state.selected = item.key;
+    for (const row of view.querySelectorAll('li.ops-item')) row.classList.toggle('selected', row.dataset.key === item.key);
+    showOpsItem(detail, item, data, { me, nameOf, refresh: rerender });
+  };
+
+  view.append(
+    h('h2', {}, 'Agenda e operações'),
+    h('p', { class: 'muted' }, `O que está parado, porquê, de quem é e quem pode desbloquear. Clique num total ou numa barra para filtrar; escolha um item para agir sem sair da página. Atualizado ${when(data.checkedAt)}.`),
+    h('div', { class: 'filters' }, toggle('mode', 'ops', 'Operações'), toggle('mode', 'calendar', 'Calendário'), ' ', toggle('scope', 'mine', 'Só o meu'), toggle('scope', 'team', 'Equipa'), ' ', search),
+    h('div', { class: 'cards' }, Object.entries(data.states).map(([key, label]) => {
+      const count = searched.filter(item => item.states.includes(key)).length;
+      return h('button', { type: 'button', class: `card go ${count ? OPS_TONE[key] : ''}`, 'aria-pressed': String(state.opsState === key), onclick: () => set({ opsState: state.opsState === key ? '' : key, groupValue: '', selected: '' }) },
+        h('div', { class: 'value' }, count), h('div', { class: 'label' }, label));
+    })),
+    h('div', { class: 'panel' },
+      h('div', { class: 'heading-row' }, h('h3', {}, `Onde se acumula · por ${groupLabel.toLowerCase()}`),
+        h('div', { class: 'filters' }, Object.entries(OPS_GROUPS).map(([key, [label]]) => toggle('group', key, label)))),
+      groups.length ? h('ul', { class: 'ops-bars' }, groups.map(([name, count]) => h('li', {},
+        h('button', { type: 'button', class: 'ops-bar', 'aria-pressed': String(state.groupValue === name), onclick: () => set({ groupValue: state.groupValue === name ? '' : name, selected: '' }) },
+          h('span', { class: 'ops-bar-label' }, name), h('span', { class: 'ops-bar-track' }, h('span', { class: 'ops-bar-fill', style: `width:${Math.max(4, Math.round(count / widest * 100))}%` })), h('strong', {}, count)))))
+        : h('p', { class: 'muted' }, 'Nada parado com estes filtros.')),
+    h('div', { class: 'split spaced' },
+      h('div', { class: 'panel' },
+        h('h3', {}, `Fila · ${queue.length}`, state.opsState ? ` · ${data.states[state.opsState]}` : '', state.groupValue ? ` · ${state.groupValue}` : ''),
+        queue.length ? h('ul', { class: 'work-list' }, queue.map(item => h('li', { class: `work-item ops-item clickable${item.key === state.selected ? ' selected' : ''}`, 'data-key': item.key, tabindex: '0', onclick: () => select(item), onkeydown: event => event.key === 'Enter' && select(item) },
+          h('div', {}, pill(data.kinds[item.kind] ?? item.kind), ' ', statePills(item)),
+          h('strong', {}, item.title),
+          h('div', { class: 'muted' }, [item.reason, item.ownerName ? `de ${item.ownerName}` : 'sem responsável', item.since ? `há ${lateBy(item.since)}` : ''].filter(Boolean).join(' · ')))))
+          : h('p', { class: 'muted' }, state.scope === 'mine' ? 'Nada seu parado. Veja «Equipa» para o resto da equipa.' : 'Nada parado com estes filtros.')),
+      detail),
+  );
+  const chosen = queue.find(item => item.key === state.selected) ?? queue[0];
+  if (chosen) select(chosen); else detail.append(h('p', { class: 'muted' }, 'Escolha um item da fila.'));
+}
+
+// Detalhe de um item: porquê está parado, de quem é, quem desbloqueia e as ações possíveis ali mesmo.
+function showOpsItem(panel, item, data, { me, nameOf, refresh }) {
+  const status = h('p', { class: 'muted', role: 'status' });
+  const run = async (fn, done) => {
+    status.textContent = 'A guardar…';
+    try { await fn(); teamCache = undefined; status.textContent = done; setTimeout(refresh, 600); } catch (error) { status.textContent = error.message; }
+  };
+  const leadId = /^BLU-/.test(item.partition ?? '') ? item.partition : '';
+  const peopleSelect = (filter, selected, label) => h('select', { 'aria-label': label }, h('option', { value: '' }, label),
+    data.people.filter(filter).map(person => h('option', { value: person.email, selected: person.email === selected }, person.name)));
+  const actions = [];
+  const extra = [];
+
+  if (item.kind === 'lead' && isCurator()) {
+    if (item.owner !== me) actions.push(h('button', { type: 'button', class: 'primary', onclick: () => run(() => api('POST', `/v1/leads/${item.id}/assign`, {}), 'Lead assumido.') }, 'Assumir'));
+    if (isFounder()) {
+      const to = peopleSelect(person => person.groups.some(group => ['curators', 'founders'].includes(group)), item.owner, 'Atribuir a…');
+      to.addEventListener('change', () => to.value && run(() => api('POST', `/v1/leads/${item.id}/assign`, { to: to.value }), `Lead atribuído a ${nameOf(to.value)}.`));
+      actions.push(to);
+    }
+    actions.push(h('button', { type: 'button', class: 'secondary', onclick: () => run(() => api('POST', `/v1/leads/${item.id}/contacted`), 'Marcado como contactado.') }, 'Marcar contactado'));
+    // Resumo do lead aqui mesmo; a ficha completa continua em Seguimento.
+    const summary = h('div', { class: 'muted' }, 'A carregar o lead…');
+    extra.push(summary);
+    api('GET', `/v1/leads/${item.id}`).then(lead => summary.replaceChildren(
+      h('dl', { class: 'facts' },
+        h('dt', {}, 'Viagem'), h('dd', {}, [lead.journey.destination, lead.journey.timeframe, lead.journey.party, lead.journey.budget].filter(Boolean).join(' · ') || '—'),
+        h('dt', {}, 'Estado'), h('dd', {}, statusPill(lead.status)),
+        h('dt', {}, 'Última atividade'), h('dd', {}, when(lead.lastActivityAt))),
+      h('ul', { class: 'feed' }, (lead.messages ?? []).slice(-3).map(message => h('li', {}, h('strong', {}, message.actor === 'customer' ? 'Cliente' : 'BLU'), ` ${(message.text ?? '').slice(0, 220)}`, h('time', {}, when(message.at))))),
+    )).catch(error => summary.replaceChildren(error.message));
+  }
+  if (item.kind === 'task' && can('tasks')) {
+    const path = `/v1/leads/${encodeURIComponent(item.partition)}/tasks/${encodeURIComponent(item.id)}`;
+    for (const [key, label] of [['doing', 'Em curso'], ['done', 'Feito']]) {
+      if (item.task?.status !== key) actions.push(h('button', { type: 'button', class: key === 'done' ? 'primary' : 'secondary', onclick: () => run(() => api('POST', path, { status: key }), `Tarefa: ${label}.`) }, label));
+    }
+    if (item.task?.status !== 'blocked') {
+      const reason = h('input', { placeholder: 'Motivo do bloqueio', 'aria-label': 'Motivo do bloqueio' });
+      extra.push(h('div', { class: 'actions' }, reason, h('button', { type: 'button', class: 'secondary', onclick: () => run(() => api('POST', path, { status: 'blocked', blockedReason: reason.value }), 'Tarefa bloqueada.') }, 'Bloquear')));
+    }
+    const owner = peopleSelect(() => true, item.owner, 'Passar a…');
+    owner.addEventListener('change', () => owner.value && run(() => api('POST', path, { owner: owner.value }), `Tarefa passada a ${nameOf(owner.value)}.`));
+    actions.push(owner);
+  }
+  if (item.kind === 'case' && can('cases')) {
+    const owner = peopleSelect(() => true, item.owner, 'Responsável do caso…');
+    owner.addEventListener('change', () => owner.value && run(() => api('POST', `/v1/leads/${encodeURIComponent(item.partition)}/cases/${encodeURIComponent(item.id)}`, { owner: owner.value }), `Caso passado a ${nameOf(owner.value)}.`));
+    actions.push(owner, h('button', { type: 'button', class: 'link', onclick: () => show('cases') }, 'Abrir em Reclamações'));
+  }
+  if (item.kind === 'message') {
+    if (item.message?.suggestion) extra.push(h('p', { class: 'message' }, `Resposta sugerida: ${item.message.suggestion}`));
+    actions.push(h('button', { type: 'button', class: 'secondary', onclick: () => { whatsappState.selected = item.id; show('whatsapp'); } }, 'Responder no WhatsApp'));
+  }
+  if (item.kind === 'reminder' && item.reminder?.text) {
+    extra.push(h('p', { class: 'message' }, item.reminder.text));
+    actions.push(h('button', { type: 'button', class: 'secondary', onclick: () => navigator.clipboard?.writeText(item.reminder.text).then(() => { status.textContent = 'Mensagem copiada: envie-a à mão.'; }) }, 'Copiar mensagem'));
+  }
+  const activityId = item.service?.activityId || item.reminder?.activityId;
+  if (activityId && leadId && isCurator()) {
+    const editor = h('div', { hidden: true });
+    actions.push(h('button', { type: 'button', class: 'secondary', onclick: () => { editor.hidden = !editor.hidden; if (!editor.hidden && !editor.childElementCount) editor.append(activityEditor(leadId, activityId, { compact: true, onSaved: refresh })); } }, 'Reagendar'));
+    extra.push(editor);
+  }
+  // Pedir desbloqueio: uma tarefa para quem pode resolver, ligada ao lead, que aparece em «O meu trabalho».
+  if (item.resolver && item.resolver.email !== me && can('tasks')) {
+    actions.push(h('button', { type: 'button', class: 'secondary', onclick: () => run(() => api('POST', '/v1/tasks', {
+      title: `Desbloquear: ${item.title}`.slice(0, 140), owner: item.resolver.email, due: data.today, ...(leadId ? { leadId } : {}),
+      note: `${data.kinds[item.kind] ?? item.kind} parado: ${item.reason}${item.ownerName ? ` Responsável: ${item.ownerName}.` : ''} Pedido no centro de operações.`,
+    }), `Pedido enviado a ${item.resolver.name}: aparece em «O meu trabalho».`) }, `Pedir desbloqueio a ${item.resolver.name}`));
+  }
+  if (leadId && item.kind !== 'lead') actions.push(h('button', { type: 'button', class: 'link', onclick: () => goTo('leads', { filter: 'all', lead: leadId }) }, 'Ficha do lead'));
+
+  panel.replaceChildren(
+    h('div', {}, pill(data.kinds[item.kind] ?? item.kind), ' ', item.states.map(key => pill(data.states[key], OPS_TONE[key]))),
+    h('h3', {}, item.title),
+    item.detail ? h('p', { class: 'muted' }, item.detail) : null,
+    h('dl', { class: 'facts' },
+      h('dt', {}, 'Porque está parado'), h('dd', {}, item.reason),
+      h('dt', {}, 'Responsável'), h('dd', {}, item.ownerName || pill('Sem responsável', 'warn')),
+      h('dt', {}, 'À espera'), h('dd', {}, item.since ? `há ${lateBy(item.since)} (desde ${when(item.since)})` : '—'),
+      item.due ? [h('dt', {}, 'Prazo'), h('dd', {}, /T/.test(item.due) ? when(item.due) : item.due)] : null,
+      item.partnerName ? [h('dt', {}, 'Parceiro'), h('dd', {}, item.partnerName)] : null,
+      item.task?.createdByName ? [h('dt', {}, 'Pedida por'), h('dd', {}, item.task.createdByName)] : null,
+      h('dt', {}, 'Quem pode desbloquear'), h('dd', {}, item.resolver ? [h('strong', {}, item.resolver.name), ` (${item.resolver.why})`] : 'Ninguém ativo com este papel.')),
+    actions.length ? h('div', { class: 'actions' }, actions) : null,
+    ...extra,
+    status,
+  );
+}
 
 const views = {
   async work(view, state = workState) {
@@ -488,6 +648,7 @@ const views = {
   // lembretes para enviar à mão. «Só o meu» ou «Equipa»; fundadores entram na equipa.
   async agenda(view, state = agendaState) {
     state.scope ||= can('team-admin') ? 'team' : 'mine';
+    if (state.mode !== 'calendar') return opsCockpit(view, state);
     const { notifications, outcomes = [], outcomeLabels = {}, plan = { items: [] } } = await api('GET', `/v1/agenda?days=${state.days}&scope=${state.scope}`);
     const rerender = () => { view.replaceChildren(); views.agenda(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
     const dayKey = iso => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(new Date(iso));
@@ -536,7 +697,7 @@ const views = {
     view.append(
       h('h2', {}, 'Agenda'),
       h('p', { class: 'muted' }, 'Tudo o que tem data (hora de Lisboa): recolhas e excursões com os seus lembretes, tarefas, seguimentos de leads, prazos de casos e lembretes para enviar à mão. Em atraso primeiro; dentro de cada dia, por urgência. Os lembretes saem sozinhos à hora marcada.'),
-      h('div', { class: 'filters' }, toggle('scope', 'mine', 'Só o meu'), toggle('scope', 'team', 'Equipa'), ' ', toggle('days', 7, '7 dias'), toggle('days', 14, '14 dias')),
+      h('div', { class: 'filters' }, toggle('mode', 'ops', 'Operações'), toggle('mode', 'calendar', 'Calendário'), ' ', toggle('scope', 'mine', 'Só o meu'), toggle('scope', 'team', 'Equipa'), ' ', toggle('days', 7, '7 dias'), toggle('days', 14, '14 dias')),
       // Equipa: quem tem o quê em aberto e o que ainda não é de ninguém.
       plan.team ? h('div', { class: 'panel spaced' }, h('h3', {}, 'Quem tem o quê'),
         h('table', {},

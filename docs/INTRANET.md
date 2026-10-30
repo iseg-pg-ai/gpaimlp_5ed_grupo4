@@ -588,3 +588,30 @@ sugestões por lead. Testes locais com respostas na forma da especificação.
   a página vai direta ao login gerido.
 - **Portal:** sem «Contactos» na navegação; o botão «Proposta no portal» saiu do
   detalhe do lead.
+
+## Agenda › Operações (2026-10-30)
+
+O separador Agenda abre no centro de operações; o calendário anterior fica em
+«Calendário». Dados: `GET /v1/agenda?view=ops&scope=mine|team` (sem rota nova),
+calculados em `ops.mjs` a partir de `loadWork` (as mesmas regras de «O meu
+trabalho»), dos lembretes falhados ou não enviados a tempo (7 dias) e dos serviços
+de hoje.
+
+- **Totais que filtram:** bloqueado, em atraso, sem responsável, cliente a
+  desistir, hoje, falha de envio. Pesquisa por lead, pessoa, parceiro ou motivo.
+- **Onde se acumula:** barras por responsável, motivo, tipo, parceiro ou quem pode
+  desbloquear; clicar numa barra filtra a fila.
+- **Fila e detalhe na mesma página:** porque está parado, responsável, há quanto
+  tempo espera, prazo, parceiro e **quem pode desbloquear**, com o porquê. Regras
+  fixas: tarefa bloqueada → quem a pediu (ou o fundador com menos trabalho, se foi
+  a própria pessoa); lead, mensagem ou lembrete sem responsável → curador ou
+  fundador com menos trabalho; com responsável → o responsável; caso sem
+  responsável → governança ou fundador com menos trabalho.
+- **Ações:** assumir, atribuir a outra pessoa (só fundadores; `POST
+  /v1/leads/{id}/assign` com `to`), marcar contactado, mudar estado ou responsável
+  da tarefa, bloquear com motivo, responsável do caso, reagendar o serviço, copiar
+  a mensagem para envio à mão e **pedir desbloqueio**: cria uma tarefa para quem
+  pode desbloquear, ligada ao lead, com prazo hoje; aparece em «O meu trabalho» e
+  no feed, e «Feito» fecha o pedido.
+- «Só o meu» mostra o que é da pessoa e o que ela pode desbloquear.
+
