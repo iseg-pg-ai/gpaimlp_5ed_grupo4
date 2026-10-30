@@ -114,3 +114,11 @@ test('automatic replies stay off until a founder turns them on, and partners can
   assert.deepEqual([threads[0].key, threads[0].name, threads[0].audience, threads[0].waiting], ['partner:guide-porto', 'Guia Porto (demo)', 'partner', true]);
   assert.equal((await call('POST /v1/whatsapp-test', { direction: 'out', partnerId: 'nobody', text: 'Olá' })).statusCode, 400);
 });
+
+test('a client picked from the list without a phone gets a conversation under the lead reference, like partners', async () => {
+  const { call } = inbox({ replies: false });
+  assert.equal((await call('POST /v1/whatsapp-test', { direction: 'out', leadId: 'BLU-AAAAAAAA0001', text: 'Olá, aqui a BLU.' })).statusCode, 201);
+  const { threads } = JSON.parse((await call('GET /v1/whatsapp-test')).body);
+  assert.deepEqual([threads[0].key, threads[0].leadId, threads[0].audience], ['lead:BLU-AAAAAAAA0001', 'BLU-AAAAAAAA0001', 'traveller']);
+  assert.equal((await call('POST /v1/whatsapp-test', { direction: 'out', text: 'Sem destino' })).statusCode, 400);
+});

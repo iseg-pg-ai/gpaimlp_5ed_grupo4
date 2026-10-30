@@ -1,7 +1,7 @@
 import { ListUsersInGroupCommand } from '@aws-sdk/client-cognito-identity-provider';
 
 // Grupos da equipa no Cognito. Uma só leitura para a API (página Equipa) e para os alertas.
-export const STAFF_GROUPS = ['founders', 'curators', 'governance', 'testers', 'marketing'];
+export const STAFF_GROUPS = ['founders', 'curators', 'governance', 'testers', 'marketing', 'finance', 'auditing', 'legal', 'security', 'crm', 'cloud', 'scm'];
 
 /** Membros da equipa com os seus grupos, por nome. */
 export async function listTeamMembers(cognito, userPoolId) {

@@ -4,7 +4,7 @@ import {
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, lisbonToUtc, parseActivity, plan } from './schedule.mjs';
 import { opsItems, opsView } from './ops.mjs';
-import { OUTCOMES, OUTCOME_STATUS, SCORE, netPromoter, outcomeRecord, parseOutcome, scorecards, toOutcome } from './partner-score.mjs';
+import { EXPERIENCES, OUTCOMES, OUTCOME_STATUS, SCORE, experienceSummary, netPromoter, outcomeRecord, parseOutcome, scorecards, toOutcome } from './partner-score.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
 import { ATTESTATIONS, AUTO_TYPES, SETTINGS, VALUE_RULES, applyAttestations, currentSettings, parseAttestation, parseSettings, replyState } from './settings.mjs';
 import { AUTO_AUTHOR, WHATSAPP_TEST, inboxRecord, parseInboxPost, threadKey, threads, toInboxMessage, whatsappMode } from './whatsapp-test.mjs';
@@ -19,13 +19,29 @@ export class NotFound extends Error {}
 
 // Papéis (grupos Cognito) e o que cada um pode fazer. Um cofre único de acessos:
 // a identidade vive no Cognito, as credenciais de serviço no Secrets Manager.
+// «read» abre os dados de clientes; papéis técnicos (segurança, cloud) não o têm e só veem as
+// páginas da sua área (operations, governance, security). «attest» confirma regras legais.
 export const ROLES = {
-  founders: { label: 'Fundador(a)', can: ['read', 'leads', 'tasks', 'cases', 'security', 'team-admin', 'feedback'] },
+  founders: { label: 'Fundador(a)', can: ['read', 'leads', 'tasks', 'cases', 'security', 'team-admin', 'feedback', 'operations', 'governance', 'attest'] },
   curators: { label: 'Curador(a)', can: ['read', 'leads', 'tasks', 'cases'] },
-  governance: { label: 'Governança', can: ['read', 'tasks', 'cases', 'security'] },
+  governance: { label: 'Governança', can: ['read', 'tasks', 'cases', 'security', 'operations', 'governance', 'attest'] },
   testers: { label: 'Testes', can: ['read'] },
   // Marketing: o seu trabalho, os totais do painel e o portal de propostas; sem conversas nem contactos de clientes.
   marketing: { label: 'Marketing', can: ['tasks'] },
+  // Finanças: margens, ROI e preço por pessoa dos parceiros; tarefas, sem alterar leads nem casos.
+  finance: { label: 'Finanças', can: ['read', 'tasks'] },
+  // Auditoria: vê o que é preciso para auditar, sem alterar nada.
+  auditing: { label: 'Auditoria', can: ['read', 'security', 'operations', 'governance'] },
+  // Jurídico: reclamações e litígios e as regras legais (RNAVT, RAL, informação pré-contratual).
+  legal: { label: 'Jurídico', can: ['read', 'tasks', 'cases', 'governance', 'attest'] },
+  // Segurança da informação: segurança, operações e governança; sem dados de clientes.
+  security: { label: 'Segurança', can: ['tasks', 'security', 'operations', 'governance'] },
+  // CRM: seguimento de leads e relação com o cliente, como os curadores.
+  crm: { label: 'CRM', can: ['read', 'leads', 'tasks'] },
+  // Cloud: infraestrutura e pipeline; sem dados de clientes.
+  cloud: { label: 'Cloud', can: ['tasks', 'operations', 'security'] },
+  // SCM: fornecedores e parceiros, agendamento de serviços e o seu desempenho.
+  scm: { label: 'SCM (fornecedores)', can: ['read', 'leads', 'tasks'] },
 };
 const STAFF = Object.keys(ROLES);
 const allowed = (groups, permission) => groups.some(group => ROLES[group]?.can.includes(permission));
@@ -34,6 +50,8 @@ const LIMITED_ROUTES = new Set([
   'GET /v1/me', 'GET /v1/work', 'GET /v1/tasks', 'POST /v1/tasks', 'GET /v1/leads/{id}/tasks/{taskId}', 'POST /v1/leads/{id}/tasks/{taskId}',
   'GET /v1/feed', 'GET /v1/team', 'GET /v1/metrics', 'GET /v1/alerts', 'POST /v1/assistant',
 ]);
+// Páginas de uma área: abrem a quem tem essa permissão, mesmo sem «read» (sem dados de clientes).
+const AREA_ROUTES = { 'GET /v1/operations': 'operations', 'GET /v1/governance': 'governance', 'GET /v1/security': 'security', 'POST /v1/governance/attestations': 'attest' };
 const validEmail = email => typeof email === 'string' && email.length <= 254 && /^[^\s@<>()]+@[^\s@<>()]+\.[a-z]{2,}$/i.test(email);
 
 // Feedback da fundadora a uma conversa do chatbot: fica junto do lead, nunca vai para o cliente.
@@ -801,8 +819,13 @@ export function createApp(deps) {
       const at = now();
       const outcomes = await deps.queryAgenda(OUTCOME_STATUS, new Date(at - SCORE.windowDays * 864e5).toISOString(), at.toISOString()).catch(() => []);
       const results = outcomes.map(toOutcome);
+      // Serviços a verificar: detratores (0–6), transfer que correu mal, o pior da viagem ou falta do parceiro.
+      const partnerName = id => deps.partners.find(partner => partner.id === id)?.name ?? id;
+      const toCheck = results.filter(item => (item.recommend !== null && item.recommend <= 6) || item.transferOk === 'no' || item.worst || item.result === 'no-show')
+        .sort((a, b) => b.at.localeCompare(a.at)).slice(0, 20)
+        .map(item => ({ ...item, partnerName: partnerName(item.partnerId) }));
       // NPS da BLU na janela: todas as respostas de recomendação, de qualquer parceiro.
-      return reply(200, { partners: deps.partners, reminders: REMINDERS, kinds: KINDS, channels: CHANNELS, outcomes: OUTCOMES, score: SCORE, scorecards: scorecards(deps.partners, results, at), nps: netPromoter(results.map(item => item.recommend)) }, 'private, max-age=60');
+      return reply(200, { partners: deps.partners, reminders: REMINDERS, kinds: KINDS, channels: CHANNELS, outcomes: OUTCOMES, score: SCORE, scorecards: scorecards(deps.partners, results, at), nps: netPromoter(results.map(item => item.recommend)), experiences: EXPERIENCES, experience: experienceSummary(results), toCheck }, 'private, max-age=60');
     },
 
     // Resultado de um dia de serviço de um parceiro: um registo por ocorrência, que se pode corrigir.
@@ -1002,11 +1025,11 @@ export function createApp(deps) {
     const claims = event.requestContext?.authorizer?.jwt?.claims ?? {};
     const groups = groupsOf(claims);
     if (!groups.some(group => STAFF.includes(group))) return fail(403, 'Sem acesso à intranet. Peça ao grupo para o adicionar.');
-    if (!allowed(groups, 'read') && !LIMITED_ROUTES.has(event.routeKey)) return fail(403, 'O seu perfil não tem acesso a esta secção.');
+    if (!allowed(groups, 'read') && !LIMITED_ROUTES.has(event.routeKey) && !allowed(groups, AREA_ROUTES[event.routeKey])) return fail(403, 'O seu perfil não tem acesso a esta secção.');
     if (writes.has(event.routeKey) && !allowed(groups, 'leads')) return fail(403, 'Esta ação é reservada a curadores e fundadores.');
     if (admin.has(event.routeKey) && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores gerem acessos.');
     if (event.routeKey === 'POST /v1/settings' && !allowed(groups, 'team-admin')) return fail(403, 'Só fundadores alteram as regras de seguimento.');
-    if (event.routeKey === 'POST /v1/governance/attestations' && !allowed(groups, 'security')) return fail(403, 'Só fundadores e governança confirmam regras.');
+    if (event.routeKey === 'POST /v1/governance/attestations' && !allowed(groups, 'attest')) return fail(403, 'Só fundadores, governança e jurídico confirmam regras.');
     if (event.routeKey === 'POST /v1/leads/{id}/feedback' && !allowed(groups, 'feedback')) return fail(403, 'Só fundadores dão feedback às conversas.');
     if (event.routeKey === 'POST /v1/whatsapp-test' && !allowed(groups, 'leads')) return fail(403, 'Só curadores e fundadores escrevem na caixa de teste.');
     if (caseRoutes.has(event.routeKey) && !allowed(groups, 'cases')) return fail(403, 'Sem acesso a reclamações e litígios.');

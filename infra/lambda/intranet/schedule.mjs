@@ -126,13 +126,17 @@ export function plan(activity, { activityId, travellerPhone, travellerEmail = ''
   return notifications;
 }
 
-// Pedido de avaliação ao viajante (em inglês, como os outros lembretes ao viajante): a pergunta
-// do NPS, de 0 a 10. A resposta chega à caixa de WhatsApp (ou ao email) e regista-se em
+// Pedido de avaliação ao viajante (em inglês, como os outros lembretes ao viajante): três perguntas
+// curtas — o transfer, o melhor e o pior (sem detalhe) e o NPS, de 0 a 10. A resposta chega à caixa de WhatsApp (ou ao email) e regista-se em
 // «Registar resultado» na Agenda; o NPS de cada parceiro aparece em Parceiros.
 function ratingMessage(activity, partner) {
   const what = activity.kind === 'pickup' ? `pickup "${activity.title}"` : `excursion "${activity.title}"`;
   const withWhom = partner && activity.partnerId !== BOLT ? ` with ${partner.name}` : '';
-  return `BLU Costa: thank you for travelling with us! After your ${what}${withWhom}, how likely are you to recommend BLU Costa to a friend? Please reply with a number from 0 (not at all) to 10 (extremely likely), and any comment you'd like to share. Reply STOP to stop these messages.`;
+  return `BLU Costa: thank you for travelling with us! Three quick questions about your ${what}${withWhom}:
+1) Was your transfer OK? (yes/no)
+2) Best and worst part: transfer, accommodation, food or guide?
+3) How likely are you to recommend BLU Costa to a friend, from 0 (not at all) to 10 (extremely likely)?
+Reply STOP to stop these messages.`;
 }
 
 /** Decide o estado depois de uma tentativa de envio. */

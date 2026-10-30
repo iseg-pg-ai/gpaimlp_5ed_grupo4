@@ -5,6 +5,8 @@
 // Com menos de MIN_SERVICES serviços não há pontuação: desconhecido não é bom nem mau.
 export const OUTCOME_STATUS = 'PARTNER_OUTCOME';
 export const OUTCOMES = { 'on-time': 'A horas', late: 'Atrasado', 'no-show': 'Não apareceu', cancelled: 'Cancelado pelo parceiro' };
+// Pergunta curta ao cliente depois da viagem: o melhor e o pior, sem detalhe, e se o transfer correu bem.
+export const EXPERIENCES = { transfer: 'Transfer', accommodation: 'Alojamento', food: 'Restaurantes e comida', guide: 'Guia e equipa' };
 export const SCORE = { windowDays: 90, minServices: 3, recent: 10, weights: { punctuality: 30, rating: 30, reliability: 25, margin: 15 }, fullMargin: 0.3 };
 
 const money = value => {
@@ -30,12 +32,17 @@ export function parseOutcome(body, activity, occurrenceAt, now = new Date()) {
   // Recomendação (NPS): «de 0 a 10, recomendaria?», a resposta ao pedido enviado no dia seguinte.
   const recommend = body.recommend === undefined || body.recommend === '' ? null : Number.parseInt(body.recommend, 10);
   if (recommend !== null && !(recommend >= 0 && recommend <= 10)) return { error: 'A recomendação do cliente vai de 0 a 10.' };
+  const pick = value => (EXPERIENCES[value] ? value : '');
+  const best = pick(body.best);
+  const worst = pick(body.worst);
+  const transferOk = body.transferOk === 'yes' || body.transferOk === 'no' ? body.transferOk : '';
+  if (best && best === worst) return { error: 'O melhor e o pior não podem ser o mesmo.' };
   const cost = money(body.cost);
   const price = money(body.price);
   if (Number.isNaN(cost) || Number.isNaN(price)) return { error: 'Custo e preço têm de ser valores positivos.' };
   const currency = /^[A-Z]{3}$/.test(body.currency ?? '') ? body.currency : 'EUR';
   const comment = typeof body.comment === 'string' ? body.comment.trim().slice(0, 500) : '';
-  return { outcome: { result, delayMinutes, rating, recommend, cost, price, currency, comment } };
+  return { outcome: { result, delayMinutes, rating, recommend, best, worst, transferOk, cost, price, currency, comment } };
 }
 
 /** Campos guardados: um registo por ocorrência, encontrado pelo índice como os lembretes. */
@@ -45,7 +52,7 @@ export function outcomeRecord({ activityId, date, occurrenceAt, activity, outcom
     recordKey: `OUTCOME#${activityId}#${date}`, activityId, date, followUpStatus: OUTCOME_STATUS, followUpAt: occurrenceAt.toISOString(),
     partnerId: activity.partnerId, kind: activity.kind, title: activity.title, people: String(activity.people ?? ''),
     result: outcome.result, delayMinutes: String(outcome.delayMinutes), currency: outcome.currency,
-    ...optional('rating', outcome.rating), ...optional('recommend', outcome.recommend), ...optional('cost', outcome.cost), ...optional('price', outcome.price), ...optional('comment', outcome.comment),
+    ...optional('rating', outcome.rating), ...optional('recommend', outcome.recommend), ...optional('best', outcome.best), ...optional('worst', outcome.worst), ...optional('transferOk', outcome.transferOk), ...optional('cost', outcome.cost), ...optional('price', outcome.price), ...optional('comment', outcome.comment),
     recordedBy: user.email, recordedAt: now.toISOString(),
   };
 }
@@ -55,13 +62,23 @@ const num = (item, key) => (str(item, key) === '' ? null : Number(str(item, key)
 export const toOutcome = item => ({
   conversationId: str(item, 'conversationId'), activityId: str(item, 'activityId'), date: str(item, 'date'), at: str(item, 'followUpAt'),
   partnerId: str(item, 'partnerId'), kind: str(item, 'kind'), title: str(item, 'title'), people: num(item, 'people') ?? 0,
-  result: str(item, 'result'), delayMinutes: num(item, 'delayMinutes') ?? 0, rating: num(item, 'rating'), recommend: num(item, 'recommend'), cost: num(item, 'cost'), price: num(item, 'price'),
+  result: str(item, 'result'), delayMinutes: num(item, 'delayMinutes') ?? 0, rating: num(item, 'rating'), recommend: num(item, 'recommend'), best: str(item, 'best'), worst: str(item, 'worst'), transferOk: str(item, 'transferOk'), cost: num(item, 'cost'), price: num(item, 'price'),
   currency: str(item, 'currency') || 'EUR', comment: str(item, 'comment'), recordedBy: str(item, 'recordedBy'),
 });
 
 const share = (part, whole) => (whole ? part / whole : null);
 const round = (value, digits = 2) => (value === null ? null : Math.round(value * 10 ** digits) / 10 ** digits);
 const average = values => (values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null);
+
+/** Quantas vezes cada parte da viagem foi a melhor e a pior, e quantos transfers correram bem. */
+export function experienceSummary(outcomes) {
+  const count = key => Object.fromEntries(Object.keys(EXPERIENCES).map(id => [id, outcomes.filter(item => item[key] === id).length]));
+  return {
+    best: count('best'), worst: count('worst'),
+    transfer: { ok: outcomes.filter(item => item.transferOk === 'yes').length, notOk: outcomes.filter(item => item.transferOk === 'no').length },
+    responses: outcomes.filter(item => item.best || item.worst || item.transferOk || item.recommend !== null && item.recommend !== undefined).length,
+  };
+}
 
 /**
  * Net Promoter Score das respostas de 0 a 10: % promotores (9–10) menos % detratores (0–6),

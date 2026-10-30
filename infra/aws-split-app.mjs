@@ -475,7 +475,7 @@ class IntranetStack extends Stack {
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       removalPolicy: RemovalPolicy.RETAIN,
     });
-    for (const [group, description] of [['founders', 'Fundadores: tudo, incluindo gestão de acessos'], ['curators', 'Seguimento de leads, agenda e parceiros'], ['governance', 'Governança e evidências (leitura)'], ['testers', 'Equipa de testes (leitura)'], ['marketing', 'Marketing: tarefas, totais do painel e portal de propostas']]) {
+    for (const [group, description] of [['founders', 'Fundadores: tudo, incluindo gestão de acessos'], ['curators', 'Seguimento de leads, agenda e parceiros'], ['governance', 'Governança e evidências (leitura)'], ['testers', 'Equipa de testes (leitura)'], ['marketing', 'Marketing: tarefas, totais do painel e portal de propostas'], ['finance', 'Finanças: margens e desempenho dos parceiros'], ['auditing', 'Auditoria: leitura, sem alterações'], ['legal', 'Jurídico: reclamações, litígios e regras legais'], ['security', 'Segurança: sem dados de clientes'], ['crm', 'CRM: seguimento de leads'], ['cloud', 'Cloud: infraestrutura, sem dados de clientes'], ['scm', 'SCM: fornecedores e parceiros']]) {
       new cognito.CfnUserPoolGroup(this, `Group-${group}`, { userPoolId: userPool.userPoolId, groupName: group, description });
     }
     const domainPrefix = process.env.INTRANET_AUTH_DOMAIN_PREFIX ?? `${projectName}-${environmentName}-intranet-${account.slice(-4)}`;

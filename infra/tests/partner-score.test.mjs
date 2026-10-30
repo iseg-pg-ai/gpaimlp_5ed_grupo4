@@ -16,12 +16,16 @@ test('o resultado de um serviço só se regista depois de acontecer, com parceir
   const activity = { partnerId: 'tuk', kind: 'pickup', people: 2 };
   const past = new Date(+now - 36e5);
   assert.deepEqual(parseOutcome({ result: 'late', delayMinutes: '15', rating: '4', cost: '60', price: '90,5' }, activity, past, now).outcome,
-    { result: 'late', delayMinutes: 15, rating: 4, recommend: null, cost: 60, price: 90.5, currency: 'EUR', comment: '' });
+    { result: 'late', delayMinutes: 15, rating: 4, recommend: null, best: '', worst: '', transferOk: '', cost: 60, price: 90.5, currency: 'EUR', comment: '' });
   assert.match(parseOutcome({ result: 'on-time' }, activity, new Date(+now + 36e5), now).error, /ainda não aconteceu/);
   assert.match(parseOutcome({ result: 'late' }, activity, past, now).error, /atraso/);
   assert.match(parseOutcome({ result: 'on-time', rating: '9' }, activity, past, now).error, /1 a 5/);
   assert.equal(parseOutcome({ result: 'on-time', recommend: '0' }, activity, past, now).outcome.recommend, 0);
   assert.match(parseOutcome({ result: 'on-time', recommend: '11' }, activity, past, now).error, /0 a 10/);
+  const told = parseOutcome({ result: 'on-time', best: 'guide', worst: 'food', transferOk: 'yes' }, activity, past, now).outcome;
+  assert.deepEqual([told.best, told.worst, told.transferOk], ['guide', 'food', 'yes']);
+  assert.match(parseOutcome({ result: 'on-time', best: 'food', worst: 'food' }, activity, past, now).error, /mesmo/);
+  assert.equal(parseOutcome({ result: 'on-time', best: 'spa' }, activity, past, now).outcome.best, '');
   assert.match(parseOutcome({ result: 'on-time', cost: '-3' }, activity, past, now).error, /positivos/);
   assert.match(parseOutcome({ result: 'on-time' }, { partnerId: 'bolt' }, past, now).error, /parceiro/);
   assert.match(parseOutcome({ result: 'great' }, activity, past, now).error, /resultado/);
