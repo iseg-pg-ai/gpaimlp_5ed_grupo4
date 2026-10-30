@@ -227,21 +227,24 @@ export function createApp(deps) {
   const loadWork = async ({ cases = true, inbox = true } = {}) => {
     const at = now();
     const today = lisbonToday();
-    const [taskItems, leads, prepared, openCases, inboxItems, settings, alertItems] = await Promise.all([
+    const [taskItems, allLeads, prepared, openCases, inboxItems, settings, alertItems] = await Promise.all([
       deps.queryStatus(TASK_STATE.open),
-      listLeads('open'),
+      listLeads('all'),
       deps.queryAgenda(NOTIFY.prepared, new Date(at - 7 * 864e5).toISOString(), at.toISOString()),
       cases ? deps.queryStatus(CASE_STATE.open) : Promise.resolve([]),
       inbox ? deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix) : Promise.resolve([]),
       loadSettings(),
       Promise.resolve().then(() => deps.queryAgenda(TEAM_ALERTS.status, new Date(at - 864e5).toISOString(), at.toISOString())).catch(() => []),
     ]);
+    // Leads de demonstração não contam em nenhuma vista, nem os lembretes e mensagens desses leads.
+    const demo = new Set(allLeads.filter(lead => lead.synthetic).map(lead => lead.id));
     return {
-      at, today, settings, leads,
+      at, today, settings,
+      leads: allLeads.filter(lead => lead.status !== CONTACTED),
       tasks: taskItems.map(item => toTask(item, today)),
-      prepared: prepared.map(toNotification),
+      prepared: prepared.map(toNotification).filter(item => !demo.has(item.conversationId)),
       cases: openCases.map(item => toCase(item, today)),
-      threads: threads(inboxItems.map(toInboxMessage), deps.partners),
+      threads: threads(inboxItems.map(toInboxMessage), deps.partners).filter(thread => !demo.has(thread.leadId)),
       alerts: alertItems.map(toAlert),
     };
   };
