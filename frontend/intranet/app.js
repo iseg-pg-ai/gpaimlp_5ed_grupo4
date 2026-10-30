@@ -119,7 +119,40 @@ let casePrefill = {};
 // Os leads de demonstração ficam escondidos por defeito, como nos números da Visão geral e do Painel.
 const leadsState = { filter: 'open', selected: '', demo: false };
 // Conversa com o assistente: só em memória, apaga-se ao recarregar a página.
-const whatsappState = { selected: '', leadId: '' };
+const whatsappState = { selected: '', leadId: '', proposal: null };
+
+// Proposta enviada pelo portal: #whatsapp?link=…&v=1&dest=… (o fragmento nunca sai do navegador).
+// Só aceita ligações de partilha https do portal; o resto é ignorado.
+function proposalHandoff() {
+  const [tab, query = ''] = location.hash.slice(1).split('?');
+  if (tab !== 'whatsapp' || !query) return null;
+  const params = new URLSearchParams(query);
+  const link = params.get('link') ?? '';
+  if (!/^https:\/\/[^\s/?#]+\/(share\/[\w-]+|api\/shares\/[\w-]+\/document)$/.test(link)) return null;
+  return { link, version: Math.min(Math.max(Number.parseInt(params.get('v') ?? '1', 10) || 1, 1), 999), destination: (params.get('dest') ?? '').slice(0, 80) };
+}
+
+// A mensagem fica preparada para rever: escolhe-se o lead (já sugerido pelo destino) e envia-se.
+function handoffPanel(state, leads, rerender) {
+  const { proposal } = state;
+  const guess = leads.find(lead => proposal.destination && lead.journey?.destination?.toLowerCase().includes(proposal.destination.toLowerCase()));
+  const holder = h('div', {});
+  const who = h('select', { 'aria-label': 'Lead da proposta' }, h('option', { value: '' }, 'Escolher o lead…'),
+    leads.filter(lead => !lead.synthetic || intelDemo.on).map(lead => h('option', { value: lead.id, selected: lead.id === guess?.id }, `${lead.journey?.destination || 'Sem destino'} · ${lead.id}`)));
+  const load = async () => {
+    holder.replaceChildren();
+    if (!who.value) return;
+    const lead = await api('GET', `/v1/leads/${encodeURIComponent(who.value)}`).catch(() => null);
+    if (lead) holder.append(proposalComposer(lead, proposal));
+  };
+  who.addEventListener('change', load);
+  load();
+  return h('div', { class: 'panel' },
+    h('h3', {}, `Proposta v${String(proposal.version).padStart(3, '0')} recebida do portal`),
+    h('p', { class: 'muted' }, 'A mensagem está preparada com o link de acesso temporário. Reveja e envie; se o cliente não responder, escreva uma versão personalizada.'),
+    h('label', {}, 'Para o lead', who), holder,
+    h('div', { class: 'actions' }, h('button', { type: 'button', class: 'link', onclick: () => { state.proposal = null; rerender(); } }, 'Descartar')));
+}
 let teamCache;
 const loadTeam = async () => (teamCache ??= (await api('GET', '/v1/team')).members);
 // «Bloqueado» já aparece no estado da tarefa; a urgência só o usa para ordenar e colorir.
@@ -529,17 +562,20 @@ function proposalMessage({ name, destination, party, dates, link, curator }) {
   ].join('\n');
 }
 
-function proposalComposer(lead) {
+function proposalComposer(lead, preset = null) {
   const curator = (session.claims?.name || session.claims?.email || 'BLU').split(/[\s@(]/)[0];
   const phone = String(lead.phones?.[0] ?? '').replace(/\D/g, '').replace(/^00/, '');
-  const link = h('input', { type: 'url', placeholder: 'Link da proposta (portal)', 'aria-label': 'Link da proposta' });
+  const link = h('input', { type: 'url', placeholder: 'Link da proposta (portal)', 'aria-label': 'Link da proposta', value: preset?.link ?? '' });
   const name = h('input', { type: 'text', maxlength: '60', placeholder: 'Nome do cliente (opcional)', 'aria-label': 'Nome do cliente' });
   const text = h('textarea', { rows: '12', maxlength: '1000', 'aria-label': 'Mensagem' });
   const status = h('p', { class: 'muted', role: 'status' });
   let edited = false;
   const fill = () => {
     if (edited) return;
-    text.value = proposalMessage({ name: name.value.trim(), destination: lead.journey.destination, party: lead.journey.party, dates: lead.journey.timeframe, link: link.value.trim(), curator });
+    text.value = proposalMessage({ name: name.value.trim(), destination: lead.journey.destination, party: lead.journey.party, dates: lead.journey.timeframe, link: link.value.trim(), curator })
+      + (preset ? `
+
+Proposta v${String(preset.version).padStart(3, '0')} · BLU Costa Travel · Curation Studio` : '');
   };
   text.addEventListener('input', () => { edited = true; });
   link.addEventListener('input', fill);
@@ -565,7 +601,7 @@ function proposalComposer(lead) {
     h('label', {}, 'Mensagem (pode editar)', text),
     h('p', { class: 'muted' }, phone.length >= 9 ? `Para +${phone}, o número que o cliente deixou no chat.` : 'Sem telefone no chat: a conversa fica com a referência do lead.'),
     h('div', { class: 'actions' }, send), status);
-  return h('details', { class: 'panel fold proposal-fold' }, h('summary', {}, h('span', { class: 'fold-title' }, 'Enviar proposta por WhatsApp')), form);
+  return h('details', { class: 'panel fold proposal-fold', ...(preset ? { open: true } : {}) }, h('summary', {}, h('span', { class: 'fold-title' }, preset ? `Proposta v${String(preset.version).padStart(3, '0')} do portal, pronta a rever` : 'Enviar proposta por WhatsApp')), form);
 }
 
 // Novo parceiro: a lista vem de config/partners.json (com licença verificada), por isso o pedido é
@@ -1425,8 +1461,9 @@ const views = {
       message.direction === 'in' && message.decision === 'person' ? h('div', { class: 'muted' }, `Para uma pessoa: ${message.reason}`) : null,
       h('time', {}, `${when(message.at)} · ${message.direction === 'in' ? (thread.audience === 'partner' ? 'parceiro (simulado)' : 'cliente (simulado)') : message.authorName || message.author}`),
       message.author === 'auto-assistant' ? [' ', pill('automática', 'ok')] : null);
-    view.append(
+    view.append(...[
       h('h2', {}, 'WhatsApp'),
+      state.proposal && isCurator() ? handoffPanel(state, leads, rerender) : null,
       mode === 'test'
         ? h('div', { class: 'panel warn-note', role: 'note' }, h('strong', {}, 'Modo de teste: nenhuma mensagem sai para o WhatsApp.'), h('p', {}, 'Os lembretes e mensagens automáticas que iriam por WhatsApp aparecem aqui, à hora marcada. Pode responder como BLU ou simular a resposta do cliente ou do parceiro para testar o circuito.'))
         : h('div', { class: 'panel', role: 'note' }, h('strong', {}, 'Modo real: as mensagens saem pelo WhatsApp Business.'), h('p', { class: 'muted' }, 'Esta caixa mostra só o histórico dos testes.')),
@@ -1454,7 +1491,7 @@ const views = {
             : mode === 'test' && isCurator() ? composer(current) : null,
         ] : h('p', { class: 'muted' }, 'Escolha uma conversa.')),
       ),
-    );
+    ].filter(Boolean));
   },
 
   async operations(view, state = operationsState) {
@@ -2124,7 +2161,7 @@ function applySite() {
 
 // A secção vai no #hash: ligações partilhadas e o botão «anterior» do navegador funcionam.
 const tabFromHash = () => {
-  const tab = decodeURIComponent(location.hash.slice(1));
+  const tab = decodeURIComponent(location.hash.slice(1).split('?')[0]);
   return views[tab] && tabVisible(tab) ? tab : '';
 };
 
@@ -2218,6 +2255,8 @@ async function start() {
     else if (hiddenAt && Date.now() - hiddenAt > 60_000) show(current);
   });
   window.addEventListener('popstate', () => { const tab = tabFromHash(); if (tab && tab !== current) show(tab); });
+  // Proposta vinda do portal: abre o WhatsApp com a mensagem preparada.
+  whatsappState.proposal = proposalHandoff();
   // Quem tem a visão geral entra por ela; os restantes pelo seu trabalho.
   show(tabFromHash() || (can('team-admin') ? 'control' : SITE.start));
   mountAssistant();

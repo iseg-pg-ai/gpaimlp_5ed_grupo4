@@ -3,11 +3,14 @@
 import { portalFetch } from "@/lib/http-client";
 
 import { useState } from "react";
-import { Copy, Mail, Share2, X } from "lucide-react";
+import { Copy, Mail, MessageCircle, Share2, X } from "lucide-react";
 import { LanguagePicker, T } from "@/components/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/form-controls";
 import { languages, type Locale } from "@/lib/locales";
+
+// Endereço da Mission Control (intranet), fixado no build; sem ele, o botão de WhatsApp não aparece.
+const missionControlUrl = process.env.NEXT_PUBLIC_INTRANET_URL ?? "";
 
 type ShareResult = { shareUrl: string; recipient: string; expiresAt: string };
 
@@ -57,8 +60,25 @@ export function ShareProposalModal({
     anchor.click();
   };
 
+  // O fragmento (#) fica no navegador: o link da proposta não passa pelos servidores da intranet.
+  const openMissionControl = (share: ShareResult) => {
+    const query = new URLSearchParams({
+      link: share.shareUrl,
+      v: String(version),
+      dest: destination,
+    });
+    window.open(
+      `${missionControlUrl.replace(/\/+$/, "")}/#whatsapp?${query}`,
+      "_blank",
+      "noopener",
+    );
+  };
+
   const prepareShare = async (event: React.FormEvent) => {
     event.preventDefault();
+    const whatsapp =
+      Boolean(missionControlUrl) &&
+      (event.nativeEvent as SubmitEvent).submitter?.getAttribute("data-channel") === "whatsapp";
     setBusy(true);
     setError("");
     setResult(null);
@@ -71,7 +91,7 @@ export function ShareProposalModal({
           version,
           locale,
           method,
-          recipient,
+          recipient: whatsapp ? "whatsapp" : recipient,
           retentionDays,
           consent,
         }),
@@ -80,7 +100,8 @@ export function ShareProposalModal({
       if (!response.ok) throw new Error(payload.error || "Não foi possível preparar a partilha.");
       setResult(payload);
       await navigator.clipboard?.writeText(payload.shareUrl).catch(() => undefined);
-      openEmail(payload);
+      if (whatsapp) openMissionControl(payload);
+      else openEmail(payload);
     } catch (shareError) {
       setError(
         shareError instanceof Error ? shareError.message : "Não foi possível preparar a partilha.",
@@ -128,7 +149,7 @@ export function ShareProposalModal({
               name="recipientEmail"
               className="mt-1.5 h-11 text-sm"
               type="email"
-              required
+              required={!missionControlUrl}
               autoFocus
               value={recipient}
               onChange={(event) => setRecipient(event.target.value)}
@@ -270,6 +291,18 @@ export function ShareProposalModal({
               <Mail className="size-4" />
               {busy ? "A preparar…" : "Preparar email"}
             </Button>
+            {missionControlUrl && (
+              <Button
+                type="submit"
+                variant="primaryDark"
+                disabled={busy || !consent}
+                data-channel="whatsapp"
+                formNoValidate
+              >
+                <MessageCircle className="size-4" />
+                Enviar por WhatsApp (Mission Control)
+              </Button>
+            )}
           </div>
         </form>
       </section>

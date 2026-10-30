@@ -34,7 +34,11 @@ export async function POST(request: Request) {
     if (!(["document", "link"] as const).includes(body.method))
       throw new Error("Forma de partilha inválida.");
     body.recipient = body.recipient.trim();
-    if (body.recipient.length > 320 || !emailPattern.test(body.recipient))
+    // «whatsapp»: a proposta segue pela Mission Control, sem email do cliente.
+    if (
+      body.recipient !== "whatsapp" &&
+      (body.recipient.length > 320 || !emailPattern.test(body.recipient))
+    )
       throw new Error("Email do destinatário inválido.");
     if (body.consent !== true) throw new Error("Confirme a autorização para partilhar.");
     if (![7, 30, 90].includes(body.retentionDays)) throw new Error("Prazo de acesso inválido.");
