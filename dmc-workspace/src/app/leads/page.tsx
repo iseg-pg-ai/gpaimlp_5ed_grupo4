@@ -5,8 +5,11 @@ import { portalFetch } from "@/lib/http-client";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Mail, MessageCircle, RefreshCw, Save, Tag } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, FileText, Mail, MessageCircle, RefreshCw, Save, Tag } from "lucide-react";
 import { T, useLocale } from "@/components/LocaleProvider";
+import { emptyBrief } from "@/data/initialBrief";
+import { LEAD_DRAFT_STORAGE, leadToBrief } from "@/lib/lead-brief";
 import {
   isOverdue,
   journeyLabels,
@@ -16,6 +19,7 @@ import {
   type Lead,
   type LeadDetail,
   type LeadFilter,
+  validLeadId,
 } from "@/lib/leads-model";
 
 async function readJson<Value>(response: Response): Promise<Value> {
@@ -33,6 +37,7 @@ const statusText: Record<string, string> = {
 
 export default function LeadsPage() {
   const { locale } = useLocale();
+  const router = useRouter();
   const [filter, setFilter] = useState<LeadFilter>("open");
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selected, setSelected] = useState<LeadDetail | null>(null);
@@ -83,6 +88,14 @@ export default function LeadsPage() {
       setError(openError instanceof Error ? openError.message : "Erro ao abrir o contacto.");
     }
   };
+
+  // Ligação direta da intranet (/leads?lead=BLU-…): abre logo esse contacto.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("lead") ?? "";
+    if (validLeadId(id)) queueMicrotask(() => void open(id));
+    // Só no primeiro carregamento: depois a escolha é feita na lista.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const markContacted = async () => {
     if (!selected) return;
@@ -298,6 +311,52 @@ export default function LeadsPage() {
                     ))}
                 </dl>
               )}
+
+              {(() => {
+                // Rascunho de proposta: preenche o formulário de viagem com o que o cliente
+                // disse; o curador confirma os pressupostos, gera o roteiro e só depois envia.
+                const today = new Date().toISOString().slice(0, 10);
+                const draft = leadToBrief(selected, emptyBrief(), today);
+                return (
+                  <section
+                    aria-label="Rascunho de proposta"
+                    className="mt-3 rounded-lg border border-[var(--portal-line-d5d1c7)] p-3"
+                  >
+                    <h3 className="flex items-center gap-2 text-sm font-semibold">
+                      <FileText aria-hidden="true" className="size-4" />
+                      <T text="Rascunho de proposta" source="pt" />
+                    </h3>
+                    <p className="mt-1 text-xs opacity-80">
+                      <T
+                        text="Abre o formulário de viagem preenchido com o que o cliente disse. Gera locais, atividades e percursos por estrada; nada é enviado ao cliente sem revisão."
+                        source="pt"
+                      />
+                    </p>
+                    <details className="mt-2 text-xs">
+                      <summary className="cursor-pointer">
+                        <T text="Pressupostos a confirmar" source="pt" /> (
+                        {draft.assumptions.length})
+                      </summary>
+                      <ul className="mt-1 list-disc pl-5">
+                        {draft.assumptions.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </details>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sessionStorage.setItem(LEAD_DRAFT_STORAGE, JSON.stringify(draft.brief));
+                        router.push("/");
+                      }}
+                      className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--portal-bg-143f4b)] px-3 text-sm text-white"
+                    >
+                      <FileText aria-hidden="true" className="size-4" />
+                      <T text="Criar rascunho de proposta" source="pt" />
+                    </button>
+                  </section>
+                );
+              })()}
 
               <section
                 aria-label="Etiquetas do curador"

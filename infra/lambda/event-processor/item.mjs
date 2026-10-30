@@ -15,8 +15,26 @@ export function messageItem(record, occurredAtId) {
   };
 }
 
+// Frases com que o cliente diz que vai desistir (inglês e português, sem acentos).
+// Deteção simples e explicável: falsos positivos só pedem um contacto humano mais cedo.
+const CHURN_PHRASES = [
+  /\b(quit|quitting|give up|giving up|forget it|never ?mind|not interested|no longer interested|lost interest|waste of time|too expensive|going elsewhere|book(ing)? elsewhere|another agency|i'?m done|stop messaging|cancel (my|the|our) (trip|booking|plans?))\b/,
+  /\b(desisto|desistir|vou desistir|esquece|deixa estar|nao tenho interesse|ja nao (estou|tenho) interess\w*|perda de tempo|muito caro|outra agencia|reservar noutro|cancelar a viagem)\b/,
+];
+
+/** Devolve a frase de desistência encontrada numa mensagem do cliente, ou ''. */
+export function churnSignal(text) {
+  const plain = String(text ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’`]/g, "'");
+  for (const pattern of CHURN_PHRASES) {
+    const match = plain.match(pattern);
+    if (match) return match[0];
+  }
+  return '';
+}
+
 // The PROFILE record is the CRM lead: activity and follow-up for every event, a message
 // count for real messages only, and the latest journey snapshot for leads and churn review.
+// Um sinal de desistência do cliente fica em churnSignalAt até um curador o contactar.
 export function profileUpdate(record) {
   const eventType = record.eventType || 'conversation.message.recorded';
   const followUpAt = new Date(Date.parse(record.occurredAt) + 3 * 86400000).toISOString();
@@ -32,6 +50,8 @@ export function profileUpdate(record) {
     if (record.context.stage) { set.push('journeyStage=:stage'); values[':stage'] = { S: record.context.stage }; }
   }
   if (eventType === 'lead.consent.granted') { set.push('consentAt=:at', 'journeyStage=:consented'); values[':consented'] = { S: 'curator-follow-up' }; }
+  const signal = eventType === 'conversation.message.recorded' && record.message.actor === 'customer' ? churnSignal(record.message.text) : '';
+  if (signal) { set.push('churnSignalAt=:at', 'churnSignal=:signal'); values[':signal'] = { S: signal }; }
   const add = eventType === 'conversation.message.recorded' ? ' ADD messageCount :one' : '';
   if (add) values[':one'] = { N: '1' };
   return {

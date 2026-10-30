@@ -1,0 +1,280 @@
+// Só para pré-visualização local (excluído do deploy): dados fictícios, sem AWS nem login.
+// ?role=marketing (ou outro grupo) mostra a intranet como esse perfil a vê.
+const mockRole = new URLSearchParams(location.search).get('role') || 'founders';
+window.BLU_INTRANET = { mock: { claims: { name: 'Fundadora de teste', email: 'fundadora@example.com', 'cognito:username': 'u-founder', 'cognito:groups': [mockRole] } } };
+const hours = n => new Date(Date.now() + n * 36e5).toISOString();
+const leads = [
+  { id: 'BLU-DEMO000000000004', status: 'PENDING', followUpAt: hours(70), lastActivityAt: hours(-1), channel: 'website', messageCount: 9, synthetic: false, stage: 'curator-follow-up', consentAt: hours(-3), assignedTo: 'fundadora@example.com', assignedAt: hours(-1), journey: { destination: 'Algarve e Açores', timeframe: 'meados de março 2027', party: '2 adultos', budget: '3000–6000 EUR' }, tags: [], churnSignalAt: hours(-1), churnSignal: 'give up', atRisk: true },
+  { id: 'BLU-DEMO000000000001', status: 'QUEUED_FOR_REVIEW', followUpAt: hours(-20), lastActivityAt: hours(-90), channel: 'website', messageCount: 4, synthetic: false, stage: 'curator-follow-up', consentAt: hours(-92), journey: { destination: 'Costa norte e Algarve', timeframe: '25 nov – 10 dez 2026', party: '3 adultos', budget: '3000 EUR', interests: 'surf, vinho, vegano', pace: 'ativo', socialSource: 'instagram' }, tags: ['hot'], curatorNote: 'Prefere contacto por email.', aiStatus: 'ok', aiAnalysedAt: hours(-89), aiSentiment: 'positive', aiSignals: [{ signal: 'hot', confidence: 0.86, certain: true }, { signal: 'needs-info', confidence: 0.55, certain: false }], aiReason: 'Pedido concreto com orçamento e grupo; faltam as datas exatas.', aiChatbot: { verdict: 'improve', confidence: 0.78, certain: true, note: 'Pediu o contacto antes de perguntar as datas da viagem.' } },
+  { id: 'BLU-DEMO000000000002', status: 'PENDING', followUpAt: hours(30), lastActivityAt: hours(-40), channel: 'website', messageCount: 6, synthetic: false, stage: 'ready-for-curator', consentAt: hours(-41), assignedTo: 'curador@example.com', assignedAt: hours(-2), journey: { destination: 'Lisboa e Sintra', timeframe: 'maio 2027', party: 'casal', interests: 'história romana' }, tags: [] },
+  { id: 'BLU-DEMO000000000003', status: 'CONTACTED', followUpAt: hours(-50), contactedAt: hours(-60), lastActivityAt: hours(-80), channel: 'whatsapp', messageCount: 3, synthetic: true, consentAt: hours(-85), journey: { destination: 'Douro' }, tags: ['vip'] },
+];
+const messages = [
+  { at: hours(-92), actor: 'customer', channel: 'website', eventType: 'conversation.message.recorded', text: 'Viagem de surf na costa norte e Algarve, 3 adultos, 3000 EUR. demo@example.com' },
+  { at: hours(-92), actor: 'assistant', channel: 'website', eventType: 'conversation.message.recorded', text: 'Que bom! Posso pedir a um curador que entre em contacto por email?' },
+  { at: hours(-91), actor: 'system', channel: 'website', eventType: 'lead.consent.granted', text: 'O visitante aceitou ser contactado por um curador.' },
+];
+// Tarefas e feed em memória: as alterações duram até recarregar a página.
+const day = n => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+const TASK_STATUS = { todo: 'Por fazer', doing: 'Em curso', blocked: 'Bloqueado', done: 'Feito' };
+const names = { 'fundadora@example.com': 'Fundadora de teste', 'curador@example.com': 'Curador de teste' };
+const tasks = [
+  { id: 'task-0001', partition: 'BLU-DEMO000000000004', leadId: 'BLU-DEMO000000000004', leadLabel: 'Algarve e Açores', title: 'Confirmar tuk-tuk para Algarve e Açores', note: '', owner: 'fundadora@example.com', due: day(-1), status: 'doing', blockedReason: '', updatedAt: hours(-5) },
+  { id: 'task-0002', partition: 'TASKS-UNLINKED', leadId: '', title: 'Resposta do hotel em Sintra', note: 'Pedido de 2 quartos para maio.', owner: 'fundadora@example.com', due: day(2), status: 'blocked', blockedReason: 'À espera do parceiro', updatedAt: hours(-3) },
+  { id: 'task-0003', partition: 'BLU-DEMO000000000002', leadId: 'BLU-DEMO000000000002', leadLabel: 'Lisboa e Sintra', title: 'Preparar proposta Lisboa e Sintra', note: '', owner: 'curador@example.com', due: day(5), status: 'todo', blockedReason: '', updatedAt: hours(-8) },
+];
+const feed = [
+  { at: hours(-3), by: 'fundadora@example.com', byName: 'Fundadora de teste', text: 'bloqueou «Resposta do hotel em Sintra»: À espera do parceiro' },
+  { at: hours(-5), by: 'curador@example.com', byName: 'Curador de teste', text: 'criou «Confirmar tuk-tuk para Algarve e Açores» para Fundadora de teste' },
+];
+const taskLog = {};
+const AUTO_TYPES = { thanks: 'Agradecimento logo após o consentimento', nudge: 'Reativação quando o cliente fica 3 dias em silêncio depois do contacto', reminders: 'Lembretes de recolhas e excursões aprovadas', replies: 'Respostas sozinhas a perguntas simples por WhatsApp (hora, local, confirmação), com os dados da reserva' };
+const settings = { replyHours: 4, auto: { thanks: false, nudge: false, reminders: true, replies: true }, updatedBy: '', updatedAt: '' };
+const attestations = {};
+// As regras e o agrupamento são os módulos reais da Lambda, para a pré-visualização decidir como a AWS.
+const real = Promise.all([import('../../infra/lambda/intranet/guardrails.mjs'), import('../../infra/lambda/intranet/whatsapp-test.mjs')]);
+const mockPartners = [
+  { id: 'tuk-alfama', name: 'Tuk-tuk Alfama (demo)', kind: 'tuk-tuk', area: 'Lisboa: Alfama, Baixa', seats: 6, whatsapp: '', demo: true },
+  { id: 'transfer-sintra', name: 'Transfer Sintra', kind: 'transfer', area: 'Sintra, Cascais', seats: 8, whatsapp: '351900000000', license: { type: 'RNAAT', number: '0000/2020' } },
+];
+// Resultados de serviços dos parceiros (90 dias): o tuk-tuk pontual e com boa margem, o transfer com atrasos.
+const outcome = (partnerId, daysAgo, result, extra = {}) => ({ conversationId: 'BLU-DEMO000000000004', activityId: `demo-${partnerId}-${daysAgo}`, date: day(-daysAgo), at: hours(-24 * daysAgo), partnerId, kind: 'pickup', title: 'Recolha no hotel', people: 2, result, delayMinutes: 0, rating: null, cost: null, price: null, currency: 'EUR', comment: '', ...extra });
+const partnerOutcomes = [
+  outcome('tuk-alfama', 3, 'on-time', { rating: 5, cost: 60, price: 90 }), outcome('tuk-alfama', 10, 'on-time', { rating: 4, cost: 60, price: 85 }),
+  outcome('tuk-alfama', 20, 'late', { delayMinutes: 10, rating: 4, cost: 55, price: 80 }), outcome('tuk-alfama', 40, 'on-time', { rating: 5 }),
+  outcome('transfer-sintra', 5, 'late', { delayMinutes: 35, rating: 2, cost: 70, price: 80, comment: 'Chegou tarde ao aeroporto.' }),
+  outcome('transfer-sintra', 15, 'no-show', { cost: 0, price: 0 }), outcome('transfer-sintra', 25, 'on-time', { rating: 4, cost: 70, price: 95 }),
+];
+const bookingFacts = { title: 'Recolha no hotel', place: 'Hotel Avenida, Lisboa', date: day(1), time: '09:30', people: 2, partner: 'Tuk-tuk Alfama (demo)' };
+const waInbox = [
+  { at: hours(-2), direction: 'out', to: '351912345678', title: 'Recolha no hotel', text: 'BLU Costa reminder: your pickup at Hotel Avenida, tomorrow 09:30, 2 people.', leadId: 'BLU-DEMO000000000004', author: 'curator-schedule', authorName: 'Lembrete agendado' },
+  { at: hours(-1.6), direction: 'in', to: '351912345678', text: 'What time is the pickup?', leadId: 'BLU-DEMO000000000004', author: 'fundadora@example.com', decision: 'auto', reason: 'Pergunta simples respondida com os dados da reserva.' },
+  { at: hours(-1.59), direction: 'out', to: '351912345678', text: 'Recolha no hotel: tomorrow at 09:30 with Tuk-tuk Alfama (demo). See you then!', leadId: 'BLU-DEMO000000000004', author: 'auto-assistant', authorName: 'Resposta automática', decision: 'auto' },
+  { at: hours(-5), direction: 'in', to: '351930000000', text: 'How much would a private Douro day cost for 4?', leadId: 'BLU-DEMO000000000002', author: 'fundadora@example.com', decision: 'person', reason: 'Fala de preço ou pagamento: só uma pessoa responde.', suggestion: 'Thank you for your message. A BLU curator will reply shortly.' },
+  { at: hours(-0.5), direction: 'out', partnerId: 'tuk-alfama', to: '', text: 'BLU Costa: recolha amanhã às 09:30 no Hotel Avenida, 2 pessoas. Confirma?', leadId: 'BLU-DEMO000000000004', author: 'curator-schedule', authorName: 'Lembrete agendado' },
+  { at: hours(-0.3), direction: 'in', partnerId: 'tuk-alfama', to: '', text: 'Podemos mudar para as 10h? Trânsito na Baixa.', leadId: 'BLU-DEMO000000000004', author: 'fundadora@example.com', decision: 'person', reason: 'Fala de alteração ou cancelamento: só uma pessoa responde.', suggestion: 'Obrigado pela mensagem. Uma curadora da BLU responde em breve.' },
+];
+async function mockInbox(method, body) {
+  const [{ decide, templateReply }, { threadKey, threads }] = await real;
+  if (method === 'POST') {
+    const partner = mockPartners.find(item => item.id === body.partnerId);
+    const message = { at: new Date().toISOString(), direction: body.direction, to: partner ? partner.whatsapp : String(body.to ?? '').replace(/\D/g, ''), partnerId: partner?.id ?? '', text: body.text, title: '', leadId: body.leadId ?? '', author: 'fundadora@example.com', authorName: 'Fundadora de teste' };
+    const thread = waInbox.filter(item => threadKey(item) === threadKey(message));
+    if (body.direction === 'out') {
+      if (thread.some(item => item.decision === 'stop')) throw new Error('Esta pessoa pediu para não receber mais mensagens.');
+      waInbox.push(message);
+      return { at: message.at };
+    }
+    message.leadId ||= thread.findLast(item => item.leadId)?.leadId ?? '';
+    const facts = message.leadId === 'BLU-DEMO000000000004' ? bookingFacts : null;
+    const autoToday = thread.filter(item => item.author === 'auto-assistant' && item.at >= hours(-24)).length;
+    const decision = decide({ text: message.text, enabled: settings.auto.replies, facts, autoToday, now: new Date() });
+    const reply = decision.action === 'stop' ? '' : templateReply(decision.intent, facts, message.text);
+    waInbox.push({ ...message, decision: decision.action, reason: decision.reason, suggestion: decision.action === 'person' ? reply : '' });
+    if (decision.action === 'auto') waInbox.push({ ...message, at: new Date(Date.now() + 1).toISOString(), direction: 'out', text: reply, author: 'auto-assistant', authorName: 'Resposta automática', decision: 'auto' });
+    return { at: message.at, decision: decision.action, reason: decision.reason };
+  }
+  return { mode: 'test', autoReplies: settings.auto.replies, threads: threads(waInbox.map(item => ({ title: '', to: '', partnerId: '', leadId: '', decision: '', reason: '', suggestion: '', authorName: '', ...item })), mockPartners) };
+}
+async function waitingWork() {
+  const { threads: all } = await mockInbox('GET');
+  return all.filter(thread => thread.waiting).map(thread => {
+    const last = thread.messages.at(-1);
+    return { kind: 'message', id: thread.key, partition: thread.leadId, title: thread.name || thread.leadId || `+${thread.to}`, due: last.at.slice(0, 10), detail: last.reason, urgency: Date.now() - Date.parse(last.at) >= settings.replyHours * 36e5 ? 'overdue' : 'soon', message: { key: thread.key, to: thread.to, partnerId: thread.partnerId, leadId: thread.leadId, audience: thread.audience, text: last.text, at: last.at, suggestion: last.suggestion } };
+  });
+}
+const VERDICTS = { good: 'Boa resposta', improve: 'A melhorar', wrong: 'Errada' };
+const feedbackGiven = { 'BLU-DEMO000000000001': [{ verdict: 'improve', note: 'Devia ter perguntado as datas antes de falar de hotéis.', by: 'fundadora@example.com', byName: 'Fundadora de teste', at: hours(-20) }] };
+const dueState = task => (task.status === 'done' ? 'done' : !task.due ? 'none' : task.due < day(0) ? 'overdue' : task.due <= day(2) ? 'soon' : 'on-track');
+const withState = task => {
+  const state = dueState(task);
+  return { ...task, dueState: state, urgency: task.status === 'blocked' ? 'blocked' : state === 'overdue' ? 'overdue' : state === 'soon' ? 'soon' : 'normal' };
+};
+const rank = { risk: 0, overdue: 1, blocked: 2, soon: 3, normal: 4 };
+const byUrgency = (a, b) => rank[a.urgency] - rank[b.urgency] || (a.due || '9999').localeCompare(b.due || '9999');
+const announce = text => feed.unshift({ at: new Date().toISOString(), by: 'fundadora@example.com', byName: 'Fundadora de teste', text });
+async function taskRoutes(method, path, body = {}) {
+  const me = 'fundadora@example.com';
+  if (path === '/v1/work') return { statuses: TASK_STATUS, today: day(0), items: [
+    ...(await waitingWork()),
+    ...tasks.filter(task => task.owner === me && task.status !== 'done').map(withState).map(task => ({ kind: 'task', id: task.id, partition: task.partition, title: task.title, due: task.due, urgency: task.urgency, task })),
+    { kind: 'lead', id: 'BLU-DEMO000000000004', partition: 'BLU-DEMO000000000004', title: 'Algarve e Açores', due: day(3), detail: 'meados de março 2027 · 2 adultos', urgency: 'risk' },
+    { kind: 'reminder', id: 'NOTIFY#a1', partition: 'BLU-DEMO000000000001', title: 'Recolha no hotel', due: day(0), detail: 'Sem contacto para este canal; enviar manualmente.', urgency: 'overdue' },
+    { kind: 'case', id: 'case-0001', partition: 'BLU-DEMO000000000001', title: 'Recolha atrasada 40 min', due: '2026-11-10', detail: 'Livro de Reclamações', urgency: 'normal' },
+  ].sort(byUrgency) };
+  if (path.startsWith('/v1/tasks?')) {
+    const done = path.includes('done');
+    return { statuses: TASK_STATUS, today: day(0), tasks: tasks.filter(task => (task.status === 'done') === done).map(withState).sort(done ? (a, b) => b.updatedAt.localeCompare(a.updatedAt) : byUrgency) };
+  }
+  if (path === '/v1/tasks' && method === 'POST') {
+    if (!body.title?.trim()) throw new Error('Indique o que há a fazer.');
+    const task = { id: `task-${String(tasks.length + 1).padStart(4, '0')}`, partition: body.leadId || 'TASKS-UNLINKED', leadId: body.leadId || '', leadLabel: '', title: body.title.trim(), note: body.note || '', owner: body.owner || me, due: body.due || '', status: 'todo', blockedReason: '', updatedAt: new Date().toISOString() };
+    tasks.push(task);
+    taskLog[task.id] = [{ at: task.updatedAt, by: me, text: `Tarefa criada para ${names[task.owner] ?? task.owner}.` }];
+    announce(task.owner === me ? `criou «${task.title}»` : `criou «${task.title}» para ${names[task.owner] ?? task.owner}`);
+    return { taskId: task.id, partition: task.partition };
+  }
+  const match = path.match(/\/tasks\/(task-\d+)$/);
+  if (!match) return undefined;
+  const task = tasks.find(item => item.id === match[1]);
+  if (method === 'GET') return { ...withState(task), log: taskLog[task.id] ?? [{ at: task.updatedAt, by: task.owner, text: 'Tarefa criada.' }] };
+  if (body.status === 'blocked' && !body.blockedReason?.trim()) throw new Error('Diga o que está a bloquear a tarefa.');
+  let text = `comentou «${task.title}»`;
+  if (body.status) { task.status = body.status; task.blockedReason = body.status === 'blocked' ? body.blockedReason : ''; text = body.status === 'blocked' ? `bloqueou «${task.title}»: ${body.blockedReason}` : `moveu «${task.title}» para ${TASK_STATUS[body.status]}`; }
+  if (body.owner) { task.owner = body.owner; text = `passou «${task.title}» a ${names[body.owner] ?? body.owner}`; }
+  if (body.due !== undefined) { task.due = body.due; text = `mudou o prazo de «${task.title}» para ${body.due || 'sem prazo'}`; }
+  task.updatedAt = new Date().toISOString();
+  (taskLog[task.id] ??= []).unshift({ at: task.updatedAt, by: me, text: `Fundadora de teste ${text}.${body.note ? ` ${body.note}` : ''}` });
+  announce(text);
+  return null;
+}
+
+window.BLU_INTRANET_MOCK = async (method, path, body) => {
+  await new Promise(resolve => setTimeout(resolve, 150));
+  const taskResult = await taskRoutes(method, path, body);
+  if (taskResult !== undefined) return taskResult;
+  // Assistente: resposta fictícia, validada pelas mesmas regras da Lambda (assistant.mjs).
+  if (path === '/v1/assistant') {
+    const { parseAssistant } = await import('../../infra/lambda/intranet/assistant.mjs');
+    const text = JSON.stringify({
+      answer: `Primeiro o lead Costa norte e Algarve (BLU-DEMO000000000001): passou o prazo de resposta e não tem responsável. Depois, a tarefa em atraso «Confirmar tuk-tuk para Algarve e Açores».`,
+      sources: ['work', 'leads'],
+      actions: [
+        { type: 'open', tab: 'leads', leadId: 'BLU-DEMO000000000001' },
+        { type: 'task', title: 'Contactar o cliente da Costa norte e Algarve', leadId: 'BLU-DEMO000000000001' },
+        { type: 'reply', leadId: 'BLU-DEMO000000000001', text: 'Hello! Thank you for your patience. Could you share your exact travel dates so we can prepare your surf trip?' },
+        { type: 'open', tab: 'security' },
+      ],
+    });
+    return parseAssistant(text, { leadIds: leads.map(lead => lead.id), tabs: ['work', 'dashboard', 'leads', 'agenda'], canTasks: true, canLeads: true });
+  }
+  if (path === '/v1/feed') return { feed, checkedAt: new Date().toISOString() };
+  if (path === '/v1/settings' && method === 'POST') { Object.assign(settings, body, { auto: { ...settings.auto, ...body.auto }, updatedBy: 'fundadora@example.com', updatedAt: new Date().toISOString() }); announce('alterou as regras de seguimento'); return { ...settings, types: AUTO_TYPES }; }
+  if (path === '/v1/settings') return { ...settings, types: AUTO_TYPES };
+  if (path === '/v1/governance/attestations') {
+    if (!body.note || body.note.trim().length < 5) throw new Error('Descreva em poucas palavras o que confirmou.');
+    attestations[body.policyId] = { at: new Date().toISOString(), by: 'fundadora@example.com', byName: 'Fundadora de teste', note: body.note, proofUrl: body.proofUrl, value: body.value, validUntil: hours(90 * 24) };
+    return { validUntil: hours(90 * 24) };
+  }
+  if (path === '/v1/alerts') return { alerts: [{ level: 'bad', text: '1 lead(s) disseram que vão desistir: contactar já.', tab: 'leads' }, { level: 'bad', text: '2 evento(s) do chat falharam e estão na fila de erros: verificar o processamento.', tab: 'operations' }, { level: 'warn', text: 'Nenhum lead das redes sociais nos últimos 7 dias: verificar as ligações das campanhas e a ponte /connect.', tab: 'operations' }, { level: 'warn', text: '1 lembrete(s) preparado(s) para enviar à mão.', tab: 'agenda' }] };
+  const types = { feedback: { label: 'Feedback' }, complaint: { label: 'Reclamação' }, livro: { label: 'Livro de Reclamações' }, legal: { label: 'Litígio / contencioso' } };
+  const cases = [
+    { id: 'case-0001', partition: 'BLU-DEMO000000000001', leadId: 'BLU-DEMO000000000001', type: 'livro', title: 'Recolha atrasada 40 min', channel: 'livro', receivedOn: '2026-10-20', deadline: '2026-11-10', owner: 'fundadora@example.com', priority: 'high', caseStatus: 'in-progress', deadlineState: 'on-track', createdBy: 'fundadora@example.com', createdAt: hours(-120), resolution: '', reference: 'Folha 12345', description: 'O cliente esperou 40 minutos pelo tuk-tuk.' },
+    { id: 'case-0002', partition: 'CASES-UNLINKED', leadId: '', type: 'legal', title: 'Pedido de reembolso por via judicial', channel: 'lawyer', receivedOn: '2026-09-01', deadline: '2026-10-24', owner: '', priority: 'high', caseStatus: 'new', deadlineState: 'overdue', createdBy: 'fundadora@example.com', createdAt: hours(-500), resolution: '', reference: 'Proc. 123/26', description: '' },
+  ];
+  if (path.startsWith('/v1/cases') && method === 'GET') return { cases: path.includes('closed') ? [] : cases, types, statuses: { new: 'Novo', 'in-progress': 'Em curso', 'waiting-customer': 'À espera do cliente', resolved: 'Resolvido', closed: 'Fechado' }, channels: { email: 'Email', phone: 'Telefone', livro: 'Livro de Reclamações', lawyer: 'Advogado / tribunal', other: 'Outro' }, today: '2026-10-25' };
+  if (path === '/v1/cases') return { caseId: 'case-0003', partition: 'CASES-UNLINKED', deadline: '2026-11-13' };
+  if (path.includes('/cases/case-') && method === 'GET') return { ...cases.find(item => path.includes(item.id)), log: [{ at: hours(-100), by: 'fundadora@example.com', text: 'Caso aberto (Livro de Reclamações); prazo 2026-11-10.' }] };
+  if (path.includes('/cases/case-')) return null;
+  if (path.endsWith('/cases')) return { cases: cases.filter(item => path.includes(item.partition)) };
+  if (path === '/v1/security') return {
+    findings: [{ level: 'warn', text: 'Só 1 fundador(a) ativo(s): recomenda-se pelo menos 2 para não perder o acesso de gestão.' }, { level: 'bad', text: '1 caso(s) de reclamação ou litígio fora do prazo.' }],
+    accounts: { total: 2, active: 2, disabled: 0, pendingInvites: 1, founders: 1 }, policies: { pass: 10, fail: 2, manual: 3 },
+    controls: [{ area: 'Identidade', control: 'Login Cognito com MFA obrigatório', status: 'on' }, { area: 'Proteção web', control: 'AWS WAF à frente da intranet e da API', status: 'off' }],
+  };
+  // Avaliação dos parceiros: resultados fictícios e as mesmas contas da Lambda (partner-score.mjs).
+  if (path.endsWith('/outcome') && method === 'POST') {
+    const [, id, , activityId] = path.split('/').slice(2);
+    const index = partnerOutcomes.findIndex(item => item.activityId === activityId && item.date === body.date);
+    const record = { conversationId: id, activityId, date: body.date, at: new Date().toISOString(), partnerId: 'transfer-sintra', kind: 'pickup', title: 'Recolha no aeroporto', people: 2, result: body.result, delayMinutes: Number(body.delayMinutes || 0), rating: body.rating ? Number(body.rating) : null, cost: body.cost === '' ? null : Number(body.cost), price: body.price === '' ? null : Number(body.price), currency: 'EUR', comment: body.comment ?? '' };
+    if (index >= 0) partnerOutcomes[index] = record; else partnerOutcomes.push(record);
+    return { result: body.result };
+  }
+  if (path === '/v1/partners') return {
+    ...(await import('../../infra/lambda/intranet/partner-score.mjs').then(({ OUTCOMES, SCORE, scorecards }) => ({ outcomes: OUTCOMES, score: SCORE, scorecards: scorecards(mockPartners, partnerOutcomes) }))),
+    partners: mockPartners,
+    reminders: [
+      { id: 'traveller-evening', label: 'Viajante: véspera às 18:00' }, { id: 'traveller-1h', label: 'Viajante: 1 h antes' },
+      { id: 'partner-evening', label: 'Parceiro: véspera às 18:00' }, { id: 'partner-2h', label: 'Parceiro: 2 h antes' },
+    ],
+  };
+  if (path.startsWith('/v1/agenda')) return { outcomes: partnerOutcomes, outcomeLabels: { 'on-time': 'A horas', late: 'Atrasado', 'no-show': 'Não apareceu', cancelled: 'Cancelado pelo parceiro' }, notifications: [
+    { conversationId: 'BLU-DEMO000000000004', activityId: 'a0-yesterday', audience: 'partner', kind: 'pickup', title: 'Recolha no aeroporto', sendAt: hours(-26), occurrenceAt: hours(-20), status: 'NOTIFY_SENT', channel: 'whatsapp', place: 'Aeroporto de Lisboa', people: 2, partnerName: 'Transfer Sintra', text: 'BLU Costa: recolha amanhã.' },
+    { conversationId: 'BLU-DEMO000000000001', activityId: 'a1', audience: 'partner', kind: 'pickup', title: 'Recolha no hotel', sendAt: hours(-2), occurrenceAt: hours(14), status: 'NOTIFY_PREPARED', reason: 'Sem contacto para este canal; enviar manualmente.', hasNumber: false, channel: 'whatsapp', place: 'Hotel Alfama', people: 3, partnerName: 'Tuk-tuk Alfama (demo)', text: 'BLU Costa: recolha "Recolha no hotel" em Hotel Alfama, amanhã 09:30, 3 pessoa(s). Responda OK para confirmar.' },
+    { conversationId: 'BLU-DEMO000000000001', activityId: 'a1', audience: 'traveller', kind: 'pickup', title: 'Recolha no hotel', sendAt: hours(13), occurrenceAt: hours(14), status: 'NOTIFY_PENDING', hasNumber: true, channel: 'email', place: 'Hotel Alfama', people: 3, partnerName: 'Tuk-tuk Alfama (demo)', text: 'BLU Costa reminder: your pickup "Recolha no hotel" at Hotel Alfama, Tue 09:30, 3 people.' },
+    { conversationId: 'BLU-DEMO000000000002', activityId: 'a2', audience: 'traveller', kind: 'excursion', title: 'Sintra e Cabo da Roca', sendAt: hours(30), occurrenceAt: hours(40), status: 'NOTIFY_PENDING', hasNumber: true, channel: 'sms', place: 'Rossio', people: 2, partnerName: 'Bolt', text: 'BLU Costa reminder: your excursion "Sintra e Cabo da Roca" at Rossio, Wed 10:00, 2 people. Please book a Bolt ride to arrive on time: https://bolt.eu/' },
+  ] };
+  if (path.endsWith('/activities') && method === 'POST') return { activityId: 'a3', notifications: 4, warnings: ['Tuk-tuk Alfama (demo) não tem número WhatsApp: os lembretes ao parceiro ficam preparados.'] };
+  if (path.endsWith('/activities')) return {
+    activities: [{ id: 'a1', kind: 'pickup', title: 'Recolha no hotel', place: 'Hotel Alfama', date: '2026-11-02', time: '09:30', repeatUntil: '2026-11-05', people: 3, partnerId: 'tuk-alfama', status: 'ACTIVE', reminders: [] }],
+    notifications: [{ activityId: 'a1', status: 'NOTIFY_PENDING' }, { activityId: 'a1', status: 'NOTIFY_PREPARED' }],
+  };
+  if (path.endsWith('/cancel')) return null;
+  if (path === '/v1/team/invite' || path.startsWith('/v1/team/u-')) return null;
+  if (path === '/v1/access') return {
+    roles: [
+      { id: 'founders', label: 'Fundador(a)', can: ['read', 'leads', 'team-admin'] }, { id: 'curators', label: 'Curador(a)', can: ['read', 'leads'] },
+      { id: 'governance', label: 'Governança', can: ['read'] }, { id: 'testers', label: 'Testes', can: ['read'] },
+    ],
+    identity: { provider: 'Amazon Cognito', mfa: 'Obrigatório (aplicação de autenticação)', passwordPolicy: 'Mínimo 12 caracteres, maiúsculas, minúsculas e números', selfSignUp: false, session: 'Token de 1 h; sessão máxima de 12 h' },
+    secrets: [{ name: 'WhatsAppChannelSecret', purpose: 'WhatsApp Business (envio de lembretes e mensagens)', lastChanged: hours(-200), rotation: false }],
+  };
+  if (path.startsWith('/v1/metrics')) return { total: 2, synthetic: 1, open: 2, overdue: 1, contacted: 0, unassigned: 1, medianHoursToContact: null, replyLate: 2, replyHours: settings.replyHours, byStatus: { QUEUED_FOR_REVIEW: 1, PENDING: 1 }, byStage: { 'curator-follow-up': 1, 'ready-for-curator': 1 }, bySource: { instagram: 1, website: 1 } };
+  if (path.startsWith('/v1/leads?')) {
+    const filter = new URLSearchParams(path.split('?')[1]).get('status');
+    const reply = lead => (lead.status === 'CONTACTED' ? {} : { replyDueAt: new Date(Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5).toISOString(), replyLate: Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5 < Date.now() });
+    return { leads: leads.filter(lead => filter === 'all' || (filter === 'contacted') === (lead.status === 'CONTACTED')).map(lead => ({ ...lead, ...reply(lead) })) };
+  }
+  if (path === '/v1/whatsapp-test') return mockInbox(method, body);
+  if (path.endsWith('/feedback')) {
+    const id = decodeURIComponent(path.split('/')[3]);
+    if (method === 'POST') { (feedbackGiven[id] ??= []).unshift({ ...body, by: 'fundadora@example.com', byName: 'Fundadora de teste', at: new Date().toISOString() }); announce(`deu feedback à conversa ${id}`); return { at: new Date().toISOString() }; }
+    return { verdicts: VERDICTS, feedback: feedbackGiven[id] ?? [] };
+  }
+  if (path === '/v1/conversations') return { verdicts: VERDICTS, conversations: [...leads].sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt)).map(lead => ({
+    id: lead.id, journey: lead.journey, stage: lead.stage, status: lead.status, synthetic: lead.synthetic, messageCount: lead.messageCount, lastActivityAt: lead.lastActivityAt,
+    feedbackCount: (feedbackGiven[lead.id] ?? []).length, lastFeedback: (feedbackGiven[lead.id] ?? [])[0] ?? null, inferred: lead.aiChatbot ?? null,
+  })) };
+  if (path.endsWith('/ask')) return { answer: 'O viajante procura uma viagem ativa de surf com vinho e comida vegana. Próximo passo: enviar email com duas propostas.', sourceIds: [], requiresHumanApproval: true };
+  if (method !== 'GET') return null;
+  if (path.startsWith('/v1/leads/')) {
+    const lead = leads.find(item => item.id === decodeURIComponent(path.split('/')[3]));
+    return { ...lead, messages, emails: ['demo@example.com'], phones: { 'BLU-DEMO000000000004': ['351912345678'], 'BLU-DEMO000000000002': ['351930000000'] }[lead.id] ?? [] };
+  }
+  // Visão geral da fundadora: a mesma soma da Lambda (team-alerts.mjs) sobre os dados fictícios.
+  if (path === '/v1/control') {
+    const { controlSummary } = await import('../../infra/lambda/intranet/team-alerts.mjs');
+    const members = [
+      { name: 'Fundadora de teste', email: 'fundadora@example.com', groups: ['founders'], enabled: true },
+      { name: 'Curador de teste', email: 'curador@example.com', groups: ['curators'], enabled: true },
+      { name: 'Ex-colaborador', email: 'antigo@example.com', groups: ['curators'], enabled: false },
+    ];
+    const late = lead => lead.status !== 'CONTACTED' && Date.parse(lead.lastActivityAt) + settings.replyHours * 36e5 <= Date.now();
+    return { checkedAt: new Date().toISOString(), ...controlSummary({
+      leads: leads.map(lead => ({ ...lead, replyLate: late(lead) })), members,
+      tasks: [...tasks, { id: 'task-0009', title: 'Ligar ao hotel em Óbidos', owner: 'antigo@example.com', status: 'todo', due: day(1) }].filter(task => task.status !== 'done').map(withState),
+      cases,
+      alerts: [
+        { key: 'escalate#BLU-DEMO000000000001#x', at: hours(-2), level: 'bad', tab: 'leads', leadId: 'BLU-DEMO000000000001', text: 'O lead Costa norte e Algarve (BLU-DEMO000000000001) está há mais de 4 h sem resposta depois do prazo.', to: ['fundadora@example.com'], delivery: 'email' },
+        { key: 'late#BLU-DEMO000000000001#x', at: hours(-6), level: 'bad', tab: 'leads', leadId: 'BLU-DEMO000000000001', text: 'O lead Costa norte e Algarve (BLU-DEMO000000000001) passou o prazo de resposta e não tem responsável.', to: ['curador@example.com', 'fundadora@example.com'], delivery: 'in-app' },
+      ],
+      reminders: { sent: 6, prepared: 1, failed: 0, missed: 1 },
+    }) };
+  }
+  if (path === '/v1/team') return { members: [
+    ...[
+      { username: 'u-founder', name: 'Fundadora de teste', email: 'fundadora@example.com', groups: ['founders'], status: 'CONFIRMED', enabled: true, openLeads: 1 },
+      { username: 'u-curator', name: 'Curador de teste', email: 'curador@example.com', groups: ['curators'], status: 'CONFIRMED', enabled: true, openLeads: 1 },
+      { username: 'u-tester', name: 'Pessoa de testes', email: 'testes@example.com', groups: ['testers'], status: 'FORCE_CHANGE_PASSWORD', enabled: true, openLeads: 0 },
+    ].map(member => {
+      const own = tasks.filter(task => task.owner === member.email && task.status !== 'done').map(withState);
+      return { ...member, openTasks: own.length, overdueTasks: own.filter(task => task.dueState === 'overdue').length, blockedTasks: own.filter(task => task.status === 'blocked').length };
+    }),
+  ] };
+  if (path === '/v1/operations') return { checkedAt: hours(0), queues: { conversationEvents: { waiting: 0, inFlight: 0 }, failedEvents: { waiting: 1, inFlight: 0 }, curatorTasks: { waiting: 2, inFlight: 0 } }, churnReview: { evaluatedAt: hours(-3), queued: 1 }, workers: [
+    { name: 'BluCostaFrontend-BedrockChat', stack: 'BluCostaFrontend', invocations24h: 42, errors24h: 0, throttles24h: 0, lastModified: hours(-5) },
+    { name: 'BluCostaFrontend-EventProcessor', stack: 'BluCostaFrontend', invocations24h: 18, errors24h: 1, throttles24h: 0, lastModified: hours(-5) },
+    { name: 'BluCostaBackoffice-ChurnFollowUpEvaluator', stack: 'BluCostaBackoffice', invocations24h: 1, errors24h: 0, throttles24h: 0, lastModified: hours(-2) },
+  ] };
+  if (path === '/v1/governance') {
+    const manifest = await fetch('../../config/governance-controls.json').then(response => response.json()).catch(() => ({ controls: {}, mapping: [] }));
+    const registry = await fetch('../../config/policies.json').then(response => response.json()).catch(() => ({ note: 'Pré-visualização sem acesso a config/policies.json.', policies: [] }));
+    const result = policy => (policy.enforcement === 'manual' ? { status: 'manual', detail: 'Controlo manual.' } : ['rnavt-registration', 'adr-information'].includes(policy.id) ? { status: 'fail', detail: 'Por preencher em config/policies.json.' } : { status: 'pass', detail: 'Verificado no deploy.' });
+    const rows = registry.policies.map(policy => ({ ...policy, result: result(policy) })).map(policy => (attestations[policy.id] && policy.result.status !== 'pass' ? { ...policy, attestation: attestations[policy.id], result: { status: 'attested', detail: attestations[policy.id].note } } : policy));
+    const count = status => rows.filter(policy => policy.result.status === status).length;
+    const policies = { evaluatedAt: hours(0), note: registry.note, summary: { pass: count('pass'), attested: count('attested'), fail: count('fail'), manual: count('manual') }, policies: rows };
+    manifest.controls = { ...manifest.controls, automaticCustomerContact: settings.auto.thanks || settings.auto.nudge };
+    return { valueRules: { 'rnavt-registration': 'Número RNAVT', 'adr-information': 'Entidade de RAL' }, manifest, policies, evidence: [{ key: 'controls/churn-followups/2026-10-25/run.json', size: 76, lastModified: hours(-3), etag: 'abc123def4567890' }] };
+  }
+  throw new Error('Rota simulada desconhecida.');
+};

@@ -123,6 +123,13 @@ Não guarda prompts, contactos, passwords ou corpos de pedidos nos logs.
 
 O transporte SNS tem fila, repetição e deduplicação; a ativação é configuração local por ambiente. O painel e os limiares estão em [Monitoring](../monitoring/README.md); as ações em incidente estão no [runbook](MONITORING_RUNBOOK.md). A fundamentação dos controlos está em [Decisões](DECISIONS.md#monitoring-acesso-às-interfaces-e-limites-operacionais); ensaios antigos não substituem aceitação atual.
 
+## Deployment do portal (piloto)
+
+Para o piloto foi escolhida a VM dedicada: stack `BluCostaPortal`, descrita em
+[Portal](PORTAL.md#servidor-privado-com-cloudfront-piloto) e registada nas
+[Decisões](DECISIONS.md). Não é produção: continua a ser uma única instância
+escritora, sem publicação na release operacional S3.
+
 ## Alternativa de hosting cloud
 
 `infra/curation-workspace.mjs` define ECS com uma task escritora, quatro containers, EFS retido, ALB HTTPS, Cognito e Secrets Manager. Os comandos são partilhados com `config/curation_services.json`. O agente continua subprocesso do portal. Essa alternativa não é ativada pela operação no Code Editor.
@@ -136,6 +143,10 @@ Parâmetros, limitações e dimensões para orçamentação estão em [Infraestr
 No Code Editor, configurar em conjunto `BLU_CONVERSATION_TABLE` e `BLU_INTELLIGENCE_TABLE` no `.env` ignorado pelo Git. Os nomes correspondem aos outputs `ConversationTableName` e `CustomerIntelligenceTableName` da stack Data.
 A role precisa de Query nas duas tabelas e no `FollowUpIndex`, e UpdateItem na tabela de inteligência; não inferir acesso a partir de um STS bem-sucedido.
 
+O `Dockerfile.portal` cobre apenas o portal Node e não é usado pelo piloto. O
+piloto encaminha todas as rotas, incluindo `/_next/static/*`, para o mesmo build,
+sem cache no CloudFront. Faltam health checks externos, alertas e um rollback
+documentado além de reativar uma das três versões guardadas no servidor.
 Na alternativa ECS, a stack de curadoria aceita os mesmos nomes, injeta-os apenas no portal e concede essas ações à role partilhada da task. Não há isolamento IAM por container. Configuração parcial ou nomes inválidos são recusados; sem ambos, Leads fica indisponível. Não são criadas tabelas paralelas.
 
 A assinatura e a publicação de imagens são alternativas cloud conservadas como

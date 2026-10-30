@@ -1,12 +1,15 @@
 // Define as stacks de dados, frontend e Backoffice com responsabilidades e permissões
 // separadas.
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { evaluatePolicies } from './policy/checks.mjs';
 import {
   App,
   CfnOutput,
   Duration,
   RemovalPolicy,
+  Size,
   Stack,
   Tags,
   aws_apigatewayv2 as apigatewayv2,
@@ -14,6 +17,8 @@ import {
   aws_bedrock as bedrock,
   aws_cloudfront as cloudfront,
   aws_cloudfront_origins as origins,
+  aws_codebuild as codebuild,
+  aws_dlm as dlm,
   aws_dynamodb as dynamodb,
   aws_ec2 as ec2,
   aws_events as events,
@@ -23,9 +28,13 @@ import {
   aws_lambda_event_sources as eventSources,
   aws_logs as logs,
   aws_s3 as s3,
+  aws_s3_assets as s3assets,
   aws_s3_deployment as s3deploy,
+  aws_apigatewayv2_authorizers as authorizers,
+  aws_cognito as cognito,
   aws_secretsmanager as secretsmanager,
   aws_sqs as sqs,
+  custom_resources as cr,
 } from 'aws-cdk-lib';
 
 // Separate deployment units for the public chatbot and the curator/backoffice.
@@ -41,6 +50,12 @@ const infraDir = path.dirname(fileURLToPath(import.meta.url));
 // available under /connect for campaign and WhatsApp hand-offs.
 const siteAsset = path.resolve(infraDir, '../frontend/blu-cloud-site/dist/client');
 const socialBridgeAsset = path.resolve(infraDir, '../frontend/website');
+const intranetAsset = path.resolve(infraDir, '../frontend/intranet');
+const governanceControls = JSON.parse(readFileSync(path.resolve(infraDir, '../config/governance-controls.json'), 'utf8'));
+const partnersConfig = JSON.parse(readFileSync(path.resolve(infraDir, '../config/partners.json'), 'utf8'));
+// Políticas como código: uma regra bloqueante em falha impede o synth e, portanto, o deploy.
+const policyReport = evaluatePolicies();
+if (policyReport.summary.blockingFailures.length) throw new Error(`Blocking policy failures: ${policyReport.summary.blockingFailures.join(', ')} (see config/policies.json)`);
 if (!/^[0-9]{12}$/.test(account ?? '')) throw new Error('TARGET_AWS_ACCOUNT_ID must be the twelve-digit destination AWS account');
 
 const app = new App({ outdir });
@@ -50,6 +65,36 @@ const tag = stack => {
   Tags.of(stack).add('Environment', environmentName);
   Tags.of(stack).add('ManagedBy', 'aws-cdk');
 };
+
+// Login gerido com a marca BLU: cada cliente Cognito precisa do seu estilo.
+// Imagens copiadas do site público (logótipo e fotografia do farol) e cores da intranet.
+function brandLogin(scope, id, userPool, client) {
+  const loginAsset = (file, category, extension) => ({ category, extension, colorMode: 'LIGHT', bytes: readFileSync(path.join(infraDir, 'assets/login', file)).toString('base64') });
+  return new cognito.CfnManagedLoginBranding(scope, id, {
+    userPoolId: userPool.userPoolId,
+    clientId: client.userPoolClientId,
+    returnMergedResources: false,
+    assets: [loginAsset('logo.png', 'FORM_LOGO', 'PNG'), loginAsset('background.jpg', 'PAGE_BACKGROUND', 'JPEG')],
+    settings: {
+      categories: { global: { colorSchemeMode: 'LIGHT' } },
+      components: {
+        pageBackground: { image: { enabled: true }, lightMode: { color: '163b45ff' } },
+        form: {
+          borderRadius: 10,
+          logo: { enabled: true, location: 'CENTER', position: 'TOP', formInclusion: 'IN' },
+          lightMode: { backgroundColor: 'fffdf9ff', borderColor: 'e2d9c9ff' },
+        },
+        primaryButton: {
+          lightMode: {
+            defaults: { backgroundColor: '163b45ff', textColor: 'ffffffff' },
+            hover: { backgroundColor: '102f38ff', textColor: 'ffffffff' },
+            active: { backgroundColor: '102f38ff', textColor: 'ffffffff' },
+          },
+        },
+      },
+    },
+  });
+}
 
 // Concentrar persistência e processamento dos eventos na stack de dados.
 class DataStack extends Stack {
@@ -215,7 +260,8 @@ class FrontendStack extends Stack {
       memorySize: 512,
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
-        MODEL_ID: process.env.BEDROCK_MODEL_ID ?? (region === 'eu-west-1' ? 'eu.amazon.nova-lite-v1:0' : 'amazon.nova-lite-v1:0'),
+        // Nova 2 Lite é o modelo publicado em eu-west-1 desde 2026-10-25; a predefinição evita regressões ao publicar.
+        MODEL_ID: process.env.BEDROCK_MODEL_ID ?? (region === 'eu-west-1' ? 'eu.amazon.nova-2-lite-v1:0' : 'amazon.nova-lite-v1:0'),
         GUARDRAIL_ID: guardrail.attrGuardrailId,
         GUARDRAIL_VERSION: guardrailVersion.attrVersion,
       },
@@ -242,7 +288,6 @@ class FrontendStack extends Stack {
     api.addRoutes({ path: '/v1/conversation-events', methods: [apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('ConversationIngestIntegration', ingest) });
     api.addRoutes({ path: '/v1/chat', methods: [apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('BedrockChatIntegration', chat) });
     api.addRoutes({ path: '/v1/channels/whatsapp', methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('WhatsAppWebhookIntegration', whatsappWebhook) });
-
     // Limites agregados no stage existente; o chat tem um limite inferior por custo.
     const defaultStage = api.defaultStage.node.defaultChild;
     defaultStage.defaultRouteSettings = { throttlingRateLimit: 10, throttlingBurstLimit: 20 };
@@ -392,20 +437,11 @@ class BackofficeStack extends Stack {
       destinationBucket: evidenceBucket,
       destinationKeyPrefix: 'controls/manifests',
       prune: false,
-      sources: [s3deploy.Source.data('customer-intelligence-controls.json', JSON.stringify({
-        schemaVersion: 1,
-        scope: ['conversation-ingestion', 'customer-intelligence', 'backoffice-rag', 'churn-followups', 'feedback'],
-        controls: {
-          humanApprovalRequired: true,
-          automaticCustomerContact: false,
-          rawTranscriptsExcludedFromKnowledgeBase: true,
-          iamProtectedBackofficeInvocation: true,
-          evidenceVersioning: true,
-          syntheticExcludedFromBusinessKpis: true,
-        },
-        reviewCadence: 'quarterly',
-        note: 'Audit evidence and control mapping; not a claim of ISO certification.',
-      }, null, 2))],
+      // Fonte única: config/governance-controls.json, também apresentada na intranet.
+      sources: [
+        s3deploy.Source.data('customer-intelligence-controls.json', JSON.stringify(governanceControls, null, 2)),
+        s3deploy.Source.data('policy-report.json', JSON.stringify(policyReport, null, 2)),
+      ],
     });
     new CfnOutput(this, 'ConversationTableForBackoffice', { value: props.data.messages.tableName });
     new CfnOutput(this, 'AnalysisExportBucket', { value: exportsBucket.bucketName });
@@ -414,10 +450,508 @@ class BackofficeStack extends Stack {
     new CfnOutput(this, 'ChurnEvaluatorFunctionArn', { value: churnEvaluator.functionArn });
     new CfnOutput(this, 'BackofficeCrmQueueUrl', { value: props.data.crmEvents.queueUrl });
     new CfnOutput(this, 'WhatsAppOutboundFunctionArn', { value: whatsappOutbound.functionArn });
+    this.rag = rag;
+    this.whatsappOutbound = whatsappOutbound;
+    this.evidenceBucket = evidenceBucket;
+  }
+}
+
+// Intranet da equipa: login Cognito com MFA, API protegida por JWT e site estático privado.
+// Só lê e atualiza os registos PROFILE já existentes; não cria tabelas nem contacta clientes.
+class IntranetStack extends Stack {
+  constructor(scope, id, props) {
+    super(scope, id, props);
+    tag(this);
+    const { data, backoffice } = props;
+
+    const userPool = new cognito.UserPool(this, 'IntranetUsers', {
+      userPoolName: `${projectName}-${environmentName}-intranet`,
+      selfSignUpEnabled: false,
+      signInAliases: { email: true },
+      standardAttributes: { email: { required: true, mutable: true }, fullname: { required: false, mutable: true } },
+      mfa: cognito.Mfa.REQUIRED,
+      mfaSecondFactor: { otp: true, sms: false },
+      passwordPolicy: { minLength: 12, requireLowercase: true, requireUppercase: true, requireDigits: true, requireSymbols: false },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    for (const [group, description] of [['founders', 'Fundadores: tudo, incluindo gestão de acessos'], ['curators', 'Seguimento de leads, agenda e parceiros'], ['governance', 'Governança e evidências (leitura)'], ['testers', 'Equipa de testes (leitura)'], ['marketing', 'Marketing: tarefas, totais do painel e portal de propostas']]) {
+      new cognito.CfnUserPoolGroup(this, `Group-${group}`, { userPoolId: userPool.userPoolId, groupName: group, description });
+    }
+    const domainPrefix = process.env.INTRANET_AUTH_DOMAIN_PREFIX ?? `${projectName}-${environmentName}-intranet-${account.slice(-4)}`;
+    if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(domainPrefix)) throw new Error('INTRANET_AUTH_DOMAIN_PREFIX must be lowercase letters, digits and hyphens');
+    // Login gerido (versão 2): permite logótipo e fundo da marca; o texto fica em inglês.
+    const loginDomain = userPool.addDomain('IntranetLogin', { cognitoDomain: { domainPrefix }, managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN });
+    const authHost = `${domainPrefix}.auth.${region}.amazoncognito.com`;
+
+    const siteBucket = new s3.Bucket(this, 'IntranetSite', {
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: RemovalPolicy.RETAIN,
+      autoDeleteObjects: false,
+    });
+
+    const api = new apigatewayv2.HttpApi(this, 'IntranetApi', { description: 'BLU staff intranet API (Cognito JWT)' });
+    // A CSP não referencia o endereço exato da API: a API já depende do domínio
+    // da distribuição (CORS), e a referência inversa criaria um ciclo no CloudFormation.
+    const siteHeaders = new cloudfront.ResponseHeadersPolicy(this, 'IntranetHeaders', {
+      securityHeadersBehavior: {
+        contentSecurityPolicy: {
+          contentSecurityPolicy: `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.execute-api.${region}.amazonaws.com https://${authHost}; form-action 'self' https://${authHost}; frame-ancestors 'none'; base-uri 'none'; object-src 'none'`,
+          override: true,
+        },
+        contentTypeOptions: { override: true },
+        frameOptions: { frameOption: cloudfront.HeadersFrameOption.DENY, override: true },
+        referrerPolicy: { referrerPolicy: cloudfront.HeadersReferrerPolicy.NO_REFERRER, override: true },
+        strictTransportSecurity: { accessControlMaxAge: Duration.days(365), includeSubdomains: true, override: true },
+      },
+    });
+    const siteOn = bucket => ({
+      defaultRootObject: 'index.html',
+      defaultBehavior: {
+        origin: origins.S3BucketOrigin.withOriginAccessControl(bucket),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        compress: true,
+        responseHeadersPolicy: siteHeaders,
+      },
+    });
+    const distribution = new cloudfront.Distribution(this, 'IntranetDistribution', siteOn(siteBucket));
+    const siteUrl = `https://${distribution.distributionDomainName}/`;
+    const extraCallbacks = (process.env.INTRANET_CALLBACK_URLS ?? '').split(',').map(url => url.trim()).filter(Boolean);
+    const client = userPool.addClient('IntranetWeb', {
+      generateSecret: false,
+      authFlows: {},
+      oAuth: {
+        flows: { authorizationCodeGrant: true },
+        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
+        callbackUrls: [siteUrl, ...extraCallbacks],
+        logoutUrls: [siteUrl, ...extraCallbacks],
+      },
+      supportedIdentityProviders: [cognito.UserPoolClientIdentityProvider.COGNITO],
+      idTokenValidity: Duration.hours(1),
+      accessTokenValidity: Duration.hours(1),
+      refreshTokenValidity: Duration.hours(12),
+      preventUserExistenceErrors: true,
+    });
+    brandLogin(this, 'IntranetLoginBranding', userPool, client).node.addDependency(loginDomain);
+    this.userPool = userPool;
+    this.authHost = authHost;
+
+    // WhatsApp em modo de teste por omissão: só INTRANET_WHATSAPP_MODE=live envia mensagens reais.
+    const whatsappMode = process.env.INTRANET_WHATSAPP_MODE ?? 'test';
+    // O mesmo modelo escreve as respostas simples (API) e analisa as conversas (despachante).
+    const replyModelId = process.env.BEDROCK_REPLY_MODEL_ID ?? (region === 'eu-west-1' ? 'eu.amazon.nova-2-lite-v1:0' : 'amazon.nova-lite-v1:0');
+    if (!['test', 'live'].includes(whatsappMode)) throw new Error('INTRANET_WHATSAPP_MODE must be "test" or "live"');
+    const fn = new lambda.Function(this, 'IntranetApiHandler', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'index.handler',
+      timeout: Duration.seconds(29),
+      memorySize: 512,
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      environment: {
+        MESSAGE_TABLE_NAME: data.messages.tableName,
+        INTELLIGENCE_TABLE_NAME: data.intelligence.tableName,
+        EVENTS_QUEUE_URL: data.events.queueUrl,
+        CRM_QUEUE_URL: data.crmEvents.queueUrl,
+        EVIDENCE_BUCKET: backoffice.evidenceBucket.bucketName,
+        RAG_FUNCTION_NAME: backoffice.rag.functionName,
+        USER_POOL_ID: userPool.userPoolId,
+        PARTNERS_JSON: JSON.stringify({ partners: partnersConfig.partners }),
+        MANAGED_SECRETS: JSON.stringify([{ arn: data.whatsappSecret.secretArn, purpose: 'WhatsApp Business (envio de lembretes e mensagens)' }]),
+        WHATSAPP_MODE: whatsappMode,
+        // Escreve só o texto das respostas simples; o mesmo modelo do chatbot público.
+        MODEL_ID: replyModelId,
+      },
+      code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
+    });
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['bedrock:InvokeModel'], resources: ['*'] }));
+    // Permissões explícitas e mínimas: sem Scan nem DeleteItem; PutItem só cria registos da agenda (com condição no código).
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:Query', 'dynamodb:GetItem'], resources: [data.messages.tableArn, data.intelligence.tableArn, `${data.intelligence.tableArn}/index/FollowUpIndex`] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem', 'dynamodb:PutItem'], resources: [data.intelligence.tableArn] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['sqs:GetQueueAttributes'], resources: [data.events.queueArn, data.crmEvents.queueArn, `arn:aws:sqs:${region}:${account}:BluCostaData-ConversationEventsDlq*`] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['lambda:ListFunctions', 'cloudwatch:GetMetricData'], resources: ['*'] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['cognito-idp:ListUsersInGroup', 'cognito-idp:AdminCreateUser', 'cognito-idp:AdminAddUserToGroup', 'cognito-idp:AdminRemoveUserFromGroup', 'cognito-idp:AdminEnableUser', 'cognito-idp:AdminDisableUser'], resources: [userPool.userPoolArn] }));
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['secretsmanager:DescribeSecret'], resources: [data.whatsappSecret.secretArn] }));
+    backoffice.evidenceBucket.grantRead(fn, 'controls/*');
+    backoffice.rag.grantInvoke(fn);
+
+    const authorizer = new authorizers.HttpJwtAuthorizer('IntranetJwt', `https://cognito-idp.${region}.amazonaws.com/${userPool.userPoolId}`, { jwtAudience: [client.userPoolClientId] });
+    const integration = new integrations.HttpLambdaIntegration('IntranetIntegration', fn);
+    const routes = [
+      ['GET', '/v1/me'], ['GET', '/v1/leads'], ['GET', '/v1/leads/{id}'],
+      ['POST', '/v1/leads/{id}/contacted'], ['POST', '/v1/leads/{id}/assign'], ['PUT', '/v1/leads/{id}/tags'], ['POST', '/v1/leads/{id}/ask'],
+      ['GET', '/v1/metrics'], ['GET', '/v1/team'], ['GET', '/v1/operations'], ['GET', '/v1/governance'],
+      ['GET', '/v1/alerts'], ['GET', '/v1/cases'], ['POST', '/v1/cases'], ['GET', '/v1/leads/{id}/cases'], ['GET', '/v1/leads/{id}/cases/{caseId}'], ['POST', '/v1/leads/{id}/cases/{caseId}'], ['GET', '/v1/security'], ['GET', '/v1/control'], ['POST', '/v1/assistant'], ['POST', '/v1/leads/{id}/activities/{activityId}/outcome'],
+      ['GET', '/v1/access'], ['POST', '/v1/team/invite'], ['POST', '/v1/team/{username}/role'], ['POST', '/v1/team/{username}/status'],
+      ['GET', '/v1/partners'], ['GET', '/v1/agenda'], ['GET', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities'], ['POST', '/v1/leads/{id}/activities/{activityId}'], ['POST', '/v1/leads/{id}/activities/{activityId}/cancel'],
+      ['GET', '/v1/work'], ['GET', '/v1/tasks'], ['POST', '/v1/tasks'], ['GET', '/v1/leads/{id}/tasks/{taskId}'], ['POST', '/v1/leads/{id}/tasks/{taskId}'], ['GET', '/v1/feed'],
+      ['GET', '/v1/settings'], ['POST', '/v1/settings'], ['POST', '/v1/governance/attestations'],
+      ['GET', '/v1/conversations'], ['GET', '/v1/leads/{id}/feedback'], ['POST', '/v1/leads/{id}/feedback'],
+      ['GET', '/v1/whatsapp-test'], ['POST', '/v1/whatsapp-test'],
+    ];
+    for (const [method, routePath] of routes) {
+      api.addRoutes({ path: routePath, methods: [apigatewayv2.HttpMethod[method]], integration, authorizer });
+    }
+    // CORS só do domínio da intranet; limite de pedidos para conter abusos com um token roubado.
+    const cfnApi = api.node.defaultChild;
+    cfnApi.corsConfiguration = { allowOrigins: [`https://${distribution.distributionDomainName}`], allowHeaders: ['authorization', 'content-type'], allowMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], maxAge: 600 };
+    api.defaultStage.node.defaultChild.defaultRouteSettings = { throttlingBurstLimit: 40, throttlingRateLimit: 20 };
+
+    // Lembretes agendados pelo curador: verificados a cada 5 minutos e enviados pelo
+    // WhatsAppOutbound do Backoffice; sem credenciais ficam marcados como preparados.
+    // Email (SES) e SMS (SNS) ficam desligados até haver remetente verificado e autorização de SMS.
+    const emailFrom = process.env.INTRANET_EMAIL_FROM ?? '';
+    if (emailFrom && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(emailFrom)) throw new Error('INTRANET_EMAIL_FROM must be a verified SES email address');
+    const smsEnabled = process.env.INTRANET_SMS_ENABLED === 'true';
+    const dispatcher = new lambda.Function(this, 'ScheduledNotifications', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'dispatch.handler',
+      timeout: Duration.seconds(60),
+      memorySize: 256,
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      environment: {
+        INTELLIGENCE_TABLE_NAME: data.intelligence.tableName,
+        MESSAGE_TABLE_NAME: data.messages.tableName,
+        WHATSAPP_FUNCTION_NAME: backoffice.whatsappOutbound.functionName,
+        EMAIL_FROM: emailFrom,
+        SMS_ENABLED: smsEnabled ? 'true' : 'false',
+        EVIDENCE_BUCKET: backoffice.evidenceBucket.bucketName,
+        WHATSAPP_MODE: whatsappMode,
+        USER_POOL_ID: userPool.userPoolId,
+        INTRANET_URL: `https://${distribution.distributionDomainName}`,
+        MODEL_ID: replyModelId,
+      },
+      code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/intranet')),
+    });
+    // Alertas à equipa: só lê quem está em cada grupo para saber a quem avisar.
+    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['cognito-idp:ListUsersInGroup'], resources: [userPool.userPoolArn] }));
+    // Análise automática das conversas: só invoca o modelo (como a API da intranet).
+    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['bedrock:InvokeModel'], resources: ['*'] }));
+    // Leitura das definições, dos leads e da conversa para as mensagens automáticas; PutItem só cria (condição no código).
+    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:Query'], resources: [data.intelligence.tableArn, `${data.intelligence.tableArn}/index/FollowUpIndex`, data.messages.tableArn] }));
+    dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem', 'dynamodb:PutItem'], resources: [data.intelligence.tableArn] }));
+    backoffice.whatsappOutbound.grantInvoke(dispatcher);
+    if (emailFrom) dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['ses:SendEmail'], resources: [`arn:aws:ses:${region}:${account}:identity/${emailFrom.split('@')[1]}`, `arn:aws:ses:${region}:${account}:identity/${emailFrom}`] }));
+    if (smsEnabled) dispatcher.addToRolePolicy(new iam.PolicyStatement({ actions: ['sns:Publish'], notResources: ['arn:aws:sns:*:*:*'] }));
+    backoffice.evidenceBucket.grantPut(dispatcher, 'controls/scheduled-notifications/*');
+    new events.Rule(this, 'ScheduledNotificationsEvery5Minutes', {
+      description: 'Sends curator-approved pickup and excursion reminders that are due.',
+      schedule: events.Schedule.rate(Duration.minutes(5)),
+      targets: [new targets.LambdaFunction(dispatcher)],
+    });
+
+    new s3deploy.BucketDeployment(this, 'DeployIntranet', {
+      destinationBucket: siteBucket,
+      distribution,
+      distributionPaths: ['/*'],
+      cacheControl: [s3deploy.CacheControl.noCache()],
+      sources: [
+        // A pasta não contém config.js nem a pré-visualização: as exclusões não se aplicam sem staging de assets.
+        s3deploy.Source.asset(intranetAsset, { exclude: ['package.json'] }),
+        s3deploy.Source.data('config.js', `window.BLU_INTRANET=${JSON.stringify({ api: api.apiEndpoint, authDomain: `https://${authHost}`, clientId: client.userPoolClientId, redirectUri: siteUrl })};`),
+      ],
+    });
+
+    new CfnOutput(this, 'IntranetUrl', { value: siteUrl });
+    new CfnOutput(this, 'IntranetApiUrl', { value: api.apiEndpoint });
+    new CfnOutput(this, 'IntranetUserPoolId', { value: userPool.userPoolId });
+    new CfnOutput(this, 'IntranetClientId', { value: client.userPoolClientId });
+    new CfnOutput(this, 'IntranetAuthDomain', { value: loginDomain.baseUrl() });
+  }
+}
+
+// Portal DMC (Next.js com SQLite): um servidor pequeno numa sub-rede privada, sem internet,
+// alcançado só pelo CloudFront (VPC origin). Um portão Node valida o login Cognito da equipa
+// (fundadores e curadores) antes do portal. O build corre no CodeBuild e o servidor ativa
+// cada versão a partir do S3. Os dados ficam num disco próprio, com cópia diária.
+const PORTAL_AMI = { 'eu-west-1': process.env.PORTAL_AMI_ID ?? 'ami-050d447ce746f6136' }; // AL2023 arm64 fixa: uma AMI nova não substitui o servidor.
+// Listas geridas da AWS: com.amazonaws.global.cloudfront.origin-facing e os serviços dos gateway endpoints.
+const PORTAL_PREFIX_LISTS = { 'eu-west-1': { s3:'pl-6da54004', dynamodb: 'pl-6fa54006' } };
+const portalSeedArchive = process.env.PORTAL_SEED_ARCHIVE ?? path.resolve(infraDir, '../blu-portal-data.tar.gz');
+
+class PortalStack extends Stack {
+  constructor(scope, id, props) {
+    super(scope, id, props);
+    tag(this);
+    const { data, intranet } = props;
+    const prefixLists = PORTAL_PREFIX_LISTS[region];
+    if (!prefixLists || !PORTAL_AMI[region]) throw new Error(`The portal stack is only configured for ${Object.keys(PORTAL_AMI).join(', ')}`);
+
+    // Usa a VPC isolada da stack de dados (a conta está no limite de VPCs). A VPC origin exige um
+    // internet gateway ligado, mas sem rotas para ele: as sub-redes continuam sem internet. O S3 e
+    // o DynamoDB chegam por gateway endpoints gratuitos.
+    const vpc = data.vpc;
+    const subnet = vpc.isolatedSubnets[0];
+    const gateway = new ec2.CfnInternetGateway(this, 'PortalOriginGateway', { tags: [{ key: 'Name', value: 'blu-portal-vpc-origin (no routes)' }] });
+    const gatewayAttachment = new ec2.CfnVPCGatewayAttachment(this, 'PortalOriginGatewayAttachment', { vpcId: vpc.vpcId, internetGatewayId: gateway.ref });
+    for (const [name, service] of [['PortalS3Endpoint', ec2.GatewayVpcEndpointAwsService.S3], ['PortalDynamoDbEndpoint', ec2.GatewayVpcEndpointAwsService.DYNAMODB]]) {
+      new ec2.GatewayVpcEndpoint(this, name, { vpc, service, subnets: [{ subnetType: ec2.SubnetType.PRIVATE_ISOLATED }] });
+    }
+
+    const releases = new s3.Bucket(this, 'PortalReleases', {
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+
+    // Disco de dados separado (catálogo, warehouse, versões e PDFs): sobrevive a uma troca do servidor.
+    const state = new ec2.Volume(this, 'PortalState', {
+      availabilityZone: subnet.availabilityZone,
+      size: Size.gibibytes(10),
+      volumeType: ec2.EbsDeviceVolumeType.GP3,
+      encrypted: true,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    Tags.of(state).add('blu-backup', 'portal-state');
+    const seed = existsSync(portalSeedArchive) ? new s3assets.Asset(this, 'PortalSeed', { path: portalSeedArchive }) : null;
+
+    const serverGroup = new ec2.SecurityGroup(this, 'PortalServer', { vpc, description: 'Portal: only CloudFront on the gate port', allowAllOutbound: false });
+    // Entrada só do CloudFront (regra junto da distribuição, abaixo); saída só para o S3 e o DynamoDB.
+    serverGroup.addEgressRule(ec2.Peer.prefixList(prefixLists.s3), ec2.Port.tcp(443), 'S3 gateway endpoint');
+    serverGroup.addEgressRule(ec2.Peer.prefixList(prefixLists.dynamodb), ec2.Port.tcp(443), 'DynamoDB gateway endpoint');
+    const role = new iam.Role(this, 'PortalServerRole', { assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'), description: 'Portal server: read releases, seed and leads; update lead profiles' });
+    releases.grantRead(role, 'releases/*');
+    releases.grantRead(role, 'config/*');
+    seed?.grantRead(role);
+    role.addToPolicy(new iam.PolicyStatement({ actions: ['dynamodb:Query'], resources: [data.messages.tableArn, data.intelligence.tableArn, `${data.intelligence.tableArn}/index/FollowUpIndex`] }));
+    role.addToPolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem'], resources: [data.intelligence.tableArn] }));
+
+    const userData = ec2.UserData.forLinux();
+    const script = readFileSync(path.join(infraDir, 'portal/host/user-data.sh'), 'utf8').replace(/\r/g, '').replace(/^#!.*\n/, '');
+    userData.addCommands(Object.entries({
+      __RELEASE_BUCKET__: releases.bucketName,
+      __SEED_URL__: seed ? seed.s3ObjectUrl : '',
+      __VOLUME_ID__: state.volumeId,
+      __REGION__: region,
+      __MESSAGE_TABLE__: data.messages.tableName,
+      __INTELLIGENCE_TABLE__: data.intelligence.tableName,
+    }).reduce((text, [marker, value]) => text.replaceAll(marker, value), script));
+    // O script corre em cada arranque (é idempotente): mudar o script só reinicia o servidor,
+    // sem o trocar. Trocar quebraria a VPC origin, presa à instância, e a ligação do disco.
+    const bootScript = new ec2.MultipartUserData();
+    bootScript.addPart(ec2.MultipartBody.fromRawBody({ contentType: 'text/cloud-config; charset="utf8"', body: 'cloud_final_modules:\n- [scripts-user, always]\n' }));
+    bootScript.addUserDataPart(userData, ec2.MultipartBody.SHELL_SCRIPT, true);
+    const server = new ec2.Instance(this, 'PortalServerInstance', {
+      vpc,
+      vpcSubnets: { subnets: [subnet] },
+      instanceType: new ec2.InstanceType(process.env.PORTAL_INSTANCE_TYPE ?? 't4g.small'),
+      machineImage: ec2.MachineImage.genericLinux(PORTAL_AMI),
+      role,
+      securityGroup: serverGroup,
+      userData: bootScript,
+      requireImdsv2: true,
+      associatePublicIpAddress: false,
+      blockDevices: [{ deviceName: '/dev/xvda', volume: ec2.BlockDeviceVolume.ebs(20, { volumeType: ec2.EbsDeviceVolumeType.GP3, encrypted: true }) }],
+    });
+    new ec2.CfnVolumeAttachment(this, 'PortalStateAttachment', { instanceId: server.instanceId, volumeId: state.volumeId, device: '/dev/sdf' });
+
+    // Cópia diária do disco de dados, guardada 7 dias.
+    const backupRole = new iam.Role(this, 'PortalBackupRole', { assumedBy: new iam.ServicePrincipal('dlm.amazonaws.com'), managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSDataLifecycleManagerServiceRole')] });
+    new dlm.CfnLifecyclePolicy(this, 'PortalStateBackup', {
+      description: 'Daily snapshot of the BLU portal data disk',
+      state: 'ENABLED',
+      executionRoleArn: backupRole.roleArn,
+      policyDetails: {
+        resourceTypes: ['VOLUME'],
+        targetTags: [{ key: 'blu-backup', value: 'portal-state' }],
+        schedules: [{ name: 'daily', copyTags: true, createRule: { interval: 24, intervalUnit: 'HOURS', times: ['03:00'] }, retainRule: { count: 7 } }],
+      },
+    });
+
+    // Página «o portal está a acordar»: se o servidor não responder (desligado ou a arrancar), o
+    // CloudFront mostra esta página em vez do erro 504, que volta a tentar sozinha.
+    const statusPage = new s3.Bucket(this, 'PortalStatusPage', {
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    new s3deploy.BucketDeployment(this, 'PortalStatusFiles', {
+      destinationBucket: statusPage,
+      destinationKeyPrefix: '_blu',
+      prune: false,
+      sources: [s3deploy.Source.asset(path.join(infraDir, 'portal/status'))],
+    });
+    const distribution = new cloudfront.Distribution(this, 'PortalDistribution', {
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+      additionalBehaviors: {
+        '/_blu/*': {
+          origin: origins.S3BucketOrigin.withOriginAccessControl(statusPage),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        },
+      },
+      // Erros do servidor (desligado, a arrancar): a página de espera, guardada só 10 segundos.
+      errorResponses: [502, 503, 504].map(httpStatus => ({ httpStatus, responseHttpStatus: 503, responsePagePath: '/_blu/waking.html', ttl: Duration.seconds(10) })),
+      defaultBehavior: {
+        origin: origins.VpcOrigin.withEc2Instance(server, { httpPort: 8080, protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY, readTimeout: Duration.seconds(60) }),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+        // Tudo passa pelo portão: sem cache, para nenhuma página com dados de clientes ficar no CloudFront.
+        cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+        originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER,
+        compress: true,
+        responseHeadersPolicy: new cloudfront.ResponseHeadersPolicy(this, 'PortalHeaders', {
+          securityHeadersBehavior: {
+            contentTypeOptions: { override: true },
+            frameOptions: { frameOption: cloudfront.HeadersFrameOption.DENY, override: true },
+            referrerPolicy: { referrerPolicy: cloudfront.HeadersReferrerPolicy.SAME_ORIGIN, override: true },
+            strictTransportSecurity: { accessControlMaxAge: Duration.days(365), includeSubdomains: true, override: true },
+          },
+        }),
+      },
+    });
+    distribution.node.addDependency(gatewayAttachment);
+    const portalOrigin = `https://${distribution.distributionDomainName}`;
+
+    // Cliente Cognito próprio no mesmo grupo de utilizadores da intranet (mesma sessão e MFA).
+    const client = new cognito.UserPoolClient(this, 'PortalWeb', {
+      userPool: intranet.userPool,
+      generateSecret: false,
+      authFlows: {},
+      oAuth: {
+        flows: { authorizationCodeGrant: true },
+        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
+        callbackUrls: [`${portalOrigin}/auth/callback`],
+        logoutUrls: [`${portalOrigin}/auth/signed-out`],
+      },
+      supportedIdentityProviders: [cognito.UserPoolClientIdentityProvider.COGNITO],
+      idTokenValidity: Duration.hours(1),
+      accessTokenValidity: Duration.hours(1),
+      refreshTokenValidity: Duration.hours(12),
+      preventUserExistenceErrors: true,
+    });
+    brandLogin(this, 'PortalLoginBranding', intranet.userPool, client);
+
+    // Configuração do portão lida pelo servidor; prune desligado para não apagar as versões.
+    new s3deploy.BucketDeployment(this, 'PortalGateConfig', {
+      destinationBucket: releases,
+      destinationKeyPrefix: 'config',
+      prune: false,
+      sources: [s3deploy.Source.jsonData('gate.json', {
+        region, userPoolId: intranet.userPool.userPoolId, clientId: client.userPoolClientId,
+        authDomain: `https://${intranet.authHost}`, publicOrigin: portalOrigin, allowedGroups: ['founders', 'curators', 'marketing'],
+      })],
+    });
+
+    // Build no CodeBuild (ARM, com internet): Node 24 verificado por SHA-256, npm ci, next build,
+    // chaves públicas do Cognito e um pacote único com o código que o portal lê fora de dmc-workspace.
+    const source = (name, relative, exclude = []) => new s3assets.Asset(this, `PortalSource${name}`, { path: path.resolve(infraDir, '..', relative), exclude });
+    const sources = {
+      workspace: source('Workspace', 'dmc-workspace', ['node_modules', '.next', 'tsconfig.tsbuildinfo', '.env*', 'test-results', 'playwright-report']),
+      config: source('Config', 'config', ['*.local.json']),
+      schemas: source('Schemas', 'src/blu_ai/schemas'),
+      // Leitura do catálogo, datasets e observatório em Python (só biblioteca padrão).
+      pyportal: source('PyPortal', 'portal', ['__pycache__']),
+      etl: source('Etl', 'etl', ['__pycache__', 'AGENTS.md']),
+      // Só o contorno da região (Natural Earth): o Observatório e o mapa da proposta leem-no.
+      dashboard: source('Dashboard', 'dashboard', ['*', '!region.geojson']),
+      intranet: source('Intranet', 'frontend/intranet', ['config.js']),
+      // A página de espera vai para o CloudFront, não para o servidor.
+      gate: source('Gate', 'infra/portal', ['jwks.json', 'status']),
+    };
+    const build = new codebuild.Project(this, 'PortalBuild', {
+      description: 'Builds the BLU portal release for the private portal server',
+      source: codebuild.Source.s3({ bucket: sources.workspace.bucket, path: sources.workspace.s3ObjectKey }),
+      secondarySources: Object.entries(sources).filter(([name]) => name !== 'workspace').map(([name, asset]) => codebuild.Source.s3({ bucket: asset.bucket, path: asset.s3ObjectKey, identifier: name })),
+      environment: { buildImage: codebuild.LinuxArmBuildImage.AMAZON_LINUX_2023_STANDARD_3_0, computeType: codebuild.ComputeType.LARGE },
+      timeout: Duration.minutes(30),
+      environmentVariables: {
+        RELEASE_BUCKET: { value: releases.bucketName },
+        USER_POOL_ID: { value: intranet.userPool.userPoolId },
+        INTRANET_STACK: { value: intranet.stackName },
+      },
+      buildSpec: codebuild.BuildSpec.fromObject({
+        version: '0.2',
+        env: { shell: 'bash' },
+        phases: {
+          build: {
+            commands: [
+              'set -euo pipefail',
+              'R=/tmp/release && rm -rf "$R" && mkdir -p "$R/src/blu_ai" "$R/frontend" "$R/infra"',
+              'cd /tmp && curl -fsSLO https://nodejs.org/dist/latest-v24.x/SHASUMS256.txt',
+              'NODE_FILE=$(grep -m1 -oE "node-v24\\.[0-9.]+-linux-arm64\\.tar\\.xz" SHASUMS256.txt)',
+              'curl -fsSLO "https://nodejs.org/dist/latest-v24.x/$NODE_FILE" && grep " $NODE_FILE$" SHASUMS256.txt | sha256sum -c -',
+              'mkdir "$R/node" && tar -xJf "$NODE_FILE" -C "$R/node" --strip-components=1 && export PATH="$R/node/bin:$PATH" && node --version',
+              'cp -r "$CODEBUILD_SRC_DIR" "$R/dmc-workspace" && cp -r "$CODEBUILD_SRC_DIR_config" "$R/config"',
+              'cp -r "$CODEBUILD_SRC_DIR_schemas" "$R/src/blu_ai/schemas" && cp -r "$CODEBUILD_SRC_DIR_intranet" "$R/frontend/intranet" && cp -r "$CODEBUILD_SRC_DIR_gate" "$R/infra/portal"',
+              'cp -r "$CODEBUILD_SRC_DIR_pyportal" "$R/portal" && cp -r "$CODEBUILD_SRC_DIR_etl" "$R/etl"',
+              'mkdir -p "$R/dashboard" && cp "$CODEBUILD_SRC_DIR_dashboard/region.geojson" "$R/dashboard/region.geojson"',
+              // Ligação «Intranet» na barra do portal: o output IntranetUrl, lido no build (sem exportação entre stacks).
+              'export NEXT_PUBLIC_INTRANET_URL="$(aws cloudformation describe-stacks --stack-name "$INTRANET_STACK" --query "Stacks[0].Outputs[?OutputKey==\'IntranetUrl\'].OutputValue" --output text)" && echo "Intranet: $NEXT_PUBLIC_INTRANET_URL"',
+              'cd "$R/dmc-workspace" && npm ci --no-audit --no-fund && npm run build && npm prune --omit=dev --no-audit --no-fund',
+              'curl -fsSL "https://cognito-idp.$AWS_REGION.amazonaws.com/$USER_POOL_ID/.well-known/jwks.json" -o "$R/infra/portal/jwks.json"',
+              'node -e "process.exit(JSON.parse(require(\'fs\').readFileSync(process.argv[1])).keys.length ? 0 : 1)" "$R/infra/portal/jwks.json"',
+              'ID="$(date -u +%Y%m%dT%H%M%SZ)-$CODEBUILD_BUILD_NUMBER" && tar -czf /tmp/release.tgz -C "$R" . && SHA=$(sha256sum /tmp/release.tgz | cut -d" " -f1)',
+              'aws s3 cp --only-show-errors /tmp/release.tgz "s3://$RELEASE_BUCKET/releases/$ID.tar.gz"',
+              'printf \'{"release":"%s","key":"releases/%s.tar.gz","sha256":"%s"}\' "$ID" "$ID" "$SHA" > /tmp/current.json',
+              'aws s3 cp --only-show-errors --content-type application/json /tmp/current.json "s3://$RELEASE_BUCKET/releases/current.json"',
+            ],
+          },
+        },
+      }),
+    });
+    for (const asset of Object.values(sources)) asset.grantRead(build);
+    // Só leitura dos outputs da intranet, para a ligação «Intranet» do portal.
+    // Pelo nome (texto fixo): intranet.stackId seria uma exportação nova entre stacks.
+    build.addToRolePolicy(new iam.PolicyStatement({ actions: ['cloudformation:DescribeStacks'], resources: [`arn:aws:cloudformation:${region}:${account}:stack/${intranet.stackName}/*`] }));
+    releases.grantPut(build, 'releases/*');
+    // Cada deploy com código novo lança um build; o servidor ativa-o sozinho quando termina.
+    const sourceVersion = Object.values(sources).map(asset => asset.assetHash).join('-');
+    // Só o id volta ao CloudFormation: a resposta completa do startBuild excede o limite de 4 KB.
+    const startBuild = { service: 'CodeBuild', action: 'startBuild', parameters: { projectName: build.projectName, environmentVariablesOverride: [{ name: 'SOURCE_VERSION', value: sourceVersion, type: 'PLAINTEXT' }] }, outputPaths: ['build.id'], physicalResourceId: cr.PhysicalResourceId.of(`portal-build-${sourceVersion}`) };
+    new cr.AwsCustomResource(this, 'PortalBuildTrigger', {
+      onCreate: startBuild,
+      onUpdate: startBuild,
+      policy: cr.AwsCustomResourcePolicy.fromStatements([new iam.PolicyStatement({ actions: ['codebuild:StartBuild'], resources: [build.projectArn] })]),
+      installLatestAwsSdk: false,
+    });
+
+    // A VPC origin só aceita tráfego autorizado pelo grupo que o CloudFront cria na VPC
+    // (CloudFront-VPCOrigins-Service-SG): nem a prefix list pública nem o bloco da sub-rede
+    // funcionam (validado a 2026-10-27). O grupo só existe depois da distribuição, daí a consulta.
+    const findOriginGroup = { service: 'EC2', action: 'describeSecurityGroups', parameters: { Filters: [{ Name: 'vpc-id', Values: [vpc.vpcId] }, { Name: 'group-name', Values: ['CloudFront-VPCOrigins-Service-SG'] }] }, outputPaths: ['SecurityGroups.0.GroupId'], physicalResourceId: cr.PhysicalResourceId.of(`portal-origin-group-${vpc.vpcId}`) };
+    const originGroup = new cr.AwsCustomResource(this, 'PortalOriginGroup', {
+      onCreate: findOriginGroup,
+      onUpdate: findOriginGroup,
+      policy: cr.AwsCustomResourcePolicy.fromStatements([new iam.PolicyStatement({ actions: ['ec2:DescribeSecurityGroups'], resources: ['*'] })]),
+      installLatestAwsSdk: false,
+    });
+    originGroup.node.addDependency(distribution);
+    new ec2.CfnSecurityGroupIngress(this, 'PortalFromCloudFront', { groupId: serverGroup.securityGroupId, ipProtocol: 'tcp', fromPort: 8080, toPort: 8080, sourceSecurityGroupId: originGroup.getResponseField('SecurityGroups.0.GroupId'), description: 'CloudFront VPC origin' });
+
+    // Guarda: a limpeza automática da conta do curso desliga o servidor; esta regra volta a ligá-lo.
+    // Só pode ligar esta instância; a etiqueta blu-keep-stopped=true deixa-o desligado de propósito.
+    const guard = new lambda.Function(this, 'PortalGuard', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(infraDir, 'lambda/portal-guard')),
+      timeout: Duration.seconds(30),
+      memorySize: 128,
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: { INSTANCE_ID: server.instanceId },
+      description: 'Starts the BLU portal server again when it is stopped',
+    });
+    guard.addToRolePolicy(new iam.PolicyStatement({ actions: ['ec2:StartInstances'], resources: [`arn:aws:ec2:${region}:${account}:instance/${server.instanceId}`] }));
+    guard.addToRolePolicy(new iam.PolicyStatement({ actions: ['ec2:DescribeInstances'], resources: ['*'] }));
+    new events.Rule(this, 'PortalStoppedRule', {
+      description: 'BLU portal server stopped: start it again',
+      eventPattern: { source: ['aws.ec2'], detailType: ['EC2 Instance State-change Notification'], detail: { state: ['stopped'], 'instance-id': [server.instanceId] } },
+      targets: [new targets.LambdaFunction(guard, { retryAttempts: 2 })],
+    });
+
+    new CfnOutput(this, 'PortalUrl', { value: `${portalOrigin}/` });
+    new CfnOutput(this, 'PortalReleaseBucket', { value: releases.bucketName });
+    new CfnOutput(this, 'PortalBuildProject', { value: build.projectName });
+    new CfnOutput(this, 'PortalSeedIncluded', { value: seed ? 'yes' : 'no' });
   }
 }
 
 const data = new DataStack(app, 'BluCostaData', { env, description: 'Shared low-cost conversation event data plane' });
 new FrontendStack(app, 'BluCostaFrontend', { env, data, description: 'Public chatbot ingestion API; no backoffice routes' });
-new BackofficeStack(app, 'BluCostaBackoffice', { env, data, description: 'Curator/backoffice read and analysis resources' });
+const backoffice = new BackofficeStack(app, 'BluCostaBackoffice', { env, data, description: 'Curator/backoffice read and analysis resources' });
+const intranet = new IntranetStack(app, 'BluCostaIntranet', { env, data, backoffice, description: 'Staff intranet: Cognito login, follow-up, metrics, team, operations and governance' });
+new PortalStack(app, 'BluCostaPortal', { env, data, intranet, description: 'DMC portal on a private server behind CloudFront and the team login' });
 app.synth();

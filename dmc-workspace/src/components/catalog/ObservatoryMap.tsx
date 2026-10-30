@@ -3,19 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, RotateCcw, Move } from "lucide-react";
 import { display, hasCoordinates, type ObservatoryRecord } from "@/lib/observatory";
+import { fitPoints, project } from "@/lib/map-projection";
 
 const colors: Record<string, string> = {
   Atração: "#2d5b67",
   Restaurante: "#b57939",
   Experiência: "#75866a",
 };
-function project(lon: number, lat: number) {
-  return [
-    lon,
-    (-Math.log(Math.tan(Math.PI / 4 + (Math.max(-85, Math.min(85, lat)) * Math.PI) / 360)) * 180) /
-      Math.PI,
-  ];
-}
 type Point = { key: string; members: ObservatoryRecord[]; x: number; y: number };
 function destinations(members: ObservatoryRecord[]) {
   return [
@@ -58,20 +52,7 @@ export function ObservatoryMap({
     return () => observer.disconnect();
   }, []);
   const valid = useMemo(() => records.filter(hasCoordinates), [records]);
-  const fit = () => {
-    const points = valid.map((r) => project(Number(r.longitude), Number(r.latitude)));
-    if (!points.length) return { x: -12, y: -52, w: 17, h: 14 };
-    const xs = points.map((p) => p[0]),
-      ys = points.map((p) => p[1]);
-    const w = Math.max(3, Math.max(...xs) - Math.min(...xs) + 1.2),
-      h = Math.max(w * 0.7, Math.max(...ys) - Math.min(...ys) + 1.2);
-    return {
-      x: (Math.max(...xs) + Math.min(...xs)) / 2 - w / 2,
-      y: (Math.max(...ys) + Math.min(...ys)) / 2 - h / 2,
-      w,
-      h,
-    };
-  };
+  const fit = () => fitPoints(valid.map((r) => project(Number(r.longitude), Number(r.latitude))));
   const [camera, setCamera] = useState(fit);
   const drag = useRef<{ x: number; y: number } | null>(null);
   const paths = useMemo(

@@ -39,3 +39,26 @@ export const initialBrief: CustomerBrief = {
   notes:
     "Surprise journey. They value Portuguese heritage, local artisans, gastronomy and one memorable final experience in Porto. Keep internal planning notes out of customer-facing exports.",
 };
+
+// Briefing vazio de uma viagem nova (e base dos rascunhos a partir de leads):
+// mantém os critérios BLU por defeito, sem dados nem restrições do exemplo.
+export const emptyBrief = (): CustomerBrief => ({
+  ...initialBrief,
+  customerName: "",
+  destination: "",
+  startDate: "",
+  endDate: "",
+  arrivalLocation: "",
+  arrivalTime: "",
+  arrivalFlightNumber: "",
+  departureLocation: "",
+  departureTime: "",
+  departureFlightNumber: "",
+  interests: [],
+  mobilityRestrictions: [],
+  dietaryRestrictions: [],
+  exclusions: [],
+  specialOccasion: "",
+  notes: "",
+  childrenAges: "",
+});

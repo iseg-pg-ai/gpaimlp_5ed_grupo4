@@ -1,0 +1,9 @@
+{
+  "note": "Parceiros de demonstração (fictícios, sem número WhatsApp). Substituir pelos parceiros reais com o número em dígitos internacionais, por exemplo 3519XXXXXXXX, e voltar a publicar BluCostaIntranet.",
+  "partners": [
+    { "id": "tuk-alfama", "name": "Tuk-tuk Alfama (demo)", "kind": "tuk-tuk", "area": "Lisboa: Alfama, Baixa, Graça", "seats": 6, "whatsapp": "", "demo": true },
+    { "id": "tuk-belem", "name": "Tuk-tuk Belém (demo)", "kind": "tuk-tuk", "area": "Lisboa: Belém, Ajuda", "seats": 6, "whatsapp": "", "demo": true },
+    { "id": "transfer-sintra", "name": "Transfer Sintra (demo)", "kind": "transfer", "area": "Sintra, Cascais, aeroporto", "seats": 8, "whatsapp": "", "demo": true },
+    { "id": "guide-porto", "name": "Guia Porto e Douro (demo)", "kind": "guide", "area": "Porto, Vale do Douro", "seats": 12, "whatsapp": "", "demo": true }
+  ]
+}

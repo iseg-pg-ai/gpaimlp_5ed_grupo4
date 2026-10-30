@@ -8,11 +8,13 @@ import type { ActivityConfirmation } from "@/lib/activity-confirmation";
 import React, { useState, useRef, useEffect } from "react";
 import { ItineraryDay, CustomerBrief, TransitLeg, TransitMode } from "@/types";
 import { ProposalStatus } from "./ProposalStatus";
+import { portalUrl } from "@/lib/http-client";
 import { ActivityCard } from "./ActivityCard";
 import { TransitConnector } from "./TransitConnector";
 import { TransitInspectorModal } from "./TransitInspectorModal";
 import { AddPoiModal } from "./AddPoiModal";
 import { DayWeatherBadge } from "./DayWeatherBadge";
+import { ProposalMap } from "./ProposalMap";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -295,6 +297,8 @@ interface ItineraryWorkspaceProps {
   onExportPdf: () => void;
   onShare?: () => void;
   onExportPrompt: () => void;
+  /** Ficheiro da criação em massa do Canva: uma página do modelo BLU por dia. */
+  onExportCanvaCsv?: () => void;
   isExporting?: boolean;
   displayBudget: string;
   proposalTools?: React.ReactNode;
@@ -328,6 +332,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
   onExportPdf,
   onShare,
   onExportPrompt,
+  onExportCanvaCsv,
   isExporting,
   displayBudget,
   proposalTools,
@@ -358,7 +363,17 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
     activityId: string;
   } | null>(null);
   const [addPoiDay, setAddPoiDay] = useState<number | null>(null);
+  const [mapOpen, setMapOpen] = useState(false);
   const dayRefs = useRef<{ [key: number]: HTMLElement | null }>({});
+
+  // Ligação direta (…/#mapa): abre o mapa e leva-o para o ecrã.
+  useEffect(() => {
+    if (window.location.hash !== "#mapa") return;
+    queueMicrotask(() => {
+      setMapOpen(true);
+      document.getElementById("mapa")?.scrollIntoView({ block: "start" });
+    });
+  }, []);
 
   // Auto-scroll into view when a specific day is modified by the AI Assistant
   useEffect(() => {
@@ -377,33 +392,51 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
 
   return (
     <div className="flex-1 min-w-0 w-full bg-[var(--portal-bg-f4f0e7)] pb-24">
-      <header className="px-4 sm:px-6 py-7 border-b border-[var(--portal-line-ddd8ce)]">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <ProposalStatus state="draft" />
-            {exported && <ProposalStatus state="exported" />}
-            {version && (
-              <span className="text-sm text-[var(--portal-text-4a636b)]">
-                v{String(version).padStart(3, "0")}
-              </span>
-            )}
+      <header className="pb-7 border-b border-[var(--portal-line-ddd8ce)]">
+        {/* Capa costeira (Cabo da Roca): a mesma fotografia da capa do PDF. */}
+        <div
+          data-testid="proposal-coast-hero"
+          className="relative bg-[#0d3b4f] bg-cover bg-center text-white"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(8,42,56,0.25) 0%, rgba(8,42,56,0.8) 100%), url(${portalUrl("/proposal/coast.jpg")})`,
+          }}
+        >
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8 pb-14">
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <ProposalStatus state="draft" />
+              {exported && <ProposalStatus state="exported" />}
+              {version && (
+                <span className="text-sm text-white/85">v{String(version).padStart(3, "0")}</span>
+              )}
+            </div>
+            <p className="text-base font-medium text-white/85 break-words">{brief.customerName}</p>
+            <h1 className="mt-2 font-serif-blu text-3xl sm:text-5xl leading-tight break-words [text-shadow:0_2px_16px_rgba(0,0,0,0.35)]">
+              {brief.destination}
+            </h1>
+            <div className="mt-4 flex flex-wrap gap-2 text-sm sm:text-base">
+              <p className="flex flex-wrap items-center gap-2 rounded-full border border-white/35 bg-white/15 px-3 py-1">
+                <Calendar aria-hidden="true" className="size-4 shrink-0" />
+                {formatDate(brief.startDate)} — {formatDate(brief.endDate)}
+              </p>
+              <p className="flex flex-wrap items-center gap-2 rounded-full border border-white/35 bg-white/15 px-3 py-1">
+                <Users aria-hidden="true" className="size-4" />
+                {brief.adults + brief.children} <T text="travellers" />
+              </p>
+            </div>
           </div>
-          <p className="text-base font-medium text-[var(--portal-text-4a636b)] break-words">
-            {brief.customerName}
-          </p>
-          <h1 className="mt-2 font-serif-blu text-3xl sm:text-4xl leading-tight text-[var(--portal-text-143f4b)] break-words">
-            {brief.destination}
-          </h1>
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm sm:text-base text-[var(--portal-text-143f4b)]">
-            <p className="flex flex-wrap items-center gap-2">
-              <Calendar aria-hidden="true" className="size-4 shrink-0" />
-              {formatDate(brief.startDate)} — {formatDate(brief.endDate)}
-            </p>
-            <p className="flex flex-wrap items-center gap-2">
-              <Users aria-hidden="true" className="size-4" />
-              {brief.adults + brief.children} <T text="travellers" />
-            </p>
-          </div>
+          <svg
+            aria-hidden="true"
+            className="absolute bottom-0 left-0 block h-8 w-full sm:h-10"
+            viewBox="0 0 1440 56"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,32 C240,64 480,0 720,24 C960,48 1200,8 1440,30 L1440,56 L0,56 Z"
+              fill="var(--portal-bg-f4f0e7)"
+            />
+          </svg>
+        </div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Button
               variant="primaryDark"
@@ -425,6 +458,20 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               <FileText aria-hidden="true" className="size-4" />
               <T text="Exportar TXT" source="pt" />
             </Button>
+            {onExportCanvaCsv && (
+              <Button
+                variant="outline"
+                onClick={onExportCanvaCsv}
+                disabled={isExporting}
+                className="min-h-11 text-sm"
+                data-testid="export-canva-csv"
+                style={{ minHeight: 44 }}
+                title="Uma página do modelo BLU por dia, com a criação em massa do Canva"
+              >
+                <FileText aria-hidden="true" className="size-4" />
+                <T text="Canva: dias (CSV)" source="pt" />
+              </Button>
+            )}
             <Button variant="outline" onClick={onEditBrief} className="min-h-11 text-sm">
               <SlidersHorizontal aria-hidden="true" className="size-4" />
               <T text="Edit Brief" />
@@ -547,6 +594,19 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
               {proposalTools}
             </details>
           )}
+          {/* #mapa abre já o mapa: é o destino do atalho «Mapa da proposta» da intranet. */}
+          <details
+            id="mapa"
+            data-testid="proposal-map"
+            open={mapOpen}
+            onToggle={(event) => setMapOpen(event.currentTarget.open)}
+            className="mt-3 scroll-mt-24 rounded-xl border border-[var(--portal-line-ddd8ce)] bg-[var(--portal-bg-fffefa)] text-sm"
+          >
+            <summary className="cursor-pointer px-4 py-3 font-medium text-[var(--portal-text-143f4b)]">
+              <T text="Mapa da proposta" source="pt" />
+            </summary>
+            {mapOpen && <ProposalMap itinerary={itinerary} dayFilter={selectedDayFilter} />}
+          </details>
         </div>
       </header>
       <nav
