@@ -28,7 +28,9 @@ const cell = (value: unknown) => {
 const programme = (day: Snapshot["itinerary"][number]) =>
   day.items
     .map((item) =>
-      [item.time, item.title, item.location ? `(${item.location})` : ""].filter(Boolean).join(" · "),
+      [item.time, item.title, item.location ? `(${item.location})` : ""]
+        .filter(Boolean)
+        .join(" · "),
     )
     .join("\n");
 
@@ -52,5 +54,7 @@ export function canvaBulkCsv(snapshot: Snapshot, meta: Pick<VersionMeta, "versio
     `v${meta.version}`,
   ]);
   // BOM para o Excel e o Canva lerem acentos em UTF-8; fim de linha CRLF como pede o formato CSV.
-  return "﻿" + [CANVA_BULK_COLUMNS, ...rows].map((row) => row.map(cell).join(",")).join("\r\n") + "\r\n";
+  return (
+    "﻿" + [CANVA_BULK_COLUMNS, ...rows].map((row) => row.map(cell).join(",")).join("\r\n") + "\r\n"
+  );
 }
