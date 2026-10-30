@@ -246,7 +246,7 @@ async function opsCockpit(view, state) {
         h('div', { class: 'filters' }, Object.entries(OPS_GROUPS).map(([key, [label]]) => toggle('group', key, label)))),
       groups.length ? h('ul', { class: 'ops-bars' }, groups.map(([name, count]) => h('li', {},
         h('button', { type: 'button', class: 'ops-bar', 'aria-pressed': String(state.groupValue === name), onclick: () => set({ groupValue: state.groupValue === name ? '' : name, selected: '' }) },
-          h('span', { class: 'ops-bar-label' }, name), h('span', { class: 'ops-bar-track' }, h('span', { class: 'ops-bar-fill', style: `width:${Math.max(4, Math.round(count / widest * 100))}%` })), h('strong', {}, count)))))
+          h('span', { class: 'ops-bar-label' }, name), h('span', { class: 'ops-bar-track' }, h('span', { class: 'ops-bar-fill', style: { width: `${Math.max(4, Math.round(count / widest * 100))}%` } })), h('strong', {}, count)))))
         : h('p', { class: 'muted' }, 'Nada parado com estes filtros.')),
     h('div', { class: 'split spaced' },
       h('div', { class: 'panel' },
