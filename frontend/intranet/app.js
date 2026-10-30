@@ -105,7 +105,8 @@ const portalUrl = (rest = '') => {
 const DEADLINE = { overdue: ['Fora do prazo', 'bad'], 'due-soon': ['Prazo próximo', 'warn'], 'on-track': ['No prazo', 'ok'], closed: ['Fechado', ''] };
 let casePrefill = {};
 // Filtro e lead aberto sobrevivem a «Atualizar» e ao regresso ao separador.
-const leadsState = { filter: 'open', selected: '' };
+// Os leads de demonstração ficam escondidos por defeito, como nos números da Visão geral e do Painel.
+const leadsState = { filter: 'open', selected: '', demo: false };
 // Conversa com o assistente: só em memória, apaga-se ao recarregar a página.
 const whatsappState = { selected: '', leadId: '' };
 let teamCache;
@@ -421,11 +422,20 @@ const views = {
     rememberLeads(leads);
     const detail = h('div', { class: 'panel' }, h('p', { class: 'muted' }, 'Escolha um lead para ver a conversa com o chatbot.'));
     // Conversas mais recentes primeiro; os leads em risco continuam no alerta acima da tabela.
-    const rows = state.filter === 'contacted' ? leads : [...leads].sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt));
+    const demoCount = leads.filter(lead => lead.synthetic).length;
+    const shown = leads.filter(lead => state.demo || !lead.synthetic || lead.id === state.selected);
+    const rows = state.filter === 'contacted' ? shown : [...shown].sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt));
+    const real = leads.filter(lead => !lead.synthetic);
+    const tally = [
+      `${real.length} lead(s) ${state.filter === 'open' ? 'em aberto' : state.filter === 'contacted' ? 'contactados' : 'no total'}`,
+      state.filter !== 'contacted' ? `${real.filter(lead => lead.status !== 'CONTACTED' && !lead.assignedTo).length} sem responsável` : '',
+      state.filter !== 'contacted' ? `${real.filter(lead => lead.replyLate).length} fora do prazo` : '',
+      demoCount ? `${demoCount} de demonstração ${state.demo ? 'incluídos' : 'escondidos'}` : '',
+    ].filter(Boolean).join(' · ');
     const select = id => { state.selected = id; for (const row of view.querySelectorAll('tr.clickable')) row.classList.toggle('selected', row.dataset.id === id); showLead(detail, id, () => rerender()); };
     const rerender = () => { view.replaceChildren(); views.leads(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
     const filterButton = (key, label) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.filter === key), onclick: () => { state.filter = key; state.selected = ''; rerender(); } }, label);
-    const churning = leads.filter(lead => lead.atRisk);
+    const churning = shown.filter(lead => lead.atRisk);
     view.append(
       h('h2', {}, 'Seguimento de leads'),
       churning.length ? h('div', { class: 'panel risk', role: 'alert' },
@@ -433,7 +443,9 @@ const views = {
         h('p', {}, 'O cliente disse que vai desistir. Contacte-o já e use «Marcar contactado» para limpar o alerta.'),
         h('div', { class: 'actions' }, churning.map(lead => h('button', { type: 'button', class: 'secondary', onclick: () => select(lead.id) }, lead.journey.destination || lead.id)))) : '',
       settings ? followUpRules(settings, rerender) : null,
-      h('div', { class: 'filters' }, filterButton('open', 'Em aberto'), filterButton('contacted', 'Contactados'), filterButton('all', 'Todos')),
+      h('div', { class: 'filters' }, filterButton('open', 'Em aberto'), filterButton('contacted', 'Contactados'), filterButton('all', 'Todos'),
+        demoCount ? [' ', h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.demo), onclick: () => { state.demo = !state.demo; rerender(); } }, `Demonstração (${demoCount})`)] : null),
+      h('p', { class: 'muted' }, tally),
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, rows.length ? h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Lead'), h('th', {}, 'Última mensagem'), h('th', {}, 'Estado'), h('th', {}, 'Responder até'), h('th', {}, 'Responsável'))),
@@ -496,7 +508,7 @@ const views = {
           editor));
     };
     const line = item => h('li', { class: `work-item ${item.urgency}` },
-      h('div', {}, pill(KINDS_PT[item.kind] ?? item.kind), ' ', urgencyPill(item.urgency), state.scope === 'team' && item.owner ? h('span', { class: 'muted' }, ` · ${item.owner}`) : null),
+      h('div', {}, pill(KINDS_PT[item.kind] ?? item.kind), ' ', urgencyPill(item.urgency), item.unassigned ? [' ', pill('Sem responsável', 'warn')] : null, state.scope === 'team' && item.owner ? h('span', { class: 'muted' }, ` · ${item.owner}`) : null),
       h('strong', {}, item.title),
       item.detail ? h('div', { class: 'muted' }, item.detail) : null,
       h('div', { class: 'actions task-actions' }, h('button', { type: 'button', class: 'link', onclick: () => openItem(item) }, 'Abrir')));
@@ -504,6 +516,15 @@ const views = {
       h('h2', {}, 'Agenda'),
       h('p', { class: 'muted' }, 'Tudo o que tem data (hora de Lisboa): recolhas e excursões com os seus lembretes, tarefas, seguimentos de leads, prazos de casos e lembretes para enviar à mão. Em atraso primeiro; dentro de cada dia, por urgência. Os lembretes saem sozinhos à hora marcada.'),
       h('div', { class: 'filters' }, toggle('scope', 'mine', 'Só o meu'), toggle('scope', 'team', 'Equipa'), ' ', toggle('days', 7, '7 dias'), toggle('days', 14, '14 dias')),
+      // Equipa: quem tem o quê em aberto e o que ainda não é de ninguém.
+      plan.team ? h('div', { class: 'panel spaced' }, h('h3', {}, 'Quem tem o quê'),
+        h('table', {},
+          h('thead', {}, h('tr', {}, h('th', {}, 'Pessoa'), h('th', {}, 'Leads'), h('th', {}, 'Tarefas'), h('th', {}, 'Casos'), h('th', {}, 'Serviços no período'))),
+          h('tbody', {},
+            plan.team.people.map(person => h('tr', {}, h('td', {}, person.name), h('td', {}, person.leads), h('td', {}, person.tasks), h('td', {}, person.cases), h('td', {}, person.services))),
+            h('tr', {}, h('td', {}, h('strong', {}, 'Sem responsável')),
+              h('td', {}, plan.team.unassigned.leads ? pill(String(plan.team.unassigned.leads), 'warn') : '0'), h('td', {}, plan.team.unassigned.tasks || '0'), h('td', {}, '—'), h('td', {}, '—')))),
+        plan.team.unassigned.leads ? h('p', { class: 'muted' }, 'Os leads sem responsável aparecem abaixo em «Hoje» ou «Em atraso». Abra-os e use «Assumir», ou ligue a atribuição automática nas Regras de seguimento.') : null) : null,
       h('div', { class: 'cards' },
         h('div', { class: 'card' }, h('div', { class: 'value' }, (counts.NOTIFY_PENDING ?? []).length), h('div', { class: 'label' }, 'Lembretes agendados')),
         h('div', { class: 'card' }, h('div', { class: 'value' }, (counts.NOTIFY_SENT ?? []).length), h('div', { class: 'label' }, 'Enviados (24 h)')),
@@ -737,7 +758,7 @@ const views = {
     const tone = { bad: 'bad', warn: 'warn', info: '' };
     view.append(
       h('h2', {}, 'Segurança'),
-      h('p', { class: 'muted' }, 'Estado das proteções da intranet e do pipeline, e o que precisa de atenção.'),
+      h('p', { class: 'muted' }, 'Estado das proteções da intranet e do pipeline, e o que precisa de atenção. Contas, papéis e convites estão em ', goLink('team', {}, 'Equipa e acessos'), '.'),
       h('div', { class: 'panel' }, h('h3', {}, 'Requer atenção'), data.findings.length
         ? h('ul', { class: 'reminders' }, data.findings.map(item => h('li', {}, pill(item.level === 'bad' ? 'Urgente' : item.level === 'warn' ? 'Atenção' : 'Info', tone[item.level]), ' ', item.text)))
         : h('p', { class: 'muted' }, 'Nada pendente.')),
@@ -1031,6 +1052,10 @@ function followUpRules(settings, refresh) {
     h('input', { type: 'checkbox', name: type, checked: settings.auto[type], disabled: !editable }), h('span', {}, label)));
   const form = h('form', { class: 'rules' },
     h('label', {}, 'Responder a cada lead em', h('span', { class: 'inline' }, h('input', { type: 'number', name: 'replyHours', min: '1', max: '72', value: String(settings.replyHours), disabled: !editable }), ' horas')),
+    h('fieldset', {}, h('legend', {}, 'Atribuição de leads'),
+      h('label', { class: 'switch' }, h('input', { type: 'checkbox', name: 'autoAssign', checked: Boolean(settings.autoAssign), disabled: !editable }),
+        h('span', {}, 'Atribuir sozinho um lead que fica 1h30 sem responsável a um curador ou fundador que não tenha nenhum lead')),
+      h('p', { class: 'muted' }, 'Verificado a cada 5 minutos. Se todos já tiverem leads, o lead fica à espera e os alertas continuam. Quem recebe é avisado; se o libertar, volta a contar 1h30.')),
     h('fieldset', {}, h('legend', {}, 'Mensagens automáticas ao cliente'), switches,
       h('p', { class: 'muted' }, 'Só a quem deu consentimento no chat; cada mensagem diz como parar (STOP) e nunca é enviada a quem pediu para parar. Sem canal configurado, ficam preparadas na Agenda para enviar à mão.')),
     editable ? h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'primary' }, 'Guardar regras'), status) : h('p', { class: 'muted' }, 'Só fundadores alteram estas regras.'),
@@ -1041,14 +1066,14 @@ function followUpRules(settings, refresh) {
     const data = new FormData(form);
     status.textContent = 'A guardar…';
     try {
-      await api('POST', '/v1/settings', { replyHours: Number(data.get('replyHours')), auto: Object.fromEntries(Object.keys(settings.types).map(type => [type, data.has(type)])) });
+      await api('POST', '/v1/settings', { replyHours: Number(data.get('replyHours')), autoAssign: data.has('autoAssign'), auto: Object.fromEntries(Object.keys(settings.types).map(type => [type, data.has(type)])) });
       refresh();
     } catch (error) {
       status.textContent = error.message;
     }
   });
   const on = Object.entries(settings.auto).filter(([, value]) => value).map(([type]) => settings.types[type]?.split(' ')[0]).filter(Boolean);
-  return h('details', { class: 'panel spaced' }, h('summary', {}, `Regras de seguimento: responder em ${settings.replyHours} h · automáticas: ${on.length ? on.join(', ') : 'nenhuma'}`),
+  return h('details', { class: 'panel spaced' }, h('summary', {}, `Regras de seguimento: responder em ${settings.replyHours} h · atribuição automática: ${settings.autoAssign ? 'ligada' : 'desligada'} · automáticas: ${on.length ? on.join(', ') : 'nenhuma'}`),
     settings.updatedAt ? h('p', { class: 'muted' }, `Alteradas por ${settings.updatedBy} em ${when(settings.updatedAt)}.`) : null, form);
 }
 
@@ -1427,25 +1452,17 @@ function plainAnswer(text) {
   return blocks;
 }
 
-// Assistente: um só, num botão fixo no canto inferior direito, em todas as secções.
-// Sem lead escolhido responde sobre todo o trabalho que o perfil vê (POST /v1/assistant), com
-// histórico e ações que a pessoa clica; com um lead (curadores e fundadores) responde sobre esse
-// lead (/v1/leads/{id}/ask). Abre já no lead aberto em Seguimento ou no WhatsApp. Nada é enviado.
+// Assistente: um chat simples num botão fixo no canto inferior direito, em todas as secções.
+// Duas conversas: «O meu» (o trabalho da própria pessoa) e «Equipa» (o de todos, para quem segue
+// leads). Responde com o que o perfil já vê (POST /v1/assistant) e pode sugerir ações que a pessoa
+// clica; nada é enviado sozinho.
 function mountAssistant() {
-  const SOURCES = { work: 'O meu trabalho', alerts: 'Alertas', metrics: 'Painel', leads: 'Seguimento', control: 'Visão geral', settings: 'Regras de seguimento', guide: 'Guia da intranet' };
-  const SUGGESTIONS = {
-    general: [['O que faço primeiro?', 'O que devo fazer primeiro hoje?'], ['Leads em risco', 'Que leads estão em risco e o que faço com cada um?'], ['Como agendar', 'Como agendo uma recolha ou excursão?']],
-    lead: [['Resumo e próximo passo', 'Resume o que este viajante procura e sugere o próximo passo.'], ['O que falta?', 'Que informação falta para preparar a proposta?'], ['Rascunho de resposta', 'Escreve um rascunho de resposta curta e cordial.']],
-  };
-  const history = [];
-  const contextLead = () => (current === 'leads' && leadsState.selected) || (current === 'whatsapp' && whatsappState.leadId) || '';
-  const nameOf = lead => lead.journey?.destination || lead.id;
-  const picker = h('select', { 'aria-label': 'Sobre' });
-  const chips = h('div', { class: 'assistant-chips' });
+  const chats = { mine: [], team: [] };
+  let scope = 'mine';
   const log = h('div', { class: 'chat assistant-log', 'aria-live': 'polite' });
   const status = h('p', { class: 'muted', role: 'status' });
-  const question = h('textarea', { rows: '3', maxlength: '1000', 'aria-label': 'Pergunta ao assistente' });
-  const ask = h('button', { type: 'submit', class: 'primary' }, 'Perguntar');
+  const question = h('textarea', { rows: '2', maxlength: '1000', 'aria-label': 'Mensagem ao assistente', placeholder: 'Escreva uma mensagem… (Enter envia)' });
+  const send = h('button', { type: 'submit', class: 'primary' }, 'Enviar');
   const actionButton = action => {
     if (action.type === 'open') return h('button', { type: 'button', class: 'secondary', onclick: () => goTo(action.tab, action.leadId ? { filter: 'all', lead: action.leadId } : {}) }, action.leadId ? `Abrir o lead ${action.leadId}` : `Abrir ${$('tabs').querySelector(`[data-tab="${action.tab}"]`)?.textContent ?? action.tab}`);
     if (action.type === 'task') return h('button', { type: 'button', class: 'secondary', onclick: () => { taskPrefill = { title: action.title, leadId: action.leadId }; show('work'); } }, `Preparar tarefa: ${action.title}`);
@@ -1457,63 +1474,63 @@ function mountAssistant() {
         goTo('leads', { filter: 'all', lead: action.leadId });
       } }, 'Copiar e abrir o lead'));
   };
-  const render = () => log.replaceChildren(...history.map(turn => turn.role === 'user'
-    ? h('div', { class: 'bubble customer' }, turn.about ? `${turn.text} (${turn.about})` : turn.text)
-    : h('div', { class: 'bubble assistant' }, ...plainAnswer(turn.text),
-      turn.actions?.length ? h('div', { class: 'actions' }, turn.actions.map(actionButton)) : null,
-      turn.sources?.length ? h('time', {}, `Fontes: ${turn.sources.map(source => SOURCES[source] ?? source).join(', ')}`) : null,
-      turn.lead ? h('time', {}, 'Sugestão gerada por IA: confirme antes de agir ou contactar o cliente.') : null)));
-  const setMode = () => {
-    const mode = picker.value ? 'lead' : 'general';
-    question.placeholder = mode === 'lead' ? 'Pergunte sobre este lead…' : 'Pergunte sobre o seu trabalho, leads, prazos ou a intranet…';
-    chips.replaceChildren(...SUGGESTIONS[mode].map(([label, text]) => h('button', { type: 'button', class: 'secondary', onclick: () => { question.value = text; question.focus(); } }, label)));
+  const render = () => {
+    const history = chats[scope];
+    log.replaceChildren(...(history.length ? history.map(turn => turn.role === 'user'
+      ? h('div', { class: 'bubble customer' }, turn.text)
+      : h('div', { class: 'bubble assistant' }, ...plainAnswer(turn.text),
+        turn.actions?.length ? h('div', { class: 'actions' }, turn.actions.map(actionButton)) : null))
+      : [h('p', { class: 'muted' }, scope === 'team' ? 'Pergunte sobre o trabalho da equipa: quem tem o quê, o que está sem responsável, o que está atrasado.' : 'Olá! Pergunte o que quiser sobre o seu trabalho, os seus leads ou a intranet.')]));
+    log.lastElementChild?.scrollIntoView({ block: 'nearest' });
   };
-  const refreshContext = () => {
-    if (!isCurator()) { picker.closest('label').hidden = true; setMode(); return; }
-    const id = contextLead();
-    const known = [...openLeads].sort((a, b) => a.synthetic - b.synthetic);
-    picker.replaceChildren(h('option', { value: '' }, 'Todo o meu trabalho'), ...known.map(lead => h('option', { value: lead.id, selected: lead.id === id }, `${nameOf(lead)}${lead.synthetic ? ' (demo)' : ''}`)));
-    if (id && !known.some(lead => lead.id === id)) picker.append(h('option', { value: id, selected: true }, id));
-    setMode();
-  };
-  picker.addEventListener('change', setMode);
-  const form = h('form', { onsubmit: async event => {
+  const tab = (key, label) => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(scope === key), onclick: event => {
+    scope = key;
+    for (const button of event.currentTarget.parentElement.children) button.setAttribute('aria-pressed', String(button === event.currentTarget));
+    status.textContent = '';
+    render();
+    question.focus();
+  } }, label);
+  const switcher = h('div', { class: 'filters assistant-scope' }, tab('mine', 'O meu assistente'), tab('team', 'Equipa'));
+  const form = h('form', { class: 'assistant-form', onsubmit: async event => {
     event.preventDefault();
     const text = question.value.trim();
-    if (!text) { question.focus(); return; }
-    const id = picker.value;
-    const earlier = history.filter(turn => !turn.lead && !turn.about).map(turn => ({ role: turn.role, text: turn.text }));
-    history.push({ role: 'user', text, about: id ? nameOf(openLeads.find(lead => lead.id === id) ?? { id }) : '' });
+    if (!text || send.disabled) return;
+    const asked = scope;
+    const history = chats[asked];
+    const earlier = history.map(turn => ({ role: turn.role, text: turn.text }));
+    history.push({ role: 'user', text });
     question.value = '';
     render();
-    ask.disabled = true;
-    status.textContent = 'A pensar…';
+    send.disabled = true;
+    status.textContent = 'A escrever…';
     try {
-      const result = id
-        ? await api('POST', `/v1/leads/${encodeURIComponent(id)}/ask`, { question: text })
-        : await api('POST', '/v1/assistant', { question: text, history: earlier });
-      history.push({ role: 'assistant', text: result.answer, actions: result.actions, sources: result.sources, lead: Boolean(id) });
+      const result = await api('POST', '/v1/assistant', { question: text, history: earlier, scope: asked });
+      history.push({ role: 'assistant', text: result.answer, actions: result.actions });
       status.textContent = '';
     } catch (error) {
       status.textContent = error.message;
     }
-    ask.disabled = false;
-    render();
-    log.lastElementChild?.scrollIntoView({ block: 'nearest' });
-  } },
-  h('label', { class: 'field' }, h('span', {}, 'Sobre'), picker), chips, log, question,
-  h('div', { class: 'actions' }, ask, h('button', { type: 'button', class: 'link', onclick: () => { history.length = 0; status.textContent = ''; render(); } }, 'Nova conversa')), status);
+    send.disabled = false;
+    if (asked === scope) render();
+    question.focus();
+  } }, question, h('div', { class: 'actions' }, send, h('button', { type: 'button', class: 'link', onclick: () => { chats[scope].length = 0; status.textContent = ''; render(); } }, 'Nova conversa')));
+  question.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } });
   const panel = h('section', { class: 'assistant-panel', id: 'assistant-panel', role: 'dialog', 'aria-label': 'Assistente', hidden: true },
     h('div', { class: 'assistant-head' }, h('strong', {}, 'Assistente'), h('button', { type: 'button', class: 'link', onclick: () => toggle(false) }, 'Fechar')),
-    h('p', { class: 'muted' }, 'Responde com o que o seu perfil já vê e sugere ações que clica; nada é enviado sozinho e sem contactos de clientes.'), form);
+    switcher, log, status, form);
   const fab = h('button', { type: 'button', class: 'assistant-fab primary', 'aria-expanded': 'false', 'aria-controls': 'assistant-panel', onclick: () => toggle(panel.hidden) }, 'Assistente');
   function toggle(open) {
     panel.hidden = !open;
     fab.setAttribute('aria-expanded', String(open));
-    if (open) { refreshContext(); question.focus(); } else fab.focus();
+    if (open) {
+      // A conversa da equipa é para quem segue leads; os outros perfis só têm a sua.
+      switcher.hidden = !can('read');
+      if (switcher.hidden) scope = 'mine';
+      render();
+      question.focus();
+    } else fab.focus();
   }
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !panel.hidden) toggle(false); });
-  document.addEventListener('blu:section', () => { if (!panel.hidden) refreshContext(); });
   document.body.append(panel, fab);
 }
 // Separadores por grupo e grupos de menu vazios escondidos.

@@ -9,14 +9,15 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { NotFound, createApp } from '../lambda/intranet/app.mjs';
 import { CONTACTED, LEAD_TAGS, OPEN_STATUSES, atRisk, groupsOf, metrics, toLead } from '../lambda/intranet/model.mjs';
-import { createAlerter, createAnalyser, createDispatcher } from '../lambda/intranet/dispatch-core.mjs';
+import { createAlerter, createAnalyser, createAssigner, createDispatcher } from '../lambda/intranet/dispatch-core.mjs';
 import { needsAnalysis, parseSignals, profileFields, signalPrompt } from '../lambda/intranet/signals.mjs';
 import { cleanHistory, parseAssistant } from '../lambda/intranet/assistant.mjs';
-import { TEAM_ALERTS, alertRecord, controlSummary, teamAlerts } from '../lambda/intranet/team-alerts.mjs';
+import { TEAM_ALERTS, alertRecord, autoAssignments, controlSummary, teamAlerts } from '../lambda/intranet/team-alerts.mjs';
 import { WHATSAPP_TEST, parseInboxPost, threads, toInboxMessage } from '../lambda/intranet/whatsapp-test.mjs';
 import { lisbonToUtc, outcome, parseActivity, plan } from '../lambda/intranet/schedule.mjs';
 import { addWorkingDays, deadlineState, parseCase, parseCaseUpdate, portugueseHolidays } from '../lambda/intranet/cases.mjs';
 import { dueState, parseTask, parseTaskUpdate } from '../lambda/intranet/tasks.mjs';
+import { currentSettings, parseSettings } from '../lambda/intranet/settings.mjs';
 import { challengeFor, claimsOf, expired, loginUrl, refreshRequest, tokenRequest } from '../../frontend/intranet/auth.js';
 
 const infraDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -137,7 +138,9 @@ test('curator actions write only the allowed profile fields', async () => {
   const [contacted, assign, release, tags, rag] = calls;
   assert.deepEqual(contacted[2], { followUpStatus: 'CONTACTED', contactedAt: '2026-10-26T12:00:00.000Z', contactedBy: 'ana@blu.pt', updatedAt: '2026-10-26T12:00:00.000Z' });
   assert.deepEqual(assign[2], { assignedTo: 'ana@blu.pt', assignedAt: '2026-10-26T12:00:00.000Z', updatedAt: '2026-10-26T12:00:00.000Z' });
-  assert.deepEqual(release[3], ['assignedTo', 'assignedAt']);
+  assert.deepEqual(assign[3], ['assignedBy']);
+  assert.deepEqual(release[2], { releasedAt: '2026-10-26T12:00:00.000Z', updatedAt: '2026-10-26T12:00:00.000Z' });
+  assert.deepEqual(release[3], ['assignedTo', 'assignedAt', 'assignedBy']);
   // Etiquetas manuais ignoradas (a análise automática é a única fonte); a nota continua.
   assert.equal(tags[2].tags, undefined);
   assert.equal(tags[2].taggedAt, undefined);
@@ -391,6 +394,27 @@ test('the agenda day plan gathers services, tasks, follow-ups and hand-sent remi
   // O lembrete preparado do Rui entra como trabalho à mão; o lead sintético não entra.
   assert.ok(ids(team).overdue.includes('reminder:NOTIFY#act-1#partner'));
   assert.ok(!JSON.stringify(team).includes('BLU-AAAAAAAA0002'));
+  assert.equal(mine.team, undefined);
+});
+
+test('the team agenda always shows unowned leads and who holds what', async () => {
+  const { deps } = fakeDeps({
+    queryStatus: async status => (status === 'PENDING' ? [profile('BLU-AAAAAAAA0001', { assignedTo: S('ana@blu.pt'), followUpAt: S('2026-12-01T10:00:00Z') }), profile('BLU-AAAAAAAA0003', { followUpAt: S('2026-12-01T10:00:00Z') })] : []),
+    queryAgenda: async () => [],
+    listTeam: async () => team,
+  });
+  const handler = createApp(deps);
+  const plan = JSON.parse((await handler(request('GET /v1/agenda', { query: { days: '7', scope: 'team' }, groups: '[founders]' }))).body).plan;
+  const leadItems = plan.items.flatMap(day => day.items).filter(item => item.kind === 'lead');
+  // Os dois passaram o prazo de resposta; só o 0003 vem marcado como sem responsável.
+  assert.deepEqual(leadItems.map(item => [item.id, item.unassigned ?? false]).sort(), [['BLU-AAAAAAAA0001', false], ['BLU-AAAAAAAA0003', true]]);
+  assert.match(leadItems.find(item => item.unassigned).detail, /^Sem responsável: assumir/);
+  // Sem atraso, um lead sem responsável entra mesmo assim, hoje.
+  const calm = createApp(fakeDeps({ queryStatus: async status => (status === 'PENDING' ? [profile('BLU-AAAAAAAA0004', { lastActivityAt: S('2026-10-26T11:00:00Z'), followUpAt: S('2026-12-01T10:00:00Z') })] : []), queryAgenda: async () => [], listTeam: async () => team }).deps);
+  const today = JSON.parse((await calm(request('GET /v1/agenda', { query: { days: '7', scope: 'team' }, groups: '[founders]' }))).body).plan.items;
+  assert.deepEqual(today.map(day => [day.day, day.items.map(item => item.id)]), [['2026-10-26', ['BLU-AAAAAAAA0004']]]);
+  assert.deepEqual(plan.team.unassigned, { leads: 1, tasks: 0 });
+  assert.deepEqual(plan.team.people.map(person => [person.email, person.leads]), [['ana@blu.pt', 1], ['gisela@blu.pt', 0]]);
 });
 
 test('in test mode a sent WhatsApp reminder is marked as delivered to the test inbox', async () => {
@@ -757,6 +781,55 @@ test('each team alert is raised and emailed once, even across overlapping runs',
   assert.ok([...stored.values()].every(record => record.delivery === 'in-app'));
 });
 
+test('auto-assignment gives leads unowned for 1h30 only to people with no open lead', () => {
+  const now = new Date('2026-10-26T12:00:00Z');
+  const crew = [...team, { email: 'joao@blu.pt', name: 'João', groups: ['curators'], enabled: true }, { email: 'mk@blu.pt', name: 'Marta', groups: ['marketing'], enabled: true }];
+  const picks = autoAssignments({
+    leads: [
+      lead('BLU-OWNED', { assignedTo: 'ana@blu.pt' }),
+      lead('BLU-OLD', { lastActivityAt: '2026-10-26T08:00:00Z' }),
+      lead('BLU-NEW', { lastActivityAt: '2026-10-26T11:00:00Z' }),
+      lead('BLU-RUI', { assignedTo: 'rui@blu.pt', lastActivityAt: '2026-10-26T09:00:00Z' }),
+      lead('BLU-FREED', { lastActivityAt: '2026-10-26T06:00:00Z', releasedAt: '2026-10-26T11:00:00Z' }),
+      lead('BLU-DONE', { status: 'CONTACTED', lastActivityAt: '2026-10-26T06:00:00Z' }),
+      lead('BLU-DEMO', { synthetic: true, lastActivityAt: '2026-10-26T06:00:00Z' }),
+      lead('BLU-EDGE', { lastActivityAt: '2026-10-26T10:30:00Z' }),
+    ],
+    members: crew, now,
+  });
+  // Mais antigo primeiro; só Gisela e João estão sem leads. A Ana já tem um, por isso o BLU-EDGE fica à espera.
+  assert.deepEqual(picks, [
+    { leadId: 'BLU-OLD', to: 'gisela@blu.pt', previous: '' },
+    { leadId: 'BLU-RUI', to: 'joao@blu.pt', previous: 'rui@blu.pt' },
+  ]);
+  assert.deepEqual(autoAssignments({ leads: [lead('BLU-OLD')], members: [team[2]], now }), []);
+});
+
+test('the auto-assigner runs only when switched on, never overwrites a fresh owner and alerts the assignee', async () => {
+  const now = new Date('2026-10-26T12:00:00Z');
+  const writes = [];
+  const feed = [];
+  const deps = {
+    now: () => now,
+    settings: async () => [],
+    leads: async () => [profile('BLU-AAAAAAAA0001', { lastActivityAt: S('2026-10-26T09:00:00Z') }), profile('BLU-AAAAAAAA0002', { lastActivityAt: S('2026-10-26T08:00:00Z') })],
+    listTeam: async () => team,
+    assign: async (id, set, previous) => (writes.push([id, set, previous]), id !== 'BLU-AAAAAAAA0002'),
+    feed: async record => feed.push(record),
+  };
+  assert.deepEqual(await createAssigner(deps)(), { assigned: 0 });
+  assert.equal(writes.length, 0);
+  const on = [{ recordKey: S('SETTING#2026-10-26T10:00:00Z#x'), settingsJson: S(JSON.stringify({ autoAssign: true })) }];
+  assert.deepEqual(await createAssigner({ ...deps, settings: async () => on })(), { assigned: 1 });
+  // O 0002 foi assumido entretanto por alguém: a escrita condicional falha e não entra no feed.
+  assert.deepEqual(writes.map(([id, set]) => [id, set.assignedTo, set.assignedBy]), [['BLU-AAAAAAAA0002', 'ana@blu.pt', 'auto-assign'], ['BLU-AAAAAAAA0001', 'gisela@blu.pt', 'auto-assign']]);
+  assert.match(feed[0].text, /BLU-AAAAAAAA0001 a Gisela/);
+  const alerts = teamAlerts({ leads: [lead('BLU-L9', { assignedTo: 'gisela@blu.pt', assignedBy: 'auto-assign', assignedAt: '2026-10-26T11:55:00Z', lastActivityAt: '2026-10-26T10:00:00Z' })], members: team, replyHours: 4, now });
+  assert.deepEqual(alerts.map(alert => [alert.key, alert.to]), [['assigned#BLU-L9#2026-10-26T11:55:00Z', ['gisela@blu.pt']]]);
+  assert.deepEqual(parseSettings({ autoAssign: 'yes' }, currentSettings([])), { error: 'Atribuição automática inválida.' });
+  assert.equal(parseSettings({ autoAssign: true }, currentSettings([])).settings.autoAssign, true);
+});
+
 test('my work lists unowned late leads to curators and the alerts addressed to me', async () => {
   const escalation = alertRecord({ key: 'escalate#BLU-AAAAAAAA0001#2026-10-25T14:00:00.000Z', at: '2026-10-26T11:00:00.000Z', level: 'bad', tab: 'leads', leadId: 'BLU-AAAAAAAA0001', text: 'O lead está sem resposta.', to: ['gisela@blu.pt'] }, 'email');
   const asItem = record => Object.fromEntries(Object.entries({ conversationId: TEAM_ALERTS.partition, ...record }).map(([key, value]) => [key, S(value)]));
@@ -983,6 +1056,15 @@ test('the assistant sees only what the role sees, never client contacts, and is 
   assert.equal((await ask('[marketing]')).statusCode, 200);
   assert.match(prompts.at(-1).user, /"leads":\[\]/);
   assert.match(prompts.at(-1).user, /"settings":null/);
+  // «Equipa»: quem tem o quê, pelo nome e nunca pelo email; marketing fica sempre no seu.
+  const teamAsk = groups => handler(request('POST /v1/assistant', { groups, body: { question: 'Quem tem o quê?', scope: 'team' } }));
+  await teamAsk('[curators]');
+  assert.match(prompts.at(-1).user, /"scope":"team/);
+  assert.match(prompts.at(-1).user, /"whoHasWhat":\{"people":\[\{"name":"Ana"/);
+  assert.doesNotMatch(prompts.at(-1).user, /ana@blu\.pt/);
+  await teamAsk('[marketing]');
+  assert.match(prompts.at(-1).user, /"scope":"mine/);
+  assert.match(prompts.at(-1).user, /"team":null/);
   assert.equal((await handler(request('POST /v1/assistant', { body: { question: ' ' } }))).statusCode, 400);
   assert.equal((await createApp(fakeDeps().deps)(request('POST /v1/assistant', { body: { question: 'Olá' } }))).statusCode, 503);
 });

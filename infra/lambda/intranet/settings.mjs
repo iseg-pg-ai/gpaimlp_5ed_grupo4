@@ -11,7 +11,10 @@ export const AUTO_TYPES = {
   reminders: 'Lembretes de recolhas e excursões aprovadas',
   replies: 'Respostas sozinhas a perguntas simples por WhatsApp (hora, local, confirmação), com os dados da reserva',
 };
-export const DEFAULTS = { replyHours: 4, auto: { thanks: false, nudge: false, reminders: true, replies: false } };
+export const DEFAULTS = { replyHours: 4, autoAssign: false, auto: { thanks: false, nudge: false, reminders: true, replies: false } };
+// Atribuição automática: um lead sem responsável ativo há AUTO_ASSIGN.minutes passa para um
+// curador ou fundador ativo que não tenha nenhum lead em aberto.
+export const AUTO_ASSIGN = { minutes: 90, roles: ['curators', 'founders'], by: 'auto-assign' };
 export const NUDGE_DAYS = 3;
 const STOP = /^\s*(stop|unsubscribe|parar|pare|cancelar)\b/i;
 
@@ -27,6 +30,7 @@ export function currentSettings(items) {
   }
   return {
     replyHours: Number.isInteger(saved.replyHours) ? saved.replyHours : DEFAULTS.replyHours,
+    autoAssign: typeof saved.autoAssign === 'boolean' ? saved.autoAssign : DEFAULTS.autoAssign,
     auto: Object.fromEntries(Object.keys(AUTO_TYPES).map(type => [type, typeof saved.auto?.[type] === 'boolean' ? saved.auto[type] : DEFAULTS.auto[type]])),
     updatedBy: item?.updatedBy?.S ?? '',
     updatedAt: item?.updatedAt?.S ?? '',
@@ -35,11 +39,15 @@ export function currentSettings(items) {
 
 /** Valida uma alteração; devolve { settings } ou { error }. */
 export function parseSettings(body, current) {
-  const next = { replyHours: current.replyHours, auto: { ...current.auto } };
+  const next = { replyHours: current.replyHours, autoAssign: current.autoAssign, auto: { ...current.auto } };
   if (body.replyHours !== undefined) {
     const hours = Number(body.replyHours);
     if (!Number.isInteger(hours) || hours < 1 || hours > 72) return { error: 'O prazo de resposta vai de 1 a 72 horas.' };
     next.replyHours = hours;
+  }
+  if (body.autoAssign !== undefined) {
+    if (typeof body.autoAssign !== 'boolean') return { error: 'Atribuição automática inválida.' };
+    next.autoAssign = body.autoAssign;
   }
   if (body.auto !== undefined) {
     if (!body.auto || typeof body.auto !== 'object') return { error: 'Mensagens automáticas inválidas.' };

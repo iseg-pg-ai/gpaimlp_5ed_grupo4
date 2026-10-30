@@ -104,6 +104,21 @@ ligação própria. O endereço do portal vive só na ligação `#portal-link` d
 - **Responsável:** botão «Assumir» grava `assignedTo` (o email Cognito) e
   `assignedAt`. Os leads assumidos aparecem em «O meu trabalho» (ver a secção
   de 2026-10-26).
+- **Atribuição automática** (desligada por defeito; fundadores ligam-na em
+  «Regras de seguimento», `autoAssign`): a cada 5 minutos, o Lambda de envio
+  atribui cada lead em aberto sem responsável ativo há 1h30 (desde a última
+  mensagem do cliente ou desde que foi libertado, `releasedAt`) a um curador ou
+  fundador ativo sem nenhum lead em aberto; se todos já tiverem, o lead fica à
+  espera e os alertas continuam. Grava `assignedBy: auto-assign` só se o lead continuar sem dono (escrita
+  condicional), regista no feed e avisa a pessoa (alerta `assigned#`).
+- **Contagens:** Seguimento esconde por defeito os leads de demonstração
+  (botão «Demonstração») e mostra os totais (em aberto, sem responsável, fora
+  do prazo) com as mesmas regras da Visão geral.
+- **Agenda, vista Equipa:** os leads sem responsável entram sempre (hoje ou em
+  atraso) e a tabela «Quem tem o quê» mostra leads, tarefas, casos e serviços
+  de cada pessoa ativa, mais o que não é de ninguém.
+- **Equipa e acessos** (contas, papéis e convites) está no grupo Controlo, junto
+  da Segurança.
 - Ações existentes: marcar contactado, etiquetas e nota (até 1 000
   caracteres). Sem apagar registos.
 - Pergunta ao Backoffice RAG sobre um lead (`conversationId` + pergunta),
@@ -439,12 +454,13 @@ mudaria os indicadores e os dados que um modelo viesse a usar.
 
 ## Assistente (2026-10-28)
 
-Desde 2026-10-29 há um só assistente: o botão «Assistente» no canto inferior
-direito, em todas as secções e para todos os perfis (o separador saiu). Em
-«Sobre», «Todo o meu trabalho» faz a pergunta geral descrita abaixo; escolher um
-lead (curadores e fundadores; vem já escolhido quando há um lead aberto em
-Seguimento ou no WhatsApp) pergunta sobre esse lead (`POST /v1/leads/{id}/ask`,
-Backoffice RAG). As sugestões prontas mudam com o modo.
+Desde 2026-10-30 o assistente é um chat simples: o botão «Assistente» no canto
+inferior direito, em todas as secções, com duas conversas separadas. «O meu
+assistente» responde sobre o trabalho da própria pessoa; «Equipa» (perfis com
+leitura de leads) responde sobre o trabalho de todos, com «quem tem o quê» e os
+próximos 7 dias da Agenda da equipa, pelo nome de cada pessoa (`scope: "team"`).
+Enter envia; Shift+Enter muda de linha. Sem seletor de lead nem sugestões
+prontas: para perguntar sobre um lead, basta escrever o destino ou a referência.
 
 Pergunta geral (`POST /v1/assistant`), para todos os perfis. Junta o que
 a pessoa já vê (o seu trabalho, alertas, totais, leads em aberto, regras de

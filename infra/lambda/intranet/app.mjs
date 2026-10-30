@@ -242,8 +242,9 @@ export function createApp(deps) {
 
     'POST /v1/leads/{id}/assign': async ({ id, user, body }) => {
       const at = now().toISOString();
-      if (body.release === true) await deps.updateProfile(id, { updatedAt: at }, ['assignedTo', 'assignedAt']);
-      else await deps.updateProfile(id, { assignedTo: user.email, assignedAt: at, updatedAt: at });
+      // Libertar marca releasedAt: a atribuição automática volta a contar 1h30 a partir daqui.
+      if (body.release === true) await deps.updateProfile(id, { releasedAt: at, updatedAt: at }, ['assignedTo', 'assignedAt', 'assignedBy']);
+      else await deps.updateProfile(id, { assignedTo: user.email, assignedAt: at, updatedAt: at }, ['assignedBy']);
       await announce(user, body.release === true ? `libertou o lead ${id}` : `assumiu o lead ${id}`);
       return reply(204);
     },
@@ -325,26 +326,33 @@ export function createApp(deps) {
       const question = typeof body.question === 'string' ? body.question.trim().slice(0, ASSISTANT.questionLimit) : '';
       if (!question) return fail(400, 'Escreva uma pergunta.');
       const can = permission => allowed(user.groups, permission);
+      // «O meu» responde sobre o trabalho da pessoa; «Equipa» sobre o de todos (quem segue leads).
+      const team = body.scope === 'team' && can('read');
       // As mesmas rotas que a pessoa abriria; uma que falhe fica de fora do contexto.
-      const view = async (key, show = true) => {
+      const view = async (key, show = true, query = {}) => {
         if (!show) return null;
         try {
-          const result = await routes[key]({ user, event: { queryStringParameters: {} }, body: {} });
+          const result = await routes[key]({ user, event: { queryStringParameters: query }, body: {} });
           return result.statusCode === 200 ? JSON.parse(result.body) : null;
         } catch {
           return null;
         }
       };
-      const [work, alerts, metrics, settings, leads, control] = await Promise.all([
+      const [work, alerts, metrics, settings, leads, control, agenda] = await Promise.all([
         view('GET /v1/work'), view('GET /v1/alerts'), view('GET /v1/metrics'), view('GET /v1/settings', can('read')),
         can('read') ? listLeads('open').catch(() => []) : Promise.resolve([]), view('GET /v1/control', can('team-admin')),
+        view('GET /v1/agenda', team, { scope: 'team', days: '7' }),
       ]);
       const tabs = Object.keys(ASSISTANT_TABS).filter(tab => ['work', 'dashboard'].includes(tab) || (can('read') && (
         tab === 'control' ? can('team-admin') : tab === 'cases' ? can('cases') : tab === 'security' ? can('security') : true)));
       const leadList = leads.slice(0, 60).map(leadContext);
       const items = work?.items ?? [];
+      const owners = Object.fromEntries((agenda?.plan?.team?.people ?? []).map(person => [person.email, person.name]));
+      const nameOfOwner = owner => (owner ? owners[owner.toLowerCase()] ?? 'outra pessoa' : 'sem responsável');
       const context = {
-        today: lisbonToday(), me: { name: user.name, roles: user.groups.map(group => ROLES[group]?.label ?? group) }, tabs,
+        today: lisbonToday(), scope: team ? 'team: answer about the whole team, by person' : 'mine: answer about my own work', me: { name: user.name, roles: user.groups.map(group => ROLES[group]?.label ?? group) }, tabs,
+        // Emails tapados no prompt: a equipa aparece pelo nome.
+        team: agenda?.plan ? { whoHasWhat: { people: (agenda.plan.team?.people ?? []).map(({ email, ...person }) => person), unassigned: agenda.plan.team?.unassigned }, next7Days: agenda.plan.items.map(day => ({ day: day.day, items: day.items.slice(0, 30).map(item => ({ kind: item.kind, title: item.title, owner: nameOfOwner(item.owner), urgency: item.urgency, unassigned: Boolean(item.unassigned), leadId: item.partition || '' })) })) } : null,
         work: items.slice(0, 40).map(item => ({ kind: item.kind, title: item.title, due: item.due, urgency: item.urgency, status: item.status, leadId: item.leadId || item.partition || '' })),
         alerts: alerts?.alerts ?? [], metrics, leads: leadList,
         settings: settings ? { replyHours: settings.replyHours, auto: settings.auto } : null,
@@ -370,7 +378,8 @@ export function createApp(deps) {
       const at = now().toISOString();
       await deps.putRecords(SETTINGS.partition, [{ recordKey: `${SETTINGS.prefix}${at}#${deps.newId()}`, settingsJson: JSON.stringify(parsed.settings), updatedBy: user.email, updatedAt: at }]);
       const switched = Object.keys(AUTO_TYPES).filter(type => parsed.settings.auto[type] !== current.auto[type]).map(type => `${AUTO_TYPES[type].toLowerCase()}: ${parsed.settings.auto[type] ? 'ligado' : 'desligado'}`);
-      const changes = [parsed.settings.replyHours !== current.replyHours ? `prazo de resposta: ${parsed.settings.replyHours} h` : '', ...switched].filter(Boolean);
+      const assign = parsed.settings.autoAssign !== current.autoAssign ? `atribuição automática: ${parsed.settings.autoAssign ? 'ligada' : 'desligada'}` : '';
+      const changes = [parsed.settings.replyHours !== current.replyHours ? `prazo de resposta: ${parsed.settings.replyHours} h` : '', assign, ...switched].filter(Boolean);
       if (changes.length) await announce(user, `alterou as regras de seguimento (${changes.join('; ')})`);
       return reply(200, { ...parsed.settings, updatedBy: user.email, updatedAt: at, types: AUTO_TYPES });
     },
@@ -825,12 +834,13 @@ export function createApp(deps) {
       const start = new Date(at - 864e5).toISOString();
       const end = new Date(+at + days * 864e5).toISOString();
       const statuses = [NOTIFY.pending, NOTIFY.sent, NOTIFY.prepared, NOTIFY.failed, NOTIFY.missed];
-      const [items, outcomes, taskItems, leads, caseItems] = await Promise.all([
+      const [items, outcomes, taskItems, leads, caseItems, members] = await Promise.all([
         Promise.all(statuses.map(status => deps.queryAgenda(status, start, end))).then(lists => lists.flat()),
         deps.queryAgenda(OUTCOME_STATUS, start, end).catch(() => []),
         deps.queryStatus(TASK_STATE.open),
         listLeads('open'),
         allowed(user.groups, 'cases') ? deps.queryStatus(CASE_STATE.open) : Promise.resolve([]),
+        scope === 'team' ? Promise.resolve().then(() => deps.listTeam()).catch(() => []) : Promise.resolve([]),
       ]);
       const notifications = items.map(toNotification).sort((a, b) => a.sendAt.localeCompare(b.sendAt));
       const mine = owner => scope === 'team' || (owner ?? '').toLowerCase() === me;
@@ -857,12 +867,14 @@ export function createApp(deps) {
         kind: 'task', id: task.id, partition: task.partition, day: bucket(task.due), due: task.due, title: task.title,
         detail: [TASK_STATUS[task.status], task.blockedReason, task.leadLabel].filter(Boolean).join(' · '), owner: task.owner, urgency: taskUrgency(task),
       }));
+      // Na vista da equipa, os leads sem responsável entram sempre (hoje, ou em atraso): são de todos.
       const followUps = leads.filter(lead => !lead.synthetic && mine(lead.assignedTo)).map(lead => {
         const due = (lead.replyLate && lead.replyDueAt ? lead.replyDueAt : lead.followUpAt).slice(0, 10);
-        const urgency = lead.atRisk ? 'risk' : lead.replyLate || isOverdue(lead, at) ? 'overdue' : 'normal';
+        const urgency = lead.atRisk ? 'risk' : lead.replyLate || isOverdue(lead, at) ? 'overdue' : !lead.assignedTo ? 'soon' : 'normal';
+        const detail = lead.atRisk ? 'Disse que vai desistir: contactar já' : lead.replyLate ? 'Sem resposta dentro do prazo' : 'Seguimento marcado';
         return {
-          kind: 'lead', id: lead.id, partition: lead.id, day: urgency === 'normal' ? bucket(due) : 'overdue', due, title: lead.journey.destination || lead.id,
-          detail: lead.atRisk ? 'Disse que vai desistir: contactar já' : lead.replyLate ? 'Sem resposta dentro do prazo' : 'Seguimento marcado', owner: lead.assignedTo ?? '', urgency,
+          kind: 'lead', id: lead.id, partition: lead.id, day: urgency === 'normal' ? bucket(due) : urgency === 'soon' ? today : 'overdue', due, title: lead.journey.destination || lead.id,
+          detail: lead.assignedTo ? detail : `Sem responsável: assumir · ${detail}`, owner: lead.assignedTo ?? '', urgency, ...(lead.assignedTo ? {} : { unassigned: true }),
         };
       }).filter(item => item.urgency !== 'normal' || (item.due && item.due <= horizon));
       const cases = caseItems.map(item => toCase(item, today)).filter(item => mine(item.owner) && item.deadline && item.deadline <= horizon).map(item => ({
@@ -876,7 +888,22 @@ export function createApp(deps) {
       const all = [...serviceItems, ...tasks, ...followUps, ...cases, ...prepared];
       const dayKeys = [...new Set(all.map(item => item.day))].sort((a, b) => (a === 'overdue' ? -1 : b === 'overdue' ? 1 : a.localeCompare(b)));
       const byDay = dayKeys.map(day => ({ day, items: all.filter(item => item.day === day).sort((a, b) => byUrgency(a, b) || (a.occurrenceAt ?? '').localeCompare(b.occurrenceAt ?? '')) }));
-      return reply(200, { notifications, outcomes: outcomes.map(toOutcome), outcomeLabels: OUTCOMES, plan: { today, scope, days, items: byDay } });
+      // Vista da equipa: quem tem o quê (todo o trabalho em aberto, não só o deste período).
+      const realLeads = leads.filter(lead => !lead.synthetic);
+      const openTasks = taskItems.map(item => toTask(item, today));
+      const openCases = caseItems.map(item => toCase(item, today));
+      const people = members.filter(member => member.enabled).map(member => {
+        const email = member.email.toLowerCase();
+        return {
+          name: member.name, email,
+          leads: realLeads.filter(lead => (lead.assignedTo ?? '').toLowerCase() === email).length,
+          tasks: openTasks.filter(task => task.owner === email).length,
+          cases: openCases.filter(item => (item.owner ?? '').toLowerCase() === email).length,
+          services: serviceItems.filter(service => (service.owner ?? '').toLowerCase() === email).length,
+        };
+      }).sort((a, b) => b.leads + b.tasks + b.cases + b.services - (a.leads + a.tasks + a.cases + a.services) || a.name.localeCompare(b.name));
+      const team = scope === 'team' ? { people, unassigned: { leads: realLeads.filter(lead => !lead.assignedTo).length, tasks: openTasks.filter(task => !task.owner).length } } : undefined;
+      return reply(200, { notifications, outcomes: outcomes.map(toOutcome), outcomeLabels: OUTCOMES, plan: { today, scope, days, items: byDay, ...(team ? { team } : {}) } });
     },
   };
 

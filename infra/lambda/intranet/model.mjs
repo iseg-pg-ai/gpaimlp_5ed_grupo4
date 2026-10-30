@@ -54,6 +54,8 @@ export function toLead(item) {
     consentAt: optional('consentAt'),
     assignedTo: optional('assignedTo'),
     assignedAt: optional('assignedAt'),
+    assignedBy: optional('assignedBy'),
+    releasedAt: optional('releasedAt'),
     journey,
     tags: cleanTags(item?.tags?.SS ?? []),
     curatorNote: optional('curatorNote'),

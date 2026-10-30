@@ -6,11 +6,12 @@ import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses';
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
-import { createAlerter, createAnalyser, createDispatcher, createPlanner } from './dispatch-core.mjs';
+import { createAlerter, createAnalyser, createAssigner, createDispatcher, createPlanner } from './dispatch-core.mjs';
 import { SETTINGS, currentSettings } from './settings.mjs';
 import { NOTIFY } from './schedule.mjs';
 import { WHATSAPP_TEST, inboxRecord, whatsappMode } from './whatsapp-test.mjs';
 import { TEAM_ALERTS } from './team-alerts.mjs';
+import { FEED } from './tasks.mjs';
 import { listTeamMembers } from './team.mjs';
 
 const db = new DynamoDBClient({});
@@ -151,6 +152,24 @@ Abrir a intranet: ${env.INTRANET_URL || 'intranet BLU'}`, Charset: 'UTF-8' } },
   })),
 });
 
+const autoAssign = createAssigner({
+  settings: () => inPartition(env.INTELLIGENCE_TABLE_NAME, SETTINGS.partition, SETTINGS.prefix),
+  leads: async () => (await Promise.all(['PENDING', 'QUEUED_FOR_REVIEW'].map(byStatus))).flat(),
+  listTeam: () => listTeamMembers(cognito, env.USER_POOL_ID),
+  // Só grava se o responsável ainda for o que foi lido (nenhum, ou uma conta desativada).
+  assign: async (id, set, previous) => {
+    try {
+      if (previous) await update(id, 'PROFILE', set, 'assignedTo = :previous', { ':previous': { S: previous } });
+      else await update(id, 'PROFILE', set, 'attribute_exists(recordKey) AND attribute_not_exists(assignedTo)');
+      return true;
+    } catch (error) {
+      if (error instanceof ConditionalCheckFailedException) return false;
+      throw error;
+    }
+  },
+  feed: record => putNew(FEED.partition, record),
+});
+
 // Análise automática das conversas: o modelo devolve só JSON; signals.mjs valida antes de gravar.
 const analyse = createAnalyser({
   leads: async () => (await Promise.all(['PENDING', 'QUEUED_FOR_REVIEW', 'CONTACTED'].map(byStatus))).flat(),
@@ -187,11 +206,18 @@ export async function handler() {
       console.error(JSON.stringify({ analysis: 'failed', error: error?.name ?? 'Error' }));
     }
   }
+  // A atribuição vem antes dos alertas, para a pessoa que recebe o lead ser avisada já.
+  let assignment = { failed: true };
+  try {
+    assignment = await autoAssign();
+  } catch (error) {
+    console.error(JSON.stringify({ assignment: 'failed', error: error?.name ?? 'Error' }));
+  }
   let alerts = { failed: true };
   try {
     alerts = await raiseAlerts();
   } catch (error) {
     console.error(JSON.stringify({ alerts: 'failed', error: error?.name ?? 'Error' }));
   }
-  return { planned, ...sent, analysis, alerts };
+  return { planned, ...sent, analysis, assignment, alerts };
 }

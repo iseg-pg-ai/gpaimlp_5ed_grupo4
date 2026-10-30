@@ -1,8 +1,9 @@
 import { NOTIFY, outcome } from './schedule.mjs';
 import { contactDetails, toLead, toMessage } from './model.mjs';
-import { NUDGE_DAYS, autoMessages, currentSettings } from './settings.mjs';
+import { AUTO_ASSIGN, NUDGE_DAYS, autoMessages, currentSettings } from './settings.mjs';
 import { toCase, toNotification, toTask } from './app.mjs';
-import { alertRecord, teamAlerts } from './team-alerts.mjs';
+import { alertRecord, autoAssignments, teamAlerts } from './team-alerts.mjs';
+import { FEED } from './tasks.mjs';
 import { ANALYSIS, needsAnalysis, parseSignals, profileFields, signalPrompt } from './signals.mjs';
 
 /**
@@ -63,6 +64,29 @@ export function createDispatcher(deps) {
     }
     if (results.length) await deps.evidence(now, results);
     return { checkedAt: now.toISOString(), due: due.length, processed: results.length, sent: results.filter(r => r.status === NOTIFY.sent).length };
+  };
+}
+
+/**
+ * Atribuição automática (ligada nas Regras de seguimento): grava o responsável só se o lead
+ * continuar como estava (condição), para nunca tirar um lead a quem o assumiu entretanto.
+ * Cada atribuição fica no feed da equipa; o aviso à pessoa sai nos alertas a seguir.
+ */
+export function createAssigner(deps) {
+  return async function autoAssign() {
+    const now = deps.now?.() ?? new Date();
+    if (!currentSettings(await deps.settings()).autoAssign) return { assigned: 0 };
+    const [leads, members] = await Promise.all([deps.leads(), deps.listTeam()]);
+    const names = Object.fromEntries(members.map(member => [member.email.toLowerCase(), member.name]));
+    const at = now.toISOString();
+    let assigned = 0;
+    for (const { leadId, to, previous } of autoAssignments({ leads: leads.map(toLead), members, now })) {
+      if (!(await deps.assign(leadId, { assignedTo: to, assignedAt: at, assignedBy: AUTO_ASSIGN.by, updatedAt: at }, previous))) continue;
+      assigned += 1;
+      await deps.feed({ recordKey: `FEED#${at}#${leadId}`, followUpStatus: FEED.status, followUpAt: at, text: `atribuiu o lead ${leadId} a ${names[to] ?? to} (sem responsável há ${AUTO_ASSIGN.minutes / 60} h)`, by: AUTO_ASSIGN.by, byName: 'Atribuição automática' })
+        .catch(error => console.error(JSON.stringify({ feed: 'not-recorded', error: error?.name ?? 'Error' })));
+    }
+    return { assigned };
   };
 }
 

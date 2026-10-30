@@ -1,5 +1,5 @@
 import { atRisk, riskAt } from './model.mjs';
-import { replyState } from './settings.mjs';
+import { AUTO_ASSIGN, replyState } from './settings.mjs';
 
 // Alertas à equipa: o seguimento verifica-se sozinho a cada 5 minutos e avisa quem tem o
 // trabalho; sem responsável, avisa todos os curadores e fundadores, para não depender de uma
@@ -31,6 +31,10 @@ export function teamAlerts({ leads = [], tasks = [], cases = [], reminders = [],
     if (atRisk(lead)) {
       add({ key: `risk#${lead.id}#${riskAt(lead)}`, level: 'bad', tab: 'leads', leadId: lead.id, to: [...ownerOr(owner, followUp), ...founders], text: `O cliente do lead ${label(lead)} disse que vai desistir: contactar já.` });
     }
+    // Quem recebeu um lead pela atribuição automática fica a saber (uma vez por atribuição).
+    if (owner && lead.assignedBy === AUTO_ASSIGN.by && lead.assignedAt && now - Date.parse(lead.assignedAt) < 864e5) {
+      add({ key: `assigned#${lead.id}#${lead.assignedAt}`, level: 'warn', tab: 'leads', leadId: lead.id, to: [owner], text: `O lead ${label(lead)} ficou ${AUTO_ASSIGN.minutes / 60} h sem responsável e foi-lhe atribuído automaticamente.` });
+    }
     const { replyDueAt, replyLate } = replyState(lead, replyHours, now);
     if (!replyLate) continue;
     add({ key: `late#${lead.id}#${replyDueAt}`, level: 'bad', tab: 'leads', leadId: lead.id, to: ownerOr(owner, followUp), text: `O lead ${label(lead)} passou o prazo de resposta${owner ? '' : ' e não tem responsável'}.` });
@@ -50,6 +54,27 @@ export function teamAlerts({ leads = [], tasks = [], cases = [], reminders = [],
     add({ key: `reminder#${reminder.recordKey}`, level: 'bad', tab: 'agenda', leadId: reminder.conversationId ?? '', to: [...ownerOr(reminder.approvedBy, []), ...founders], text: `O lembrete «${reminder.title || 'agendado'}» não foi enviado: ${reminder.reason || 'falha no envio'}.` });
   }
   return alerts.map(alert => ({ ...alert, at: now.toISOString() }));
+}
+
+/**
+ * Atribuição automática: leads em aberto sem responsável ativo há pelo menos AUTO_ASSIGN.minutes
+ * (desde a última mensagem do cliente ou desde que alguém o libertou), do mais antigo para o mais
+ * recente. Cada um vai para um curador ou fundador ativo sem nenhum lead em aberto (por ordem
+ * alfabética); quando todos já têm, o lead fica à espera e os alertas continuam. Devolve [{ leadId, to, previous }].
+ */
+export function autoAssignments({ leads = [], members = [], now = new Date() }) {
+  const active = new Set(members.filter(member => member.enabled).map(member => lower(member.email)));
+  const people = members.filter(member => member.enabled && member.email && member.groups.some(group => AUTO_ASSIGN.roles.includes(group)));
+  if (!people.length) return [];
+  const open = leads.filter(lead => !lead.synthetic && lead.status !== 'CONTACTED');
+  const load = new Map(people.map(member => [lower(member.email), open.filter(lead => lower(lead.assignedTo) === lower(member.email)).length]));
+  const since = lead => [lead.lastActivityAt, lead.releasedAt].filter(Boolean).sort().at(-1) ?? '';
+  const waiting = open
+    .filter(lead => !(lead.assignedTo && active.has(lower(lead.assignedTo))) && since(lead) && now - Date.parse(since(lead)) >= AUTO_ASSIGN.minutes * 6e4)
+    .sort((a, b) => since(a).localeCompare(since(b)));
+  const names = Object.fromEntries(people.map(member => [lower(member.email), member.name]));
+  const free = [...load.keys()].filter(email => load.get(email) === 0).sort((a, b) => names[a].localeCompare(names[b]));
+  return waiting.slice(0, free.length).map((lead, index) => ({ leadId: lead.id, to: free[index], previous: lead.assignedTo ?? '' }));
 }
 
 /** Registo guardado de um alerta (sem texto de clientes), listado em FollowUpIndex. */
