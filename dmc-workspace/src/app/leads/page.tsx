@@ -10,6 +10,7 @@ import { CheckCircle2, FileText, Mail, MessageCircle, RefreshCw, Save, Tag } fro
 import { T, useLocale } from "@/components/LocaleProvider";
 import { emptyBrief } from "@/data/initialBrief";
 import { LEAD_DRAFT_STORAGE, leadToBrief } from "@/lib/lead-brief";
+import { LeadProposalMatches } from "@/components/LeadProposalMatches";
 import {
   isOverdue,
   journeyLabels,
@@ -311,6 +312,8 @@ export default function LeadsPage() {
                     ))}
                 </dl>
               )}
+
+              <LeadProposalMatches key={selected.id} leadId={selected.id} />
 
               {(() => {
                 // Rascunho de proposta: preenche o formulário de viagem com o que o cliente
