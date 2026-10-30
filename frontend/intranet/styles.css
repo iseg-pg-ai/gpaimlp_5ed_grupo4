@@ -261,3 +261,15 @@ li.ops-item.selected { background: #f3ecdf; outline: 2px solid var(--ink); }
 .fold + .fold, .fold + .grid2, .grid2 + .fold, .cards + .fold { margin-top: .9rem; }
 .grid2 > .fold { margin-top: 0; }
 .table-scroll { overflow-x: auto; }
+
+/* Árvores que se desdobram: grupo › subgrupo › itens, cada nível com a sua contagem. */
+.tree, .tree-leaves { list-style: none; margin: 0; padding: 0; }
+.tree .tree, .tree .tree-leaves { margin-left: 1.1rem; padding-left: .6rem; border-left: 1px dashed var(--line); }
+.tree-node > summary { list-style: none; display: flex; align-items: center; gap: .5rem; padding: .45rem .5rem; border-radius: 6px; font-weight: 400; min-height: 40px; }
+.tree-node > summary::-webkit-details-marker { display: none; }
+.tree-node > summary::before { content: "›"; color: var(--ink-soft); transition: transform .15s; }
+.tree-node[open] > summary::before { transform: rotate(90deg); }
+.tree-node > summary:hover { background: #f3ecdf; }
+.tree-count { margin-left: auto; min-width: 1.8rem; text-align: center; border-radius: 999px; background: #efe8da; padding: 0 .5rem; font-size: .85rem; }
+.tree-leaf { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .2rem .8rem; width: 100%; padding: .4rem .5rem; min-height: 40px; border: 0; border-radius: 6px; background: none; color: inherit; text-align: left; }
+.tree-leaf:hover, .tree-leaf:focus-visible { background: #f3ecdf; }

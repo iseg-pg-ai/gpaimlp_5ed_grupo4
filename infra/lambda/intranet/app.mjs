@@ -243,7 +243,11 @@ export function createApp(deps) {
 
   // «O meu trabalho» e a Visão geral contam com as mesmas regras: os dados carregam-se uma vez
   // e a lista de cada pessoa sai de workItems, que a Visão geral aplica a cada membro.
-  const loadWork = async ({ cases = true, inbox = true } = {}) => {
+  // Com «demo=1» os leads de demonstração contam como os outros, mas ficam marcados (`demo`) para a
+  // interface os assinalar; sem o pedido, ficam de fora como sempre.
+  const includeDemo = event => event?.queryStringParameters?.demo === '1';
+  const withDemo = (leads, include) => (include ? leads.map(lead => (lead.synthetic ? { ...lead, synthetic: false, demo: true } : lead)) : leads);
+  const loadWork = async ({ cases = true, inbox = true, demo: showDemo = false } = {}) => {
     const at = now();
     const today = lisbonToday();
     const [taskItems, allLeads, prepared, openCases, inboxItems, settings, alertItems] = await Promise.all([
@@ -257,13 +261,14 @@ export function createApp(deps) {
     ]);
     // Leads de demonstração não contam em nenhuma vista, nem os lembretes e mensagens desses leads.
     const demo = new Set(allLeads.filter(lead => lead.synthetic).map(lead => lead.id));
+    const hidden = showDemo ? new Set() : demo;
     return {
-      at, today, settings, demo,
-      leads: allLeads.filter(lead => lead.status !== CONTACTED),
+      at, today, settings, demo, hidden,
+      leads: withDemo(allLeads, showDemo).filter(lead => lead.status !== CONTACTED),
       tasks: taskItems.map(item => toTask(item, today)),
-      prepared: prepared.map(toNotification).filter(item => !demo.has(item.conversationId)),
+      prepared: prepared.map(toNotification).filter(item => !hidden.has(item.conversationId)),
       cases: openCases.map(item => toCase(item, today)),
-      threads: threads(inboxItems.map(toInboxMessage), deps.partners).filter(thread => !demo.has(thread.leadId)),
+      threads: threads(inboxItems.map(toInboxMessage), deps.partners).filter(thread => !hidden.has(thread.leadId)),
       alerts: alertItems.map(toAlert),
     };
   };
@@ -460,9 +465,9 @@ export function createApp(deps) {
       return reply(200, parseAssistant(text, { leadIds, tabs, canTasks: can('tasks'), canLeads: can('leads') }));
     },
 
-    'GET /v1/metrics': async () => {
+    'GET /v1/metrics': async ({ event }) => {
       const settings = await loadSettings();
-      const leads = await listLeads('all', settings);
+      const leads = withDemo(await listLeads('all', settings), includeDemo(event));
       return reply(200, { ...metrics(leads, now()), replyLate: leads.filter(lead => !lead.synthetic && lead.replyLate).length, replyHours: settings.replyHours }, 'private, max-age=60');
     },
 
@@ -738,17 +743,17 @@ export function createApp(deps) {
     },
 
     // Painel da fundadora: seguimentos, pontos de falha e quem tem o quê, numa só vista.
-    'GET /v1/control': async () => {
+    'GET /v1/control': async ({ event }) => {
       const at = now();
       const today = lisbonToday();
       const week = new Date(at - 7 * 864e5).toISOString();
       const settle = promise => Promise.resolve().then(() => promise).catch(() => []);
       const [members, leads, work, taskItems, caseItems, alertItems, ...reminderLists] = await Promise.all([
-        deps.listTeam(), listLeads('all'), loadWork(), deps.queryStatus(TASK_STATE.open), deps.queryStatus(CASE_STATE.open),
+        deps.listTeam(), listLeads('all').then(list => withDemo(list, includeDemo(event))), loadWork({ demo: includeDemo(event) }), deps.queryStatus(TASK_STATE.open), deps.queryStatus(CASE_STATE.open),
         settle(deps.queryAgenda(TEAM_ALERTS.status, week, at.toISOString())),
         ...['sent', 'prepared', 'failed', 'missed'].map(status => settle(deps.queryAgenda(NOTIFY[status], week, at.toISOString()))),
       ]);
-      const demo = new Set(leads.filter(lead => lead.synthetic).map(lead => lead.id));
+      const demo = work.hidden;
       const summary = controlSummary({
         leads, members, tasks: taskItems.map(item => toTask(item, today)), cases: caseItems.map(item => toCase(item, today)),
         alerts: alertItems.map(toAlert),
@@ -782,7 +787,7 @@ export function createApp(deps) {
       const total = kinds.reduce((sum, kind) => sum + team[kind].total, 0);
       const unowned = kinds.reduce((sum, kind) => sum + team[kind].unowned, 0);
       if (team.message.unowned) summary.breaking.unshift({ level: 'warn', text: `${team.message.unowned} mensagem(ns) por responder sem responsável.`, tab: 'whatsapp' });
-      return reply(200, { ...summary, work: { total, unowned, team, people }, unansweredMessages: team.message.unowned, checkedAt: at.toISOString() }, 'private, max-age=60');
+      return reply(200, { ...summary, demoLeads: includeDemo(event) ? work.demo.size : 0, work: { total, unowned, team, people }, unansweredMessages: team.message.unowned, checkedAt: at.toISOString() }, 'private, max-age=60');
     },
 
     'GET /v1/security': async () => {
@@ -918,14 +923,14 @@ export function createApp(deps) {
         const dayEnd = new Date(+at + 864e5).toISOString();
         const settle = promise => Promise.resolve().then(() => promise).catch(() => []);
         const [work, members, failedLists, services] = await Promise.all([
-          loadWork({ cases: allowed(user.groups, 'cases'), inbox: allowed(user.groups, 'leads') }), deps.listTeam(),
+          loadWork({ cases: allowed(user.groups, 'cases'), inbox: allowed(user.groups, 'leads'), demo: includeDemo(event) }), deps.listTeam(),
           Promise.all([NOTIFY.failed, NOTIFY.missed].map(status => settle(deps.queryAgenda(status, week, at.toISOString())))),
           settle(deps.queryAgenda(NOTIFY.pending, new Date(at - 864e5).toISOString(), dayEnd)),
         ]);
-        const { demo } = work;
+        const { demo, hidden } = work;
         const real = { ...work, leads: work.leads.filter(lead => !lead.synthetic) };
-        const failed = failedLists.flat().map(toNotification).filter(item => !demo.has(item.conversationId));
-        const items = opsItems({ work: real, failed, services: services.map(toNotification).filter(item => !demo.has(item.conversationId)), members, partners: deps.partners });
+        const failed = failedLists.flat().map(toNotification).filter(item => !hidden.has(item.conversationId));
+        const items = opsItems({ work: real, failed, services: services.map(toNotification).filter(item => !hidden.has(item.conversationId)), members, partners: deps.partners, demoIds: demo });
         const scope = event.queryStringParameters?.scope === 'team' ? 'team' : 'mine';
         return reply(200, { ...opsView(items, { scope, me: user.email, members }), today: work.today, checkedAt: at.toISOString() });
       }

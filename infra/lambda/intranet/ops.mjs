@@ -32,7 +32,7 @@ const lisbonDay = iso => (Number.isNaN(Date.parse(iso ?? '')) ? '' : new Intl.Da
  * Itens do centro de operações. `failed` são lembretes falhados, não enviados a tempo ou preparados
  * para envio à mão; `services` são os lembretes de hoje (um serviço por ocorrência).
  */
-export function opsItems({ work, failed = [], services = [], members = [], partners = [] }) {
+export function opsItems({ work, failed = [], services = [], members = [], partners = [], demoIds = new Set() }) {
   const { at, today, settings, leads, tasks, prepared, cases, threads } = work;
   const active = members.filter(member => member.enabled);
   const byEmail = new Map(active.map(member => [lower(member.email), member]));
@@ -57,7 +57,7 @@ export function opsItems({ work, failed = [], services = [], members = [], partn
   const items = [];
   const add = item => items.push({
     ...item, owner: lower(item.owner), ownerName: item.owner ? nameOf(item.owner) : '',
-    states: [...new Set(item.states)].filter(Boolean), partnerName: item.partnerName || (item.partnerId ? partnerName(item.partnerId) : ''),
+    states: [...new Set(item.states)].filter(Boolean), demo: demoIds.has(item.partition), partnerName: item.partnerName || (item.partnerId ? partnerName(item.partnerId) : ''),
   });
 
   for (const lead of leads) {
