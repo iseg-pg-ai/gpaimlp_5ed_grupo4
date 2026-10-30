@@ -572,7 +572,51 @@ function proposalComposer(lead) {
 // Apoio do assistente: abre o painel com uma pergunta já feita sobre o que está no ecrã.
 let askAssistant = () => {};
 
+// Atrasos críticos: o que está parado há demasiado tempo e tem de sair à força (atribuir, pedir
+// desbloqueio, fechar). Os mesmos itens e ações de Operações, a partir de um limite de dias.
+const overdueState = { days: 7, selected: '' };
+const AGE_BUCKETS = ['Mais de 30 dias', '14 a 30 dias', '7 a 14 dias', '3 a 7 dias'];
+
 const views = {
+  async overdue(view, state = overdueState) {
+    const data = await api('GET', `/v1/agenda?view=ops&scope=team&${demoQuery()}`);
+    const rerender = () => { view.replaceChildren(); views.overdue(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
+    const me = session.claims?.email?.toLowerCase() ?? '';
+    const nameOf = email => data.people.find(person => person.email === email)?.name ?? email;
+    const days = item => (item.since ? (Date.now() - Date.parse(item.since)) / DAY_MS : 0);
+    const late = data.items.filter(item => item.blocker && days(item) >= state.days).sort((a, b) => days(b) - days(a));
+    const bucket = item => (days(item) >= 30 ? AGE_BUCKETS[0] : days(item) >= 14 ? AGE_BUCKETS[1] : days(item) >= 7 ? AGE_BUCKETS[2] : AGE_BUCKETS[3]);
+    const detail = h('div', { class: 'panel ops-detail' });
+    const select = item => {
+      state.selected = item.key;
+      for (const row of view.querySelectorAll('li.ops-item')) row.classList.toggle('selected', row.dataset.key === item.key);
+      showOpsItem(detail, item, data, { me, nameOf, refresh: rerender });
+    };
+    const limit = value => h('button', { type: 'button', class: 'secondary', 'aria-pressed': String(state.days === value), onclick: () => { Object.assign(state, { days: value, selected: '' }); rerender(); } }, `${value}+ dias`);
+    const oldest = late[0] ? Math.floor(days(late[0])) : 0;
+    view.append(...[
+      h('div', { class: 'heading-row' }, h('h2', {}, 'Atrasos críticos'), h('div', { class: 'filters' }, limit(3), limit(7), limit(14), demoToggle(rerender))),
+      h('div', { class: 'cards' },
+        h('div', { class: `card ${late.length ? 'bad' : ''}` }, h('div', { class: 'value' }, late.length), h('div', { class: 'label' }, `Parados há ${state.days}+ dias`)),
+        h('div', { class: `card ${oldest >= 14 ? 'bad' : ''}` }, h('div', { class: 'value' }, late.length ? `${oldest} d` : '—'), h('div', { class: 'label' }, 'O mais antigo')),
+        h('div', { class: `card ${late.some(item => !item.owner) ? 'warn' : ''}` }, h('div', { class: 'value' }, late.filter(item => !item.owner).length), h('div', { class: 'label' }, 'Sem responsável'))),
+      late.length ? fold('overdue-tree', 'Por idade e tipo', drillTree(late, [
+        ['Idade', bucket, AGE_BUCKETS],
+        ['Tipo', item => data.kinds[item.kind] ?? item.kind],
+      ], item => treeLeaf(item.title, () => select(item), `${Math.floor(days(item))} d · ${data.blockers[item.blocker] ?? item.blocker}`)), { count: late.length }) : null,
+      h('div', { class: 'split spaced' },
+        h('div', { class: 'panel' }, h('h3', {}, `A forçar · ${late.length}`),
+          late.length ? h('ul', { class: 'work-list' }, late.map(item => h('li', { class: `work-item ops-item clickable overdue${item.key === state.selected ? ' selected' : ''}`, 'data-key': item.key, tabindex: '0', onclick: () => select(item), onkeydown: event => event.key === 'Enter' && select(item) },
+            h('div', {}, pill(`${Math.floor(days(item))} d`, 'bad'), ' ', pill(data.kinds[item.kind] ?? item.kind), item.demo ? [' ', pill('demo')] : null),
+            h('strong', {}, item.title),
+            h('div', { class: 'muted' }, [item.reason, item.ownerName ? `de ${item.ownerName}` : 'sem responsável', item.resolver ? `desbloqueia: ${item.resolver.name}` : ''].filter(Boolean).join(' · ')))))
+            : h('p', { class: 'muted' }, `Nada parado há ${state.days} dias ou mais.`)),
+        detail),
+    ].filter(Boolean));
+    const chosen = late.find(item => item.key === state.selected) ?? late[0];
+    if (chosen) select(chosen); else detail.append(h('p', { class: 'muted' }, 'Nada a forçar.'));
+  },
+
   async work(view, state = workState) {
     const [{ items, statuses }, { tasks }, { feed }, members] = await Promise.all([
       api('GET', '/v1/work'), api('GET', `/v1/tasks?status=${state.board}`),
@@ -2020,7 +2064,7 @@ async function updateBadges() {
 
 function applySite() {
   const nav = $('tabs');
-  for (const button of nav.querySelectorAll('button[data-tab]')) if (!tabVisible(button.dataset.tab)) button.hidden = true;
+  for (const button of nav.querySelectorAll('button[data-tab]')) if (!tabVisible(button.dataset.tab) || ('limited' in button.dataset && can('read'))) button.hidden = true;
   // Ligações para outros sites só para quem lá pode entrar (data-groups).
   for (const link of nav.querySelectorAll('a[data-groups]')) link.hidden = !link.dataset.groups.split(' ').some(group => groupsNow().includes(group));
   for (const group of nav.querySelectorAll('details[data-group]')) group.hidden = ![...group.querySelectorAll('button, a')].some(item => !item.hidden);
