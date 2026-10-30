@@ -16,7 +16,7 @@ export function publicOrigin(requestUrl: string): string {
 
 export const noStoreHeaders = { "Cache-Control": "no-store" } as const;
 
-/** Recusa origens externas; pedidos sem Origin continuam permitidos. */
+/** Recusa pedidos enviados por outro site; os navegadores incluem Origin em POST. */
 export function rejectForeignOrigin(request: Request): Response | null {
   const origin = request.headers.get("origin");
   return origin && origin !== publicOrigin(request.url)

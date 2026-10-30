@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>BLU Mission Control</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="config.js"></script>
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="mark">BC</span><span>BLU Mission Control</span></div>
+      <button type="button" id="menu" class="menu-toggle" aria-controls="tabs" aria-expanded="false" hidden>Menu</button>
+      <!-- Árvore por finalidade: cada grupo dobra; a equipa primeiro. Contadores em data-count (CSS). -->
+      <nav id="tabs" class="tabs" aria-label="Secções" hidden>
+        <details class="nav-tree" data-group="team" open>
+          <summary>Equipa</summary>
+          <button type="button" data-tab="control" data-perm="team-admin" data-badge="control">Visão geral</button>
+        </details>
+        <details class="nav-tree" data-group="ops" open>
+          <summary>Operações</summary>
+          <button type="button" data-tab="operations">Inteligência</button>
+          <button type="button" data-tab="agenda">Agenda</button>
+          <button type="button" data-tab="overdue" data-badge="overdue">Atrasos críticos</button>
+        </details>
+        <details class="nav-tree" data-group="mine" open>
+          <summary>O meu trabalho</summary>
+          <button type="button" data-tab="work" aria-current="page" data-badge="work">O meu trabalho</button>
+          <!-- Totais agregados para quem não vê dados de clientes (marketing). -->
+          <button type="button" data-tab="dashboard" data-limited>Painel</button>
+        </details>
+        <details class="nav-tree" data-group="clients" open>
+          <summary>Clientes</summary>
+          <button type="button" data-tab="leads">Seguimento</button>
+          <button type="button" data-tab="whatsapp" data-badge="whatsapp">WhatsApp</button>
+          <button type="button" data-tab="cases" data-perm="cases">Reclamações e litígios</button>
+        </details>
+        <details class="nav-tree" data-group="partners" open>
+          <summary>Parceiros</summary>
+          <button type="button" data-tab="partners">Parceiros e NPS</button>
+        </details>
+        <details class="nav-tree" data-group="control">
+          <summary>Controlo</summary>
+          <!-- Contas, papéis e convites (IAM) ficam junto da Segurança. -->
+          <button type="button" data-tab="team">Equipa e acessos</button>
+          <button type="button" data-tab="security" data-perm="security">Segurança</button>
+          <button type="button" data-tab="governance" data-badge="governance">Governança</button>
+        </details>
+        <details class="nav-tree" data-group="links">
+          <summary>Ligações</summary>
+          <!-- Site e chatbot do BluCostaFrontend (output FrontendUrl), em modo demo para não contar nos indicadores. -->
+          <a href="https://d1sb8lbbur6ggj.cloudfront.net/?demo=1" target="_blank" rel="noopener">Site e chatbot ↗</a>
+          <!-- Portal DMC do BluCostaPortal (output PortalUrl); o portão do portal deixa entrar os mesmos grupos. -->
+          <a id="portal-link" href="https://d3804amye1jw31.cloudfront.net/" target="_blank" rel="noopener" data-groups="founders curators marketing" hidden>Portal de propostas ↗</a>
+        </details>
+      </nav>
+      <div id="who" class="who" hidden>
+        <span id="who-name"></span>
+        <button type="button" id="refresh" class="link" hidden>Atualizar</button>
+        <button type="button" id="logout" class="link">Sair</button>
+      </div>
+    </header>
+    <main id="main">
+      <section id="signin" class="signin" hidden>
+        <h1>BLU Mission Control</h1>
+        <p>Acesso reservado à equipa, com autenticação de dois fatores.</p>
+        <button type="button" id="login" class="primary">Entrar</button>
+        <p id="signin-error" class="error" role="alert"></p>
+      </section>
+      <section id="view" hidden></section>
+    </main>
+  </body>
+</html>

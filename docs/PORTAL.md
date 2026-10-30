@@ -203,6 +203,18 @@ documento criado externamente a partir do prompt não substitui artefactos
 históricos, não atualiza ligações públicas e não marca a versão como PDF exportado
 no portal. Alterar o roteiro exige exportar novamente o prompt da versão correta.
 
+### Canva: criação em massa por dia
+
+O botão **Canva: dias (CSV)** guarda uma versão e descarrega um CSV com uma linha
+por dia (viagem, cliente, período, dia, data, título, local, resumo, programa com
+horas e locais, pendências e versão). No Canva, abrir uma cópia do
+[modelo BLU](https://canva.link/5u8zxudd1vkcbth), escolher **Apps › Criação em
+massa**, carregar o CSV e ligar cada campo a uma caixa de texto da página do dia:
+o Canva cria uma página por dia. Segue as regras do TXT: sem contactos,
+referências de reserva nem notas internas; células que pareçam fórmulas ficam
+como texto. O orçamento e as condições continuam no TXT/PDF. O texto vai no idioma
+em que a proposta foi guardada; a tradução continua a ser a do TXT/PDF.
+
 ## Idiomas
 
 A interface suporta português, inglês, mandarim, espanhol, francês e alemão. Os
@@ -289,6 +301,44 @@ O script instala as dependências, cria um build limpo, confirma que
 Para reutilizar uma instalação ou build já validado, podem ser definidos
 `SKIP_INSTALL=true` e `SKIP_BUILD=true`.
 
+O `Dockerfile.portal` cobre apenas este processo Node. A materialização S3 e os
+restantes serviços pertencem a uma futura arquitetura de deployment, descrita em
+[Operações](OPERATIONS.md#deployment-do-portal-piloto).
+
+### Servidor privado com CloudFront (piloto)
+
+A stack `BluCostaPortal` (`infra/aws-split-app.mjs`) publica o portal com
+endereço próprio (saída `PortalUrl`):
+
+- **Rede:** instância `t4g.small` numa sub-rede isolada da VPC de `BluCostaData`
+  (a conta está no limite de VPCs), sem IP público nem NAT; o CloudFront chega-lhe
+  por uma VPC origin na porta 8080. A entrada só aceita o grupo
+  `CloudFront-VPCOrigins-Service-SG`, consultado depois da distribuição: a prefix
+  list pública e o bloco da sub-rede não funcionam. A VPC origin exige um internet gateway ligado,
+  que não tem rotas. A saída só alcança o S3 e o DynamoDB, por gateway endpoints.
+- **Login:** `infra/portal/gate.mjs` serve `/auth/*`, valida o ID token Cognito do
+  grupo da intranet e guarda-o num cookie `HttpOnly`. Só fundadores, curadores e
+  marketing entram; dentro do portal ainda não há separação por perfil (quem
+  entra vê o catálogo e as propostas). O Next.js escuta apenas em `127.0.0.1:3001`.
+- **Build:** cada deploy com código novo lança o projeto CodeBuild `PortalBuild`,
+  que junta `dmc-workspace`, `config`, `portal`, `etl`, os esquemas do assistente e
+  o portão num pacote com Node 24. O servidor procura uma versão nova a cada
+  2 minutos, confirma o SHA-256 e reinicia os serviços. Guarda as três últimas.
+- **Dados:** volume EBS próprio montado em `/srv/blu/state`, semeado uma única vez
+  a partir de `blu-portal-data.tar.gz` (se existir na raiz no momento do deploy) e
+  copiado todos os dias às 03:00 UTC, com 7 cópias.
+
+Sem internet no servidor, a meteorologia, o planeador do assistente e a tradução
+de itinerários não respondem, e os PDFs em mandarim precisam ainda de uma fonte
+CJK. O arranque, o atualizador e os serviços escrevem na consola da instância
+(`aws ec2 get-console-output --latest`), a única janela sem SSM nem internet.
+
+O script de arranque corre em cada arranque e é idempotente: alterá-lo só reinicia
+o servidor. Trocar de servidor não é viável sem intervenção, porque a VPC origin
+fica presa à instância e o disco de dados só liga a uma de cada vez. A conta do
+curso para todas as instâncias de 6 em 6 horas e as inativas de hora a hora
+(`iseg-ec2-autoshutdown-cleaner`); sem exceção aprovada, o portal só responde
+depois de alguém voltar a ligar o servidor.
 O `Dockerfile.curation` e a stack ECS definem uma alternativa de hosting,
 sem dados operacionais na imagem. Não são o destino da operação individual no
 Code Editor. Ver [Operações](OPERATIONS.md#alternativa-de-hosting-cloud).
@@ -298,6 +348,23 @@ avisos antes de integrar alterações no portal.
 
 Os testes de navegador, variáveis para armazenamento isolado e alternativa Edge
 no Windows estão centralizados no [guia de testes](TESTING.md#testes-de-navegador).
+
+## Mapa da proposta e ligações diretas (2026-10-27)
+
+- **Mapa da proposta:** secção «Mapa da proposta» na proposta aberta
+  (`src/components/ProposalMap.tsx`). Cada dia tem uma cor; os pontos são
+  numerados pela ordem do roteiro e ligados por uma linha tracejada, que não é o
+  trajeto na estrada. Segue o dia escolhido na navegação por dias.
+- **Só coordenadas do catálogo** (`src/lib/proposal-map.ts`): pontos sem
+  coordenadas numéricas válidas (vazias, texto ou 0,0) ficam numa lista à parte
+  e nunca aparecem no mapa. O tempo livre não conta.
+- **Contorno:** `GET /api/map-outlines` lê `dashboard/region.geojson`, o mesmo
+  ficheiro do Observatório; o build do `BluCostaPortal` passou a incluí-lo (sem ele,
+  o Observatório também falhava no servidor). A projeção está em
+  `src/lib/map-projection.ts`, partilhada pelos dois mapas.
+- **Ligações diretas:** `/#mapa` abre a proposta com o mapa aberto e
+  `/leads?lead=BLU-…` abre esse contacto. O login do portão guarda o fragmento
+  (`#mapa`) durante o login. A proposta em edição é a do navegador de quem a abre.
 
 ## Meteorologia e controlos HTML nativos
 

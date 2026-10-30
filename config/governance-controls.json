@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 2,
+  "scope": [
+    "conversation-ingestion",
+    "customer-intelligence",
+    "backoffice-rag",
+    "churn-followups",
+    "feedback",
+    "intranet",
+    "scheduled-notifications"
+  ],
+  "controls": {
+    "humanApprovalRequired": true,
+    "automaticCustomerContact": false,
+    "rawTranscriptsExcludedFromKnowledgeBase": true,
+    "iamProtectedBackofficeInvocation": true,
+    "evidenceVersioning": true,
+    "syntheticExcludedFromBusinessKpis": true
+  },
+  "mapping": [
+    {
+      "id": "named-access",
+      "control": "Acesso à intranet e ao Backoffice só para pessoas e papéis nomeados",
+      "evidence": "Grupos Cognito com MFA obrigatório; BACKOFFICE_TRUSTED_PRINCIPAL_ARNS sem raiz da conta",
+      "references": [
+        "ISO/IEC 27001:2022 A.5.15",
+        "ISO/IEC 27001:2022 A.5.18",
+        "ISO/IEC 27001:2022 A.8.5"
+      ]
+    },
+    {
+      "id": "consent-before-storage",
+      "control": "A conversa só é guardada com consentimento explícito do visitante",
+      "evidence": "Evento lead.consent.granted e campo consentAt no perfil",
+      "references": [
+        "RGPD art. 6.º",
+        "RGPD art. 7.º"
+      ]
+    },
+    {
+      "id": "human-follow-up",
+      "control": "Nenhum contacto decidido automaticamente; o avaliador diário só cria tarefas de revisão",
+      "evidence": "controls/churn-followups/ e respostas do RAG com requiresHumanApproval",
+      "references": [
+        "RGPD art. 22.º",
+        "Controlo interno BLU"
+      ]
+    },
+    {
+      "id": "scheduled-reminders",
+      "control": "Lembretes de recolhas e excursões só depois de aprovados por um curador, com registo de quem aprovou e do resultado",
+      "evidence": "Registos NOTIFY# com approvedBy; controls/scheduled-notifications/ sem texto nem números",
+      "references": [
+        "RGPD art. 6.º",
+        "RGPD art. 21.º",
+        "Controlo interno BLU"
+      ]
+    },
+    {
+      "id": "logs-without-personal-data",
+      "control": "Registos técnicos sem texto de mensagens, contactos nem tokens",
+      "evidence": "Logs das Lambdas com categoria de erro apenas",
+      "references": [
+        "ISO/IEC 27001:2022 A.8.15",
+        "RGPD art. 32.º"
+      ]
+    },
+    {
+      "id": "recovery",
+      "control": "Tabelas com recuperação pontual e buckets versionados e retidos",
+      "evidence": "PITR em ConversationMessages e CustomerIntelligence; buckets versionados",
+      "references": [
+        "ISO/IEC 27001:2022 A.8.13"
+      ]
+    },
+    {
+      "id": "retention",
+      "control": "Arquivo bruto de sessões expira ao fim de 90 dias",
+      "evidence": "Regra de ciclo de vida ExpireRawSessionArchive",
+      "references": [
+        "RGPD art. 5.º, n.º 1, alínea e)",
+        "ISO/IEC 27001:2022 A.8.10"
+      ]
+    },
+    {
+      "id": "kpi-integrity",
+      "control": "Dados sintéticos e de demonstração excluídos dos indicadores de negócio",
+      "evidence": "Campo synthetic e cálculo de /v1/metrics",
+      "references": [
+        "Controlo interno BLU"
+      ]
+    }
+  ],
+  "reviewCadence": "quarterly",
+  "note": "Mapeamento de apoio à auditoria proposto pelo grupo; não constitui certificação ISO."
+}

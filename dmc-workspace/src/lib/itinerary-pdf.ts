@@ -4,7 +4,8 @@ import { activitySource, dayDescription, presentationText } from "./presentation
 import { outstandingChecks } from "./activity-confirmation.ts";
 import { renderBudget } from "./budget-pdf.ts";
 import PDFDocument from "pdfkit";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import type { CustomerBrief, ItineraryDay } from "../types/index";
 export type Snapshot = { brief: CustomerBrief; itinerary: ItineraryDay[]; pending: string[] };
 export type VersionMeta = {
@@ -38,6 +39,19 @@ export function resolveChineseFont() {
         },
       ];
   return candidates.find((font) => existsSync(/* turbopackIgnore: true */ font.path));
+}
+
+// Estilo costeiro: oceano, espuma e a fotografia do Cabo da Roca partilhada com o ecrã.
+const OCEAN = "#0D3B4F";
+const SURF = "#2F8F9D";
+export function coverPhoto(): Buffer | null {
+  const file =
+    process.env.BLU_PDF_COVER ?? path.join(process.cwd(), "public", "proposal", "coast.jpg");
+  try {
+    return existsSync(/* turbopackIgnore: true */ file) ? readFileSync(file) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function renderPdf(
@@ -78,8 +92,8 @@ export function renderPdf(
       const decorate = () => {
         doc.save();
         doc.rect(0, 0, doc.page.width, doc.page.height).fill("#FFFEFA");
-        doc.rect(0, 0, doc.page.width, 10).fill("#143F4B");
-        doc.rect(48, 35, 38, 3).fill("#B88B49");
+        doc.rect(0, 0, doc.page.width, 10).fill(OCEAN);
+        doc.rect(0, 10, doc.page.width, 2).fill(SURF);
         doc.restore();
       };
       decorate();
@@ -109,23 +123,63 @@ export function renderPdf(
           .fontSize(23)
           .heightOfString(translated(value), { width: doc.page.width - 96, lineGap: 5 });
         ensure(Math.min(height + 65, 600));
-        doc.save().rect(48, doc.y, 32, 3).fill("#B88B49").restore();
+        // Pequena onda em vez do traço dourado.
+        const y = doc.y + 2;
+        doc
+          .save()
+          .moveTo(48, y)
+          .bezierCurveTo(56, y - 5, 64, y + 5, 72, y)
+          .bezierCurveTo(80, y - 5, 88, y + 5, 96, y)
+          .lineWidth(2)
+          .stroke(SURF)
+          .restore();
         doc.y += 16;
         text(value, 23);
       };
       const b = snapshot.brief;
       // The cover uses the same flow layout in every language, rather than fixed text boxes.
+      const photo = coverPhoto();
+      const coverHeight = photo ? 330 : 170;
       doc.save();
-      doc.rect(0, 0, doc.page.width, 170).fill("#143F4B");
-      doc
-        .circle(doc.page.width - 15, 40, 115)
-        .lineWidth(1)
-        .stroke("#50727A");
-      doc.circle(doc.page.width - 15, 40, 145).stroke("#50727A");
+      doc.rect(0, 0, doc.page.width, coverHeight).fill(OCEAN);
+      if (photo) {
+        // Capa costeira: fotografia, véu escuro para o texto e onda na transição.
+        doc.image(photo, 0, 0, {
+          cover: [doc.page.width, coverHeight],
+          align: "center",
+          valign: "center",
+        });
+        const veil = doc.linearGradient(0, 0, 0, coverHeight);
+        veil.stop(0, "#082A38", 0.55).stop(0.5, "#082A38", 0.15).stop(1, "#082A38", 0.6);
+        doc.rect(0, 0, doc.page.width, coverHeight).fill(veil);
+        const w = doc.page.width;
+        doc
+          .moveTo(0, coverHeight - 18)
+          .bezierCurveTo(
+            w * 0.25,
+            coverHeight + 8,
+            w * 0.45,
+            coverHeight - 34,
+            w * 0.6,
+            coverHeight - 16,
+          )
+          .bezierCurveTo(w * 0.75, coverHeight, w * 0.88, coverHeight - 26, w, coverHeight - 14)
+          .lineTo(w + 4, coverHeight - 14)
+          .lineTo(w + 4, coverHeight + 2)
+          .lineTo(-4, coverHeight + 2)
+          .lineTo(-4, coverHeight - 18)
+          .fill("#FFFEFA");
+      } else {
+        doc
+          .circle(doc.page.width - 15, 40, 115)
+          .lineWidth(1)
+          .stroke("#50727A");
+        doc.circle(doc.page.width - 15, 40, 145).stroke("#50727A");
+      }
       doc.restore();
       doc.y = 64;
       text("BLU COSTA TRAVEL", 27, "#FFFEFA");
-      doc.y = 204;
+      doc.y = coverHeight + 34;
       text("ROTEIRO · PROPOSTA PRELIMINAR", 11, "#896225");
       text(b.destination, 38);
       text(b.customerName, 22, "#52656B");

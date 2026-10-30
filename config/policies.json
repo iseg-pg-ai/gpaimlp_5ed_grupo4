@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "note": "Mapeamento técnico de apoio preparado pelo grupo; não substitui parecer jurídico. Revisão trimestral ou quando a legislação mudar.",
+  "company": {
+    "legalName": "",
+    "rnavt": "",
+    "adrEntity": "",
+    "adrUrl": ""
+  },
+  "policies": [
+    {
+      "id": "ai-disclosure",
+      "title": "Informar que o assistente do site é uma IA",
+      "jurisdiction": "UE",
+      "sources": [{ "name": "Regulamento (UE) 2024/1689 (Regulamento da IA)", "ref": "art. 50.º, n.º 1", "url": "https://eur-lex.europa.eu/eli/reg/2024/1689/oj" }],
+      "requirement": "Quem conversa com o chatbot é informado de que interage com um sistema de IA.",
+      "enforcement": "automated",
+      "severity": "blocking",
+      "check": "aiDisclosure",
+      "owner": "Produto"
+    },
+    {
+      "id": "consent-before-storage",
+      "title": "Guardar conversas só com consentimento",
+      "jurisdiction": "UE/PT",
+      "sources": [
+        { "name": "Regulamento (UE) 2016/679 (RGPD)", "ref": "art. 6.º e 7.º", "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj" },
+        { "name": "Lei n.º 58/2019", "ref": "execução do RGPD em Portugal", "url": "https://diariodarepublica.pt/dr/detalhe/lei/58-2019-123815982" }
+      ],
+      "requirement": "A API de ingestão recusa eventos sem journeyConsent=true.",
+      "enforcement": "automated",
+      "severity": "blocking",
+      "check": "consentBeforeStorage",
+      "owner": "Dados"
+    },
+    {
+      "id": "storage-limitation",
+      "title": "Limitar a conservação do arquivo bruto",
+      "jurisdiction": "UE",
+      "sources": [{ "name": "RGPD", "ref": "art. 5.º, n.º 1, alínea e)", "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj" }],
+      "requirement": "O arquivo bruto de sessões expira em 90 dias ou menos.",
+      "enforcement": "automated",
+      "severity": "blocking",
+      "check": "storageLimitation",
+      "owner": "Dados"
+    },
+    {
+      "id": "security-of-processing",
+      "title": "Autenticação forte da equipa",
+      "jurisdiction": "UE",
+      "sources": [{ "name": "RGPD", "ref": "art. 32.º", "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj" }],
+      "requirement": "A intranet exige MFA e não permite registo público.",
+      "enforcement": "automated",
+      "severity": "blocking",
+      "check": "staffMfa",
+      "owner": "Segurança"
+    },
+    {
+      "id": "reminders-require-consent",
+      "title": "Lembretes ao viajante só com consentimento e aprovação",
+      "jurisdiction": "UE/PT",
+      "sources": [
+        { "name": "RGPD", "ref": "art. 6.º e 21.º", "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj" },
+        { "name": "Lei n.º 41/2004", "ref": "comunicações eletrónicas não solicitadas", "url": "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2004-34482875" }
+      ],
+      "requirement": "Lembretes ao viajante só são agendados com consentimento registado e ficam com o curador que os aprovou.",
+      "enforcement": "automated",
+      "severity": "blocking",
+      "check": "remindersRequireConsent",
+      "owner": "Operações"
+    },
+    {
+      "id": "partner-licensing",
+      "title": "Parceiros de transporte e animação licenciados",
+      "jurisdiction": "PT",
+      "sources": [
+        { "name": "Decreto-Lei n.º 108/2009", "ref": "empresas de animação turística (RNAAT)", "url": "https://diariodarepublica.pt/dr/legislacao-consolidada/decreto-lei/2009-34514675" },
+        { "name": "Lei n.º 45/2018", "ref": "transporte em veículo descaracterizado (TVDE)", "url": "https://diariodarepublica.pt/dr/detalhe/lei/45-2018-115991688" }
+      ],
+      "requirement": "Parceiros reais (não demo) têm licença registada; o código recusa agendar com parceiros sem licença.",
+      "enforcement": "automated",
+      "severity": "blocking",
+      "check": "partnerLicensing",
+      "owner": "Operações"
+    },
+    {
+      "id": "complaints-book",
+      "title": "Livro de Reclamações Eletrónico no site",
+      "jurisdiction": "PT",
+      "sources": [{ "name": "Decreto-Lei n.º 156/2005, na redação do Decreto-Lei n.º 74/2017", "ref": "livro de reclamações eletrónico", "url": "https://www.livroreclamacoes.pt/" }],
+      "requirement": "O site tem ligação visível ao Livro de Reclamações Eletrónico.",
+      "enforcement": "automated",
+      "severity": "blocking",
+      "check": "complaintsBook",
+      "owner": "Jurídico"
+    },
+    {
+      "id": "complaints-deadline",
+      "title": "Responder ao Livro de Reclamações no prazo",
+      "jurisdiction": "PT",
+      "sources": [{ "name": "Decreto-Lei n.º 156/2005, na redação do Decreto-Lei n.º 74/2017", "ref": "resposta em 15 dias úteis", "url": "https://www.livroreclamacoes.pt/" }],
+      "requirement": "Cada entrada do Livro de Reclamações tem prazo de 15 dias úteis (sem fins de semana nem feriados nacionais) que não pode ser alargado; casos em atraso aparecem em Segurança.",
+      "enforcement": "automated",
+      "severity": "blocking",
+      "check": "complaintsDeadline",
+      "owner": "Jurídico"
+    },
+    {
+      "id": "no-final-prices-by-ai",
+      "title": "O chatbot não indica preços finais",
+      "jurisdiction": "PT",
+      "sources": [{ "name": "Decreto-Lei n.º 138/90", "ref": "indicação de preços", "url": "https://diariodarepublica.pt/dr/legislacao-consolidada/decreto-lei/1990-34508875" }],
+      "requirement": "O chatbot nunca anuncia disponibilidade nem preço final; o preço é dado pelo curador na proposta.",
+      "enforcement": "automated",
+      "severity": "blocking",
+      "check": "noFinalPrices",
+      "owner": "Produto"
+    },
+    {
+      "id": "no-tracking-cookies",
+      "title": "Sem cookies ou rastreadores não essenciais sem consentimento",
+      "jurisdiction": "UE/PT",
+      "sources": [{ "name": "Lei n.º 41/2004", "ref": "art. 5.º (cookies)", "url": "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2004-34482875" }],
+      "requirement": "O site e a intranet não carregam analítica nem píxeis de publicidade.",
+      "enforcement": "automated",
+      "severity": "warning",
+      "check": "noTrackingCookies",
+      "owner": "Produto"
+    },
+    {
+      "id": "rnavt-registration",
+      "title": "Número RNAVT nas comunicações",
+      "jurisdiction": "PT",
+      "sources": [{ "name": "Decreto-Lei n.º 17/2018", "ref": "regime das agências de viagens e turismo (RNAVT)", "url": "https://diariodarepublica.pt/dr/detalhe/decreto-lei/17-2018-114872426" }],
+      "requirement": "O número de registo RNAVT está em config/policies.json e aparece no rodapé do site.",
+      "enforcement": "automated",
+      "severity": "warning",
+      "check": "rnavtRegistration",
+      "owner": "Jurídico"
+    },
+    {
+      "id": "adr-information",
+      "title": "Informação sobre resolução alternativa de litígios",
+      "jurisdiction": "PT",
+      "sources": [{ "name": "Lei n.º 144/2015", "ref": "art. 18.º", "url": "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2015-70216136" }],
+      "requirement": "O site indica a entidade de RAL a que o consumidor pode recorrer.",
+      "enforcement": "automated",
+      "severity": "warning",
+      "check": "adrInformation",
+      "owner": "Jurídico"
+    },
+    {
+      "id": "package-precontract-info",
+      "title": "Ficha de informação normalizada antes do contrato",
+      "jurisdiction": "UE/PT",
+      "sources": [
+        { "name": "Diretiva (UE) 2015/2302 (viagens organizadas)", "ref": "art. 5.º", "url": "https://eur-lex.europa.eu/eli/dir/2015/2302/oj" },
+        { "name": "Decreto-Lei n.º 17/2018", "ref": "transposição da diretiva", "url": "https://diariodarepublica.pt/dr/detalhe/decreto-lei/17-2018-114872426" }
+      ],
+      "requirement": "Antes de fechar uma viagem organizada, o curador entrega a ficha normalizada e as condições.",
+      "enforcement": "manual",
+      "severity": "warning",
+      "owner": "Curadoria"
+    },
+    {
+      "id": "insolvency-protection",
+      "title": "Garantia contra insolvência",
+      "jurisdiction": "UE/PT",
+      "sources": [
+        { "name": "Diretiva (UE) 2015/2302", "ref": "art. 17.º", "url": "https://eur-lex.europa.eu/eli/dir/2015/2302/oj" },
+        { "name": "Decreto-Lei n.º 17/2018", "ref": "Fundo de Garantia de Viagens e Turismo", "url": "https://diariodarepublica.pt/dr/detalhe/decreto-lei/17-2018-114872426" }
+      ],
+      "requirement": "A agência mantém a contribuição para o Fundo de Garantia de Viagens e Turismo.",
+      "enforcement": "manual",
+      "severity": "warning",
+      "owner": "Direção"
+    },
+    {
+      "id": "accessibility",
+      "title": "Acessibilidade do site e da reserva",
+      "jurisdiction": "UE/PT",
+      "sources": [
+        { "name": "Diretiva (UE) 2019/882 (Ato Europeu da Acessibilidade)", "ref": "serviços de comércio eletrónico", "url": "https://eur-lex.europa.eu/eli/dir/2019/882/oj" },
+        { "name": "Decreto-Lei n.º 82/2022", "ref": "transposição", "url": "https://diariodarepublica.pt/dr/detalhe/decreto-lei/82-2022-202948617" }
+      ],
+      "requirement": "Auditoria de acessibilidade (WCAG 2.1 AA) ao site, chat e intranet.",
+      "enforcement": "manual",
+      "severity": "warning",
+      "owner": "Produto"
+    }
+  ]
+}

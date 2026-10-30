@@ -36,6 +36,7 @@ jobs:
   build-warehouse:
     runs-on: windows-latest
     steps:
+      # O contexto runner não existe no env do job; os caminhos são definidos num passo.
       - name: Set CI paths
         shell: pwsh
         run: |

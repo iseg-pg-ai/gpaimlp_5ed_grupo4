@@ -1,0 +1,71 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "NEXUS Integration Gateway",
+    "version": "0.1.0",
+    "contact": { "name": "Inge (giselainge)", "url": "https://github.com/giselainge" },
+    "description": "Compares partnership channels (partner APIs, supplier files, own partners) for the same BLU product by revenue or profit, with cannibalization and source lineage. Unknown commission or cost is reported, never treated as zero; currencies are never mixed."
+  },
+  "paths": {
+    "/health": {
+      "get": { "operationId": "health", "responses": { "200": { "description": "Gateway is up", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string" }, "version": { "type": "string" } } } } } } } }
+    },
+    "/v1/margins": {
+      "get": {
+        "operationId": "margins",
+        "summary": "Margin and cannibalization by product and currency",
+        "parameters": [
+          { "name": "objective", "in": "query", "schema": { "type": "string", "enum": ["profit", "revenue"], "default": "profit" } },
+          { "name": "pax", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 2 } },
+          { "name": "as_of", "in": "query", "description": "Only offers valid on this date (default today)", "schema": { "type": "string", "format": "date" } },
+          { "name": "product_key", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Analysis", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MarginReport" } } } },
+          "400": { "description": "Invalid or unknown parameter", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": { "type": "object", "required": ["error"], "properties": { "error": { "type": "string" } } },
+      "Money": { "type": "string", "nullable": true, "pattern": "^-?\\d+\\.\\d{2}$", "description": "Decimal string; null when unknown" },
+      "Alternative": {
+        "type": "object",
+        "properties": {
+          "offer_id": { "type": "string" }, "channel": { "type": "string", "enum": ["reseller", "direct", "own"] }, "source_id": { "type": "string" },
+          "supplier": { "type": "string", "nullable": true }, "title": { "type": "string" }, "price_basis": { "type": "string", "enum": ["quoted", "from"] },
+          "customer_pays": { "$ref": "#/components/schemas/Money" }, "revenue": { "$ref": "#/components/schemas/Money" },
+          "cost": { "$ref": "#/components/schemas/Money" }, "profit": { "$ref": "#/components/schemas/Money" },
+          "margin_pct": { "type": "number", "nullable": true }, "eligible": { "type": "boolean" },
+          "unknown": { "type": "array", "items": { "type": "string" } }, "notes": { "type": "array", "items": { "type": "string" } },
+          "lineage": { "$ref": "offer.schema.json#/properties/lineage" }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "product_key": { "type": "string" }, "currency": { "type": "string" }, "title": { "type": "string" },
+          "channels": { "type": "array", "items": { "type": "string" } },
+          "best": { "type": "object", "nullable": true }, "undecided_reason": { "type": "string", "nullable": true },
+          "alternatives": { "type": "array", "items": { "$ref": "#/components/schemas/Alternative" } },
+          "cannibalization": {
+            "type": "array",
+            "items": { "type": "object", "properties": { "offer_id": { "type": "string" }, "channel": { "type": "string" }, "instead_of": { "type": "string" }, "loss_per_sale": { "$ref": "#/components/schemas/Money" }, "loss_pct": { "type": "number", "nullable": true }, "message": { "type": "string" } } }
+          }
+        }
+      },
+      "MarginReport": {
+        "type": "object",
+        "properties": {
+          "objective": { "type": "string" }, "pax": { "type": "integer" }, "as_of": { "type": "string", "format": "date" },
+          "products": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } },
+          "sources": { "type": "object", "additionalProperties": { "type": "object", "properties": { "offers": { "type": "integer" }, "rejected": { "type": "integer" } } } },
+          "rejected": { "type": "array", "items": { "type": "object", "properties": { "source_id": { "type": "string" }, "ref": { "type": "string" }, "errors": { "type": "array", "items": { "type": "string" } } } } },
+          "unmatched": { "type": "array", "items": { "type": "object" } }
+        }
+      }
+    }
+  }
+}
