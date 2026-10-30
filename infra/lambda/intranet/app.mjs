@@ -3,7 +3,7 @@ import {
   atRisk, cleanTags, contactDetails, groupsOf, isOverdue, metrics, toLead, toMessage, validLeadId, workerLabel,
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, lisbonToUtc, parseActivity, plan } from './schedule.mjs';
-import { OUTCOMES, OUTCOME_STATUS, SCORE, outcomeRecord, parseOutcome, scorecards, toOutcome } from './partner-score.mjs';
+import { OUTCOMES, OUTCOME_STATUS, SCORE, netPromoter, outcomeRecord, parseOutcome, scorecards, toOutcome } from './partner-score.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
 import { ATTESTATIONS, AUTO_TYPES, SETTINGS, VALUE_RULES, applyAttestations, currentSettings, parseAttestation, parseSettings, replyState } from './settings.mjs';
 import { AUTO_AUTHOR, WHATSAPP_TEST, inboxRecord, parseInboxPost, threadKey, threads, toInboxMessage, whatsappMode } from './whatsapp-test.mjs';
@@ -388,14 +388,15 @@ export function createApp(deps) {
     'GET /v1/team': async () => {
       const today = lisbonToday();
       const [members, leads, taskItems] = await Promise.all([deps.listTeam(), listLeads('open'), deps.queryStatus(TASK_STATE.open)]);
+      // Mesmas regras da Visão geral: sem leads de demonstração e emails sem maiúsculas.
       const owned = leads.reduce((totals, lead) => {
-        if (lead.assignedTo) totals[lead.assignedTo] = (totals[lead.assignedTo] ?? 0) + 1;
+        if (lead.assignedTo && !lead.synthetic) totals[lead.assignedTo.toLowerCase()] = (totals[lead.assignedTo.toLowerCase()] ?? 0) + 1;
         return totals;
       }, {});
       const tasks = taskItems.map(item => toTask(item, today));
       const ownTasks = email => tasks.filter(task => task.owner === email.toLowerCase());
       return reply(200, { members: members.map(member => ({
-        ...member, openLeads: owned[member.email] ?? 0, openTasks: ownTasks(member.email).length,
+        ...member, openLeads: owned[member.email.toLowerCase()] ?? 0, openTasks: ownTasks(member.email).length,
         overdueTasks: ownTasks(member.email).filter(task => task.dueState === 'overdue').length, blockedTasks: ownTasks(member.email).filter(task => task.status === 'blocked').length,
       })) });
     },
@@ -531,8 +532,12 @@ export function createApp(deps) {
         loadSettings(),
         Promise.resolve().then(() => deps.queryAgenda(TEAM_ALERTS.status, new Date(at - 864e5).toISOString(), at.toISOString())).catch(() => []),
       ]);
-      // Mensagens à espera de uma pessoa: de todos os curadores, com a resposta sugerida pronta.
-      const waiting = threads(inbox.map(toInboxMessage), deps.partners).filter(thread => thread.waiting).map(thread => {
+      // «O meu trabalho» é só da pessoa: leads de demonstração e trabalho sem dono ficam na
+      // Visão geral da equipa (mensagens sem responsável, leads sem responsável).
+      const myLeads = leads.filter(lead => !lead.synthetic && lead.assignedTo?.toLowerCase() === me);
+      const myLeadIds = new Set(myLeads.map(lead => lead.id));
+      // Mensagens à espera de resposta nos leads da pessoa, com a resposta sugerida pronta.
+      const waiting = threads(inbox.map(toInboxMessage), deps.partners).filter(thread => thread.waiting && myLeadIds.has(thread.leadId)).map(thread => {
         const last = thread.messages.at(-1);
         const late = at - Date.parse(last.at) >= settings.replyHours * 36e5;
         return {
@@ -541,8 +546,6 @@ export function createApp(deps) {
           message: { key: thread.key, to: thread.to, partnerId: thread.partnerId, leadId: thread.leadId, audience: thread.audience, text: last.text, at: last.at, suggestion: last.suggestion },
         };
       });
-      const myLeads = leads.filter(lead => lead.assignedTo?.toLowerCase() === me);
-      const myLeadIds = new Set(myLeads.map(lead => lead.id));
       // Uma linha por lead: se já há uma mensagem à espera desse lead, a linha do lead sai da lista.
       const waitingLeadIds = new Set(waiting.map(item => item.message.leadId).filter(Boolean));
       const items = [
@@ -555,11 +558,6 @@ export function createApp(deps) {
         })),
         ...prepared.filter(item => str(item, 'approvedBy').toLowerCase() === me || myLeadIds.has(str(item, 'conversationId'))).map(toNotification)
           .map(item => ({ kind: 'reminder', id: item.recordKey, partition: item.conversationId, title: item.title, due: item.sendAt.slice(0, 10), detail: `${item.reason || 'Preparado: enviar à mão'}`, urgency: 'overdue' })),
-        // Leads sem responsável que passaram o prazo ou querem desistir: aparecem a quem segue leads.
-        ...(allowed(user.groups, 'leads') ? leads.filter(lead => !lead.synthetic && !lead.assignedTo && (lead.atRisk || lead.replyLate)) : []).map(lead => ({
-          kind: 'lead', id: lead.id, partition: lead.id, title: lead.journey.destination || lead.id, due: (lead.replyDueAt || lead.followUpAt).slice(0, 10),
-          detail: 'Sem responsável: assumir', urgency: lead.atRisk ? 'risk' : 'overdue', unassigned: true,
-        })),
         // Alertas que não têm já um item próprio acima: escalamentos, bloqueios, lembretes e casos de outros.
         ...alertItems.map(toAlert).filter(alert => alert.to.includes(me) && /^(escalate|blocked|reminder|case)#/.test(alert.key))
           .filter(alert => !(alert.key.startsWith('case#') && (openCases ?? []).some(item => str(item, 'owner') === me && alert.key.startsWith(`case#${str(item, 'caseId')}#`))))
@@ -692,8 +690,9 @@ export function createApp(deps) {
       const today = lisbonToday();
       const week = new Date(at - 7 * 864e5).toISOString();
       const settle = promise => Promise.resolve().then(() => promise).catch(() => []);
-      const [members, leads, taskItems, caseItems, alertItems, ...reminderLists] = await Promise.all([
+      const [members, leads, taskItems, caseItems, inbox, alertItems, ...reminderLists] = await Promise.all([
         deps.listTeam(), listLeads('all'), deps.queryStatus(TASK_STATE.open), deps.queryStatus(CASE_STATE.open),
+        settle(deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix)),
         settle(deps.queryAgenda(TEAM_ALERTS.status, week, at.toISOString())),
         ...['sent', 'prepared', 'failed', 'missed'].map(status => settle(deps.queryAgenda(NOTIFY[status], week, at.toISOString()))),
       ]);
@@ -703,7 +702,11 @@ export function createApp(deps) {
         alerts: alertItems.map(toAlert),
         reminders: Object.fromEntries(['sent', 'prepared', 'failed', 'missed'].map((status, index) => [status, reminderLists[index].filter(item => !demo.has(str(item, 'conversationId'))).length])),
       });
-      return reply(200, { ...summary, checkedAt: at.toISOString() }, 'private, max-age=60');
+      // Mensagens por responder fora dos leads de alguém: saíram de «O meu trabalho», ficam aqui.
+      const owned = new Set(leads.filter(lead => lead.assignedTo && members.some(member => member.enabled && member.email.toLowerCase() === lead.assignedTo.toLowerCase())).map(lead => lead.id));
+      const unowned = threads(inbox.map(toInboxMessage), deps.partners).filter(thread => thread.waiting && !owned.has(thread.leadId)).length;
+      if (unowned) summary.breaking.unshift({ level: 'warn', text: `${unowned} mensagem(ns) por responder sem responsável.`, tab: 'whatsapp' });
+      return reply(200, { ...summary, unansweredMessages: unowned, checkedAt: at.toISOString() }, 'private, max-age=60');
     },
 
     'GET /v1/security': async () => {
@@ -714,7 +717,7 @@ export function createApp(deps) {
       const findings = [
         founders.length < 2 ? { level: 'warn', text: `Só ${founders.length} fundador(a) ativo(s): recomenda-se pelo menos 2 para não perder o acesso de gestão.` } : null,
         ...members.filter(member => member.enabled && member.status !== 'CONFIRMED').map(member => ({ level: 'info', text: `${member.name} ainda não aceitou o convite (${member.status}).` })),
-        ...(report?.summary.fail ? [{ level: 'warn', text: `${report.summary.fail} política(s) em falta em Governança.` }] : []),
+        ...(report?.summary.fail ? [{ level: 'warn', text: `${report.summary.fail} política(s) em falta em Governança.`, tab: 'governance' }] : []),
         overdueCases ? { level: 'bad', text: `${overdueCases} caso(s) de reclamação ou litígio fora do prazo.` } : null,
       ].filter(Boolean);
       return reply(200, {
@@ -739,7 +742,9 @@ export function createApp(deps) {
     'GET /v1/partners': async () => {
       const at = now();
       const outcomes = await deps.queryAgenda(OUTCOME_STATUS, new Date(at - SCORE.windowDays * 864e5).toISOString(), at.toISOString()).catch(() => []);
-      return reply(200, { partners: deps.partners, reminders: REMINDERS, kinds: KINDS, channels: CHANNELS, outcomes: OUTCOMES, score: SCORE, scorecards: scorecards(deps.partners, outcomes.map(toOutcome), at) }, 'private, max-age=60');
+      const results = outcomes.map(toOutcome);
+      // NPS da BLU na janela: todas as respostas de recomendação, de qualquer parceiro.
+      return reply(200, { partners: deps.partners, reminders: REMINDERS, kinds: KINDS, channels: CHANNELS, outcomes: OUTCOMES, score: SCORE, scorecards: scorecards(deps.partners, results, at), nps: netPromoter(results.map(item => item.recommend)) }, 'private, max-age=60');
     },
 
     // Resultado de um dia de serviço de um parceiro: um registo por ocorrência, que se pode corrigir.
@@ -903,7 +908,10 @@ export function createApp(deps) {
         };
       }).sort((a, b) => b.leads + b.tasks + b.cases + b.services - (a.leads + a.tasks + a.cases + a.services) || a.name.localeCompare(b.name));
       const team = scope === 'team' ? { people, unassigned: { leads: realLeads.filter(lead => !lead.assignedTo).length, tasks: openTasks.filter(task => !task.owner).length } } : undefined;
-      return reply(200, { notifications, outcomes: outcomes.map(toOutcome), outcomeLabels: OUTCOMES, plan: { today, scope, days, items: byDay, ...(team ? { team } : {}) } });
+      // Os totais da Agenda seguem a vista: «Só o meu» conta os lembretes que a pessoa aprovou ou dos seus leads.
+      const ownLeadIds = new Set(leads.filter(lead => lead.assignedTo?.toLowerCase() === me).map(lead => lead.id));
+      const scoped = scope === 'team' ? notifications : notifications.filter(item => mine(item.approvedBy) || ownLeadIds.has(item.conversationId));
+      return reply(200, { notifications: scoped, outcomes: outcomes.map(toOutcome), outcomeLabels: OUTCOMES, plan: { today, scope, days, items: byDay, ...(team ? { team } : {}) } });
     },
   };
 

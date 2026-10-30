@@ -400,15 +400,18 @@ Regras em `infra/lambda/intranet/team-alerts.mjs`:
   destinatários têm de estar verificados) e aparece em «O meu trabalho». Sem email
   configurado, fica só na intranet; uma falha de envio marca `email-failed`.
 - O texto leva só a referência e o destino do lead, nunca contactos nem mensagens.
-- «O meu trabalho» mostra a curadores e fundadores os leads sem responsável que
-  passaram o prazo ou querem desistir, com «Sem responsável: assumir».
+- «O meu trabalho» é só da pessoa (2026-10-30): tarefas, leads assumidos e as
+  mensagens por responder desses leads. Leads sem responsável e mensagens sem dono
+  ficam na Visão geral da equipa (pontos de falha) e em Seguimento e WhatsApp.
+  Leads de demonstração não contam em nenhuma vista.
 - Permissão nova: `cognito-idp:ListUsersInGroup` no despachante, para saber a quem
   avisar (a lista de membros é a mesma da página Equipa, em `team.mjs`).
 
-## Visão geral da fundadora (2026-10-28)
+## Visão geral da equipa (2026-10-28, revisto a 2026-10-30)
 
 Separador «Visão geral», só para fundadores (`GET /v1/control`, permissão
-`team-admin`). Junta numa página:
+`team-admin`): o trabalho operacional de toda a equipa, não o de uma pessoa. As
+ligações abrem a Agenda na vista Equipa. Junta numa página:
 
 - **Seguimentos:** em aberto, dentro do prazo, fora do prazo, clientes a desistir
   e sem responsável (registos de demonstração excluídos).
@@ -561,3 +564,21 @@ o catálogo não tem resposta e para sinais de avaliação no ranking.
 Ainda não está ligada a nenhuma rota nem ecrã: falta o acordo de parceiro
 (partner.getyourguide.com), guardar o token no Secrets Manager e a rota de
 sugestões por lead. Testes locais com respostas na forma da especificação.
+
+## Revisão da intranet (2026-10-30)
+
+- **Agenda:** os totais seguem a vista; «Só o meu» conta só os lembretes que a
+  pessoa aprovou ou dos seus leads.
+- **Equipa e acessos:** leads em aberto com as mesmas regras da Visão geral.
+- **Governança:** os cartões «em falta» e «para verificar à mão» levam à lista do
+  que falta; cada regra em falta tem atalho para o seu tema.
+- **Segurança:** a fila de cópias para o analista externo passou de Operações para
+  «Auditoria externa»; não é trabalho da equipa.
+- **NPS:** o pedido do dia seguinte ao serviço pergunta «de 0 a 10, recomendaria a
+  BLU?». A resposta regista-se em Agenda › Registar resultado (`recommend`).
+  Parceiros mostra o NPS da BLU (promotores 9–10 menos detratores 0–6, em %) e o
+  de cada parceiro; sem respostas, não há NPS.
+- **Login:** o cartão «Entrar» só aparece depois de «Sair» ou com erro; no resto,
+  a página vai direta ao login gerido.
+- **Portal:** sem «Contactos» na navegação; o botão «Proposta no portal» saiu do
+  detalhe do lead.

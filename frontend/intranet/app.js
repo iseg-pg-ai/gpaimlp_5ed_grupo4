@@ -544,7 +544,8 @@ const views = {
   // tipo primeiro. Sem serviços suficientes não há pontuação (desconhecido não é bom nem mau).
   async partners(view, state = { selected: '' }) {
     partnerCache = null;
-    const { partners, scorecards = [], score = {}, outcomes: labels = {} } = await loadPartners();
+    const { partners, scorecards = [], score = {}, outcomes: labels = {}, nps = { nps: null, responses: 0 } } = await loadPartners();
+    const npsText = value => (value === null || value === undefined ? '—' : value > 0 ? `+${value}` : `${value}`);
     const info = Object.fromEntries(partners.map(partner => [partner.id, partner]));
     const percent = value => (value === null || value === undefined ? '—' : `${Math.round(value * 100)}%`);
     const scorePill = card => (card.score === null ? pill('Dados insuficientes') : pill(`${card.score}`, card.score >= 75 ? 'ok' : card.score >= 50 ? 'warn' : 'bad'));
@@ -562,6 +563,7 @@ const views = {
           h('dt', {}, 'Pontualidade'), h('dd', {}, `${percent(m.punctuality)}${m.averageDelay ? ` · atraso médio ${m.averageDelay} min` : ''}`),
           h('dt', {}, 'Fiabilidade'), h('dd', {}, `${percent(m.reliability)} · ${m.noShows} falta(s), ${m.cancellations} cancelamento(s)`),
           h('dt', {}, 'Avaliação dos clientes'), h('dd', {}, m.rating === null ? 'sem avaliações' : `${m.rating} / 5 (${m.ratings})`),
+          h('dt', {}, 'NPS (recomendação)'), h('dd', {}, m.nps === null || m.nps === undefined ? 'sem respostas' : `${npsText(m.nps)} (${m.npsResponses} resposta(s))`),
           h('dt', {}, 'Margem e ROI'), h('dd', {}, m.margin === null ? 'sem custos e preços registados' : `margem ${percent(m.margin)} · ROI ${percent(m.roi)}`),
           h('dt', {}, 'Preço médio por pessoa'), h('dd', {}, m.pricePerPerson === null ? '—' : `${m.pricePerPerson} ${m.currency}`),
           ...Object.entries(m.byCurrency).flatMap(([currency, totals]) => [h('dt', {}, `Totais ${currency}`), h('dd', {}, `receita ${totals.revenue} · custo ${totals.cost}`)]),
@@ -570,21 +572,28 @@ const views = {
         h('h3', { class: 'spaced' }, 'Últimos serviços'),
         card.recent.length ? h('ul', { class: 'feed' }, card.recent.map(item => h('li', {},
           h('strong', {}, labels[item.result] ?? item.result), item.result === 'late' ? ` (${item.delayMinutes} min)` : '', ` · ${item.title}`,
-          item.rating ? ` · cliente ${item.rating}/5` : '', item.price !== null && item.cost !== null ? ` · ${item.price} − ${item.cost} ${item.currency}` : '',
+          item.rating ? ` · cliente ${item.rating}/5` : '', item.recommend !== null && item.recommend !== undefined ? ` · recomenda ${item.recommend}/10` : '', item.price !== null && item.cost !== null ? ` · ${item.price} − ${item.cost} ${item.currency}` : '',
           item.comment ? h('div', { class: 'muted' }, `«${item.comment}»`) : null, h('time', {}, `${item.date} · ${item.conversationId}`))))
           : h('p', { class: 'muted' }, 'Ainda sem resultados. Depois de cada serviço, registe-o na Agenda (botão «Registar resultado»).'));
     };
     const cards = scorecards.length ? scorecards : partners.map(partner => ({ id: partner.id, name: partner.name, kind: partner.kind, demo: partner.demo, score: null, metrics: { services: 0, people: 0, punctuality: null, averageDelay: 0, noShows: 0, cancellations: 0, reliability: null, rating: null, ratings: 0, margin: null, roi: null, pricePerPerson: null, currency: '', byCurrency: {} }, recent: [] }));
     view.append(h('h2', {}, 'Parceiros'),
       h('p', { class: 'muted' }, `Avaliação dos últimos ${score.windowDays ?? 90} dias a partir dos resultados registados na Agenda: pontualidade, avaliação dos clientes, fiabilidade (faltas e cancelamentos) e margem. Pontuação só com ${score.minServices ?? 3} ou mais serviços. A lista vem de config/partners.json.`),
+      // NPS: o pedido de recomendação (0 a 10) sai sozinho no dia seguinte ao serviço; a resposta regista-se na Agenda.
+      h('div', { class: 'cards' },
+        h('div', { class: `card ${nps.nps === null ? '' : nps.nps >= 30 ? 'ok' : nps.nps >= 0 ? 'warn' : 'bad'}` }, h('div', { class: 'value' }, npsText(nps.nps)), h('div', { class: 'label' }, `NPS da BLU (${nps.responses} resposta(s))`)),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, nps.promoters ?? 0), h('div', { class: 'label' }, 'Promotores (9–10)')),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, nps.passives ?? 0), h('div', { class: 'label' }, 'Neutros (7–8)')),
+        h('div', { class: 'card' }, h('div', { class: 'value' }, nps.detractors ?? 0), h('div', { class: 'label' }, 'Detratores (0–6)'))),
+      h('p', { class: 'muted' }, 'No dia seguinte ao último dia de cada serviço, o cliente recebe por WhatsApp (ou email) a pergunta «de 0 a 10, recomendaria a BLU?». Registe a resposta em Agenda › Registar resultado.'),
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, h('table', {},
-          h('thead', {}, h('tr', {}, h('th', {}, 'Parceiro'), h('th', {}, 'Tipo'), h('th', {}, 'Pontuação'), h('th', {}, 'Serviços'), h('th', {}, 'Pontualidade'), h('th', {}, 'Clientes'), h('th', {}, 'Margem'), h('th', {}, 'Preço/pessoa'))),
+          h('thead', {}, h('tr', {}, h('th', {}, 'Parceiro'), h('th', {}, 'Tipo'), h('th', {}, 'Pontuação'), h('th', {}, 'Serviços'), h('th', {}, 'Pontualidade'), h('th', {}, 'Clientes'), h('th', {}, 'NPS'), h('th', {}, 'Margem'), h('th', {}, 'Preço/pessoa'))),
           h('tbody', {}, cards.map(card => h('tr', { class: `clickable${card.id === state.selected ? ' selected' : ''}`, 'data-id': card.id, tabindex: '0', onclick: () => showDetail(card), onkeydown: event => event.key === 'Enter' && showDetail(card) },
             h('td', {}, card.rank ? `${card.rank}. ` : '', card.name, card.demo ? [' ', pill('demo')] : null),
             h('td', {}, card.kind), h('td', {}, scorePill(card)), h('td', {}, card.metrics.services),
             h('td', {}, percent(card.metrics.punctuality)), h('td', {}, card.metrics.rating === null ? '—' : `${card.metrics.rating}/5`),
-            h('td', {}, percent(card.metrics.margin)), h('td', {}, card.metrics.pricePerPerson === null ? '—' : `${card.metrics.pricePerPerson} ${card.metrics.currency}`)))))),
+            h('td', {}, npsText(card.metrics.nps)), h('td', {}, percent(card.metrics.margin)), h('td', {}, card.metrics.pricePerPerson === null ? '—' : `${card.metrics.pricePerPerson} ${card.metrics.currency}`)))))),
         detail));
     const chosen = cards.find(card => card.id === state.selected) ?? cards[0];
     if (chosen) showDetail(chosen);
@@ -760,13 +769,13 @@ const views = {
   },
 
   async security(view) {
-    const data = await api('GET', '/v1/security');
+    const [data, ops] = await Promise.all([api('GET', '/v1/security'), api('GET', '/v1/operations').catch(() => null)]);
     const tone = { bad: 'bad', warn: 'warn', info: '' };
     view.append(
       h('h2', {}, 'Segurança'),
       h('p', { class: 'muted' }, 'Estado das proteções da intranet e do pipeline, e o que precisa de atenção. Contas, papéis e convites estão em ', goLink('team', {}, 'Equipa e acessos'), '.'),
       h('div', { class: 'panel' }, h('h3', {}, 'Requer atenção'), data.findings.length
-        ? h('ul', { class: 'reminders' }, data.findings.map(item => h('li', {}, pill(item.level === 'bad' ? 'Urgente' : item.level === 'warn' ? 'Atenção' : 'Info', tone[item.level]), ' ', item.text)))
+        ? h('ul', { class: 'reminders' }, data.findings.map(item => h('li', {}, pill(item.level === 'bad' ? 'Urgente' : item.level === 'warn' ? 'Atenção' : 'Info', tone[item.level]), ' ', item.text, item.tab ? [' ', goLink(item.tab)] : null)))
         : h('p', { class: 'muted' }, 'Nada pendente.')),
       h('div', { class: 'cards' },
         h('div', { class: 'card' }, h('div', { class: 'value' }, data.accounts.active), h('div', { class: 'label' }, 'Contas ativas')),
@@ -774,6 +783,10 @@ const views = {
         h('div', { class: 'card' }, h('div', { class: 'value' }, data.accounts.pendingInvites), h('div', { class: 'label' }, 'Convites por aceitar')),
         h('div', { class: 'card' }, h('div', { class: 'value' }, data.accounts.disabled), h('div', { class: 'label' }, 'Contas desativadas')),
         data.policies ? h('div', { class: 'card' }, h('div', { class: 'value' }, `${data.policies.pass}/${data.policies.pass + data.policies.fail + data.policies.manual}`), h('div', { class: 'label' }, 'Políticas cumpridas')) : null),
+      // Auditoria externa: cópia de cada mensagem para um analista fora da equipa. Não é trabalho do dia a dia.
+      ops ? h('div', { class: 'panel' }, h('h3', {}, 'Auditoria externa'),
+        h('p', {}, `${ops.queues.curatorTasks.waiting} cópia(s) de mensagens à espera de um analista externo.`),
+        h('p', { class: 'muted' }, 'Cada mensagem do chatbot gera uma cópia para análise independente. Enquanto nenhum analista estiver ligado, as cópias expiram ao fim de 14 dias sem afetar clientes nem leads; a equipa não tem de fazer nada.')) : null,
       h('div', { class: 'panel' }, h('h3', {}, 'Controlos'), h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Área'), h('th', {}, 'Controlo'), h('th', {}, 'Estado'))),
         h('tbody', {}, data.controls.map(item => h('tr', {}, h('td', {}, item.area), h('td', {}, item.control), h('td', {}, item.status === 'on' ? pill('Ativo', 'ok') : pill('Por ativar', 'warn'))))))),
@@ -922,8 +935,6 @@ const views = {
       h('p', { class: 'muted' }, `Verificado em ${when(ops.checkedAt)}.`),
       h('div', { class: 'cards' },
         queueCard(q.conversationEvents, 'Eventos por processar'), queueCard(q.failedEvents, 'Eventos falhados (DLQ)', true),
-        // Fila de cópias para um analista externo: sem ninguém ligado, acumulam e expiram ao fim de 14 dias. Não é trabalho da equipa.
-        h('div', { class: 'card' }, h('div', { class: 'value' }, q.curatorTasks.waiting), h('div', { class: 'label' }, 'Cópias à espera do analista externo'), h('div', { class: 'muted' }, 'Cópia de cada mensagem para análise externa; sem analista ligado, expiram ao fim de 14 dias. Não há nada a fazer aqui; as conversas para rever estão abaixo.')),
         h('div', { class: 'card' }, h('div', { class: 'value' }, ops.churnReview ? ops.churnReview.queued : '—'), h('div', { class: 'label' }, 'Revisão diária: leads em atraso'), h('div', { class: 'muted' }, ops.churnReview ? `Última execução ${when(ops.churnReview.evaluatedAt)}` : 'Sem execução nos últimos 3 dias'))),
       h('div', { class: 'panel' }, h('h3', {}, 'Workers (últimas 24 h)'), h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Função'), h('th', {}, 'Stack'), h('th', {}, 'Execuções'), h('th', {}, 'Erros'), h('th', {}, 'Limitações'), h('th', {}, 'Estado'), h('th', {}, 'Atualizada'))),
@@ -942,7 +953,11 @@ const views = {
     const RESULT = { pass: ['Cumpre', 'ok'], attested: ['Verificada', 'ok'], fail: ['Em falta', 'bad'], manual: ['Verificar à mão', 'warn'] };
     const rules = policies?.policies ?? [];
     const rerender = () => { view.replaceChildren(); views.governance(view, state).catch(error => view.append(h('p', { class: 'error' }, error.message))); };
-    const card = (value, label, tone) => h('div', { class: `card ${tone ?? ''}` }, h('div', { class: 'value' }, value), h('div', { class: 'label' }, label));
+    // Cartões com atalho: levam à lista do que falta ou ao tema das regras.
+    const card = (value, label, tone, go) => (go && value
+      ? h('button', { type: 'button', class: `card go ${tone ?? ''}`, onclick: go }, h('div', { class: 'value' }, value), h('div', { class: 'label' }, label))
+      : h('div', { class: `card ${tone ?? ''}` }, h('div', { class: 'value' }, value), h('div', { class: 'label' }, label)));
+    const toTodo = () => view.querySelector('#governance-todo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     const sources = policy => policy.sources.map(source => h('div', {}, h('a', { href: source.url, target: '_blank', rel: 'noopener noreferrer' }, source.name), h('span', { class: 'muted' }, ` ${source.ref}`)));
     const done = policy => ['pass', 'attested'].includes(policy.result.status);
     const attestedLine = policy => policy.attestation ? h('div', { class: 'muted' },
@@ -985,6 +1000,7 @@ const views = {
     const others = rules.filter(policy => !Object.values(RULE_TOPICS).flat().includes(policy.id));
     if (others.length) byTopic.push(['Outras regras', others]);
     const topics = byTopic.filter(([, list]) => list.length);
+    const topicOf = policy => topics.find(([, list]) => list.includes(policy))?.[0];
     const openTopic = topic => {
       state.open = topic;
       const box = view.querySelector(`details[data-topic="${CSS.escape(topic)}"]`);
@@ -1003,19 +1019,19 @@ const views = {
         ? h('div', { class: 'cards' },
           card(policies.summary.pass, 'cumpridas automaticamente', 'ok'),
           card(policies.summary.attested ?? 0, 'verificadas pela equipa', 'ok'),
-          card(policies.summary.fail, 'em falta: precisam de si', policies.summary.fail ? 'bad' : 'ok'),
-          card(policies.summary.manual, 'para verificar à mão', policies.summary.manual ? 'warn' : 'ok'))
+          card(policies.summary.fail, 'em falta: precisam de si', policies.summary.fail ? 'bad' : 'ok', toTodo),
+          card(policies.summary.manual, 'para verificar à mão', policies.summary.manual ? 'warn' : 'ok', toTodo))
         : h('div', { class: 'notice' }, 'O relatório das regras legais ainda não foi publicado. Aparece aqui depois da próxima publicação do backoffice.'),
       topics.length ? h('div', { class: 'topic-buttons' }, topics.map(([topic, list]) => {
         const ok = list.filter(done).length;
         return h('button', { type: 'button', class: `topic-button ${ok === list.length ? 'ok' : 'warn'}`, onclick: () => openTopic(topic) },
           h('span', { class: 'value' }, `${ok}/${list.length}`), h('span', {}, topic));
       })) : null,
-      todo.length ? h('div', { class: 'panel risk' },
+      todo.length ? h('div', { class: 'panel risk', id: 'governance-todo' },
         h('h3', {}, 'O que precisa de si'),
         h('ul', { class: 'todo' }, todo.map(policy => h('li', {},
           h('strong', {}, ACTIONS[policy.id] ?? policy.requirement), ' ', pill(...RESULT[policy.result.status]),
-          h('div', { class: 'muted' }, `${policy.title}. Responsável: ${policy.owner}.`),
+          h('div', { class: 'muted' }, `${policy.title}. Responsável: ${policy.owner}. `, topicOf(policy) ? h('button', { type: 'button', class: 'link', onclick: () => openTopic(topicOf(policy)) }, `Ver em ${topicOf(policy)}`) : null),
           h('div', { class: 'muted' }, sources(policy)),
           attestedLine(policy),
           verify(policy))))) : policies ? h('div', { class: 'notice ok' }, 'Todas as regras estão cumpridas ou verificadas. A próxima revisão é trimestral.') : null,
@@ -1147,6 +1163,8 @@ function outcomeBlock(item, outcomes, labels, refresh) {
   const result = h('select', { name: 'result', required: true }, h('option', { value: '' }, 'Resultado…'), Object.entries(labels).map(([key, label]) => h('option', { value: key, selected: done?.result === key }, label)));
   const delay = h('input', { name: 'delayMinutes', type: 'number', min: '1', max: '600', placeholder: 'Atraso (min)', value: done?.delayMinutes || '' });
   const rating = h('select', { name: 'rating' }, h('option', { value: '' }, 'Cliente: sem avaliação'), [5, 4, 3, 2, 1].map(value => h('option', { value, selected: done?.rating === value }, `Cliente: ${value}/5`)));
+  // Resposta ao pedido de recomendação do dia seguinte (NPS, 0 a 10).
+  const recommend = h('select', { name: 'recommend' }, h('option', { value: '' }, 'Recomenda (0–10): sem resposta'), Array.from({ length: 11 }, (_, index) => 10 - index).map(value => h('option', { value, selected: done?.recommend === value }, `Recomenda: ${value}/10`)));
   const form = h('form', { class: 'outcome', onsubmit: async event => {
     event.preventDefault();
     status.textContent = 'A guardar…';
@@ -1158,7 +1176,7 @@ function outcomeBlock(item, outcomes, labels, refresh) {
       status.textContent = error.message;
     }
   } },
-    result, delay, rating,
+    result, delay, rating, recommend,
     h('input', { name: 'cost', inputmode: 'decimal', placeholder: 'Custo (EUR)', value: done?.cost ?? '' }),
     h('input', { name: 'price', inputmode: 'decimal', placeholder: 'Preço ao cliente (EUR)', value: done?.price ?? '' }),
     h('input', { name: 'comment', maxlength: '500', placeholder: 'Comentário (opcional)', value: done?.comment ?? '' }),
@@ -1204,9 +1222,6 @@ async function showLead(panel, id, refreshList) {
       mine ? act('Libertar', () => api('POST', `/v1/leads/${id}/assign`, { release: true })) : act('Assumir', () => api('POST', `/v1/leads/${id}/assign`, {}), 'primary'),
       lead.status === 'CONTACTED' ? null : act('Marcar contactado', () => api('POST', `/v1/leads/${id}/contacted`)),
       can('tasks') ? h('button', { type: 'button', class: 'secondary', onclick: () => { taskPrefill = { leadId: id }; show('work'); } }, 'Criar tarefa') : null),
-    // Atalho do curador: o portal abre já neste lead; o mapa é uma secção da proposta.
-    isCurator() && portalUrl() ? h('div', { class: 'actions' },
-      h('a', { class: 'button secondary', href: portalUrl(`leads?lead=${encodeURIComponent(id)}`), target: '_blank', rel: 'noopener' }, 'Proposta no portal ↗')) : null,
     isCurator() ? null : h('p', { class: 'muted' }, 'Só curadores e fundadores podem alterar leads.'),
     status,
     h('h3', {}, 'Conversa com o chatbot'),
@@ -1582,8 +1597,11 @@ async function start() {
   document.title = SITE.name;
   document.querySelector('.brand span:last-child').textContent = SITE.name;
   $('login').addEventListener('click', () => login());
+  // O cartão «Entrar» só aparece quando é preciso agir (erro ou depois de «Sair»);
+  // no resto dos casos vai-se direto ao login gerido, sem ecrã intermédio.
+  const needSignin = message => { $('signin-error').textContent = message ?? ''; $('signin').hidden = false; };
   if (!config) {
-    $('signin-error').textContent = 'Configuração em falta: esta página só funciona depois do deploy.';
+    needSignin('Configuração em falta: esta página só funciona depois do deploy.');
     $('login').disabled = true;
     return;
   }
@@ -1594,11 +1612,12 @@ async function start() {
       // salvo depois de «Sair», para não reentrar sem o pedir.
       const signedOut = sessionStorage.getItem('blu-intranet-signed-out');
       sessionStorage.removeItem('blu-intranet-signed-out');
-      if (!signedOut) await login();
+      if (signedOut) needSignin();
+      else await login();
       return;
     }
   } catch (error) {
-    $('signin-error').textContent = error.message;
+    needSignin(error.message);
     return;
   }
   $('signin').hidden = true;
