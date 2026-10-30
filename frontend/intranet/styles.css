@@ -273,3 +273,7 @@ li.ops-item.selected { background: #f3ecdf; outline: 2px solid var(--ink); }
 .tree-count { margin-left: auto; min-width: 1.8rem; text-align: center; border-radius: 999px; background: #efe8da; padding: 0 .5rem; font-size: .85rem; }
 .tree-leaf { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .2rem .8rem; width: 100%; padding: .4rem .5rem; min-height: 40px; border: 0; border-radius: 6px; background: none; color: inherit; text-align: left; }
 .tree-leaf:hover, .tree-leaf:focus-visible { background: #f3ecdf; }
+
+/* Proposta por WhatsApp: mensagem com o toque da BLU, revista antes de enviar. */
+.proposal textarea { font-family: Georgia, "Times New Roman", serif; line-height: 1.55; }
+.proposal-fold { margin-top: .9rem; }

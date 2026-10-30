@@ -385,6 +385,7 @@ function showOpsItem(panel, item, data, { me, nameOf, refresh }) {
         h('dt', {}, 'Estado'), h('dd', {}, statusPill(lead.status)),
         h('dt', {}, 'Última atividade'), h('dd', {}, when(lead.lastActivityAt))),
       h('ul', { class: 'feed' }, (lead.messages ?? []).slice(-3).map(message => h('li', {}, h('strong', {}, message.actor === 'customer' ? 'Cliente' : 'BLU'), ` ${(message.text ?? '').slice(0, 220)}`, h('time', {}, when(message.at))))),
+      lead.synthetic ? null : proposalComposer(lead),
     )).catch(error => summary.replaceChildren(error.message));
   }
   if (item.kind === 'task' && can('tasks')) {
@@ -509,6 +510,64 @@ const demoToggle = rerender => h('button', { type: 'button', class: 'secondary',
   try { localStorage.setItem('blu-intel-demo', intelDemo.on ? '1' : '0'); } catch { /* sem armazenamento */ }
   rerender();
 } }, intelDemo.on ? 'Demonstração incluída' : 'Só dados reais');
+
+// Proposta por WhatsApp com o toque da BLU: o curador revê e edita antes de enviar; vai pela caixa
+// de WhatsApp (em modo de teste nada sai para o cliente). Em inglês, como as outras mensagens ao viajante.
+function proposalMessage({ name, destination, party, dates, link, curator }) {
+  const trip = [destination || 'your journey', party ? `for ${party}` : '', dates || ''].filter(Boolean).join(', ');
+  return [
+    name ? `Dear ${name},` : 'Hello,',
+    '',
+    `Your journey has taken shape. We've curated ${trip}: paced for you, with the places we would choose for ourselves.`,
+    '',
+    `Your proposal: ${link || '[link da proposta]'}`,
+    '',
+    'Take your time with it. If anything should feel different (a slower morning, a table by the sea, one more day in the north), just reply here and we\'ll reshape it.',
+    '',
+    'With care,',
+    `${curator} · BLU Costa`,
+    'Travel is not accumulation. It is interpretation.',
+  ].join('\n');
+}
+
+function proposalComposer(lead) {
+  const curator = (session.claims?.name || session.claims?.email || 'BLU').split(/[\s@(]/)[0];
+  const phone = String(lead.phones?.[0] ?? '').replace(/\D/g, '').replace(/^00/, '');
+  const link = h('input', { type: 'url', placeholder: 'Link da proposta (portal)', 'aria-label': 'Link da proposta' });
+  const name = h('input', { type: 'text', maxlength: '60', placeholder: 'Nome do cliente (opcional)', 'aria-label': 'Nome do cliente' });
+  const text = h('textarea', { rows: '12', maxlength: '1000', 'aria-label': 'Mensagem' });
+  const status = h('p', { class: 'muted', role: 'status' });
+  let edited = false;
+  const fill = () => {
+    if (edited) return;
+    text.value = proposalMessage({ name: name.value.trim(), destination: lead.journey.destination, party: lead.journey.party, dates: lead.journey.timeframe, link: link.value.trim(), curator });
+  };
+  text.addEventListener('input', () => { edited = true; });
+  link.addEventListener('input', fill);
+  name.addEventListener('input', fill);
+  fill();
+  const send = h('button', { type: 'submit', class: 'primary' }, 'Enviar pelo WhatsApp');
+  const form = h('form', { class: 'proposal', onsubmit: async event => {
+    event.preventDefault();
+    if (!/^https?:\/\/\S+$/.test(link.value.trim())) { status.textContent = 'Indique o link da proposta.'; link.focus(); return; }
+    if (text.value.includes('[link da proposta]')) text.value = text.value.replace('[link da proposta]', link.value.trim());
+    send.disabled = true;
+    status.textContent = 'A enviar…';
+    try {
+      await api('POST', '/v1/whatsapp-test', { direction: 'out', leadId: lead.id, ...(phone.length >= 9 ? { to: phone } : {}), text: text.value });
+      whatsappState.selected = phone.length >= 9 ? phone : `lead:${lead.id}`;
+      status.replaceChildren('Proposta enviada para a caixa de WhatsApp. ', h('button', { type: 'button', class: 'link', onclick: () => show('whatsapp') }, 'Abrir a conversa'));
+    } catch (error) {
+      status.textContent = error.message;
+      send.disabled = false;
+    }
+  } },
+    h('div', { class: 'form-grid' }, link, name),
+    h('label', {}, 'Mensagem (pode editar)', text),
+    h('p', { class: 'muted' }, phone.length >= 9 ? `Para +${phone}, o número que o cliente deixou no chat.` : 'Sem telefone no chat: a conversa fica com a referência do lead.'),
+    h('div', { class: 'actions' }, send), status);
+  return h('details', { class: 'panel fold proposal-fold' }, h('summary', {}, h('span', { class: 'fold-title' }, 'Enviar proposta por WhatsApp')), form);
+}
 
 // Apoio do assistente: abre o painel com uma pergunta já feita sobre o que está no ecrã.
 let askAssistant = () => {};
@@ -1599,6 +1658,7 @@ async function showLead(panel, id, refreshList) {
       mine ? act('Libertar', () => api('POST', `/v1/leads/${id}/assign`, { release: true })) : act('Assumir', () => api('POST', `/v1/leads/${id}/assign`, {}), 'primary'),
       lead.status === 'CONTACTED' ? null : act('Marcar contactado', () => api('POST', `/v1/leads/${id}/contacted`)),
       can('tasks') ? h('button', { type: 'button', class: 'secondary', onclick: () => { taskPrefill = { leadId: id }; show('work'); } }, 'Criar tarefa') : null),
+    isCurator() && !lead.synthetic ? proposalComposer(lead) : null,
     isCurator() ? null : h('p', { class: 'muted' }, 'Só curadores e fundadores podem alterar leads.'),
     status,
     h('h3', {}, 'Conversa com o chatbot'),
