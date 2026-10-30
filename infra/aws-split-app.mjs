@@ -53,6 +53,7 @@ const socialBridgeAsset = path.resolve(infraDir, '../frontend/website');
 const intranetAsset = path.resolve(infraDir, '../frontend/intranet');
 const governanceControls = JSON.parse(readFileSync(path.resolve(infraDir, '../config/governance-controls.json'), 'utf8'));
 const partnersConfig = JSON.parse(readFileSync(path.resolve(infraDir, '../config/partners.json'), 'utf8'));
+const libraryConfig = JSON.parse(readFileSync(path.resolve(infraDir, '../config/proposal-library.json'), 'utf8'));
 // Políticas como código: uma regra bloqueante em falha impede o synth e, portanto, o deploy.
 const policyReport = evaluatePolicies();
 if (policyReport.summary.blockingFailures.length) throw new Error(`Blocking policy failures: ${policyReport.summary.blockingFailures.join(', ')} (see config/policies.json)`);
@@ -558,6 +559,7 @@ class IntranetStack extends Stack {
         RAG_FUNCTION_NAME: backoffice.rag.functionName,
         USER_POOL_ID: userPool.userPoolId,
         PARTNERS_JSON: JSON.stringify({ partners: partnersConfig.partners }),
+        LIBRARY_JSON: JSON.stringify({ bucket: libraryConfig.bucket, prefix: libraryConfig.prefix, entries: libraryConfig.entries }),
         MANAGED_SECRETS: JSON.stringify([{ arn: data.whatsappSecret.secretArn, purpose: 'WhatsApp Business (envio de lembretes e mensagens)' }]),
         WHATSAPP_MODE: whatsappMode,
         // Escreve só o texto das respostas simples; o mesmo modelo do chatbot público.
@@ -574,6 +576,8 @@ class IntranetStack extends Stack {
     fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['cognito-idp:ListUsersInGroup', 'cognito-idp:AdminCreateUser', 'cognito-idp:AdminAddUserToGroup', 'cognito-idp:AdminRemoveUserFromGroup', 'cognito-idp:AdminEnableUser', 'cognito-idp:AdminDisableUser'], resources: [userPool.userPoolArn] }));
     fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['secretsmanager:DescribeSecret'], resources: [data.whatsappSecret.secretArn] }));
     backoffice.evidenceBucket.grantRead(fn, 'controls/*');
+    // Biblioteca de propostas genéricas: só leitura do prefixo das propostas.
+    fn.addToRolePolicy(new iam.PolicyStatement({ actions: ['s3:GetObject'], resources: [`arn:aws:s3:::${libraryConfig.bucket}/${libraryConfig.prefix}*`] }));
     backoffice.rag.grantInvoke(fn);
 
     const authorizer = new authorizers.HttpJwtAuthorizer('IntranetJwt', `https://cognito-idp.${region}.amazonaws.com/${userPool.userPoolId}`, { jwtAudience: [client.userPoolClientId] });
@@ -588,7 +592,7 @@ class IntranetStack extends Stack {
       ['GET', '/v1/work'], ['GET', '/v1/tasks'], ['POST', '/v1/tasks'], ['GET', '/v1/leads/{id}/tasks/{taskId}'], ['POST', '/v1/leads/{id}/tasks/{taskId}'], ['GET', '/v1/feed'],
       ['GET', '/v1/settings'], ['POST', '/v1/settings'], ['POST', '/v1/governance/attestations'],
       ['GET', '/v1/conversations'], ['GET', '/v1/leads/{id}/feedback'], ['POST', '/v1/leads/{id}/feedback'],
-      ['GET', '/v1/whatsapp-test'], ['POST', '/v1/whatsapp-test'],
+      ['GET', '/v1/whatsapp-test'], ['POST', '/v1/whatsapp-test'], ['GET', '/v1/leads/{id}/library'],
     ];
     for (const [method, routePath] of routes) {
       api.addRoutes({ path: routePath, methods: [apigatewayv2.HttpMethod[method]], integration, authorizer });

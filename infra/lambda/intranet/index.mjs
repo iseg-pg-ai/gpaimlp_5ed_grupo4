@@ -11,6 +11,7 @@ import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/clien
 import { GetQueueAttributesCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { randomUUID } from 'node:crypto';
 import { NotFound, createApp } from './app.mjs';
+import { presignGet } from './library.mjs';
 import { listTeamMembers } from './team.mjs';
 import { workerLabel } from './model.mjs';
 
@@ -237,6 +238,9 @@ async function secrets() {
 }
 
 const partners = JSON.parse(env.PARTNERS_JSON || '{"partners":[]}').partners;
+const library = JSON.parse(env.LIBRARY_JSON || '{"entries":[]}');
+// Link temporário com as credenciais da função (duram horas): serve para rever e enviar logo.
+const presign = ({ bucket, key }) => presignGet({ bucket, key, region: env.AWS_REGION, expires: 3 * 3600, credentials: { accessKeyId: env.AWS_ACCESS_KEY_ID, secretAccessKey: env.AWS_SECRET_ACCESS_KEY, sessionToken: env.AWS_SESSION_TOKEN } });
 
 // Só escreve o texto de uma resposta simples; as regras e a verificação final ficam em guardrails.mjs.
 async function draftReply({ system, user }) {
@@ -262,6 +266,8 @@ async function assist({ system, user }) {
 
 export const handler = createApp({
   partners,
+  library,
+  presign,
   policyReport: () => readJson(POLICY_REPORT_KEY),
   invite,
   setRole,

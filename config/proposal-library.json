@@ -1,0 +1,13 @@
+{
+  "note": "Propostas genéricas em PDF para sugerir a leads. Só entram as com approved: true, e só depois de uma pessoa confirmar que o PDF não cita clientes anteriores. Todas começam por aprovar.",
+  "bucket": "gpaimlp-5ed-grupo4-650557269385-eu-west-1-an",
+  "prefix": "data/4. PROPOSTAS BLU-20260923T183619Z-1-001/4. PROPOSTAS BLU/",
+  "entries": [
+    { "id": "fado-evening", "title": "A Fado Evening", "file": "A FADO EVENING.pdf", "keywords": ["lisboa", "lisbon", "fado", "music", "evening", "night"], "approved": false },
+    { "id": "hidden-gems-sintra", "title": "Hidden Gems of Sintra", "file": "HIDDEN GEMS OF SINTRA.pdf", "keywords": ["sintra", "cascais", "palaces", "history", "nature"], "approved": false },
+    { "id": "lisbon-at-the-table", "title": "Lisbon at the Table", "file": "LISBON AT THE TABLE.pdf", "keywords": ["lisboa", "lisbon", "food", "wine", "gastronomy", "restaurants"], "approved": false },
+    { "id": "lx-wine-tasting", "title": "LX Wine Tasting", "file": "LX WINE TASTING.pdf", "keywords": ["lisboa", "lisbon", "wine", "tasting"], "approved": false },
+    { "id": "day-trip-braga-guimaraes", "title": "Day trip Braga and Guimarães", "file": "DAY TRIP BRAGA N GUIMARAES.pdf", "keywords": ["braga", "guimaraes", "minho", "porto", "history", "daytrip"], "approved": false },
+    { "id": "day-trip-porto-aveiro", "title": "Day trip Porto, Aveiro, Óbidos and Lisbon", "file": "DAY TRIP PORTO - AVEIRO - OBI - LISBON.pdf", "keywords": ["porto", "aveiro", "obidos", "lisboa", "lisbon", "daytrip"], "approved": false }
+  ]
+}

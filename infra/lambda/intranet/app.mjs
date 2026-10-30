@@ -4,6 +4,7 @@ import {
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, lisbonToUtc, parseActivity, plan } from './schedule.mjs';
 import { opsItems, opsView } from './ops.mjs';
+import { matchLibrary } from './library.mjs';
 import { RECO, recoRecord, recommend, toReco } from './recommend.mjs';
 import { EXPERIENCES, OUTCOMES, OUTCOME_STATUS, SCORE, experienceSummary, netPromoter, outcomeRecord, parseOutcome, scorecards, toOutcome } from './partner-score.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
@@ -403,6 +404,17 @@ export function createApp(deps) {
           return { id: lead.id, journey: lead.journey, stage: lead.stage, status: lead.status, synthetic: lead.synthetic, messageCount: lead.messageCount, lastActivityAt: lead.lastActivityAt, feedbackCount: given.length, lastFeedback: given[0] ?? null, inferred: lead.aiChatbot ?? null };
         }),
       });
+    },
+
+    // Propostas genéricas aprovadas que servem este lead, com um link temporário para a pessoa rever.
+    'GET /v1/leads/{id}/library': async ({ id }) => {
+      const lead = await getLead(id);
+      const library = deps.library ?? { entries: [] };
+      const matches = matchLibrary(lead.journey, library.entries).map(({ file, ...match }) => ({
+        ...match,
+        url: deps.presign ? deps.presign({ bucket: library.bucket, key: `${library.prefix ?? ''}${file}` }) : '',
+      }));
+      return reply(200, { matches, temporary: true }, 'private, no-store');
     },
 
     'GET /v1/leads/{id}/feedback': async ({ id }) => {

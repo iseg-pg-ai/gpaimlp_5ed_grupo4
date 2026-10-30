@@ -6,6 +6,7 @@ import { languages } from "@/lib/locales";
 import { VersionStore } from "@/lib/version-store";
 import { Trash2 } from "lucide-react";
 import { ShareAccessManager } from "@/components/ShareAccessManager";
+import { ShareFromHistory } from "@/components/ShareFromHistory";
 import { FeedbackManager } from "@/components/FeedbackManager";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -14,7 +15,12 @@ export default async function ExportHistory({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const error = (await searchParams).versionActionError;
+  const params = await searchParams;
+  const leadId =
+    typeof params.lead === "string" && /^BLU-[A-Za-z0-9_-]{1,80}$/.test(params.lead)
+      ? params.lead
+      : undefined;
+  const error = params.versionActionError;
   const actionError =
     error === "invalid"
       ? "Pedido inválido."
@@ -42,6 +48,12 @@ export default async function ExportHistory({
       {actionError && (
         <p role="alert" className="mb-4 text-red-800">
           <T text={actionError} source="pt" />
+        </p>
+      )}
+      {leadId && (
+        <p className="my-4">
+          Escolha a versão da proposta para o lead {leadId}. Confirme o conteúdo antes de preparar o
+          WhatsApp.
         </p>
       )}
       <ShareAccessManager initialShares={shares} />
@@ -129,6 +141,7 @@ export default async function ExportHistory({
               </button>
             </form>
             <div>
+              <ShareFromHistory tripId={v.tripId} version={v.version} leadId={leadId} />
               <FeedbackManager tripId={v.tripId} version={v.version} />
             </div>
           </div>

@@ -23,6 +23,7 @@ export function ShareProposalModal({
   defaultMethod = "link",
   customerName,
   destination,
+  leadId,
   onClose,
 }: {
   tripId: string;
@@ -33,6 +34,7 @@ export function ShareProposalModal({
   defaultMethod?: "document" | "link";
   customerName: string;
   destination: string;
+  leadId?: string;
   onClose: () => void;
 }) {
   const available = [
@@ -66,12 +68,9 @@ export function ShareProposalModal({
       link: share.shareUrl,
       v: String(version),
       dest: destination,
+      ...(leadId ? { lead: leadId } : {}),
     });
-    window.open(
-      `${missionControlUrl.replace(/\/+$/, "")}/#whatsapp?${query}`,
-      "_blank",
-      "noopener",
-    );
+    window.location.assign(`${missionControlUrl.replace(/\/+$/, "")}/#whatsapp?${query}`);
   };
 
   const prepareShare = async (event: React.FormEvent) => {
@@ -259,7 +258,7 @@ export function ShareProposalModal({
           {result && (
             <div role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">
               <p className="font-semibold">
-                Partilha preparada. Confirme o envio no programa de email.
+                Partilha preparada. Abra o canal escolhido e confirme o envio.
               </p>
               <p className="mt-1 text-xs">
                 Acesso válido até {new Date(result.expiresAt).toLocaleString()}.
@@ -272,6 +271,15 @@ export function ShareProposalModal({
                 >
                   <Copy className="size-4" /> Copiar ligação
                 </button>
+                {missionControlUrl && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 underline"
+                    onClick={() => openMissionControl(result)}
+                  >
+                    <MessageCircle className="size-4" /> Abrir no WhatsApp (Mission Control)
+                  </button>
+                )}
                 <button
                   type="button"
                   className="inline-flex items-center gap-1 underline"
