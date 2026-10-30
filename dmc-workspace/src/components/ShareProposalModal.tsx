@@ -88,7 +88,8 @@ export function ShareProposalModal({
       dest: destination,
       ...(leadId ? { lead: leadId } : {}),
     });
-    window.location.assign(`${missionControlUrl.replace(/\/+$/, "")}/#whatsapp?${query}`);
+    // Endereço externo (Mission Control): navegação normal do navegador, não uma rota do Next.
+    window.location.href = `${missionControlUrl.replace(/\/+$/, "")}/#whatsapp?${query}`;
   };
 
   const prepareShare = async (event: React.FormEvent) => {
