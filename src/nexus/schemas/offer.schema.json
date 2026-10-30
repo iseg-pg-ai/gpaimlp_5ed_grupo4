@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blu.costa/nexus/offer.schema.json",
+  "title": "NEXUS canonical offer v0.1",
+  "description": "One way to sell one BLU product through one partnership channel, with source lineage. Unknown values are null, never zero.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["offer_id", "product_key", "title", "channel", "source_id", "currency", "unit", "price_basis", "sell_price", "lineage"],
+  "properties": {
+    "offer_id": { "type": "string", "maxLength": 120 },
+    "product_key": { "type": "string", "pattern": "^[a-z0-9]+(?:[-_.:][a-z0-9]+)*$", "maxLength": 80 },
+    "title": { "type": "string", "maxLength": 200 },
+    "channel": { "enum": ["reseller", "direct", "own"] },
+    "source_id": { "type": "string", "pattern": "^[a-z0-9]+(?:[-_.:][a-z0-9]+)*$", "maxLength": 40 },
+    "supplier_id": { "type": ["string", "null"], "maxLength": 80 },
+    "supplier_name": { "type": ["string", "null"], "maxLength": 200 },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "unit": { "enum": ["person", "group"] },
+    "price_basis": { "enum": ["quoted", "from"], "description": "from = indicative listing price" },
+    "sell_price": { "type": "string", "pattern": "^\\d{1,7}(?:\\.\\d{1,4})?$", "description": "Customer price per unit, decimal string" },
+    "cost_price": { "type": ["string", "null"], "pattern": "^\\d{1,7}(?:\\.\\d{1,4})?$", "description": "What BLU pays per unit; null for resale or when unknown" },
+    "commission_rate": { "type": ["string", "null"], "pattern": "^(?:0(?:\\.\\d{1,4})?|1(?:\\.0{1,4})?)$", "description": "Resale only: share of the customer price BLU earns" },
+    "min_pax": { "type": ["integer", "null"], "minimum": 1 },
+    "valid_from": { "type": ["string", "null"], "format": "date" },
+    "valid_to": { "type": ["string", "null"], "format": "date" },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "source_type", "ref", "contract", "ingested_at", "checksum"],
+      "properties": {
+        "source_id": { "type": "string" },
+        "source_type": { "enum": ["api", "file"] },
+        "ref": { "type": "string", "description": "Where the record came from: API path and id, or file and row" },
+        "contract": { "type": "string", "description": "Contract and version the record was read with" },
+        "ingested_at": { "type": "string", "format": "date-time" },
+        "checksum": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 of the source record" }
+      }
+    }
+  }
+}

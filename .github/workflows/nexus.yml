@@ -1,0 +1,36 @@
+# Testa o NEXUS Integration Gateway (só biblioteca padrão, sem serviços externos nem dados reais).
+name: NEXUS
+
+on:
+  push:
+    paths:
+      - "src/nexus/**"
+      - "tests/test_nexus.py"
+      - "config/nexus.json"
+      - ".github/workflows/nexus.yml"
+  pull_request:
+    paths:
+      - "src/nexus/**"
+      - "tests/test_nexus.py"
+      - "config/nexus.json"
+      - ".github/workflows/nexus.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Run NEXUS tests
+        env:
+          PYTHONPATH: src
+        run: python -B -m unittest tests.test_nexus -v

@@ -212,3 +212,16 @@ ligação do portal e toda a documentação.
 Efeito no próximo `cdk deploy BluCostaIntranet`: a distribuição do backoffice é
 apagada e o endereço deixa de responder; o bucket fica retido e pode ser
 removido à mão. Avisar a equipa antes do deploy por causa de favoritos.
+
+### NEXUS Integration Gateway v0.1: um modelo comercial, sem persistência — 2026-10-30
+
+Decisão: o NEXUS é um pacote Python só com biblioteca padrão (`src/nexus/`) que lê de
+novo, em cada pedido, as respostas guardadas da GetYourGuide Partner API e os ficheiros
+dos fornecedores; não guarda nada nem cria outro catálogo, como pede a regra de uma
+fonte por conhecimento. Uma oferta só entra num produto BLU por mapeamento explícito.
+
+Evidência: o contrato `getyourguide/partner-api-spec` 1.0.0 define `retail_price` e
+`customer_base_price` como preços ao cliente, sem o que o parceiro ganha; por isso a
+comissão vem do acordo (`config/nexus.json`) e, enquanto for `null`, a margem da
+revenda fica desconhecida em vez de zero. Testes em `tests/test_nexus.py`; detalhe em
+[NEXUS](NEXUS.md).
