@@ -639,4 +639,3 @@ sugestões por lead. Testes locais com respostas na forma da especificação.
   há integração por API: os casos do Livro continuam a ser registados à mão.
 - **Novo parceiro:** pedido (tarefa) a partir de Parceiros, porque a lista vem de
   `config/partners.json` e exige licença verificada.
-
