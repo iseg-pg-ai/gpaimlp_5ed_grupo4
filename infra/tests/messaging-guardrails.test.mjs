@@ -134,3 +134,10 @@ test('a complaint by WhatsApp opens one complaint case per conversation while it
   assert.equal(cases().length, 1);
   assert.equal(JSON.parse((await call('POST /v1/whatsapp-test', { direction: 'in', to: '351912345678', text: 'Thanks, see you tomorrow' })).body).caseOpened, false);
 });
+
+test('a proposal sent with suggested partners records them once each, ignoring unknown ids', async () => {
+  const { call, stored } = inbox({ replies: false });
+  await call('POST /v1/whatsapp-test', { direction: 'out', to: '351912345678', leadId: 'BLU-AAAAAAAA0001', text: 'Proposta v001', recommended: ['tuk-alfama', 'tuk-alfama', 'nobody'] });
+  const recos = stored.filter(item => item.conversationId === 'BLU-AAAAAAAA0001' && item.recordKey.startsWith('RECO#'));
+  assert.deepEqual(recos.map(item => [item.partnerId, item.outcome, item.followUpStatus]), [['tuk-alfama', 'sent', 'RECO_OUTCOME']]);
+});

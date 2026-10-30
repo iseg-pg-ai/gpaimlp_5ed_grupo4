@@ -4,6 +4,7 @@ import {
 } from './model.mjs';
 import { CHANNELS, KINDS, NOTIFY, REMINDERS, digitsOnly, lisbonToUtc, parseActivity, plan } from './schedule.mjs';
 import { opsItems, opsView } from './ops.mjs';
+import { RECO, recoRecord, recommend, toReco } from './recommend.mjs';
 import { EXPERIENCES, OUTCOMES, OUTCOME_STATUS, SCORE, experienceSummary, netPromoter, outcomeRecord, parseOutcome, scorecards, toOutcome } from './partner-score.mjs';
 import { CASE_CHANNELS, CASE_STATE, CASE_STATUS, CASE_TYPES, UNLINKED, deadlineState, parseCase, parseCaseUpdate } from './cases.mjs';
 import { ATTESTATIONS, AUTO_TYPES, SETTINGS, VALUE_RULES, applyAttestations, currentSettings, parseAttestation, parseSettings, replyState } from './settings.mjs';
@@ -437,6 +438,9 @@ export function createApp(deps) {
         const inbox = (await deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix)).map(toInboxMessage);
         if (inbox.some(item => threadKey(item) === threadKey(message) && item.decision === 'stop')) return fail(409, 'Esta pessoa pediu para não receber mais mensagens.');
         await deps.putRecords(WHATSAPP_TEST.partition, [inboxRecord({ at: at.toISOString(), id: deps.newId(), ...message })]);
+        // Proposta enviada com sugestões: fica registado quais, para o modelo aprender o que é aceite.
+        const suggested = [...new Set(Array.isArray(body.recommended) ? body.recommended : [])].filter(id => deps.partners.some(partner => partner.id === id)).slice(0, RECO.top);
+        if (message.leadId && suggested.length) await deps.putRecords(message.leadId, suggested.map(partnerId => recoRecord({ partnerId, outcome: 'sent', user, now: at })));
         return reply(201, { at: at.toISOString() });
       }
       const outcome = await answer(message, at);
@@ -841,8 +845,19 @@ export function createApp(deps) {
     },
 
     // Parceiros com a avaliação dos últimos SCORE.windowDays dias (resultados registados na Agenda).
-    'GET /v1/partners': async () => {
+    'GET /v1/partners': async ({ event }) => {
       const at = now();
+      // ?lead=ID junta os dois parceiros que melhor servem esse lead (explicável, aprende com as propostas).
+      const forLead = event.queryStringParameters?.lead;
+      if (forLead) {
+        if (!validLeadId(forLead)) return fail(400, 'Referência de lead inválida.');
+        const [lead, outcomes, history] = await Promise.all([
+          getLead(forLead),
+          deps.queryAgenda(OUTCOME_STATUS, new Date(at - SCORE.windowDays * 864e5).toISOString(), at.toISOString()).catch(() => []),
+          deps.queryAgenda(RECO.status, new Date(at - RECO.windowDays * 864e5).toISOString(), at.toISOString()).catch(() => []),
+        ]);
+        return reply(200, recommend(lead, deps.partners, scorecards(deps.partners, outcomes.map(toOutcome), at), history.map(toReco)), 'private, max-age=60');
+      }
       const outcomes = await deps.queryAgenda(OUTCOME_STATUS, new Date(at - SCORE.windowDays * 864e5).toISOString(), at.toISOString()).catch(() => []);
       const results = outcomes.map(toOutcome);
       // Serviços a verificar: detratores (0–6), transfer que correu mal, o pior da viagem ou falta do parceiro.
@@ -882,6 +897,10 @@ export function createApp(deps) {
       const partner = deps.partners.find(item => item.id === parsed.activity.partnerId);
       const notifications = plan(parsed.activity, { activityId, travellerPhone: digitsOnly(lead.phones[0]), travellerEmail: lead.emails[0] ?? '', partner, travellerConsent: Boolean(lead.consentAt), now: now() });
       const at = now().toISOString();
+      const suggestedBefore = parsed.activity.partnerId ? (await deps.queryRecords(id, 'RECO#').catch(() => [])).map(toReco) : [];
+      if (suggestedBefore.some(item => item.partnerId === parsed.activity.partnerId && item.outcome === 'sent') && !suggestedBefore.some(item => item.partnerId === parsed.activity.partnerId && item.outcome === 'accepted')) {
+        await deps.putRecords(id, [recoRecord({ partnerId: parsed.activity.partnerId, outcome: 'accepted', user, now: now() })]);
+      }
       await deps.putRecords(id, [
         { recordKey: `ACTIVITY#${activityId}`, activityId, ...parsed.activity, reminders: parsed.activity.reminders.join(','), status: 'ACTIVE', createdBy: user.email, createdAt: at, notificationCount: String(notifications.length) },
         ...notificationRecords(notifications, parsed.activity, partner, settings, user, at),

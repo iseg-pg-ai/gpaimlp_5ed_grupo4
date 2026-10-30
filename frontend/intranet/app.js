@@ -581,6 +581,16 @@ Proposta v${String(preset.version).padStart(3, '0')} · BLU Costa Travel · Cura
   link.addEventListener('input', fill);
   name.addEventListener('input', fill);
   fill();
+  // Os dois serviços que melhor servem a viagem, com o motivo; a pessoa escolhe quais entram na mensagem.
+  let picks = [];
+  const recommendations = h('div', { class: 'reco' });
+  api('GET', `/v1/partners?lead=${encodeURIComponent(lead.id)}`).then(({ items, basis, outcomes }) => {
+    if (!items.length) return;
+    picks = items.map(item => ({ item, box: h('input', { type: 'checkbox', checked: true, 'aria-label': `Incluir ${item.name}` }) }));
+    recommendations.append(h('h4', {}, 'Sugestões para este cliente'),
+      ...picks.map(({ item, box }) => h('label', { class: 'reco-item' }, box, ' ', h('strong', {}, item.name), ' ', pill(`${item.score}%`, 'ok'), h('div', { class: 'muted' }, item.reasons.join(' · ')))),
+      h('p', { class: 'muted' }, basis === 'learned' ? `Ordem aprendida com ${outcomes} propostas enviadas.` : 'Ordem por regras (zona, lugares e qualidade medida). Passa a aprender depois de 10 propostas com resultado.'));
+  }).catch(() => {});
   const send = h('button', { type: 'submit', class: 'primary' }, 'Enviar pelo WhatsApp');
   const form = h('form', { class: 'proposal', onsubmit: async event => {
     event.preventDefault();
@@ -588,8 +598,12 @@ Proposta v${String(preset.version).padStart(3, '0')} · BLU Costa Travel · Cura
     if (text.value.includes('[link da proposta]')) text.value = text.value.replace('[link da proposta]', link.value.trim());
     send.disabled = true;
     status.textContent = 'A enviar…';
+    const chosen = picks.filter(({ box }) => box.checked).map(({ item }) => item);
+    const extra = chosen.length && !text.value.includes(chosen[0].name) ? `
+
+Sugerimos também: ${chosen.map(item => `${item.name} (${item.area})`).join(' · ')}` : '';
     try {
-      await api('POST', '/v1/whatsapp-test', { direction: 'out', leadId: lead.id, ...(phone.length >= 9 ? { to: phone } : {}), text: text.value });
+      await api('POST', '/v1/whatsapp-test', { direction: 'out', leadId: lead.id, ...(phone.length >= 9 ? { to: phone } : {}), text: (text.value + extra).slice(0, 1000), recommended: chosen.map(item => item.partnerId) });
       whatsappState.selected = phone.length >= 9 ? phone : `lead:${lead.id}`;
       status.replaceChildren('Proposta enviada para a caixa de WhatsApp. ', h('button', { type: 'button', class: 'link', onclick: () => show('whatsapp') }, 'Abrir a conversa'));
     } catch (error) {
@@ -598,6 +612,7 @@ Proposta v${String(preset.version).padStart(3, '0')} · BLU Costa Travel · Cura
     }
   } },
     h('div', { class: 'form-grid' }, link, name),
+    recommendations,
     h('label', {}, 'Mensagem (pode editar)', text),
     h('p', { class: 'muted' }, phone.length >= 9 ? `Para +${phone}, o número que o cliente deixou no chat.` : 'Sem telefone no chat: a conversa fica com a referência do lead.'),
     h('div', { class: 'actions' }, send), status);
