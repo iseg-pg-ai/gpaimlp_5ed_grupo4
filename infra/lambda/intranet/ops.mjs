@@ -64,7 +64,6 @@ export function opsItems({ work, failed = [], services = [], members = [], partn
     const owned = isActive(lead.assignedTo);
     const late = lead.replyLate || isOverdue(lead, at);
     const states = [owned ? '' : 'unassigned', late ? 'overdue' : '', lead.atRisk ? 'risk' : '', lisbonDay(lead.replyDueAt || lead.followUpAt) === today ? 'today' : ''];
-    if (!states.some(Boolean)) continue;
     add({
       key: `lead:${lead.id}`, kind: 'lead', id: lead.id, partition: lead.id, title: lead.journey.destination || lead.id,
       detail: [lead.journey.timeframe, lead.journey.party].filter(Boolean).join(' · '), owner: owned ? lead.assignedTo : '', states,
@@ -80,7 +79,6 @@ export function opsItems({ work, failed = [], services = [], members = [], partn
   for (const task of tasks) {
     const owned = isActive(task.owner);
     const states = [task.status === 'blocked' ? 'blocked' : '', task.dueState === 'overdue' ? 'overdue' : '', owned ? '' : 'unassigned', task.due === today ? 'today' : ''];
-    if (!states.some(Boolean)) continue;
     // Uma tarefa bloqueada desbloqueia-se com quem a pediu; se foi a própria pessoa, com um fundador.
     const resolver = task.status === 'blocked'
       ? (lower(task.createdBy) !== lower(task.owner) && person(task.createdBy, 'pediu esta tarefa')) || leastLoaded(['founders'], 'fundador(a) com menos trabalho em aberto')
@@ -130,7 +128,6 @@ export function opsItems({ work, failed = [], services = [], members = [], partn
   for (const item of cases) {
     const owned = isActive(item.owner);
     const states = [item.deadlineState === 'overdue' ? 'overdue' : '', owned ? '' : 'unassigned', item.deadline === today ? 'today' : ''];
-    if (!states.some(Boolean)) continue;
     add({
       key: `case:${item.id}`, kind: 'case', id: item.id, partition: item.partition, title: item.title, detail: item.type,
       owner: owned ? item.owner : '', states,
@@ -159,7 +156,10 @@ export function opsItems({ work, failed = [], services = [], members = [], partn
   }
 
   // Mais grave primeiro: bloqueado, desistência, atraso, sem responsável; dentro, o que espera há mais tempo.
-  const weight = item => ['blocked', 'risk', 'overdue', 'failed', 'unassigned', 'today'].findIndex(state => item.states.includes(state));
+  const weight = item => {
+    const index = ['blocked', 'risk', 'overdue', 'failed', 'unassigned', 'today'].findIndex(state => item.states.includes(state));
+    return index < 0 ? 99 : index;
+  };
   return items.sort((a, b) => weight(a) - weight(b) || (a.since || '9').localeCompare(b.since || '9'));
 }
 

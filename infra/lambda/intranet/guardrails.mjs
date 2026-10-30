@@ -60,7 +60,7 @@ export function decide({ text, enabled, facts, autoToday, now = new Date() }) {
   if (STOP.test(text)) return { action: 'stop', reason: 'Pediu para não receber mais mensagens.' };
   const handoff = HANDOFF.find(([, pattern]) => pattern.test(text));
   const intent = intentOf(text);
-  if (handoff) return { action: 'person', intent, reason: `Fala de ${handoff[0]}: só uma pessoa responde.` };
+  if (handoff) return { action: 'person', intent, topic: handoff[0], reason: `Fala de ${handoff[0]}: só uma pessoa responde.` };
   if (!intent) return { action: 'person', intent, reason: 'Pergunta fora das respostas simples.' };
   if (['time', 'place'].includes(intent) && !facts) return { action: 'person', intent, reason: 'Sem atividade agendada para responder com certeza.' };
   if (!enabled) return { action: 'person', intent, reason: 'Respostas automáticas desligadas nas regras de seguimento.' };
