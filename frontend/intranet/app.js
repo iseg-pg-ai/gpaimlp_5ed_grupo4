@@ -565,7 +565,7 @@ function proposalMessage({ name, destination, party, dates, link, curator }) {
 // Link da proposta dentro da mensagem: cola-se o link de partilha do portal (Histórico › Partilhar) e
 // entra no texto com a assinatura. Só aceita links de partilha https do próprio portal.
 const PORTAL_SHARE = /^https:\/\/[^\s/?#]+\/(share\/[\w-]+|api\/shares\/[\w-]+\/document)$/;
-function proposalLinkField(getText) {
+function proposalLinkField(getText, leadId = '') {
   const link = h('input', { type: 'url', placeholder: 'Link da proposta (portal)', 'aria-label': 'Link da proposta' });
   const note = h('span', { class: 'muted', role: 'status' });
   const insert = h('button', { type: 'button', class: 'secondary', onclick: () => {
@@ -576,7 +576,16 @@ function proposalLinkField(getText) {
     link.value = '';
     note.textContent = 'Link inserido na mensagem.';
   } }, 'Inserir link');
-  return h('div', { class: 'actions' }, link, insert, h('a', { href: 'https://d3804amye1jw31.cloudfront.net/exports', target: '_blank', rel: 'noopener' }, 'Histórico do portal ↗'), note);
+  // Biblioteca: até duas propostas genéricas aprovadas que servem o lead. O link abre o PDF para
+  // rever (temporário, dura horas); para o cliente use o link de partilha do portal.
+  const library = h('div', { class: 'muted' });
+  if (leadId) api('GET', `/v1/leads/${encodeURIComponent(leadId)}/library`).then(({ matches }) => {
+    if (!matches.length) return;
+    library.append('Da biblioteca (rever antes de enviar): ', ...matches.flatMap(match => [
+      match.url ? h('a', { href: match.url, target: '_blank', rel: 'noopener' }, `${match.title} ↗`) : match.title,
+      ` (${match.score}% · ${match.reasons.join(' · ')}) `]));
+  }).catch(() => {});
+  return h('div', {}, h('div', { class: 'actions' }, link, insert, h('a', { href: 'https://d3804amye1jw31.cloudfront.net/exports', target: '_blank', rel: 'noopener' }, 'Histórico do portal ↗'), note), library);
 }
 
 function proposalComposer(lead, preset = null) {
@@ -1421,7 +1430,7 @@ const views = {
         write({ direction, ...target(thread), leadId: thread.leadId, text: new FormData(form).get('text') }, thread.key);
       } },
         h('label', {}, 'Mensagem', h('textarea', { name: 'text', required: true, maxlength: '1000', rows: '2', placeholder: 'Escreva como BLU, ou simule o que o outro lado responde…' })),
-        proposalLinkField(() => form.querySelector('textarea')),
+        proposalLinkField(() => form.querySelector('textarea'), thread.leadId),
         h('div', { class: 'actions' },
           h('button', { type: 'submit', class: 'primary', value: 'out' }, 'Enviar como BLU'),
           h('button', { type: 'submit', class: 'secondary', value: 'in' }, thread.audience === 'partner' ? 'Simular resposta do parceiro' : 'Simular resposta do cliente'), status));
