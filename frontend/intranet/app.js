@@ -2272,8 +2272,8 @@ async function start() {
   window.addEventListener('popstate', () => { const tab = tabFromHash(); if (tab && tab !== current) show(tab); });
   // Proposta vinda do portal: abre o WhatsApp com a mensagem preparada.
   whatsappState.proposal = proposalHandoff();
-  // Quem tem a visão geral entra por ela; os restantes pelo seu trabalho.
-  show(tabFromHash() || (can('team-admin') ? 'control' : SITE.start));
+  // A Mission Control abre no Seguimento de leads; quem não vê clientes entra pelo seu trabalho.
+  show(tabFromHash() || (can('leads') ? 'leads' : SITE.start));
   mountAssistant();
   watchLeads();
   updateBadges();
