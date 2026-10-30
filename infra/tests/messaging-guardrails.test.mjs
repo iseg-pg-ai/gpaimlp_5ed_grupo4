@@ -70,7 +70,7 @@ function inbox({ replies = true, draft } = {}) {
   const handler = createApp(deps);
   const call = (routeKey, body) => handler({ routeKey, body: body && JSON.stringify(body), requestContext: { authorizer: { jwt: { claims: { email: 'ana@blu.pt', name: 'Ana', 'cognito:groups': '[curators]' } } } } });
   const messages = () => stored.filter(r => r.conversationId === WHATSAPP_TEST.partition);
-  return { call, messages };
+  return { call, messages, stored };
 }
 
 test('a simple question is answered automatically from the booking; a wrong model text falls back to the template', async () => {
@@ -121,4 +121,16 @@ test('a client picked from the list without a phone gets a conversation under th
   const { threads } = JSON.parse((await call('GET /v1/whatsapp-test')).body);
   assert.deepEqual([threads[0].key, threads[0].leadId, threads[0].audience], ['lead:BLU-AAAAAAAA0001', 'BLU-AAAAAAAA0001', 'traveller']);
   assert.equal((await call('POST /v1/whatsapp-test', { direction: 'out', text: 'Sem destino' })).statusCode, 400);
+});
+
+test('a complaint by WhatsApp opens one complaint case per conversation while it is open', async () => {
+  const { call, stored } = inbox({ replies: false });
+  const send = text => call('POST /v1/whatsapp-test', { direction: 'in', to: '351912345678', text, leadId: 'BLU-AAAAAAAA0001' });
+  const first = JSON.parse((await send('The pickup was terrible and I want to make a complaint')).body);
+  assert.equal(first.caseOpened, true);
+  const cases = () => stored.filter(item => item.conversationId === 'BLU-AAAAAAAA0001' && item.recordKey.startsWith('CASE#'));
+  assert.deepEqual([cases().length, cases()[0].type, cases()[0].channel, cases()[0].priority], [1, 'complaint', 'whatsapp', 'high']);
+  assert.equal(JSON.parse((await send('Still a problem, nobody answered')).body).caseOpened, false);
+  assert.equal(cases().length, 1);
+  assert.equal(JSON.parse((await call('POST /v1/whatsapp-test', { direction: 'in', to: '351912345678', text: 'Thanks, see you tomorrow' })).body).caseOpened, false);
 });

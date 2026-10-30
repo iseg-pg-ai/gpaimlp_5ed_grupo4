@@ -616,3 +616,26 @@ sugestões por lead. Testes locais com respostas na forma da especificação.
 - **Agenda:** abre no briefing de hoje (em atraso e hoje), com «Só o meu» e
   «Equipa» a mostrar quantos itens tem cada vista; «Próximos dias» abre o
   calendário de 7 ou 14 dias.
+
+## Auditoria e correções rápidas (2026-10-30)
+
+- **Contagens e atalhos:** os cartões da Visão geral abrem Operações já no tipo
+  escolhido (leads, tarefas, mensagens, lembretes, casos), com a mesma contagem;
+  Operações lista todos os itens em aberto, os parados à frente. Os lembretes a
+  tratar são os preparados, falhados e não enviados a tempo, contados uma só vez.
+  Ao abrir Seguimento a partir da Visão geral, a escolha de demonstração
+  acompanha.
+- **Negócio** (Visão geral): leads, contactados, tempo mediano até contacto, NPS,
+  serviços realizados e serviços a verificar.
+- **Bola vermelha** na Governança (e no grupo Controlo, quando dobrado) com o
+  número de regras legais em falta.
+- **Pipeline técnico** saiu de Operações; fica só para quem não vê dados de
+  clientes (Cloud, Segurança).
+- **O meu trabalho:** atalhos (Nova tarefa, Seguimento, WhatsApp, Operações);
+  tarefas da equipa e feed dobrados.
+- **Queixas por WhatsApp** abrem uma reclamação (canal WhatsApp, prioridade alta,
+  15 dias úteis), uma por conversa enquanto estiver aberta.
+- **Livro de Reclamações:** ligação ao site oficial em Reclamações e litígios. Não
+  há integração por API: os casos do Livro continuam a ser registados à mão.
+- **Novo parceiro:** pedido (tarefa) a partir de Parceiros, porque a lista vem de
+  `config/partners.json` e exige licença verificada.

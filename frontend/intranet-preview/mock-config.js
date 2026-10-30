@@ -243,7 +243,7 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
     return { ...lead, messages, emails: ['demo@example.com'], phones: { 'BLU-DEMO000000000004': ['351912345678'], 'BLU-DEMO000000000002': ['351930000000'] }[lead.id] ?? [] };
   }
   // Visão geral da fundadora: a mesma soma da Lambda (team-alerts.mjs) sobre os dados fictícios.
-  if (path === '/v1/control') {
+  if (path.split('?')[0] === '/v1/control') {
     const { controlSummary } = await import('../../infra/lambda/intranet/team-alerts.mjs');
     const members = [
       { name: 'Fundadora de teste', email: 'fundadora@example.com', groups: ['founders'], enabled: true },

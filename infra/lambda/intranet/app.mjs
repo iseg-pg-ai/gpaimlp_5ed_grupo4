@@ -184,7 +184,28 @@ export function createApp(deps) {
       }));
     }
     await deps.putRecords(WHATSAPP_TEST.partition, records);
-    return { decision: decision.action, reason: decision.reason };
+    let caseId = '';
+    if (decision.topic === 'queixa ou problema' && !message.partnerId) caseId = await openComplaint(message, leadId, key, at);
+    return { decision: decision.action, reason: decision.reason, caseId };
+  };
+  // Uma queixa recebida por WhatsApp entra em Reclamações e litígios (canal WhatsApp, prioridade alta),
+  // com o prazo legal a contar desde hoje; enquanto estiver aberta, a mesma conversa não abre outra.
+  const openComplaint = async (message, leadId, key, at) => {
+    const partition = leadId || UNLINKED;
+    const reference = `whatsapp:${key}`;
+    const existing = await deps.queryRecords(partition, 'CASE#');
+    if (existing.some(item => str(item, 'reference') === reference && str(item, 'followUpStatus') === CASE_STATE.open)) return '';
+    const text = message.text.replace(/\s+/g, ' ').trim();
+    const parsed = parseCase({ type: 'complaint', title: `WhatsApp: ${text.slice(0, 80)}`, description: text, channel: 'whatsapp', priority: 'high', reference }, { staff: [], today: lisbonToday() });
+    if (parsed.error) return '';
+    const caseId = deps.newId();
+    const stamp = at.toISOString();
+    await deps.putRecords(partition, [
+      { recordKey: `CASE#${caseId}`, caseId, ...parsed.record, followUpStatus: CASE_STATE.open, followUpAt: parsed.record.deadline, createdBy: AUTO_AUTHOR.email, createdAt: stamp, updatedAt: stamp },
+      { recordKey: `CASELOG#${caseId}#${stamp}`, caseId, text: `Caso aberto a partir de uma queixa por WhatsApp (${CASE_TYPES.complaint.label}); prazo ${parsed.record.deadline}.`, createdBy: AUTO_AUTHOR.email, createdAt: stamp },
+    ]);
+    await announce({ email: AUTO_AUTHOR.email, name: AUTO_AUTHOR.name }, `abriu a reclamação «${parsed.record.title}» a partir do WhatsApp (prazo ${parsed.record.deadline})`, { scope: 'cases' }).catch(() => {});
+    return caseId;
   };
   // Relatório legal do deploy com as verificações manuais registadas na intranet.
   const loadReport = async () => {
@@ -253,7 +274,7 @@ export function createApp(deps) {
     const [taskItems, allLeads, prepared, openCases, inboxItems, settings, alertItems] = await Promise.all([
       deps.queryStatus(TASK_STATE.open),
       listLeads('all'),
-      deps.queryAgenda(NOTIFY.prepared, new Date(at - 7 * 864e5).toISOString(), at.toISOString()),
+      Promise.all([NOTIFY.prepared, NOTIFY.failed, NOTIFY.missed].map(status => Promise.resolve().then(() => deps.queryAgenda(status, new Date(at - 7 * 864e5).toISOString(), at.toISOString())).catch(() => []))).then(lists => lists.flat()),
       cases ? deps.queryStatus(CASE_STATE.open) : Promise.resolve([]),
       inbox ? deps.queryRecords(WHATSAPP_TEST.partition, WHATSAPP_TEST.prefix) : Promise.resolve([]),
       loadSettings(),
@@ -419,7 +440,7 @@ export function createApp(deps) {
         return reply(201, { at: at.toISOString() });
       }
       const outcome = await answer(message, at);
-      return reply(201, { at: at.toISOString(), decision: outcome.decision, reason: outcome.reason });
+      return reply(201, { at: at.toISOString(), decision: outcome.decision, reason: outcome.reason, caseOpened: Boolean(outcome.caseId) });
     },
 
     // Assistente: junta o que esta pessoa já pode ver e pede ao modelo uma resposta com ações sugeridas.

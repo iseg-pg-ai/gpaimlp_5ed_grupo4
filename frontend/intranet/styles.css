@@ -277,3 +277,6 @@ li.ops-item.selected { background: #f3ecdf; outline: 2px solid var(--ink); }
 /* Proposta por WhatsApp: mensagem com o toque da BLU, revista antes de enviar. */
 .proposal textarea { font-family: Georgia, "Times New Roman", serif; line-height: 1.55; }
 .proposal-fold { margin-top: .9rem; }
+
+/* Bola vermelha também no grupo da árvore quando dobrado (o item já a mostra quando aberto). */
+.tabs details[open] > summary[data-count]::after { display: none; }
