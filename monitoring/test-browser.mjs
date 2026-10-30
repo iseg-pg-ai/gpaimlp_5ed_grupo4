@@ -70,6 +70,10 @@ try {
       .click();
     await page.getByRole("heading", { name: "O sistema, à vista." }).waitFor();
     await page.locator("#service-count").getByText("2 / 3").waitFor();
+    assert.equal(await page.locator("#services .service-card").count(), 4);
+    const agentCard = page.locator("#services .service-card").filter({ has: page.getByRole("heading", { name: "Agente IA", exact: true }) });
+    await agentCard.getByText("Integrado no portal", { exact: true }).waitFor();
+    await agentCard.getByText("3 chamadas · 0 falhas nas últimas 24 h", { exact: true }).waitFor();
     assert.equal(await page.locator("#incident-count").innerText(), "1");
     await page.locator("#agent-proposals").getByText("4", { exact: true }).waitFor();
     assert.equal(await page.locator("#agent-proposals").innerText(), "4");

@@ -213,6 +213,25 @@ try {
       "grid",
     );
   }
+  // Simula o proxy Studio que retira o prefixo antes de chegar ao servidor.
+  await page.route("**/codeeditor/stripped/ports/3003{,/**}", async (route) => {
+    const url = new URL(route.request().url());
+    url.pathname = url.pathname.replace("/codeeditor/stripped/ports/3003", "") || "/";
+    const response = await page.request.get(url.href);
+    await route.fulfill({ response });
+  });
+  for (const suffix of ["", "/", "/index.html"]) {
+    const failures = [];
+    const onResponse = (response) => {
+      if (response.status() >= 400) failures.push(response.url());
+    };
+    page.on("response", onResponse);
+    await page.goto(new URL("/codeeditor/stripped/ports/3003" + suffix, origin).href);
+    await page.getByRole("heading", { name: /Portugal, com intenção/ }).waitFor();
+    assert.equal(await page.locator("#scene").evaluate((node) => getComputedStyle(node).display), "grid");
+    assert.deepEqual(failures, [], "Os recursos carregam através do proxy sem 404");
+    page.off("response", onResponse);
+  }
   for (const path of ["serve.py", "../serve.py", "../.env", "missing.js"]) {
     const response = await page.request.get(new URL(path, origin).href);
     assert.equal(

@@ -135,7 +135,7 @@ O manifesto inclui hashes SHA-256 e tamanhos. A evidência mais recente fica em 
 - Consumo de IA com chamadas, falhas, latência e tokens quando reportados.
 - Incidentes deduplicados, recuperações e fila SNS persistente; envio externo desativado até existir tópico, subscrição, IAM e ensaio autorizados.
 
-`monitoring/config.json` define intervalo (10–300 segundos), backups, limpeza, limiares de alerta e idade máxima aceitável do warehouse. As métricas do agente são recolhidas dos eventos do fluxo integrado no portal, sem uma sonda ou porta própria. O valor preliminar de 168 horas deve ser revisto quando existir uma cadência operacional acordada. Reiniciar para aplicar alterações.
+`monitoring/config.json` define intervalo (10–300 segundos), backups, limpeza, limiares de alerta e idade máxima aceitável do warehouse. O cartão do agente identifica a integração no portal e mostra chamadas e falhas das últimas 24 horas; não confirma a disponibilidade do modelo nem entra na contagem de serviços com sonda HTTP. As métricas do agente são recolhidas dos eventos do fluxo integrado no portal, sem uma sonda ou porta própria. O valor preliminar de 168 horas deve ser revisto quando existir uma cadência operacional acordada. Reiniciar para aplicar alterações.
 A ocupação de disco a partir de 90% conta como incidente local preliminar, a rever com a equipa. As contagens das tabelas incluem entidades de vários tipos; não representam um total de clientes ou de experiências únicas.
 
 O painel identifica recolha atrasada e perda de ligação. Um HTTP 200 não prova prontidão funcional, acesso Bedrock ou um fluxo completo de curadoria. A validação publicada não mostra tentativas ETL que falharam antes de substituir a entrega.

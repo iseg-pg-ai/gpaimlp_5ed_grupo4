@@ -12,7 +12,7 @@ const names = {
   "Portal BLU": "01 / CURADORIA",
   "Observatório analítico": "02 / ANÁLISE",
   Apresentação: "03 / EXPERIÊNCIA",
-  "Agente IA": "04 / ASSISTÊNCIA OPCIONAL",
+  "Agente IA": "04 / ASSISTÊNCIA IA",
 };
 const date = (value) =>
   value ? new Date(value).toLocaleString("pt-PT") : "Por verificar";
@@ -146,6 +146,23 @@ async function openOperations(kind) {
     );
   }
 }
+function agentCard(snapshot) {
+  const ai = snapshot.operations?.ai;
+  const portal = snapshot.services.find((service) => service.name === "Portal BLU");
+  const state = portal?.state === "down" ? "down" : ai?.failures_24h ? "degraded" : "unknown";
+  const label = state === "down" ? "Portal indisponível" : state === "degraded" ? "Erros reportados" : "Integrado no portal";
+  const card = node("article", `service-card ${state}`);
+  const top = node("div", "service-top");
+  top.append(node("span", "eyebrow", names["Agente IA"]), node("span", `status-dot ${state}`));
+  const bottom = node("div", "service-bottom");
+  bottom.append(node("span", `badge ${state}`, label));
+  card.append(top, node("h3", "", "Agente IA"), bottom,
+    node("p", "footnote", ai
+      ? `${ai.calls_24h} chamadas · ${ai.failures_24h} falhas nas últimas 24 h`
+      : "Atividade por verificar"),
+    node("p", "footnote", "Executado a pedido · sem sonda própria ao modelo"));
+  return card;
+}
 function render(data) {
   const s = data.snapshot;
   if (!s) {
@@ -201,7 +218,7 @@ function render(data) {
       (stale ? 1 : 0);
   text("incident-count", incidentCount);
   $("services").replaceChildren(
-    ...s.services.map((service) => {
+    ...s.services.filter((service) => service.name !== "Agente IA").map((service) => {
       const card = node("article", `service-card ${service.state}`);
       const top = node("div", "service-top");
       top.append(
@@ -233,6 +250,7 @@ function render(data) {
       return card;
     }),
   );
+  $("services").append(agentCard(s));
   text("published-at", date(s.warehouse.published_at));
   text(
     "warehouse-age",

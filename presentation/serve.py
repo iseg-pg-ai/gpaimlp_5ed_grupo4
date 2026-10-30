@@ -39,7 +39,7 @@ def main():
             if path in ("/", "/index.html"):
                 document = re.sub(
                     r'<base\s+href="\./"\s*/?>',
-                    lambda _: f'<base href="{escape(prefix, quote=True)}/">',
+                    lambda _: f'<base href="{escape(prefix, quote=True)}/">' if prefix else '<base href="./">',
                     (DIST / "index.html").read_text(),
                 )
                 content = document.encode("utf-8")

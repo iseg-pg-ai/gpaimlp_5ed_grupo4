@@ -10,6 +10,14 @@
       content="Conhecer quem viaja. Escolher com intenção. Descubra a curadoria BLU numa experiência ilustrativa para viajantes e parceiros."
     />
     <base href="./" />
+    <script>
+      // O proxy pode remover o prefixo antes de encaminhar o pedido ao servidor.
+      const presentationBase = document.querySelector("base");
+      const presentationProxy = location.pathname.match(/^(.*?\/ports\/\d+)(?=\/|$)/);
+      if (presentationBase.getAttribute("href") === "./" && presentationProxy) {
+        presentationBase.href = presentationProxy[1] + "/";
+      }
+    </script>
     <title>BLU · Viajar com intenção</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css?v=20261028-pitch" />
