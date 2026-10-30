@@ -84,6 +84,13 @@ PYTHONPATH=src python -B -m unittest tests.test_nexus -v
 Dados sintéticos em pastas temporárias; workflow `.github/workflows/nexus.yml` (Python 3.12 e
 3.13).
 
+## Autoria
+
+- **Autora e responsável:** Inge ([giselainge](https://github.com/giselainge)), que definiu o
+  produto, os requisitos e as decisões.
+- **Proposta de desenho:** redigida com o ChatGPT (OpenAI), a partir das indicações da autora.
+- **Implementação:** escrita com o Claude Code (Anthropic), sob a direção da autora.
+
 ## Pendências
 
 - Comissão do acordo GetYourGuide e mapeamento das tours para produtos BLU.

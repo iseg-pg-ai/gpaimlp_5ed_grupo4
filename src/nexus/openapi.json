@@ -3,6 +3,7 @@
   "info": {
     "title": "NEXUS Integration Gateway",
     "version": "0.1.0",
+    "contact": { "name": "Inge (giselainge)", "url": "https://github.com/giselainge" },
     "description": "Compares partnership channels (partner APIs, supplier files, own partners) for the same BLU product by revenue or profit, with cannibalization and source lineage. Unknown commission or cost is reported, never treated as zero; currencies are never mixed."
   },
   "paths": {
