@@ -127,6 +127,17 @@ function proposalHandoff() {
   const [tab, query = ''] = location.hash.slice(1).split('?');
   if (tab !== 'whatsapp' || !query) return null;
   const params = new URLSearchParams(query);
+  const portalLink = value => /^https:\/\/[^\s/?#]+\/(share\/[\w-]+|api\/shares\/[\w-]+\/document)$/.test(value);
+  // Até dois rascunhos de propostas guardadas que servem o lead, para uma pessoa escolher.
+  if (params.has('d')) {
+    let drafts = [];
+    try { drafts = JSON.parse(params.get('d')); } catch { return null; }
+    drafts = (Array.isArray(drafts) ? drafts : []).slice(0, 2).filter(item => portalLink(String(item?.link ?? ''))).map(item => ({
+      link: item.link, version: Math.min(Math.max(Number.parseInt(item.v, 10) || 1, 1), 999), destination: String(item.dest ?? '').slice(0, 80),
+      score: Math.min(Math.max(Number.parseInt(item.score, 10) || 0, 0), 100), reasons: (Array.isArray(item.why) ? item.why : []).slice(0, 6).map(line => String(line).slice(0, 120)),
+    }));
+    return drafts.length ? { drafts, lead: /^BLU-[A-Z0-9]+$/.test(params.get('lead') ?? '') ? params.get('lead') : '' } : null;
+  }
   const link = params.get('link') ?? '';
   if (!/^https:\/\/[^\s/?#]+\/(share\/[\w-]+|api\/shares\/[\w-]+\/document)$/.test(link)) return null;
   return { link, version: Math.min(Math.max(Number.parseInt(params.get('v') ?? '1', 10) || 1, 1), 999), destination: (params.get('dest') ?? '').slice(0, 80) };
@@ -135,7 +146,19 @@ function proposalHandoff() {
 // A mensagem fica preparada para rever: escolhe-se o lead (já sugerido pelo destino) e envia-se.
 function handoffPanel(state, leads, rerender) {
   const { proposal } = state;
-  const guess = leads.find(lead => proposal.destination && lead.journey?.destination?.toLowerCase().includes(proposal.destination.toLowerCase()));
+  // Dois rascunhos: a pessoa escolhe um e só então abre o formulário de envio.
+  if (proposal.drafts) {
+    return h('div', { class: 'panel' },
+      h('h3', {}, 'Propostas guardadas que servem este cliente'),
+      h('p', { class: 'muted' }, 'Escolha um rascunho: abre a mensagem para rever. Nada é enviado sem a sua confirmação.'),
+      h('div', { class: 'cards' }, proposal.drafts.map(draft => h('div', { class: 'card' },
+        h('div', { class: 'value' }, `${draft.score}%`),
+        h('div', { class: 'label' }, `${draft.destination} · v${String(draft.version).padStart(3, '0')}`),
+        h('div', { class: 'muted' }, draft.reasons.join(' · ')),
+        h('button', { type: 'button', class: 'primary', onclick: () => { state.proposal = { ...draft, lead: proposal.lead }; rerender(); } }, 'Usar este rascunho')))),
+      h('div', { class: 'actions' }, h('button', { type: 'button', class: 'link', onclick: () => { state.proposal = null; rerender(); } }, 'Descartar')));
+  }
+  const guess = leads.find(lead => lead.id === proposal.lead) ?? leads.find(lead => proposal.destination && lead.journey?.destination?.toLowerCase().includes(proposal.destination.toLowerCase()));
   const holder = h('div', {});
   const who = h('select', { 'aria-label': 'Lead da proposta' }, h('option', { value: '' }, 'Escolher o lead…'),
     leads.filter(lead => !lead.synthetic || intelDemo.on).map(lead => h('option', { value: lead.id, selected: lead.id === guess?.id }, `${lead.journey?.destination || 'Sem destino'} · ${lead.id}`)));
