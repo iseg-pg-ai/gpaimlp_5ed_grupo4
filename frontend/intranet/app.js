@@ -335,7 +335,7 @@ function showOpsItem(panel, item, data, { me, nameOf, refresh }) {
   }
   if (leadId && item.kind !== 'lead') actions.push(h('button', { type: 'button', class: 'link', onclick: () => goTo('leads', { filter: 'all', lead: leadId }) }, 'Ficha do lead'));
 
-  panel.replaceChildren(
+  panel.replaceChildren(...[
     h('div', {}, pill(data.kinds[item.kind] ?? item.kind), ' ', item.states.map(key => pill(data.states[key], OPS_TONE[key]))),
     h('h3', {}, item.title),
     item.detail ? h('p', { class: 'muted' }, item.detail) : null,
@@ -350,7 +350,8 @@ function showOpsItem(panel, item, data, { me, nameOf, refresh }) {
     actions.length ? h('div', { class: 'actions' }, actions) : null,
     ...extra,
     status,
-  );
+  // replaceChildren escreve «null» como texto: só os nós que existem.
+  ].filter(Boolean));
 }
 
 const views = {
