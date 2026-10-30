@@ -2,7 +2,7 @@
 "use client";
 import { portalFetch } from "@/lib/http-client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Copy, Mail, MessageCircle, Share2, X } from "lucide-react";
 import { LanguagePicker, T } from "@/components/LocaleProvider";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,24 @@ export function ShareProposalModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<ShareResult | null>(null);
+  const [copied, setCopied] = useState("");
+  const linkField = useRef<HTMLInputElement>(null);
+
+  // Copia a ligação; sem permissão do navegador, seleciona o campo para copiar à mão.
+  const copyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied("Ligação copiada.");
+    } catch {
+      linkField.current?.focus();
+      linkField.current?.select();
+      setCopied(
+        document.execCommand("copy")
+          ? "Ligação copiada."
+          : "Ligação selecionada: copie com Ctrl+C (ou ⌘C).",
+      );
+    }
+  };
 
   const openEmail = (share: ShareResult) => {
     const language = languages.find((item) => item.code === locale)?.name ?? locale;
@@ -70,7 +88,10 @@ export function ShareProposalModal({
       dest: destination,
       ...(leadId ? { lead: leadId } : {}),
     });
-    window.location.assign(`${missionControlUrl.replace(/\/+$/, "")}/#whatsapp?${query}`);
+    // Endereço externo (Mission Control): navegação normal do navegador, como no email.
+    const anchor = document.createElement("a");
+    anchor.href = `${missionControlUrl.replace(/\/+$/, "")}/#whatsapp?${query}`;
+    anchor.click();
   };
 
   const prepareShare = async (event: React.FormEvent) => {
@@ -263,11 +284,24 @@ export function ShareProposalModal({
               <p className="mt-1 text-xs">
                 Acesso válido até {new Date(result.expiresAt).toLocaleString()}.
               </p>
+              <input
+                ref={linkField}
+                readOnly
+                aria-label="Ligação da proposta"
+                value={result.shareUrl}
+                onFocus={(event) => event.currentTarget.select()}
+                className="mt-2 w-full rounded border border-emerald-300 bg-white px-2 py-1 text-xs"
+              />
+              {copied && (
+                <p role="status" className="mt-1 text-xs">
+                  {copied}
+                </p>
+              )}
               <div className="mt-2 flex flex-wrap gap-3">
                 <button
                   type="button"
                   className="inline-flex items-center gap-1 underline"
-                  onClick={() => navigator.clipboard.writeText(result.shareUrl)}
+                  onClick={() => copyLink(result.shareUrl)}
                 >
                   <Copy className="size-4" /> Copiar ligação
                 </button>
