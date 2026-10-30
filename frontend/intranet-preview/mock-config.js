@@ -188,6 +188,17 @@ window.BLU_INTRANET_MOCK = async (method, path, body) => {
       { id: 'partner-evening', label: 'Parceiro: véspera às 18:00' }, { id: 'partner-2h', label: 'Parceiro: 2 h antes' },
     ],
   };
+  // Operações › Inteligência: as mesmas regras da API (ops.mjs), sobre os dados de demonstração.
+  if (path.startsWith('/v1/agenda') && path.includes('view=ops')) {
+    const { OPS_STATES, OPS_KINDS, OPS_BLOCKERS } = await import('../../infra/lambda/intranet/ops.mjs');
+    const items = leads.filter(lead => !lead.assignedTo || lead.atRisk).map(lead => ({
+      key: `lead:${lead.id}`, kind: 'lead', id: lead.id, partition: lead.id, title: lead.journey.destination || lead.id, detail: '', owner: lead.assignedTo ?? '', ownerName: lead.assignedTo ?? '',
+      states: [lead.assignedTo ? '' : 'unassigned', lead.atRisk ? 'risk' : ''].filter(Boolean), reason: lead.atRisk ? 'Cliente disse que vai desistir.' : 'Ninguém assumiu o lead.',
+      since: lead.lastActivityAt, due: lead.followUpAt, partnerName: '', resolver: { email: 'fundadora@example.com', name: 'Fundadora de teste', why: 'demonstração' },
+      blocker: lead.atRisk ? 'client' : 'owner',
+    }));
+    return { scope: 'team', items, totals: {}, states: OPS_STATES, kinds: OPS_KINDS, blockers: OPS_BLOCKERS, people: [{ email: 'fundadora@example.com', name: 'Fundadora de teste', groups: ['founders'] }], today: day(0), checkedAt: hours(0) };
+  }
   if (path.startsWith('/v1/agenda')) return { outcomes: partnerOutcomes, outcomeLabels: { 'on-time': 'A horas', late: 'Atrasado', 'no-show': 'Não apareceu', cancelled: 'Cancelado pelo parceiro' }, notifications: [
     { conversationId: 'BLU-DEMO000000000004', activityId: 'a0-yesterday', audience: 'partner', kind: 'pickup', title: 'Recolha no aeroporto', sendAt: hours(-26), occurrenceAt: hours(-20), status: 'NOTIFY_SENT', channel: 'whatsapp', place: 'Aeroporto de Lisboa', people: 2, partnerName: 'Transfer Sintra', text: 'BLU Costa: recolha amanhã.' },
     { conversationId: 'BLU-DEMO000000000001', activityId: 'a1', audience: 'partner', kind: 'pickup', title: 'Recolha no hotel', sendAt: hours(-2), occurrenceAt: hours(14), status: 'NOTIFY_PREPARED', reason: 'Sem contacto para este canal; enviar manualmente.', hasNumber: false, channel: 'whatsapp', place: 'Hotel Alfama', people: 3, partnerName: 'Tuk-tuk Alfama (demo)', text: 'BLU Costa: recolha "Recolha no hotel" em Hotel Alfama, amanhã 09:30, 3 pessoa(s). Responda OK para confirmar.' },

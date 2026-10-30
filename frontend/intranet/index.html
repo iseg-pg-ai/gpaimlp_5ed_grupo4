@@ -13,28 +13,45 @@
   <body>
     <header class="topbar">
       <div class="brand"><span class="mark">BC</span><span>Intranet BLU</span></div>
+      <button type="button" id="menu" class="menu-toggle" aria-controls="tabs" aria-expanded="false" hidden>Menu</button>
+      <!-- Árvore por finalidade: cada grupo dobra; a equipa primeiro. Contadores em data-count (CSS). -->
       <nav id="tabs" class="tabs" aria-label="Secções" hidden>
-        <span class="nav-group">Trabalho</span>
-        <button type="button" data-tab="control" data-perm="team-admin">Visão geral</button>
-        <button type="button" data-tab="work" aria-current="page">O meu trabalho</button>
-        <button type="button" data-tab="dashboard">Painel</button>
-        <button type="button" data-tab="leads">Seguimento</button>
-        <button type="button" data-tab="agenda">Agenda</button>
-        <button type="button" data-tab="whatsapp">WhatsApp</button>
-        <button type="button" data-tab="partners">Parceiros</button>
-        <span class="nav-group">Controlo</span>
-        <button type="button" data-tab="cases" data-perm="cases">Reclamações e litígios</button>
-        <button type="button" data-tab="security" data-perm="security">Segurança</button>
-        <!-- Contas, papéis e convites (IAM) ficam junto da Segurança. -->
-        <button type="button" data-tab="team">Equipa e acessos</button>
-        <button type="button" data-tab="operations">Operações</button>
-        <button type="button" data-tab="governance">Governança</button>
-        <span class="nav-group">Público</span>
-        <!-- Site e chatbot do BluCostaFrontend (output FrontendUrl), em modo demo para não contar nos indicadores. -->
-        <a href="https://d1sb8lbbur6ggj.cloudfront.net/?demo=1" target="_blank" rel="noopener">Site e chatbot ↗</a>
-        <span class="nav-group">Propostas</span>
-        <!-- Portal DMC do BluCostaPortal (output PortalUrl); o portão do portal deixa entrar os mesmos grupos. -->
-        <a id="portal-link" href="https://d3804amye1jw31.cloudfront.net/" target="_blank" rel="noopener" data-groups="founders curators marketing" hidden>Portal de propostas ↗</a>
+        <details class="nav-tree" data-group="team" open>
+          <summary>Equipa</summary>
+          <button type="button" data-tab="control" data-perm="team-admin" data-badge="control">Visão geral</button>
+          <button type="button" data-tab="work" aria-current="page" data-badge="work">O meu trabalho</button>
+          <button type="button" data-tab="agenda">Agenda</button>
+        </details>
+        <details class="nav-tree" data-group="clients" open>
+          <summary>Clientes</summary>
+          <button type="button" data-tab="leads">Seguimento</button>
+          <button type="button" data-tab="whatsapp" data-badge="whatsapp">WhatsApp</button>
+          <button type="button" data-tab="cases" data-perm="cases">Reclamações e litígios</button>
+        </details>
+        <details class="nav-tree" data-group="partners" open>
+          <summary>Parceiros</summary>
+          <button type="button" data-tab="partners">Parceiros e NPS</button>
+        </details>
+        <details class="nav-tree" data-group="ops" open>
+          <summary>Operações</summary>
+          <button type="button" data-tab="operations">Inteligência</button>
+          <button type="button" data-tab="operations" data-sub="pipeline" class="sub">Pipeline técnico</button>
+          <button type="button" data-tab="dashboard">Painel</button>
+        </details>
+        <details class="nav-tree" data-group="control">
+          <summary>Controlo</summary>
+          <!-- Contas, papéis e convites (IAM) ficam junto da Segurança. -->
+          <button type="button" data-tab="team">Equipa e acessos</button>
+          <button type="button" data-tab="security" data-perm="security">Segurança</button>
+          <button type="button" data-tab="governance">Governança</button>
+        </details>
+        <details class="nav-tree" data-group="links">
+          <summary>Ligações</summary>
+          <!-- Site e chatbot do BluCostaFrontend (output FrontendUrl), em modo demo para não contar nos indicadores. -->
+          <a href="https://d1sb8lbbur6ggj.cloudfront.net/?demo=1" target="_blank" rel="noopener">Site e chatbot ↗</a>
+          <!-- Portal DMC do BluCostaPortal (output PortalUrl); o portão do portal deixa entrar os mesmos grupos. -->
+          <a id="portal-link" href="https://d3804amye1jw31.cloudfront.net/" target="_blank" rel="noopener" data-groups="founders curators marketing" hidden>Portal de propostas ↗</a>
+        </details>
       </nav>
       <div id="who" class="who" hidden>
         <span id="who-name"></span>
