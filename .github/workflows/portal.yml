@@ -79,7 +79,9 @@ jobs:
         run: npm run test:catalog-etl
 
   container:
-    runs-on: ubuntu-latest
+    # Fixo em 24.04: o Docker 29 do ubuntu-26.04 usa o image store do containerd e o
+    # `docker image inspect` deixa de devolver o digest da configuração como Id.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
