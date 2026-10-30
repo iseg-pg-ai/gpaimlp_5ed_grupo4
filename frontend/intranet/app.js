@@ -69,7 +69,7 @@ const groupsNow = () => session.claims?.['cognito:groups'] ?? [];
 // Fundadores e curadores alteram leads e agenda; só fundadores gerem acessos.
 const isCurator = () => groupsNow().some(group => ['curators', 'founders'].includes(group));
 const isFounder = () => groupsNow().includes('founders');
-const ROLE_LABEL = { founders: 'Fundador(a)', curators: 'Curador(a)', governance: 'Governança', testers: 'Testes', marketing: 'Marketing' };
+const ROLE_LABEL = { founders: 'Fundador(a)', curators: 'Curador(a)', governance: 'Governança', testers: 'Testes', marketing: 'Marketing', finance: 'Finanças', auditing: 'Auditoria', legal: 'Jurídico', security: 'Segurança', crm: 'CRM', cloud: 'Cloud', scm: 'SCM (fornecedores)' };
 const CHANNEL = { whatsapp: 'WhatsApp', sms: 'SMS', email: 'Email' };
 // Governança em linguagem simples: [quando ativo, quando inativo] por controlo do manifest.
 const PROMISES = {
@@ -95,9 +95,18 @@ const ACTIONS = {
 };
 const EVIDENCE_KIND = { 'churn-followups': 'Revisões de clientes em risco', manifests: 'Configuração das regras e controlos' };
 // Espelha ROLES da API: só esconde o que o servidor recusaria de qualquer forma.
-const ROLE_PERMS = { founders: ['read', 'tasks', 'cases', 'security', 'team-admin', 'feedback'], curators: ['read', 'tasks', 'cases'], governance: ['read', 'tasks', 'cases', 'security'], testers: ['read'], marketing: ['tasks'] };
+const ROLE_PERMS = {
+  founders: ['read', 'tasks', 'cases', 'security', 'team-admin', 'feedback', 'operations', 'governance', 'attest'], curators: ['read', 'tasks', 'cases'],
+  governance: ['read', 'tasks', 'cases', 'security', 'operations', 'governance', 'attest'], testers: ['read'], marketing: ['tasks'],
+  finance: ['read', 'tasks'], auditing: ['read', 'security', 'operations', 'governance'], legal: ['read', 'tasks', 'cases', 'governance', 'attest'],
+  security: ['tasks', 'security', 'operations', 'governance'], crm: ['read', 'tasks'], cloud: ['tasks', 'operations', 'security'], scm: ['read', 'tasks'],
+};
+// Colunas da tabela «Papéis» em Equipa e acessos.
+const PERMISSION_LABELS = [['read', 'Dados de clientes'], ['leads', 'Leads e agenda'], ['tasks', 'Tarefas'], ['cases', 'Reclamações'], ['security', 'Segurança'], ['operations', 'Operações'], ['governance', 'Governança'], ['attest', 'Confirmar regras'], ['team-admin', 'Gerir acessos']];
 const can = permission => groupsNow().some(group => ROLE_PERMS[group]?.includes(permission));
-const tabVisible = tab => can('read') || LIMITED_TABS.includes(tab);
+// Páginas de uma área abrem a quem tem essa permissão, mesmo sem «read» (como na API).
+const AREA_TABS = { operations: 'operations', governance: 'governance', security: 'security' };
+const tabVisible = tab => can('read') || LIMITED_TABS.includes(tab) || Boolean(AREA_TABS[tab] && can(AREA_TABS[tab]));
 // Endereço do portal: uma só fonte, a ligação do menu (index.html).
 const portalUrl = (rest = '') => {
   const base = document.getElementById('portal-link')?.href;
@@ -562,7 +571,6 @@ const views = {
           const part = w.team[kind];
           return goCard(part.total, label, tab, options, part.unowned ? 'warn' : '');
         })) : null,
-      w ? h('p', { class: 'muted' }, `Sem responsável: ${WORK_KINDS.map(([kind, label]) => `${w.team[kind].unowned} ${label.toLowerCase()}`).join(' · ')}. Os alertas não contam no total: apontam para trabalho que já está contado.`) : null,
       h('h3', { class: 'spaced' }, 'Leads'),
       h('div', { class: 'cards' },
         goCard(c.followUps.open, 'Leads em aberto', 'leads', { filter: 'open' }), goCard(c.followUps.onTime, 'Dentro do prazo', 'leads', { filter: 'open' }),
@@ -583,7 +591,7 @@ const views = {
             countCell(person.urgent, 'bad'), h('td', {}, h('strong', {}, person.total)))),
           h('tr', {}, h('td', {}, h('strong', {}, 'Sem responsável')), h('td', {}, '—'),
             ...WORK_KINDS.map(([kind]) => countCell(w.team[kind].unowned, 'warn')), h('td', {}, '—'), h('td', {}, '—'), h('td', {}, h('strong', {}, w.unowned))))),
-        h('p', { class: 'muted' }, 'Cada linha é a lista de «O meu trabalho» dessa pessoa. Uma mensagem por responder substitui a linha do lead a que pertence; os alertas também aparecem na lista da pessoa.')) : null,
+      ) : null,
       h('div', { class: 'grid2 spaced' },
         h('div', { class: 'panel' }, h('h3', {}, 'Lembretes (7 dias)'), h('table', {}, h('tbody', {},
           // Os lembretes vivem na Agenda; os enviados por WhatsApp em teste também na caixa do WhatsApp.
@@ -725,7 +733,7 @@ const views = {
   // tipo primeiro. Sem serviços suficientes não há pontuação (desconhecido não é bom nem mau).
   async partners(view, state = { selected: '' }) {
     partnerCache = null;
-    const { partners, scorecards = [], score = {}, outcomes: labels = {}, nps = { nps: null, responses: 0 } } = await loadPartners();
+    const { partners, scorecards = [], score = {}, outcomes: labels = {}, nps = { nps: null, responses: 0 }, experiences = {}, toCheck = [] } = await loadPartners();
     const npsText = value => (value === null || value === undefined ? '—' : value > 0 ? `+${value}` : `${value}`);
     const info = Object.fromEntries(partners.map(partner => [partner.id, partner]));
     const percent = value => (value === null || value === undefined ? '—' : `${Math.round(value * 100)}%`);
@@ -766,7 +774,19 @@ const views = {
         h('div', { class: 'card' }, h('div', { class: 'value' }, nps.promoters ?? 0), h('div', { class: 'label' }, 'Promotores (9–10)')),
         h('div', { class: 'card' }, h('div', { class: 'value' }, nps.passives ?? 0), h('div', { class: 'label' }, 'Neutros (7–8)')),
         h('div', { class: 'card' }, h('div', { class: 'value' }, nps.detractors ?? 0), h('div', { class: 'label' }, 'Detratores (0–6)'))),
-      h('p', { class: 'muted' }, 'No dia seguinte ao último dia de cada serviço, o cliente recebe por WhatsApp (ou email) a pergunta «de 0 a 10, recomendaria a BLU?». Registe a resposta em Agenda › Registar resultado.'),
+      // Atalho para o que merece ser visto: cada serviço com o motivo e a ligação ao lead.
+      h('div', { class: 'panel' }, h('h3', {}, `A verificar · ${toCheck.length}`), toCheck.length ? h('ul', { class: 'work-list' }, toCheck.map(item => h('li', { class: 'work-item' },
+        h('div', {}, [
+          item.recommend !== null && item.recommend <= 6 ? pill(`Recomenda ${item.recommend}/10`, 'bad') : null,
+          item.transferOk === 'no' ? pill('Transfer correu mal', 'bad') : null,
+          item.worst ? pill(`Pior: ${experiences[item.worst] ?? item.worst}`, 'warn') : null,
+          item.result === 'no-show' ? pill('Parceiro não apareceu', 'bad') : null,
+        ].filter(Boolean).flatMap(part => [part, ' '])),
+        h('strong', {}, `${item.partnerName} · ${item.title}`), h('div', { class: 'muted' }, [item.date, item.comment ? `«${item.comment}»` : ''].filter(Boolean).join(' · ')),
+        item.conversationId ? h('div', { class: 'actions task-actions' },
+          h('button', { type: 'button', class: 'link', onclick: () => goTo('leads', { filter: 'all', lead: item.conversationId }) }, 'Abrir lead'),
+          can('cases') ? h('button', { type: 'button', class: 'link', onclick: () => { casePrefill = { leadId: item.conversationId }; show('cases'); } }, 'Abrir reclamação') : null) : null)))
+        : h('p', { class: 'muted' }, 'Nada a verificar.')),
       h('div', { class: 'split' },
         h('div', { class: 'panel' }, h('table', {},
           h('thead', {}, h('tr', {}, h('th', {}, 'Parceiro'), h('th', {}, 'Tipo'), h('th', {}, 'Pontuação'), h('th', {}, 'Serviços'), h('th', {}, 'Pontualidade'), h('th', {}, 'Clientes'), h('th', {}, 'NPS'), h('th', {}, 'Margem'), h('th', {}, 'Preço/pessoa'))),
@@ -820,8 +840,8 @@ const views = {
         h('tbody', {}, members.map(memberRow)))),
       h('div', { class: 'grid2 spaced' },
         h('div', { class: 'panel' }, h('h3', {}, 'Papéis'), h('table', {},
-          h('thead', {}, h('tr', {}, h('th', {}, 'Papel'), h('th', {}, 'Ver'), h('th', {}, 'Alterar leads e agenda'), h('th', {}, 'Gerir acessos'))),
-          h('tbody', {}, access.roles.map(item => h('tr', {}, h('td', {}, item.label), ...['read', 'leads', 'team-admin'].map(permission => h('td', {}, item.can.includes(permission) ? '✓' : '—'))))))),
+          h('thead', {}, h('tr', {}, h('th', {}, 'Papel'), ...PERMISSION_LABELS.map(([, label]) => h('th', {}, label)))),
+          h('tbody', {}, access.roles.map(item => h('tr', {}, h('td', {}, item.label), ...PERMISSION_LABELS.map(([permission]) => h('td', {}, item.can.includes(permission) ? '✓' : '—'))))))),
         h('div', { class: 'panel' }, h('h3', {}, 'Cofre de acessos'),
           h('dl', { class: 'facts' },
             h('dt', {}, 'Identidade'), h('dd', {}, access.identity.provider),
@@ -1016,8 +1036,7 @@ const views = {
     // Nova conversa: escolher o cliente (lead) ou o parceiro; o número do cliente vem do lead.
     // No filtro Clientes só aparecem clientes; em Parceiros, só parceiros.
     const clientOptions = h('optgroup', { label: 'Clientes' },
-      leads.map(lead => h('option', { value: `lead:${lead.id}` }, `${lead.journey?.destination || 'Sem destino'} · ${lead.id}${lead.synthetic ? ' (demo)' : ''}`)),
-      h('option', { value: 'client' }, 'Outro cliente (escrever o número)'));
+      leads.map(lead => h('option', { value: `lead:${lead.id}` }, `${lead.journey?.destination || 'Sem destino'} · ${lead.id}${lead.synthetic ? ' (demo)' : ''}`)));
     const partnerOptions = h('optgroup', { label: 'Parceiros' },
       partners.map(partner => h('option', { value: `partner:${partner.id}` }, `${partner.name}${partner.whatsapp ? '' : ' · sem número'}`)));
     const who = h('select', { name: 'who', required: true, 'aria-label': 'Para quem' }, h('option', { value: '' }, 'Escolher…'),
@@ -1033,8 +1052,9 @@ const views = {
       const pick = who.value;
       const [kind, id] = pick.split(':');
       const existing = kind === 'lead' ? threads.find(thread => thread.leadId === id && thread.to) : null;
-      number.hidden = kind !== 'client';
+      number.hidden = true;
       fix.hidden = true;
+      fix.textContent = 'Corrigir número';
       openExisting.hidden = !existing;
       phone.value = '';
       hint.textContent = '';
@@ -1051,7 +1071,7 @@ const views = {
       if (who.value !== pick) return;
       phone.value = detail?.phones?.[0] ?? '';
       if (phone.value) { hint.textContent = `Número deixado pelo cliente na conversa: ${phone.value}.`; fix.hidden = false; }
-      else { hint.textContent = 'Este cliente não deixou telefone na conversa: escreva o número.'; number.hidden = false; }
+      else { hint.textContent = 'Sem telefone deixado no chat: a conversa fica com a referência do lead.'; fix.textContent = 'Indicar número'; fix.hidden = false; }
     });
     const newThread = h('form', { class: 'verify', onsubmit: event => {
       event.preventDefault();
@@ -1059,8 +1079,9 @@ const views = {
       const [kind, id] = String(data.who).split(':');
       const partner = kind === 'partner' ? partners.find(item => item.id === id) : null;
       const digits = String(data.to ?? '').replace(/\D/g, '');
-      if (!partner && digits.length < 9) { number.hidden = false; hint.textContent = 'Indique o número do cliente.'; phone.focus(); return; }
-      write({ direction: 'out', ...(partner ? { partnerId: partner.id } : { to: digits }), leadId: kind === 'lead' ? id : '', text: data.text }, partner ? (partner.whatsapp || `partner:${partner.id}`) : digits);
+      // Como nos parceiros: sem número, a conversa do cliente fica com a referência do lead.
+      if (!partner && digits && digits.length < 9) { hint.textContent = 'Número incompleto: use o indicativo do país, ou apague-o para usar a referência do lead.'; phone.focus(); return; }
+      write({ direction: 'out', ...(partner ? { partnerId: partner.id } : { to: digits }), leadId: kind === 'lead' ? id : '', text: data.text }, partner ? (partner.whatsapp || `partner:${partner.id}`) : digits || `lead:${id}`);
     } },
       h('label', {}, 'Para', who), number, hint, h('div', { class: 'actions' }, openExisting, fix),
       h('label', {}, 'Primeira mensagem da BLU', h('textarea', { name: 'text', required: true, maxlength: '1000', rows: '2' })),
@@ -1346,6 +1367,12 @@ function outcomeBlock(item, outcomes, labels, refresh) {
   const rating = h('select', { name: 'rating' }, h('option', { value: '' }, 'Cliente: sem avaliação'), [5, 4, 3, 2, 1].map(value => h('option', { value, selected: done?.rating === value }, `Cliente: ${value}/5`)));
   // Resposta ao pedido de recomendação do dia seguinte (NPS, 0 a 10).
   const recommend = h('select', { name: 'recommend' }, h('option', { value: '' }, 'Recomenda (0–10): sem resposta'), Array.from({ length: 11 }, (_, index) => 10 - index).map(value => h('option', { value, selected: done?.recommend === value }, `Recomenda: ${value}/10`)));
+  // Respostas curtas do cliente: o transfer e o melhor e o pior da viagem, sem detalhe.
+  const experiences = partnerCache?.experiences ?? { transfer: 'Transfer', accommodation: 'Alojamento', food: 'Restaurantes e comida', guide: 'Guia e equipa' };
+  const choice = (name, empty, prefix) => h('select', { name }, h('option', { value: '' }, empty), Object.entries(experiences).map(([id, label]) => h('option', { value: id, selected: done?.[name] === id }, `${prefix}: ${label}`)));
+  const best = choice('best', 'Melhor: sem resposta', 'Melhor');
+  const worst = choice('worst', 'Pior: sem resposta', 'Pior');
+  const transferOk = h('select', { name: 'transferOk' }, h('option', { value: '' }, 'Transfer: sem resposta'), h('option', { value: 'yes', selected: done?.transferOk === 'yes' }, 'Transfer: correu bem'), h('option', { value: 'no', selected: done?.transferOk === 'no' }, 'Transfer: correu mal'));
   const form = h('form', { class: 'outcome', onsubmit: async event => {
     event.preventDefault();
     status.textContent = 'A guardar…';
@@ -1357,7 +1384,7 @@ function outcomeBlock(item, outcomes, labels, refresh) {
       status.textContent = error.message;
     }
   } },
-    result, delay, rating, recommend,
+    result, delay, rating, recommend, transferOk, best, worst,
     h('input', { name: 'cost', inputmode: 'decimal', placeholder: 'Custo (EUR)', value: done?.cost ?? '' }),
     h('input', { name: 'price', inputmode: 'decimal', placeholder: 'Preço ao cliente (EUR)', value: done?.price ?? '' }),
     h('input', { name: 'comment', maxlength: '500', placeholder: 'Comentário (opcional)', value: done?.comment ?? '' }),

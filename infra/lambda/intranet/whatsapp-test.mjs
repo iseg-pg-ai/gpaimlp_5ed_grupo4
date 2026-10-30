@@ -16,8 +16,9 @@ export const whatsappMode = value => (value === 'live' ? 'live' : 'test');
 
 const s = (item, key) => item?.[key]?.S ?? '';
 
-// Uma conversa por número; um parceiro de demonstração sem número fica com a própria chave.
-export const threadKey = message => message.to || (message.partnerId ? `partner:${message.partnerId}` : '');
+// Uma conversa por número; sem número, um parceiro ou um cliente (lead) ficam com a própria chave,
+// como no modo de teste: escolhe-se da lista, nunca se escreve o número à mão.
+export const threadKey = message => message.to || (message.partnerId ? `partner:${message.partnerId}` : message.leadId ? `lead:${message.leadId}` : '');
 
 export const inboxRecord = ({ at, id, direction, to = '', partnerId = '', text, title = '', leadId = '', author, authorName = '', decision = '', reason = '', suggestion = '' }) => ({
   recordKey: `${WHATSAPP_TEST.prefix}${at}#${id}`,
@@ -75,7 +76,8 @@ export function parseInboxPost(body, validLeadId, partners = []) {
   if (!direction) return { error: 'Escolha quem escreve a mensagem.' };
   if (partnerId && !partner) return { error: 'Parceiro desconhecido.' };
   // Um número internacional (E.164) tem 9 a 15 dígitos com o indicativo do país.
-  if (!partner && !/^\d{9,15}$/.test(to)) return { error: 'Número inválido: use o indicativo do país e 9 a 15 dígitos, por exemplo 351912345678.' };
+  if (!partner && to && !/^\d{9,15}$/.test(to)) return { error: 'Número inválido: use o indicativo do país e 9 a 15 dígitos, por exemplo 351912345678.' };
+  if (!partner && !leadId && !to) return { error: 'Escolha um cliente da lista ou indique o número com o indicativo do país, por exemplo 351912345678.' };
   if (to && !/^\d{9,15}$/.test(to)) return { error: 'Número do parceiro inválido.' };
   if (!text) return { error: 'Escreva a mensagem.' };
   if (leadId && !validLeadId(leadId)) return { error: 'Referência de lead inválida.' };

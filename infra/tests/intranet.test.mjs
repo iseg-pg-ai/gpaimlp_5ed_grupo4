@@ -742,7 +742,7 @@ test('the intranet stack protects every route and grants no destructive data acc
     assert.deepEqual(cognitoActions, ['cognito-idp:ListUsersInGroup']);
     assert.doesNotMatch(JSON.stringify(dispatcherPolicy.Properties.PolicyDocument), /dynamodb:(Scan|DeleteItem|BatchWriteItem)|dynamodb:\*/);
     const groups = of('AWS::Cognito::UserPoolGroup').map(group => group.Properties.GroupName).sort();
-    assert.deepEqual(groups, ['curators', 'founders', 'governance', 'marketing', 'testers']);
+    assert.deepEqual(groups, ['auditing', 'cloud', 'crm', 'curators', 'finance', 'founders', 'governance', 'legal', 'marketing', 'scm', 'security', 'testers']);
   } finally {
     await rm(outdir, { recursive: true, force: true });
   }
@@ -1164,4 +1164,22 @@ test('AWS function names become plain names for the team', async () => {
   assert.equal(workerLabel('ChurnReview'), 'Revisão diária de leads');
   assert.equal(workerLabel('ReminderDispatch'), 'Envio de lembretes');
   assert.equal(workerLabel('XyzAbc'), 'Processo automático');
+});
+
+test('new roles see their own area: cloud and security never reach client data, auditing only reads, legal confirms rules', async () => {
+  const { deps } = fakeDeps({ policyReport: async () => ({ summary: { pass: 1, fail: 0, manual: 0 }, results: [] }) });
+  const handler = createApp(deps);
+  const as = groups => (routeKey, extra = {}) => handler(request(routeKey, { groups, ...extra }));
+  for (const groups of ['[cloud]', '[security]']) {
+    const call = as(groups);
+    assert.equal((await call('GET /v1/operations')).statusCode, 200, groups);
+    assert.equal((await call('GET /v1/security')).statusCode, 200, groups);
+    for (const route of ['GET /v1/leads', 'GET /v1/conversations', 'GET /v1/whatsapp-test']) assert.equal((await call(route)).statusCode, 403, `${groups} ${route}`);
+  }
+  const auditor = as('[auditing]');
+  assert.equal((await auditor('GET /v1/leads')).statusCode, 200);
+  assert.equal((await auditor('POST /v1/tasks', { body: { title: 'x' } })).statusCode, 403);
+  assert.equal((await auditor('POST /v1/governance/attestations', { body: {} })).statusCode, 403);
+  assert.notEqual((await as('[legal]')('POST /v1/governance/attestations', { body: {} })).statusCode, 403);
+  assert.equal((await as('[finance]')('POST /v1/leads/{id}/assign', { id: 'BLU-AAAAAAAA0001', body: {} })).statusCode, 403);
 });
