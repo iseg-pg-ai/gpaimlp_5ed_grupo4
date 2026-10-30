@@ -562,6 +562,23 @@ function proposalMessage({ name, destination, party, dates, link, curator }) {
   ].join('\n');
 }
 
+// Link da proposta dentro da mensagem: cola-se o link de partilha do portal (Histórico › Partilhar) e
+// entra no texto com a assinatura. Só aceita links de partilha https do próprio portal.
+const PORTAL_SHARE = /^https:\/\/[^\s/?#]+\/(share\/[\w-]+|api\/shares\/[\w-]+\/document)$/;
+function proposalLinkField(getText) {
+  const link = h('input', { type: 'url', placeholder: 'Link da proposta (portal)', 'aria-label': 'Link da proposta' });
+  const note = h('span', { class: 'muted', role: 'status' });
+  const insert = h('button', { type: 'button', class: 'secondary', onclick: () => {
+    const value = link.value.trim();
+    if (!PORTAL_SHARE.test(value)) { note.textContent = 'Use o link de partilha do portal (Histórico › Partilhar).'; return; }
+    const text = getText();
+    if (!text.value.includes(value)) text.value = `${text.value.trimEnd()}${text.value.trim() ? '\n\n' : ''}A sua proposta: ${value}\nBLU Costa Travel · Curation Studio`.slice(0, 1000);
+    link.value = '';
+    note.textContent = 'Link inserido na mensagem.';
+  } }, 'Inserir link');
+  return h('div', { class: 'actions' }, link, insert, h('a', { href: 'https://d3804amye1jw31.cloudfront.net/exports', target: '_blank', rel: 'noopener' }, 'Histórico do portal ↗'), note);
+}
+
 function proposalComposer(lead, preset = null) {
   const curator = (session.claims?.name || session.claims?.email || 'BLU').split(/[\s@(]/)[0];
   const phone = String(lead.phones?.[0] ?? '').replace(/\D/g, '').replace(/^00/, '');
@@ -1404,6 +1421,7 @@ const views = {
         write({ direction, ...target(thread), leadId: thread.leadId, text: new FormData(form).get('text') }, thread.key);
       } },
         h('label', {}, 'Mensagem', h('textarea', { name: 'text', required: true, maxlength: '1000', rows: '2', placeholder: 'Escreva como BLU, ou simule o que o outro lado responde…' })),
+        proposalLinkField(() => form.querySelector('textarea')),
         h('div', { class: 'actions' },
           h('button', { type: 'submit', class: 'primary', value: 'out' }, 'Enviar como BLU'),
           h('button', { type: 'submit', class: 'secondary', value: 'in' }, thread.audience === 'partner' ? 'Simular resposta do parceiro' : 'Simular resposta do cliente'), status));
