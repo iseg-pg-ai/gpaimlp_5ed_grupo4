@@ -70,8 +70,10 @@ def main():
         else:
             print("Smoke recusado durante a importação da plataforma OCI.")
         raise SystemExit(1)
-    except (ValueError, KeyError, OSError, subprocess.SubprocessError):
-        raise SystemExit("Smoke recusado: configuração, execução ou relatório inválido.")
+    except (ValueError, KeyError, OSError, subprocess.SubprocessError) as error:
+        # A mensagem diz que verificação falhou; nunca inclui o stdout dos serviços.
+        reason = str(error) if isinstance(error, ValueError) and not isinstance(error, json.JSONDecodeError) else type(error).__name__
+        raise SystemExit("Smoke recusado: configuração, execução ou relatório inválido (" + reason + ").")
 
 
 if __name__ == "__main__":
