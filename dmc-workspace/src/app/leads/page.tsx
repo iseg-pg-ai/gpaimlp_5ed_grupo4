@@ -313,7 +313,7 @@ export default function LeadsPage() {
                 </dl>
               )}
 
-              <LeadProposalMatches leadId={selected.id} />
+              <LeadProposalMatches key={selected.id} leadId={selected.id} />
 
               {(() => {
                 // Rascunho de proposta: preenche o formulário de viagem com o que o cliente

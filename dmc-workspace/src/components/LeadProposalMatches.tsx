@@ -19,7 +19,6 @@ export function LeadProposalMatches({ leadId }: { leadId: string }) {
 
   useEffect(() => {
     let current = true;
-    setMatches(null);
     portalFetch(`/api/leads/${encodeURIComponent(leadId)}/proposals`)
       .then((response) => (response.ok ? response.json() : { matches: [] }))
       .then(
